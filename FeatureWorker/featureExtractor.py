@@ -2,6 +2,8 @@ from featureWorker import FeatureWorker
 from fwConstants import *
 from fwConstants import _warn
 
+import codecs
+
 #feature extractor constants:
 offsetre = re.compile(r'p(\-?\d+)([a-z])')
 toffsetre = re.compile(r'pt(\-?\d+)([a-z])')
@@ -68,30 +70,6 @@ class FeatureExtractor(FeatureWorker):
         
         
         
-    def printTokenizedLines(self, filename, whiteListFeatTable = None):
-        """prints tokenized messages in format mallet can use"""
-        sql = """SELECT %s, %s  from %s""" % (self.messageid_field, self.message_field,self.corptable+'_tok')
-        messagesEnc = self._executeGetList(sql)
-        try:
-            messagesTok = map(lambda m: (m[0], json.loads(m[1])), messagesEnc)
-        except ValueError as e:
-            raise ValueError("One of the tokenized messages was badly JSON encoded, please check your data again. (Maybe MySQL truncated the data?)")
-            
-        #if whitelistFeatTable:
-        whiteSet = None
-        if whiteListFeatTable:
-            sql = "SELECT distinct feat FROM %s " % whiteListFeatTable
-            whiteSet = set([s[0] for s in self._executeGetList(sql)])
-            
-        f = open(filename, 'w')
-        for m in messagesTok:
-            toks = m[1]
-            if whiteSet:
-                toks = [w for w in toks if w in whiteSet]
-            f.write("""%s en %s\n""" %(m[0], ' '.join([s.encode('utf-8') for s in toks])))
-        f.close()
-        _warn("Wrote tokenized file to: %s"%filename)
-        
         
     def addSentTokenizedMessages(self):
         """Creates a parsed version of the message table"""
@@ -148,6 +126,8 @@ class FeatureExtractor(FeatureWorker):
 
     def printTokenizedLines(self, filename, whiteListFeatTable = None):
         """prints tokenized messages in format mallet can use"""
+        reload(sys)
+        sys.setdefaultencoding('utf8')
         sql = """SELECT %s, %s  from %s""" % (self.messageid_field, self.message_field,self.corptable+'_tok')
         messagesEnc = self._executeGetList(sql)
         try:
@@ -172,7 +152,8 @@ class FeatureExtractor(FeatureWorker):
 
     def printJoinedFeatureLines(self, filename, delimeter = ' '):
         """prints tokenized messages in format mallet can use"""
-
+        reload(sys)
+        sys.setdefaultencoding('utf8')
         f = open(filename, 'w')
         for (gid, featValues) in self.yieldValuesSparseByGroups():
             message = delimeter.join([delimeter.join([feat.replace(' ', '_')]*val) for feat, value in featValues.iteritems()])

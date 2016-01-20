@@ -64,7 +64,7 @@ from regressionPredictor import RegressionPredictor
 from lib.TweetNLP import TweetNLP
 
 #wwbp
-from tools.misc import notify
+import notify
 from lib import wordcloud
 from mysqlMethods import mysqlMethods as mm
 

@@ -114,7 +114,7 @@ regex_strings = (
     r"""(?:http[s]?\:\/\/)"""   #need to capture it alone sometimes
     ,
     #command in parens:
-    r"""(?:\[[a-z_]+\])"""   #need to capture it alone sometimes
+    r"""(?:\[[\w_]+\])"""   #need to capture it alone sometimes
     ,
     # HTTP GET Info
     r"""(?:\/\w+\?(?:\;?\w+\=\w+)+)"""
@@ -131,7 +131,7 @@ regex_strings = (
     ,
     # Remaining word types:
     r"""
-    (?:[a-z][a-z'\-_]+[a-z])       # Words with apostrophes or dashes.
+    (?:[\w][\w'\-_]+[\w])       # Words with apostrophes or dashes.
     |
     (?:[+\-]?\d+[,/.:-]\d+[+\-]?)  # Numbers, including fractions, decimals.
     |
@@ -247,7 +247,7 @@ if __name__ == '__main__':
     samples = (
         u"RT @ #happyfuncoding: this is a typical Twitter tweet :-)",
         u"It's perhaps noteworthy that phone numbers like +1 (800) 123-4567, (800) 123-4567, and 123-4567 are treated as words despite their whitespace.",
-        u'Something </sarcasm> about <fails to break this up> <3 </3 <\\3 mañana création <em class="grumpy">pain</em> <meta name="viewport" content="width=device-width"> <br />',
+        u'Something </sarcasm> about <fails to break this up> <3 </3 <\\3 mañana vergüenza güenza création tonterías tonteréas <em class="grumpy">pain</em> <meta name="viewport" content="width=device-width"> <br />',
         u"This is more like a Facebook message with a url: http://www.youtube.com/watch?v=dQw4w9WgXcQ, youtube.com google.com https://google.com/ ",
         u"HTML entities &amp; other Web oddities can be an &aacute;cute <em class='grumpy'>pain</em> >:(",
         )

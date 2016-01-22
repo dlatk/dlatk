@@ -752,9 +752,9 @@ def main(fn_args = None):
 
     if args.addpnames:
         if not fe: fe = FE()
-        namesLex = interface.Lexicon(mysql_host = args.mysql_host)
+        namesLex = lexInterface.Lexicon(mysql_host = args.mysql_host)
         namesLex.loadLexicon(args.addpnames[0])
-        langLex = interface.Lexicon(mysql_host = args.mysql_host)
+        langLex = lexInterface.Lexicon(mysql_host = args.mysql_host)
         langLex.loadLexicon(args.addpnames[1])
         args.feattable = fe.addPNamesTable(namesLex.getLexicon(), langLex.getLexicon(),  valueFunc = args.valuefunc)
 
@@ -1483,7 +1483,7 @@ def main(fn_args = None):
         lex_dict_with_name = {args.classToLex: v for featTableName,v in lexicon_dict.iteritems()} if args.classToLex else {args.regrToLex: v for featTableName,v in lexicon_dict.iteritems()}
         # print lex_dict_with_name.items()
         for lexName, lexicon in lex_dict_with_name.iteritems():
-            lex = interface.WeightedLexicon(lexicon, mysql_host = args.mysql_host)
+            lex = lexInterface.WeightedLexicon(lexicon, mysql_host = args.mysql_host)
             lex.createWeightedLexiconTable('dd_'+lexName)
 
     if args.fitreducer:
@@ -1496,7 +1496,7 @@ def main(fn_args = None):
             lexiconName = args.reducertolexicon
             if outcomeName != 'noOutcome':
                 lexiconName += '_'+outcomeName
-            lexicon = interface.WeightedLexicon(lexDict, mysql_host = args.mysql_host)
+            lexicon = lexInterface.WeightedLexicon(lexDict, mysql_host = args.mysql_host)
             lexicon.createLexiconTable(lexiconName)
         
     if args.savemodels and dr:

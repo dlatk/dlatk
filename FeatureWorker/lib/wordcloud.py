@@ -262,20 +262,23 @@ def wordcloud(word_list, freq_list, output_prefix='test',
         if height is None:
             height = 2000
 
+        if background_color[0] == "#": #TODO: do an actual HEX check
+            background_color = background_color[1:]
+
         config_loc = PERMA_path + "/wc_config.txt";
-        if not os.path.isfile(config_loc):
-            with open(config_loc, "w") as f:
-                f.write('font: ' + font_path + '\n')
-                f.write("format: tab\n" +
-                        "inputencoding: UTF-8\n" +
-                        "firstline: data\n" +
-                        "wordcolumn: 1\n" +
-                        "weightcolumn: 2\n" +
-                        "colorcolumn: 3\n" +
-                        "background: ffffff\n" +
-                        "placement: HorizontalCenterLine\n" +
-                        "shape: BLOBBY\n" +
-                        "orientation: HORIZONTAL")
+        #if not os.path.isfile(config_loc):
+        with open(config_loc, "w") as f:
+            f.write('font: ' + font_path + '\n')
+            f.write("format: tab\n" +
+                    "inputencoding: UTF-8\n" +
+                    "firstline: data\n" +
+                    "wordcolumn: 1\n" +
+                    "weightcolumn: 2\n" +
+                    "colorcolumn: 3\n" +
+                    "background: " + background_color + "\n" +
+                    "placement: HorizontalCenterLine\n" +
+                    "shape: BLOBBY\n" +
+                    "orientation: HORIZONTAL")
 
         if not output_prefix:
             warn('No filename specified. Filename specified as \'wc\'.')

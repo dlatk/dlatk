@@ -108,7 +108,9 @@ def wordcloud(word_list, freq_list, output_prefix='test',
     fontFamily="Helvetica-Narrow", keepPdfs=False, fontStyle=None,
     font_path="",
     min_font_size=40, max_font_size=250, max_words=500,
-    big_mask=False):
+    big_mask=False,
+    background_color="#FFFFFF",
+    wordcloud_algorithm='ibm'):
     """given a list of words and a list of their frequencies, builds a wordle"""
 
     #font paths:
@@ -118,8 +120,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
 
     if font_path == "":
         font_path = PERMA_path + "/meloche_bd.ttf"
-
-    wordcloud_algorithm = 'ibm' #change this to True to use the old wordcloud
+    
     if wordcloud_algorithm == 'old': #old wordcloud function
         assert(len(word_list) == len(freq_list))
 
@@ -243,7 +244,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
                     max_words=max_words,
                     color_func=color_func,
                     prefer_horizontal=1.0,
-                    background_color="#FFFFFF",
+                    background_color=background_color,
                     mask=img_array).generate_from_frequencies(word_freq_tup)
 
         if output_prefix: 
@@ -319,7 +320,8 @@ def wordcloud(word_list, freq_list, output_prefix='test',
             pngFile = output_prefix + '.png'
 
             for tup in word_freq_color_tup:
-                f.write(str(tup[0]) + '\t' + str(tup[1]) + '\t' + str(tup[2]) + '\n')
+                word_row = tup[0].encode("utf-8") + '\t' + str(tup[1]) + '\t' + str(tup[2]) + '\n'
+                f.write(word_row)
                 #str is necessary in case the words are numbers
 
         command = ['java','-jar', PERMA_path + '/ibm-word-cloud.jar', '-c', 

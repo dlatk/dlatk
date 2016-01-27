@@ -103,6 +103,7 @@ DEF_FEAT_TABLE = 'feat$1gram$messages_en$user_id$16to16$0_01'
 DEF_COLLOCTABLE = 'test_collocs'
 DEF_COLUMN_COLLOC = "feat"
 DEF_COLUMN_PMI_FILTER = "pmi_filter_val"
+DEF_P = 0.05 # p value for printing tagclouds
 
 ##Mediation Settings:
 DEF_MEDIATION_BOOTSTRAP = 1000
@@ -318,6 +319,8 @@ def main(fn_args = None):
                        help='Includes interaction terms in multiple regression.')
     group.add_argument('--bootstrapp', '--bootstrap', dest='bootstrapp', type=int, default = 0,
                        help="Bootstrap p-values (only works for AUCs for now) ")
+    group.add_argument("--p_value", type=float, metavar='P', dest="maxP", default = float(DEF_P),
+                       help="Significance threshold for returning results. Default = 0.05.")
 
     group.add_argument('--mediation', action='store_true', dest='mediation', default=False,
                        help='Run mediation analysis.')
@@ -1103,9 +1106,9 @@ def main(fn_args = None):
             print "\n%s:" % outcomeField
             cnt = 0
             for featR in featRs.iteritems():
-                if featR[1][1] < 0.001: cnt +=1 
+                if featR[1][1] < args.maxP: cnt +=1 
             pprint(sorted(featRs.items(), key= lambda f: f[1] if not isnan(f[1][0]) else 0))
-            print "\n%d features significant at p < 0.001" % cnt
+            print "\n%d features significant at p < %s" % (cnt, args.maxP)
 
     if args.rmatrix and not args.cca: 
         if args.outputname:
@@ -1127,7 +1130,7 @@ def main(fn_args = None):
 
     if args.tagcloud:
         outputFile = makeOutputFilename(args, fg, og, suffix="_tagcloud")
-        og.printTagCloudData(correls, 0.05, outputFile, str(args), maxWords = args.maxtcwords, duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme)
+        og.printTagCloudData(correls, args.maxP, outputFile, str(args), maxWords = args.maxtcwords, duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme)
     if args.makewordclouds:
         if not args.tagcloud:
             print >>sys.stderr, "ERROR, can't use --make_wordclouds without --tagcloud"
@@ -1137,7 +1140,7 @@ def main(fn_args = None):
     if args.topictc:
         outputFile = makeOutputFilename(args, fg, og, suffix='_topic_tagcloud')
         # use plottingWhitelistPickle to link to a pickle file containing the words driving the categories
-        og.printTopicTagCloudData(correls, args.topiclexicon, 0.05, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats)
+        og.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats)
         # don't want to base on this: maxWords = args.maxtcwords)
     if args.maketopicwordclouds:
         if not args.topictc:
@@ -1170,7 +1173,7 @@ def main(fn_args = None):
             ddla.differential()
         if args.ddlaTagcloud: 
             correls = ddla.outputForTagclouds()
-            OG().printTagCloudData(correls, 0.05, outputFile = ddla.outputFile[:-4]+"_tagcloud", colorScheme = args.tagcloudcolorscheme)
+            OG().printTagCloudData(correls, args.maxP, outputFile = ddla.outputFile[:-4]+"_tagcloud", colorScheme = args.tagcloudcolorscheme)
             ## TODO : use this output into OutcomeGetter.
 
 

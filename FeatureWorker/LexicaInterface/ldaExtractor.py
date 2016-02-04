@@ -6,7 +6,6 @@ from numpy import log2, isnan
 import csv
 import os.path, sys
 sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/FeatureWorker/LexicaInterface",""))
-print os.path.dirname(os.path.abspath(__file__)).replace("/LexicaInterface","")
 from FeatureWorker.featureExtractor import FeatureExtractor
 from FeatureWorker import featureWorker
 

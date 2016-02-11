@@ -138,7 +138,7 @@ class FeatureExtractor(FeatureWorker):
         #if whitelistFeatTable:
         whiteSet = None
         if whiteListFeatTable:
-            sql = "SELECT distinct feat FROM %s " % whiteListFeatTable
+            sql = "SELECT distinct feat FROM %s " % whiteListFeatTable[0]
             whiteSet = set([s[0] for s in self._executeGetList(sql)])
             
         f = open(filename, 'w')

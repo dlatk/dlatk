@@ -4,9 +4,10 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import re
 from numpy import log2, isnan
 import csv
-
-from featureWorker import FeatureExtractor
-import featureWorker
+import os.path, sys
+sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/FeatureWorker/LexicaInterface",""))
+from FeatureWorker.featureExtractor import FeatureExtractor
+from FeatureWorker import featureWorker
 
 
 from json import loads

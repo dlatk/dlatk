@@ -53,6 +53,7 @@ except ImportError:
 from FeatureWorker.featureWorker import FeatureWorker
 from FeatureWorker.featureExtractor import FeatureExtractor
 from FeatureWorker.outcomeGetter import OutcomeGetter
+from FeatureWorker.outcomeAnalyzer import OutcomeAnalyzer
 from FeatureWorker.featureGetter import FeatureGetter
 from FeatureWorker.featureRefiner import FeatureRefiner
 #defaults:
@@ -602,7 +603,7 @@ def main(fn_args = None):
 
     group = parser.add_argument_group('Plot Actions', '')
     group.add_argument('--barplot', action='store_true', dest='barplot',
-                       help='produce correlation barplots. Requires fg, og. Uses groupfreqthresh, outputdir')
+                       help='produce correlation barplots. Requires fg, oa. Uses groupfreqthresh, outputdir')
     group.add_argument('--scatterplot', action='store_true', dest='scatterplot',
                        help='Requires --outcome_table --outcome_fields, optional: -f --feature_names')
     group.add_argument('--feat_flexibin', action='store_true', dest='featflexibin', default=False,
@@ -615,7 +616,7 @@ def main(fn_args = None):
     # group.add_argument('--hist2d', action='store_true', dest='hist2d',
     #                    help='Requires -f --feature_names --outcome_table --outcome_value')
     group.add_argument('--descplot', action='store_true', dest='descplot',
-                       help='produce histograms and boxplots for specified outcomes. Requires og. Uses outputdir')
+                       help='produce histograms and boxplots for specified outcomes. Requires oa. Uses outputdir')
     group.add_argument('--loessplot', type=str, metavar='FEAT(S)', dest='loessplot', nargs='+', default='',
                        help='Output loess plots of the given features.')
     group.add_argument('--v2', action='store_true', dest='v2',
@@ -641,6 +642,7 @@ def main(fn_args = None):
     if not args.valuefunc: args.valuefunc = lambda d: d
     if not args.lexvaluefunc: args.lexvaluefunc = lambda d: d
     if args.bonferroni: args.simes = False
+    if args.p_correction_method: args.bonferroni = False
 
     if args.feattable and len(args.feattable) == 1:
         args.feattable = args.feattable[0]
@@ -663,6 +665,9 @@ def main(fn_args = None):
 
     def OG():
         return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable)
+
+    def OA():
+        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
 
     def FR():
         return FeatureRefiner(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
@@ -696,6 +701,7 @@ def main(fn_args = None):
     se = None
     fr = None
     og = None
+    oa = None
     fg = None
     fgs = None #feature getters
 
@@ -885,8 +891,8 @@ def main(fn_args = None):
         temp_feature_file = OutcomeGetter.buildBatchPlotFile(args.corpdb, args.feattable, args.topiclist) if not args.flexiplotfile else args.flexiplotfile
         feat_to_label = None
         if args.topiclexicon:
-            if not og: og=OG()
-            feat_to_label = og.buildTopicLabelDict(args.topiclexicon, 10) #TODO-finish -- uses topictagcloudwords method
+            if not oa: oa=OA()
+            feat_to_label = oa.buildTopicLabelDict(args.topiclexicon, 10) #TODO-finish -- uses topictagcloudwords method
             #pprint(feat_to_label)
         OutcomeGetter.plotFlexibinnedTable(args.corpdb, args.feattable, temp_feature_file, feat_to_label, args.preservebintable)
        
@@ -947,48 +953,48 @@ def main(fn_args = None):
     #Outcome Only options:
     if args.printcsv:
         pprint(args)
-        if not og: og = OG()
+        if not oa: oa = OA()
         if not fg: fg = FG()
 #        if args.isbinned:
 #            og.printBinnedGroupsAndOutcomesToCSV(fg, args.printcsv, args.groupfreqthresh)
 #        else:
-        og.printGroupsAndOutcomesToCSV(fg, args.printcsv, groupThresh=args.groupfreqthresh)
+        oa.printGroupsAndOutcomesToCSV(fg, args.printcsv, groupThresh=args.groupfreqthresh)
 
     if args.printfreqcsv:
         pprint(args)
-        if not og: og = OG()
+        if not oa: oa = OA()
         if not fg: fg = FG()
-        og.printGroupsAndOutcomesToCSV(fg, args.printcsv, args.groupfreqthresh, freqs = True)
+        oa.printGroupsAndOutcomesToCSV(fg, args.printcsv, args.groupfreqthresh, freqs = True)
 
     if args.printnumgroups:
         pprint(args)
-        if not og: og = OG()
+        if not oa: oa = OA()
         if not fg: fg = FG()
-        pprint(('number of groups per outcome:', og.numGroupsPerOutcome(fg, args.printcsv, args.groupfreqthresh)))
+        pprint(('number of groups per outcome:', oa.numGroupsPerOutcome(fg, args.printcsv, args.groupfreqthresh)))
 
     if args.loessplot:
-        if not og: og = OG()
+        if not oa: oa = OA()
         if not fg: fg = FG()
         # whitelist = whitelist
-        og.loessPlotFeaturesByOutcome(fg, args.groupfreqthresh, args.spearman, args.bonferroni, args.p_correction_method, blacklist, whitelist.union(args.loessplot), args.showfeatfreqs, outputdir=args.outputdir, outputname=args.outputname, topicLexicon=args.topiclexicon)        
+        oa.loessPlotFeaturesByOutcome(fg, args.groupfreqthresh, args.spearman, args.bonferroni, args.p_correction_method, blacklist, whitelist.union(args.loessplot), args.showfeatfreqs, outputdir=args.outputdir, outputname=args.outputname, topicLexicon=args.topiclexicon)        
 
     #Correlation Analysis Options:
     correls = None
     if args.compTagcloud and args.compTCsample1 and args.compTCsample2:
         if not fg: fg = FG()
-        if not og: og = OG()
-        correls = og.IDPcomparison(fg, args.compTCsample1, args.compTCsample2, groupThresh=args.groupfreqthresh, blacklist=blacklist, whitelist=whitelist)
+        if not oa: oa = OA()
+        correls = oa.IDPcomparison(fg, args.compTCsample1, args.compTCsample2, groupThresh=args.groupfreqthresh, blacklist=blacklist, whitelist=whitelist)
 
     if not args.compTagcloud and not args.cca and (args.correlate or args.rmatrix or args.tagcloud or args.topictc or args.barplot or args.featcorrelfilter or args.makewordclouds or args.maketopicwordclouds):
-        if not og: og = OG()
+        if not oa: oa = OA()
         if not fg: fg = FG()
         if args.interactionDdla:
             # if len(args.outcomefieldsprint "There were no features with significant interactions") > 1: raise NotImplementedError("Multiple outcomes with DDLA not yet implemented")
             # Step 1 Interaction
             args.outcomeinteraction = [args.interactionDdla]
-            og = OG()
+            oa = OA()
             print "##### STEP 1: Finding features with significant interaction term"
-            correls = og.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni,
+            correls = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni,
                                                args.p_correction_method, args.outcomeinteraction, blacklist,
                                                whitelist, args.showfeatfreqs, args.outcomeWithOutcome,
                                                logisticReg=args.logisticReg, outputInteraction=True)
@@ -1019,7 +1025,7 @@ def main(fn_args = None):
                 args.outcomefields = [out]
                 og = OG()
                 where = args.interactionDdla+"=1"
-                correls_1 = og.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni,
+                correls_1 = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni,
                                                      args.p_correction_method, args.outcomeinteraction, blacklist,
                                                      whitelist, args.showfeatfreqs, args.outcomeWithOutcome,
                                                      logisticReg=args.logisticReg, groupWhere = where)
@@ -1027,22 +1033,22 @@ def main(fn_args = None):
                 correls.update({"["+k+"]_1": v for k, v in correls_1.iteritems()})
                 og = OG()
                 where = args.interactionDdla+"=0"
-                correls_0 = og.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni,
+                correls_0 = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni,
                                                      args.p_correction_method, args.outcomeinteraction, blacklist,
                                                      whitelist, args.showfeatfreqs, args.outcomeWithOutcome,
                                                      logisticReg=args.logisticReg, groupWhere = where)
                 correls.update({"["+k+"]_0": v for k, v in correls_0.iteritems()})
 
         elif args.IDP:        
-            correls = og.IDP_correlate(fg, groupThresh=args.groupfreqthresh, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs,blacklist=blacklist, whitelist=whitelist ) 
+            correls = oa.IDP_correlate(fg, groupThresh=args.groupfreqthresh, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs,blacklist=blacklist, whitelist=whitelist ) 
         elif args.zScoreGroup:
-            correls = og.zScoreGroup(fg, groupThresh=args.groupfreqthresh, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs, blacklist=blacklist, whitelist=whitelist)
+            correls = oa.zScoreGroup(fg, groupThresh=args.groupfreqthresh, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs, blacklist=blacklist, whitelist=whitelist)
         elif args.auc:        
-            correls = og.aucWithFeatures(fg, groupThresh=args.groupfreqthresh, bonferroni = args.bonferroni, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs,blacklist=blacklist, whitelist=whitelist, bootstrapP = args.bootstrapp) 
+            correls = oa.aucWithFeatures(fg, groupThresh=args.groupfreqthresh, bonferroni = args.bonferroni, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs,blacklist=blacklist, whitelist=whitelist, bootstrapP = args.bootstrapp) 
         else:
-            correls = og.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni, args.p_correction_method, args.outcomeinteraction, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, logisticReg=args.logisticReg, outputInteraction=args.outputInteractionTerms)
+            correls = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni, args.p_correction_method, args.outcomeinteraction, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, logisticReg=args.logisticReg, outputInteraction=args.outputInteractionTerms)
         if args.topicdupefilter:#remove duplicate topics (keeps those correlated more strongly)
-            correls = og.topicDupeFilterCorrels(correls, args.topiclexicon)
+            correls = oa.topicDupeFilterCorrels(correls, args.topiclexicon)
 
     if args.ccaPermute:
         if not og: og = OG()
@@ -1065,9 +1071,9 @@ def main(fn_args = None):
                                            outputname = args.outputname if args.outputname
                                            else args.outputdir + '/rMatrix.' + fg.featureTable + '.' + og.outcome_table  + '.' + '_'.join(og.outcome_value_fields))
     if args.cca:
-        if not og: og = OG()
+        if not oa: oa = OA()
         if not fg: fg = FG()
-        cca = CCA(fg, og, args.cca)
+        cca = CCA(fg, oa, args.cca)
         if args.ccaOutcomesVsControls:
             (featComp, outcomeComp, dVectorDict) = cca.ccaOutcomesVsControls(args.groupfreqthresh,
                                                                 penaltyX = args.penaltyFeats,
@@ -1085,17 +1091,17 @@ def main(fn_args = None):
             if args.outputname:
                 outputFile = args.outputname
             else: 
-                outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + og.outcome_table  + '.' + '_'.join(og.outcome_value_fields)
-                if og.outcome_controls: outputFile += '.'+ '_'.join(og.outcome_controls)
+                outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
+                if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
                 if args.spearman: outputFile += '.spearman'
-            og.correlMatrix(featComp, outputFile+".feat", outputFormat='html', sort=args.sort, paramString=paramString.replace("\n","<br>"), nValue=args.nvalue, freq=args.freq)
-            og.correlMatrix(outcomeComp, outputFile+".outcome", outputFormat='html', sort=args.sort, paramString=paramString.replace("\n","<br>"), nValue=args.nvalue, freq=args.freq)
+            oa.correlMatrix(featComp, outputFile+".feat", outputFormat='html', sort=args.sort, paramString=paramString.replace("\n","<br>"), nValue=args.nvalue, freq=args.freq)
+            oa.correlMatrix(outcomeComp, outputFile+".outcome", outputFormat='html', sort=args.sort, paramString=paramString.replace("\n","<br>"), nValue=args.nvalue, freq=args.freq)
             if args.csv:
-                og.correlMatrix(featComp, outputFile+".feat", outputFormat='csv', sort=args.sort, paramString=paramString, nValue=args.nvalue, freq=args.freq)
-                og.correlMatrix(outcomeComp, outputFile+".outcome", outputFormat='csv', sort=args.sort, paramString=paramString, nValue=args.nvalue, freq=args.freq)
+                oa.correlMatrix(featComp, outputFile+".feat", outputFormat='csv', sort=args.sort, paramString=paramString, nValue=args.nvalue, freq=args.freq)
+                oa.correlMatrix(outcomeComp, outputFile+".outcome", outputFormat='csv', sort=args.sort, paramString=paramString, nValue=args.nvalue, freq=args.freq)
             if args.pickle:
-                og.correlMatrix(featComp, outputFile+".feat", outputFormat='pickle', sort=args.sort, paramString=paramString, nValue=args.nvalue, freq=args.freq)
-                og.correlMatrix(outcomeComp, outputFile+".outcome", outputFormat='pickle', sort=args.sort, paramString=paramString, nValue=args.nvalue, freq=args.freq)
+                oa.correlMatrix(featComp, outputFile+".feat", outputFormat='pickle', sort=args.sort, paramString=paramString, nValue=args.nvalue, freq=args.freq)
+                oa.correlMatrix(outcomeComp, outputFile+".outcome", outputFormat='pickle', sort=args.sort, paramString=paramString, nValue=args.nvalue, freq=args.freq)
             outputFile += ".feat"
         if args.savemodels:
             cca.saveModel(args.picklefile)
@@ -1114,23 +1120,23 @@ def main(fn_args = None):
         if args.outputname:
             outputFile = args.outputname
         else: 
-            outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + og.outcome_table  + '.' + '_'.join(og.outcome_value_fields)
-            if og.outcome_controls: outputFile += '.'+ '_'.join(og.outcome_controls)
+            outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
+            if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
             if args.spearman: outputFile += '.spearman'
-        og.correlMatrix(correls, outputFile, outputFormat='html', sort=args.sort, paramString=str(args), nValue=args.nvalue, freq=args.freq)
+        oa.correlMatrix(correls, outputFile, outputFormat='html', sort=args.sort, paramString=str(args), nValue=args.nvalue, freq=args.freq)
 
     if args.csv and not args.cca and correls:
         if args.outputname:
             outputFile = args.outputname
         else: 
-            outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + og.outcome_table  + '.' + '_'.join(og.outcome_value_fields)
-            if og.outcome_controls: outputFile += '.'+ '_'.join(og.outcome_controls)
+            outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
+            if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
             if args.spearman: outputFile += '.spearman'
-        og.correlMatrix(correls, outputFile, outputFormat='csv', sort=args.sort, paramString=str(args), nValue=args.nvalue, freq=args.freq)
+        oa.correlMatrix(correls, outputFile, outputFormat='csv', sort=args.sort, paramString=str(args), nValue=args.nvalue, freq=args.freq)
 
     if args.tagcloud:
-        outputFile = makeOutputFilename(args, fg, og, suffix="_tagcloud")
-        og.printTagCloudData(correls, args.maxP, outputFile, str(args), maxWords = args.maxtcwords, duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme)
+        outputFile = makeOutputFilename(args, fg, oa, suffix="_tagcloud")
+        oa.printTagCloudData(correls, args.maxP, outputFile, str(args), maxWords = args.maxtcwords, duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme)
     if args.makewordclouds:
         if not args.tagcloud:
             print >>sys.stderr, "ERROR, can't use --make_wordclouds without --tagcloud"
@@ -1138,9 +1144,9 @@ def main(fn_args = None):
         wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True)
 
     if args.topictc:
-        outputFile = makeOutputFilename(args, fg, og, suffix='_topic_tagcloud')
+        outputFile = makeOutputFilename(args, fg, oa, suffix='_topic_tagcloud')
         # use plottingWhitelistPickle to link to a pickle file containing the words driving the categories
-        og.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats)
+        oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats)
         # don't want to base on this: maxWords = args.maxtcwords)
     if args.maketopicwordclouds:
         if not args.topictc:
@@ -1150,14 +1156,14 @@ def main(fn_args = None):
 
     comboCorrels = None
     if args.combormatrix:
-        if not og: og = OG()
+        if not oa: oa = OA()
         if not fg: fg = FG()
-        comboCorrels = og.correlateControlCombosWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni, args.p_correction_method, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome)
+        comboCorrels = oa.correlateControlCombosWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni, args.p_correction_method, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome)
         if args.csv:
             outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.combocntrl.csv', 'w')
-            og.outputComboCorrelMatrixCSV(comboCorrels, outputStream, paramString = str(args))
+            oa.outputComboCorrelMatrixCSV(comboCorrels, outputStream, paramString = str(args))
         else:
             pprint(comboCorrels)
 
@@ -1180,15 +1186,15 @@ def main(fn_args = None):
     ##multiRegression Options:
     coeffs = None
     if args.multir: #add any options that output multiR results to be caught here
-        if not og: og = OG()
+        if not oa: oa = OA()
         if not fg: fg = FG()
         pprint(args)
         pprint(coeffs)
-        coeffs = og.multRegressionWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni, args.p_correction_method, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, interactions = args.interactions)
+        coeffs = oa.multRegressionWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni, args.p_correction_method, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, interactions = args.interactions)
 
         if args.csv:
-            outputFile = makeOutputFilename(args, fg, og, "multiprint") ##uses outputdir
-            og.writeSignificantCoeffs4dVis(coeffs, outputFile, args.outcomefields, paramString=str(args))
+            outputFile = makeOutputFilename(args, fg, oa, "multiprint") ##uses outputdir
+            oa.writeSignificantCoeffs4dVis(coeffs, outputFile, args.outcomefields, paramString=str(args))
         #TODO: do some sort of sorted printing?
 
     # Mediation Analysis
@@ -1507,15 +1513,15 @@ def main(fn_args = None):
 
     ##Plot Actions:
     if args.barplot:
-        outputFile = makeOutputFilename(args, fg, og, "barplot")
-        og.barPlot(correls, outputFile)
+        outputFile = makeOutputFilename(args, fg, oa, "barplot")
+        oa.barPlot(correls, outputFile)
 
     if args.descplot:
         if not og: og=OG()
         (groups, outcome_to_gid_to_value, controls) = og.getGroupsAndOutcomes(args.groupfreqthresh)
         outcome_to_values = dict(  map(lambda (k,v): (k, v.values()), outcome_to_gid_to_value.items())  )
         outputFile = makeOutputFilename(args, None, og, "desc_stats")
-        from wwbp.descStats import StatsPlotter
+        from FeatureWorker.lib.descStats import StatsPlotter
         sp = StatsPlotter(args.corpdb)
         sp.plotDescStats(outcome_to_values, len(groups), outputFile)
 
@@ -1535,7 +1541,7 @@ def main(fn_args = None):
         else:
             scatter_dict_2 = outcome_to_gid_to_value
             
-        from wwbp.descStats import StatsPlotter
+        from FeatureWorker.lib.descStats import StatsPlotter
         sp = StatsPlotter()
         for scatter_group_1 in scatter_dict_1:
             for scatter_group_2 in scatter_dict_2:
@@ -1568,7 +1574,7 @@ def main(fn_args = None):
         pprint(results)
 
     if args.notify or args.notifyluke or args.notifyandy or args.notifyjohannes:
-        from wwbp import notify
+        from FeatureWorker.lib import notify
         if args.notify:
             notify.sendEmail("featureWorker run Finished", "this was sent from featureWorker.py", args.notify)
         if args.notifyluke: 

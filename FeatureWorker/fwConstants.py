@@ -30,6 +30,7 @@ import datetime
 from dateutil.parser import parse as dtParse
 import sqlalchemy
 import pandas as pd
+from ConfigParser import SafeConfigParser 
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -64,9 +65,10 @@ from regressionPredictor import RegressionPredictor
 from lib.TweetNLP import TweetNLP
 
 #wwbp
-import notify
+from lib import notify
 from lib import wordcloud
 from mysqlMethods import mysqlMethods as mm
+from mysqlMethods import mysql_iter_funcs as mif
 
 ###########################################################
 ### Constants
@@ -120,6 +122,7 @@ DEF_MIN_FEAT_SUM = 0 #minimum sum of feature total to keep
 DEF_LEXICON_DB = 'permaLexicon'
 #DEF_FEAT_TABLE = ''
 DEF_FEAT_TABLE = 'feat$1gram$messages_en$user_id$16to16$0_01'
+DEF_P = 0.05 # p value for printing tagclouds
 
 DEF_CORENLP_DIR = '/home/hansens/Tools/corenlp-python'
 DEF_CORENLP_SERVER_COMMAND = './corenlp/corenlp.py'

@@ -5,6 +5,24 @@ from featureWorker import FeatureWorker
 class FeatureGetter(FeatureWorker):
     """Deals with selecting features"""
 
+    @classmethod
+    def fromFile(cls, initFile):
+        """load variables from file"""
+        parser = SafeConfigParser()
+        parser.read(initFile)
+        corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else DEF_CORPDB
+        corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else DEF_CORPTABLE
+        correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else DEF_CORREL_FIELD
+        mysql_host = parser.get('constants','mysql_host') if parser.has_option('constants','mysql_host') else "localhost"
+        message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else DEF_MESSAGE_FIELD
+        messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else DEF_MESSAGEID_FIELD
+        lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else DEF_LEXICON_DB
+        featureTable = parser.get('constants','featureTable') if parser.has_option('constants','featureTable') else DEF_FEAT_TABLE
+        featNames = parser.get('constants','featNames') if parser.has_option('constants','featNames') else DEF_FEAT_NAMES
+        wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
+        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, wordTable = None)
+
+
     def __init__(self, corpdb=DEF_CORPDB, corptable=DEF_CORPTABLE, correl_field=DEF_CORREL_FIELD, mysql_host="localhost", message_field=DEF_MESSAGE_FIELD, messageid_field=DEF_MESSAGEID_FIELD, lexicondb = DEF_LEXICON_DB, featureTable=DEF_FEAT_TABLE, featNames=DEF_FEAT_NAMES, wordTable = None):
         super(FeatureGetter, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb, wordTable=wordTable)
         self.featureTable = featureTable    
@@ -101,7 +119,7 @@ class FeatureGetter(FeatureWorker):
         return self._executeGetList(sql) 
 
     def getValuesAndGroupNorms(self, where = ''):
-        """returns a list of (group_id, feature, group_norm) triples"""
+        """returns a list of (group_id, feature, value, group_norm) triples"""
         sql = """SELECT group_id, feat, value, group_norm from %s"""%(self.featureTable)
         if (where): sql += ' WHERE ' + where
         return self._executeGetList(sql) 
@@ -629,6 +647,49 @@ class FeatureGetter(FeatureWorker):
 
         return results
 
+    # pandas dataframe methods
+    def getGroupNormsAsDF(self, where='', index=['group_id','feat']):
+        """returns a dataframe of (group_id, feature, group_norm)"""
+        """default index is on group_id and feat"""
+        db_eng = mif.get_db_engine(self.corpdb)
+        sql = """SELECT group_id, feat, group_norm from %s""" % (self.featureTable)
+        if (where): sql += ' WHERE ' + where
+        return pd.read_sql(sql=sql, con=db_eng, index_col=index)
+
+    def getValuesAsDF(self, where='', index=['group_id','feat']):
+        """returns a dataframe of (group_id, feature, value)"""
+        """default index is on group_id and feat"""
+        db_eng = mif.get_db_engine(self.corpdb)
+        sql = """SELECT group_id, feat, value from %s""" % (self.featureTable)
+        if (where): sql += ' WHERE ' + where
+        return pd.read_sql(sql=sql, con=db_eng, index_col=index)
+
+    def getGroupNormsWithZerosAsDF(self, groups=[], where='', index=['group_id','feat'], pivot=False):
+        """returns a dict of (group_id => feature => group_norm)"""
+        """default index is on group_id and feat"""
+        db_eng = mif.get_db_engine(self.corpdb)
+        sql = """SELECT group_id, feat, group_norm from %s""" % (self.featureTable)
+        if groups:
+            gCond = " group_id in ('%s')" % "','".join(str(g) for g in groups)
+            if (where): sql += ' WHERE ' + where + " AND " + gCond
+            else: sql += ' WHERE ' + gCond
+        elif (where):
+            sql += ' WHERE ' + where
+        if pivot:
+            return pd.read_sql(sql=sql, con=db_eng, index_col=index).unstack().fillna(value=0)
+        else:
+            # this method won't work if default index is changed
+            df =  pd.read_sql(sql=sql, con=db_eng, index_col=index)
+            idx = pd.MultiIndex.from_product([df.index.levels[0], df.index.levels[1]], names=df.index.names)
+            return df.reindex(idx).fillna(value=0)
+
+    def getValuesAndGroupNormsAsDF(self, where='', index=['group_id','feat']):
+        """returns a dataframe of (group_id, feature, value, group_norm)"""
+        """default index is on group_id and feat"""
+        db_eng = mif.get_db_engine(self.corpdb)
+        sql = """SELECT group_id, feat, value, group_norm from %s""" % (self.featureTable)
+        if (where): sql += ' WHERE ' + where
+        return pd.read_sql(sql=sql, con=db_eng, index_col=index)
 
     @staticmethod
     def pairedTTest(y1, y2):

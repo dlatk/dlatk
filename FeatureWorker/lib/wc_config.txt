@@ -1,0 +1,11 @@
+font: /home/sgiorgi/newPERMA/CoreInfrastructure/FeatureWorker/lib/meloche_bd.ttf
+format: tab
+inputencoding: UTF-8
+firstline: data
+wordcolumn: 1
+weightcolumn: 2
+colorcolumn: 3
+background: FFFFFF
+placement: HorizontalCenterLine
+shape: BLOBBY
+orientation: HORIZONTAL

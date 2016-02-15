@@ -380,7 +380,7 @@ class FeatureGetter(FeatureWorker):
             if where: valuelist = self.getValues(where+" AND "+gCond)
             else: valuelist = self.getValues(gCond)
         else: 
-            valuelist = self.getGroupNorms()
+            valuelist = self.getValues()
         values = dict()
         for tup in valuelist:
             (gid, feat, value) = tup
@@ -406,7 +406,7 @@ class FeatureGetter(FeatureWorker):
             if where: valuelist = self.getValues(where+" AND "+gCond)
             else: valuelist = self.getValues(gCond)
         else: 
-            valuelist = self.getGroupNorms()
+            valuelist = self.getValues()
         values = dict()
         for tup in valuelist:
             (gid, feat, value) = tup

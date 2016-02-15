@@ -622,7 +622,7 @@ class FeatureExtractor(FeatureWorker):
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter                
-
+                
                 while insert_idx_start < len(rows):
                     insert_rows = rows[insert_idx_start:min(insert_idx_end, len(rows))]
                     #_warn("Inserting rows %d to %d... " % (insert_idx_start, insert_idx_end))
@@ -632,18 +632,18 @@ class FeatureExtractor(FeatureWorker):
 
 
                 
-                # wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
-                # totalGrams = float(totalGrams) # to avoid casting each time below
-                # rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
-                # if metaFeatures:
-                #     mfRows = []
-                #     mfwsql = """INSERT INTO """+mfTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
-                #     avgGramLength = totalChars / totalGrams
-                #     avgGramsPerMsg = totalGrams / len(mids)
-                #     mfRows.append( ('_avg'+str(n)+'gramLength', avgGramLength, valueFunc(avgGramLength)) )
-                #     mfRows.append( ('_avg'+str(n)+'gramsPerMsg', avgGramsPerMsg, valueFunc(avgGramsPerMsg)) )
-                #     mfRows.append( ('_total'+str(n)+'grams', totalGrams, valueFunc(totalGrams)) )
-                #     self._executeWriteMany(mfwsql, mfRows)
+                wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                totalGrams = float(totalGrams) # to avoid casting each time below
+                rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                if metaFeatures:
+                    mfRows = []
+                    mfwsql = """INSERT INTO """+mfTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                    avgGramLength = totalChars / totalGrams
+                    avgGramsPerMsg = totalGrams / len(mids)
+                    mfRows.append( ('_avg'+str(n)+'gramLength', avgGramLength, valueFunc(avgGramLength)) )
+                    mfRows.append( ('_avg'+str(n)+'gramsPerMsg', avgGramsPerMsg, valueFunc(avgGramsPerMsg)) )
+                    mfRows.append( ('_total'+str(n)+'grams', totalGrams, valueFunc(totalGrams)) )
+                    self._executeWriteMany(mfwsql, mfRows)
                     
                 # self._executeWriteMany(wsql, rows)
         

@@ -666,7 +666,7 @@ class FeatureGetter(FeatureWorker):
         if (where): sql += ' WHERE ' + where
         return pd.read_sql(sql=sql, con=db_eng, index_col=index)
 
-    def getGroupNormsWithZerosAsDF(self, groups=[], where='', pivot=False, sparse=True):
+    def getGroupNormsWithZerosAsDF(self, groups=[], where='', pivot=False, sparse=False):
         """returns a dict of (group_id => feature => group_norm)"""
         """default index is on group_id and feat"""
         index=['group_id','feat']

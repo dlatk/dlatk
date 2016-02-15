@@ -648,25 +648,28 @@ class FeatureGetter(FeatureWorker):
         return results
 
     # pandas dataframe methods
-    def getGroupNormsAsDF(self, where='', index=['group_id','feat']):
+    def getGroupNormsAsDF(self, where=''):
         """returns a dataframe of (group_id, feature, group_norm)"""
         """default index is on group_id and feat"""
+        index=['group_id','feat']
         db_eng = mif.get_db_engine(self.corpdb)
         sql = """SELECT group_id, feat, group_norm from %s""" % (self.featureTable)
         if (where): sql += ' WHERE ' + where
         return pd.read_sql(sql=sql, con=db_eng, index_col=index)
 
-    def getValuesAsDF(self, where='', index=['group_id','feat']):
+    def getValuesAsDF(self, where=''):
         """returns a dataframe of (group_id, feature, value)"""
         """default index is on group_id and feat"""
+        index=['group_id','feat']
         db_eng = mif.get_db_engine(self.corpdb)
         sql = """SELECT group_id, feat, value from %s""" % (self.featureTable)
         if (where): sql += ' WHERE ' + where
         return pd.read_sql(sql=sql, con=db_eng, index_col=index)
 
-    def getGroupNormsWithZerosAsDF(self, groups=[], where='', index=['group_id','feat'], pivot=False):
+    def getGroupNormsWithZerosAsDF(self, groups=[], where='', pivot=False, sparse=True):
         """returns a dict of (group_id => feature => group_norm)"""
         """default index is on group_id and feat"""
+        index=['group_id','feat']
         db_eng = mif.get_db_engine(self.corpdb)
         sql = """SELECT group_id, feat, group_norm from %s""" % (self.featureTable)
         if groups:
@@ -676,16 +679,23 @@ class FeatureGetter(FeatureWorker):
         elif (where):
             sql += ' WHERE ' + where
         if pivot:
-            return pd.read_sql(sql=sql, con=db_eng, index_col=index).unstack().fillna(value=0)
+            if sparse:
+                return pd.read_sql(sql=sql, con=db_eng, index_col=index).unstack().to_sparse().fillna(value=0)
+            else:
+                return pd.read_sql(sql=sql, con=db_eng, index_col=index).unstack().fillna(value=0)
         else:
             # this method won't work if default index is changed
             df =  pd.read_sql(sql=sql, con=db_eng, index_col=index)
             idx = pd.MultiIndex.from_product([df.index.levels[0], df.index.levels[1]], names=df.index.names)
-            return df.reindex(idx).fillna(value=0)
+            if sparse:
+                return df.reindex(idx).to_sparse().fillna(value=0)
+            else:
+                return df.reindex(idx).fillna(value=0)
 
-    def getValuesAndGroupNormsAsDF(self, where='', index=['group_id','feat']):
+    def getValuesAndGroupNormsAsDF(self, where=''):
         """returns a dataframe of (group_id, feature, value, group_norm)"""
         """default index is on group_id and feat"""
+        index=['group_id','feat']
         db_eng = mif.get_db_engine(self.corpdb)
         sql = """SELECT group_id, feat, value, group_norm from %s""" % (self.featureTable)
         if (where): sql += ' WHERE ' + where

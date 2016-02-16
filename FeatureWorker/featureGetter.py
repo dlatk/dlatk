@@ -680,7 +680,7 @@ class FeatureGetter(FeatureWorker):
             sql += ' WHERE ' + where
         if pivot:
             if sparse:
-                return pd.read_sql(sql=sql, con=db_eng, index_col=index).unstack().to_sparse().fillna(value=0)
+                return pd.read_sql(sql=sql, con=db_eng, index_col=index).unstack().to_sparse(fill_value=0)
             else:
                 return pd.read_sql(sql=sql, con=db_eng, index_col=index).unstack().fillna(value=0)
         else:
@@ -688,7 +688,7 @@ class FeatureGetter(FeatureWorker):
             df =  pd.read_sql(sql=sql, con=db_eng, index_col=index)
             idx = pd.MultiIndex.from_product([df.index.levels[0], df.index.levels[1]], names=df.index.names)
             if sparse:
-                return df.reindex(idx).to_sparse().fillna(value=0)
+                return df.reindex(idx).to_sparse(fill_value=0)
             else:
                 return df.reindex(idx).fillna(value=0)
 

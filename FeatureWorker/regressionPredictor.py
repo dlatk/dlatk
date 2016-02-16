@@ -44,7 +44,7 @@ from sklearn.linear_model.base import LinearModel
 from sklearn.base import RegressorMixin
 
 #modified sklearns: 
-from FeatureWorker.occurrenceSelection import OccurrenceThreshold
+from occurrenceSelection import OccurrenceThreshold
 from pca_mod import RandomizedPCA #allows percentage input
 #spams
 #sys.path.append('/home/lukaszdz/PERMA/code/ml/spams')
@@ -367,7 +367,7 @@ class RegressionPredictor:
     backOffModel = 'linear'
 
     # feature selection:
-    #featureSelectionString = None
+    featureSelectionString = None
     #featureSelectionString= 'ElasticNet(alpha=1.0, l1_ratio=0.5, fit_intercept=True, normalize=False, precompute="auto", max_iter=1000, copy_X=True, tol=0.0001, warm_start=False, positive=False, rho=None)'
     #featureSelectionString = 'RandomizedLasso(random_state=self.randomState, n_jobs=self.cvJobs, normalize=False)'
     #featureSelectionString = 'ExtraTreesRegressor(n_jobs=self.cvJobs, random_state=42, compute_importances=True)'
@@ -382,7 +382,7 @@ class RegressionPredictor:
     #featureSelectionString = 'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
     
 
-    featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/max(1.5,len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
+    #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/max(1.5,len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=100.0)), ("3_rpca", RandomizedPCA(n_components=int(X.shape[0]**2/(2500 * max(1.5,len(self.featureGetters)))), random_state=42, whiten=False, iterated_power=3))])'
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=70.0)), ("3_rpca", RandomizedPCA(n_components=.4/len(self.featureGetters), random_state=42, whiten=False, iterated_power=3, max_components=X.shape[0]/max(1.5, len(self.featureGetters))))])'
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=70.0)), ("3_rpca", RandomizedPCA(n_components=.4, random_state=42, whiten=False, iterated_power=3, max_components=X.shape[0]/max(1.5, len(self.featureGetters))))])'

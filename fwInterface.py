@@ -120,6 +120,9 @@ DEF_CLASS_MODEL = 'svc'
 DEF_COMB_MODELS = ['ridgecv']
 DEF_FOLDS = 5
 
+##Meta settings
+DEF_INIT_FILE = 'initFile.txt'
+
 def _warn(string):
     print >>sys.stderr, string
 
@@ -323,6 +326,7 @@ def main(fn_args = None):
     group.add_argument("--p_value", type=float, metavar='P', dest="maxP", default = float(DEF_P),
                        help="Significance threshold for returning results. Default = 0.05.")
 
+    group = parser.add_argument_group('Mediation Variables', '')
     group.add_argument('--mediation', action='store_true', dest='mediation', default=False,
                        help='Run mediation analysis.')
     group.add_argument('--mediation_bootstrap', '--mediation_boot', action='store_true', dest='mediationboot', default=False,
@@ -622,7 +626,9 @@ def main(fn_args = None):
     group.add_argument('--v2', action='store_true', dest='v2',
                        help='Run commands from other place')
 
-
+    group = parser.add_argument_group('Meta Variables', '')
+    parser.add_argument('--to_file', dest='initfile', nargs='?', const=DEF_INIT_FILE, default=None)
+    
     if fn_args:
         args = parser.parse_args(fn_args.split())
     else:
@@ -1582,7 +1588,32 @@ def main(fn_args = None):
         if args.notifyandy: 
             notify.sendEmail("featureWorker run Finished", args.notifyandy + '\n\n\n' + str(args), 'andy.schwartz@gmail.com')
         if args.notifyjohannes: 
-            notify.sendEmail("featureWorker run Finished", args.notifyjohannes + '\n\n\n' + str(args), 'johannes.chicago@gmail.com')                    
+            notify.sendEmail("featureWorker run Finished", args.notifyjohannes + '\n\n\n' + str(args), 'johannes.chicago@gmail.com')  
+
+    if args.initfile:
+      with open(args.initfile, 'w') as init_file:  
+        init_file.write("[constants]\n")
+        
+        if (args.corpdb and args.corpdb != DEF_CORPDB): init_file.write("corpdb = " + str(args.corpdb)+"\n") 
+        if (args.corptable and args.corptable != DEF_CORPTABLE): init_file.write("corptable = " + str(args.corptable)+"\n") 
+        if (args.correl_field and args.correl_field != DEF_CORREL_FIELD): init_file.write("correl_field = " + str(args.correl_field)+"\n") 
+        if (args.mysql_host and args.mysql_host != "localhost"): init_file.write("mysql_host = " + str(args.mysql_host)+"\n") 
+        if (args.message_field and args.message_field != DEF_MESSAGE_FIELD): init_file.write("message_field = " + str(args.message_field)+"\n") 
+        if (args.messageid_field and args.messageid_field != DEF_MESSAGEID_FIELD): init_file.write("messageid_field = " + str(args.messageid_field)+"\n") 
+        if (args.lexicondb and args.lexicondb != DEF_LEXICON_DB): init_file.write("lexicondb = " + str(args.lexicondb)+"\n") 
+        if (args.feattable and args.feattable != DEF_FEAT_TABLE): init_file.write("featureTable = " + str(args.feattable)+"\n") 
+        if (args.featnames and args.featnames != DEF_FEAT_NAMES): init_file.write("featNames = " + ", ".join([str(feat) for feat in args.featnames])+"\n") 
+        if (args.date_field and args.date_field != DEF_DATE_FIELD): init_file.write("date_field = " + str(args.date_field)+"\n")
+        if (args.outcometable and args.outcometable != DEF_OUTCOME_TABLE): init_file.write("outcome_table = " + str(args.outcometable)+"\n") 
+        if (args.outcomefields and args.outcomefields != DEF_OUTCOME_FIELDS): init_file.write("outcome_value_fields = " + ", ".join([str(out) for out in args.outcomefields])+"\n")
+        if (args.outcomecontrols and args.outcomecontrols != DEF_OUTCOME_CONTROLS): init_file.write("outcome_controls = " + ", ".join([str(out) for out in args.outcomecontrols])+"\n")
+        if (args.outcomeinteraction and args.outcomeinteraction != DEF_OUTCOME_CONTROLS): init_file.write("outcome_interaction = " + ", ".join([str(out) for out in args.outcomeinteraction])+"\n")
+        if (args.featlabelmaptable and args.featlabelmaptable != ''): init_file.write("featureMappingTable = " + str(args.featlabelmaptable)+"\n")
+        if (args.featlabelmaplex and args.featlabelmaplex != ''): init_file.write("featureMappingLex = " + str(args.featlabelmaplex)+"\n")
+        if (args.wordTable): init_file.write("wordTable = " + str(args.wordTable)+"\n")
+        if (args.outputname): init_file.write("output_name = " + str(args.outputname)+"\n")
+        
+        init_file.close()                
 
     _warn("--\nInterface Runtime: %.2f seconds"% float(time.time() - start_time))
     _warn("featureWorker exits with success! A good day indeed :).")

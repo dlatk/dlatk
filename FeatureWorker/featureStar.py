@@ -1,4 +1,5 @@
 from ConfigParser import SafeConfigParser
+import pandas as pd
 
 import fwConstants as fwc
 from featureWorker import FeatureWorker
@@ -65,3 +66,20 @@ class FeatureStar(object):
 				"OutcomeGetter": self.og,
 				"OutcomeAnalyzer": self.oa
 			}
+
+	def combineDFs(self, fg=None, og=None, fillNA=True):
+		if fg:
+			if isinstance(fg, FeatureGetter):
+				fg = fg.getGroupNormsWithZerosAsDF(pivot=True)
+		else:
+			fg = self.fg.getGroupNormsWithZerosAsDF(pivot=True)
+		if og:
+			if isinstance(og, OutcomeGetter):
+				og = og.getGroupsAndOutcomesAsDF()
+		else:
+			og = self.og.getGroupsAndOutcomesAsDF()
+
+		if fillNA:
+			return pd.concat([fg, og], axis=1).fillna(value=0)
+		else:
+			return pd.concat([fg, og], axis=1)

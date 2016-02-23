@@ -290,17 +290,27 @@ enabled, so the total word count for your groups might be off
 
         return (groups, ocs, controls)
 
-    def getGroupAndOutcomeValuesAsDF(self, outcomeField = None, where='', index='group_id'):
+    def getGroupAndOutcomeValuesAsDF(self, outcomeField = None, where=''):
         """returns a dataframe of (group_id, outcome_value)"""
-        """default index is on group_id"""
         if not outcomeField: outcomeField = self.outcome_value_fields[0]
         db_eng = mif.get_db_engine(self.corpdb)
         sql = "select %s, %s from `%s` WHERE %s IS NOT NULL" % (self.correl_field, outcomeField, self.outcome_table, outcomeField)
         if (where): sql += ' WHERE ' + where
+        index = self.correl_field
         return pd.read_sql(sql=sql, con=db_eng, index_col=index)
 
-    def getGroupsAndOutcomesAsDF(self, groupThresh = 0, lexicon_count_table=None, groupsWhere = ''):
-        raise NotImplementedError
+    def getGroupsAndOutcomesAsDF(self, groupThresh = 0, lexicon_count_table=None, groupsWhere = '', sparse=False):
+        (groups, allOutcomes, controls) = self.getGroupsAndOutcomes(groupThresh, lexicon_count_table, groupsWhere)
+        o_df = pd.DataFrame(allOutcomes)
+        c_df = pd.DataFrame(controls)
+        if sparse:
+            df = pd.concat([o_df, c_df], axis=1).to_sparse(fill_value=0)
+            df.index.names = ['group_id']
+            return df
+        else:
+            df = pd.concat([o_df, c_df], axis=1)
+            df.index.names = ['group_id']
+            return df
 
     def getAnnotationTableAsDF(self, fields=['unit_id', 'worker_id', 'score'], where='', index=['unit_id', 'worker_id'], pivot=True, fillNA=False):
         """return a dataframe of unit_it, worker_id, score"""

@@ -28,6 +28,7 @@ import time
 from pprint import pprint
 from numpy import isnan, sqrt, log2
 from FeatureWorker import DDLA
+from ConfigParser import SafeConfigParser
 
 #wwbp
 try:
@@ -134,6 +135,14 @@ def _report(object_description, ii, reporting_int, iterable_length):
     if ii % reporting_int == 0:
         _warn("%d out of %d %s processed; %2.2f complete"%(ii, iterable_length, object_description, float(ii)/iterable_length))
 
+def getInitVar(variable, parser, default, varList=False):
+    if parser:
+        if varList:
+            return [o.strip() for o in parser.get('constants',variable).split(",")] if parser.has_option('constants',variable) else default
+        else:
+            return parser.get('constants',variable) if parser.has_option('constants',variable) else default
+    else:
+        return default
 
 #################################################################
 ### Main / Command-Line Processing:
@@ -149,36 +158,51 @@ def main(fn_args = None):
     parser = argparse.ArgumentParser(
         description='Extract and Manage Language Feature Data.', prefix_chars='-+', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+    # Meta variables
+    group = parser.add_argument_group('Meta Variables', '')
+    group.add_argument('--to_file', dest='toinitfile', nargs='?', const=DEF_INIT_FILE, default=None,
+                      help='write flag values to text file')
+    group.add_argument('--from_file', type=str, dest='frominitfile', default='',
+                       help='reads flag values from file')
+
+    args, remaining_argv = parser.parse_known_args()
+
+    if args.frominitfile:
+        conf_parser = SafeConfigParser()
+        conf_parser.read(args.frominitfile)
+    else:
+        conf_parser = None
+
     group = parser.add_argument_group('Corpus Variables', 'Defining the data from which features are extracted.')
 
-    group.add_argument('-d', '--corpdb', metavar='DB', dest='corpdb', default=DEF_CORPDB,
+    group.add_argument('-d', '--corpdb', metavar='DB', dest='corpdb', default=getInitVar('corpdb', conf_parser, DEF_CORPDB),
                         help='Corpus Database Name.')
-    group.add_argument('-t', '--corptable', metavar='TABLE', dest='corptable', default=DEF_CORPTABLE,
+    group.add_argument('-t', '--corptable', metavar='TABLE', dest='corptable', default=getInitVar('corptable', conf_parser, DEF_CORPTABLE),
                         help='Corpus Table.')
-    group.add_argument('-c', '--correl_field', metavar='FIELD', dest='correl_field', default=DEF_CORREL_FIELD,
+    group.add_argument('-c', '--correl_field', metavar='FIELD', dest='correl_field', default=getInitVar('correl_field', conf_parser, DEF_CORREL_FIELD),
                         help='Correlation Field (AKA Group Field): The field which features are aggregated over.')
-    group.add_argument('-H', '--host', metavar='HOST', dest='mysql_host', default=HOST,
+    group.add_argument('-H', '--host', metavar='HOST', dest='mysql_host', default=getInitVar('mysql_host', conf_parser, HOST),
                        help='Host that the mysql server runs on (default: %s)' % HOST)
-    group.add_argument('--message_field', metavar='FIELD', dest='message_field', default=DEF_MESSAGE_FIELD,
+    group.add_argument('--message_field', metavar='FIELD', dest='message_field', default=getInitVar('message_field', conf_parser, DEF_MESSAGE_FIELD),
                         help='The field where the text to be analyzed is located.')
-    group.add_argument('--messageid_field', metavar='FIELD', dest='messageid_field', default=DEF_MESSAGEID_FIELD,
+    group.add_argument('--messageid_field', metavar='FIELD', dest='messageid_field', default=getInitVar('messageid_field', conf_parser, DEF_MESSAGEID_FIELD),
                         help='The unique identifier for the message.')
-    group.add_argument('--date_field', metavar='FIELD', dest='date_field', default=DEF_DATE_FIELD,
+    group.add_argument('--date_field', metavar='FIELD', dest='date_field', default=getInitVar('date_field', conf_parser, DEF_DATE_FIELD),
                         help='Date a message was sent (if avail, for timex processing).')
-    group.add_argument('--lexicondb', metavar='DB', dest='lexicondb', default=DEF_LEXICON_DB,
+    group.add_argument('--lexicondb', metavar='DB', dest='lexicondb', default=getInitVar('lexicondb', conf_parser, DEF_LEXICON_DB),
                         help='The database which stores all lexicons.')
 
     group = parser.add_argument_group('Feature Variables', 'Use of these is dependent on the action.')
-    group.add_argument('-f', '--feat_table', metavar='TABLE', dest='feattable', type=str, nargs='+', default=None,
+    group.add_argument('-f', '--feat_table', metavar='TABLE', dest='feattable', type=str, nargs='+', default=getInitVar('feattable', conf_parser, None, varList=True),
                        help='Table containing feature information to work with')
     group.add_argument('-n', '--set_n', metavar='N', dest='n', type=int, nargs='+', default=[DEF_N],
                        help='The n value used for n-grams or co-occurence features')
     group.add_argument('--no_metafeats', action='store_false', dest='metafeats', default=True,
                        help='indicate not to extract meta features (word, message length) with ngrams')
-    group.add_argument('-l', '--lex_table', metavar='TABLE', dest='lextable', default='',
+    group.add_argument('-l', '--lex_table', metavar='TABLE', dest='lextable', default=getInitVar('lextable', conf_parser, ''),
                        help='Lexicon Table Name: used for extracting category features from 1grams'+
                        '(or use --word_table to extract from other than 1gram)')
-    group.add_argument('--word_table', metavar='WORDTABLE', dest='wordTable', default=None,
+    group.add_argument('--word_table', metavar='WORDTABLE', dest='wordTable', default=getInitVar('wordTable', conf_parser, None),
                        help='Table that contains the list of words to give for lex extraction/group_freq_thresh')
     group.add_argument('--colloc_table', metavar='TABLE', dest='colloc_table', default=DEF_COLLOCTABLE,
                         help='Table that holds a list of collocations to be used as features.')
@@ -251,21 +275,21 @@ def main(fn_args = None):
 
 
     group = parser.add_argument_group('Outcome Variables', '')
-    group.add_argument('--outcome_table', type=str, metavar='TABLE', dest='outcometable', default=DEF_OUTCOME_TABLE,
+    group.add_argument('--outcome_table', type=str, metavar='TABLE', dest='outcometable', default=getInitVar('outcometable', conf_parser, DEF_OUTCOME_TABLE),
                        help='Table holding outcomes (make sure correl_field type matches corpus\').')
-    group.add_argument('--outcome_fields', '--outcomes',  type=str, metavar='FIELD(S)', dest='outcomefields', nargs='+', default=DEF_OUTCOME_FIELDS,
+    group.add_argument('--outcome_fields', '--outcomes',  type=str, metavar='FIELD(S)', dest='outcomefields', nargs='+', default=getInitVar('outcomefields', conf_parser, DEF_OUTCOME_FIELDS, varList=True),
                        help='Fields to compare with.')
-    group.add_argument('--outcome_controls', '--controls', type=str, metavar='FIELD(S)', dest='outcomecontrols', nargs='+', default=DEF_OUTCOME_CONTROLS,
+    group.add_argument('--outcome_controls', '--controls', type=str, metavar='FIELD(S)', dest='outcomecontrols', nargs='+', default=getInitVar('outcomecontrols', conf_parser, DEF_OUTCOME_CONTROLS, varList=True),
                        help='Fields in outcome table to use as controls for correlation(regression).')
-    group.add_argument('--outcome_interaction', '--interaction', type=str, metavar='TERM(S)', dest='outcomeinteraction', nargs='+', default=DEF_OUTCOME_CONTROLS,
+    group.add_argument('--outcome_interaction', '--interaction', type=str, metavar='TERM(S)', dest='outcomeinteraction', nargs='+', default=getInitVar('outcomeinteraction', conf_parser, DEF_OUTCOME_CONTROLS, varList=True),
                        help='Fields in outcome table to use as controls and interaction terms for correlation(regression).')
-    group.add_argument('--feat_names', type=str, metavar='FIELD(S)', dest='featnames', nargs='+', default=DEF_FEAT_NAMES,
+    group.add_argument('--feat_names', type=str, metavar='FIELD(S)', dest='featnames', nargs='+', default=getInitVar('featnames', conf_parser, DEF_FEAT_NAMES, varList=True),
                        help='Limit outputs to the given set of features.')
-    group.add_argument("--group_freq_thresh", type=int, metavar='N', dest="groupfreqthresh", default = int(DEF_GROUP_FREQ_THRESHOLD),
+    group.add_argument("--group_freq_thresh", type=int, metavar='N', dest="groupfreqthresh", default=getInitVar('groupfreqthresh', conf_parser, int(DEF_GROUP_FREQ_THRESHOLD)),
                        help="minimum WORD frequency per correl_field to include correl_field in results")
 #    group.add_argument('--output_dir', type=str, metavar='DIR', dest='outputdir', default=DEF_OUTPUTDIR,
 #                       help='Destination for html or plot images (depricated, use output_name).')
-    group.add_argument('--output_name', '--output', type=str, dest='outputname', default='',
+    group.add_argument('--output_name', '--output', type=str, dest='outputname', default=getInitVar('outputname', conf_parser, ''),
                        help='overrides the default filename for output')
     group.add_argument('--max_tagcloud_words', type=int, metavar='N', dest='maxtcwords', default=DEF_MAX_TC_WORDS,
                        help='Max words to appear in a tagcloud')
@@ -275,9 +299,9 @@ def main(fn_args = None):
     group.add_argument('--tagcloud_filter', action='store_true', dest='tcfilter', default=DEF_TC_FILTER,)
     group.add_argument('--no_tagcloud_filter', action='store_false', dest='tcfilter', default=DEF_TC_FILTER,
                        help='filter / dont filter tag clouds for duplicate info in phrases.')
-    group.add_argument('--feat_labelmap_table', type=str, dest='featlabelmaptable', default='',
+    group.add_argument('--feat_labelmap_table', type=str, dest='featlabelmaptable', default=getInitVar('featlabelmaptable', conf_parser, ''),
                        help='specifies an lda mapping tablename to be used for LDA topic mapping')
-    group.add_argument('--feat_labelmap_lex', type=str, dest='featlabelmaplex', default='',
+    group.add_argument('--feat_labelmap_lex', type=str, dest='featlabelmaplex', default=getInitVar('featlabelmaplex', conf_parser, ''),
                        help='specifies a lexicon tablename to be used for the LDA topic mapping')
     group.add_argument('--bracket_labels', action='store_true', dest='bracketlabels', default='',
                        help='use with: feat_labelmap_lex... if used, the labelmap features will be contained within brackets')
@@ -309,7 +333,7 @@ def main(fn_args = None):
                        help='Use AUC instead of linear regression/correlation [only works with binary outcome values]') 
     group.add_argument('--zScoreGroup', action='store_true', dest='zScoreGroup', default=False,
                        help="Outputs a certain group's zScore for all feats, which group is determined by the boolean outcome value [MUST be boolean outcome]") 
-    group.add_argument('--p_correction', metavar='METHOD', type=str, dest='p_correction_method', default='',
+    group.add_argument('--p_correction', metavar='METHOD', type=str, dest='p_correction_method', default=getInitVar('p_correction_method', conf_parser, ''),
                        help='Specify a p-value correction method: simes, holm, hochberg, hommel, bonferroni, BH, BY, fdr, none')
     group.add_argument('--no_bonferroni', action='store_false', dest='bonferroni', default=True,
                        help='Turn off bonferroni correction of p-values.')
@@ -317,13 +341,13 @@ def main(fn_args = None):
                        help='Report n values.')
     group.add_argument('--freq', type=bool, dest='freq', default=True,
                        help='Report freqs.')
-    group.add_argument('--tagcloud_colorscheme', type=str, dest='tagcloudcolorscheme', default='multi', 
+    group.add_argument('--tagcloud_colorscheme', type=str, dest='tagcloudcolorscheme', default=getInitVar('tagcloudcolorscheme', conf_parser, 'multi'), 
                        help='specify a color scheme to use for tagcloud generation. Default: multi, also accepts red, blue, & red-random')
     group.add_argument('--interactions', action='store_true', dest='interactions', default=False,
                        help='Includes interaction terms in multiple regression.')
     group.add_argument('--bootstrapp', '--bootstrap', dest='bootstrapp', type=int, default = 0,
                        help="Bootstrap p-values (only works for AUCs for now) ")
-    group.add_argument("--p_value", type=float, metavar='P', dest="maxP", default = float(DEF_P),
+    group.add_argument("--p_value", type=float, metavar='P', dest="maxP", default = getInitVar('maxP', conf_parser, float(DEF_P)),
                        help="Significance threshold for returning results. Default = 0.05.")
 
     group = parser.add_argument_group('Mediation Variables', '')
@@ -626,14 +650,14 @@ def main(fn_args = None):
     group.add_argument('--v2', action='store_true', dest='v2',
                        help='Run commands from other place')
 
-    group = parser.add_argument_group('Meta Variables', '')
-    parser.add_argument('--to_file', dest='initfile', nargs='?', const=DEF_INIT_FILE, default=None)
-    
     if fn_args:
         args = parser.parse_args(fn_args.split())
     else:
         args = parser.parse_args()
 
+    print args
+    print args.toinitfile, args.frominitfile
+    #exit()
     # #options = vars(args) #pass to function to avoid passing lots of arguments
     ##NON-Specified Defaults:
 
@@ -1590,8 +1614,8 @@ def main(fn_args = None):
         if args.notifyjohannes: 
             notify.sendEmail("featureWorker run Finished", args.notifyjohannes + '\n\n\n' + str(args), 'johannes.chicago@gmail.com')  
 
-    if args.initfile:
-      with open(args.initfile, 'w') as init_file:  
+    if args.toinitfile:
+      with open(args.toinitfile, 'w') as init_file:  
         init_file.write("[constants]\n")
         
         if (args.corpdb and args.corpdb != DEF_CORPDB): init_file.write("corpdb = " + str(args.corpdb)+"\n") 
@@ -1601,17 +1625,22 @@ def main(fn_args = None):
         if (args.message_field and args.message_field != DEF_MESSAGE_FIELD): init_file.write("message_field = " + str(args.message_field)+"\n") 
         if (args.messageid_field and args.messageid_field != DEF_MESSAGEID_FIELD): init_file.write("messageid_field = " + str(args.messageid_field)+"\n") 
         if (args.lexicondb and args.lexicondb != DEF_LEXICON_DB): init_file.write("lexicondb = " + str(args.lexicondb)+"\n") 
-        if (args.feattable and args.feattable != DEF_FEAT_TABLE): init_file.write("featureTable = " + str(args.feattable)+"\n") 
-        if (args.featnames and args.featnames != DEF_FEAT_NAMES): init_file.write("featNames = " + ", ".join([str(feat) for feat in args.featnames])+"\n") 
+        if (args.feattable and args.feattable != DEF_FEAT_TABLE): init_file.write("feattable = " + str(args.feattable)+"\n") 
+        if (args.featnames and args.featnames != DEF_FEAT_NAMES): init_file.write("featnames = " + ", ".join([str(feat) for feat in args.featnames])+"\n") 
         if (args.date_field and args.date_field != DEF_DATE_FIELD): init_file.write("date_field = " + str(args.date_field)+"\n")
-        if (args.outcometable and args.outcometable != DEF_OUTCOME_TABLE): init_file.write("outcome_table = " + str(args.outcometable)+"\n") 
-        if (args.outcomefields and args.outcomefields != DEF_OUTCOME_FIELDS): init_file.write("outcome_value_fields = " + ", ".join([str(out) for out in args.outcomefields])+"\n")
-        if (args.outcomecontrols and args.outcomecontrols != DEF_OUTCOME_CONTROLS): init_file.write("outcome_controls = " + ", ".join([str(out) for out in args.outcomecontrols])+"\n")
-        if (args.outcomeinteraction and args.outcomeinteraction != DEF_OUTCOME_CONTROLS): init_file.write("outcome_interaction = " + ", ".join([str(out) for out in args.outcomeinteraction])+"\n")
-        if (args.featlabelmaptable and args.featlabelmaptable != ''): init_file.write("featureMappingTable = " + str(args.featlabelmaptable)+"\n")
-        if (args.featlabelmaplex and args.featlabelmaplex != ''): init_file.write("featureMappingLex = " + str(args.featlabelmaplex)+"\n")
+        if (args.outcometable and args.outcometable != DEF_OUTCOME_TABLE): init_file.write("outcometable = " + str(args.outcometable)+"\n") 
+        if (args.outcomefields and args.outcomefields != DEF_OUTCOME_FIELDS): init_file.write("outcomefields = " + ", ".join([str(out) for out in args.outcomefields])+"\n")
+        if (args.outcomecontrols and args.outcomecontrols != DEF_OUTCOME_CONTROLS): init_file.write("outcomecontrols = " + ", ".join([str(out) for out in args.outcomecontrols])+"\n")
+        if (args.outcomeinteraction and args.outcomeinteraction != DEF_OUTCOME_CONTROLS): init_file.write("outcomeinteraction = " + ", ".join([str(out) for out in args.outcomeinteraction])+"\n")
+        if (args.featlabelmaptable and args.featlabelmaptable != ''): init_file.write("featlabelmaptable = " + str(args.featlabelmaptable)+"\n")
+        if (args.featlabelmaplex and args.featlabelmaplex != ''): init_file.write("featlabelmaplex = " + str(args.featlabelmaplex)+"\n")
         if (args.wordTable): init_file.write("wordTable = " + str(args.wordTable)+"\n")
-        if (args.outputname): init_file.write("output_name = " + str(args.outputname)+"\n")
+        if (args.outputname): init_file.write("outputname = " + str(args.outputname)+"\n")
+        if (args.groupfreqthresh and args.groupfreqthresh != int(DEF_GROUP_FREQ_THRESHOLD)): init_file.write("groupfreqthresh = " + str(args.groupfreqthresh)+"\n")
+        if (args.lextable): init_file.write("lextable = " + str(args.lextable)+"\n")
+        if (args.p_correction_method): init_file.write("p_correction_method = " + str(args.p_correction_method)+"\n")
+        if (args.tagcloudcolorscheme and args.tagcloudcolorscheme != 'multi'): init_file.write("tagcloudcolorscheme = " + str(args.tagcloudcolorscheme)+"\n")
+        if (args.maxP and args.maxP != float(DEF_P)): init_file.write("maxP = " + str(args.maxP)+"\n")
         
         init_file.close()                
 

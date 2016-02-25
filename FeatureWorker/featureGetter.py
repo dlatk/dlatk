@@ -17,8 +17,8 @@ class FeatureGetter(FeatureWorker):
         message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else DEF_MESSAGE_FIELD
         messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else DEF_MESSAGEID_FIELD
         lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else DEF_LEXICON_DB
-        featureTable = parser.get('constants','featureTable') if parser.has_option('constants','featureTable') else DEF_FEAT_TABLE
-        featNames = parser.get('constants','featNames') if parser.has_option('constants','featNames') else DEF_FEAT_NAMES
+        featureTable = parser.get('constants','feattable') if parser.has_option('constants','feattable') else DEF_FEAT_TABLE
+        featNames = parser.get('constants','featnames') if parser.has_option('constants','featnames') else DEF_FEAT_NAMES
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
         return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, wordTable = None)
 

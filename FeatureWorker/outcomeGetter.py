@@ -21,12 +21,12 @@ class OutcomeGetter(FeatureWorker):
         message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else DEF_MESSAGE_FIELD
         messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else DEF_MESSAGEID_FIELD
         lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else DEF_LEXICON_DB
-        outcome_table = parser.get('constants','outcome_table') if parser.has_option('constants','outcome_table') else DEF_OUTCOME_TABLE
-        outcome_value_fields = [o.strip() for o in parser.get('constants','outcome_value_fields').split(",")] if parser.has_option('constants','outcome_value_fields') else [DEF_OUTCOME_FIELD] # possible list
-        outcome_controls = [o.strip() for o in parser.get('constants','outcome_controls').split(",")] if parser.has_option('constants','outcome_controls') else DEF_OUTCOME_CONTROLS # possible list
-        outcome_interaction = [o.strip() for o in parser.get('constants','outcome_interaction').split(",")] if parser.has_option('constants','outcome_interaction') else DEF_OUTCOME_CONTROLS # possible list
-        featureMappingTable = parser.get('constants','featureMappingTable') if parser.has_option('constants','featureMappingTable') else ''
-        featureMappingLex = parser.get('constants','featureMappingLex') if parser.has_option('constants','featureMappingLex') else ''
+        outcome_table = parser.get('constants','outcometable') if parser.has_option('constants','outcometable') else DEF_OUTCOME_TABLE
+        outcome_value_fields = [o.strip() for o in parser.get('constants','outcomefields').split(",")] if parser.has_option('constants','outcomefields') else [DEF_OUTCOME_FIELD] # possible list
+        outcome_controls = [o.strip() for o in parser.get('constants','outcomecontrols').split(",")] if parser.has_option('constants','outcomecontrols') else DEF_OUTCOME_CONTROLS # possible list
+        outcome_interaction = [o.strip() for o in parser.get('constants','outcomeinteraction').split(",")] if parser.has_option('constants','outcomeinteraction') else DEF_OUTCOME_CONTROLS # possible list
+        featureMappingTable = parser.get('constants','featlabelmaptable') if parser.has_option('constants','featlabelmaptable') else ''
+        featureMappingLex = parser.get('constants','featlabelmaplex') if parser.has_option('constants','featlabelmaplex') else ''
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
         return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex, wordTable=wordTable)
     

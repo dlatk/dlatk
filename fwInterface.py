@@ -655,9 +655,7 @@ def main(fn_args = None):
     else:
         args = parser.parse_args()
 
-    print args
-    print args.toinitfile, args.frominitfile
-    #exit()
+    #print args
     # #options = vars(args) #pass to function to avoid passing lots of arguments
     ##NON-Specified Defaults:
 

@@ -24,16 +24,16 @@ class FeatureStar(object):
 		message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else fwc.DEF_MESSAGE_FIELD
 		messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else fwc.DEF_MESSAGEID_FIELD
 		lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else fwc.DEF_LEXICON_DB
-		featureTable = parser.get('constants','featureTable') if parser.has_option('constants','featureTable') else DEF_FEAT_TABLE
-		featNames = parser.get('constants','featNames') if parser.has_option('constants','featNames') else fwc.DEF_FEAT_NAMES
+		featureTable = parser.get('constants','feattable') if parser.has_option('constants','feattable') else fwc.DEF_FEAT_TABLE
+		featNames = parser.get('constants','featnames') if parser.has_option('constants','featnames') else fwc.DEF_FEAT_NAMES
 		date_field = parser.get('constants','date_field') if parser.has_option('constants','date_field') else fwc.DEF_DATE_FIELD
-		outcome_table = parser.get('constants','outcome_table') if parser.has_option('constants','outcome_table') else fwc.DEF_OUTCOME_TABLE
-		outcome_value_fields = [o.strip() for o in parser.get('constants','outcome_value_fields').split(",")] if parser.has_option('constants','outcome_value_fields') else [fwc.DEF_OUTCOME_FIELD] # possible list
-		outcome_controls = [o.strip() for o in parser.get('constants','outcome_controls').split(",")] if parser.has_option('constants','outcome_controls') else fwc.DEF_OUTCOME_CONTROLS # possible list
-		outcome_interaction = [o.strip() for o in parser.get('constants','outcome_interaction').split(",")] if parser.has_option('constants','outcome_interaction') else fwc.DEF_OUTCOME_CONTROLS # possible list
-		featureMappingTable = parser.get('constants','featureMappingTable') if parser.has_option('constants','featureMappingTable') else ''
-		featureMappingLex = parser.get('constants','featureMappingLex') if parser.has_option('constants','featureMappingLex') else ''
-		output_name = parser.get('constants','output_name') if parser.has_option('constants','output_name') else ''
+		outcome_table = parser.get('constants','outcometable') if parser.has_option('constants','outcometable') else fwc.DEF_OUTCOME_TABLE
+		outcome_value_fields = [o.strip() for o in parser.get('constants','outcomefields').split(",")] if parser.has_option('constants','outcomefields') else [fwc.DEF_OUTCOME_FIELD] # possible list
+		outcome_controls = [o.strip() for o in parser.get('constants','outcomecontrols').split(",")] if parser.has_option('constants','outcomecontrols') else fwc.DEF_OUTCOME_CONTROLS # possible list
+		outcome_interaction = [o.strip() for o in parser.get('constants','outcomeinteraction').split(",")] if parser.has_option('constants','outcomeinteraction') else fwc.DEF_OUTCOME_CONTROLS # possible list
+		featureMappingTable = parser.get('constants','featlabelmaptable') if parser.has_option('constants','featlabelmaptable') else ''
+		featureMappingLex = parser.get('constants','featlabelmaplex') if parser.has_option('constants','featlabelmaplex') else ''
+		output_name = parser.get('constants','outputname') if parser.has_option('constants','outputname') else ''
 		wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
 		if initList:
 			init = initList

@@ -20,6 +20,9 @@ __version__ = "0.3"
 __maintainer__ = "H. Andrew Schwartz"
 __email__ = "hansens@sas.upenn.edu"
 
+import codecs
+codecs.register(lambda name: codecs.lookup('utf8') if name == 'utf8mb4' else None)
+
 import os, getpass
 import sys
 import pdb

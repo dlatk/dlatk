@@ -795,7 +795,10 @@ class FeatureRefiner(FeatureGetter):
 
 
         # create new feature table
-        short_name = 'tf_idf'
+        feat_name_grabber = re.compile(r'^feat\$([^\$]+)\$') 
+        feat_name = feat_name_grabber.match(ngram_table).group(1) # grabs feat_name (i.e. 1gram, 1to3gram)
+
+        short_name = 'tf_idf_{}'.format(feat_name)
         idf_table = self.createFeatureTable(short_name, valueType = 'DOUBLE')
 
         #getting N

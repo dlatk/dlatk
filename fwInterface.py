@@ -487,7 +487,7 @@ def main(fn_args = None):
     group.add_argument('--feat_occ_filter', action='store_true', dest='featoccfilter',
                        help='remove infrequent features. (uses variables feat_table and p_occ).')
     group.add_argument('--combine_feat_tables', type=str, dest='combinefeattables', default=None,
-                       help='Given multiuple feature table, combines them (provide feature name) ')
+                       help='Given multiple feature table, combines them (provide feature name) ')
     group.add_argument('--add_feat_norms', action='store_true', dest='addfeatnorms',
                        help='calculates and adds the mean normalized (feat_norm) value for each row (uses variable feat_table).')
     group.add_argument('--feat_colloc_filter', action='store_true', dest='featcollocfilter',
@@ -500,6 +500,9 @@ def main(fn_args = None):
                        help='Creates a feature table grouped by a given outcome (requires outcome field, can use controls)')
     group.add_argument('--aggregate_feats_by_new_group', action='store_true', dest='aggregategroup', default=False,
                        help='Aggregate feature table by group field (i.e. message_id features by user_ids).')
+    group.add_argument('--tf_idf', action='store_true', dest='tfidf', default=False,
+                       help='Given an ngram feature table, creates a new feature table with tf-idf (uses -f).')
+
 
     group = parser.add_argument_group('Outcome Actions', '')
     group.add_argument('--print_csv', metavar="FILENAME", dest='printcsv', default = None,
@@ -926,7 +929,10 @@ def main(fn_args = None):
             feat_to_label = oa.buildTopicLabelDict(args.topiclexicon, 10) #TODO-finish -- uses topictagcloudwords method
             #pprint(feat_to_label)
         OutcomeGetter.plotFlexibinnedTable(args.corpdb, args.feattable, temp_feature_file, feat_to_label, args.preservebintable)
-       
+    if args.tfidf:
+        if not fr: fr=FR()
+        args.feattable = fr.createTfIdfTable(args.feattable)
+
 
     #if args.addmean: #works, but excessive option
     #    if not fr: fr=FR()

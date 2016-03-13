@@ -224,15 +224,15 @@ class RegressionPredictor:
             #{'alphas': np.array([100000, 500000, 250000, 25000, 10000, 2500, 1000, 100, 10])}, 
             #{'alphas': np.array([100000, 500000, 250000, 25000, 10000])},
             #{'alphas': np.array([250000, 100000, 1000000, 2500000, 10000000, 25000000, 100000000])}, #personality, n-grams + 2000 topics
-            {'alphas': np.array([1, .01, .0001, 100, 10000, 1000000])}, #first-pass
+            #{'alphas': np.array([1, .01, .0001, 100, 10000, 1000000])}, #first-pass
             #{'alphas': np.array([1000, 1, .1, 10, 100, 10000, 100000])}, #user-level low num users (~5k) or counties
-            #{'alphas': np.array([1000, 10000, 100000, 1000000])}, #user-level low num users (~5k) or counties
+            {'alphas': np.array([1000, 10000, 100000])}, #user-level low num users (~5k) or counties
             #{'alphas': np.array([1000, 100, 10000, 10, 1])}, #county achd (need low for controls)
             #{'alphas': np.array([10000, 100000, 1000, 1000000, 100])}, #message quality
             #{'alphas': np.array([1, .1, .01, .001, .0001, .00001, .000001])} 
             #{'alphas': np.array([.01, .001, .1, 1, 10, .0001])} #message-level rel_freq no std
             #{'alphas': np.array([.001])},
-            {'alphas': np.array([100, 1000, 10])},
+            #{'alphas': np.array([100, 1000, 10])},
             #{'alphas': np.array([10, .1, .25, 1, 2.5, 100])}, #user-level low num users (~5k) or counties
             #{'alphas': np.array([1000, 1, 10000, 100000, 1000000])}, #user-level medium num users (~25k)
             #{'alphas': np.array([1000, 100, 10000, 10, 100000, 1])}, #message-level sparse binary
@@ -382,7 +382,7 @@ class RegressionPredictor:
     #featureSelectionString = 'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
     
 
-    #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/max(1.5,len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
+    featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/max(1.5,len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=100.0)), ("3_rpca", RandomizedPCA(n_components=int(X.shape[0]**2/(2500 * max(1.5,len(self.featureGetters)))), random_state=42, whiten=False, iterated_power=3))])'
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=70.0)), ("3_rpca", RandomizedPCA(n_components=.4/len(self.featureGetters), random_state=42, whiten=False, iterated_power=3, max_components=X.shape[0]/max(1.5, len(self.featureGetters))))])'
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=70.0)), ("3_rpca", RandomizedPCA(n_components=.4, random_state=42, whiten=False, iterated_power=3, max_components=X.shape[0]/max(1.5, len(self.featureGetters))))])'
@@ -1185,10 +1185,11 @@ class RegressionPredictor:
                 XGroups = XGroups & fgGroups #intersect groups from all feature tables
                 UGroups = UGroups | fgGroups #intersect groups from all feature tables
                 #potential source of bug: if a sparse feature table doesn't have all the groups it should
-                #potential source of bug: if a sparse feature table doesn't have all of the groups which it should
+                #TODO: fill these in with zeros but print an obvious warning because it could also be a sign of 
+                #      non-english messages which aren't triggering any feautres
         #XGroups = XGroups & groups #this should not be needed
         if len(XGroups) < len(groups): 
-            print " Different number of groups available for different outcomes. (%d, %d)" % (len(XGroups), len(groups))
+            print " !! Different number of groups available for different feature tables. (%d, %d)\n this may cause problems down the line" % (len(XGroups), len(groups))
         
 
         #########################################

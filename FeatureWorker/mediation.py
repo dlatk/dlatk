@@ -132,8 +132,7 @@ class Mediation(object):
 	Software 59:5.  http://www.jstatsoft.org/v59/i05/paper
 	"""
 
-	def __init__(self, outcome_model, mediator_model, exposure, mediator=None,
-				 moderators=None, outcome_fit_kwargs=None, mediator_fit_kwargs=None):
+	def __init__(self, outcome_model, mediator_model, exposure, mediator=None, moderators=None, outcome_fit_kwargs=None, mediator_fit_kwargs=None):
 
 		self.outcome_model = outcome_model
 		self.mediator_model = mediator_model
@@ -258,6 +257,8 @@ class Mediation(object):
 
 	def _fit_model(self, model, fit_kwargs, boot=False):
 		klass = model.__class__
+		print model.__class__
+		print model.__dict__
 		init_kwargs = model._get_init_kwds()
 		endog = model.endog
 		exog = model.exog
@@ -270,6 +271,18 @@ class Mediation(object):
 
 
 	def fit(self, method="parametric", n_rep=1000):
+		"""
+		Fit a regression model to assess mediation.
+
+		Arguments
+		---------
+		method : string
+			Either 'parametric' or 'bootstrap'.
+		n_rep : integer
+			The number of simulation replications.
+
+		Returns a MediationResults object.
+		"""
 
 		if method.startswith("para"):
 			# Initial fit to unperturbed data.
@@ -303,14 +316,9 @@ class Mediation(object):
 			predicted_outcomes = [[None, None], [None, None]]
 			for tm in 0, 1:
 				mex = self._get_mediator_exog(tm)
-				if self.mediator_model.__class__.__name__ == "GLM":
-					gen = get_generalized_distribution(self.mediator_model, mediation_params,
-															   mediator_result.scale,
-															   exog=mex)
-				else:
-					gen = get_linear_distribution(self.mediator_model, mediation_params,
-															   mediator_result.scale,
-															   exog=mex)
+				gen = self.mediator_model.get_distribution(mediation_params,
+														   mediator_result.scale,
+														   exog=mex)
 				potential_mediator = gen.rvs(mex.shape[0])
 
 				for te in 0, 1:
@@ -443,31 +451,37 @@ class MediationResults(object):
 		self.ADE_avg = (self.ADE_ctrl + self.ADE_tx) / 2
 
 
-	def summary(self, alpha=0.05, bonferroni = True, numFeats=1):
+	def summary(self, alpha=0.05, bonferroni=True, numMeds=1):
+		"""
+		Provide a summary of a mediation analysis.
+		"""
 
-		columns = ["Estimate", "P-value", "Lower CI bound", "Upper CI bound"]
-		index = ["Prop. mediated (average)", "ACME (average)", "ADE (average)", 
-				 "ACME (treated)", "ACME (control)", "ADE (treated)", "ADE (control)",
-				 "Total effect", "Prop. mediated (treated)", "Prop. mediated (control)"]
+		columns = ["Estimate", "Lower CI bound", "Upper CI bound", "P-value"]
+		index = ["ACME (control)", "ACME (treated)", "ADE (control)", "ADE (treated)",
+				 "Total effect", "Prop. mediated (control)", "Prop. mediated (treated)",
+				 "ACME (average)", "ADE (average)", "Prop. mediated (average)"]
 		smry = pd.DataFrame(columns=columns, index=index)
 
-		for i, vec in enumerate([self.prop_med_avg, self.ACME_avg, self.ADE_avg, 
-								 self.ACME_tx, self.ACME_ctrl, self.ADE_tx, self.ADE_ctrl,
-								 self.total_effect, self.prop_med_tx, self.prop_med_ctrl]):
+		for i, vec in enumerate([self.ACME_ctrl, self.ACME_tx, self.ADE_ctrl, self.ADE_tx,
+								 self.total_effect, self.prop_med_ctrl,
+								 self.prop_med_tx, self.ACME_avg, self.ADE_avg,
+								 self.prop_med_avg]):
 
 			if ((vec is self.prop_med_ctrl) or (vec is self.prop_med_tx) or
 				(vec is self.prop_med_avg)):
 				smry.iloc[i, 0] = np.median(vec)
 			else:
 				smry.iloc[i, 0] = vec.mean()
+			smry.iloc[i, 1] = np.percentile(vec, 100 * alpha / 2)
+			smry.iloc[i, 2] = np.percentile(vec, 100 * (1 - alpha / 2))
 			if bonferroni:
-				smry.iloc[i, 1] = _pvalue(vec)*numFeats
+				smry.iloc[i, 3] = _pvalue(vec)*numMeds
 			else:
-				smry.iloc[i, 1] = _pvalue(vec)
-			smry.iloc[i, 2] = np.percentile(vec, 100 * alpha / 2)
-			smry.iloc[i, 3] = np.percentile(vec, 100 * (1 - alpha / 2))
+				smry.iloc[i, 3] = _pvalue(vec)
 
-		return smry 
+		smry = smry.convert_objects(convert_numeric=True)
+
+		return smry
 
 class MediationAnalysis:
 	"""
@@ -497,7 +511,8 @@ class MediationAnalysis:
 						--controls from -outcome_table
 	"""
 
-	def __init__(self, fg, og, path_starts, mediators, outcomes, controls, summary=True, to_csv=False, to_mysql=False, output_name=None, method="parametric", boot_number=1000, sig_level=0.05):
+	def __init__(self, fg, og, path_starts, mediators, outcomes, controls, summary=True, to_csv=False, to_mysql=False, 
+		output_name=None, method="parametric", boot_number=1000, sig_level=0.05, style='barron'):
 		
 		self.outcomeGetter = og
 		self.featureGetter = fg
@@ -520,6 +535,16 @@ class MediationAnalysis:
 		self.output_sobel = dict()
 		self.output_p = dict() # [c_p, c'_p, alpha_p, beta_p, sobel_p, ...]
 
+		if style == 'barron':
+			self.baron_and_kenny = True
+			self.imai_and_keele = False
+		elif style == 'imai':
+			self.baron_and_kenny = False
+			self.imai_and_keele = True
+		elif style == 'both':
+			self.baron_and_kenny = True
+			self.imai_and_keele = True
+
 	def _truncate_groups(seq, max_group_size, key):
 		"""yield only the first `max_group_size` elements from each sub-group of `seq`"""
 		for key, group in itertools.groupby(seq, key):
@@ -536,8 +561,11 @@ class MediationAnalysis:
 		else:
 			csv_name = "mediation_summary.csv"
 				
-		header = ["Path Start", "Outcome", "Mediator", "c-c'", "sobel_P", "alpha", "beta", "c'", 
-				"Prop_mediated_average_Estimate", "Prop_mediated_average_P_value", 
+		header = ["Path Start", "Outcome", "Mediator"]
+		if self.baron_and_kenny:
+			header = header + ["c-c'", "sobel_P", "alpha", "beta", "c'"]
+		if self.imai_and_keele: 
+			header = header + ["Prop_mediated_average_Estimate", "Prop_mediated_average_P_value", 
 				"ACME_average_Estimate", "ACME_average_P_value"] 
 
 		for path_start in self.output:
@@ -546,15 +574,19 @@ class MediationAnalysis:
 				for mediator in self.output[path_start][outcome]:
 					sobel_p = self.output_p[path_start][outcome][mediator][4]
 					if sobel_p <= self.sig_level:
-						summary_results.append([path_start, outcome, mediator] +  
-							[self.output_sobel[path_start][outcome][mediator].tolist()[4] , sobel_p] + 
-							[self.output_sobel[path_start][outcome][mediator].tolist()[6], 
-							self.output_sobel[path_start][outcome][mediator].tolist()[9], 
-							self.output_sobel[path_start][outcome][mediator].tolist()[2]] + 
-							[self.output[path_start][outcome][mediator][0], 
-							self.output_p[path_start][outcome][mediator][5],
-							self.output[path_start][outcome][mediator][4],
-							self.output_p[path_start][outcome][mediator][6]])
+						results = [path_start, outcome, mediator]
+						if self.baron_and_kenny:
+							results = results + [self.output_sobel[path_start][outcome][mediator].tolist()[4] , sobel_p] + \
+								[self.output_sobel[path_start][outcome][mediator].tolist()[6], 
+								self.output_sobel[path_start][outcome][mediator].tolist()[9], 
+								self.output_sobel[path_start][outcome][mediator].tolist()[2]]
+						if self.imai_and_keele: 
+							results = results + [self.output[path_start][outcome][mediator][0], 
+								self.output_p[path_start][outcome][mediator][5],
+								self.output[path_start][outcome][mediator][4],
+								self.output_p[path_start][outcome][mediator][6]]
+						summary_results.append(results)
+							
 
 		summary_results.sort(key=lambda x: (x[0].lower(), x[1].lower(), -x[3]), reverse=False)
 		if len(summary_results) > 0:
@@ -575,10 +607,12 @@ class MediationAnalysis:
 		else:
 			csv_name = "mediation.csv"
 				
-		header = ["Path Start", "Outcome", "Mediator", 
-				"c", "c_p", "c'", "c'_p", "c-c'", "alpha*beta", "alpha", "alpha_error", "alpha_p", 
-				"beta", "beta_error", "beta_p", "sobel", "sobel_SE", "sobel_P",
-				"Prop_mediated_average_Estimate", "Prop_mediated_average_P_value", 
+		header = ["Path Start", "Outcome", "Mediator"]
+		if self.baron_and_kenny:
+			header = header + ["c", "c_p", "c'", "c'_p", "c-c'", "alpha*beta", "alpha", "alpha_error", "alpha_p", 
+				"beta", "beta_error", "beta_p", "sobel", "sobel_SE", "sobel_P"]
+		if self.imai_and_keele: 
+			header = header + ["Prop_mediated_average_Estimate", "Prop_mediated_average_P_value", 
 				"ACME_average_Estimate", "ACME_average_P_value", 
 				"ADE_average_Estimate", "ADE_average_P_value", 
 				"Prop_mediated_average_Lower_CI_bound", "Prop_mediated_average_Upper_CI_bound", 
@@ -592,7 +626,6 @@ class MediationAnalysis:
 				"Prop_mediated_control_Estimate", "Prop_mediated_control_P_value", "Prop_mediated_control_Lower_CI_bound", "Prop_mediated_control_Upper_CI_bound", 
 				"Prop_mediated_treated_Estimate", "Prop_mediated_treated_P_value", "Prop_mediated_treated_Lower_CI_bound", "Prop_mediated_treated_Upper_CI_bound"] 
 				
-				#[c_p, c_prime_p, alpha_p, beta_p, sobel_p ] + summary["P-value"].tolist()
 		print "Printing results to: %s" % csv_name
 		with open(csv_name, 'wb') as csvfile:
 			f = csv.writer(csvfile, quotechar='"', quoting=csv.QUOTE_NONNUMERIC, delimiter=',')
@@ -600,33 +633,30 @@ class MediationAnalysis:
 			for path_start in self.output:
 				for outcome in self.output[path_start]:
 					for mediator in self.output[path_start][outcome]:
+						bk_rearranged = []
+						med_rearranged = []
 						p_list = self.output_p[path_start][outcome][mediator]
-						bk_rearranged = [self.output_sobel[path_start][outcome][mediator][0], p_list[0], self.output_sobel[path_start][outcome][mediator][2], p_list[1],
-										self.output_sobel[path_start][outcome][mediator][4], self.output_sobel[path_start][outcome][mediator][5], 
-										self.output_sobel[path_start][outcome][mediator][6], self.output_sobel[path_start][outcome][mediator][7], p_list[2],
-										self.output_sobel[path_start][outcome][mediator][9], self.output_sobel[path_start][outcome][mediator][10], p_list[3], 
-										self.output_sobel[path_start][outcome][mediator][12], self.output_sobel[path_start][outcome][mediator][13], p_list[4]]
-						med_rearranged = [self.output[path_start][outcome][mediator][0], p_list[5], 
-											self.output[path_start][outcome][mediator][4], p_list[6], 
-											self.output[path_start][outcome][mediator][8], p_list[7]] \
-											 + self.output[path_start][outcome][mediator][2:4] +  self.output[path_start][outcome][mediator][6:8] +  self.output[path_start][outcome][mediator][10:12] \
-											 + [self.output[path_start][outcome][mediator][12], p_list[8]] + self.output[path_start][outcome][mediator][14:16] \
-											 + [self.output[path_start][outcome][mediator][16], p_list[9]] + self.output[path_start][outcome][mediator][18:20] \
-											 + [self.output[path_start][outcome][mediator][20], p_list[10]] + self.output[path_start][outcome][mediator][22:24] \
-											 + [self.output[path_start][outcome][mediator][24], p_list[11]] + self.output[path_start][outcome][mediator][26:28] \
-											 + [self.output[path_start][outcome][mediator][28], p_list[12]] + self.output[path_start][outcome][mediator][30:32] \
-											 + [self.output[path_start][outcome][mediator][32], p_list[13]] + self.output[path_start][outcome][mediator][34:36] \
-											 + [self.output[path_start][outcome][mediator][36], p_list[14]] + self.output[path_start][outcome][mediator][38:] 
+						if self.baron_and_kenny:
+							bk_rearranged = [self.output_sobel[path_start][outcome][mediator][0], p_list[0], self.output_sobel[path_start][outcome][mediator][2], p_list[1],
+											self.output_sobel[path_start][outcome][mediator][4], self.output_sobel[path_start][outcome][mediator][5], 
+											self.output_sobel[path_start][outcome][mediator][6], self.output_sobel[path_start][outcome][mediator][7], p_list[2],
+											self.output_sobel[path_start][outcome][mediator][9], self.output_sobel[path_start][outcome][mediator][10], p_list[3], 
+											self.output_sobel[path_start][outcome][mediator][12], self.output_sobel[path_start][outcome][mediator][13], p_list[4]]
+						if self.imai_and_keele: 
+							med_rearranged = [self.output[path_start][outcome][mediator][0], p_list[5], 
+												self.output[path_start][outcome][mediator][4], p_list[6], 
+												self.output[path_start][outcome][mediator][8], p_list[7]] \
+												 + self.output[path_start][outcome][mediator][2:4] +  self.output[path_start][outcome][mediator][6:8] +  self.output[path_start][outcome][mediator][10:12] \
+												 + [self.output[path_start][outcome][mediator][12], p_list[8]] + self.output[path_start][outcome][mediator][14:16] \
+												 + [self.output[path_start][outcome][mediator][16], p_list[9]] + self.output[path_start][outcome][mediator][18:20] \
+												 + [self.output[path_start][outcome][mediator][20], p_list[10]] + self.output[path_start][outcome][mediator][22:24] \
+												 + [self.output[path_start][outcome][mediator][24], p_list[11]] + self.output[path_start][outcome][mediator][26:28] \
+												 + [self.output[path_start][outcome][mediator][28], p_list[12]] + self.output[path_start][outcome][mediator][30:32] \
+												 + [self.output[path_start][outcome][mediator][32], p_list[13]] + self.output[path_start][outcome][mediator][34:36] \
+												 + [self.output[path_start][outcome][mediator][36], p_list[14]] + self.output[path_start][outcome][mediator][38:] 
 						f.writerow([path_start, outcome, mediator] + bk_rearranged + med_rearranged)
 
 	def print_mysql(self):
-		
-		return
-
-	def _get_p_values(self):
-		return
-
-	def _reconstruct_p_values(self):
 		return
 		
 	def prep_data(self, path_start, mediator, outcome, controlDict=None, controlNames=None, zscoreRegression=None):
@@ -646,6 +676,24 @@ class MediationAnalysis:
 		data = data.dropna()
 		return data
 
+	def get_data(self, switch, outcome_field, location, features):
+		"""
+		get data from outcomeGetter / featureGetter
+		"""
+		data = None
+		if switch == "feat_as_path_start" and location == "path_start":
+				data = features[outcome_field]
+		elif switch == "feat_as_outcome" and location == "outcome":
+				data = features[outcome_field]
+		elif switch == "feat_as_control" and location == "control":
+				data = features[outcome_field]
+		elif switch == "default" and location == "mediator":
+				data = features[outcome_field]
+		else:
+			data = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = outcome_field))
+		if not data: print "AAAAAAAAAAAAAAAA", switch, outcome_field, location
+		return data
+
 	def mediate(self, group_freq_thresh = 0, switch="default", spearman = False, bonferroni = True, p_correction_method = None, 
 				zscoreRegression = True, logisticReg = False):
 		"""
@@ -661,11 +709,6 @@ class MediationAnalysis:
 						}
 					}
 		"""
-		
-		pathstartsDict = dict()
-		mediatorsDict = dict()
-		outcomesDict = dict()
-		controlsDict = dict()
 
 		if "no_features" not in switch:
 			(groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(group_freq_thresh)
@@ -674,80 +717,28 @@ class MediationAnalysis:
 			(allFeatures, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups=groups)
 
 		if switch == "feat_as_path_start":
-			''' path_starts in featureGetter, everything else in outcomeGetter '''
 			if len(self.pathStartNames) == 0:
-				pathstartsDict = allFeatures
-				self.pathStartNames = pathstartsDict.keys()
-			else: 
-				for path_starts in self.pathStartNames:
-					pathstartsDict[path_starts] = allFeatures[path_starts]
-			for mediator in self.mediatorNames:
-				mediatorsDict[mediator] = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = mediator))
-			for outcome in self.outcomeNames:
-				outcomesDict[outcome] = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = outcome))
-			for control in self.controlNames:
-				controlsDict[control] = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = control))
-			numFeats = len(pathstartsDict)
+				self.pathStartNames = allFeatures.keys()
+			numMeds = len(self.pathStartNames)
 
 		elif switch == "feat_as_outcome":
-			''' outcomes in featureGetter, everything else in outcomeGetter '''
-			for path_starts in self.pathStartNames:
-				pathstartsDict[path_starts] = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = path_starts))
-			for mediator in self.mediatorNames:
-				mediatorsDict[mediator] = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = mediator))
 			if len(self.outcomeNames) == 0:
-				outcomesDict = allFeatures
-				self.outcomeNames = outcomesDict.keys()
-			else:
-				for outcome in self.outcomeNames:
-					outcomesDict[outcome] = allFeatures[outcome]
-			for control in self.controlNames:
-				controlsDict[control] = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = control))
-			numFeats = len(outcomesDict)
+				self.outcomeNames = allFeatures.keys()
+			numMeds = len(self.outcomeNames)
 
 		elif switch == "feat_as_control":
-			''' controls in featureGetter, everything else in outcomeGetter '''
-			for path_starts in self.pathStartNames:
-				pathstartsDict[path_starts] = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = path_starts))
-			for mediator in self.mediatorNames:
-				mediatorsDict[mediator] = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = mediator))
-			for outcome in self.outcomeNames:
-				outcomesDict[outcome] = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = outcome))
 			if len(self.controlNames) == 0:
-				controlsDict = allFeatures
-				self.controlNames = controlsDict.keys()
-			else:
-				for control in self.controlNames:
-					controlsDict[control] = allFeatures[control]
+				self.controlNames = allFeatures.keys()
+			numMeds = len(self.pathStartNames)
 
 		elif switch == "no_features":
-			''' everything in outcomeGetter '''
-			for path_starts in self.pathStartNames:
-				pathstartsDict[path_starts] = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = path_starts))
-			for mediator in self.mediatorNames:
-				mediatorsDict[mediator] = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = mediator))
-			for outcome in self.outcomeNames:
-				outcomesDict[outcome] = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = outcome))
-			for control in self.controlNames:
-				controlsDict[control] = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = control))
-			numFeats = 1
+			numMeds = len(self.pathStartNames)
 
 		elif switch == "default":
-			''' mediators in featureGetter, everything else in outcomeGetter '''
-			for path_starts in self.pathStartNames:
-				pathstartsDict[path_starts] = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = path_starts))
 			if len(self.mediatorNames) == 0:
-				mediatorsDict = allFeatures
-				self.mediatorNames = mediatorsDict.keys()
-			else:
-				for mediator in self.mediatorNames:
-					mediatorsDict[mediator] = allFeatures[mediator]
-			for outcome in self.outcomeNames:
-				outcomesDict[outcome] = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = outcome))
-			for control in self.controlNames:
-				controlsDict[control] = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = control))
-			numFeats = len(mediatorsDict)
+				self.mediatorNames = allFeatures.keys()
 
+		numMeds = len(self.mediatorNames)
 		mediation_count = 0
 		total_mediations = str(len(self.pathStartNames)*len(self.mediatorNames)*len(self.outcomeNames))
 
@@ -763,12 +754,24 @@ class MediationAnalysis:
 
 				for mediator in self.mediatorNames:
 					mediation_count += 1
-
+					self.output_p[path_start][outcome][mediator] = []
+					self.output[path_start][outcome][mediator] = []
+					
 					if len(self.controlNames) > 0:
-						data = self.prep_data(pathstartsDict[path_start], mediatorsDict[mediator], outcomesDict[outcome], controlsDict, self.controlNames, zscoreRegression=zscoreRegression)
+						#data = self.prep_data(pathstartsDict[path_start], mediatorsDict[mediator], outcomesDict[outcome], controlsDict, self.controlNames, zscoreRegression=zscoreRegression)
+						data = self.prep_data(self.get_data(switch, path_start, "path_start", allFeatures), 
+							self.get_data(switch, mediator, "mediator", allFeatures), 
+							self.get_data(switch, outcome, "outcome", allFeatures), 
+							controlsDict, self.controlNames, zscoreRegression=zscoreRegression)
+						
 						control_formula = " + " + " + ".join(self.controlNames)
 					else: 
-						data = self.prep_data(pathstartsDict[path_start], mediatorsDict[mediator], outcomesDict[outcome], zscoreRegression=zscoreRegression)
+						#data = self.prep_data(pathstartsDict[path_start], mediatorsDict[mediator], outcomesDict[outcome], zscoreRegression=zscoreRegression)
+						data = self.prep_data(self.get_data(switch, path_start, "path_start", allFeatures), 
+							self.get_data(switch, mediator, "mediator", allFeatures), 
+							self.get_data(switch, outcome, "outcome", allFeatures), 
+							zscoreRegression=zscoreRegression)
+						
 						control_formula = ""
 					
 					outcome_exog = patsy.dmatrix("mediator + path_start " + control_formula + " -1", data,
@@ -794,46 +797,50 @@ class MediationAnalysis:
 					direct_model = sm.OLS(outcome_array, direct_exog)
 
 					# classic mediation with Sobel Test
-					outcome_results = outcome_model.fit()
-					mediator_results = mediator_model.fit()
-					direct_results = direct_model.fit()
+					if self.baron_and_kenny:
+						outcome_results = outcome_model.fit()
+						mediator_results = mediator_model.fit()
+						direct_results = direct_model.fit()
 
-					c = direct_results.params.get('path_start')
-					c_prime = outcome_results.params.get('path_start')
-					alpha = mediator_results.params.get('path_start')
-					alpha_error = mediator_results.bse.get('path_start')
-					beta = outcome_results.params.get('mediator')
-					beta_error = outcome_results.bse.get('mediator')
-					sobel_SE = sqrt(beta*beta*alpha_error*alpha_error + alpha*alpha*beta_error*beta_error)
-					sobel = (alpha*beta)/ sobel_SE
+						c = direct_results.params.get('path_start')
+						c_prime = outcome_results.params.get('path_start')
+						alpha = mediator_results.params.get('path_start')
+						alpha_error = mediator_results.bse.get('path_start')
+						beta = outcome_results.params.get('mediator')
+						beta_error = outcome_results.bse.get('mediator')
+						sobel_SE = sqrt(beta*beta*alpha_error*alpha_error + alpha*alpha*beta_error*beta_error)
+						sobel = (alpha*beta)/ sobel_SE
+
+						if bonferroni:
+							c_p = direct_results.pvalues.get('path_start')*numMeds
+							c_prime_p = outcome_results.pvalues.get('path_start')*numMeds
+							alpha_p = mediator_results.pvalues.get('path_start')*numMeds
+							beta_p = outcome_results.pvalues.get('mediator')*numMeds
+							sobel_p = st.norm.sf(abs(sobel))*2*numMeds
+						else:
+							c_p = direct_results.pvalues.get('path_start')
+							c_prime_p = outcome_results.pvalues.get('path_start')
+							alpha_p = mediator_results.pvalues.get('path_start')
+							beta_p = outcome_results.pvalues.get('mediator')
+							sobel_p = st.norm.sf(abs(sobel))*2
+
+						self.output_sobel[path_start][outcome][mediator] = np.array([c, c_p, c_prime, c_prime_p, abs(c-c_prime), alpha*beta, alpha, alpha_error, alpha_p, beta, beta_error, beta_p, sobel, sobel_SE, sobel_p])
+						self.output_p[path_start][outcome][mediator] = self.output_p[path_start][outcome][mediator] + [c_p, c_prime_p, alpha_p, beta_p, sobel_p ]
 
 					# new mediation
-					tx_pos = [outcome_exog.columns.tolist().index("path_start"),
-							  mediator_exog.columns.tolist().index("path_start")]
-					med_pos = outcome_exog.columns.tolist().index("mediator")
+					if self.imai_and_keele:
+						tx_pos = [outcome_exog.columns.tolist().index("path_start"),
+								  mediator_exog.columns.tolist().index("path_start")]
+						med_pos = outcome_exog.columns.tolist().index("mediator")
 
-					med = Mediation(outcome_model, mediator_model, tx_pos, med_pos)
+						med = Mediation(outcome_model, mediator_model, tx_pos, med_pos)
 
-					med_result = med.fit(method=self.mediation_method, n_rep=self.boot_number)
-					summary = med_result.summary(bonferroni = bonferroni, numFeats=numFeats)
-					if bonferroni:
-						c_p = direct_results.pvalues.get('path_start')*numFeats
-						c_prime_p = outcome_results.pvalues.get('path_start')*numFeats
-						alpha_p = mediator_results.pvalues.get('path_start')*numFeats
-						beta_p = outcome_results.pvalues.get('mediator')*numFeats
-						sobel_p = st.norm.sf(abs(sobel))*2*numFeats
-					else:
-						c_p = direct_results.pvalues.get('path_start')
-						c_prime_p = outcome_results.pvalues.get('path_start')
-						alpha_p = mediator_results.pvalues.get('path_start')
-						beta_p = outcome_results.pvalues.get('mediator')
-						sobel_p = st.norm.sf(abs(sobel))*2
-
-
-					summary_array = np.reshape(summary.values, 40).tolist()
-					self.output[path_start][outcome][mediator] = summary_array
-					self.output_sobel[path_start][outcome][mediator] = np.array([c, c_p, c_prime, c_prime_p, abs(c-c_prime), alpha*beta, alpha, alpha_error, alpha_p, beta, beta_error, beta_p, sobel, sobel_SE, sobel_p])
-					self.output_p[path_start][outcome][mediator] = [c_p, c_prime_p, alpha_p, beta_p, sobel_p ] + summary["P-value"].tolist()
+						med_result = med.fit(method=self.mediation_method, n_rep=self.boot_number)
+						summary = med_result.summary(bonferroni = bonferroni, numMeds=numMeds)
+						summary_array = np.reshape(summary.values, 40).tolist()
+						
+						self.output[path_start][outcome][mediator] = summary_array
+						self.output_p[path_start][outcome][mediator] = self.output_p[path_start][outcome][mediator] + summary["P-value"].tolist()
 
 					print "Mediation number " + str(mediation_count) + " out of " + total_mediations
 					
@@ -841,19 +848,24 @@ class MediationAnalysis:
 						print "Path Start: %s, Mediator: %s, Outcome: %s, Controls: %s" % (path_start, mediator, outcome, ", ".join(self.controlNames))
 					else:
 						print "Path Start: %s, Mediator: %s, Outcome: %s" % (path_start, mediator, outcome)
-					print "C: %s, C_p: %s, C': %s, C'_p: %s" % (str(c), str(c_p), str(c_prime), str(c_prime_p))
-					print "C-C': %s, alpha*beta: %s" % (str(c-c_prime), str(alpha*beta))
-					print "alpha: %s, alpha_error: %s, alpha_p: %s" % (str(alpha), str(alpha_error), str(alpha_p))
-					print "beta: %s, beta_error: %s, beta_p: %s" % (str(beta), str(beta_error), str(beta_p))
-					print "Sobel z-score: %s, Sobel SE: %s, Sobel p: %s" % (str(sobel), str(sobel_SE), str(sobel_p))
-					print summary
+					if self.baron_and_kenny:
+						print "C: %s, C_p: %s, C': %s, C'_p: %s" % (str(c), str(c_p), str(c_prime), str(c_prime_p))
+						print "C-C': %s, alpha*beta: %s" % (str(c-c_prime), str(alpha*beta))
+						print "alpha: %s, alpha_error: %s, alpha_p: %s" % (str(alpha), str(alpha_error), str(alpha_p))
+						print "beta: %s, beta_error: %s, beta_p: %s" % (str(beta), str(beta_error), str(beta_p))
+						print "Sobel z-score: %s, Sobel SE: %s, Sobel p: %s" % (str(sobel), str(sobel_SE), str(sobel_p))
+					if self.imai_and_keele:
+						print summary
 					print ""
 
 		if p_correction_method:
-			p_list = ["C_p", "C'_p", "alpha_p", "beta_p", "sobel_p", "Prop_mediated_average_P_value", 
-				"ACME_average_P_value", "ADE_average_P_value", "ACME_treated_P_value", "ACME_control_P_value", 
-				"ADE_treated_P_value", "ADE_control_P_value", "Total_effect_P_value", 
-				"Prop_mediated_control_P_value", "Prop_mediated_treated_P_value"]
+			p_list = []
+			if self.baron_and_kenny:
+				p_list = p_list + ["C_p", "C'_p", "alpha_p", "beta_p", "sobel_p"]
+			if self.imai_and_keele:
+				p_list = p_list + ["Prop_mediated_average_P_value", "ACME_average_P_value", "ADE_average_P_value", "ACME_treated_P_value", 
+					"ACME_control_P_value", "ADE_treated_P_value", "ADE_control_P_value", "Total_effect_P_value", 
+					"Prop_mediated_control_P_value", "Prop_mediated_treated_P_value"]
 			p_dict = dict()
 			r_dict = dict()
 			for path_start in self.pathStartNames:
@@ -872,4 +884,3 @@ class MediationAnalysis:
 		if self.to_mysql: self.print_mysql()
 
 
-		

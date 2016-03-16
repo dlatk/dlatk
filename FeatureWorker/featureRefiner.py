@@ -1,15 +1,27 @@
+import re
+from collections import OrderedDict
+from pprint import pprint
+
+#math / stats:
+from numpy import sqrt, array, std, mean, log2
+
+#local / nlp
+from lib.happierfuntokenizing import Tokenizer #Potts tokenizer
+
+#infrastructure
 from featureGetter import FeatureGetter
-from fwConstants import *
-from fwConstants import _warn, _report, _getReportingInt, _dbConnectSQLalchemy
+import fwConstants as fwc
+from mysqlMethods import mysqlMethods as mm
+from mysqlMethods.mysql_iter_funcs import get_db_engine
 
 class FeatureRefiner(FeatureGetter):
-    """Deals with the refinmene of feature information already in a table (outputs to new table)"""
+    """Deals with the refinement of feature information already in a table (outputs to new table)"""
 
     def makeTopicLabelMap(self, topiclexicon, numtopicwords=5, is_weighted_lexicon=False):
         featlabel_tablename = 'feat_to_label$%s$%d'%(topiclexicon, numtopicwords)
 
         pldb = self.lexicondb
-        (plconn, plcur, plcurD) = mm.dbConnect(pldb)
+        (plconn, plcur, plcurD) = mm.dbConnect(pldb, charset=self.encoding)
         sql = 'DROP TABLE IF EXISTS `%s`'%featlabel_tablename
         mm.execute(pldb, plcur, sql)
         sql = 'CREATE TABLE `%s` (`id` int(16) unsigned NOT NULL AUTO_INCREMENT, `term` varchar(128) DEFAULT NULL, `category` varchar(64) DEFAULT NULL, PRIMARY KEY (`id`), KEY `term` (`term`), KEY `category` (`category`) )'%featlabel_tablename
@@ -47,7 +59,7 @@ class FeatureRefiner(FeatureGetter):
         longestType = "VARCHAR(12)"
         valueType = 'INTEGER'
         for table in featureTables:
-            columns = self._getTableColumnNameTypes(table)
+            columns = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, table)
             if not columns: raise ValueError("One of your feature tables probably doesn't exist")
             currentType = columns['feat']
             valueType = columns['value']
@@ -63,7 +75,7 @@ class FeatureRefiner(FeatureGetter):
             toNum = numMatch.group(1)
         valueFunc = None
         if toNum:
-            for func in POSSIBLE_VALUE_FUNCS:
+            for func in fwc.POSSIBLE_VALUE_FUNCS:
                 if float(func(16)) == float(toNum):
                     valueFunc = func
                     break     
@@ -81,27 +93,27 @@ class FeatureRefiner(FeatureGetter):
             featureName = '_'.join(names)
         featureTableName = self.createFeatureTable(featureName, "VARCHAR(%d)"%longestInt, valueType, tableName, valueFunc, extension=pocc)
         # Maarten: todo: test if too long and don't disable keys
-        self._disableTableKeys(featureTableName)#for faster, when enough space for repair by sorting
+        mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName)#for faster, when enough space for repair by sorting
 
         for fTable in featureTables:
-            self._execute("INSERT INTO %s (group_id, feat, value, group_norm) SELECT group_id, feat, value, group_norm from %s;" % (featureTableName, fTable))
+            mm.execute(self.corpdb, self.dbCursor, "INSERT INTO %s (group_id, feat, value, group_norm) SELECT group_id, feat, value, group_norm from %s;" % (featureTableName, fTable))
         
-        self._enableTableKeys(featureTableName)#for faster, when enough space for repair by sorting
+        mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName)#for faster, when enough space for repair by sorting
 
         return featureTableName
 
 
     def createTableWithBinnedFeats(self, num_bins, group_id_range, groupfreqthresh, valueFunc = lambda x:x, 
-                                   gender=None, genderattack=False, reporting_percent=0.04, outcomeTable = DEF_OUTCOME_TABLE, skip_binning=False):
+                                   gender=None, genderattack=False, reporting_percent=0.04, outcomeTable = fwc.DEF_OUTCOME_TABLE, skip_binning=False):
         featureTable = self.featureTable
         group_id_range = map(int, group_id_range)
         newTable = featureTable+'$'+str(num_bins)+'b_'+'_'.join(map(str,group_id_range))
         if skip_binning: return newTable
 
         sql = 'DROP TABLE IF EXISTS %s'%newTable
-        self._execute(sql)
+        mm.execute(self.corpdb, self.dbCursor, sql)
         sql = "CREATE TABLE %s like %s" % (newTable, featureTable)
-        self._execute(sql)
+        mm.execute(self.corpdb, self.dbCursor, sql)
 
         #groupValues = self.getSumValuesByGroup(where) # [(gid1, val1), ...]
         # OLD N calculation.... same as new one....
@@ -116,9 +128,9 @@ class FeatureRefiner(FeatureGetter):
         # else:
         #     sql += ' AND gender IS NOT NULL'
         # sql += ' group by age'
-        # groupValues = self._executeGetList(sql) # [(gid1, N1), ...]
+        # groupValues = mm.executeGetList(self.corpdb, self.dbCursor, sql) # [(gid1, N1), ...]
         # groupIdToN = dict(groupValues)
-        groupNs = self._executeGetList('SELECT group_id, N FROM %s GROUP BY group_id'%self.featureTable)
+        groupNs = mm.executeGetList(self.corpdb, self.dbCursor, 'SELECT group_id, N FROM %s GROUP BY group_id'%self.featureTable)
         groupIdToN = dict(groupNs)
         #pprint(groupIdToN)
         #pprint(groupIdToN)
@@ -126,10 +138,10 @@ class FeatureRefiner(FeatureGetter):
         bin_size = float(total_freq) / float(num_bins+2)
 
         num_groups = len(groupNs)
-        reporting_int = _getReportingInt(reporting_percent, num_groups)
+        reporting_int = fwc._getReportingInt(reporting_percent, num_groups)
 
         # figure out the bins, i.e. if group_id's 1,2,3 total value is greater than "bin_size" our first bin is 1_3.
-        _warn('determining the number of bins...')
+        mm.warn('determining the number of bins...')
         current_sum = 0
         current_lower_group = groupNs[0][0]
 
@@ -148,30 +160,30 @@ class FeatureRefiner(FeatureGetter):
                 bin_groups[(current_lower_group, current_upper_group)]  = '_'.join(map(str,[current_lower_group, current_upper_group]))
                 next_group_is_lower_group = True
             gg += 1
-            _report('group_id\'s', gg, reporting_int, num_groups)
+            fwc._report('group_id\'s', gg, reporting_int, num_groups)
         if current_sum >= 0:
             bin_groups[(current_lower_group, current_upper_group)]  = '_'.join(map(str,[current_lower_group, current_upper_group]))
 
         max_label_length = max(map(len, bin_groups.values()))
 
         sql = 'ALTER TABLE %s MODIFY COLUMN group_id VARCHAR(%d)'%(newTable, max_label_length) #this action preserves the index
-        self._execute(sql)
+        mm.execute(self.corpdb, self.dbCursor, sql)
         sql = 'ALTER TABLE %s ADD COLUMN `bin_center` float(6) not null default -1.0'%(newTable)
-        self._execute(sql)
+        mm.execute(self.corpdb, self.dbCursor, sql)
         sql = 'ALTER TABLE %s ADD COLUMN `bin_center_w` float(6) not null default -1.0'%(newTable)
-        self._execute(sql)
+        mm.execute(self.corpdb, self.dbCursor, sql)
         sql = 'ALTER TABLE %s ADD COLUMN `bin_width` int(10) not null default -1'%(newTable)
-        self._execute(sql)
-        self._disableTableKeys(newTable)
+        mm.execute(self.corpdb, self.dbCursor, sql)
+        mm.disableTableKeys(self.corpdb, self.dbCursor, newTable)
 
         # for each newly denoted bin: e.g. 1_3, 4_5, 6_6, ... get the new feature value counts / group norms; insert them into the new table
         # e.g. 1 'hi' 5, 2 'hi' 10, 3 'hi' 30 ==> 1_3 'hi' 45  (of course include group_norm also)
-        _warn('aggreagating the newly binned feature values / group_norms into the new table...')
+        mm.warn('aggreagating the newly binned feature values / group_norms into the new table...')
         isql = 'INSERT INTO %s (group_id, feat, value, group_norm, std_dev, N, bin_center, bin_center_w, bin_width) VALUES (%s)'%(newTable, '%s, %s, %s, %s, %s, %s, %s, %s, %s')
         #isql = 'INSERT INTO %s (group_id, feat, value, group_norm, N, bin_center, bin_width) VALUES (%s)'%(newTable, '%s, %s, %s, %s, %s, %s, %s')
         ii_bins = 0
         num_bins = len(bin_groups.keys())
-        reporting_int = _getReportingInt(reporting_percent, num_bins)
+        reporting_int = fwc._getReportingInt(reporting_percent, num_bins)
         #_warn('#############BIN NUMBER############### [[%d]] #############'%len(bin_groups))
         for (lower_group, upper_group), label in bin_groups.iteritems():
             bin_N_sum = 0
@@ -189,7 +201,7 @@ class FeatureRefiner(FeatureGetter):
             
             # sql = 'SELECT group_id, feat, value, group_norm, N FROM %s where group_id >= %d AND group_id <= %d'%(self.featureTable, lower_group, upper_group)
             sql = 'SELECT group_id, feat, value, group_norm, std_dev FROM %s where group_id >= %d AND group_id <= %d'%(self.featureTable, lower_group, upper_group)
-            groupFeatValueNorm = self._executeGetList(sql)
+            groupFeatValueNorm = mm.executeGetList(self.corpdb, self.dbCursor, sql)
             #pprint(groupFeatValueNorm)
 
             totalFeatCountForThisBin = float(0)
@@ -197,7 +209,7 @@ class FeatureRefiner(FeatureGetter):
             featToSummedNorm = {}
             for group_id, feat, value, norm, sd in groupFeatValueNorm:
             # for group_id, feat, value, norm, N in groupFeatValueNorm:
-                if LOWERCASE_ONLY: feat = str(feat).lower()
+                if fwc.LOWERCASE_ONLY: feat = str(feat).lower()
                 totalFeatCountForThisBin += value
                 currentN = groupIdToN[group_id]
                 try:
@@ -221,19 +233,19 @@ class FeatureRefiner(FeatureGetter):
 
             current_batch = [ ('_'.join(map(str,(lower_group, upper_group))),  k,  v, featToMeanNorm[k], sqrt(featToSummedVar[k] / bin_N_sum),
                                bin_N_sum, bin_center, bin_center_w, bin_width) for k, v in featToValue.iteritems() ]
-            self._executeWriteMany(isql, current_batch)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, isql, current_batch, writeCursor=self.dbConn.cursor(), charset=self.encoding)
             # print 'N bin sum:', bin_N_sum
             # isql = 'INSERT INTO %s (group_id, feat, value, group_norm, N, bin_center, bin_center_w, bin_width) VALUES (%s)'%(newTable, '%s, %s, %s, %s, %s, %s, %s, %s')
             ii_bins += 1
-            _report('group_id bins', ii_bins, reporting_int, num_bins)
+            fwc._report('group_id bins', ii_bins, reporting_int, num_bins)
 
-        self._enableTableKeys(newTable)
-        _warn('Done creating new group_id-binned feature table.')
+        mm.enableTableKeys(self.corpdb, self.dbCursor, newTable)
+        mm.warn('Done creating new group_id-binned feature table.')
 
-        outputdata = self._executeGetList('select group_id, N from `%s` group by group_id'%(newTable,))
+        outputdata = mm.executeGetList(self.corpdb, self.dbCursor, 'select group_id, N from `%s` group by group_id'%(newTable,))
         pprint(outputdata)
 
-        # self._execute('drop table if exists `%s`'%(newTable,))
+        # mm.execute(self.corpdb, self.dbCursor, 'drop table if exists `%s`'%(newTable,))
         return newTable
 
     def createTableWithRemovedFeats(self, p, minimumFeatSum = 0, groupFreqThresh = 0):
@@ -252,11 +264,11 @@ class FeatureRefiner(FeatureGetter):
         featureTable = self.featureTable
         numToKeep = len(toKeep)
         newTable = featureTable+'$'+label
-        self._execute("DROP TABLE IF EXISTS %s" % newTable)
-        _warn(" %s <new table %s will have %d distinct features.>" %(featureTable, newTable, numToKeep))
+        mm.execute(self.corpdb, self.dbCursor, "DROP TABLE IF EXISTS %s" % newTable)
+        mm.warn(" %s <new table %s will have %d distinct features.>" %(featureTable, newTable, numToKeep))
         sql = """CREATE TABLE %s like %s""" % (newTable, featureTable)
-        self._execute(sql)
-        self._disableTableKeys(newTable)
+        mm.execute(self.corpdb, self.dbCursor, sql)
+        mm.disableTableKeys(self.corpdb, self.dbCursor, newTable)
   
         num_at_time = 2000
         total = 0
@@ -271,19 +283,19 @@ class FeatureRefiner(FeatureGetter):
                 toWrite.append(featRow)
             if len(toWrite) > num_at_time:
             #write those past the filter to the table
-                self._executeWriteMany(wsql, toWrite)
+                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding)
                 total+= num_at_time
-                if total % 100000 == 0: _warn("%.1fm feature instances written" % (total/float(1000000)))
+                if total % 100000 == 0: mm.warn("%.1fm feature instances written" % (total/float(1000000)))
                 toWrite = []
 
         #catch rest:
         if len(toWrite) > 0:
             #write those past the filter to the table
-            self._executeWriteMany(wsql, toWrite)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding)
 
-        _warn("Done inserting.\nEnabling keys.")
-        self._enableTableKeys(newTable)
-        _warn("done.")
+        mm.warn("Done inserting.\nEnabling keys.")
+        mm.enableTableKeys(self.corpdb, self.dbCursor, newTable)
+        mm.warn("done.")
 
         self.featureTable = newTable
         return newTable
@@ -296,7 +308,7 @@ class FeatureRefiner(FeatureGetter):
         assert totalGroups > 0, 'NO GROUPS TO FILTER BASED ON (LIKELY group_freq_thresh IS TOO HIGH)'
         assert p <= 1, 'p_occ > 1 not implemented yet'
         threshold = int(round(p*totalGroups))
-        _warn (" %s [threshold: %d]" %(featureTable, threshold))
+        mm.warn (" %s [threshold: %d]" %(featureTable, threshold))
 
         #acquire counts per feature (each row will come from a different correl_field)
 
@@ -336,21 +348,21 @@ class FeatureRefiner(FeatureGetter):
         num_at_time = 2000
         numWritten = 0
         for (group_id, feat, group_norm) in groupNorms:
-            if LOWERCASE_ONLY: feat = feat.lower()
+            if fwc.LOWERCASE_ONLY: feat = feat.lower()
             if (feat):
                 fn = ( ((group_norm - fMeans[feat][0]) / float(fMeans[feat][1]), group_id, feat) )
                 featNorms.append(fn)
                 if len(featNorms) >= num_at_time:
-                    self._executeWriteMany(wsql, featNorms)
+                    mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, featNorms, writeCursor=self.dbConn.cursor(), charset=self.encoding)
                     featNorms = []
                     numWritten += num_at_time
-                    if numWritten % 100000 == 0: _warn("%.1fm feature instances updated out of %dm" % 
+                    if numWritten % 100000 == 0: mm.warn("%.1fm feature instances updated out of %dm" % 
                                                         ((numWritten/float(1000000)), len(groupNorms)/1000000))
                                     
         
         #write values back in 
         if featNorms: 
-            self._executeWriteMany(wsql, featNorms)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, featNorms, writeCursor=self.dbConn.cursor(), charset=self.encoding)
 
         return True
 
@@ -363,7 +375,7 @@ class FeatureRefiner(FeatureGetter):
         #turn into dict of lists:
         fNumDict = dict() 
         for (gid, feat, gn) in groupNorms:
-            if LOWERCASE_ONLY: feat = feat.lower()
+            if fwc.LOWERCASE_ONLY: feat = feat.lower()
             if feat: 
                 if not feat in fNumDict:
                     fNumDict[feat] = [gn]
@@ -393,10 +405,10 @@ class FeatureRefiner(FeatureGetter):
 
         #CREATE TABLE
         meanTable = 'mean$'+self.featureTable
-        self._execute("DROP TABLE IF EXISTS %s" % meanTable)
-        featType = self._executeGetList("SHOW COLUMNS FROM %s like 'feat'" % self.featureTable)[0][1]
+        mm.execute(self.corpdb, self.dbCursor, "DROP TABLE IF EXISTS %s" % meanTable)
+        featType = mm.executeGetList(self.corpdb, self.dbCursor, "SHOW COLUMNS FROM %s like 'feat'" % self.featureTable)[0][1]
         sql = """CREATE TABLE %s (feat %s, mean DOUBLE, std DOUBLE, zero_feat_norm DOUBLE, PRIMARY KEY (`feat`))""" % (meanTable, featType)
-        self._execute(sql)
+        mm.execute(self.corpdb, self.dbCursor, sql)
 
         fMeans = self.findMeans(field, True, groupNorms)
         fMeansList = [(k, v[0], v[1], v[2]) for k, v in fMeans.iteritems()]
@@ -404,7 +416,7 @@ class FeatureRefiner(FeatureGetter):
 
         #WRITE TO TABLE:
         sql = """INSERT INTO """+meanTable+""" (feat, mean, std, zero_feat_norm) VALUES (%s, %s, %s, %s)"""
-        self._executeWriteMany(sql, fMeansList)
+        mm.executeWriteMany(self.corpdb, self.dbCursor, sql, fMeansList, writeCursor=self.dbConn.cursor(), charset=self.encoding)
 
         return fMeans
 
@@ -413,7 +425,7 @@ class FeatureRefiner(FeatureGetter):
         #n = the number of words in the ngrams
         #uses pmi to remove uncommon collocations:
         featureTable = self.featureTable
-        _warn(featureTable)
+        mm.warn(featureTable)
         wordGetter = self.getWordGetter()
         tokenizer = Tokenizer()
 
@@ -425,7 +437,7 @@ class FeatureRefiner(FeatureGetter):
         for (colloc, freq) in jointFreqs:
             # words = tokenizer.tokenize(colloc)
             # If words got truncated in the creation of 1grams, we need to account for that
-            words = [word[:VARCHAR_WORD_LENGTH] for word in tokenizer.tokenize(colloc)]
+            words = [word[:fwc.VARCHAR_WORD_LENGTH] for word in tokenizer.tokenize(colloc)]
             if (len(words) > 1):
                 indFreqs = [wordFreqs[w] for w in words if w in wordFreqs]
                 pmi = FeatureRefiner.pmi(freq, indFreqs, allFreqs, words = words)
@@ -444,7 +456,7 @@ class FeatureRefiner(FeatureGetter):
             **pmi_threshold_val is pmi/(num_tokens-1), thats what --feat_colloc_filter is based on
         '''
         featureTable = self.featureTable
-        _warn(featureTable)
+        mm.warn(featureTable)
         wordGetter = self.getWordGetter()
         tokenizer = Tokenizer()
 
@@ -460,7 +472,7 @@ class FeatureRefiner(FeatureGetter):
             count +=1
             if count % 50000 == 0:
                 print "calculating pmi for {}th feature".format(count)
-            words = [word[:VARCHAR_WORD_LENGTH] for word in tokenizer.tokenize(colloc)]
+            words = [word[:fwc.VARCHAR_WORD_LENGTH] for word in tokenizer.tokenize(colloc)]
             if (len(words) > 1):
                 indFreqs = [wordFreqs[w] for w in words if w in wordFreqs]
                 pmi = FeatureRefiner.pmi(freq, indFreqs, allFreqs, words = words)
@@ -522,7 +534,7 @@ class FeatureRefiner(FeatureGetter):
             self.corpdb, self.corptable, self.correl_field)
 
         correlField = self.getCorrelFieldType(self.correl_field) if not correlField else correlField
-        correl_fieldType = self._executeGetList(sql)[0][0] if not correlField else correlField
+        correl_fieldType = mm.executeGetList(self.corpdb, self.dbCursor, sql)[0][0] if not correlField else correlField
 
         #create sql
         drop = """DROP TABLE IF EXISTS %s""" % tableName
@@ -532,8 +544,8 @@ class FeatureRefiner(FeatureGetter):
         sql = """CREATE TABLE %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, group_id %s, feat %s, value %s, group_norm DOUBLE, KEY `correl_field` (`group_id`), KEY `feature` (`feat`)) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin""" %(tableName, correl_fieldType, featureType, valueType)
 
         #run sql
-        self._execute(drop)
-        self._execute(sql)
+        mm.execute(self.corpdb, self.dbCursor, drop)
+        mm.execute(self.corpdb, self.dbCursor, sql)
 
         return  tableName;
 
@@ -550,7 +562,7 @@ class FeatureRefiner(FeatureGetter):
             assert len(outcomeGetter.outcome_controls) < 2, 'Currently, only allowed to specify one control.'
             controlField = outcomeGetter.outcome_controls[0]
             if len(controlValuesToAvg) < 1:
-                _warn("getting distinct values for controls")
+                mm.warn("getting distinct values for controls")
                 controlValuesToAvg = outcomeGetter.getDistinctOutcomeValues(outcome = controlField, includeNull = False, where=outcomeRestriction)
 
         #create new table name:
@@ -570,12 +582,12 @@ class FeatureRefiner(FeatureGetter):
         for newTable in newTables:
             drop = """DROP TABLE IF EXISTS %s""" % (newTable)
             sql = "create table %s like %s" % (newTable, featureTable)
-            self._execute(drop)
-            self._execute(sql)
+            mm.execute(self.corpdb, self.dbCursor, drop)
+            mm.execute(self.corpdb, self.dbCursor, sql)
             sql = 'ALTER TABLE %s ADD COLUMN `N` int(16) not null default -1'%(newTable)
-            self._execute(sql)
+            mm.execute(self.corpdb, self.dbCursor, sql)
             sql = 'ALTER TABLE %s CHANGE feat_norm std_dev FLOAT' % newTable;
-            self._execute(sql)
+            mm.execute(self.corpdb, self.dbCursor, sql)
 
             
         outres = outcomeRestriction
@@ -590,7 +602,7 @@ class FeatureRefiner(FeatureGetter):
                         sql = "INSERT INTO %s (group_id, feat, value, group_norm, std_dev, N) SELECT age, feat, total_freq, mean_rel_freq, SQRT((N_no_zero*(POW((mean_no_zero - mean_rel_freq), 2) + std_no_zero*std_no_zero) + (N - N_no_zero)*(mean_rel_freq * mean_rel_freq)) / N) as std, N  from (SELECT b.%s, feat, SUM(value) as total_freq, SUM(group_norm)/%d as mean_rel_freq, AVG(group_norm) as mean_no_zero, std(group_norm) as std_no_zero, %d as N, count(*) as N_no_zero FROM %s AS a, %s AS b WHERE %s b.%s = '%s' AND b.%s = '%s' AND b.user_id = a.group_id group by b.%s, a.feat) as stats" % (newTable, outcomeField, count, count, featureTable, outcomeTable, outres, controlField, str(cvalue), outcomeField, str(outcomeValue), outcomeField)
 #SELECT age, feat, total_freq, mean_rel_freq, SQRT((N_no_zero*(POW((mean_no_zero - mean_rel_freq), 2) + std_no_zero*std_no_zero) + (N - N_no_zero)*(mean_rel_freq * mean_rel_freq)) / N) as std, N  from (
 #SELECT b.age, feat, SUM(value) as total_freq, SUM(group_norm)/390 as mean_rel_freq, AVG(group_norm) as mean_no_zero, std(group_norm) as std_no_zero, 390 as N, count(*) as N_no_zero FROM feat$1gram$messages_en$user_id$16to16$0_01 AS a, masterstats_andy AS b WHERE UWT >= 1000 AND b.age = '45' AND b.user_id = a.group_id group by b.age, a.feat) as a             
-                        self._execute(sql, False)
+                        mm.execute(self.corpdb, self.dbCursor, sql, False)
                     else:
                         print "skipping %s %s and %s %s, count: %d because control value not in list" % (outcomeField, str(outcomeValue), controlField, str(cvalue), count)
         else: #no controls to avg
@@ -621,7 +633,7 @@ class FeatureRefiner(FeatureGetter):
                     if len(rows) >= 10000:
                         sql = "INSERT INTO %s (group_id, feat, value, group_norm, std_dev, N) " % newTable
                         sql += "VALUES (%s)" % ', '.join('%s' for r in rows[0]) 
-                        self._executeWriteMany(sql, rows)
+                        mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
                         j += len(rows)
                         print "    wrote %d rows [finished %d outcome_values]" % (j, i)
                         rows = []
@@ -629,7 +641,7 @@ class FeatureRefiner(FeatureGetter):
                 if rows:
                     sql = "INSERT INTO %s (group_id, feat, value, group_norm, std_dev, N) " % newTable
                     sql += "VALUES (%s)" % ', '.join('%s' for r in rows[0])
-                    self._executeWriteMany(sql, rows)
+                    mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
                     j += len(rows)  
                     print "    wrote %d rows [finished %d outcome_values]" % (j, i)
                 print "Inserted into %s" % newTable
@@ -642,7 +654,7 @@ class FeatureRefiner(FeatureGetter):
                 print "on %s %s, count: %d (no control)" % (outcomeField, str(outcomeValue), count)
                 sql = "INSERT INTO %s (group_id, feat, value, group_norm, std_dev, N) SELECT %s, feat, total_freq, mean_rel_freq, SQRT((N_no_zero*(POW((mean_no_zero - mean_rel_freq), 2) + std_no_zero*std_no_zero) + (N - N_no_zero)*(mean_rel_freq * mean_rel_freq)) / N) as std, N  from (SELECT group_id, feat, SUM(value) as total_freq, SUM(group_norm)/%d as mean_rel_freq, AVG(group_norm) as mean_no_zero, std(group_norm) as std_no_zero, count(1) as N_no_zero, %d as N FROM %s) AS a, %s AS b WHERE %s b.%s = '%s' AND b.%s = a.group_id group by b.%s, a.feat" % (newTable, outcomeField,  count, count, featureTable, outcomeTable, outres, outcomeField, str(outcomeValue), self.correl_field ,outcomeField)
                 # print "Maarten", self.correl_field, sql
-                self._execute(sql, False)"""
+                mm.execute(self.corpdb, self.dbCursor, sql, False)"""
         #2: Combine feature table to take average of controls:
         #controlGroupAvgName = outcomeField + '_' + controlField + 'avg_' + '_'.join(map(lambda v: str(v), controlValuesToAvg))
         if controlField and len(newTables) > 1:  
@@ -650,8 +662,8 @@ class FeatureRefiner(FeatureGetter):
             avgTable = 'feat_grpd'+ nameSuffix + '$' + '$'.join(nameParts[1:3]) + '$' + controlGroupAvgName + '$' + '$'.join(nameParts[4:])
             drop = """DROP TABLE IF EXISTS %s""" % (avgTable)
             sql = "create table %s like %s" % (avgTable, newTables[0])
-            self._execute(drop)
-            self._execute(sql)
+            mm.execute(self.corpdb, self.dbCursor, drop)
+            mm.execute(self.corpdb, self.dbCursor, sql)
 
             #create insert fields:
             shortNames = map(lambda i: chr(ord('a')+i), range(len(newTables)))
@@ -680,7 +692,7 @@ class FeatureRefiner(FeatureGetter):
             sql = "INSERT INTO %s (group_id, feat, value, group_norm, std_dev, N) SELECT a.group_id, a.feat, %s, %s, %s, %s FROM %s where %s AND %s" % \
                 (avgTable, values, groupNorms, stdDev, Ns, tableNames, groupIdJoins, featJoins)
             print "Populating AVG table with command: %s" % sql
-            self._execute(sql, False)
+            mm.execute(self.corpdb, self.dbCursor, sql, False)
 
 
     def createAggregateFeatTableByGroup(self, valueFunc = lambda d: d):
@@ -695,30 +707,30 @@ class FeatureRefiner(FeatureGetter):
 
         newTable = 'feat$agg_'+name[:12]+'$'+oldCorpTable+'$'+self.correl_field # +'$'+'$'.join(theRest)
         drop = """DROP TABLE IF EXISTS %s""" % (newTable)
-        self._execute(drop)
+        mm.execute(self.corpdb, self.dbCursor, drop)
 
         sql = """CREATE TABLE %s like %s""" % (newTable, featureTable)
-        self._execute(sql)
+        mm.execute(self.corpdb, self.dbCursor, sql)
         sql = """ALTER TABLE %s MODIFY group_id VARCHAR(255)""" % (newTable)
-        self._execute(sql)
+        mm.execute(self.corpdb, self.dbCursor, sql)
         
 
-        self._disableTableKeys(newTable)
+        mm.disableTableKeys(self.corpdb, self.dbCursor, newTable)
         
-        _warn("Inserting group_id, feat, and values")
+        mm.warn("Inserting group_id, feat, and values")
         sql = "INSERT INTO %s SELECT m.%s, f.feat, sum(f.value), 0 FROM %s AS f, %s AS m where m.%s = f.group_id GROUP BY m.%s, f.feat" % (newTable,self.correl_field, featureTable, self.corptable, oldGroupField, self.correl_field)
-        self._execute(sql)
+        mm.execute(self.corpdb, self.dbCursor, sql)
 
-        _warn("Recalculating group_norms")
+        mm.warn("Recalculating group_norms")
         sql = "UPDATE %s a INNER JOIN (SELECT group_id,sum(value) sum FROM %s GROUP BY group_id) b ON a.group_id=b.group_id SET a.group_norm=a.value/b.sum" % (newTable,newTable)
         
-        self._execute(sql)
+        mm.execute(self.corpdb, self.dbCursor, sql)
   
         # patrick changed this to be all SQL 7/21/15. Values and group norms were being calculated wrong before
 
-        _warn("Done inserting.\nEnabling keys.")
-        self._enableTableKeys(newTable)
-        _warn("done.")
+        mm.warn("Done inserting.\nEnabling keys.")
+        mm.enableTableKeys(self.corpdb, self.dbCursor, newTable)
+        mm.warn("done.")
 
         self.featureTable = newTable
         return newTable
@@ -742,7 +754,7 @@ class FeatureRefiner(FeatureGetter):
         if not word_tablename:
             word_table = feature_tablename
 
-        db_engine = _dbConnectSQLalchemy(self.corpdb, self.mysql_host)
+        db_engine = get_db_engine(db_schema=self.corpdb, db_host=self.mysql_host)
 
         #Which are my valid groups?
         res = db_engine.execute("SELECT group_id FROM {} GROUP BY group_id HAVING SUM(value) > {}".format(word_table, group_freq_thresh))

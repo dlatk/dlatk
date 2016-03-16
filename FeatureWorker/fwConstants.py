@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-__authors__ = "Andy Schwartz, Lukasz Dziurzynski, Megha Agrawal, Maarten Sap"
+__authors__ = "Andy Schwartz, Lukasz Dziurzynski, Megha Agrawal, Maarten Sap, Salvatore Giorgi"
 __copyright__ = "Copyright 2013"
 __credits__ = []
 __license__ = "Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License: http://creativecommons.org/licenses/by-nc-sa/3.0/"
@@ -8,67 +8,24 @@ __version__ = "0.5"
 __maintainer__ = "Andy Schwartz"
 __email__ = "hansens@sas.upenn.edu"
 
-
-import sys, os, gzip, getpass
-import pdb
-import time
-import argparse
-import MySQLdb
+import sys, os, getpass
 import re
-import json
-import multiprocessing
-import pickle
-import unicodecsv as csv
-import traceback
-from collections import deque, OrderedDict, Counter
-from pprint import pprint
 from random import randint
-from itertools import combinations
-from xml.dom.minidom import parseString as xmlParseString
-from datetime import MINYEAR, timedelta
-import datetime
-from dateutil.parser import parse as dtParse
-import sqlalchemy
-import pandas as pd
-from ConfigParser import SafeConfigParser 
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 #math / stats:
-from math import floor, log, ceil, log10
-from numpy import sqrt, log2, array, mean, std, var, isnan, zeros, fabs, concatenate, round, max as npmax, abs as npabs, append as npappend, multiply
-from numpy import ones, tile, log as nplog, sort as npsort, isinf
+from math import floor, log
+from numpy import sqrt, log2, array, mean, std, isnan, fabs, round
 from numpy.random import permutation
 import numpy as np
-from scipy.stats import zscore, rankdata, ttest_rel
-from scipy.stats.stats import pearsonr, spearmanr
-from scipy.stats import t as spt
-import statsmodels.api as sm
+from scipy.stats import zscore
 from sklearn.metrics import roc_auc_score
 from sklearn.linear_model import LogisticRegression
-
-#nltk
-from nltk.tree import Tree, ParentedTree
-from nltk.corpus import wordnet as wn
-import nltk.data
-#from nltk.tokenize import sent_tokenize
 
 #R
 import rpy2.robjects as ro
 from rpy2.robjects.packages import importr
-
-#local / nlp
-from lib.happierfuntokenizing import Tokenizer #Potts tokenizer
-#from rFeaturePlot import FeaturePlotter
-from lib.StanfordParser import StanfordParser
-from regressionPredictor import RegressionPredictor
-from lib.TweetNLP import TweetNLP
-
-#wwbp
-from lib import notify
-from lib import wordcloud
-from mysqlMethods import mysqlMethods as mm
-from mysqlMethods import mysql_iter_funcs as mif
 
 ###########################################################
 ### Constants
@@ -97,6 +54,7 @@ DEF_CORREL_FIELD = 'user_id'
 DEF_MESSAGE_FIELD = 'message'
 DEF_MESSAGEID_FIELD = 'message_id'
 #DEF_MESSAGEID_FIELD = 'id'
+DEF_ENCODING = 'utf8mb4'
 DEF_LEXTABLE = 'wn_O'
 DEF_DATE_FIELD = 'updated_time'
 
@@ -380,56 +338,117 @@ def rgbColorMix(fromColor, toColor, resolution, randomness = False):
 
 #Local maintenance:
 
-def _dbConnectSQLalchemy(db, host="localhost"):
-    eng = None
-    attempts = 0;
-    while (1):
-        try:
-            connInf = sqlalchemy.engine.url.URL(drivername="mysql",
-                                                host = host,
-                                                database = db,
-                                                query={ 'read_default_file' : '~/.my.cnf', 'charset': 'utf8mb4'})
-            eng = sqlalchemy.create_engine(name_or_url = connInf, pool_recycle=3600)
-            break
-        except Exception as e:
-            attempts += 1
-            _warn(" *MYSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db, e, attempts))
-            time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
-            if (attempts > MAX_ATTEMPTS):
-                sys.exit(1)
-    return eng
-
-def _dbConnect(db, host="localhost"): 
-    dbConn = None
-    attempts = 0;
-    while (1):
-        try:
-            dbConn = MySQLdb.connect(
-                user = USER,
-                host = host,
-                db = db,
-                charset = 'utf8mb4',
-                use_unicode = True,
-                read_default_file="~/.my.cnf"
-            )
-            break
-        except MySQLdb.Error, e:
-            attempts += 1
-            _warn(" *MYSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db, e, attempts))
-            time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
-            if (attempts > MAX_ATTEMPTS):
-                sys.exit(1)
-    dbCursor = dbConn.cursor()
-    dictCursor = dbConn.cursor(MySQLdb.cursors.DictCursor)
-    return dbConn, dbCursor, dictCursor
-
-def _warn(string):
-    print >>sys.stderr, string
-
-def _getReportingInt(reporting_percent, iterable_length):
+def getReportingInt(reporting_percent, iterable_length):
     return max(1, floor(reporting_percent * iterable_length))
 
-def _report(object_description, ii, reporting_int, iterable_length):
+def report(object_description, ii, reporting_int, iterable_length):
     #print ii, reporting_int
     if ii % reporting_int == 0:
-        _warn("%d out of %d %s processed; %2.2f complete"%(ii, iterable_length, object_description, float(ii)/iterable_length))
+        warn("%d out of %d %s processed; %2.2f complete"%(ii, iterable_length, object_description, float(ii)/iterable_length))
+
+#def _dbConnectSQLalchemy(db, host="localhost"):
+#    eng = None
+#    attempts = 0;
+#    while (1):
+#        try:
+#            connInf = sqlalchemy.engine.url.URL(drivername="mysql",
+#                                                host = host,
+#                                                database = db,
+#                                                query={ 'read_default_file' : '~/.my.cnf', 'charset': 'utf8mb4'})
+#            eng = sqlalchemy.create_engine(name_or_url = connInf, pool_recycle=3600)
+#            break
+#        except Exception as e:
+#            attempts += 1
+#            _warn(" *MYSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db, e, attempts))
+#            time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
+#            if (attempts > MAX_ATTEMPTS):
+#                sys.exit(1)
+#    return eng
+#
+#def _dbConnect(db, host="localhost"): 
+#    dbConn = None
+#    attempts = 0;
+#    while (1):
+#        try:
+#            dbConn = MySQLdb.connect(
+#                user = USER,
+#                host = host,
+#                db = db,
+#                charset = 'utf8mb4',
+#                use_unicode = True,
+#                read_default_file="~/.my.cnf"
+#            )
+#            break
+#        except MySQLdb.Error, e:
+#            attempts += 1
+#            _warn(" *MYSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db, e, attempts))
+#            time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
+#            if (attempts > MAX_ATTEMPTS):
+#                sys.exit(1)
+#    dbCursor = dbConn.cursor()
+#    dictCursor = dbConn.cursor(MySQLdb.cursors.DictCursor)
+#    return dbConn, dbCursor, dictCursor
+#
+#def _warn(string):
+#    print >>sys.stderr, string
+
+#import sys, os, gzip, getpass
+#import pdb
+#import time
+#import argparse
+#import MySQLdb
+#import re
+#import json
+#import multiprocessing
+#import pickle
+#import unicodecsv as csv
+#import traceback
+#from collections import deque, OrderedDict, Counter
+#from pprint import pprint
+#from random import randint
+#from itertools import combinations
+#from xml.dom.minidom import parseString as xmlParseString
+#from datetime import MINYEAR, timedelta
+#import datetime
+#from dateutil.parser import parse as dtParse
+#import sqlalchemy
+#import pandas as pd
+#from ConfigParser import SafeConfigParser 
+#
+#sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+#
+##math / stats:
+#from math import floor, log, ceil, log10
+#from numpy import sqrt, log2, array, mean, std, var, isnan, zeros, fabs, concatenate, round, max as npmax, abs as npabs, append as npappend, multiply
+#from numpy import ones, tile, log as nplog, sort as npsort, isinf
+#from numpy.random import permutation
+#import numpy as np
+#from scipy.stats import zscore, rankdata, ttest_rel
+#from scipy.stats.stats import pearsonr, spearmanr
+#from scipy.stats import t as spt
+#import statsmodels.api as sm
+#from sklearn.metrics import roc_auc_score
+#from sklearn.linear_model import LogisticRegression
+#
+##nltk
+#from nltk.tree import Tree, ParentedTree
+#from nltk.corpus import wordnet as wn
+#import nltk.data
+##from nltk.tokenize import sent_tokenize
+#
+##R
+#import rpy2.robjects as ro
+#from rpy2.robjects.packages import importr
+#
+##local / nlp
+#from lib.happierfuntokenizing import Tokenizer #Potts tokenizer
+##from rFeaturePlot import FeaturePlotter
+#from lib.StanfordParser import StanfordParser
+#from regressionPredictor import RegressionPredictor
+#from lib.TweetNLP import TweetNLP
+#
+##wwbp
+#from lib import notify
+#from lib import wordcloud
+#from mysqlMethods import mysqlMethods as mm
+#from mysqlMethods import mysql_iter_funcs as mif

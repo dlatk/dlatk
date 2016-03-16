@@ -1,6 +1,7 @@
-from ConfigParser import SafeConfigParser
 import pandas as pd
+from ConfigParser import SafeConfigParser
 
+#infrastructure
 import fwConstants as fwc
 from featureWorker import FeatureWorker
 from featureGetter import FeatureGetter
@@ -23,6 +24,7 @@ class FeatureStar(object):
 		mysql_host = parser.get('constants','mysql_host') if parser.has_option('constants','mysql_host') else "localhost"
 		message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else fwc.DEF_MESSAGE_FIELD
 		messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else fwc.DEF_MESSAGEID_FIELD
+		encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else fwc.DEF_ENCODING
 		lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else fwc.DEF_LEXICON_DB
 		featureTable = parser.get('constants','feattable') if parser.has_option('constants','feattable') else fwc.DEF_FEAT_TABLE
 		featNames = parser.get('constants','featnames') if parser.has_option('constants','featnames') else fwc.DEF_FEAT_NAMES
@@ -39,24 +41,24 @@ class FeatureStar(object):
 			init = initList
 		else:
 			init = [o.strip() for o in parser.get('constants','init').split(",")] if parser.has_option('constants','init') else ['fw', 'fg', 'fe', 'fr', 'og', 'oa']
-		return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, date_field=date_field, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable, init=init)
+		return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, date_field=date_field, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable, init=init)
 	
-	def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host="localhost", message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, lexicondb=fwc.DEF_LEXICON_DB, featureTable=fwc.DEF_FEAT_TABLE, featNames=fwc.DEF_FEAT_NAMES, date_field=fwc.DEF_DATE_FIELD, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls = fwc.DEF_OUTCOME_CONTROLS, outcome_interaction = fwc.DEF_OUTCOME_CONTROLS, featureMappingTable='', featureMappingLex='',  output_name='', wordTable=None, init=None):
+	def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host="localhost", message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, lexicondb=fwc.DEF_LEXICON_DB, featureTable=fwc.DEF_FEAT_TABLE, featNames=fwc.DEF_FEAT_NAMES, date_field=fwc.DEF_DATE_FIELD, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls = fwc.DEF_OUTCOME_CONTROLS, outcome_interaction = fwc.DEF_OUTCOME_CONTROLS, featureMappingTable='', featureMappingLex='',  output_name='', wordTable=None, init=None):
 		
 		if init:
-			self.fw = FeatureWorker(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb, date_field, wordTable) if 'fw' in init else None
-			self.fg = FeatureGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb, featureTable, featNames, wordTable) if 'fg' in init else None
-			self.fe = FeatureExtractor(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb, wordTable=wordTable) if 'fe' in init else None
-			self.fr = FeatureRefiner(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb, featureTable, featNames, wordTable) if 'fr' in init else None
-			self.og = OutcomeGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, featureMappingTable, featureMappingLex, wordTable) if 'og' in init else None
-			self.oa = OutcomeAnalyzer(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, featureMappingTable, featureMappingLex, output_name, wordTable) if 'oa' in init else None
+			self.fw = FeatureWorker(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, date_field, wordTable) if 'fw' in init else None
+			self.fg = FeatureGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, featureTable, featNames, wordTable) if 'fg' in init else None
+			self.fe = FeatureExtractor(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, wordTable=wordTable) if 'fe' in init else None
+			self.fr = FeatureRefiner(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, featureTable, featNames, wordTable) if 'fr' in init else None
+			self.og = OutcomeGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, featureMappingTable, featureMappingLex, wordTable) if 'og' in init else None
+			self.oa = OutcomeAnalyzer(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, featureMappingTable, featureMappingLex, output_name, wordTable) if 'oa' in init else None
 		else: 
-			self.fw = FeatureWorker(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb, date_field, wordTable)
-			self.fg = FeatureGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb, featureTable, featNames, wordTable)
-			self.fe = FeatureExtractor(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb, wordTable=wordTable)
-			self.fr = FeatureRefiner(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb, featureTable, featNames, wordTable)
-			self.og = OutcomeGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, featureMappingTable, featureMappingLex, wordTable)
-			self.oa = OutcomeAnalyzer(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, featureMappingTable, featureMappingLex, output_name, wordTable)
+			self.fw = FeatureWorker(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, date_field, wordTable)
+			self.fg = FeatureGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, featureTable, featNames, wordTable)
+			self.fe = FeatureExtractor(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, wordTable=wordTable)
+			self.fr = FeatureRefiner(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, featureTable, featNames, wordTable)
+			self.og = OutcomeGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, featureMappingTable, featureMappingLex, wordTable)
+			self.oa = OutcomeAnalyzer(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, featureMappingTable, featureMappingLex, output_name, wordTable)
 		
 		self.allFW = {
 				"FeatureWorker": self.fw,

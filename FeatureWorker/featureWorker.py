@@ -9,8 +9,13 @@
 ## TODO:
 ## -handle that mysql is not using mixed case (should we lowercase all features?)
 
-from fwConstants import *
-from fwConstants import _dbConnectSQLalchemy, _dbConnect, _warn, _getReportingInt, _report
+import sys
+import time
+import MySQLdb
+
+#infrastructure
+import fwConstants as fwc
+from mysqlMethods import mysqlMethods as mm 
 
 ##############################################################
 ### Class Definitions
@@ -18,14 +23,15 @@ from fwConstants import _dbConnectSQLalchemy, _dbConnect, _warn, _getReportingIn
 #
 class FeatureWorker(object):
     """Generic class for functions working with features"""
-    def __init__(self, corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb = DEF_LEXICON_DB, date_field=DEF_DATE_FIELD, wordTable = None):
+    def __init__(self, corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb = fwc.DEF_LEXICON_DB, date_field=fwc.DEF_DATE_FIELD, wordTable = None):
         self.corpdb = corpdb
         self.corptable = corptable
         self.correl_field = correl_field
         self.mysql_host = mysql_host
         self.message_field = message_field
         self.messageid_field = messageid_field
-        (self.dbConn, self.dbCursor, self.dictCursor) = _dbConnect(corpdb, host=mysql_host)
+        self.encoding = encoding
+        (self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(corpdb, host=mysql_host, charset=encoding)
         self.lexicondb = lexicondb
         self.wordTable = wordTable if wordTable else "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
 
@@ -35,7 +41,7 @@ class FeatureWorker(object):
         if not messageTable: messageTable = self.corptable
         msql = """SELECT %s, %s FROM %s"""% (self.messageid_field, self.message_field, messageTable)
         if where: msql += " WHERE " + where
-        return self._executeGetSSCursor(msql)
+        return mm.executeGetSSCursor(self.corpdb, msql)
 
     def getMessagesForCorrelField(self, cf_id, messageTable = None, warnMsg = True):
         """..."""
@@ -43,7 +49,7 @@ class FeatureWorker(object):
         msql = """SELECT %s, %s FROM %s WHERE %s = '%s'""" % (
             self.messageid_field, self.message_field, messageTable, self.correl_field, cf_id)
         #return self._executeGetSSCursor(msql, warnMsg)
-        return self._executeGetList(msql, warnMsg)
+        return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg)
 
     def getMessagesWithFieldForCorrelField(self, cf_id, extraField, messageTable = None, warnMsg = True):
         """..."""
@@ -51,7 +57,7 @@ class FeatureWorker(object):
         msql = """SELECT %s, %s, %s FROM %s WHERE %s = '%s'""" % (
             self.messageid_field, self.message_field, extraField, messageTable, self.correl_field, cf_id)
         #return self._executeGetSSCursor(msql, showQuery)
-        return self._executeGetList(msql, warnMsg)
+        return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg)
 
     def getNumWordsByCorrelField(self, where = ''):
         """..."""
@@ -61,7 +67,7 @@ class FeatureWorker(object):
         if (where): sql += ' WHERE ' + where  
         sql += """ GROUP BY %s) as a """ % self.messageid_field 
         sql += """ GROUP BY %s """ % self.correl_field
-        return self._executeGetList(sql)
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql)
 
     def getWordTable(self, corptable = None):
         if self.wordTable: return self.wordTable
@@ -77,169 +83,24 @@ class FeatureWorker(object):
 
     def getWordGetter(self, lexicon_count_table=None):
         from featureGetter import FeatureGetter
-        if lexicon_count_table: _warn(lexicon_count_table)
+        if lexicon_count_table: mm.warn(lexicon_count_table)
         wordTable = self.getWordTable() if not lexicon_count_table else lexicon_count_table
 
-        assert self._tableExists(wordTable), "Need to create word table to use current functionality: %s" % wordTable
+        assert mm.tableExists(self.corpdb, self.dbCursor, wordTable), "Need to create word table to use current functionality: %s" % wordTable
         return FeatureGetter(self.corpdb, self.corptable, self.correl_field, self.mysql_host,
-                             self.message_field, self.messageid_field, self.lexicondb,
-                             featureTable=wordTable, wordTable = wordTable)
+                             self.message_field, self.messageid_field, self.encoding,
+                             self.lexicondb, featureTable=wordTable, wordTable = wordTable)
     def getWordGetterPOcc(self, pocc):
+        from featureGetter import FeatureGetter
         wordTable = self.getWordTablePOcc(pocc)
-        assert self._tableExists(wordTable), "Need to create word table to use current functionality"
+        assert mm.tableExists(self.corpdb, self.dbCursor, wordTable), "Need to create word table to use current functionality"
         return FeatureGetter(self.corpdb, self.corptable, self.correl_field, self.mysql_host,
-                             self.message_field, self.messageid_field, self.lexicondb,
-                             featureTable=wordTable, wordTable = wordTable)
+                             self.message_field, self.messageid_field, self.encoding,
+                             self.lexicondb, featureTable=wordTable, wordTable = wordTable)
 
     def getGroupWordCounts(self, where = '', lexicon_count_table=None):
         wordGetter = self.getWordGetter(lexicon_count_table)
         return dict(wordGetter.getSumValuesByGroup(where))
-
-
-    ##INTERNAL METHODS##
-
-    def _execute(self, sql, warnMsg=True):
-        """Executes a given query"""
-        if warnMsg:
-            _warn("SQL QUERY: %s"% sql[:MAX_SQL_PRINT_CHARS])
-        attempts = 0;
-        while (1):
-            try:
-                self.dbCursor.execute(sql)
-                break
-            except MySQLdb.Error, e:
-                attempts += 1
-                _warn(" *MYSQL DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
-                time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
-                (self.dbConn, self.dbCursor, self.dictCursor) = _dbConnect(self.corpdb, self.mysql_host)
-                if (attempts > MAX_ATTEMPTS):
-                    sys.exit(1)
-        return True
-
-    def _executeGetList(self, sql, warnMsg=True):
-        """Executes a given query, returns results as a list of lists"""
-        if warnMsg:
-            _warn("SQL QUERY: %s"% sql[:MAX_SQL_PRINT_CHARS])
-        data = []
-        attempts = 0;
-        while (1):
-            try:
-                self.dbCursor.execute(sql)
-                data = self.dbCursor.fetchall()
-                break
-            except MySQLdb.Error, e:
-                attempts += 1
-                _warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
-                time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
-                (self.dbConn, self.dbCursor, self.dictCursor) = _dbConnect(self.corpdb, self.mysql_host)
-                if (attempts > MAX_ATTEMPTS):
-                    sys.exit(1)
-        return data
-
-    def _executeGetDict(self, sql):
-        """Executes a given query, returns results as a list of dicts"""
-        _warn("SQL (DictCursor) QUERY: %s"% sql[:MAX_SQL_PRINT_CHARS])
-        data = []
-        attempts = 0;
-        while (1):
-            try:
-                self.dictCursor.execute(sql)
-                data = self.dictCursor.fetchall()
-                break
-            except MySQLdb.Error, e:
-                attempts += 1
-                _warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
-                time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
-                (self.dbConn, self.dbCursor, self.dictCursor) = _dbConnect(self.corpdb, self.mysql_host)
-                if (attempts > MAX_ATTEMPTS):
-                    sys.exit(1)
-        return data
-
-    def _executeGetSSCursor(self, sql, warnMsg = True):
-        """Executes a given query (ss cursor is good to iterate over for large returns)"""
-        if warnMsg: 
-            _warn("SQL (SSCursor) QUERY: %s"% sql[:MAX_SQL_PRINT_CHARS])
-        ssCursor = _dbConnect(self.corpdb, self.mysql_host)[0].cursor(MySQLdb.cursors.SSCursor)
-        data = []
-        attempts = 0;
-        while (1):
-            try:
-                ssCursor.execute(sql)
-                break
-            except MySQLdb.Error, e:
-                attempts += 1
-                _warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
-                time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
-                ssCursor = _dbConnect(self.corpdb, self.mysql_host)[0].cursor(MySQLdb.cursors.SSCursor)
-                if (attempts > MAX_ATTEMPTS):
-                    sys.exit(1)
-        return ssCursor
-
-    def _executeWriteMany(self, sql, rows):
-        """Executes a write query"""
-        #_warn("SQL (write many) QUERY: %s"% sql)
-        if not hasattr(self, 'writeCursor'):
-            self.writeCursor = self.dbConn.cursor()
-        attempts = 0;
-        while (1):
-            try:
-                self.writeCursor.executemany(sql, rows)
-                break
-            except MySQLdb.Error, e:
-                attempts += 1
-                _warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
-                time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
-                (self.dbConn, self.dbCursor, self.dictCursor) = _dbConnect(self.corpdb, self.mysql_host)
-                self.writeCursor = self.dbConn.cursor()
-                if (attempts > MAX_ATTEMPTS):
-                    sys.exit(1)
-        return self.writeCursor
-
-    ## TABLE MAINTENANCE ##
-
-    def _optimizeTable(self, table):
-        """Optimizes the table -- good after a lot of deletes"""
-        sql = """OPTIMIZE TABLE %s """%(table)
-        return self._execute(sql) 
-
-    def _disableTableKeys(self, table):
-        """Disable keys: good before doing a lot of inserts"""
-        sql = """ALTER TABLE %s DISABLE KEYS"""%(table)
-        return self._execute(sql) 
-
-    def _enableTableKeys(self, table):
-        """Enables the keys, for use after inserting (and with keys disabled)"""
-        sql = """ALTER TABLE %s ENABLE KEYS"""%(table)
-        return self._execute(sql) 
-
-    ## Table Meta Info ##
-    def _tableExists(self, table):
-        sql = """show tables like '%s'""" % table
-        if self._executeGetList(sql):
-            return True
-        else:
-            return False
-
-    def _getTableDataLength(self, table):
-        """Returns the data length for the given table"""
-        sql = """SELECT DATA_LENGTH FROM information_schema.tables where TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s'""" % (self.corpdb, table)
-        return self._executeGetList(sql)[0]
-
-    def _getTableIndexLength(self, table):
-        """Returns the data length for the given table"""
-        sql = """SELECT INDEX_LENGTH FROM information_schema.tables where TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s'""" % (self.corpdb, table)
-        return self._executeGetList(sql)[0]
-
-    def _getTableColumnNameTypes(self, table):
-        """returns a dict of column names mapped to types"""
-        sql = """SELECT column_name, column_type FROM information_schema.columns where TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s'"""%(self.corpdb, table)
-        return dict(self._executeGetList(sql))
-
-
-    def _getTableColumnNameList(self, table):
-        """returns a dict of column names mapped to types"""
-        sql = """SELECT column_name FROM information_schema.columns where TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s' ORDER BY ORDINAL_POSITION"""%(self.corpdb, table)
-        return [x[0] for x in self._executeGetList(sql)]
 
     @staticmethod
     def makeBlackWhiteList(args_featlist, args_lextable, args_categories, args_lexdb):
@@ -247,7 +108,7 @@ class FeatureWorker(object):
         print "making black or white list: [%s] [%s] [%s]" %([unicode(feat,'utf-8') if isinstance(feat, str) else feat for feat in args_featlist], args_lextable, args_categories)
 
         if args_lextable and args_categories:
-            (conn, cur, dcur) = _dbConnect(args_lexdb)
+            (conn, cur, dcur) = mm.dbConnect(args_lexdb, charset=self.encoding)
             sql = 'SELECT term FROM %s' % (args_lextable)
             if (len(args_categories) > 0) and args_categories[0] != '*':
                 sql = 'SELECT term FROM %s WHERE category in (%s)'%(args_lextable, ','.join(map(lambda x: '\''+str(x)+'\'', args_categories)))
@@ -264,6 +125,153 @@ class FeatureWorker(object):
             raise Exception('blacklist / whitelist flag specified without providing features.')
         newlist = [w.strip() for w in newlist]
         return newlist
+
+    ##INTERNAL METHODS##
+
+    # def _execute(self, sql, warnMsg=True):
+    #     """Executes a given query"""
+    #     if warnMsg:
+    #         mm.warn("SQL QUERY: %s"% sql[:fwc.MAX_SQL_PRINT_CHARS])
+    #     attempts = 0;
+    #     while (1):
+    #         try:
+    #             self.dbCursor.execute(sql)
+    #             break
+    #         except MySQLdb.Error, e:
+    #             attempts += 1
+    #             mm.warn(" *MYSQL DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
+    #             time.sleep(fwc.MYSQL_ERROR_SLEEP*attempts**2)
+    #             (self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(self.corpdb, self.mysql_host)
+    #             if (attempts > fwc.MAX_ATTEMPTS):
+    #                 sys.exit(1)
+    #     return True
+
+    # def _executeGetList(self, sql, warnMsg=True):
+    #     """Executes a given query, returns results as a list of lists"""
+    #     if warnMsg:
+    #         mm.warn("SQL QUERY: %s"% sql[:fwc.MAX_SQL_PRINT_CHARS])
+    #     data = []
+    #     attempts = 0;
+    #     while (1):
+    #         try:
+    #             self.dbCursor.execute(sql)
+    #             data = self.dbCursor.fetchall()
+    #             break
+    #         except MySQLdb.Error, e:
+    #             attempts += 1
+    #             mm.warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
+    #             time.sleep(fwc.MYSQL_ERROR_SLEEP*attempts**2)
+    #             (self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(self.corpdb, self.mysql_host)
+    #             if (attempts > fwc.MAX_ATTEMPTS):
+    #                 sys.exit(1)
+    #     return data
+
+    # def _executeGetDict(self, sql):
+    #     """Executes a given query, returns results as a list of dicts"""
+    #     mm.warn("SQL (DictCursor) QUERY: %s"% sql[:fwc.MAX_SQL_PRINT_CHARS])
+    #     data = []
+    #     attempts = 0;
+    #     while (1):
+    #         try:
+    #             self.dictCursor.execute(sql)
+    #             data = self.dictCursor.fetchall()
+    #             break
+    #         except MySQLdb.Error, e:
+    #             attempts += 1
+    #             mm.warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
+    #             time.sleep(fwc.MYSQL_ERROR_SLEEP*attempts**2)
+    #             (self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(self.corpdb, self.mysql_host)
+    #             if (attempts > fwc.MAX_ATTEMPTS):
+    #                 sys.exit(1)
+    #     return data
+
+    # def _executeGetSSCursor(self, sql, warnMsg = True):
+    #     """Executes a given query (ss cursor is good to iterate over for large returns)"""
+    #     if warnMsg: 
+    #         mm.warn("SQL (SSCursor) QUERY: %s"% sql[:fwc.MAX_SQL_PRINT_CHARS])
+    #     ssCursor = mm.dbConnect(self.corpdb, self.mysql_host)[0].cursor(MySQLdb.cursors.SSCursor)
+    #     data = []
+    #     attempts = 0;
+    #     while (1):
+    #         try:
+    #             ssCursor.execute(sql)
+    #             break
+    #         except MySQLdb.Error, e:
+    #             attempts += 1
+    #             mm.warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
+    #             time.sleep(fwc.MYSQL_ERROR_SLEEP*attempts**2)
+    #             ssCursor = mm.dbConnect(self.corpdb, self.mysql_host)[0].cursor(MySQLdb.cursors.SSCursor)
+    #             if (attempts > fwc.MAX_ATTEMPTS):
+    #                 sys.exit(1)
+    #     return ssCursor
+
+    # def _executeWriteMany(self, sql, rows):
+    #     """Executes a write query"""
+    #     #_warn("SQL (write many) QUERY: %s"% sql)
+    #     if not hasattr(self, 'writeCursor'):
+    #         self.writeCursor = self.dbConn.cursor()
+    #     attempts = 0;
+    #     while (1):
+    #         try:
+    #             self.writeCursor.executemany(sql, rows)
+    #             break
+    #         except MySQLdb.Error, e:
+    #             attempts += 1
+    #             mm.warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
+    #             time.sleep(fwc.MYSQL_ERROR_SLEEP*attempts**2)
+    #             (self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(self.corpdb, self.mysql_host)
+    #             self.writeCursor = self.dbConn.cursor()
+    #             if (attempts > fwc.MAX_ATTEMPTS):
+    #                 sys.exit(1)
+    #     return self.writeCursor
+
+    # ## TABLE MAINTENANCE ##
+
+    # def _optimizeTable(self, table):
+    #     """Optimizes the table -- good after a lot of deletes"""
+    #     sql = """OPTIMIZE TABLE %s """%(table)
+    #     return mm.execute(self.corpdb, self.dbCursor, sql) 
+
+    # def _disableTableKeys(self, table):
+    #     """Disable keys: good before doing a lot of inserts"""
+    #     sql = """ALTER TABLE %s DISABLE KEYS"""%(table)
+    #     return mm.execute(self.corpdb, self.dbCursor, sql) 
+
+    # def _enableTableKeys(self, table):
+    #     """Enables the keys, for use after inserting (and with keys disabled)"""
+    #     sql = """ALTER TABLE %s ENABLE KEYS"""%(table)
+    #     return mm.execute(self.corpdb, self.dbCursor, sql) 
+
+    # ## Table Meta Info ##
+    # def _tableExists(self, table):
+    #     sql = """show tables like '%s'""" % table
+    #     if mm.executeGetList(self.corpdb, self.dbCursor, sql):
+    #         return True
+    #     else:
+    #         return False
+
+    # def _getTableDataLength(self, table):
+    #     """Returns the data length for the given table"""
+    #     sql = """SELECT DATA_LENGTH FROM information_schema.tables where TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s'""" % (self.corpdb, table)
+    #     return mm.executeGetList(self.corpdb, self.dbCursor, sql)[0]
+
+    # def _getTableIndexLength(self, table):
+    #     """Returns the data length for the given table"""
+    #     sql = """SELECT INDEX_LENGTH FROM information_schema.tables where TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s'""" % (self.corpdb, table)
+    #     return mm.executeGetList(self.corpdb, self.dbCursor, sql)[0]
+
+    # def _getTableColumnNameTypes(self, table):
+    #     """returns a dict of column names mapped to types"""
+    #     sql = """SELECT column_name, column_type FROM information_schema.columns where TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s'"""%(self.corpdb, table)
+    #     return dict(mm.executeGetList(self.corpdb, self.dbCursor, sql))
+
+
+    # def _getTableColumnNameList(self, table):
+    #     """returns a dict of column names mapped to types"""
+    #     sql = """SELECT column_name FROM information_schema.columns where TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s' ORDER BY ORDINAL_POSITION"""%(self.corpdb, table)
+    #     return [x[0] for x in mm.executeGetList(self.corpdb, self.dbCursor, sql)]
+
+    
 
 
 # at bottom to avoid circular imports

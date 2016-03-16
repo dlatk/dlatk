@@ -1,6 +1,13 @@
+import re
+import MySQLdb
+import pandas as pd
+from ConfigParser import SafeConfigParser
+
+#infrastructure
 from featureWorker import FeatureWorker
-from fwConstants import *
-from fwConstants import _warn, _dbConnectSQLalchemy
+import fwConstants as fwc
+from mysqlMethods import mysqlMethods as mm
+from mysqlMethods.mysql_iter_funcs import get_db_engine
 
 class OutcomeGetter(FeatureWorker):
     """Deals with outcome tables"""
@@ -14,25 +21,26 @@ class OutcomeGetter(FeatureWorker):
         """load variables from file"""
         parser = SafeConfigParser()
         parser.read(initFile)
-        corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else DEF_CORPDB
-        corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else DEF_CORPTABLE
-        correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else DEF_CORREL_FIELD
+        corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else fwc.DEF_CORPDB
+        corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else fwc.DEF_CORPTABLE
+        correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else fwc.DEF_CORREL_FIELD
         mysql_host = parser.get('constants','mysql_host') if parser.has_option('constants','mysql_host') else "localhost"
-        message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else DEF_MESSAGE_FIELD
-        messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else DEF_MESSAGEID_FIELD
-        lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else DEF_LEXICON_DB
-        outcome_table = parser.get('constants','outcometable') if parser.has_option('constants','outcometable') else DEF_OUTCOME_TABLE
-        outcome_value_fields = [o.strip() for o in parser.get('constants','outcomefields').split(",")] if parser.has_option('constants','outcomefields') else [DEF_OUTCOME_FIELD] # possible list
-        outcome_controls = [o.strip() for o in parser.get('constants','outcomecontrols').split(",")] if parser.has_option('constants','outcomecontrols') else DEF_OUTCOME_CONTROLS # possible list
-        outcome_interaction = [o.strip() for o in parser.get('constants','outcomeinteraction').split(",")] if parser.has_option('constants','outcomeinteraction') else DEF_OUTCOME_CONTROLS # possible list
+        message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else fwc.DEF_MESSAGE_FIELD
+        messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else fwc.DEF_MESSAGEID_FIELD
+        encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else fwc.DEF_ENCODING
+        lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else fwc.DEF_LEXICON_DB
+        outcome_table = parser.get('constants','outcometable') if parser.has_option('constants','outcometable') else fwc.DEF_OUTCOME_TABLE
+        outcome_value_fields = [o.strip() for o in parser.get('constants','outcomefields').split(",")] if parser.has_option('constants','outcomefields') else [fwc.DEF_OUTCOME_FIELD] # possible list
+        outcome_controls = [o.strip() for o in parser.get('constants','outcomecontrols').split(",")] if parser.has_option('constants','outcomecontrols') else fwc.DEF_OUTCOME_CONTROLS # possible list
+        outcome_interaction = [o.strip() for o in parser.get('constants','outcomeinteraction').split(",")] if parser.has_option('constants','outcomeinteraction') else fwc.DEF_OUTCOME_CONTROLS # possible list
         featureMappingTable = parser.get('constants','featlabelmaptable') if parser.has_option('constants','featlabelmaptable') else ''
         featureMappingLex = parser.get('constants','featlabelmaplex') if parser.has_option('constants','featlabelmaplex') else ''
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
-        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex, wordTable=wordTable)
+        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex, wordTable=wordTable)
     
 
-    def __init__(self, corpdb=DEF_CORPDB, corptable=DEF_CORPTABLE, correl_field=DEF_CORREL_FIELD, mysql_host="localhost", message_field=DEF_MESSAGE_FIELD, messageid_field=DEF_MESSAGEID_FIELD, lexicondb = DEF_LEXICON_DB, outcome_table=DEF_OUTCOME_TABLE, outcome_value_fields=[DEF_OUTCOME_FIELD], outcome_controls = DEF_OUTCOME_CONTROLS, outcome_interaction = DEF_OUTCOME_CONTROLS, featureMappingTable='', featureMappingLex='', wordTable = None):
-        super(OutcomeGetter, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb, wordTable = wordTable)
+    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host="localhost", message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, lexicondb = fwc.DEF_LEXICON_DB, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls = fwc.DEF_OUTCOME_CONTROLS, outcome_interaction = fwc.DEF_OUTCOME_CONTROLS, featureMappingTable='', featureMappingLex='', wordTable = None):
+        super(OutcomeGetter, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, wordTable = wordTable)
         self.outcome_table = outcome_table
 
         if isinstance(outcome_value_fields, basestring):
@@ -40,7 +48,7 @@ class OutcomeGetter(FeatureWorker):
 
         if outcome_value_fields and len(outcome_value_fields) > 0 and outcome_value_fields[0] == '*':#handle wildcard fields
             newOutcomeFields = []
-            for name, typ in self._getTableColumnNameTypes(outcome_table).iteritems():
+            for name, typ in mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, outcome_table).iteritems():
                 typ = re.sub(r'\([0-9\,]*\)\s*$', '', typ)
                 if typ.split()[0].upper() in self._mysqlNumeric:
                     newOutcomeFields.append(name)
@@ -48,7 +56,7 @@ class OutcomeGetter(FeatureWorker):
 
         if outcome_controls and len(outcome_controls) > 0 and outcome_controls[0] == '*':#handle wildcard fields
             newOutcomeFields = []
-            for name, typ in self._getTableColumnNameTypes(outcome_table).iteritems():
+            for name, typ in mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, outcome_table).iteritems():
                 typ = re.sub(r'\([0-9\,]*\)\s*$', '', typ)
                 if typ.split()[0].upper() in self._mysqlNumeric:
                     newOutcomeFields.append(name)
@@ -87,7 +95,7 @@ class OutcomeGetter(FeatureWorker):
         return feat_to_label
 
     def createOutcomeTable(self,tablename,dataframe, ifExists='fail'):
-        eng = _dbConnectSQLalchemy(self.corpdb, self.mysql_host)
+        eng = get_db_engine(self.corpdb, self.mysql_host)
         dataframe.to_sql(tablename, eng, index_label = self.correl_field, if_exists = ifExists)
         print "New table created: %s" % tablename
 
@@ -102,7 +110,7 @@ class OutcomeGetter(FeatureWorker):
             if not includeNull:
                 wheres.append("%s IS NOT NULL" % outcome)
             sql += ' WHERE ' + ' AND '.join(wheres)
-        return map(lambda v: v[0], self._executeGetList(sql))
+        return map(lambda v: v[0], mm.executeGetList(self.corpdb, self.dbCursor, sql))
 
     def getDistinctOutcomeValueCounts(self, outcome = None, requireControls = False, includeNull = True, where = ''):
         """returns a dict of (outcome_value, count)"""
@@ -120,7 +128,7 @@ class OutcomeGetter(FeatureWorker):
             sql += ' WHERE ' + ' AND '.join(wheres)
             
         sql += ' group by %s ' % outcome
-        return dict(self._executeGetList(sql))
+        return dict(mm.executeGetList(self.corpdb, self.dbCursor, sql))
 
     def getDistinctOutcomeAndControlValueCounts(self, outcome = None, control = None, includeNull = True, where = ''):
         """returns a dict of (outcome_value, count)"""
@@ -141,7 +149,7 @@ class OutcomeGetter(FeatureWorker):
             
         sql += ' group by %s, %s ' % (outcome, control)
         countDict = dict()
-        for (outcome, control, count) in self._executeGetList(sql):
+        for (outcome, control, count) in mm.executeGetList(self.corpdb, self.dbCursor, sql):
             if not outcome in countDict:
                 countDict[outcome] = dict()
             countDict[outcome][control] = count
@@ -153,7 +161,7 @@ class OutcomeGetter(FeatureWorker):
         if not outcomeField: outcomeField = self.outcome_value_fields[0]
         sql = "select %s, %s from `%s` WHERE %s IS NOT NULL"%(self.correl_field, outcomeField, self.outcome_table, outcomeField)
         if (where): sql += ' AND ' + where
-        return self._executeGetList(sql, False)
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, False)
 
     def makeContingencyTable(self, featureGetter, featureValueField, outcome_filter_where='', feature_value_group_sum_min=0):
         """makes a contingency table from this outcome value, a featureGetter, and the desired column of the featureGetter, assumes both correl_field's are the same"""
@@ -206,7 +214,7 @@ class OutcomeGetter(FeatureWorker):
 
         # finish the original query with the updated feature table
         sql += "FROM %s AS updatedFeatures GROUP BY %s"%(sql_filtered_feature_table_2, fg.correl_field)
-        return [distinctFeatureList, self._executeGetList(sql, False)]
+        return [distinctFeatureList, mm.executeGetList(self.corpdb, self.dbCursor, sql, False)]
 
     def makeBinnedOutcomeTable(self, buckets, mid_aom_list):
         """buckets is a list of tuples"""
@@ -214,7 +222,7 @@ class OutcomeGetter(FeatureWorker):
 
     def getGroupsAndOutcomes(self, groupThresh = 0, lexicon_count_table=None, groupsWhere = ''):
         if groupThresh and self.wordTable != self.get1gramTable():
-            _warn("""###################################################################
+            mm.warn("""###################################################################
 WARNING: You specified a --word_table and --group_freq_thresh is
 enabled, so the total word count for your groups might be off
 (remove "--word_table WT" to solve this issue)
@@ -227,7 +235,7 @@ enabled, so the total word count for your groups might be off
         controls = dict()
 
         #get outcome values:
-        _warn("Loading Outcomes and Getting Groups for: %s" % str(outcomeFieldList)) #debug
+        mm.warn("Loading Outcomes and Getting Groups for: %s" % str(outcomeFieldList)) #debug
         if outcomeFieldList:
             for outcomeField in outcomeFieldList:
                 outcomes[outcomeField] = dict(self.getGroupAndOutcomeValues(outcomeField))
@@ -293,7 +301,7 @@ enabled, so the total word count for your groups might be off
     def getGroupAndOutcomeValuesAsDF(self, outcomeField = None, where=''):
         """returns a dataframe of (group_id, outcome_value)"""
         if not outcomeField: outcomeField = self.outcome_value_fields[0]
-        db_eng = mif.get_db_engine(self.corpdb)
+        db_eng = get_db_engine(self.corpdb)
         sql = "select %s, %s from `%s` WHERE %s IS NOT NULL" % (self.correl_field, outcomeField, self.outcome_table, outcomeField)
         if (where): sql += ' WHERE ' + where
         index = self.correl_field
@@ -315,8 +323,8 @@ enabled, so the total word count for your groups might be off
     def getAnnotationTableAsDF(self, fields=['unit_id', 'worker_id', 'score'], where='', index=['unit_id', 'worker_id'], pivot=True, fillNA=False):
         """return a dataframe of unit_it, worker_id, score"""
         if fillNA and not pivot:
-            _warn("fillNA set to TRUE but pivot set to FALSE. No missing values will be filled.") 
-        db_eng = mif.get_db_engine(self.corpdb)
+            mm.warn("fillNA set to TRUE but pivot set to FALSE. No missing values will be filled.") 
+        db_eng = get_db_engine(self.corpdb)
         sql = """SELECT %s, %s, %s from %s""" % tuple(fields + [self.outcome_table])
         if (where): sql += ' WHERE ' + where
         if pivot:

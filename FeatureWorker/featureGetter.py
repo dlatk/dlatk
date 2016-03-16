@@ -1,6 +1,17 @@
-from fwConstants import *
-from fwConstants import _warn
+from ConfigParser import SafeConfigParser
+import MySQLdb
+import pandas as pd
+
+#math / stats:
+from numpy import zeros, sqrt, array, std, mean
+from scipy.stats import t as spt
+import numpy as np
+
+#infrastructure
+import fwConstants as fwc
 from featureWorker import FeatureWorker
+from mysqlMethods import mysqlMethods as mm
+from mysqlMethods import mysql_iter_funcs as mif
 
 class FeatureGetter(FeatureWorker):
     """Deals with selecting features"""
@@ -10,21 +21,22 @@ class FeatureGetter(FeatureWorker):
         """load variables from file"""
         parser = SafeConfigParser()
         parser.read(initFile)
-        corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else DEF_CORPDB
-        corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else DEF_CORPTABLE
-        correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else DEF_CORREL_FIELD
+        corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else fwc.DEF_CORPDB
+        corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else fwc.DEF_CORPTABLE
+        correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else fwc.DEF_CORREL_FIELD
         mysql_host = parser.get('constants','mysql_host') if parser.has_option('constants','mysql_host') else "localhost"
-        message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else DEF_MESSAGE_FIELD
-        messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else DEF_MESSAGEID_FIELD
-        lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else DEF_LEXICON_DB
-        featureTable = parser.get('constants','feattable') if parser.has_option('constants','feattable') else DEF_FEAT_TABLE
-        featNames = parser.get('constants','featnames') if parser.has_option('constants','featnames') else DEF_FEAT_NAMES
+        message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else fwc.DEF_MESSAGE_FIELD
+        messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else fwc.DEF_MESSAGEID_FIELD
+        encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else fwc.DEF_ENCODING
+        lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else fwc.DEF_LEXICON_DB
+        featureTable = parser.get('constants','feattable') if parser.has_option('constants','feattable') else fwc.DEF_FEAT_TABLE
+        featNames = parser.get('constants','featnames') if parser.has_option('constants','featnames') else fwc. DEF_FEAT_NAMES
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
-        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, wordTable = None)
+        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, wordTable = None)
 
 
-    def __init__(self, corpdb=DEF_CORPDB, corptable=DEF_CORPTABLE, correl_field=DEF_CORREL_FIELD, mysql_host="localhost", message_field=DEF_MESSAGE_FIELD, messageid_field=DEF_MESSAGEID_FIELD, lexicondb = DEF_LEXICON_DB, featureTable=DEF_FEAT_TABLE, featNames=DEF_FEAT_NAMES, wordTable = None):
-        super(FeatureGetter, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb, wordTable=wordTable)
+    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host="localhost", message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, lexicondb = fwc.DEF_LEXICON_DB, featureTable=fwc.DEF_FEAT_TABLE, featNames=fwc.DEF_FEAT_NAMES, wordTable = None):
+        super(FeatureGetter, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, wordTable=wordTable)
         self.featureTable = featureTable    
         self.featNames = featNames
 
@@ -32,15 +44,15 @@ class FeatureGetter(FeatureWorker):
 
     def optimizeFeatTable(self):
         """Optimizes the table -- good after a lot of deletes"""
-        return self._optimizeTable(self.featureTable)
+        return mm.optimizeTable(self.corpdb, self.dbCursor, self.featureTable)
 
     def disableFeatTableKeys(self):
         """Disable keys: good before doing a lot of inserts"""
-        return self._disableTableKeys(self.featureTable)
+        return mm.disableTableKeys(self.corpdb, self.dbCursor, self.featureTable)
 
     def enableFeatTableKeys(self, table = None):
         """Enables the keys, for use after inserting (and with keys disabled)"""
-        return self._enableTableKeys(self.featureTable)
+        return mm.enableTableKeys(self.corpdb, self.dbCursor, self.featureTable)
 
     ## Getters ##
 
@@ -61,8 +73,8 @@ class FeatureGetter(FeatureWorker):
             where = " WHERE group_id in ('%s')" % "','".join(str(g) for g in groups)
         sql = """select feat, count(*) from %s %s group by feat"""%(self.featureTable, where)
         if SS:
-            self._executeGetSSCursor(sql)
-        return self._executeGetList(sql) 
+            mm.executeGetSSCursor(self.corpdb, sql)
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql) 
 
     def getFeatureCountsSS(self, groupFreqThresh = 0, where = ''):
         """returns a list of (feature, count) tuples, where count is the number of groups with the feature"""
@@ -72,83 +84,83 @@ class FeatureGetter(FeatureWorker):
         """returns a list of (feature, count) tuples, where count is the number of groups with the feature"""
         sql = """select feat, sum(value) from %s group by feat"""%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return self._executeGetList(sql) 
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql) 
 
     def getDistinctFeatures(self, where=''):
         """returns a distinct list of (feature) tuples given the name of the feature value field (either value, group_norm, or feat_norm)"""
         sql = "select distinct feat from %s"%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return map(lambda l: l[0], self._executeGetList(sql))
+        return map(lambda l: l[0], mm.executeGetList(self.corpdb, self.dbCursor, sql))
 
     def getFeatureZeros(self, where=''):
         """returns a distinct list of (feature) tuples given the name of the feature value field (either value, group_norm, or feat_norm)"""
         sql = "select feat, zero_feat_norm from %s"%('mean_'+self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return self._executeGetList(sql)
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql)
 
     def getValues(self, where = ''):
         """returns a list of (group_id, feature, value) triples"""
         sql = """select group_id, feat, value from %s"""%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return self._executeGetList(sql) 
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql) 
 
     def getSumValue(self, where = ''):
         """returns the sume of all values"""
         sql = """select sum(value) from %s"""%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return self._executeGetList(sql)[0][0]
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql)[0][0]
 
     def getSumValuesByGroup(self, where = ''):
         """ """
         sql = """SELECT group_id, sum(value) FROM %s """ % self.featureTable
         if (where): sql += ' WHERE ' + where  
         sql += """ GROUP BY group_id """
-        return self._executeGetList(sql)
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql)
 
     def getSumValuesByFeat(self, where = ''):
         """ """
         sql = """SELECT feat, sum(value) FROM %s """ % self.featureTable
         if (where): sql += ' WHERE ' + where  
         sql += """ GROUP BY feat """
-        return self._executeGetList(sql)
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql)
 
     def getGroupNorms(self, where = ''):
         """returns a list of (group_id, feature, group_norm) triples"""
         sql = """SELECT group_id, feat, group_norm from %s"""%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return self._executeGetList(sql) 
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql) 
 
     def getValuesAndGroupNorms(self, where = ''):
         """returns a list of (group_id, feature, value, group_norm) triples"""
         sql = """SELECT group_id, feat, value, group_norm from %s"""%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return self._executeGetList(sql) 
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql) 
 
     def getGroupNormsForFeat(self, feat, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
         sql = """SELECT group_id, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, MySQLdb.escape_string(feat))
         if (where): sql += ' AND ' + where
-        return self._executeGetList(sql, warnMsg) 
+        return smm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg) 
 
     def getGroupNormsForFeats(self, feats, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
         fCond = " feat in ('%s')" % "','".join(MySQLdb.escape_string(unicode(f)) for f in feats)
         sql = """SELECT group_id, group_norm FROM %s WHERE %s"""%(self.featureTable, fCond)
         if (where): sql += ' AND ' + where
-        return self._executeGetList(sql, warnMsg) 
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg) 
 
     def getValuesAndGroupNormsForFeats(self, feats, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
         fCond = " feat in ('%s')" % "','".join(MySQLdb.escape_string(unicode(f)) for f in feats)
         sql = """SELECT group_id, value, group_norm FROM %s WHERE %s"""%(self.featureTable, fCond)
         if (where): sql += ' AND ' + where
-        return self._executeGetList(sql, warnMsg) 
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg) 
 
     def getValuesAndGroupNormsForFeat(self, feat, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
         sql = """SELECT group_id, value, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, MySQLdb.escape_string(unicode(feat, 'utf8')))
         if (where): sql += ' AND ' + where
-        return self._executeGetList(sql, warnMsg) 
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg) 
 
 
     def getGroupAndFeatureValues(self, featName=None, where=''):
@@ -156,10 +168,10 @@ class FeatureGetter(FeatureWorker):
         if not featName: featName = self.featNames[0]
         sql = "select group_id, group_norm from %s WHERE feat = '%s'"%(self.featureTable, featName)
         if (where): sql += ' AND ' + where
-        return self._executeGetList(sql, False)
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, False)
 
     def getGroupsAndFeats(self, where=''):
-        _warn("Loading Features and Getting Groups.")
+        mm.warn("Loading Features and Getting Groups.")
         groups = set()
         features = dict()
         featNames = set(self.featNames)
@@ -188,7 +200,7 @@ class FeatureGetter(FeatureWorker):
         if not groups: groups = self.getDistinctGroups(where)
         allFeats = self.getDistinctFeatures(where)
         #fill in zeros (this can get quite big!)
-        _warn("Adding zeros to group norms (%d groups * %d feats)." %(len(groups), len(allFeats)))
+        mm.warn("Adding zeros to group norms (%d groups * %d feats)." %(len(groups), len(allFeats)))
         for gid in groups:
             if not gid in gns: gns[gid] = dict()
             for feat in allFeats:
@@ -221,7 +233,7 @@ class FeatureGetter(FeatureWorker):
         if blacklist:
             allFeats = list(set(allFeats) - set(blacklist))
         #fill in zeros (this can get quite big!)
-        _warn("Adding zeros to group norms (%d groups * %d feats)." %(len(groups), len(allFeats)))
+        mm.warn("Adding zeros to group norms (%d groups * %d feats)." %(len(groups), len(allFeats)))
         for feat in allFeats:
             if not feat in gns: gns[feat] = dict()
             thisGn = gns[feat]
@@ -260,7 +272,7 @@ class FeatureGetter(FeatureWorker):
         if not feats: 
             allFeats = self.getDistinctFeatures(where)
         else:
-            _warn("feats restricted to %s" % feats)
+            warn("feats restricted to %s" % feats)
         
         numFeats = len(allFeats)
         gCond = None
@@ -279,10 +291,10 @@ class FeatureGetter(FeatureWorker):
             getGroupNormsForFeats = self.getValuesAndGroupNormsForFeats
             
         #figure out if too big for memory:
-        _warn("Yielding norms with zeros (%d groups * %d feats)." %(len(groups), numFeats))
+        mm.warn("Yielding norms with zeros (%d groups * %d feats)." %(len(groups), numFeats))
         gns = dict()
         vals = dict() #only gets field if values is true
-        if (numFeats * numGroups) < 12500000*GIGS_OF_MEMORY:
+        if (numFeats * numGroups) < 12500000*fwc.GIGS_OF_MEMORY:
             #statically acquire all gns
             gnlist = []
             if gCond: 
@@ -306,7 +318,7 @@ class FeatureGetter(FeatureWorker):
                 if values:
                     vals[feat][gid] = float(tup[2])
         else:
-            _warn("Too big to keep gns in memory, querying for each feature (slower, but less memory intensive)")
+            mm.warn("Too big to keep gns in memory, querying for each feature (slower, but less memory intensive)")
 
         def getFeatValuesAndGNs(feat):
             if gns:
@@ -315,7 +327,7 @@ class FeatureGetter(FeatureWorker):
                         return (vals[feat].copy(), gns[feat].copy())
                     return (None, gns[feat].copy())
                 except KeyError:
-                    _warn("Couldn't find gns for feat: %s (group_freq_thresh may be too high)" % feat)
+                    mm.warn("Couldn't find gns for feat: %s (group_freq_thresh may be too high)" % feat)
                     return (None, dict())
             else:#must query for feat
                 gnDict = None 
@@ -364,7 +376,7 @@ class FeatureGetter(FeatureWorker):
         if not allFeats:
             allFeats = self.getDistinctFeatures(where)
         #fill in zeros (this can get quite big!)
-        _warn("Yielding norms with zeros for %d groups * %d feats." %(len(groups), len(allFeats)))
+        mm.warn("Yielding norms with zeros for %d groups * %d feats." %(len(groups), len(allFeats)))
         for gid in groups:
             thisGns = dict()
             if gid in gns: thisGns.update(gns[gid])
@@ -390,7 +402,7 @@ class FeatureGetter(FeatureWorker):
         if not allFeats:
             allFeats = self.getDistinctFeatures(where)
         #fill in zeros (this can get quite big!)
-        _warn("Yielding values with zeros for %d groups * %d feats." %(len(groups), len(allFeats)))
+        mm.warn("Yielding values with zeros for %d groups * %d feats." %(len(groups), len(allFeats)))
         for gid in groups:
             thisValues = dict()
             if gid in values: thisValues.update(values[gid])
@@ -416,7 +428,7 @@ class FeatureGetter(FeatureWorker):
         if not allFeats:
             allFeats = self.getDistinctFeatures(where)
         #fill in zeros (this can get quite big!)
-        _warn("Yielding values with zeros for %d groups * %d feats." %(len(groups), len(allFeats)))
+        mm.warn("Yielding values with zeros for %d groups * %d feats." %(len(groups), len(allFeats)))
         for gid in groups:
             thisValues = dict()
             if gid in values: thisValues = values[gid]
@@ -431,19 +443,19 @@ class FeatureGetter(FeatureWorker):
             f.write("""%s en %s\n""" %(gid, message.encode('utf-8')))            
        
         f.close()
-        _warn("Wrote joined features file to: %s"%filename)
+        mm.warn("Wrote joined features file to: %s"%filename)
     
     def getFeatNorms(self, where = ''):
         """returns a list of (group_id, feature, feat_norm) triples"""
         sql = """select group_id, feat, feat_norm from %s"""%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return self._executeGetList(sql) 
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql) 
 
     def getFeatNormsSS(self, where = ''):
         """returns a server-side cursor pointing to (group_id, feature, feat_norm) triples"""
         sql = """select group_id, feat, feat_norm from %s"""%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return self._executeGetSSCursor(sql) 
+        return mm.executeGetSSCursor(self.corpdb, sql) 
 
     def getFeatNormsWithZeros(self, groups = [], where = ''):
         """returns a dict of (group_id => feature => feat_norm) """
@@ -462,7 +474,7 @@ class FeatureGetter(FeatureWorker):
         if not groups: groups = self.getDistinctGroups(where)
 
         #fill in zeros (this can get quite big!)
-        _warn("Adding zeros to feat norms (%d groups * %d feats)." %(len(groups), len(meanData.keys())))
+        mm.warn("Adding zeros to feat norms (%d groups * %d feats)." %(len(groups), len(meanData.keys())))
         meanData = self.getFeatMeanData() # feat : (mean, std, zero_mean)
         for gid in groups:
             if not gid in fns: fns[gid] = dict()
@@ -475,7 +487,7 @@ class FeatureGetter(FeatureWorker):
         meanTable = 'mean_'+self.featureTable
         sql = """select feat, mean, std, zero_feat_norm from %s"""%(meanTable)
         if (where): sql += ' WHERE ' + where
-        mList = self._executeGetList(sql) 
+        mList = mm.executeGetList(self.corpdb, self.dbCursor, sql) 
         meanData = dict()
         for tup in mList: #feat : (mean, std, zero_feat_norm)
             meanData[tup[0]] = tup[1:]
@@ -485,14 +497,14 @@ class FeatureGetter(FeatureWorker):
         """ returns a list of lists: each row is a group_id and each col is a feature"""
         """ the first row has a blank first entry and then a list of unique features"""
         """ the first column has a blank first entry and then a list of unique group_ids"""
-        _warn("running getContingencyArrayFeatNorm")
+        mm.warn("running getContingencyArrayFeatNorm")
 
-        _warn("Getting distinct feature / groupId lists and (feat, featNormZero) list")
+        mm.warn("Getting distinct feature / groupId lists and (feat, featNormZero) list")
         distinctFeatureList = self.getDistinctFeatures( where )
         featureZeroList = self.getFeatureZeros( where )
         distinctGroupList = self.getDistinctGroups( where )
 
-        _warn("Converting feature / groupId lists to dictionaries (item: index) for quick insertion")
+        mm.warn("Converting feature / groupId lists to dictionaries (item: index) for quick insertion")
         distinctFeatureDict = {}
         counter = 0
         for feature in distinctFeatureList:
@@ -505,16 +517,16 @@ class FeatureGetter(FeatureWorker):
             distinctGroupDict[group] = counter
             counter += 1
         
-        _warn("Making a 2d array (matrix) with ncol = nDistinctFeatures and nrow = nDistinctGroupIds")
-        _warn("For each distinct feature, intializing that column with feat norm zeros' value")
+        mm.warn("Making a 2d array (matrix) with ncol = nDistinctFeatures and nrow = nDistinctGroupIds")
+        mm.warn("For each distinct feature, intializing that column with feat norm zeros' value")
         contingencyMatrix = zeros( ( len(distinctGroupList), len(distinctFeatureList) ) )
         for tup in featureZeroList:
             (feat, featNormZero) = tup
             columnIndexToZero = distinctFeatureDict[ feat ] 
             contingencyMatrix[ :, columnIndexToZero ] = featNormZero
 
-        _warn("calling getFeatNormsSS, iterating through (with SS cursor)")
-        _warn("for each iteration, using the index dictionaries to insert the entry into the matrix")
+        mm.warn("calling getFeatNormsSS, iterating through (with SS cursor)")
+        mm.warn("for each iteration, using the index dictionaries to insert the entry into the matrix")
         ssCursor = self.getFeatNormsSS( where )
         for tup in ssCursor:
             (gid, feat, featNorm) = tup
@@ -522,7 +534,7 @@ class FeatureGetter(FeatureWorker):
             rowIndexForInsertion = distinctGroupDict[ gid ]
             contingencyMatrix[ rowIndexForInsertion, columnIndexForInsertion ] = featNorm
 
-        _warn("returning [contingency matrix, rownames (distinct groups), and colnames (distinct features)]")
+        mm.warn("returning [contingency matrix, rownames (distinct groups), and colnames (distinct features)]")
         return [ contingencyMatrix, distinctGroupList, distinctFeatureList ]
 
 
@@ -530,13 +542,13 @@ class FeatureGetter(FeatureWorker):
         """returns a list of (group_id, feature, value, group_norm) tuples"""
         sql = """select group_id, feat, value, group_norm from %s"""%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return self._executeGetList(sql) 
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql) 
 
     def getFeatAllSS(self, where = '', featNorm=True):
         """returns a list of (group_id, feature, value, group_norm) tuples"""
         sql = """select group_id, feat, value, group_norm from %s"""%(self.featureTable) if featNorm else """select group_id, feat, value, group_norm from %s"""%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return self._executeGetSSCursor(sql) 
+        return mm.executeGetSSCursor(self.corpdb, sql) 
 
     def countGroups(self, groupThresh = 0, where=''):
         """returns the number of distinct groups (note that this runs on the corptable to be accurate)"""
@@ -550,20 +562,20 @@ class FeatureGetter(FeatureWorker):
         else:
             sql = """select count(DISTINCT %s) from %s""" %(self.correl_field, self.corptable)
             if (where): sql += ' WHERE ' + where
-            return self._executeGetList(sql)[0][0]
+            return mm.executeGetList(self.corpdb, self.dbCursor, sql)[0][0]
             
     def getDistinctGroupsFromFeatTable(self, where=""):
         """Returns the distinct group ids that are in the feature table"""
         sql = "select distinct group_id from %s" % self.featureTable
         if (where): sql += ' WHERE ' + where
-        return map(lambda l:l[0], self._executeGetList(sql))
+        return map(lambda l:l[0], mm.executeGetList(self.corpdb, self.dbCursor, sql))
 
 
     def getDistinctGroups(self, where=''):
         """returns the distinct distinct groups (note that this runs on the corptable to be accurate)"""
         sql = """select DISTINCT %s from %s""" %(self.correl_field, self.corptable)
         if (where): sql += ' WHERE ' + where
-        return map(lambda l: l[0], self._executeGetList(sql))
+        return map(lambda l: l[0], mm.executeGetList(self.corpdb, self.dbCursor, sql))
     
     def ttestWithOtherFG(self, other, maskTable= None, groupFreqThresh = 0):
         """Performs PAIRED ttest on differences between group norms for 2 tables, within features"""
@@ -572,7 +584,7 @@ class FeatureGetter(FeatureWorker):
         #read mask table and figure out groups for each mask:
         masks = {'no mask': set()}
         if maskTable:
-            maskList = self._getTableColumnNameList(maskTable)
+            maskList = mm.getTableColumnNameList(self.corpdb, self.dbCursor, maskTable)
             print maskList
             assert self.correl_field in maskList, "group field, %s, not in mask table" % self.correl_field
             maskToIndex = dict([(maskList[i], i) for i in xrange(len(maskList))])
@@ -580,7 +592,7 @@ class FeatureGetter(FeatureWorker):
 
             #get data:
             sql = """SELECT %s FROM %s""" % (', '.join(maskList), maskTable)
-            maskData = self._executeGetList(sql)
+            maskData = mm.executeGetList(self.corpdb, self.dbCursor, sql)
             for maskId in maskList:
                 if not maskId == self.correl_field:
                     masks[maskId] = set()

@@ -71,8 +71,9 @@ import math
 
 DEFAULT_MAX_PREDICT_AT_A_TIME = 100000
 
-#fw:
+#infrastructure
 from classifyPredictor import ClassifyPredictor
+from mysqlMethods import mysqlMethods as mm
 
 #alignDictsAsXy(Xdicts, ydict, sparse=True, keys = trainGroupsOrder)
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
@@ -174,7 +175,7 @@ def alignDictsAsXyWithFeats(X, y, feats):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
     keys = frozenset(y.keys())
     # keys = keys.intersection(*[x.keys() for x in X])
-    keys = keys.intersection(X.keys())	
+    keys = keys.intersection(X.keys())  
     keys = list(keys) #to make sure it stays in order
     feats = list(feats)
     listy = map(lambda k: y[k], keys)
@@ -530,7 +531,7 @@ class RegressionPredictor:
             (groupNorms, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups, blacklist = blacklist)
         groupNormValues = groupNorms.values() #list of dictionaries of group => group_norm
         controlValues = controls.values() #list of dictionaries of group=>group_norm
-	#     this will return a dictionary of dictionaries
+    #     this will return a dictionary of dictionaries
 
         #3. test classifiers for each possible y:
         for outcomeName, outcomes in sorted(allOutcomes.items()):
@@ -1286,7 +1287,7 @@ class RegressionPredictor:
             print "[Inserting Predictions as Feature values for %s]" % feat
             wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
             rows = [(k, v, v) for k, v in preds.iteritems()] #adds group_norm and applies freq filter
-            fe._executeWriteMany(wsql, rows)
+            mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
 
     def predictToFeatureTable(self, groupFreqThresh = 0, standardize = True, sparse = False, fe = None, name = None):
         if not fe:
@@ -1358,13 +1359,13 @@ class RegressionPredictor:
                 for k, v in preds.iteritems():
                     rows.append((k, v, v))
                     if len(rows) >  self.maxPredictAtTime or len(rows) >= len(preds):
-                        fe._executeWriteMany(wsql, rows)
+                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
                         written += len(rows)
                         print "   %d feature rows written" % written
                         rows = []
             # if there's rows left
             if rows:
-                fe._executeWriteMany(wsql, rows)
+                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
                 written += len(rows)
                 print "   %d feature rows written" % written
         return
@@ -1821,7 +1822,7 @@ class RegressionPredictor:
         self.featureNames = groupNorms.keys() #holds the order to expect features
         groupNormValues = groupNorms.values() #list of dictionaries of group => group_norm
         controlValues = controls.values() #list of dictionaries of group=>group_norm
-	#     this will return a dictionary of dictionaries
+    #     this will return a dictionary of dictionaries
 
 
         #3. Create classifiers for each possible y:
@@ -1877,7 +1878,7 @@ class RegressionPredictor:
         #groupNormValues = groupNorms.values() #list of dictionaries of group => group_norm
         print "number of features after alignment: %d" % len(groupNormValues)
         controlValues = controls.values() #list of dictionaries of group=>group_norm (TODO: including controls for predict might mess things up)
-	#     this will return a dictionary of dictionaries
+    #     this will return a dictionary of dictionaries
 
         #3. Predict ys for each model:
         predictions = dict() #outcome=>group_id=>value
@@ -2538,7 +2539,7 @@ def r2simple(ytrue, ypred):
         
 #         #1. get data possible ys (outcomes)
 #         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
-# 	#     - this will give you 3 values: groups, outcomes, and controls
+#   #     - this will give you 3 values: groups, outcomes, and controls
 #         #       groups lists all of the groups (i.e. users) who meet groupFreqThresh criteria
 #         #       outcomes is a dictionary(hashtable) of dictionaries
 #         #       you can ignore controls
@@ -2546,43 +2547,43 @@ def r2simple(ytrue, ypred):
 
 #         #2. get data for X:
 #         langFeatures = self.featureGetter.getGroupNormsWithZeros(groups)
-# 	#     this will return a dictionary of dictionaries
+#   #     this will return a dictionary of dictionaries
 
 #         #3. Create predictors for each possible y:
 #         predictors = dict() #store scikit-learn models here
 #         scalers = dict()
 #         for outcomeName, outcomes in allOutcomes.iteritems():
 #            (X, y) = alignDictsAsXy(langFeatures[0], outcomes, list(langFeatures[1]))
-# 	   X = np.array(X)
-# 	   if standardize == True:
-# 		scalers[outcomeName] = preprocessing.StandardScaler()
-# 		X = scalers[outcomeName].fit_transform(X)
+#      X = np.array(X)
+#      if standardize == True:
+#       scalers[outcomeName] = preprocessing.StandardScaler()
+#       X = scalers[outcomeName].fit_transform(X)
 
 #            # X, y = shuffle(X, y, random_state=0) #if cross-validating and suspect data is not randomly ordered
 #            #y = zscore(y) #debug: remove in future
-# 	   n = len(y)
-# 	   split = (n*4)/5
-# 	   print 'Shape of X', X.shape
-# 	   X_train = X[:split]
-# 	   #print 'shape of X train', X_train.shape
+#      n = len(y)
+#      split = (n*4)/5
+#      print 'Shape of X', X.shape
+#      X_train = X[:split]
+#      #print 'shape of X train', X_train.shape
 #            X_test = X[split:]
-# 	   #print 'shape of Xtest', X_test.shape
-# 	   y = np.array(y)
-# 	   y = y.reshape(n,1)
-# 	   y_train = y[:split]
+#      #print 'shape of Xtest', X_test.shape
+#      y = np.array(y)
+#      y = y.reshape(n,1)
+#      y_train = y[:split]
 #            y_test = y[split:]
-# #	   selector = SelectPercentile(f_regression, percentile=10)
-# #	   X_train = selector.fit_transform(X_train, y_train)
-# #	   X_test = selector.transform(X_test)
-# #	   print 'Shape of feature selected x train', X_train.shape
-# #	   print 'Shape of feature selected x test', X_test.shape
-# 	   predictors[outcomeName] = linear_model.Ridge(alpha=0.1)
+# #    selector = SelectPercentile(f_regression, percentile=10)
+# #    X_train = selector.fit_transform(X_train, y_train)
+# #    X_test = selector.transform(X_test)
+# #    print 'Shape of feature selected x train', X_train.shape
+# #    print 'Shape of feature selected x test', X_test.shape
+#      predictors[outcomeName] = linear_model.Ridge(alpha=0.1)
 #            predictors[outcomeName].fit(X_train,y_train)
            
-# 	   #Debugging information
+#      #Debugging information
 #            predictedY = predictors[outcomeName].predict(X_test)
-# 	   #print "[%s] Mean error rate on test data: %.4f" % (outcomeName, predictors[outcomeName].score(X_test,y_test))
-# 	   print "[%s] Mean error rate (R2) on test data: %.4f" % (outcomeName, metrics.r2_score(y_test, predictedY))
-# 	   print "[%s] mean square error: %.4f" % (outcomeName, metrics.mean_square_error(y_test, predictedY))
+#      #print "[%s] Mean error rate on test data: %.4f" % (outcomeName, predictors[outcomeName].score(X_test,y_test))
+#      print "[%s] Mean error rate (R2) on test data: %.4f" % (outcomeName, metrics.r2_score(y_test, predictedY))
+#      print "[%s] mean square error: %.4f" % (outcomeName, metrics.mean_square_error(y_test, predictedY))
 
 #         #Set object's regressionModels and scalers

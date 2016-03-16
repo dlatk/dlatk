@@ -777,7 +777,7 @@ class FeatureExtractor(FeatureWorker):
         mm.warn("Done Reading / Inserting.")
 
         if len(cfRows)*n < fwc.MAX_TO_DISABLE_KEYS:
-            warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
+            mm.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
             mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName)#rebuilds keys
         mm.warn("Done\n")
         return featureTableName
@@ -1018,7 +1018,7 @@ class FeatureExtractor(FeatureWorker):
             # write the rows in chunks
             while insert_idx_start < len(rows):
                 insert_rows = rows[insert_idx_start:min(insert_idx_end, len(rows))]
-                warn( "Inserting rows %d to %d..."%(insert_idx_start, insert_idx_end) )
+                mm.warn( "Inserting rows %d to %d..."%(insert_idx_start, insert_idx_end) )
                 mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, insert_rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
                 insert_idx_start += fwc.MYSQL_BATCH_INSERT_SIZE
                 insert_idx_end += fwc.MYSQL_BATCH_INSERT_SIZE
@@ -1868,7 +1868,7 @@ class FeatureExtractor(FeatureWorker):
         #SELECT / LOOP ON CORREL FIELD FIRST:
         mm.disableTableKeys(self.corpdb, self.dbCursor, outcomeFeatTableName)#for faster, when enough space for repair by sorting
         for outcome, values in allOutcomes.iteritems():
-            warn("  On %s"%outcome)
+            mm.warn("  On %s"%outcome)
             wsql = """INSERT INTO """+outcomeFeatTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
             phraseRows = [(k, outcome, v, valueFunc(v)) for k, v in values.iteritems()] #adds group_norm and applies freq filter
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, phraseRows, writeCursor=self.dbConn.cursor(), charset=self.encoding)

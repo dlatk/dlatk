@@ -110,7 +110,6 @@ DEF_P = 0.05 # p value for printing tagclouds
 
 ##Mediation Settings:
 DEF_MEDIATION_BOOTSTRAP = 1000
-DEF_MEDIATION_P = 0.05
 DEF_OUTCOME_PATH_STARTS = []
 DEF_OUTCOME_MEDIATORS = []
 
@@ -379,8 +378,6 @@ def main(fn_args = None):
                        help='Print results to a CSV. Default file name is mediation.csv. Use --output_name to specify file name.')
     group.add_argument('--mediation_mysql', action='store_true', dest='mediationmysql', default=False,
                        help='Store results in MySQL database. Database is specified by -d and table name is specified by -output_name')
-    group.add_argument("--mediation_sig_thresh", type=float, metavar='P', dest="mediationsigthresh", default = float(DEF_MEDIATION_P),
-                       help="Significance threshold for returning results. Default = 0.05.")
     group.add_argument('--mediation_no_summary', action='store_false', dest='mediationsummary', default=True,
                        help='Print results to a CSV. Default file name is mediation.csv. Use --output_name to specify file name.')
     group.add_argument('--mediation_method', metavar='METHOD', type=str, dest='mediation_style', default='barron',
@@ -1297,7 +1294,7 @@ def main(fn_args = None):
         og = OG()
         MediationAnalysis(fg, og, path_starts, mediators, outcomes, args.outcomecontrols, summary=args.mediationsummary, 
               to_csv=args.mediationcsv, to_mysql=args.mediationmysql, output_name=args.outputname, 
-              method=mediation_method, boot_number=med_boot_number, sig_level=args.mediationsigthresh, style=args.mediation_style).mediate(args.groupfreqthresh, 
+              method=mediation_method, boot_number=med_boot_number, sig_level=args.maxP, style=args.mediation_style).mediate(args.groupfreqthresh, 
               "feat_as_path_start", args.spearman, args.bonferroni,
               args.p_correction_method, logisticReg=args.logisticReg)
       elif args.feat_as_outcome:
@@ -1306,7 +1303,7 @@ def main(fn_args = None):
         og = OG()
         MediationAnalysis(fg, og, path_starts, mediators, outcomes, args.outcomecontrols, summary=args.mediationsummary, 
               to_csv=args.mediationcsv, to_mysql=args.mediationmysql, output_name=args.outputname, 
-              method=mediation_method, boot_number=med_boot_number, sig_level=args.mediationsigthresh, style=args.mediation_style).mediate(args.groupfreqthresh, 
+              method=mediation_method, boot_number=med_boot_number, sig_level=args.maxP, style=args.mediation_style).mediate(args.groupfreqthresh, 
               "feat_as_outcome", args.spearman, args.bonferroni,
               args.p_correction_method, logisticReg=args.logisticReg)
       elif args.feat_as_control:
@@ -1317,7 +1314,7 @@ def main(fn_args = None):
         og = OG()
         MediationAnalysis(fg, og, path_starts, mediators, outcomes, controls, summary=args.mediationsummary, 
               to_csv=args.mediationcsv, to_mysql=args.mediationmysql, output_name=args.outputname, 
-              method=mediation_method, boot_number=med_boot_number, sig_level=args.mediationsigthresh, style=args.mediation_style).mediate(args.groupfreqthresh, 
+              method=mediation_method, boot_number=med_boot_number, sig_level=args.maxP, style=args.mediation_style).mediate(args.groupfreqthresh, 
               "feat_as_control", args.spearman, args.bonferroni,
               args.p_correction_method, logisticReg=args.logisticReg)
       elif args.no_features:
@@ -1325,7 +1322,7 @@ def main(fn_args = None):
         og = OG()
         MediationAnalysis(None, og, path_starts, mediators, outcomes, args.outcomecontrols, summary=args.mediationsummary, 
               to_csv=args.mediationcsv, to_mysql=args.mediationmysql, output_name=args.outputname, 
-              method=mediation_method, boot_number=med_boot_number, sig_level=args.mediationsigthresh, style=args.mediation_style).mediate(args.groupfreqthresh, 
+              method=mediation_method, boot_number=med_boot_number, sig_level=args.maxP, style=args.mediation_style).mediate(args.groupfreqthresh, 
               "no_features", args.spearman, args.bonferroni,
               args.p_correction_method, logisticReg=args.logisticReg)
       else:
@@ -1334,7 +1331,7 @@ def main(fn_args = None):
         og = OG()
         MediationAnalysis(fg, og, path_starts, mediators, outcomes, args.outcomecontrols, summary=args.mediationsummary, 
               to_csv=args.mediationcsv, to_mysql=args.mediationmysql, output_name=args.outputname, 
-              method=mediation_method, boot_number=med_boot_number, sig_level=args.mediationsigthresh, style=args.mediation_style).mediate(args.groupfreqthresh, 
+              method=mediation_method, boot_number=med_boot_number, sig_level=args.maxP, style=args.mediation_style).mediate(args.groupfreqthresh, 
               "default", args.spearman, args.bonferroni,
               args.p_correction_method, logisticReg=args.logisticReg)
 

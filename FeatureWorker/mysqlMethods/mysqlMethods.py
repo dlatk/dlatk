@@ -38,7 +38,7 @@ def executeGetSSCursor(db, sql, warnMsg = True, charset=DEF_ENCODING):
                 sys.exit(1)
     return ssCursor
 
-def dbConnect(db, host=HOST, charset=DEF_ENCODING):
+def dbConnect(db, host=HOST, charset=DEF_ENCODING, unicode_switch=True):
     """ Connects to specified database. Returns tuple of (dbConn, dbCursor, dictCursor) """
     dbConn = None
     attempts = 0;
@@ -49,7 +49,7 @@ def dbConnect(db, host=HOST, charset=DEF_ENCODING):
                 user = USER,
                 db = db,
                 charset = charset,#'latin-2', #_dbConnect
-                #use_unicode = True, #_dbConnect
+                use_unicode = unicode_switch, #_dbConnect
                 read_default_file = "~/.my.cnf"
             )
             break

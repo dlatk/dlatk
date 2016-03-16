@@ -272,7 +272,7 @@ class FeatureGetter(FeatureWorker):
         if not feats: 
             allFeats = self.getDistinctFeatures(where)
         else:
-            warn("feats restricted to %s" % feats)
+            mm.warn("feats restricted to %s" % feats)
         
         numFeats = len(allFeats)
         gCond = None

@@ -1956,7 +1956,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         if outputFile: 
             #redirect
             outputFile = outputFile +'.'+outputFormat
-            warn(" print to file: %s" % outputFile)
+            mm.warn(" print to file: %s" % outputFile)
             old_stdout = sys.stdout
             sys.stdout = open(outputFile, 'w')
         if paramString: print paramString + "\n"

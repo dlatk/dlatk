@@ -1189,15 +1189,15 @@ class RegressionPredictor:
                 #TODO: fill these in with zeros but print an obvious warning because it could also be a sign of 
                 #      non-english messages which aren't triggering any feautres
         #XGroups = XGroups & groups #this should not be needed
-        if len(XGroups) < len(groups): 
+        if len(XGroups) < len(UGroups): 
             print " !! Different number of groups available for different feature tables. (%d, %d)\n this may cause problems down the line" % (len(XGroups), len(groups))
         
 
         #########################################
         #3. predict for all possible outcomes
         predictions = dict()
-        testGroupsOrder = list(UGroups) 
-        #testGroupsOrder = list(XGroups)
+        #testGroupsOrder = list(UGroups) #use the union of feature tables (may cause null issue)
+        testGroupsOrder = list(XGroups)#use the intersection only
         
         for outcomeName in sorted(outcomes):
             print "\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4))

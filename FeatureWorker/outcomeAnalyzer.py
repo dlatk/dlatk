@@ -1,9 +1,34 @@
-from outcomeGetter import OutcomeGetter
-from fwConstants import *
-#import fwConstants as fwc 
-from fwConstants import _warn
-
+import os
+import sys
+import re
+import csv
+import gzip
+import multiprocessing
+from itertools import combinations
+from pprint import pprint
 from ConfigParser import SafeConfigParser 
+
+#math / stats:
+from math import floor
+from numpy import array, tile, sqrt, fabs, multiply, mean, isnan
+from numpy import log as nplog, sort as npsort, append as npappend
+import numpy as np
+from scipy.stats import zscore, rankdata
+from scipy.stats.stats import pearsonr, spearmanr
+import statsmodels.api as sm
+from sklearn.metrics import roc_auc_score
+from sklearn.linear_model import LogisticRegression
+
+#R
+import rpy2.robjects as ro
+from rpy2.robjects.packages import importr
+
+#infrastructure
+from outcomeGetter import OutcomeGetter
+import fwConstants as fwc 
+from mysqlMethods import mysqlMethods as mm
+
+
 class OutcomeAnalyzer(OutcomeGetter):
     """Deals with outcome tables"""
 
@@ -12,30 +37,31 @@ class OutcomeAnalyzer(OutcomeGetter):
         """load variables from file"""
         parser = SafeConfigParser()
         parser.read(initFile)
-        corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else DEF_CORPDB
-        corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else DEF_CORPTABLE
-        correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else DEF_CORREL_FIELD
+        corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else fwc.DEF_CORPDB
+        corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else fwc.DEF_CORPTABLE
+        correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else fwc.DEF_CORREL_FIELD
         mysql_host = parser.get('constants','mysql_host') if parser.has_option('constants','mysql_host') else "localhost"
-        message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else DEF_MESSAGE_FIELD
-        messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else DEF_MESSAGEID_FIELD
-        lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else DEF_LEXICON_DB
-        outcome_table = parser.get('constants','outcometable') if parser.has_option('constants','outcometable') else DEF_OUTCOME_TABLE
-        outcome_value_fields = [o.strip() for o in parser.get('constants','outcomefields').split(",")] if parser.has_option('constants','outcomefields') else [DEF_OUTCOME_FIELD] # possible list
-        outcome_controls = [o.strip() for o in parser.get('constants','outcomecontrols').split(",")] if parser.has_option('constants','outcomecontrols') else DEF_OUTCOME_CONTROLS # possible list
-        outcome_interaction = [o.strip() for o in parser.get('constants','outcome_interaction').split(",")] if parser.has_option('constants','outcome_interaction') else DEF_OUTCOME_CONTROLS # possible list
+        message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else fwc.DEF_MESSAGE_FIELD
+        messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else fwc.DEF_MESSAGEID_FIELD
+        encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else fwc.DEF_ENCODING
+        lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else fwc.DEF_LEXICON_DB
+        outcome_table = parser.get('constants','outcometable') if parser.has_option('constants','outcometable') else fwc.DEF_OUTCOME_TABLE
+        outcome_value_fields = [o.strip() for o in parser.get('constants','outcomefields').split(",")] if parser.has_option('constants','outcomefields') else [fwc.DEF_OUTCOME_FIELD] # possible list
+        outcome_controls = [o.strip() for o in parser.get('constants','outcomecontrols').split(",")] if parser.has_option('constants','outcomecontrols') else fwc.DEF_OUTCOME_CONTROLS # possible list
+        outcome_interaction = [o.strip() for o in parser.get('constants','outcome_interaction').split(",")] if parser.has_option('constants','outcome_interaction') else fwc.DEF_OUTCOME_CONTROLS # possible list
         featureMappingTable = parser.get('constants','featlabelmaptable') if parser.has_option('constants','featlabelmaptable') else ''
         featureMappingLex = parser.get('constants','featlabelmaplex') if parser.has_option('constants','featlabelmaplex') else ''
         output_name = parser.get('constants','output_name') if parser.has_option('constants','output_name') else ''
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
-        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable)
+        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable)
     
-    def __init__(self, corpdb=DEF_CORPDB, corptable=DEF_CORPTABLE, correl_field=DEF_CORREL_FIELD, mysql_host="localhost", message_field=DEF_MESSAGE_FIELD, messageid_field=DEF_MESSAGEID_FIELD, lexicondb = DEF_LEXICON_DB, outcome_table=DEF_OUTCOME_TABLE, outcome_value_fields=[DEF_OUTCOME_FIELD], outcome_controls = DEF_OUTCOME_CONTROLS, outcome_interaction = DEF_OUTCOME_CONTROLS, featureMappingTable='', featureMappingLex='',  output_name='', wordTable = None):
-        super(OutcomeAnalyzer, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, featureMappingTable, featureMappingLex,  wordTable)
-    	self.output_name = output_name
+    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host="localhost", message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, lexicondb=fwc.DEF_LEXICON_DB, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls=fwc.DEF_OUTCOME_CONTROLS, outcome_interaction=fwc.DEF_OUTCOME_CONTROLS, featureMappingTable='', featureMappingLex='',  output_name='', wordTable = None):
+        super(OutcomeAnalyzer, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, featureMappingTable, featureMappingLex,  wordTable)
+        self.output_name = output_name
 
     def printGroupsAndOutcomesToCSV(self, featGetter, outputfile, groupThresh=0, where = '', freqs = False):
         """prints sas-style csv file output"""
-        assert self._tableExists(featGetter.featureTable), 'feature table does not exist (make sure to quote it)'
+        assert mm.tableExists(self.corpdb, self.dbCursor, featGetter.featureTable), 'feature table does not exist (make sure to quote it)'
 
         #get outcome data to work with
         (groups, allOutcomes, controls) = OutcomeGetter.getGroupsAndOutcomes(groupThresh)
@@ -55,9 +81,9 @@ class OutcomeAnalyzer(OutcomeGetter):
         #write csv:
         csvOut = csv.DictWriter(open(outputfile, 'w'), fieldnames=allKeys)
         outcomesByGroup = dict()
-        if allOutcomes and len(allOutcomes) > 0: outcomesByGroup = reverseDictDict(allOutcomes)
+        if allOutcomes and len(allOutcomes) > 0: outcomesByGroup = fwc.reverseDictDict(allOutcomes)
         controlsByGroup = dict()
-        if controls and len(controls) > 0: controlsByGroup = reverseDictDict(controls)
+        if controls and len(controls) > 0: controlsByGroup = fwc.reverseDictDict(controls)
         firstRow = dict([(unicode(k), unicode(k)) for k in allKeys])
         csvOut.writerow(firstRow)
         numPed = 0
@@ -76,7 +102,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             rowDict['group_id'] = str(group)
             csvOut.writerow(rowDict)
             numPed += 1
-            if numPed % 1000 == 0: _warn("  %d groups printed"%(numPed))
+            if numPed % 1000 == 0: mm.warn("  %d groups printed"%(numPed))
 
     def printBinnedGroupsAndOutcomesToCSV(self, featGetter, outputfile, groupThresh=0, where = '', freqs = False):
         raise NotImplementedError()
@@ -84,7 +110,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     def yieldDataForOneFeatAtATime(self, featGetter, groupThresh = 0, blacklist=None, whitelist=None,outcomeWithOutcome=False, includeFreqs = False, groupWhere = ''):
         """Finds the correlations between features and outcomes"""
-        assert self._tableExists(featGetter.featureTable), 'feature table does not exist (make sure to quote it)'
+        assert mm.tableExists(self.corpdb, self.dbCursor, featGetter.featureTable), 'feature table does not exist (make sure to quote it)'
         lexicon_count_table = None
         # if 'cat_' in featGetter.featureTable.split('$')[1]:
         #     lexicon_count_table = featGetter.featureTable
@@ -102,11 +128,11 @@ class OutcomeAnalyzer(OutcomeGetter):
                 featFreqs.update(dict([('outcome_'+k, len(v)) for k, v in allOutcomes.iteritems()]))
                                 
         #run correlations:
-        _warn("Yielding data to correlate over %s, adjusting for: %s%s" % (str(self.outcome_value_fields),
+        mm.warn("Yielding data to correlate over %s, adjusting for: %s%s" % (str(self.outcome_value_fields),
                                                                             str(self.outcome_controls),
                                                                             " interaction with "+str(self.outcome_interaction) if self.outcome_interaction else "."))
         if whitelist:
-            _warn(" (number of features above may be off due to whitelist)")
+            mm.warn(" (number of features above may be off due to whitelist)")
         assert featGetter and featGetter.featureTable, "Correlate requires a specified feature table"
         featsToYield = []
         has_wildcards = False
@@ -160,9 +186,9 @@ class OutcomeAnalyzer(OutcomeGetter):
         groups = []
         if groupThresh:
             wordTable = self.getWordTable()
-            groups = [str(i[1]) for i in self._executeGetList("select sum(value), group_id from %s group by group_id" % wordTable) if long(i[0]) >= groupThresh]
+            groups = [str(i[1]) for i in mm.executeGetList(self.corpdb, self.dbCursor, "select sum(value), group_id from %s group by group_id" % wordTable) if long(i[0]) >= groupThresh]
         else:
-            groups = [str(i[0]) for i in self._executeGetList("select distinct group_id from %s" % wordTable)]
+            groups = [str(i[0]) for i in mm.executeGetList(self.corpdb, self.dbCursor, "select distinct group_id from %s" % wordTable)]
             
         # Checking for group wildcards in the samples
         if sample1 == ['*']:
@@ -190,10 +216,10 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         if sample1 & sample2:
             if len(sample1) < len(sample2):
-                _warn("****** WARNING: some of the groups in sample1 are also present in sample2. Those groups will be removed from sample2 ******")
+                mm.warn("****** WARNING: some of the groups in sample1 are also present in sample2. Those groups will be removed from sample2 ******")
                 sample2 = sample2 - sample1
             else:
-                _warn("****** WARNING: some of the groups in sample2 are also present in sample1. Those groups will be removed from sample1 ******")
+                mm.warn("****** WARNING: some of the groups in sample2 are also present in sample1. Those groups will be removed from sample1 ******")
                 sample1 = sample1 - sample2
 
         raise NotImplementedError("Need to look at only those features that have been used by the users in the smaller sample")
@@ -203,7 +229,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         
         # How many features are there? Need to chunk if too many because it'll cause a memory error
         # numFeatsQuery = "select distinct feat from %s" % featGetter.featureTable
-        # numFeats = [i[0] for i in self._executeGetList(numFeatsQuery)]
+        # numFeats = [i[0] for i in mm.executeGetList(self.corpdb, self.dbCursor, numFeatsQuery)]
         # print "Total number of features:", len(numFeats)
 
         values = {}
@@ -212,12 +238,12 @@ class OutcomeAnalyzer(OutcomeGetter):
             if i == 0:
                 sql = "select feat, sum(value), sum(group_norm) from %s where group_id in ('%s') group by feat" % (featGetter.featureTable, "', '".join(str(i) for i in gs))
                 # fill in dictionary for 1st time
-                res = self._executeGetList(sql)
+                res = mm.executeGetList(self.corpdb, self.dbCursor, sql)
                 values = {feat: [float(gn)] for feat, freq, gn in res}
                 freqsDict = {feat: long(freq) for feat, freq, gn in res}
             else:
                 sql = "select feat, sum(group_norm) from %s where group_id in ('%s') group by feat" % (featGetter.featureTable, "', '".join(str(i) for i in gs))
-                new_values = {feat: gn for feat, gn in self._executeGetList(sql)}
+                new_values = {feat: gn for feat, gn in mm.executeGetList(self.corpdb, self.dbCursor, sql)}
                 for feat, gnList in values.iteritems():
                     gnList.append(new_values.get(feat, 0))
 
@@ -261,7 +287,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     sys.stderr.write("regexp isn't valid: %s\n" % term)
 
         sql = "select feat, sum(value), sum(group_norm) from %s group by feat" % (featGetter.featureTable)
-        counts_list = self._executeGetList(sql)
+        counts_list = mm.executeGetList(self.corpdb, self.dbCursor, sql)
         
         (groups, allOutcomes, controls) = self.getGroupsAndOutcomes(groupThresh)
         # groups = set of group_id's that have a non null outcome (for all outcomes ever) aka is useless
@@ -277,7 +303,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 good_groups = [i for i in outcome_groups if allOutcomes[outcome][i]==value]
                 sql = "select feat, sum(value), sum(group_norm) from %s where group_id in ('%s')" % (featGetter.featureTable, "','".join([str(i) for i in good_groups]))
                 sql += " group by feat"
-                value_dict = {feat : {'value': long(value), 'group_norm': group_norm} for feat, value, group_norm in self._executeGetList(sql)}
+                value_dict = {feat : {'value': long(value), 'group_norm': group_norm} for feat, value, group_norm in mm.executeGetList(self.corpdb, self.dbCursor, sql)}
                                     
                 for feat, value_group_norm_dict in counts_dict.iteritems():
                     try:
@@ -295,7 +321,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             results = tile(results, (len(counts_dict),))
             results['feat'] = counts_dict.keys()
 
-            _warn("Using '%s' to find relationship" % value_considered)
+            mm.warn("Using '%s' to find relationship" % value_considered)
             counts = array([i[value_considered] for i in counts_dict.values()])
             if counts.shape[1] < 2:
                 print "Your outcomes table is empty!(probably)"
@@ -345,7 +371,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     print "Outcome Encoding Error: zScoreGroup only works on binary outcomes"
                     raise ValueError
 
-                (dataList, outcomeList) = alignDictsAsLists(dataDict, outcomes)
+                (dataList, outcomeList) = fwc.alignDictsAsLists(dataDict, outcomes)
                 # Aligned lists of group_norm, outcome_value
                 # To-do:
                 # zscore dataList, and then return the item in the list that corresponds to the 
@@ -386,11 +412,11 @@ class OutcomeAnalyzer(OutcomeGetter):
                         # Do regression showing the effect of the controls only
                         # i.e. show the coefficients from the controls alone
                         
-                        (X, y) = alignDictsAsXy([controls[k] for k in sorted(controls.keys())], outcomes)
+                        (X, y) = fwc.alignDictsAsXy([controls[k] for k in sorted(controls.keys())], outcomes)
                         # print "alignDict time: %f"% float(time.time() - t0)#debug
                         if spearman:
-                            X = switchColumnsAndRows([rankdata(x)
-                                                      for x in switchColumnsAndRows(X)])
+                            X = fwc.switchColumnsAndRows([rankdata(x)
+                                                      for x in fwc.switchColumnsAndRows(X)])
                             y = rankdata(y)
                         if zscoreRegression: 
                             # print "MAARTEN\t", type(X[0][0]), type(y[0])
@@ -405,8 +431,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                             print results.summary(outcomeField, sorted(controls.keys()))#debug
                         except (ValueError, Exception) as err:
                             mode = 'Logistic regression' if logisticReg else 'OLS'
-                            _warn("%s threw ValueError: %s" % (mode,str(err)))
-                            _warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
+                            mm.warn("%s threw ValueError: %s" % (mode,str(err)))
+                            mm.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
 
                     #t0 = time.time()#debug
 
@@ -416,7 +442,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     controlsKeys = [control for control, values in controls.iteritems() if control not in interaction] + interaction
 
                     # controls.values() makes the labels go away, turns it into a list
-                    (X, y) = alignDictsAsXy(controlsValues + [dataDict], outcomes)
+                    (X, y) = fwc.alignDictsAsXy(controlsValues + [dataDict], outcomes)
                     # X is a matrix, y is a column vector
                     # Each row of X is: [control1, control2, ..., interaction1, interaction2, ..., group_norm]
                     #                       0         1           len(controls) len(controls)+1    len(controls)+len(interaction)
@@ -430,7 +456,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     
                     #print "alignDict time: %f"% float(time.time() - t0)#debug
                     if spearman: 
-                        X = switchColumnsAndRows([rankdata(x) for x in switchColumnsAndRows(X)])
+                        X = fwc.switchColumnsAndRows([rankdata(x) for x in fwc.switchColumnsAndRows(X)])
                         y = rankdata(y)
                     if zscoreRegression: (X, y) = (zscore(X), zscore(y) if not logisticReg else y)
 
@@ -452,11 +478,11 @@ class OutcomeAnalyzer(OutcomeGetter):
                             
                     except (ValueError,Exception) as err:
                         mode = 'Logistic regression' if logisticReg else 'OLS'
-                        _warn("%s threw ValueError: [%s]" % (mode, str(err)))
-                        _warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
+                        mm.warn("%s threw ValueError: [%s]" % (mode, str(err)))
+                        mm.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
 
                 else: #run pearson / spearman correlation (if not logitsic or not controls)
-                    (dataList, outcomeList) = alignDictsAsLists(dataDict, outcomes)
+                    (dataList, outcomeList) = fwc.alignDictsAsLists(dataDict, outcomes)
                     # pdb.set_trace()
                     #LAD addition: added because pearsonr messes up when trying to regress between different types: Decimal and float
                     outcomeList = map(float, outcomeList)
@@ -465,7 +491,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     else: tup = pearsonr(dataList, outcomeList) + (len(dataList),)
 
                 if not tup or not tup[0]:
-                    _warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
+                    mm.warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
                     if includeFreqs: tup = (float('nan'), float('nan'), len(y), 0)
                     else: tup = (float('nan'), float('nan'), len(y))
                 else: 
@@ -479,7 +505,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                             
                         except KeyError:
                             if not whitelist:
-                                _warn("unable to find total freq for '%s'" % feat)
+                                mm.warn("unable to find total freq for '%s'" % feat)
                             tup = tup + (float('nan'), )
                             if outputInteraction:
                                 interaction_tuples = {k: v + (float('nan'), ) for k, v in interaction_tuples.iteritems()} 
@@ -495,7 +521,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                             correls[inter] = {feat: tup}
 
             numRed += 1
-            if numRed % 200 == 0: _warn("  %d features correlated"%(numRed))
+            if numRed % 200 == 0: mm.warn("  %d features correlated"%(numRed))
             firstLoop = False
         # exit() # Maarten
 
@@ -504,7 +530,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             for outcomeField, featCorrels in correls.iteritems():
                 pDict = dict( [(k, tup[1]) for k, tup in featCorrels.iteritems()] ) 
                 rDict = dict( [(k, tup[0]) for k, tup in featCorrels.iteritems()] ) 
-                pDict = pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
+                pDict = fwc.pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
                 for k, tup in featCorrels.iteritems():
                     featCorrels[k] = (tup[0], pDict[k]) + tup[2:]
 
@@ -540,7 +566,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 # find correlation or regression coef, p-value, and N (stored in tup)
                 if controls: #consider controls
 
-                    (X, y) = alignDictsAsXy([controls[k] for k in sorted(controls.keys())] + [dataDict], outcomes)
+                    (X, y) = fwc.alignDictsAsXy([controls[k] for k in sorted(controls.keys())] + [dataDict], outcomes)
                     if zscoreRegression: 
                         X = zscore(X)
 
@@ -558,8 +584,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                                     auc -= 1
                                 print "  %11s: %.4f" %(cntrl, auc)
                         except (ValueError, Exception) as err:
-                            _warn("threw ValueError: %s" % str(err))
-                            _warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
+                            mm.warn("threw ValueError: %s" % str(err))
+                            mm.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
                             #TODO: add line of error
                         #all controls alone:
                         lr = LogisticRegression(penalty='l2', C=1000000, fit_intercept=True)
@@ -581,8 +607,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                             print "%d/%d: %.3f cauc vs %.3f c+tpc (%.3f difference); YES bootstrapping" % (featNum,numFeats,abs(cauc),check,check-abs(cauc))
                             Xc = X[:,:-1]
                             Xend = X[:,-1][...,None]
-                            pool = multiprocessing.Pool(int(CORES/3))        
-                            fCount = sum(pool.map(fiftyChecks, [(Xc, Xend, y, check)]*int(bootstrapP/50) ) ) 
+                            pool = multiprocessing.Pool(int(fwc.CORES/3))        
+                            fCount = sum(pool.map(fwc.fiftyChecks, [(Xc, Xend, y, check)]*int(bootstrapP/50) ) ) 
                             tup = (auc, fCount/float(bootstrapP), len(y))
                             pool.close()
                         else:
@@ -594,7 +620,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                                         
                 else: #no controls
                     cauc = 0.50
-                    (X, y) = alignDictsAsLists(dataDict, outcomes)
+                    (X, y) = fwc.alignDictsAsLists(dataDict, outcomes)
                     y = map(float, y)
                     if zscoreRegression:
                         X = zscore(X)
@@ -603,8 +629,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                         if auc < 0.5:
                             auc -= 1
                     except (ValueError, Exception) as err:
-                        _warn("threw ValueError: %s" % str(err))
-                        _warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
+                        mm.warn("threw ValueError: %s" % str(err))
+                        mm.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
 
                     #Bootstrap without controls:
                     if bootstrapP:
@@ -614,8 +640,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                             #print X
                             Xc = None
                             #Xend = X[:,-1][...,None]
-                            pool = multiprocessing.Pool(int(CORES/3))
-                            fCount = sum(pool.map(fiftyChecks, [(Xc, X, y, check)]*int(bootstrapP/50) ) ) 
+                            pool = multiprocessing.Pool(int(fwc.CORES/3))
+                            fCount = sum(pool.map(fwc.fiftyChecks, [(Xc, X, y, check)]*int(bootstrapP/50) ) ) 
                             # test = fiftyChecks((Xc, X, y, check))
                             # print test
                             # sys.exit()
@@ -629,7 +655,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
                 #adjust or add to tup...
                 if not tup or not tup[0]:
-                    _warn("unable to AUC feature '%s' with '%s'" %(feat, outcomeField))
+                    mm.warn("unable to AUC feature '%s' with '%s'" %(feat, outcomeField))
                     if includeFreqs: tup = (float('nan'), float('nan'), len(y), 0)
                     else: tup = (float('nan'), float('nan'), len(y))
                 else: 
@@ -641,7 +667,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
                         except KeyError:
                             if not whitelist:
-                                _warn("unable to find total freq for '%s'" % feat)
+                                mm.warn("unable to find total freq for '%s'" % feat)
                             tup = tup + (float('nan'), )
                     try: 
                         aucs[outcomeField][feat] = tup
@@ -649,7 +675,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                         aucs[outcomeField] = {feat: tup}
 
                 numRed += 1
-                if numRed % 200 == 0: _warn("  %d features correlated"%(numRed))
+                if numRed % 200 == 0: mm.warn("  %d features correlated"%(numRed))
                 firstLoop = False
 
         if self.featureMapping:
@@ -691,12 +717,12 @@ class OutcomeAnalyzer(OutcomeGetter):
                             if firstLoop:
                                 # show the coefficients from the controls alone
                                 thisControlKeys = sorted(controls.keys())
-                                (X, y) = alignDictsAsXy([controls[k] for k in thisControlKeys], outcomes)
+                                (X, y) = fwc.alignDictsAsXy([controls[k] for k in thisControlKeys], outcomes)
                                 
                                 # print "alignDict time: %f"% float(time.time() - t0)#debug
                                 
                                 if spearman: 
-                                    X = switchColumnsAndRows([rankdata(x) for x in switchColumnsAndRows(X)])
+                                    X = fwc.switchColumnsAndRows([rankdata(x) for x in fwc.switchColumnsAndRows(X)])
                                     y = rankdata(y)
                                 if zscoreRegression: (X, y) = (zscore(X), zscore(y))
                                 
@@ -715,17 +741,17 @@ class OutcomeAnalyzer(OutcomeGetter):
                                         comboCorrels[outcomeField][controlKeyCombo]['__CONTROL_'+thisControlKeys[c]] = tup
                                     print results.summary(outcomeField, sorted(controls.keys()))#debug
                                 except ValueError as err:
-                                    _warn("OLS threw ValueError: %s" % str(err))
-                                    _warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
+                                    mm.warn("OLS threw ValueError: %s" % str(err))
+                                    mm.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
 
                             #t0 = time.time()#debug
                             
-                            (X, y) = alignDictsAsXy(controls.values() + [dataDict], outcomes)
+                            (X, y) = fwc.alignDictsAsXy(controls.values() + [dataDict], outcomes)
                             
                             # print "alignDict time: %f"% float(time.time() - t0)#debug
                             
                             if spearman: 
-                                X = switchColumnsAndRows([rankdata(x) for x in switchColumnsAndRows(X)])
+                                X = fwc.switchColumnsAndRows([rankdata(x) for x in fwc.switchColumnsAndRows(X)])
                                 y = rankdata(y)
                             if zscoreRegression: (X, y) = (zscore(X), zscore(y))
                             results = None
@@ -734,17 +760,17 @@ class OutcomeAnalyzer(OutcomeGetter):
                                 tup = (results.params[-1], results.pvalues[-1], len(y))
                                 #print results.summary(outcomeField, controls.keys()+[feat])#debug
                             except ValueError as err:
-                                _warn("OLS threw ValueError: %s" % str(err))
-                                _warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
+                                mm.warn("OLS threw ValueError: %s" % str(err))
+                                mm.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
 
                         else:
                             # If not controls : run pearson / spearman correlation
-                            (dataList, outcomeList) = alignDictsAsLists(dataDict, outcomes)
+                            (dataList, outcomeList) = fwc.alignDictsAsLists(dataDict, outcomes)
                             if spearman: tup = spearmanr(dataList, outcomeList) + (len(dataList),)
                             else: tup = pearsonr(dataList, outcomeList) + (len(dataList),)
 
                         if not tup or not tup[0]:
-                            _warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
+                            mm.warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
                             if includeFreqs: tup = (float('nan'), float('nan'), float('nan'), float('nan'))
                             else: tup = (float('nan'), float('nan'), float('nan'))
                         else: 
@@ -755,7 +781,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                                 try:
                                     tup = tup + (int(featFreqs[str(feat)]), )
                                 except KeyError:
-                                    _warn("unable to find total freq for '%s'" % feat)
+                                    mm.warn("unable to find total freq for '%s'" % feat)
                                     tup = tup + (float('nan'), )
                         try: 
                             comboCorrels[outcomeField][controlKeyCombo][feat] = tup
@@ -768,7 +794,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                                 comboCorrels[outcomeField][controlKeyCombo][feat] = tup
 
             numRed += 1
-            if numRed % 200 == 0: _warn("  %d features correlated"%(numRed))
+            if numRed % 200 == 0: mm.warn("  %d features correlated"%(numRed))
             firstLoop = False
 
         
@@ -779,7 +805,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 for controlCombo, featCorrels in featComboCorrels.iteritems():
                     pDict = dict( [(k, tup[1]) for k, tup in featCorrels.iteritems()] ) 
                     rDict = dict( [(k, tup[0]) for k, tup in featCorrels.iteritems()] ) 
-                    pDict = pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
+                    pDict = fwc.pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
                     for k, tup in featComboCorrels.iteritems():
                         featComboCorrels[k][controlCombo] = (tup[0], pDict[k]) + tup[2:]
 
@@ -789,7 +815,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             for outcomeField, comboFeatRs in comboCorrels.iteritems():
                 newComboCorrels[outcomeField] = dict()
                 for controlCombo, featRs in comboFeatRs.iteritems():
-                    neewComboCorrels[outcomeField][controlCombo] = dict()
+                    newComboCorrels[outcomeField][controlCombo] = dict()
                     for feat in featRs:
                         newComboCorrels[outcomeField][controlCombo][self.mapFeatureName(feat, self.featureMapping)] = featRs[feat]
             comboCorrels = newComboCorrels 
@@ -820,9 +846,9 @@ class OutcomeAnalyzer(OutcomeGetter):
             outcomeKeys = allOutcomes.keys()
             numOutcomes = len(outcomeKeys)
             outcomeColumns = dict((outcomeKeys[i], i) for i in range(len(outcomeKeys)))
-            (X, y) = alignDictsAsXy(allOutcomes.values() + controls.values(), dataDict)
+            (X, y) = fwc.alignDictsAsXy(allOutcomes.values() + controls.values(), dataDict)
             if spearman:
-                X = switchColumnsAndRows([rankdata(x) for x in switchColumnsAndRows(X)])
+                X = fwc.switchColumnsAndRows([rankdata(x) for x in fwc.switchColumnsAndRows(X)])
                 y = rankdata(y)
             if zscoreRegression: (X, y) = (zscore(X), zscore(y))
             results = None
@@ -846,7 +872,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     i += 1
                     if not tup[0]: #if there was no coefficient for some reason
                         if not whitelist:
-                            _warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
+                            mm.warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
                         if includeFreqs: tup = (float('nan'), float('nan'), float('nan'), float('nan'))
                         else: tup = (float('nan'), float('nan'), float('nan'))
                     else: 
@@ -858,23 +884,23 @@ class OutcomeAnalyzer(OutcomeGetter):
                                 tup = tup + (int(featFreqs[str(feat)]), )
                             except KeyError:
                                 if not whitelist:
-                                    _warn("unable to find total freq for '%s'" % feat)
+                                    mm.warn("unable to find total freq for '%s'" % feat)
                                 tup = tup + (float('nan'), )
                     currentCoeffs[outcomeName] = tup
             except ValueError as err: #if OLS couldn't run
-                _warn("OLS threw ValueError: %s" % str(err))
-                _warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
+                mm.warn("OLS threw ValueError: %s" % str(err))
+                mm.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
 
             coeffs[feat] = currentCoeffs
             numRed += 1
-            if numRed % 200 == 0: _warn("  %d features regressed over"%(numRed))
+            if numRed % 200 == 0: mm.warn("  %d features regressed over"%(numRed))
         
         if p_correction_method: 
             ##change correls here. 
             for feat, outcomeCoeffs in coeffs.iteritems():
                 pDict = dict( [(k, tup[1]) for k, tup in featCorrels.iteritems()] ) 
                 rDict = dict( [(k, tup[0]) for k, tup in featCorrels.iteritems()] ) 
-                pDict = pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
+                pDict = fwc.pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
                 for k, tup in outcomeCoeffs.iteritems():
                     outcomeCoeffsCorrels[k] = (tup[0], pDict[k]) + tup[2:]
 
@@ -899,15 +925,15 @@ class OutcomeAnalyzer(OutcomeGetter):
                 print "Generating plot data for feature '%s' and outcome %s (controlled for %s)" % (feat, outcomeField, str(allControls.keys()))
                 (X, y) = (None, None)
                 if allControls:
-                    (X, y) = alignDictsAsXy([outcomes] + allControls.values(), dataDict)
+                    (X, y) = fwc.alignDictsAsXy([outcomes] + allControls.values(), dataDict)
                 else:
-                    (X, y) = alignDictsAsLists(outcomes, dataDict)
+                    (X, y) = fwc.alignDictsAsLists(outcomes, dataDict)
                 if zscoreRegression: 
                     # (X, y) = (zscore(X), y)
                     # (X, y) = (zscore(X), zscore(y))
                     #(X, y) = (zscore(X), zscore(y))
-                    (X, y) = stratifiedZScoreybyX0(X, y)
-                elif allControls: _warn("running loess with controls without zscore does not produce reliable output")
+                    (X, y) = fwc.stratifiedZScoreybyX0(X, y)
+                elif allControls: mm.warn("running loess with controls without zscore does not produce reliable output")
                 sortedX0set = []
                 if len(X.shape) > 1: sortedX0set = sorted(set(X[:,0]))
                 else: sortedX0set = sorted(set(X))
@@ -991,7 +1017,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 ro.r('plotdata <- data.frame(feature=rep("%s", length(yhat)), %s=%s, yhat=yhat)'%(feat, outcome, outcome))
                 #ro.r('plotdata <- data.frame(feature=rep("%s", length(yhat)), %s=%s, yhat=yhat, lty=rep(1+floor((%d-1)/3.0), length(yhat)))'%(feat, outcome, outcome, ii)) #dashed <- HAS
                 ro.r('full.plotdata <- rbind(full.plotdata, plotdata)')
-                _warn('finished feature: %s'%(feat,))
+                mm.warn('finished feature: %s'%(feat,))
  
                 # ro.r('''plot <- plot + scale_y_continuous('Standardized Relative Frequency', limits=c(-3.3,3.3), breaks=c(-3,0,3)) + scale_x_continuous('Age', limits=c(10, 70), breaks=seq(15,65,10))''')
                 # ro.r('''save(full.plotdata, file='plotdata.RObj')''')
@@ -1003,7 +1029,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 # outputname = outcome.upper() + '-' + '-'.join(featToFeatData.keys()) + '.jpg' if not outputname else outputname
                 outputname = outcome.upper() + '-' + '-'.join(featToFeatData.keys()) + '.svg' if not outputname else outputname ## HAS
                 output_filename = os.path.join(outputdir, outputname)
-                _warn( 'Writing to file: %s'%(output_filename,) )
+                mm.warn( 'Writing to file: %s'%(output_filename,) )
 
                 plotscript_filename = '/tmp/plotscript-%s.R'%(time_uuid,)
                 with open(plotscript_filename, 'w') as f:
@@ -1113,7 +1139,7 @@ class OutcomeAnalyzer(OutcomeGetter):
     def getLabelmapFromLexicon(self, lexicon_table): 
 
         """Returns a label map based on a lexicon. labelmap is {feat:concatenated_categories}"""
-        (conn, cur, curD) = mm.dbConnect(self.lexicondb)
+        (conn, cur, curD) = mm.dbConnect(self.lexicondb, charset=self.encoding)
         sql = 'SELECT * FROM %s'%(lexicon_table)
         rows = mm.executeGetList(self.lexicondb, cur, sql, True) #returns list of [id, feat, cat, ...] entries
 
@@ -1136,7 +1162,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         elif not labelmap_table:
             raise Exception("must specify labelmap_table or lda_id")
 
-        (conn, cur, curD) = mm.dbConnect(self.lexicondb)
+        (conn, cur, curD) = mm.dbConnect(self.lexicondb, charset=self.encoding)
         sql = 'SELECT * FROM %s'%(labelmap_table)
         rows = mm.executeGetList(self.lexicondb, cur, sql, True) #returns list of [feat, label, ...] entries
 
@@ -1174,8 +1200,8 @@ class OutcomeAnalyzer(OutcomeGetter):
             (r, p, n, freq) = rf
             tw = topicWords.get(topic)
             if not tw: 
-                _warn("**The following topic had no words from the topic lexicion**")
-                _warn("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, Freq: %d]\n" % (topic, r, p, n, freq))
+                mm.warn("**The following topic had no words from the topic lexicion**")
+                mm.warn("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, Freq: %d]\n" % (topic, r, p, n, freq))
                 continue
             currentWords = set(map(lambda t: t[0], tw))
             shouldCont = False
@@ -1187,13 +1213,13 @@ class OutcomeAnalyzer(OutcomeGetter):
             if not shouldCont: 
                 keptTopics.add(topic)
             if freq < 1000:
-                _warn("**The frequency for this topic was very small**")
-                _warn("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, Freq: %d]\n" % (topic, r, p, n, freq))
+                mm.warn("**The frequency for this topic was very small**")
+                mm.warn("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, Freq: %d]\n" % (topic, r, p, n, freq))
 
         return keptTopics
 
 
-    def printTagCloudData(self, correls, maxP = DEF_P, outputFile='', paramString = None, maxWords = 100, duplicateFilter = False, colorScheme='multi'):
+    def printTagCloudData(self, correls, maxP = fwc.DEF_P, outputFile='', paramString = None, maxWords = 100, duplicateFilter = False, colorScheme='multi'):
         """prints data that can be inputted into tag cloud software"""
         if paramString: print paramString + "\n"
 
@@ -1222,12 +1248,12 @@ class OutcomeAnalyzer(OutcomeGetter):
                     wordFreqs = dict( [(w, v[3]) for (w, v) in rs.items() if not ' ' in w] ) #word->freq dict
                 if posRs: 
                     if len(posRs[0][1]) < 3:
-                        _warn("printTagCloudData: not enough data or duplicateFilter option, skipping filter for %s posRs\n"%outcomeField)
+                        mm.warn("printTagCloudData: not enough data or duplicateFilter option, skipping filter for %s posRs\n"%outcomeField)
                     else:
                         posRs = OutcomeAnalyzer.duplicateFilter(posRs, wordFreqs, maxWords * 3)
                 if negRs: 
                     if len(negRs[0][1]) < 3:
-                        _warn("printTagCloudData: not enough data or duplicateFilter option, skipping filter for %s negRs\n"%outcomeField)
+                        mm.warn("printTagCloudData: not enough data or duplicateFilter option, skipping filter for %s negRs\n"%outcomeField)
                     else:
                         negRs = OutcomeAnalyzer.duplicateFilter(negRs, wordFreqs, maxWords * 3)
 
@@ -1244,7 +1270,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             sys.stdout = sys.__stdout__
 
 
-    def printTopicTagCloudData(self, correls, topicLex, maxP = DEF_P, paramString = None, maxWords = 15, maxTopics = 100, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False):
+    def printTopicTagCloudData(self, correls, topicLex, maxP = fwc.DEF_P, paramString = None, maxWords = 15, maxTopics = 100, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False):
         if paramString: print paramString + "\n"
 
         fsock = None
@@ -1262,7 +1288,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             print 'Using words from featuretable for visualization'
             sql = "SELECT feat, sum(value) FROM %s group by feat"%(self.getWordTable())
             # words = {word: int(freq), ...}
-            wordFreqs = {t[0]: int(t[1]) for t in self._executeGetList(sql)}
+            wordFreqs = {t[0]: int(t[1]) for t in mm.executeGetList(self.corpdb, self.dbCursor, sql)}
             words = set(wordFreqs.keys())
             newTopicWords = dict()
             for cat, tw in topicWords.iteritems():
@@ -1307,10 +1333,10 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     def getTopicWords(self, topicLex, maxWords=15):
         if not topicLex:
-            _warn("No topic lexicon selected, please specify it with --topic_lexicon TOP_LEX")
+            mm.warn("No topic lexicon selected, please specify it with --topic_lexicon TOP_LEX")
             exit(2)
         sql = "SELECT term, category, weight FROM %s.%s"%(self.lexicondb, topicLex)
-        catList = self._executeGetList(sql)
+        catList = mm.executeGetList(self.corpdb, self.dbCursor, sql)
         topicWords = dict()
         for (term, cat, w) in catList:
             stripped_cat = cat.strip() #thank you Daniel, love Johannes
@@ -1397,7 +1423,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     @staticmethod
     def buildBatchPlotFile(corpdb, featTable, topicList=''):
-        (conn, cur, curD) = mm.dbConnect(corpdb)
+        (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding)
         outputfile = '/tmp/flexiplot.csv'
         if topicList:
             from collections import OrderedDict
@@ -1415,8 +1441,8 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     @staticmethod
     def plotFlexibinnedTable(corpdb, flexiTable, featureFile, feat_to_label=None, preserveBinTable=False):
-        (conn, cur, curD) = mm.dbConnect(corpdb)
-        (pconn, pcur, pcurD) = mm.dbConnect(self.lexicondb)
+        (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding)
+        (pconn, pcur, pcurD) = mm.dbConnect(self.lexicondb, charset=self.encoding)
         if not feat_to_label:
             sql = 'SELECT DISTINCT(feat) FROM %s'%flexiTable
             feats = mm.executeGetList(corpdb, cur, sql)[0]
@@ -1433,7 +1459,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         for feat, label in feat_to_label.iteritems():
             rows.append((feat, label))
         sql = 'INSERT INTO %s VALUES(%s)'%(temp_table, '%s, %s')
-        mm.executeWriteMany(self.lexicondb, pconn, sql, rows)
+        mm.executeWriteMany(self.lexicondb, pconn, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
         #pprint(mm.executeGetList(self.lexicondb, pcur, 'SELECT * FROM %s'%temp_table))
         cmd = "/usr/bin/Rscript plotbot.R 'from.file' '%s' '%s' 'feat_to_label_temp' '%s'"%(corpdb, flexiTable, featureFile)
         os.system(cmd)
@@ -1450,7 +1476,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     @staticmethod
     def writeFlexiAgeCSV(corpdb, flexiTable, age_csv):
-        (conn, cur, curD) = mm.dbConnect(corpdb)
+        (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding)
         ageTable = flexiTable.replace('feat', 'age', 1)
         sql = 'CREATE TABLE %s LIKE %s'%(ageTable, flexiTable)
         mm.execute(corpdb, cur, sql)
@@ -1540,33 +1566,33 @@ class OutcomeAnalyzer(OutcomeGetter):
         if colorScheme=='multi':
         #print "%d %d %.4f" %(freq, maxFreq, perc)#debug
             if perc < 0.17: #grey to darker grey
-                (red, green, blue) = rgbColorMix((168, 168, 168),(124, 124, 148), resolution)[int(((1.00-(1-perc))/0.17)*resolution) - 1]
+                (red, green, blue) = fwc.rgbColorMix((168, 168, 168),(124, 124, 148), resolution)[int(((1.00-(1-perc))/0.17)*resolution) - 1]
             elif perc >= 0.17 and perc < 0.52: #grey to blue
-                (red, green, blue) = rgbColorMix((124, 124, 148), (32, 32, 210), resolution)[int(((0.830-(1-perc))/0.35)*resolution) - 1]
+                (red, green, blue) = fwc.rgbColorMix((124, 124, 148), (32, 32, 210), resolution)[int(((0.830-(1-perc))/0.35)*resolution) - 1]
             elif perc >= 0.52 and perc < 0.90: #blue to red
-                (red, green, blue) = rgbColorMix((32, 32, 210), (200, 16, 32), resolution)[int(((0.48-(1-perc))/0.38)*resolution) - 1]
+                (red, green, blue) = fwc.rgbColorMix((32, 32, 210), (200, 16, 32), resolution)[int(((0.48-(1-perc))/0.38)*resolution) - 1]
             else: #red to dark red
-                (red, green, blue) = rgbColorMix((200, 16, 32), (128, 0, 0), resolution)[int(((0.10-(1-perc))/0.10)*resolution) - 1]
+                (red, green, blue) = fwc.rgbColorMix((200, 16, 32), (128, 0, 0), resolution)[int(((0.10-(1-perc))/0.10)*resolution) - 1]
         # blue:
         elif colorScheme=='blue':
             if perc < 0.50: #light blue to med. blue
-                (red, green, blue) = rgbColorMix((76, 76, 236), (48, 48, 156), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
+                (red, green, blue) = fwc.rgbColorMix((76, 76, 236), (48, 48, 156), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
             else: #med. blue to strong blue
-                (red, green, blue) = rgbColorMix((48, 48, 156), (0, 0, 110), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
+                (red, green, blue) = fwc.rgbColorMix((48, 48, 156), (0, 0, 110), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
         #red:
         elif colorScheme=='red': 
             if perc < 0.50: #light red to med. red
-                (red, green, blue) = rgbColorMix((236, 76, 76), (156, 48, 48), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
+                (red, green, blue) = fwc.rgbColorMix((236, 76, 76), (156, 48, 48), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
             else: #med. red to strong red
-                (red, green, blue) = rgbColorMix((156, 48, 48), (110, 0, 0), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
+                (red, green, blue) = fwc.rgbColorMix((156, 48, 48), (110, 0, 0), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
         elif colorScheme=='green': 
-            (red, green, blue) = rgbColorMix((166, 247, 178), (27, 122, 26), resolution)[int((1.00-(1-perc))*resolution) - 1]
+            (red, green, blue) = fwc.rgbColorMix((166, 247, 178), (27, 122, 26), resolution)[int((1.00-(1-perc))*resolution) - 1]
         #red+randomness:
         elif colorScheme=='red-random':
             if perc < 0.50: #light blue to med. blue
-                (red, green, blue) = rgbColorMix((236, 76, 76), (156, 48, 48), resolution, True)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
+                (red, green, blue) = fwc.rgbColorMix((236, 76, 76), (156, 48, 48), resolution, True)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
             else: #med. blue to strong blue
-                (red, green, blue) = rgbColorMix((156, 48, 48), (110, 0, 0), resolution, True)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
+                (red, green, blue) = fwc.rgbColorMix((156, 48, 48), (110, 0, 0), resolution, True)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
 
 
         #print "(%d %d %d)" %(red, green, blue)#debug
@@ -1575,7 +1601,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         return htmlcode.replace(' ', '0')
 
 
-    def generateTagCloudImage(self, correls, maxP = DEF_P, paramString = None, colorScheme='multi' ):
+    def generateTagCloudImage(self, correls, maxP = fwc.DEF_P, paramString = None, colorScheme='multi' ):
         """generates a tag cloud image from correls"""
         if paramString: print paramString + "\n"
         #TODO: make maxP a parameter
@@ -1618,7 +1644,8 @@ class OutcomeAnalyzer(OutcomeGetter):
 
                               
     def barPlot(self, correls, outputFile = None, featSet = set(), featsPerOutcome = 5):
-        _warn("Generating Bar Plot.")
+        from rFeaturePlot import FeaturePlotter        
+        mm.warn("Generating Bar Plot.")
         if not outputFile: outputFile = '_'.join(self.outcome_value_fields)
         #generate features to use: (ignore featsPerOutcome if featset is passed in)
         if not featSet:
@@ -1634,24 +1661,24 @@ class OutcomeAnalyzer(OutcomeGetter):
         FeaturePlotter().barPlot(outputFile, newCorrels) 
                                
     def correlMatrix(self, correlMatrix, outputFile = None, outputFormat='html', sort = False, pValue = True, nValue = True, freq = False, paramString = None):
-        _warn("Generating Correlation Matrix.")
+        mm.warn("Generating Correlation Matrix.")
                     
         if outputFile: 
             #redirect
             outputFile = outputFile +'.'+outputFormat
-            _warn(" print to file: %s" % outputFile)
+            mm.warn(" print to file: %s" % outputFile)
         outputFilePtr = sys.stdout
         if outputFile: outputFilePtr = open(outputFile, 'w') 
         if paramString: print >>outputFilePtr,paramString + "\n \n"
             
         outputFormat = outputFormat.lower()
-        _warn('=====================%d===================='%(len(correlMatrix),))
+        mm.warn('=====================%d===================='%(len(correlMatrix),))
         if outputFormat == 'pickle':
             import cPickle as pickle
             pickle.dump(correlMatrix, open(outputFile, "wb" ))
         elif outputFormat == 'csv':
             if (len(correlMatrix)>0): 
-                self.outputCorrelMatrixCSV(reverseDictDict(correlMatrix), pValue, nValue, freq, outputFilePtr=outputFilePtr)
+                self.outputCorrelMatrixCSV(fwc.reverseDictDict(correlMatrix), pValue, nValue, freq, outputFilePtr=outputFilePtr)
                 if sort: self.outputSortedCorrelCSV(correlMatrix, pValue, nValue, freq, outputFilePtr=outputFilePtr)
         elif outputFormat == 'html':
             if (len(correlMatrix)>0):
@@ -1659,27 +1686,27 @@ class OutcomeAnalyzer(OutcomeGetter):
                 if sort: header += ' or see them <a href="#sorted">sorted by r-values</a>'
                 header += '<br><br></div>'
                 print >>outputFilePtr, header
-                self.outputCorrelMatrixHTML(reverseDictDict(correlMatrix), pValue, nValue, freq, outputFilePtr=outputFilePtr)
+                self.outputCorrelMatrixHTML(fwc.reverseDictDict(correlMatrix), pValue, nValue, freq, outputFilePtr=outputFilePtr)
                 if sort: self.outputSortedCorrelHTML(correlMatrix, pValue, nValue, freq, outputFilePtr=outputFilePtr)
         else:
-            _warn("unknown output format: %s"% outputFormat)
+            mm.warn("unknown output format: %s"% outputFormat)
       
     @staticmethod    
     def outputCorrelMatrixCSV(correlMatrix, pValue = True, nValue = True, freq=True, outputFilePtr = sys.stdout):
-        keys1 = sorted(correlMatrix.keys(), key = permaSortedKey)
+        keys1 = sorted(correlMatrix.keys(), key = fwc.permaSortedKey)
         # keys2 = sorted(correlMatrix[keys1[0]].keys(), key = permaSortedKey)
         keys2 = set([j for i in correlMatrix.values() for j in i.keys()])
-        keys2 = sorted(list(keys2), key = permaSortedKey)
+        keys2 = sorted(list(keys2), key = fwc.permaSortedKey)
         writer = csv.writer(outputFilePtr)
         titlerow = ['feature']
         for key2 in keys2:
-            titlerow.append(tupleToStr(key2))
+            titlerow.append(fwc.tupleToStr(key2))
             if pValue: titlerow.append('p')
             if nValue: titlerow.append('N')
             if freq: titlerow.append('freq')
         writer.writerow(titlerow)
         for key1 in keys1:
-            row = [tupleToStr(key1)]
+            row = [fwc.tupleToStr(key1)]
             for key2 in keys2:
                 (r, p, n, f) = correlMatrix[key1].get(key2, [0, 1, 0, 0])[:4]
                 row.append(r)
@@ -1693,7 +1720,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         """Ouputs a sorted correlation matrix (note correlmatrix is reversed from non-sorted) """
         #TODO: topN
         print >>outputFilePtr, "\nSORTED:"
-        keys1 = sorted(correlMatrix.keys(), key = permaSortedKey)
+        keys1 = sorted(correlMatrix.keys(), key = fwc.permaSortedKey)
         sortedData = dict()
         titlerow = ['rank']
         maxLen = 0
@@ -1714,7 +1741,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 data = sortedData[key1]
                 if rank < len(data):#print this keys rank item
                     data = data[rank]
-                    row.append(tupleToStr(data[0])) #name of feature
+                    row.append(fwc.tupleToStr(data[0])) #name of feature
                     (r, p, n, f) = data[1][:4]
                     row.append(r)
                     if pValue: row.append(p)
@@ -1738,7 +1765,7 @@ class OutcomeAnalyzer(OutcomeGetter):
     def outputComboCorrelMatrixCSV(comboCorrelMatrix, outputstream = sys.stdout, paramString = None):
         """prints correl matrices for all combinations of features, always prints p-values, n, and freq)"""
         print >>outputstream, paramString+"\n"
-        outcomeKeys = sorted(comboCorrelMatrix.keys(), key = permaSortedKey)
+        outcomeKeys = sorted(comboCorrelMatrix.keys(), key = fwc.permaSortedKey)
         for outcomeName in outcomeKeys:
             columnKeys = sorted(comboCorrelMatrix[outcomeName].keys(), key = lambda k: len(k))
             columnNames = ['feature'] + sum([['b_'+str(ck), 'p_'+str(ck), 'n_'+str(ck)] for ck in columnKeys], [])[:] + ['freq']
@@ -1780,21 +1807,21 @@ class OutcomeAnalyzer(OutcomeGetter):
         output += "<table border=1><tr>"
         output += '<td></td>'
         # correlMatrix: dictionary of rows - dictionary of columns
-        keys1 = sorted(correlMatrix.keys(), key = permaSortedKey)
+        keys1 = sorted(correlMatrix.keys(), key = fwc.permaSortedKey)
         # keys2 = sorted(correlMatrix[keys1[0]].keys(), key = permaSortedKey)
         keys2 = set([j for i in correlMatrix.values() for j in i.keys()])
-        keys2 = sorted(list(keys2), key = permaSortedKey)
+        keys2 = sorted(list(keys2), key = fwc.permaSortedKey)
         lastKey2 = keys2[-1]
         for key2 in keys2:
 
-            output += "<td><b>%s</b></td>" % tupleToStr(key2)
+            output += "<td><b>%s</b></td>" % fwc.tupleToStr(key2)
             if pValue: output += '<td class="sml"><em>(p)</em></td>'
             if nValue: output += '<td class="sml"><em>N</em></td>'
             if freq and (key2 == lastKey2): output += '<td class="tny">freq</td>'
         output += "</tr>\n"
 
         for key1 in keys1:
-            output += "<tr><td><b>%s</b></td>" % tupleToStr(key1)
+            output += "<tr><td><b>%s</b></td>" % fwc.tupleToStr(key1)
             ffreq = 0
             for key2 in keys2:
                 (r, p, n, f) = correlMatrix[key1].get(key2, [0, 1, 0, ffreq])[:4]
@@ -1851,14 +1878,14 @@ class OutcomeAnalyzer(OutcomeGetter):
         output += '<a href="#bottomSorted">Go to bottom</a>'
         output += "<p> SORTED:"
         output += "<table border=1>"
-        keys1 = sorted(correlMatrix.keys(), key = permaSortedKey)
+        keys1 = sorted(correlMatrix.keys(), key = fwc.permaSortedKey)
         sortedData = dict()
         maxLen = 0
         output += "<tr><td><b>rank</b></td>"
         for key1 in keys1:
             sortedData[key1] = sorted(correlMatrix[key1].iteritems(), key=lambda (k, v): (-1*float(v[0]) if not isnan(float(v[0])) else 0, k))
             if len(sortedData[key1]) > maxLen: maxLen = len(sortedData[key1])
-            output += "<td><b>%s<br/>r</b></td>"%tupleToStr(key1)
+            output += "<td><b>%s<br/>r</b></td>"%fwc.tupleToStr(key1)
 
             pnf = []
             if pValue: pnf.append("<em>(p)</em>")
@@ -1901,7 +1928,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     else: #must be nan or inf
                         bgcolor = "rgb(190, 190, 190)"
 
-                    output += "<td class='%s' style='background-color:%s;'>%s<br />%.3f</td>" % (fgclass, bgcolor,tupleToStr(data[0]), r)
+                    output += "<td class='%s' style='background-color:%s;'>%s<br />%.3f</td>" % (fgclass, bgcolor,fwc.tupleToStr(data[0]), r)
                     pnf = []
                     if pValue: pnf.append("<em>(%6.4f)</em>"%float(p))
                     if nValue: pnf.append("<em>%d</em>" % int(n))
@@ -1914,7 +1941,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         output += "<tr><td><b>rank</b></td>"
         for key1 in keys1:
-            output += "<td><b>%s<br/>r</b></td>"%tupleToStr(key1)
+            output += "<td><b>%s<br/>r</b></td>"%fwc.tupleToStr(key1)
             pnf = []
             if pValue: pnf.append("<em>(p)</em>")
             if nValue: pnf.append("<em>N</em>")
@@ -1934,13 +1961,13 @@ class OutcomeAnalyzer(OutcomeGetter):
         #print >>outputFilePtr, output
         print >>outputFilePtr, "</p>"
 
-    def printSignificantCoeffs(self, coeffs, outputFile = None, outputFormat='tsv', sort = False, pValue = True, nValue = False, maxP = DEF_P, paramString = None):
-        _warn("Generating Significant Coeffs.")
+    def printSignificantCoeffs(self, coeffs, outputFile = None, outputFormat='tsv', sort = False, pValue = True, nValue = False, maxP = fwc.DEF_P, paramString = None):
+        mm.warn("Generating Significant Coeffs.")
                                
         if outputFile: 
             #redirect
             outputFile = outputFile +'.'+outputFormat
-            _warn(" print to file: %s" % outputFile)
+            mm.warn(" print to file: %s" % outputFile)
             old_stdout = sys.stdout
             sys.stdout = open(outputFile, 'w')
         if paramString: print paramString + "\n"
@@ -1962,14 +1989,14 @@ class OutcomeAnalyzer(OutcomeGetter):
         if outputFormat == 'html':
             raise NotImplementedError
         else:
-            _warn("unknown output format: %s"% outputFormat)
+            mm.warn("unknown output format: %s"% outputFormat)
       
         if outputFile: 
             #unredirect
             sys.stdout = old_stdout
 
-    def writeSignificantCoeffs4dVis(self, coeffs, outputFile, outputFormat='tsv', sort = False, pValue = True, nValue = False, maxP = DEF_P, paramString = None, interactions = False):
-        _warn("Generating Significant Coeffs.")
+    def writeSignificantCoeffs4dVis(self, coeffs, outputFile, outputFormat='tsv', sort = False, pValue = True, nValue = False, maxP = fwc.DEF_P, paramString = None, interactions = False):
+        mm.warn("Generating Significant Coeffs.")
 
         # import pdb
         # pdb.set_trace()
@@ -1997,7 +2024,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 print header
                 for ngram, outcomeDict in sigCoeffs.iteritems():
                     if '\t' in ngram:
-                        _warn('ngram [%s] skipped because it had a tab in it' % (ngram, ))
+                        mm.warn('ngram [%s] skipped because it had a tab in it' % (ngram, ))
                         continue
                     # linedata has: ngram, outcome_1_r, outcome_2_r, ... outcome_n_r, outcome_1_pValue, outcome_2_pValue, ... outcome_n_pValue, num_users, ngram_frequency
                     linedata = [ngram] + list(map(lambda x:outcomeDict[x][0], outcomes)) + list(map(lambda x:outcomeDict[x][1], outcomes)) + list(outcomeDict[outcomes[0]][2:4])
@@ -2005,7 +2032,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     gf.write(line)
                     print line
         else:
-            _warn("unknown output format: %s"% outputFormat)
+            mm.warn("unknown output format: %s"% outputFormat)
         pprint(sigCoeffs)
 
     def interraterReliability(self, fields, where, index, method='icc'):

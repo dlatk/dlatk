@@ -8,17 +8,30 @@ import warnings
 import sys
 import time
 
+from FeatureWorker.fwConstants import DEF_ENCODING
 
-def get_db_engine(db_schema, db_host = None, db_config = '~/.my.cnf', port=3306):
+def get_db_engine(db_schema, db_host = None, charset=DEF_ENCODING, db_config = '~/.my.cnf', port=3306):
+    eng = None
+    attempts = 0;
     if not db_host:
         db_host = 'localhost' if socket.gethostname()=='wwbp' else 'wwbp-venti'
-    db_url = URL(drivername='mysql', host=db_host, port=port,
-        database=db_schema,
-        query={
-            'read_default_file' : db_config,
-            'charset': 'utf8mb4'
-        })
-    return create_engine(name_or_url=db_url)
+    while (1):
+        try:
+            db_url = URL(drivername='mysql', host=db_host, port=port,
+                database=db_schema,
+                query={
+                    'read_default_file' : db_config,
+                    'charset': charset
+                })
+            eng = create_engine(name_or_url=db_url)
+            break
+        except Exception as e:
+            attempts += 1
+            _warn(" *MYSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db, e, attempts))
+            time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
+            if (attempts > MAX_ATTEMPTS):
+                sys.exit(1)
+    return eng
 
 def create_table(db_eng, table_name, columns, more_definitions=[], table_options="", if_exists="error"):
     '''
@@ -184,3 +197,23 @@ def mysql_multitable(db_eng, dict_iter, table_prefix, table_column, table_column
 def dictify(my_iter, columns):
     for item in my_iter:
         yield dict(zip(columns, item))
+
+
+# def _dbConnectSQLalchemy(db, host="localhost"):
+#     eng = None
+#     attempts = 0;
+#     while (1):
+#         try:
+#             connInf = sqlalchemy.engine.url.URL(drivername="mysql",
+#                                                 host = host,
+#                                                 database = db,
+#                                                 query={ 'read_default_file' : '~/.my.cnf', 'charset': 'utf8mb4'})
+#             eng = sqlalchemy.create_engine(name_or_url = connInf, pool_recycle=3600)
+#             break
+#         except Exception as e:
+#             attempts += 1
+#             _warn(" *MYSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db, e, attempts))
+#             time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
+#             if (attempts > MAX_ATTEMPTS):
+#                 sys.exit(1)
+#     return eng

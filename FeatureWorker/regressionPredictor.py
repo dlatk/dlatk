@@ -71,8 +71,9 @@ import math
 
 DEFAULT_MAX_PREDICT_AT_A_TIME = 100000
 
-#fw:
+#infrastructure
 from classifyPredictor import ClassifyPredictor
+from mysqlMethods import mysqlMethods as mm
 
 #alignDictsAsXy(Xdicts, ydict, sparse=True, keys = trainGroupsOrder)
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
@@ -174,7 +175,7 @@ def alignDictsAsXyWithFeats(X, y, feats):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
     keys = frozenset(y.keys())
     # keys = keys.intersection(*[x.keys() for x in X])
-    keys = keys.intersection(X.keys())	
+    keys = keys.intersection(X.keys())  
     keys = list(keys) #to make sure it stays in order
     feats = list(feats)
     listy = map(lambda k: y[k], keys)
@@ -224,15 +225,15 @@ class RegressionPredictor:
             #{'alphas': np.array([100000, 500000, 250000, 25000, 10000, 2500, 1000, 100, 10])}, 
             #{'alphas': np.array([100000, 500000, 250000, 25000, 10000])},
             #{'alphas': np.array([250000, 100000, 1000000, 2500000, 10000000, 25000000, 100000000])}, #personality, n-grams + 2000 topics
-            {'alphas': np.array([1, .01, .0001, 100, 10000, 1000000])}, #first-pass
+            #{'alphas': np.array([1, .01, .0001, 100, 10000, 1000000])}, #first-pass
             #{'alphas': np.array([1000, 1, .1, 10, 100, 10000, 100000])}, #user-level low num users (~5k) or counties
-            #{'alphas': np.array([1000, 10000, 100000, 1000000])}, #user-level low num users (~5k) or counties
+            {'alphas': np.array([1000, 10000, 100000])}, #user-level low num users (~5k) or counties
             #{'alphas': np.array([1000, 100, 10000, 10, 1])}, #county achd (need low for controls)
             #{'alphas': np.array([10000, 100000, 1000, 1000000, 100])}, #message quality
             #{'alphas': np.array([1, .1, .01, .001, .0001, .00001, .000001])} 
             #{'alphas': np.array([.01, .001, .1, 1, 10, .0001])} #message-level rel_freq no std
             #{'alphas': np.array([.001])},
-            {'alphas': np.array([100, 1000, 10])},
+            #{'alphas': np.array([100, 1000, 10])},
             #{'alphas': np.array([10, .1, .25, 1, 2.5, 100])}, #user-level low num users (~5k) or counties
             #{'alphas': np.array([1000, 1, 10000, 100000, 1000000])}, #user-level medium num users (~25k)
             #{'alphas': np.array([1000, 100, 10000, 10, 100000, 1])}, #message-level sparse binary
@@ -382,7 +383,7 @@ class RegressionPredictor:
     #featureSelectionString = 'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
     
 
-    #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/max(1.5,len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
+    featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/max(1.5,len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=100.0)), ("3_rpca", RandomizedPCA(n_components=int(X.shape[0]**2/(2500 * max(1.5,len(self.featureGetters)))), random_state=42, whiten=False, iterated_power=3))])'
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=70.0)), ("3_rpca", RandomizedPCA(n_components=.4/len(self.featureGetters), random_state=42, whiten=False, iterated_power=3, max_components=X.shape[0]/max(1.5, len(self.featureGetters))))])'
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=70.0)), ("3_rpca", RandomizedPCA(n_components=.4, random_state=42, whiten=False, iterated_power=3, max_components=X.shape[0]/max(1.5, len(self.featureGetters))))])'
@@ -530,7 +531,7 @@ class RegressionPredictor:
             (groupNorms, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups, blacklist = blacklist)
         groupNormValues = groupNorms.values() #list of dictionaries of group => group_norm
         controlValues = controls.values() #list of dictionaries of group=>group_norm
-	#     this will return a dictionary of dictionaries
+    #     this will return a dictionary of dictionaries
 
         #3. test classifiers for each possible y:
         for outcomeName, outcomes in sorted(allOutcomes.items()):
@@ -1185,17 +1186,18 @@ class RegressionPredictor:
                 XGroups = XGroups & fgGroups #intersect groups from all feature tables
                 UGroups = UGroups | fgGroups #intersect groups from all feature tables
                 #potential source of bug: if a sparse feature table doesn't have all the groups it should
-                #potential source of bug: if a sparse feature table doesn't have all of the groups which it should
+                #TODO: fill these in with zeros but print an obvious warning because it could also be a sign of 
+                #      non-english messages which aren't triggering any feautres
         #XGroups = XGroups & groups #this should not be needed
-        if len(XGroups) < len(groups): 
-            print " Different number of groups available for different outcomes. (%d, %d)" % (len(XGroups), len(groups))
+        if len(XGroups) < len(UGroups): 
+            print " !! Different number of groups available for different feature tables. (%d, %d)\n this may cause problems down the line" % (len(XGroups), len(groups))
         
 
         #########################################
         #3. predict for all possible outcomes
         predictions = dict()
-        testGroupsOrder = list(UGroups) 
-        #testGroupsOrder = list(XGroups)
+        #testGroupsOrder = list(UGroups) #use the union of feature tables (may cause null issue)
+        testGroupsOrder = list(XGroups)#use the intersection only
         
         for outcomeName in sorted(outcomes):
             print "\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4))
@@ -1285,7 +1287,7 @@ class RegressionPredictor:
             print "[Inserting Predictions as Feature values for %s]" % feat
             wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
             rows = [(k, v, v) for k, v in preds.iteritems()] #adds group_norm and applies freq filter
-            fe._executeWriteMany(wsql, rows)
+            mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
 
     def predictToFeatureTable(self, groupFreqThresh = 0, standardize = True, sparse = False, fe = None, name = None):
         if not fe:
@@ -1357,13 +1359,13 @@ class RegressionPredictor:
                 for k, v in preds.iteritems():
                     rows.append((k, v, v))
                     if len(rows) >  self.maxPredictAtTime or len(rows) >= len(preds):
-                        fe._executeWriteMany(wsql, rows)
+                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
                         written += len(rows)
                         print "   %d feature rows written" % written
                         rows = []
             # if there's rows left
             if rows:
-                fe._executeWriteMany(wsql, rows)
+                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
                 written += len(rows)
                 print "   %d feature rows written" % written
         return
@@ -1820,7 +1822,7 @@ class RegressionPredictor:
         self.featureNames = groupNorms.keys() #holds the order to expect features
         groupNormValues = groupNorms.values() #list of dictionaries of group => group_norm
         controlValues = controls.values() #list of dictionaries of group=>group_norm
-	#     this will return a dictionary of dictionaries
+    #     this will return a dictionary of dictionaries
 
 
         #3. Create classifiers for each possible y:
@@ -1876,7 +1878,7 @@ class RegressionPredictor:
         #groupNormValues = groupNorms.values() #list of dictionaries of group => group_norm
         print "number of features after alignment: %d" % len(groupNormValues)
         controlValues = controls.values() #list of dictionaries of group=>group_norm (TODO: including controls for predict might mess things up)
-	#     this will return a dictionary of dictionaries
+    #     this will return a dictionary of dictionaries
 
         #3. Predict ys for each model:
         predictions = dict() #outcome=>group_id=>value
@@ -2537,7 +2539,7 @@ def r2simple(ytrue, ypred):
         
 #         #1. get data possible ys (outcomes)
 #         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
-# 	#     - this will give you 3 values: groups, outcomes, and controls
+#   #     - this will give you 3 values: groups, outcomes, and controls
 #         #       groups lists all of the groups (i.e. users) who meet groupFreqThresh criteria
 #         #       outcomes is a dictionary(hashtable) of dictionaries
 #         #       you can ignore controls
@@ -2545,43 +2547,43 @@ def r2simple(ytrue, ypred):
 
 #         #2. get data for X:
 #         langFeatures = self.featureGetter.getGroupNormsWithZeros(groups)
-# 	#     this will return a dictionary of dictionaries
+#   #     this will return a dictionary of dictionaries
 
 #         #3. Create predictors for each possible y:
 #         predictors = dict() #store scikit-learn models here
 #         scalers = dict()
 #         for outcomeName, outcomes in allOutcomes.iteritems():
 #            (X, y) = alignDictsAsXy(langFeatures[0], outcomes, list(langFeatures[1]))
-# 	   X = np.array(X)
-# 	   if standardize == True:
-# 		scalers[outcomeName] = preprocessing.StandardScaler()
-# 		X = scalers[outcomeName].fit_transform(X)
+#      X = np.array(X)
+#      if standardize == True:
+#       scalers[outcomeName] = preprocessing.StandardScaler()
+#       X = scalers[outcomeName].fit_transform(X)
 
 #            # X, y = shuffle(X, y, random_state=0) #if cross-validating and suspect data is not randomly ordered
 #            #y = zscore(y) #debug: remove in future
-# 	   n = len(y)
-# 	   split = (n*4)/5
-# 	   print 'Shape of X', X.shape
-# 	   X_train = X[:split]
-# 	   #print 'shape of X train', X_train.shape
+#      n = len(y)
+#      split = (n*4)/5
+#      print 'Shape of X', X.shape
+#      X_train = X[:split]
+#      #print 'shape of X train', X_train.shape
 #            X_test = X[split:]
-# 	   #print 'shape of Xtest', X_test.shape
-# 	   y = np.array(y)
-# 	   y = y.reshape(n,1)
-# 	   y_train = y[:split]
+#      #print 'shape of Xtest', X_test.shape
+#      y = np.array(y)
+#      y = y.reshape(n,1)
+#      y_train = y[:split]
 #            y_test = y[split:]
-# #	   selector = SelectPercentile(f_regression, percentile=10)
-# #	   X_train = selector.fit_transform(X_train, y_train)
-# #	   X_test = selector.transform(X_test)
-# #	   print 'Shape of feature selected x train', X_train.shape
-# #	   print 'Shape of feature selected x test', X_test.shape
-# 	   predictors[outcomeName] = linear_model.Ridge(alpha=0.1)
+# #    selector = SelectPercentile(f_regression, percentile=10)
+# #    X_train = selector.fit_transform(X_train, y_train)
+# #    X_test = selector.transform(X_test)
+# #    print 'Shape of feature selected x train', X_train.shape
+# #    print 'Shape of feature selected x test', X_test.shape
+#      predictors[outcomeName] = linear_model.Ridge(alpha=0.1)
 #            predictors[outcomeName].fit(X_train,y_train)
            
-# 	   #Debugging information
+#      #Debugging information
 #            predictedY = predictors[outcomeName].predict(X_test)
-# 	   #print "[%s] Mean error rate on test data: %.4f" % (outcomeName, predictors[outcomeName].score(X_test,y_test))
-# 	   print "[%s] Mean error rate (R2) on test data: %.4f" % (outcomeName, metrics.r2_score(y_test, predictedY))
-# 	   print "[%s] mean square error: %.4f" % (outcomeName, metrics.mean_square_error(y_test, predictedY))
+#      #print "[%s] Mean error rate on test data: %.4f" % (outcomeName, predictors[outcomeName].score(X_test,y_test))
+#      print "[%s] Mean error rate (R2) on test data: %.4f" % (outcomeName, metrics.r2_score(y_test, predictedY))
+#      print "[%s] mean square error: %.4f" % (outcomeName, metrics.mean_square_error(y_test, predictedY))
 
 #         #Set object's regressionModels and scalers

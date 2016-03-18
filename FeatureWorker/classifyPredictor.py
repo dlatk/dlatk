@@ -66,6 +66,9 @@ import math
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 
+#infrastructure
+from mysqlMethods import mysqlMethods as mm
+
 
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
@@ -919,7 +922,7 @@ class ClassifyPredictor:
             print "[Inserting Predictions as Feature values for %s]" % feat
             wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
             rows = [(k, v, v) for k, v in preds.iteritems()] #adds group_norm and applies freq filter
-            fe._executeWriteMany(wsql, rows)
+            mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
 
     def predictToOutcomeTable(self, groupFreqThresh = 0, standardize = True, sparse = False, fe = None, name = None, nFolds = 10):
 
@@ -1020,7 +1023,7 @@ class ClassifyPredictor:
             for k, v in preds.iteritems():
                 rows.append((k, v, v))
 
-            fe._executeWriteMany(wsql, rows)
+            mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
             written += len(rows)
             print "   %d feature rows written" % written
 

@@ -20,9 +20,6 @@ __version__ = "0.3"
 __maintainer__ = "H. Andrew Schwartz"
 __email__ = "hansens@sas.upenn.edu"
 
-import codecs
-codecs.register(lambda name: codecs.lookup('utf8') if name == 'utf8mb4' else None)
-
 import os, getpass
 import sys
 import pdb
@@ -84,6 +81,7 @@ DEF_MESSAGEID_FIELD = 'message_id'
 #DEF_MESSAGEID_FIELD = 'id'
 DEF_LEXTABLE = 'wn_O'
 DEF_DATE_FIELD = 'updated_time'
+DEF_ENCODING = 'utf8mb4'
 
 ##Outcome settings
 DEF_OUTCOME_TABLE = 'masterstats_andy_maxAge64'
@@ -112,7 +110,6 @@ DEF_P = 0.05 # p value for printing tagclouds
 
 ##Mediation Settings:
 DEF_MEDIATION_BOOTSTRAP = 1000
-DEF_MEDIATION_P = 0.05
 DEF_OUTCOME_PATH_STARTS = []
 DEF_OUTCOME_MEDIATORS = []
 
@@ -158,23 +155,26 @@ def main(fn_args = None):
     start_time = time.time()
 
     ##Argument Parser:
-    parser = argparse.ArgumentParser(
-        description='Extract and Manage Language Feature Data.', prefix_chars='-+', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    init_parser = argparse.ArgumentParser(prefix_chars='-+', formatter_class=argparse.ArgumentDefaultsHelpFormatter, add_help=False)
 
     # Meta variables
-    group = parser.add_argument_group('Meta Variables', '')
+    group = init_parser.add_argument_group('Meta Variables', '')
     group.add_argument('--to_file', dest='toinitfile', nargs='?', const=DEF_INIT_FILE, default=None,
                       help='write flag values to text file')
     group.add_argument('--from_file', type=str, dest='frominitfile', default='',
                        help='reads flag values from file')
 
-    args, remaining_argv = parser.parse_known_args()
+    init_args, remaining_argv = init_parser.parse_known_args()
 
-    if args.frominitfile:
+    if init_args.frominitfile:
         conf_parser = SafeConfigParser()
-        conf_parser.read(args.frominitfile)
+        conf_parser.read(init_args.frominitfile)
     else:
         conf_parser = None
+    
+    # Inherit options from init_parser
+    parser = argparse.ArgumentParser(description='Extract and Manage Language Feature Data.', 
+        parents=[init_parser])
 
     group = parser.add_argument_group('Corpus Variables', 'Defining the data from which features are extracted.')
 
@@ -194,6 +194,8 @@ def main(fn_args = None):
                         help='Date a message was sent (if avail, for timex processing).')
     group.add_argument('--lexicondb', metavar='DB', dest='lexicondb', default=getInitVar('lexicondb', conf_parser, DEF_LEXICON_DB),
                         help='The database which stores all lexicons.')
+    group.add_argument('--encoding', metavar='DB', dest='encoding', default=getInitVar('encoding', conf_parser, DEF_ENCODING),
+                        help='MySQL encoding')
 
     group = parser.add_argument_group('Feature Variables', 'Use of these is dependent on the action.')
     group.add_argument('-f', '--feat_table', metavar='TABLE', dest='feattable', type=str, nargs='+', default=getInitVar('feattable', conf_parser, None, varList=True),
@@ -376,11 +378,10 @@ def main(fn_args = None):
                        help='Print results to a CSV. Default file name is mediation.csv. Use --output_name to specify file name.')
     group.add_argument('--mediation_mysql', action='store_true', dest='mediationmysql', default=False,
                        help='Store results in MySQL database. Database is specified by -d and table name is specified by -output_name')
-    group.add_argument("--mediation_sig_thresh", type=float, metavar='P', dest="mediationsigthresh", default = float(DEF_MEDIATION_P),
-                       help="Significance threshold for returning results. Default = 0.05.")
     group.add_argument('--mediation_no_summary', action='store_false', dest='mediationsummary', default=True,
                        help='Print results to a CSV. Default file name is mediation.csv. Use --output_name to specify file name.')
-
+    group.add_argument('--mediation_method', metavar='METHOD', type=str, dest='mediation_style', default='barron',
+                       help='Specify a mediation method: barron, imai, both')
 
 
     group = parser.add_argument_group('Prediction Variables', '')
@@ -659,10 +660,9 @@ def main(fn_args = None):
     if fn_args:
         args = parser.parse_args(fn_args.split())
     else:
-        args = parser.parse_args()
+        args = parser.parse_args(remaining_argv)
 
-    #print args
-    # #options = vars(args) #pass to function to avoid passing lots of arguments
+
     ##NON-Specified Defaults:
 
     if args.v2:
@@ -692,24 +692,24 @@ def main(fn_args = None):
 
     ##Process Arguments
     def FE():
-        return FeatureExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.lexicondb, wordTable = args.wordTable)
+        return FeatureExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, wordTable = args.wordTable)
 
     def SE():
-        return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.lexicondb, args.corpdir, wordTable = args.wordTable)
+        return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, args.corpdir, wordTable = args.wordTable)
 
     def OG():
-        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable)
+        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable)
 
     def OA():
-        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
+        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
 
     def FR():
-        return FeatureRefiner(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
+        return FeatureRefiner(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
 
     def FG(featTable = None):
         if not featTable:
             featTable = args.feattable
-        return FeatureGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.lexicondb, featTable, args.featnames, wordTable = args.wordTable)
+        return FeatureGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, featTable, args.featnames, wordTable = args.wordTable)
 
     def FGs(featTable = None):
         if not featTable:
@@ -725,6 +725,7 @@ def main(fn_args = None):
                               args.mysql_host,
                               args.message_field,
                               args.messageid_field,
+                              args.encoding, 
                               args.lexicondb, featTable,
                               args.featnames,
                               wordTable = args.wordTable)
@@ -1299,7 +1300,7 @@ def main(fn_args = None):
         og = OG()
         MediationAnalysis(fg, og, path_starts, mediators, outcomes, args.outcomecontrols, summary=args.mediationsummary, 
               to_csv=args.mediationcsv, to_mysql=args.mediationmysql, output_name=args.outputname, 
-              method=mediation_method, boot_number=med_boot_number, sig_level=args.mediationsigthresh).mediate(args.groupfreqthresh, 
+              method=mediation_method, boot_number=med_boot_number, sig_level=args.maxP, style=args.mediation_style).mediate(args.groupfreqthresh, 
               "feat_as_path_start", args.spearman, args.bonferroni,
               args.p_correction_method, logisticReg=args.logisticReg)
       elif args.feat_as_outcome:
@@ -1308,7 +1309,7 @@ def main(fn_args = None):
         og = OG()
         MediationAnalysis(fg, og, path_starts, mediators, outcomes, args.outcomecontrols, summary=args.mediationsummary, 
               to_csv=args.mediationcsv, to_mysql=args.mediationmysql, output_name=args.outputname, 
-              method=mediation_method, boot_number=med_boot_number, sig_level=args.mediationsigthresh).mediate(args.groupfreqthresh, 
+              method=mediation_method, boot_number=med_boot_number, sig_level=args.maxP, style=args.mediation_style).mediate(args.groupfreqthresh, 
               "feat_as_outcome", args.spearman, args.bonferroni,
               args.p_correction_method, logisticReg=args.logisticReg)
       elif args.feat_as_control:
@@ -1319,7 +1320,7 @@ def main(fn_args = None):
         og = OG()
         MediationAnalysis(fg, og, path_starts, mediators, outcomes, controls, summary=args.mediationsummary, 
               to_csv=args.mediationcsv, to_mysql=args.mediationmysql, output_name=args.outputname, 
-              method=mediation_method, boot_number=med_boot_number, sig_level=args.mediationsigthresh).mediate(args.groupfreqthresh, 
+              method=mediation_method, boot_number=med_boot_number, sig_level=args.maxP, style=args.mediation_style).mediate(args.groupfreqthresh, 
               "feat_as_control", args.spearman, args.bonferroni,
               args.p_correction_method, logisticReg=args.logisticReg)
       elif args.no_features:
@@ -1327,7 +1328,7 @@ def main(fn_args = None):
         og = OG()
         MediationAnalysis(None, og, path_starts, mediators, outcomes, args.outcomecontrols, summary=args.mediationsummary, 
               to_csv=args.mediationcsv, to_mysql=args.mediationmysql, output_name=args.outputname, 
-              method=mediation_method, boot_number=med_boot_number, sig_level=args.mediationsigthresh).mediate(args.groupfreqthresh, 
+              method=mediation_method, boot_number=med_boot_number, sig_level=args.maxP, style=args.mediation_style).mediate(args.groupfreqthresh, 
               "no_features", args.spearman, args.bonferroni,
               args.p_correction_method, logisticReg=args.logisticReg)
       else:
@@ -1336,7 +1337,7 @@ def main(fn_args = None):
         og = OG()
         MediationAnalysis(fg, og, path_starts, mediators, outcomes, args.outcomecontrols, summary=args.mediationsummary, 
               to_csv=args.mediationcsv, to_mysql=args.mediationmysql, output_name=args.outputname, 
-              method=mediation_method, boot_number=med_boot_number, sig_level=args.mediationsigthresh).mediate(args.groupfreqthresh, 
+              method=mediation_method, boot_number=med_boot_number, sig_level=args.maxP, style=args.mediation_style).mediate(args.groupfreqthresh, 
               "default", args.spearman, args.bonferroni,
               args.p_correction_method, logisticReg=args.logisticReg)
 
@@ -1621,8 +1622,8 @@ def main(fn_args = None):
         if args.notifyjohannes: 
             notify.sendEmail("featureWorker run Finished", args.notifyjohannes + '\n\n\n' + str(args), 'johannes.chicago@gmail.com')  
 
-    if args.toinitfile:
-      with open(args.toinitfile, 'w') as init_file:  
+    if init_args.toinitfile:
+      with open(init_args.toinitfile, 'w') as init_file:  
         init_file.write("[constants]\n")
         
         if (args.corpdb and args.corpdb != DEF_CORPDB): init_file.write("corpdb = " + str(args.corpdb)+"\n") 
@@ -1631,6 +1632,7 @@ def main(fn_args = None):
         if (args.mysql_host and args.mysql_host != "localhost"): init_file.write("mysql_host = " + str(args.mysql_host)+"\n") 
         if (args.message_field and args.message_field != DEF_MESSAGE_FIELD): init_file.write("message_field = " + str(args.message_field)+"\n") 
         if (args.messageid_field and args.messageid_field != DEF_MESSAGEID_FIELD): init_file.write("messageid_field = " + str(args.messageid_field)+"\n") 
+        if (args.encoding and args.encoding != DEF_ENCODING): init_file.write("encoding = " + str(args.encoding)+"\n") 
         if (args.lexicondb and args.lexicondb != DEF_LEXICON_DB): init_file.write("lexicondb = " + str(args.lexicondb)+"\n") 
         if (args.feattable and args.feattable != DEF_FEAT_TABLE): init_file.write("feattable = " + str(args.feattable)+"\n") 
         if (args.featnames and args.featnames != DEF_FEAT_NAMES): init_file.write("featnames = " + ", ".join([str(feat) for feat in args.featnames])+"\n") 

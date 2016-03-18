@@ -347,7 +347,7 @@ def main(fn_args = None):
     group.add_argument('--freq', type=bool, dest='freq', default=True,
                        help='Report freqs.')
     group.add_argument('--tagcloud_colorscheme', type=str, dest='tagcloudcolorscheme', default=getInitVar('tagcloudcolorscheme', conf_parser, 'multi'), 
-                       help='specify a color scheme to use for tagcloud generation. Default: multi, also accepts red, blue, & red-random')
+                       help='specify a color scheme to use for tagcloud generation. Default: multi, also accepts red, blue, red-random, redblue, bluered')
     group.add_argument('--interactions', action='store_true', dest='interactions', default=False,
                        help='Includes interaction terms in multiple regression.')
     group.add_argument('--bootstrapp', '--bootstrap', dest='bootstrapp', type=int, default = 0,

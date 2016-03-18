@@ -229,7 +229,7 @@ def pCorrection(pDict, method='simes', pLevelsSimes=[0.05, 0.01, 0.001], rDict =
         pDictTuples = [[k, v] for k, v in pDict.iteritems()]
         sortDict = rDict if rDict else pDict
 
-        sortedPTuples = sorted(pDictTuples, key=lambda tup: 0 if isnan(sortDict[tup[0]]) else fabs(sortDict[tup[0]]), reverse=True)
+        sortedPTuples = sorted(pDictTuples, key=lambda tup: 0 if isnan(sortDict[tup[0]]) else fabs(sortDict[tup[0]]), reverse=True if rDict else False)
         ii = 0
         rejectRest = False
         pMax = pLevelsSimes.pop()

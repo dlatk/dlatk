@@ -735,6 +735,58 @@ class FeatureRefiner(FeatureGetter):
         self.featureTable = newTable
         return newTable
 
+    def createTfIdfTable(self, ngram_table):
+        # Using ngram_table, creates new feature table where group_norm = tf-idf (term frequency-inverse document frequency)
+
+        # tf-idf = tf*idf
+
+        # tf (term frequency) is simply how frequently a term occurs in a document (group_norm for a given group_id)
+
+        # each feat's idf = log(N/dt)
+        # N = number of documents in total (i.e. count(distinct(group_id))
+        # df (document frequency) = number of documents where feat was used in (i.e. count(distinct(group_id)) where feat = 'feat')
+
+        # create new feature table
+        feat_name_grabber = re.compile(r'^feat\$([^\$]+)\$') 
+        feat_name = feat_name_grabber.match(ngram_table).group(1) # grabs feat_name (i.e. 1gram, 1to3gram)
+
+        short_name = 'tf_idf_{}'.format(feat_name)
+        idf_table = self.createFeatureTable(short_name, valueType = 'DOUBLE')
+
+        #getting N
+        sql = "SELECT COUNT(DISTINCT group_id) FROM %s" % ngram_table
+        N = mm.executeGetList(sql, False)[0][0]
+
+        feat_counts = self.getFeatureCounts() #tuples of: feat, count (number of groups feature appears with)
+
+        mm.warn('Inserting idf values into new table')
+        counter = 0
+        for (feat, dt) in feat_counts:
+            idf = log(N/float(dt))
+
+            # get (group_id, group_norm) where feat = feat
+            sql = """SELECT group_id, value, group_norm from %s WHERE feat = \'%s\'"""%(ngram_table, MySQLdb.escape_string(feat))
+            group_id_freq = mm.executeGetList(sql, False)
+
+            for (group_id, value, tf) in group_id_freq:
+                tf_idf = tf * idf
+
+                insert_sql = "INSERT INTO {} (group_id, feat, value, group_norm) VALUES (\'{}\', \'{}\', {}, {});".format(
+                                                idf_table, 
+                                                group_id, 
+                                                MySQLdb.escape_string(feat), 
+                                                value, 
+                                                tf_idf)
+                mm.execute(insert_sql, False)
+
+                if (counter % 50000 == 0):
+                    print '%d tf_idf values inserted!' % (counter)
+                counter += 1
+
+        mm.warn('Finished inserting.')
+
+
+        return idf_table
 
 ##NOTE - this is not used for the time being, it is slower and less tested than createTableWithRemovedFeats
 ##it is however a little more straightforward and it outputs a ufeat$pocc table
@@ -793,58 +845,4 @@ class FeatureRefiner(FeatureGetter):
         return filtered_tablename
 
 
-    def createTfIdfTable(self, ngram_table):
-        # Using ngram_table, creates new feature table where group_norm = tf-idf (term frequency-inverse document frequency)
 
-        # tf-idf = tf*idf
-
-        # tf (term frequency) is simply how frequently a term occurs in a document (group_norm for a given group_id)
-
-        # each feat's idf = log(N/dt)
-        # N = number of documents in total (i.e. count(distinct(group_id))
-        # df (document frequency) = number of documents where feat was used in (i.e. count(distinct(group_id)) where feat = 'feat')
-
-
-
-        # create new feature table
-        feat_name_grabber = re.compile(r'^feat\$([^\$]+)\$') 
-        feat_name = feat_name_grabber.match(ngram_table).group(1) # grabs feat_name (i.e. 1gram, 1to3gram)
-
-        short_name = 'tf_idf_{}'.format(feat_name)
-        idf_table = self.createFeatureTable(short_name, valueType = 'DOUBLE')
-
-        #getting N
-        sql = "SELECT COUNT(DISTINCT group_id) FROM %s" % ngram_table
-        N = self._executeGetList(sql, False)[0][0]
-
-        feat_counts = self.getFeatureCounts() #tuples of: feat, count (number of groups feature appears with)
-
-        _warn('Inserting idf values into new table')
-        counter = 0
-        for (feat, dt) in feat_counts:
-            idf = log(N/float(dt))
-
-            # get (group_id, group_norm) where feat = feat
-            sql = """SELECT group_id, value, group_norm from %s WHERE feat = \'%s\'"""%(ngram_table, MySQLdb.escape_string(feat))
-            group_id_freq = self._executeGetList(sql, False)
-
-            for (group_id, value, tf) in group_id_freq:
-                tf_idf = tf * idf
-
-                insert_sql = "INSERT INTO {} (group_id, feat, value, group_norm) VALUES (\'{}\', \'{}\', {}, {});".format(
-                                                idf_table, 
-                                                group_id, 
-                                                MySQLdb.escape_string(feat), 
-                                                value, 
-                                                tf_idf)
-                self._execute(insert_sql, False)
-
-                if (counter % 50000 == 0):
-                    print '%d tf_idf values inserted!' % (counter)
-                counter += 1
-
-
-        _warn('Finished inserting.')
-
-
-        return idf_table

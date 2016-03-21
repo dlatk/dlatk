@@ -451,7 +451,7 @@ class MediationResults(object):
 		self.ADE_avg = (self.ADE_ctrl + self.ADE_tx) / 2
 
 
-	def summary(self, alpha=0.05, bonferroni=True, numMeds=1):
+	def summary(self, alpha=0.05, bonferroni=False, numMeds=1):
 		"""
 		Provide a summary of a mediation analysis.
 		"""
@@ -512,7 +512,7 @@ class MediationAnalysis:
 	"""
 
 	def __init__(self, fg, og, path_starts, mediators, outcomes, controls, summary=True, to_csv=False, to_mysql=False, 
-		output_name=None, method="parametric", boot_number=1000, sig_level=0.05, style='barron'):
+		output_name=None, method="parametric", boot_number=1000, sig_level=0.05, style='baron'):
 		
 		self.outcomeGetter = og
 		self.featureGetter = fg
@@ -535,7 +535,7 @@ class MediationAnalysis:
 		self.output_sobel = dict()
 		self.output_p = dict() # [c_p, c'_p, alpha_p, beta_p, sobel_p, ...]
 
-		if style == 'barron':
+		if style == 'baron':
 			self.baron_and_kenny = True
 			self.imai_and_keele = False
 		elif style == 'imai':
@@ -694,7 +694,7 @@ class MediationAnalysis:
 		if not data: print "AAAAAAAAAAAAAAAA", switch, outcome_field, location
 		return data
 
-	def mediate(self, group_freq_thresh = 0, switch="default", spearman = False, bonferroni = True, p_correction_method = None, 
+	def mediate(self, group_freq_thresh = 0, switch="default", spearman = False, bonferroni = False, p_correction_method = 'BH', 
 				zscoreRegression = True, logisticReg = False):
 		"""
 		output =    {path_start_i: 

@@ -123,7 +123,8 @@ class OutcomeAnalyzer(OutcomeGetter):
         featFreqs = None
         if includeFreqs:
             where = """ group_id in ('%s')""" % ("','".join(str(g) for g in groups))
-            featFreqs = dict([ (unicode(k), v) for k, v in  featGetter.getSumValuesByFeat(where = where) ])
+            #featFreqs = dict([ (unicode(k), v) for k, v in  featGetter.getSumValuesByFeat(where = where) ])
+            featFreqs = dict([ (k, v) for k, v in  featGetter.getSumValuesByFeat(where = where) ])
             if outcomeWithOutcome :
                 featFreqs.update(dict([('outcome_'+k, len(v)) for k, v in allOutcomes.iteritems()]))
                                 
@@ -388,7 +389,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             if numFeatsDone % 200 == 0: print "%6d features z-scored" % numFeatsDone
         return correls
 
-    def correlateWithFeatures(self, featGetter, groupThresh = 0, spearman = False, bonferroni = True, p_correction_method = None, interaction = None, 
+    def correlateWithFeatures(self, featGetter, groupThresh = 0, spearman = False, bonferroni = False, p_correction_method = 'BH', interaction = None, 
                               blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False, zscoreRegression = True, logisticReg = False, outputInteraction = False, groupWhere = ''):
         """Finds the correlations between features and outcomes"""
         
@@ -545,7 +546,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         return correls
 
-    def aucWithFeatures(self, featGetter, groupThresh = 0, bonferroni = True, p_correction_method = None, interaction = None, bootstrapP = None, blacklist=None, 
+    def aucWithFeatures(self, featGetter, groupThresh = 0, bonferroni = False, p_correction_method = 'BH', interaction = None, bootstrapP = None, blacklist=None, 
                         whitelist=None, includeFreqs = False, outcomeWithOutcome = False, zscoreRegression = True, outputInteraction = False, groupWhere = ''):
         """Finds the auc between features and dichotamous outcomes"""
         
@@ -690,7 +691,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         return aucs
 
 
-    def correlateControlCombosWithFeatures(self, featGetter, groupThresh = 0, spearman = False, bonferroni = True, p_correction_method = None, 
+    def correlateControlCombosWithFeatures(self, featGetter, groupThresh = 0, spearman = False, bonferroni = False, p_correction_method = 'BH', 
                               blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False, zscoreRegression = True):
         """Finds the correlations between features and all combinations of outcomes"""
 
@@ -826,7 +827,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
 
 
-    def multRegressionWithFeatures(self, featGetter, groupThresh = 0, spearman = False, bonferroni = True, p_correction_method = None, 
+    def multRegressionWithFeatures(self, featGetter, groupThresh = 0, spearman = False, bonferroni = False, p_correction_method = 'BH', 
                               blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False, zscoreRegression = True, interactions = False):
         """Finds the multiple regression coefficient between outcomes and features"""
         #outcomes => things to find coefficients for
@@ -914,7 +915,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         return coeffs
 
 
-    def loessPlotFeaturesByOutcome(self, featGetter, groupThresh = 0, spearman = False, bonferroni = True, p_correction_method = None, blacklist=None, whitelist=None, 
+    def loessPlotFeaturesByOutcome(self, featGetter, groupThresh = 0, spearman = False, bonferroni = False, p_correction_method = 'BH', blacklist=None, whitelist=None, 
                                    includeFreqs = False, zscoreRegression = True, outputdir='/data/ml/fb20', outputname='loess.jpg', topicLexicon=None, numTopicTerms=8, outputOrder = []):
         """Finds the correlations between features and outcomes"""
         

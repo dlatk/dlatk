@@ -55,6 +55,7 @@ DEF_MESSAGE_FIELD = 'message'
 DEF_MESSAGEID_FIELD = 'message_id'
 #DEF_MESSAGEID_FIELD = 'id'
 DEF_ENCODING = 'utf8mb4'
+DEF_UNICODE_SWITCH = True
 DEF_LEXTABLE = 'wn_O'
 DEF_DATE_FIELD = 'updated_time'
 
@@ -81,6 +82,7 @@ DEF_LEXICON_DB = 'permaLexicon'
 #DEF_FEAT_TABLE = ''
 DEF_FEAT_TABLE = 'feat$1gram$messages_en$user_id$16to16$0_01'
 DEF_P = 0.05 # p value for printing tagclouds
+DEF_P_CORR = 'BH' #Benjamini, Hochberg
 
 DEF_CORENLP_DIR = '/home/hansens/Tools/corenlp-python'
 DEF_CORENLP_SERVER_COMMAND = './corenlp/corenlp.py'

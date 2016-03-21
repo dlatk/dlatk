@@ -107,6 +107,7 @@ DEF_COLLOCTABLE = 'test_collocs'
 DEF_COLUMN_COLLOC = "feat"
 DEF_COLUMN_PMI_FILTER = "pmi_filter_val"
 DEF_P = 0.05 # p value for printing tagclouds
+DEF_P_CORR = 'BH' #Benjamini, Hochbergasd
 
 ##Mediation Settings:
 DEF_MEDIATION_BOOTSTRAP = 1000
@@ -196,6 +197,8 @@ def main(fn_args = None):
                         help='The database which stores all lexicons.')
     group.add_argument('--encoding', metavar='DB', dest='encoding', default=getInitVar('encoding', conf_parser, DEF_ENCODING),
                         help='MySQL encoding')
+    group.add_argument('--no_unicode', action='store_false', dest='nounicode', default=True,
+                       help='Turn off unicode for reading/writing mysql and text processing.')
 
     group = parser.add_argument_group('Feature Variables', 'Use of these is dependent on the action.')
     group.add_argument('-f', '--feat_table', metavar='TABLE', dest='feattable', type=str, nargs='+', default=getInitVar('feattable', conf_parser, None, varList=True),
@@ -338,10 +341,12 @@ def main(fn_args = None):
                        help='Use AUC instead of linear regression/correlation [only works with binary outcome values]') 
     group.add_argument('--zScoreGroup', action='store_true', dest='zScoreGroup', default=False,
                        help="Outputs a certain group's zScore for all feats, which group is determined by the boolean outcome value [MUST be boolean outcome]") 
-    group.add_argument('--p_correction', metavar='METHOD', type=str, dest='p_correction_method', default=getInitVar('p_correction_method', conf_parser, ''),
+    group.add_argument('--p_correction', metavar='METHOD', type=str, dest='p_correction_method', default=getInitVar('p_correction_method', conf_parser, DEF_P_CORR),
                        help='Specify a p-value correction method: simes, holm, hochberg, hommel, bonferroni, BH, BY, fdr, none')
-    group.add_argument('--no_bonferroni', action='store_false', dest='bonferroni', default=True,
-                       help='Turn off bonferroni correction of p-values.')
+    #group.add_argument('--no_bonferroni', action='store_false', dest='bonferroni', default=True,
+    #                   help='Turn off bonferroni correction of p-values.')
+    group.add_argument('--no_correction', action='store_const', const='', dest='p_correction_method',
+                       help='Turn off BH correction of p-values.')
     group.add_argument('--nvalue', type=bool, dest='nvalue', default=True,
                        help='Report n values.')
     group.add_argument('--freq', type=bool, dest='freq', default=True,
@@ -380,8 +385,8 @@ def main(fn_args = None):
                        help='Store results in MySQL database. Database is specified by -d and table name is specified by -output_name')
     group.add_argument('--mediation_no_summary', action='store_false', dest='mediationsummary', default=True,
                        help='Print results to a CSV. Default file name is mediation.csv. Use --output_name to specify file name.')
-    group.add_argument('--mediation_method', metavar='METHOD', type=str, dest='mediation_style', default='barron',
-                       help='Specify a mediation method: barron, imai, both')
+    group.add_argument('--mediation_method', metavar='METHOD', type=str, dest='mediation_style', default='baron',
+                       help='Specify a mediation method: baron, imai, both')
 
 
     group = parser.add_argument_group('Prediction Variables', '')
@@ -675,8 +680,12 @@ def main(fn_args = None):
     ##Argument adjustments: 
     if not args.valuefunc: args.valuefunc = lambda d: d
     if not args.lexvaluefunc: args.lexvaluefunc = lambda d: d
-    if args.bonferroni: args.simes = False
-    if args.p_correction_method: args.bonferroni = False
+
+    if args.p_correction_method.startswith("bonf"):
+        args.p_correction_method = ''
+        args.bonferroni = True
+    else:
+        args.bonferroni = False
 
     if args.feattable and len(args.feattable) == 1:
         args.feattable = args.feattable[0]

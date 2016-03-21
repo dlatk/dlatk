@@ -343,8 +343,8 @@ def main(fn_args = None):
                        help="Outputs a certain group's zScore for all feats, which group is determined by the boolean outcome value [MUST be boolean outcome]") 
     group.add_argument('--p_correction', metavar='METHOD', type=str, dest='p_correction_method', default=getInitVar('p_correction_method', conf_parser, DEF_P_CORR),
                        help='Specify a p-value correction method: simes, holm, hochberg, hommel, bonferroni, BH, BY, fdr, none')
-    #group.add_argument('--no_bonferroni', action='store_false', dest='bonferroni', default=True,
-    #                   help='Turn off bonferroni correction of p-values.')
+    group.add_argument('--no_bonferroni', action='store_false', dest='bonferroni', default=True,
+                       help='Turn off bonferroni correction of p-values.')
     group.add_argument('--no_correction', action='store_const', const='', dest='p_correction_method',
                        help='Turn off BH correction of p-values.')
     group.add_argument('--nvalue', type=bool, dest='nvalue', default=True,
@@ -667,6 +667,9 @@ def main(fn_args = None):
     else:
         args = parser.parse_args(remaining_argv)
 
+    if not args.bonferroni:
+      print "--no_bonf has been depricated. Default p correction method is now Benjamini, Hochberg. Please use --no_correction instead of --no_bonf."
+      sys.exit(1)
 
     ##NON-Specified Defaults:
 

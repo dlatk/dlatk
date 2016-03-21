@@ -82,6 +82,7 @@ DEF_MESSAGEID_FIELD = 'message_id'
 DEF_LEXTABLE = 'wn_O'
 DEF_DATE_FIELD = 'updated_time'
 DEF_ENCODING = 'utf8mb4'
+DEF_UNICODE_SWITCH = True
 
 ##Outcome settings
 DEF_OUTCOME_TABLE = 'masterstats_andy_maxAge64'
@@ -197,7 +198,7 @@ def main(fn_args = None):
                         help='The database which stores all lexicons.')
     group.add_argument('--encoding', metavar='DB', dest='encoding', default=getInitVar('encoding', conf_parser, DEF_ENCODING),
                         help='MySQL encoding')
-    group.add_argument('--no_unicode', action='store_false', dest='nounicode', default=True,
+    group.add_argument('--no_unicode', action='store_false', dest='nounicode', default=DEF_UNICODE_SWITCH,
                        help='Turn off unicode for reading/writing mysql and text processing.')
 
     group = parser.add_argument_group('Feature Variables', 'Use of these is dependent on the action.')
@@ -659,8 +660,8 @@ def main(fn_args = None):
                        help='produce histograms and boxplots for specified outcomes. Requires oa. Uses outputdir')
     group.add_argument('--loessplot', type=str, metavar='FEAT(S)', dest='loessplot', nargs='+', default='',
                        help='Output loess plots of the given features.')
-    group.add_argument('--v2', action='store_true', dest='v2',
-                       help='Run commands from other place')
+    # group.add_argument('--v2', action='store_true', dest='v2',
+    #                    help='Run commands from other place')
 
     if fn_args:
         args = parser.parse_args(fn_args.split())
@@ -673,12 +674,12 @@ def main(fn_args = None):
 
     ##NON-Specified Defaults:
 
-    if args.v2:
-        from PERMA.code.fwv2 import wwbp
-        if fn_args:
-            wwbp.main(fn_args)
-        else:
-            wwbp.main(" ".join(sys.argv[1:]))
+    # if args.v2:
+    #     from PERMA.code.fwv2 import wwbp
+    #     if fn_args:
+    #         wwbp.main(fn_args)
+    #     else:
+    #         wwbp.main(" ".join(sys.argv[1:]))
 
     ##Argument adjustments: 
     if not args.valuefunc: args.valuefunc = lambda d: d
@@ -704,24 +705,24 @@ def main(fn_args = None):
 
     ##Process Arguments
     def FE():
-        return FeatureExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, wordTable = args.wordTable)
+        return FeatureExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, wordTable = args.wordTable)
 
     def SE():
-        return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, args.corpdir, wordTable = args.wordTable)
+        return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, args.corpdir, wordTable = args.wordTable)
 
     def OG():
-        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable)
+        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable)
 
     def OA():
-        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
+        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
 
     def FR():
-        return FeatureRefiner(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
+        return FeatureRefiner(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
 
     def FG(featTable = None):
         if not featTable:
             featTable = args.feattable
-        return FeatureGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, featTable, args.featnames, wordTable = args.wordTable)
+        return FeatureGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, featTable, args.featnames, wordTable = args.wordTable)
 
     def FGs(featTable = None):
         if not featTable:
@@ -738,6 +739,7 @@ def main(fn_args = None):
                               args.message_field,
                               args.messageid_field,
                               args.encoding, 
+                              args.nounicode,
                               args.lexicondb, featTable,
                               args.featnames,
                               wordTable = args.wordTable)

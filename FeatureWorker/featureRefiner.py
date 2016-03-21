@@ -21,11 +21,11 @@ class FeatureRefiner(FeatureGetter):
         featlabel_tablename = 'feat_to_label$%s$%d'%(topiclexicon, numtopicwords)
 
         pldb = self.lexicondb
-        (plconn, plcur, plcurD) = mm.dbConnect(pldb, charset=self.encoding)
+        (plconn, plcur, plcurD) = mm.dbConnect(pldb, charset=self.encoding, use_unicode=self.use_unicode)
         sql = 'DROP TABLE IF EXISTS `%s`'%featlabel_tablename
-        mm.execute(pldb, plcur, sql)
+        mm.execute(pldb, plcur, sql, charset=self.encoding, use_unicode=self.use_unicode)
         sql = 'CREATE TABLE `%s` (`id` int(16) unsigned NOT NULL AUTO_INCREMENT, `term` varchar(128) DEFAULT NULL, `category` varchar(64) DEFAULT NULL, PRIMARY KEY (`id`), KEY `term` (`term`), KEY `category` (`category`) )'%featlabel_tablename
-        mm.execute(pldb, plcur, sql)
+        mm.execute(pldb, plcur, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
         sql = 'SELECT DISTINCT category FROM %s'%topiclexicon
         categories = map(lambda x: x[0], mm.executeGetList(pldb, plcur, sql))
@@ -33,20 +33,20 @@ class FeatureRefiner(FeatureGetter):
         for category in categories:
             if is_weighted_lexicon:
                 sql = 'SELECT term, weight from %s WHERE category = \'%s\''%(topiclexicon, category)
-                rows = mm.executeGetList(pldb, plcur, sql)
+                rows = mm.executeGetList(pldb, plcur, sql, charset=self.encoding, use_unicode=self.use_unicode)
                 top_n_rows = sorted(rows, key=lambda x:x[1], reverse=True)
                 terms = map(lambda x: x[0], top_n_rows)
                 label = ' '.join(map(str, terms[0:numtopicwords]))
                 escaped_label = MySQLdb.escape_string(label)
                 sql = 'INSERT INTO `%s` (`term`, `category`) VALUES(\'%s\', \'%s\')'%(featlabel_tablename, category, escaped_label )
-                mm.execute(pldb, plcur, sql)
+                mm.execute(pldb, plcur, sql, charset=self.encoding, use_unicode=self.use_unicode)
             else:
                 sql = 'SELECT term from %s WHERE category = \'%s\''%(topiclexicon, category)
-                terms = map(lambda x: x[0], mm.executeGetList(pldb, plcur, sql))
+                terms = map(lambda x: x[0], mm.executeGetList(pldb, plcur, sql, charset=self.encoding, use_unicode=self.use_unicode))
                 label = ' '.join(map(str, terms[0:numtopicwords]))
                 escaped_label = MySQLdb.escape_string(label)
                 sql = 'INSERT INTO `%s` (`term`, `category`) VALUES(\'%s\', \'%s\')'%(featlabel_tablename, category, escaped_label )
-                mm.execute(pldb, plcur, sql)
+                mm.execute(pldb, plcur, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
         return featlabel_tablename
 
@@ -93,12 +93,12 @@ class FeatureRefiner(FeatureGetter):
             featureName = '_'.join(names)
         featureTableName = self.createFeatureTable(featureName, "VARCHAR(%d)"%longestInt, valueType, tableName, valueFunc, extension=pocc)
         # Maarten: todo: test if too long and don't disable keys
-        mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName)#for faster, when enough space for repair by sorting
+        mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
 
         for fTable in featureTables:
-            mm.execute(self.corpdb, self.dbCursor, "INSERT INTO %s (group_id, feat, value, group_norm) SELECT group_id, feat, value, group_norm from %s;" % (featureTableName, fTable))
+            mm.execute(self.corpdb, self.dbCursor, "INSERT INTO %s (group_id, feat, value, group_norm) SELECT group_id, feat, value, group_norm from %s;" % (featureTableName, fTable), charset=self.encoding, use_unicode=self.use_unicode)
         
-        mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName)#for faster, when enough space for repair by sorting
+        mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
 
         return featureTableName
 
@@ -111,9 +111,9 @@ class FeatureRefiner(FeatureGetter):
         if skip_binning: return newTable
 
         sql = 'DROP TABLE IF EXISTS %s'%newTable
-        mm.execute(self.corpdb, self.dbCursor, sql)
+        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         sql = "CREATE TABLE %s like %s" % (newTable, featureTable)
-        mm.execute(self.corpdb, self.dbCursor, sql)
+        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
         #groupValues = self.getSumValuesByGroup(where) # [(gid1, val1), ...]
         # OLD N calculation.... same as new one....
@@ -130,7 +130,7 @@ class FeatureRefiner(FeatureGetter):
         # sql += ' group by age'
         # groupValues = mm.executeGetList(self.corpdb, self.dbCursor, sql) # [(gid1, N1), ...]
         # groupIdToN = dict(groupValues)
-        groupNs = mm.executeGetList(self.corpdb, self.dbCursor, 'SELECT group_id, N FROM %s GROUP BY group_id'%self.featureTable)
+        groupNs = mm.executeGetList(self.corpdb, self.dbCursor, 'SELECT group_id, N FROM %s GROUP BY group_id'%self.featureTable, charset=self.encoding, use_unicode=self.use_unicode)
         groupIdToN = dict(groupNs)
         #pprint(groupIdToN)
         #pprint(groupIdToN)
@@ -167,14 +167,14 @@ class FeatureRefiner(FeatureGetter):
         max_label_length = max(map(len, bin_groups.values()))
 
         sql = 'ALTER TABLE %s MODIFY COLUMN group_id VARCHAR(%d)'%(newTable, max_label_length) #this action preserves the index
-        mm.execute(self.corpdb, self.dbCursor, sql)
+        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         sql = 'ALTER TABLE %s ADD COLUMN `bin_center` float(6) not null default -1.0'%(newTable)
-        mm.execute(self.corpdb, self.dbCursor, sql)
+        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         sql = 'ALTER TABLE %s ADD COLUMN `bin_center_w` float(6) not null default -1.0'%(newTable)
-        mm.execute(self.corpdb, self.dbCursor, sql)
+        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         sql = 'ALTER TABLE %s ADD COLUMN `bin_width` int(10) not null default -1'%(newTable)
-        mm.execute(self.corpdb, self.dbCursor, sql)
-        mm.disableTableKeys(self.corpdb, self.dbCursor, newTable)
+        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.disableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
 
         # for each newly denoted bin: e.g. 1_3, 4_5, 6_6, ... get the new feature value counts / group norms; insert them into the new table
         # e.g. 1 'hi' 5, 2 'hi' 10, 3 'hi' 30 ==> 1_3 'hi' 45  (of course include group_norm also)
@@ -201,7 +201,7 @@ class FeatureRefiner(FeatureGetter):
             
             # sql = 'SELECT group_id, feat, value, group_norm, N FROM %s where group_id >= %d AND group_id <= %d'%(self.featureTable, lower_group, upper_group)
             sql = 'SELECT group_id, feat, value, group_norm, std_dev FROM %s where group_id >= %d AND group_id <= %d'%(self.featureTable, lower_group, upper_group)
-            groupFeatValueNorm = mm.executeGetList(self.corpdb, self.dbCursor, sql)
+            groupFeatValueNorm = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
             #pprint(groupFeatValueNorm)
 
             totalFeatCountForThisBin = float(0)
@@ -233,16 +233,16 @@ class FeatureRefiner(FeatureGetter):
 
             current_batch = [ ('_'.join(map(str,(lower_group, upper_group))),  k,  v, featToMeanNorm[k], sqrt(featToSummedVar[k] / bin_N_sum),
                                bin_N_sum, bin_center, bin_center_w, bin_width) for k, v in featToValue.iteritems() ]
-            mm.executeWriteMany(self.corpdb, self.dbCursor, isql, current_batch, writeCursor=self.dbConn.cursor(), charset=self.encoding)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, isql, current_batch, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
             # print 'N bin sum:', bin_N_sum
             # isql = 'INSERT INTO %s (group_id, feat, value, group_norm, N, bin_center, bin_center_w, bin_width) VALUES (%s)'%(newTable, '%s, %s, %s, %s, %s, %s, %s, %s')
             ii_bins += 1
             fwc._report('group_id bins', ii_bins, reporting_int, num_bins)
 
-        mm.enableTableKeys(self.corpdb, self.dbCursor, newTable)
+        mm.enableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
         mm.warn('Done creating new group_id-binned feature table.')
 
-        outputdata = mm.executeGetList(self.corpdb, self.dbCursor, 'select group_id, N from `%s` group by group_id'%(newTable,))
+        outputdata = mm.executeGetList(self.corpdb, self.dbCursor, 'select group_id, N from `%s` group by group_id'%(newTable,), charset=self.encoding, use_unicode=self.use_unicode)
         pprint(outputdata)
 
         # mm.execute(self.corpdb, self.dbCursor, 'drop table if exists `%s`'%(newTable,))
@@ -264,11 +264,11 @@ class FeatureRefiner(FeatureGetter):
         featureTable = self.featureTable
         numToKeep = len(toKeep)
         newTable = featureTable+'$'+label
-        mm.execute(self.corpdb, self.dbCursor, "DROP TABLE IF EXISTS %s" % newTable)
+        mm.execute(self.corpdb, self.dbCursor, "DROP TABLE IF EXISTS %s" % newTable, charset=self.encoding, use_unicode=self.use_unicode)
         mm.warn(" %s <new table %s will have %d distinct features.>" %(featureTable, newTable, numToKeep))
         sql = """CREATE TABLE %s like %s""" % (newTable, featureTable)
-        mm.execute(self.corpdb, self.dbCursor, sql)
-        mm.disableTableKeys(self.corpdb, self.dbCursor, newTable)
+        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.disableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
   
         num_at_time = 2000
         total = 0
@@ -279,11 +279,13 @@ class FeatureRefiner(FeatureGetter):
         #iterate through each row, deciding whetehr to keep or not
         for featRow in self.getFeatAllSS(featNorm=featNorm):
             #print "%d %d" % (len(featRow), len(toWrite))
-            if unicode(featRow[1]).lower() in toKeep:
+            if self.use_unicode and unicode(featRow[1]).lower() in toKeep:
+                toWrite.append(featRow)
+            elif not self.use_unicode and featRow[1].lower() in toKeep:
                 toWrite.append(featRow)
             if len(toWrite) > num_at_time:
             #write those past the filter to the table
-                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding)
+                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
                 total+= num_at_time
                 if total % 100000 == 0: mm.warn("%.1fm feature instances written" % (total/float(1000000)))
                 toWrite = []
@@ -291,10 +293,10 @@ class FeatureRefiner(FeatureGetter):
         #catch rest:
         if len(toWrite) > 0:
             #write those past the filter to the table
-            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
         mm.warn("Done inserting.\nEnabling keys.")
-        mm.enableTableKeys(self.corpdb, self.dbCursor, newTable)
+        mm.enableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
         mm.warn("done.")
 
         self.featureTable = newTable
@@ -319,7 +321,10 @@ class FeatureRefiner(FeatureGetter):
         i = 0
         for (feat, count) in featCounts:
             if count >= threshold:
-                toKeep.add(unicode(feat).lower())
+                if self.use_unicode:
+                    toKeep.add(unicode(feat).lower())
+                else:
+                    toKeep.add(feat.lower())
             i += 1
             
             if (i % 1000000) == 0: print "    checked %d features" % i
@@ -328,7 +333,10 @@ class FeatureRefiner(FeatureGetter):
         if minimumFeatSum > 1:
             featSums = self.getFeatureValueSums()
             for (feat, fsum) in featSums:
-                feat = unicode(feat).lower()
+                if self.use_unicode:
+                    feat = unicode(feat).lower()
+                else:
+                    feat = feat.lower()
                 if feat in toKeep:
                     if fsum < minimumFeatSum:
                         toKeep.remove(feat)
@@ -353,7 +361,7 @@ class FeatureRefiner(FeatureGetter):
                 fn = ( ((group_norm - fMeans[feat][0]) / float(fMeans[feat][1]), group_id, feat) )
                 featNorms.append(fn)
                 if len(featNorms) >= num_at_time:
-                    mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, featNorms, writeCursor=self.dbConn.cursor(), charset=self.encoding)
+                    mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, featNorms, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
                     featNorms = []
                     numWritten += num_at_time
                     if numWritten % 100000 == 0: mm.warn("%.1fm feature instances updated out of %dm" % 
@@ -362,7 +370,7 @@ class FeatureRefiner(FeatureGetter):
         
         #write values back in 
         if featNorms: 
-            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, featNorms, writeCursor=self.dbConn.cursor(), charset=self.encoding)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, featNorms, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
         return True
 
@@ -405,10 +413,10 @@ class FeatureRefiner(FeatureGetter):
 
         #CREATE TABLE
         meanTable = 'mean$'+self.featureTable
-        mm.execute(self.corpdb, self.dbCursor, "DROP TABLE IF EXISTS %s" % meanTable)
+        mm.execute(self.corpdb, self.dbCursor, "DROP TABLE IF EXISTS %s" % meanTable, charset=self.encoding, use_unicode=self.use_unicode)
         featType = mm.executeGetList(self.corpdb, self.dbCursor, "SHOW COLUMNS FROM %s like 'feat'" % self.featureTable)[0][1]
         sql = """CREATE TABLE %s (feat %s, mean DOUBLE, std DOUBLE, zero_feat_norm DOUBLE, PRIMARY KEY (`feat`))""" % (meanTable, featType)
-        mm.execute(self.corpdb, self.dbCursor, sql)
+        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
         fMeans = self.findMeans(field, True, groupNorms)
         fMeansList = [(k, v[0], v[1], v[2]) for k, v in fMeans.iteritems()]
@@ -416,7 +424,7 @@ class FeatureRefiner(FeatureGetter):
 
         #WRITE TO TABLE:
         sql = """INSERT INTO """+meanTable+""" (feat, mean, std, zero_feat_norm) VALUES (%s, %s, %s, %s)"""
-        mm.executeWriteMany(self.corpdb, self.dbCursor, sql, fMeansList, writeCursor=self.dbConn.cursor(), charset=self.encoding)
+        mm.executeWriteMany(self.corpdb, self.dbCursor, sql, fMeansList, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
         return fMeans
 
@@ -534,7 +542,7 @@ class FeatureRefiner(FeatureGetter):
             self.corpdb, self.corptable, self.correl_field)
 
         correlField = self.getCorrelFieldType(self.correl_field) if not correlField else correlField
-        correl_fieldType = mm.executeGetList(self.corpdb, self.dbCursor, sql)[0][0] if not correlField else correlField
+        correl_fieldType = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)[0][0] if not correlField else correlField
 
         #create sql
         drop = """DROP TABLE IF EXISTS %s""" % tableName
@@ -544,8 +552,8 @@ class FeatureRefiner(FeatureGetter):
         sql = """CREATE TABLE %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, group_id %s, feat %s, value %s, group_norm DOUBLE, KEY `correl_field` (`group_id`), KEY `feature` (`feat`)) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin""" %(tableName, correl_fieldType, featureType, valueType)
 
         #run sql
-        mm.execute(self.corpdb, self.dbCursor, drop)
-        mm.execute(self.corpdb, self.dbCursor, sql)
+        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
         return  tableName;
 
@@ -582,12 +590,12 @@ class FeatureRefiner(FeatureGetter):
         for newTable in newTables:
             drop = """DROP TABLE IF EXISTS %s""" % (newTable)
             sql = "create table %s like %s" % (newTable, featureTable)
-            mm.execute(self.corpdb, self.dbCursor, drop)
-            mm.execute(self.corpdb, self.dbCursor, sql)
+            mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
+            mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
             sql = 'ALTER TABLE %s ADD COLUMN `N` int(16) not null default -1'%(newTable)
             mm.execute(self.corpdb, self.dbCursor, sql)
             sql = 'ALTER TABLE %s CHANGE feat_norm std_dev FLOAT' % newTable;
-            mm.execute(self.corpdb, self.dbCursor, sql)
+            mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
             
         outres = outcomeRestriction
@@ -602,7 +610,7 @@ class FeatureRefiner(FeatureGetter):
                         sql = "INSERT INTO %s (group_id, feat, value, group_norm, std_dev, N) SELECT age, feat, total_freq, mean_rel_freq, SQRT((N_no_zero*(POW((mean_no_zero - mean_rel_freq), 2) + std_no_zero*std_no_zero) + (N - N_no_zero)*(mean_rel_freq * mean_rel_freq)) / N) as std, N  from (SELECT b.%s, feat, SUM(value) as total_freq, SUM(group_norm)/%d as mean_rel_freq, AVG(group_norm) as mean_no_zero, std(group_norm) as std_no_zero, %d as N, count(*) as N_no_zero FROM %s AS a, %s AS b WHERE %s b.%s = '%s' AND b.%s = '%s' AND b.user_id = a.group_id group by b.%s, a.feat) as stats" % (newTable, outcomeField, count, count, featureTable, outcomeTable, outres, controlField, str(cvalue), outcomeField, str(outcomeValue), outcomeField)
 #SELECT age, feat, total_freq, mean_rel_freq, SQRT((N_no_zero*(POW((mean_no_zero - mean_rel_freq), 2) + std_no_zero*std_no_zero) + (N - N_no_zero)*(mean_rel_freq * mean_rel_freq)) / N) as std, N  from (
 #SELECT b.age, feat, SUM(value) as total_freq, SUM(group_norm)/390 as mean_rel_freq, AVG(group_norm) as mean_no_zero, std(group_norm) as std_no_zero, 390 as N, count(*) as N_no_zero FROM feat$1gram$messages_en$user_id$16to16$0_01 AS a, masterstats_andy AS b WHERE UWT >= 1000 AND b.age = '45' AND b.user_id = a.group_id group by b.age, a.feat) as a             
-                        mm.execute(self.corpdb, self.dbCursor, sql, False)
+                        mm.execute(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
                     else:
                         print "skipping %s %s and %s %s, count: %d because control value not in list" % (outcomeField, str(outcomeValue), controlField, str(cvalue), count)
         else: #no controls to avg
@@ -633,7 +641,7 @@ class FeatureRefiner(FeatureGetter):
                     if len(rows) >= 10000:
                         sql = "INSERT INTO %s (group_id, feat, value, group_norm, std_dev, N) " % newTable
                         sql += "VALUES (%s)" % ', '.join('%s' for r in rows[0]) 
-                        mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
+                        mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
                         j += len(rows)
                         print "    wrote %d rows [finished %d outcome_values]" % (j, i)
                         rows = []
@@ -641,7 +649,7 @@ class FeatureRefiner(FeatureGetter):
                 if rows:
                     sql = "INSERT INTO %s (group_id, feat, value, group_norm, std_dev, N) " % newTable
                     sql += "VALUES (%s)" % ', '.join('%s' for r in rows[0])
-                    mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
+                    mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
                     j += len(rows)  
                     print "    wrote %d rows [finished %d outcome_values]" % (j, i)
                 print "Inserted into %s" % newTable
@@ -662,8 +670,8 @@ class FeatureRefiner(FeatureGetter):
             avgTable = 'feat_grpd'+ nameSuffix + '$' + '$'.join(nameParts[1:3]) + '$' + controlGroupAvgName + '$' + '$'.join(nameParts[4:])
             drop = """DROP TABLE IF EXISTS %s""" % (avgTable)
             sql = "create table %s like %s" % (avgTable, newTables[0])
-            mm.execute(self.corpdb, self.dbCursor, drop)
-            mm.execute(self.corpdb, self.dbCursor, sql)
+            mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
+            mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
             #create insert fields:
             shortNames = map(lambda i: chr(ord('a')+i), range(len(newTables)))
@@ -692,7 +700,7 @@ class FeatureRefiner(FeatureGetter):
             sql = "INSERT INTO %s (group_id, feat, value, group_norm, std_dev, N) SELECT a.group_id, a.feat, %s, %s, %s, %s FROM %s where %s AND %s" % \
                 (avgTable, values, groupNorms, stdDev, Ns, tableNames, groupIdJoins, featJoins)
             print "Populating AVG table with command: %s" % sql
-            mm.execute(self.corpdb, self.dbCursor, sql, False)
+            mm.execute(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
 
 
     def createAggregateFeatTableByGroup(self, valueFunc = lambda d: d):
@@ -707,29 +715,29 @@ class FeatureRefiner(FeatureGetter):
 
         newTable = 'feat$agg_'+name[:12]+'$'+oldCorpTable+'$'+self.correl_field # +'$'+'$'.join(theRest)
         drop = """DROP TABLE IF EXISTS %s""" % (newTable)
-        mm.execute(self.corpdb, self.dbCursor, drop)
+        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
 
         sql = """CREATE TABLE %s like %s""" % (newTable, featureTable)
-        mm.execute(self.corpdb, self.dbCursor, sql)
+        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         sql = """ALTER TABLE %s MODIFY group_id VARCHAR(255)""" % (newTable)
-        mm.execute(self.corpdb, self.dbCursor, sql)
+        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         
 
-        mm.disableTableKeys(self.corpdb, self.dbCursor, newTable)
+        mm.disableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
         
         mm.warn("Inserting group_id, feat, and values")
         sql = "INSERT INTO %s SELECT m.%s, f.feat, sum(f.value), 0 FROM %s AS f, %s AS m where m.%s = f.group_id GROUP BY m.%s, f.feat" % (newTable,self.correl_field, featureTable, self.corptable, oldGroupField, self.correl_field)
-        mm.execute(self.corpdb, self.dbCursor, sql)
+        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
         mm.warn("Recalculating group_norms")
         sql = "UPDATE %s a INNER JOIN (SELECT group_id,sum(value) sum FROM %s GROUP BY group_id) b ON a.group_id=b.group_id SET a.group_norm=a.value/b.sum" % (newTable,newTable)
         
-        mm.execute(self.corpdb, self.dbCursor, sql)
+        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
   
         # patrick changed this to be all SQL 7/21/15. Values and group norms were being calculated wrong before
 
         mm.warn("Done inserting.\nEnabling keys.")
-        mm.enableTableKeys(self.corpdb, self.dbCursor, newTable)
+        mm.enableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
         mm.warn("done.")
 
         self.featureTable = newTable
@@ -755,7 +763,7 @@ class FeatureRefiner(FeatureGetter):
 
         #getting N
         sql = "SELECT COUNT(DISTINCT group_id) FROM %s" % ngram_table
-        N = mm.executeGetList(sql, False)[0][0]
+        N = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)[0][0]
 
         feat_counts = self.getFeatureCounts() #tuples of: feat, count (number of groups feature appears with)
 
@@ -766,7 +774,7 @@ class FeatureRefiner(FeatureGetter):
 
             # get (group_id, group_norm) where feat = feat
             sql = """SELECT group_id, value, group_norm from %s WHERE feat = \'%s\'"""%(ngram_table, MySQLdb.escape_string(feat))
-            group_id_freq = mm.executeGetList(sql, False)
+            group_id_freq = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
 
             for (group_id, value, tf) in group_id_freq:
                 tf_idf = tf * idf

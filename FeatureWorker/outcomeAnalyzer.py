@@ -1449,7 +1449,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     @staticmethod
     def buildBatchPlotFile(corpdb, featTable, topicList=''):
-        (conn, cur, curD) = mm.dbConnect(corpdb)
+        (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding, use_unicode=self.use_unicode)
         outputfile = '/tmp/flexiplot.csv'
         if topicList:
             from collections import OrderedDict
@@ -1460,7 +1460,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         else:
             csvOut = csv.DictWriter(open(outputfile, 'w'), fieldnames=['title_name', 'feat'])
             sql = 'SELECT DISTINCT feat FROM %s'%featTable
-            feats = mm.executeGetList1(corpdb, cur, sql, True)
+            feats = mm.executeGetList1(corpdb, cur, sql, True, charset=self.encoding, use_unicode=self.use_unicode)
             for feat in feats:
                 csvOut.writerow({'title_name':feat, 'feat':feat})
         return outputfile
@@ -1548,12 +1548,18 @@ class OutcomeAnalyzer(OutcomeGetter):
                 if use_unicode:
                     print "%s:%d:%s" % (w.encode('utf-8').replace(' ', '_'), int(occ), color)
                 else:
-                    print "%s:%d:%s" % (w.replace(' ', '_'), int(occ), color)
+                    if len(w) > len(fwc.removeNonAscii(w)): 
+                        mm.warn("Unicode being ignored, %s is being skipped" % w)
+                    else:
+                        print "%s:%d:%s" % (w.replace(' ', '_'), int(occ), color)
             else:
                 if use_unicode:
                     print "%s:%d" % (w.encode('utf-8').replace(' ', '_'), int(occ))
                 else:
-                    print "%s:%d" % (w.replace(' ', '_'), int(occ))
+                    if len(w) > len(fwc.removeNonAscii(w)): 
+                        mm.warn("Unicode being ignored, %s is being skipped" % w)
+                    else:
+                        print "%s:%d" % (w.replace(' ', '_'), int(occ))
 
     @staticmethod
     def duplicateFilter(rList, wordFreqs, maxToCheck = 100):

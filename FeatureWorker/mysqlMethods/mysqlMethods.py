@@ -48,7 +48,7 @@ def dbConnect(db, host=HOST, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITC
                 host = host,
                 user = USER,
                 db = db,
-                charset = charset,#'latin-2', #_dbConnect
+                charset = 'latin1' if not use_unicode else charset,#'latin-2', #_dbConnect
                 use_unicode = use_unicode, #_dbConnect
                 read_default_file = "~/.my.cnf"
             )

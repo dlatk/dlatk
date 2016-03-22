@@ -133,7 +133,7 @@ class FeatureExtractor(FeatureWorker):
             messages = map(lambda r: r[messageIndex], rows)
 
             #tokenize msgs:
-            # parses = map(lambda m: json.dumps(sentDetector.tokenize(removeNonAscii(treatNewlines(m.strip())))), messages)
+            # parses = map(lambda m: json.dumps(sentDetector.tokenize(fwc.removeNonAscii(treatNewlines(m.strip())))), messages)
             parses = map(lambda m: json.dumps(sentDetector.tokenize(fwc.treatNewlines(m.strip()))), messages)
 
             #add msgs into new tables
@@ -620,11 +620,10 @@ class FeatureExtractor(FeatureWorker):
                     
                     if not warnedMaybeForeignLanguage and (len(message)-len(fwc.removeNonAscii(message))) > 2:
                         mm.warn("\n#############################")
-                        # _warn("Unicode characters are being removed, disable this by commenting out 'message = removeNonAscii(message)' in featureWorker.py\n")
-                        mm.warn("Unicode characters are not being removed, uncomment 'message = removeNonAscii(message)' in featureWorker.py if you want to remove them.\n")
+                        mm.warn("Unicode characters are not being removed, uncomment 'message = fwc.removeNonAscii(message)' in featureWorker.py if you want to remove them.\n")
                         warnedMaybeForeignLanguage = True
                         
-                    # message = removeNonAscii(message)
+                    if not self.use_unicode: message = fwc.removeNonAscii(message)
                     message = fwc.shrinkSpace(message)
 
                     #words = message.split()
@@ -827,7 +826,7 @@ class FeatureExtractor(FeatureWorker):
         '''
                 ###### BEGIN extract to new function
         message = fwc.treatNewlines(message)
-        # message = removeNonAscii(message) #TODO: don't use for foreign languages
+        if not self.use_unicode: message = fwc.removeNonAscii(message) #TODO: don't use for foreign languages
         message = fwc.shrinkSpace(message)
 
         #TODO - update this to a word based dict, eg maxCollocSize[word[i]]
@@ -924,7 +923,7 @@ class FeatureExtractor(FeatureWorker):
 
                     #TODO: remove if keeping other characters
                     message = fwc.treatNewlines(message)
-                    # message = removeNonAscii(message) #TODO: don't use for foreign languages
+                    if not self.use_unicode: message = fwc.removeNonAscii(message) #TODO: don't use for foreign languages
                     message = fwc.shrinkSpace(message)
 
                     self._countFeatures(collocSet, maxCollocSizeByFirstWord, message, tokenizer, freqs, includeSubCollocs)
@@ -997,7 +996,7 @@ class FeatureExtractor(FeatureWorker):
                     if msgs > 1000*2915:
                         break
                     message = fwc.treatNewlines(message)
-                    # message = removeNonAscii(message)
+                    if not self.use_unicode: message = fwc.removeNonAscii(message)
                     message = fwc.shrinkSpace(message)
 
                     words = tokenizer.tokenize(message)
@@ -1262,7 +1261,7 @@ class FeatureExtractor(FeatureWorker):
                     if msgs % fwc.PROGRESS_AFTER_ROWS == 0: #progress update
                         mm.warn("Messages Read: %dk" % int(msgs/1000))
                     message = fwc.treatNewlines(message)
-                    # message = removeNonAscii(message)
+                    if not self.use_unicode: message = fwc.removeNonAscii(message)
                     message = fwc.shrinkSpace(message)
 
 
@@ -1957,7 +1956,7 @@ class FeatureExtractor(FeatureWorker):
                     if msgs % fwc.PROGRESS_AFTER_ROWS == 0: #progress update
                         mm.warn("Messages Read: %dk" % int(msgs/1000))
                     message = fwc.treatNewlines(message)
-                    # message = removeNonAscii(message)
+                    if not self.use_unicode: message = fwc.removeNonAscii(message)
                     message = fwc.shrinkSpace(message)
 
                     parseInfo = loads(corenlpServer.parse(message))
@@ -2076,7 +2075,7 @@ class FeatureExtractor(FeatureWorker):
                     if msgs % fwc.PROGRESS_AFTER_ROWS == 0: #progress update
                         mm.warn("Messages Read: %dk" % int(msgs/1000))
                     message = fwc.treatNewlines(message)
-                    # message = removeNonAscii(message)
+                    if not self.use_unicode: message = fwc.removeNonAscii(message)
                     message = fwc.shrinkSpace(message)
 
                     parseInfo = loads(corenlpServer.parse(message))

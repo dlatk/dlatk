@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #########################################
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import re

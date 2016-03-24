@@ -782,8 +782,9 @@ class FeatureRefiner(FeatureGetter):
 
 
     def createTfIdfTable(self, ngram_table):
-        # Using ngram_table, creates new feature table where group_norm = tf-idf (term frequency-inverse document frequency)
-
+        """
+        Using ngram_table, creates new feature table where group_norm = tf-idf (term frequency-inverse document frequency)
+        """
         # tf-idf = tf*idf
 
         # tf (term frequency) is simply how frequently a term occurs in a document (group_norm for a given group_id)
@@ -813,13 +814,13 @@ class FeatureRefiner(FeatureGetter):
             idf = log(N/float(dt))
 
             # get (group_id, group_norm) where feat = feat
-            sql = """SELECT group_id, value, group_norm from %s WHERE feat = \'%s\'"""%(ngram_table, MySQLdb.escape_string(feat))
+            sql = u"""SELECT group_id, value, group_norm from %s WHERE feat = \'%s\'"""%(ngram_table, MySQLdb.escape_string(feat))
             group_id_freq = self._executeGetList(sql, False)
 
             for (group_id, value, tf) in group_id_freq:
                 tf_idf = tf * idf
 
-                insert_sql = "INSERT INTO {} (group_id, feat, value, group_norm) VALUES (\'{}\', \'{}\', {}, {});".format(
+                insert_sql = u"INSERT INTO {} (group_id, feat, value, group_norm) VALUES (\'{}\', \'{}\', {}, {});".format(
                                                 idf_table, 
                                                 group_id, 
                                                 MySQLdb.escape_string(feat), 

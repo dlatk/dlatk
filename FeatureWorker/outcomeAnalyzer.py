@@ -1244,7 +1244,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             sys.stdout = sys.__stdout__
 
 
-    def printTopicTagCloudData(self, correls, topicLex, maxP = DEF_P, paramString = None, maxWords = 15, maxTopics = 100, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False):
+    def printTopicTagCloudData(self, correls, topicLex, maxP = DEF_P, paramString = None, maxWords = 15, maxTopics = 200, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False):
         if paramString: print paramString + "\n"
 
         fsock = None
@@ -1284,18 +1284,18 @@ class OutcomeAnalyzer(OutcomeGetter):
             negRs = [(k, (float(-1*v[0]),) + v[1:]) for k, v in sigRs.iteritems() if v[0] < 0]
 
             print "PositiveRs:\n------------"
-            if colorScheme = 'bluered':
+            if colorScheme == 'bluered':
                 OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='blue')
-            elif colorScheme = 'redblue':
+            elif colorScheme == 'redblue':
                 OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='red')
     
             else:
                 OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme=colorScheme)
             
             print "\nNegative Rs:\n-------------"
-            if colorScheme = 'bluered':
+            if colorScheme == 'bluered':
                 OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='red')
-            elif colorScheme = 'redblue':
+            elif colorScheme == 'redblue':
                 OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='blue')            
             else:
                 OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme=colorScheme)

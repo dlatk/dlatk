@@ -382,8 +382,6 @@ def main(fn_args = None):
                        help='All mediation analysis variables found corptable. No feature table needed.')
     group.add_argument('--mediation_csv', action='store_true', dest='mediationcsv', default=False,
                        help='Print results to a CSV. Default file name is mediation.csv. Use --output_name to specify file name.')
-    group.add_argument('--mediation_mysql', action='store_true', dest='mediationmysql', default=False,
-                       help='Store results in MySQL database. Database is specified by -d and table name is specified by -output_name')
     group.add_argument('--mediation_no_summary', action='store_false', dest='mediationsummary', default=True,
                        help='Print results to a CSV. Default file name is mediation.csv. Use --output_name to specify file name.')
     group.add_argument('--mediation_method', metavar='METHOD', type=str, dest='mediation_style', default='baron',

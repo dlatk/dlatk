@@ -33,6 +33,8 @@ from operator import itemgetter
 import itertools
 import sys
 
+MAX_SUMMARY_SIZE = 10 # maximum number of results to print in summary for each path start / outcome pair
+
 """
 Mediation analysis
 Implements algorithm 1 ('parametric inference') and algorithm 2
@@ -587,14 +589,14 @@ class MediationAnalysis:
 						summary_results.append(results)
 							
 
-		summary_results.sort(key=lambda x: (x[0].lower(), x[1].lower(), -x[3]), reverse=False)
+		summary_results.sort(key=lambda x: (x[0].lower(), x[1].lower(), -abs(x[3])), reverse=False)
 		if len(summary_results) > 0:
 			print "Printing results to: %s" % csv_name
 			with open(csv_name, 'wb') as csvfile:
 				f = csv.writer(csvfile, quotechar='"', quoting=csv.QUOTE_NONNUMERIC, delimiter=',')
 				f.writerow(header)
 				for key, group in itertools.groupby(summary_results, key=lambda x: (x[0], x[1])):
-					for item in list(group)[:10]:
+					for item in list(group)[:MAX_SUMMARY_SIZE]:
 						f.writerow(item)
 		else:
 			print "Summary: nothing passes significance threshold of %s." % (self.sig_level)
@@ -655,8 +657,6 @@ class MediationAnalysis:
 												 + [self.output[path_start][outcome][mediator][36], p_list[14]] + self.output[path_start][outcome][mediator][38:] 
 						f.writerow([path_start, outcome, mediator] + bk_rearranged + med_rearranged)
 
-	def print_mysql(self):
-		return
 		
 	def prep_data(self, path_start, mediator, outcome, controlDict=None, controlNames=None, zscoreRegression=None):
 		"""
@@ -823,7 +823,7 @@ class MediationAnalysis:
 							beta_p = outcome_results.pvalues.get('mediator')
 							sobel_p = st.norm.sf(abs(sobel))*2
 
-						self.output_sobel[path_start][outcome][mediator] = np.array([c, c_p, c_prime, c_prime_p, abs(c-c_prime), alpha*beta, alpha, alpha_error, alpha_p, beta, beta_error, beta_p, sobel, sobel_SE, sobel_p])
+						self.output_sobel[path_start][outcome][mediator] = np.array([c, c_p, c_prime, c_prime_p, c-c_prime, alpha*beta, alpha, alpha_error, alpha_p, beta, beta_error, beta_p, sobel, sobel_SE, sobel_p])
 						self.output_p[path_start][outcome][mediator] = self.output_p[path_start][outcome][mediator] + [c_p, c_prime_p, alpha_p, beta_p, sobel_p ]
 
 					# new mediation
@@ -880,6 +880,5 @@ class MediationAnalysis:
 
 		if self.summary: self.print_summary()
 		if self.to_csv: self.print_csv()
-		if self.to_mysql: self.print_mysql()
 
 

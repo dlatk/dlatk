@@ -1281,7 +1281,11 @@ class OutcomeAnalyzer(OutcomeGetter):
             sys.stdout = sys.__stdout__
 
 
+<<<<<<< HEAD
     def printTopicTagCloudData(self, correls, topicLex, maxP = fwc.DEF_P, paramString = None, maxWords = 15, maxTopics = 100, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False):
+=======
+    def printTopicTagCloudData(self, correls, topicLex, maxP = DEF_P, paramString = None, maxWords = 15, maxTopics = 200, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False):
+>>>>>>> phil-dev
         if paramString: print paramString + "\n"
 
         fsock = None

@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 __authors__ = "Andy Schwartz, Lukasz Dziurzynski, Megha Agrawal, Maarten Sap, Salvatore Giorgi"
 __copyright__ = "Copyright 2013"
 __credits__ = []

@@ -1,4 +1,3 @@
-#!/usr/bin/python
 ###############################
 ## correlates results between two csvs of results
 ## csvs in arguments:

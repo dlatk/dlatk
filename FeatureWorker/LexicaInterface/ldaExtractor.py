@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #########################################
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import re
@@ -20,8 +20,8 @@ class LDAExtractor(FeatureExtractor):
 
     def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, 
                  mysql_host = "localhost", message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, 
-                 encoding=fwc.DEF_ENCODING, ldaMsgTable = DEF_LDA_MSG_TABLE):
-        super(LDAExtractor, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding)
+                 encoding=fwc.DEF_ENCODING, use_unicode=fwc.DEF_UNICODE_SWITCH, ldaMsgTable = DEF_LDA_MSG_TABLE):
+        super(LDAExtractor, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode)
         self.ldaMsgTable = ldaMsgTable
 
 

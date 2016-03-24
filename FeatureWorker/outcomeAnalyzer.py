@@ -44,6 +44,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else fwc.DEF_MESSAGE_FIELD
         messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else fwc.DEF_MESSAGEID_FIELD
         encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else fwc.DEF_ENCODING
+        use_unicode = parser.get('constants','use_unicode') if parser.has_option('constants','use_unicode') else fwc.DEF_UNICODE_SWITCH
         lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else fwc.DEF_LEXICON_DB
         outcome_table = parser.get('constants','outcometable') if parser.has_option('constants','outcometable') else fwc.DEF_OUTCOME_TABLE
         outcome_value_fields = [o.strip() for o in parser.get('constants','outcomefields').split(",")] if parser.has_option('constants','outcomefields') else [fwc.DEF_OUTCOME_FIELD] # possible list
@@ -53,15 +54,15 @@ class OutcomeAnalyzer(OutcomeGetter):
         featureMappingLex = parser.get('constants','featlabelmaplex') if parser.has_option('constants','featlabelmaplex') else ''
         output_name = parser.get('constants','output_name') if parser.has_option('constants','output_name') else ''
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
-        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable)
+        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable)
     
-    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host="localhost", message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, lexicondb=fwc.DEF_LEXICON_DB, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls=fwc.DEF_OUTCOME_CONTROLS, outcome_interaction=fwc.DEF_OUTCOME_CONTROLS, featureMappingTable='', featureMappingLex='',  output_name='', wordTable = None):
-        super(OutcomeAnalyzer, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, featureMappingTable, featureMappingLex,  wordTable)
+    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host="localhost", message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, use_unicode=fwc.DEF_UNICODE_SWITCH, lexicondb=fwc.DEF_LEXICON_DB, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls=fwc.DEF_OUTCOME_CONTROLS, outcome_interaction=fwc.DEF_OUTCOME_CONTROLS, featureMappingTable='', featureMappingLex='',  output_name='', wordTable = None):
+        super(OutcomeAnalyzer, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, featureMappingTable, featureMappingLex,  wordTable)
         self.output_name = output_name
 
     def printGroupsAndOutcomesToCSV(self, featGetter, outputfile, groupThresh=0, where = '', freqs = False):
         """prints sas-style csv file output"""
-        assert mm.tableExists(self.corpdb, self.dbCursor, featGetter.featureTable), 'feature table does not exist (make sure to quote it)'
+        assert mm.tableExists(self.corpdb, self.dbCursor, featGetter.featureTable, charset=self.encoding, use_unicode=self.use_unicode), 'feature table does not exist (make sure to quote it)'
 
         #get outcome data to work with
         (groups, allOutcomes, controls) = OutcomeGetter.getGroupsAndOutcomes(groupThresh)
@@ -84,7 +85,10 @@ class OutcomeAnalyzer(OutcomeGetter):
         if allOutcomes and len(allOutcomes) > 0: outcomesByGroup = fwc.reverseDictDict(allOutcomes)
         controlsByGroup = dict()
         if controls and len(controls) > 0: controlsByGroup = fwc.reverseDictDict(controls)
-        firstRow = dict([(unicode(k), unicode(k)) for k in allKeys])
+        if self.use_unicode:
+            firstRow = dict([(unicode(k), unicode(k)) for k in allKeys])
+        else:
+            firstRow = dict([(k, k) for k in allKeys])
         csvOut.writerow(firstRow)
         numPed = 0
         #can also use yieldGroupNorms if preferring to output that information
@@ -110,7 +114,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     def yieldDataForOneFeatAtATime(self, featGetter, groupThresh = 0, blacklist=None, whitelist=None,outcomeWithOutcome=False, includeFreqs = False, groupWhere = ''):
         """Finds the correlations between features and outcomes"""
-        assert mm.tableExists(self.corpdb, self.dbCursor, featGetter.featureTable), 'feature table does not exist (make sure to quote it)'
+        assert mm.tableExists(self.corpdb, self.dbCursor, featGetter.featureTable, charset=self.encoding, use_unicode=self.use_unicode), 'feature table does not exist (make sure to quote it)'
         lexicon_count_table = None
         # if 'cat_' in featGetter.featureTable.split('$')[1]:
         #     lexicon_count_table = featGetter.featureTable
@@ -123,8 +127,10 @@ class OutcomeAnalyzer(OutcomeGetter):
         featFreqs = None
         if includeFreqs:
             where = """ group_id in ('%s')""" % ("','".join(str(g) for g in groups))
-            #featFreqs = dict([ (unicode(k), v) for k, v in  featGetter.getSumValuesByFeat(where = where) ])
-            featFreqs = dict([ (k, v) for k, v in  featGetter.getSumValuesByFeat(where = where) ])
+            if self.use_unicode:
+                featFreqs = dict([ (unicode(k), v) for k, v in  featGetter.getSumValuesByFeat(where = where) ])
+            else:
+                featFreqs = dict([ (k, v) for k, v in  featGetter.getSumValuesByFeat(where = where) ])
             if outcomeWithOutcome :
                 featFreqs.update(dict([('outcome_'+k, len(v)) for k, v in allOutcomes.iteritems()]))
                                 
@@ -187,9 +193,9 @@ class OutcomeAnalyzer(OutcomeGetter):
         groups = []
         if groupThresh:
             wordTable = self.getWordTable()
-            groups = [str(i[1]) for i in mm.executeGetList(self.corpdb, self.dbCursor, "select sum(value), group_id from %s group by group_id" % wordTable) if long(i[0]) >= groupThresh]
+            groups = [str(i[1]) for i in mm.executeGetList(self.corpdb, self.dbCursor, "select sum(value), group_id from %s group by group_id" % wordTable, charset=self.encoding, use_unicode=self.use_unicode) if long(i[0]) >= groupThresh]
         else:
-            groups = [str(i[0]) for i in mm.executeGetList(self.corpdb, self.dbCursor, "select distinct group_id from %s" % wordTable)]
+            groups = [str(i[0]) for i in mm.executeGetList(self.corpdb, self.dbCursor, "select distinct group_id from %s" % wordTable, charset=self.encoding, use_unicode=self.use_unicode)]
             
         # Checking for group wildcards in the samples
         if sample1 == ['*']:
@@ -239,12 +245,12 @@ class OutcomeAnalyzer(OutcomeGetter):
             if i == 0:
                 sql = "select feat, sum(value), sum(group_norm) from %s where group_id in ('%s') group by feat" % (featGetter.featureTable, "', '".join(str(i) for i in gs))
                 # fill in dictionary for 1st time
-                res = mm.executeGetList(self.corpdb, self.dbCursor, sql)
+                res = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
                 values = {feat: [float(gn)] for feat, freq, gn in res}
                 freqsDict = {feat: long(freq) for feat, freq, gn in res}
             else:
                 sql = "select feat, sum(group_norm) from %s where group_id in ('%s') group by feat" % (featGetter.featureTable, "', '".join(str(i) for i in gs))
-                new_values = {feat: gn for feat, gn in mm.executeGetList(self.corpdb, self.dbCursor, sql)}
+                new_values = {feat: gn for feat, gn in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)}
                 for feat, gnList in values.iteritems():
                     gnList.append(new_values.get(feat, 0))
 
@@ -288,7 +294,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     sys.stderr.write("regexp isn't valid: %s\n" % term)
 
         sql = "select feat, sum(value), sum(group_norm) from %s group by feat" % (featGetter.featureTable)
-        counts_list = mm.executeGetList(self.corpdb, self.dbCursor, sql)
+        counts_list = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         
         (groups, allOutcomes, controls) = self.getGroupsAndOutcomes(groupThresh)
         # groups = set of group_id's that have a non null outcome (for all outcomes ever) aka is useless
@@ -304,7 +310,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 good_groups = [i for i in outcome_groups if allOutcomes[outcome][i]==value]
                 sql = "select feat, sum(value), sum(group_norm) from %s where group_id in ('%s')" % (featGetter.featureTable, "','".join([str(i) for i in good_groups]))
                 sql += " group by feat"
-                value_dict = {feat : {'value': long(value), 'group_norm': group_norm} for feat, value, group_norm in mm.executeGetList(self.corpdb, self.dbCursor, sql)}
+                value_dict = {feat : {'value': long(value), 'group_norm': group_norm} for feat, value, group_norm in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)}
                                     
                 for feat, value_group_norm_dict in counts_dict.iteritems():
                     try:
@@ -501,8 +507,15 @@ class OutcomeAnalyzer(OutcomeGetter):
                         if outputInteraction: interaction_tuples = {k: (v[0], v[1]*numFeats) + v[2:] for k, v in interaction_tuples.iteritems()} 
                     if includeFreqs:
                         try:
-                            tup = tup + (int(featFreqs[unicode(feat)]), )
-                            if outputInteraction: interaction_tuples = {k: v + (int(featFreqs[unicode(feat)]), ) for k, v in interaction_tuples.iteritems()} 
+                            if self.use_unicode:
+                                tup = tup + (int(featFreqs[unicode(feat)]), )
+                            else:
+                                tup = tup + (int(featFreqs[feat]), )
+                            if outputInteraction: 
+                                if self.use_unicode:
+                                    interaction_tuples = {k: v + (int(featFreqs[unicode(feat)]), ) for k, v in interaction_tuples.iteritems()} 
+                                else:
+                                    interaction_tuples = {k: v + (int(featFreqs[feat]), ) for k, v in interaction_tuples.iteritems()} 
                             
                         except KeyError:
                             if not whitelist:
@@ -664,7 +677,10 @@ class OutcomeAnalyzer(OutcomeGetter):
                         tup = (tup[0], tup[1]*numFeats) + tup[2:]
                     if includeFreqs:
                         try:
-                            tup = tup + (int(featFreqs[unicode(feat)]), )
+                            if self.use_unicode:
+                                tup = tup + (int(featFreqs[unicode(feat)]), )
+                            else:
+                                tup = tup + (int(featFreqs[feat]), )
 
                         except KeyError:
                             if not whitelist:
@@ -1140,9 +1156,9 @@ class OutcomeAnalyzer(OutcomeGetter):
     def getLabelmapFromLexicon(self, lexicon_table): 
 
         """Returns a label map based on a lexicon. labelmap is {feat:concatenated_categories}"""
-        (conn, cur, curD) = mm.dbConnect(self.lexicondb, charset=self.encoding)
+        (conn, cur, curD) = mm.dbConnect(self.lexicondb, charset=self.encoding, use_unicode=self.use_unicode)
         sql = 'SELECT * FROM %s'%(lexicon_table)
-        rows = mm.executeGetList(self.lexicondb, cur, sql, True) #returns list of [id, feat, cat, ...] entries
+        rows = mm.executeGetList(self.lexicondb, cur, sql, True, charset=self.encoding, use_unicode=self.use_unicode) #returns list of [id, feat, cat, ...] entries
 
         feat_to_label = {}
         for row in rows:
@@ -1163,9 +1179,9 @@ class OutcomeAnalyzer(OutcomeGetter):
         elif not labelmap_table:
             raise Exception("must specify labelmap_table or lda_id")
 
-        (conn, cur, curD) = mm.dbConnect(self.lexicondb, charset=self.encoding)
+        (conn, cur, curD) = mm.dbConnect(self.lexicondb, charset=self.encoding, use_unicode=self.use_unicode)
         sql = 'SELECT * FROM %s'%(labelmap_table)
-        rows = mm.executeGetList(self.lexicondb, cur, sql, True) #returns list of [feat, label, ...] entries
+        rows = mm.executeGetList(self.lexicondb, cur, sql, True, charset=self.encoding, use_unicode=self.use_unicode) #returns list of [feat, label, ...] entries
 
         feat_to_label = {}
         for row in rows:
@@ -1260,20 +1276,20 @@ class OutcomeAnalyzer(OutcomeGetter):
 
             print "PositiveRs:\n------------"
             if colorScheme == 'bluered':
-                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme='blue')
+                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme='blue', use_unicode=self.use_unicode)
             elif colorScheme == 'redblue':
-                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme='red')
+                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme='red', use_unicode=self.use_unicode)
             else:
-                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme=colorScheme)
+                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme=colorScheme, use_unicode=self.use_unicode)
             # OutcomeAnalyzer.plotWordcloudFromTuples(posRs, maxWords, outputFile + ".%s.%s"%(outcomeField, "posR"), wordcloud )
             
             print "\nNegative Rs:\n-------------"
             if colorScheme == 'bluered':
-                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme='red')
+                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme='red', use_unicode=self.use_unicode)
             elif colorScheme == 'redblue':
-                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme='blue')
+                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme='blue', use_unicode=self.use_unicode)
             else:
-                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme=colorScheme)
+                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme=colorScheme, use_unicode=self.use_unicode)
             # OutcomeAnalyzer.plotWordcloudFromTuples(negRs, maxWords, outputFile + ".%s.%s"%(outcomeField, "negR"), wordcloud )
 
         if outputFile:
@@ -1281,11 +1297,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             sys.stdout = sys.__stdout__
 
 
-<<<<<<< HEAD
-    def printTopicTagCloudData(self, correls, topicLex, maxP = fwc.DEF_P, paramString = None, maxWords = 15, maxTopics = 100, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False):
-=======
-    def printTopicTagCloudData(self, correls, topicLex, maxP = DEF_P, paramString = None, maxWords = 15, maxTopics = 200, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False):
->>>>>>> phil-dev
+    def printTopicTagCloudData(self, correls, topicLex, maxP = fwc.DEF_P, paramString = None, maxWords = 15, maxTopics = 200, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False):
         if paramString: print paramString + "\n"
 
         fsock = None
@@ -1303,7 +1315,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             print 'Using words from featuretable for visualization'
             sql = "SELECT feat, sum(value) FROM %s group by feat"%(self.getWordTable())
             # words = {word: int(freq), ...}
-            wordFreqs = {t[0]: int(t[1]) for t in mm.executeGetList(self.corpdb, self.dbCursor, sql)}
+            wordFreqs = {t[0]: int(t[1]) for t in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)}
             words = set(wordFreqs.keys())
             newTopicWords = dict()
             for cat, tw in topicWords.iteritems():
@@ -1326,20 +1338,20 @@ class OutcomeAnalyzer(OutcomeGetter):
 
             print "PositiveRs:\n------------"
             if colorScheme == 'bluered':
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='blue')
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='blue', use_unicode=self.use_unicode)
             elif colorScheme == 'redblue':
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='red')
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='red', use_unicode=self.use_unicode)
     
             else:
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme=colorScheme)
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme=colorScheme, use_unicode=self.use_unicode)
             
             print "\nNegative Rs:\n-------------"
             if colorScheme == 'bluered':
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='red')
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='red', use_unicode=self.use_unicode)
             elif colorScheme == 'redblue':
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='blue')            
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='blue', use_unicode=self.use_unicode)            
             else:
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme=colorScheme)
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme=colorScheme, use_unicode=self.use_unicode)
 
         if outputFile:
             fsock.close()
@@ -1351,7 +1363,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             mm.warn("No topic lexicon selected, please specify it with --topic_lexicon TOP_LEX")
             exit(2)
         sql = "SELECT term, category, weight FROM %s.%s"%(self.lexicondb, topicLex)
-        catList = mm.executeGetList(self.corpdb, self.dbCursor, sql)
+        catList = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         topicWords = dict()
         for (term, cat, w) in catList:
             stripped_cat = cat.strip() #thank you Daniel, love Johannes
@@ -1365,7 +1377,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         return topicWords
 
     @staticmethod
-    def printTopicListTagCloudFromTuples(rs, topicWords, maxWords = 25, maxTopics = 40, duplicateFilter = False, wordFreqs = None, filterThresh = 0.25, colorScheme='multi'):
+    def printTopicListTagCloudFromTuples(rs, topicWords, maxWords = 25, maxTopics = 40, duplicateFilter = False, wordFreqs = None, filterThresh = 0.25, colorScheme='multi', use_unicode=True):
         rList = sorted(rs, key= lambda f: abs(f[1][0]) if not isnan(f[1][0]) else 0, reverse=True)[:maxTopics]
         usedWordSets = list() # a list of sets of topic words
         for (topic, rf) in rList:
@@ -1397,7 +1409,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             # if using 1gram words and frequencies
             # (r, p, n, freq) belong to the category only
             tw = map(lambda (w, f): (w, (f, p, n, f)), tw) if not wordFreqs else map(lambda (w, f): (w, (f*float(wordFreqs[w]), p, n, wordFreqs[w])), tw)
-            OutcomeAnalyzer.printTagCloudFromTuples(tw, maxWords, rankOrderR = True, colorScheme=colorScheme)
+            OutcomeAnalyzer.printTagCloudFromTuples(tw, maxWords, rankOrderR = True, colorScheme=colorScheme, use_unicode=use_unicode)
 
         # pprint(topicWords)
         return topicWords
@@ -1438,7 +1450,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     @staticmethod
     def buildBatchPlotFile(corpdb, featTable, topicList=''):
-        (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding)
+        (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding, use_unicode=self.use_unicode)
         outputfile = '/tmp/flexiplot.csv'
         if topicList:
             from collections import OrderedDict
@@ -1449,27 +1461,27 @@ class OutcomeAnalyzer(OutcomeGetter):
         else:
             csvOut = csv.DictWriter(open(outputfile, 'w'), fieldnames=['title_name', 'feat'])
             sql = 'SELECT DISTINCT feat FROM %s'%featTable
-            feats = mm.executeGetList1(corpdb, cur, sql, True)
+            feats = mm.executeGetList1(corpdb, cur, sql, True, charset=self.encoding, use_unicode=self.use_unicode)
             for feat in feats:
                 csvOut.writerow({'title_name':feat, 'feat':feat})
         return outputfile
 
     @staticmethod
     def plotFlexibinnedTable(corpdb, flexiTable, featureFile, feat_to_label=None, preserveBinTable=False):
-        (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding)
-        (pconn, pcur, pcurD) = mm.dbConnect(self.lexicondb, charset=self.encoding)
+        (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding, use_unicode=self.use_unicode)
+        (pconn, pcur, pcurD) = mm.dbConnect(self.lexicondb, charset=self.encoding, use_unicode=self.use_unicode)
         if not feat_to_label:
             sql = 'SELECT DISTINCT(feat) FROM %s'%flexiTable
-            feats = mm.executeGetList(corpdb, cur, sql)[0]
+            feats = mm.executeGetList(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)[0]
             feat_to_label = dict(map(lambda x: (x,x), feats))
 
         temp_table = 'feat_to_label_temp'
         biggest_feat = max(map(len, feat_to_label.keys()))
         biggest_label = max(map(len, feat_to_label.values()))
         sql = 'DROP TABLE IF EXISTS %s'%temp_table
-        mm.execute(self.lexicondb, pcur, sql)
+        mm.execute(self.lexicondb, pcur, sql, charset=self.encoding, use_unicode=self.use_unicode)
         sql = 'CREATE TABLE %s (feat varchar(%d), label varchar(%d))'%(temp_table, biggest_feat, biggest_label)
-        mm.execute(self.lexicondb, pcur, sql)
+        mm.execute(self.lexicondb, pcur, sql, charset=self.encoding, use_unicode=self.use_unicode)
         rows = []
         for feat, label in feat_to_label.iteritems():
             rows.append((feat, label))
@@ -1480,31 +1492,31 @@ class OutcomeAnalyzer(OutcomeGetter):
         os.system(cmd)
 
         sql = 'DROP TABLE IF EXISTS feat_to_label_temp'
-        mm.execute(self.lexicondb, pcur, sql)
+        mm.execute(self.lexicondb, pcur, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
         # pprint(mm.executeGetList(corpdb, cur, 'SELECT group_id, N FROM %s GROUP BY group_id'%flexiTable))
-        print(mm.executeGetList(corpdb, cur, 'SELECT group_id FROM %s GROUP BY group_id'%flexiTable))
+        print(mm.executeGetList(corpdb, cur, 'SELECT group_id FROM %s GROUP BY group_id'%flexiTable, charset=self.encoding, use_unicode=self.use_unicode))
         if not preserveBinTable:
             sql = 'DROP TABLE %s'%flexiTable
-            mm.execute(corpdb, cur, sql)
+            mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
         
 
     @staticmethod
     def writeFlexiAgeCSV(corpdb, flexiTable, age_csv):
-        (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding)
+        (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding, use_unicode=self.use_unicode)
         ageTable = flexiTable.replace('feat', 'age', 1)
         sql = 'CREATE TABLE %s LIKE %s'%(ageTable, flexiTable)
-        mm.execute(corpdb, cur, sql)
+        mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
         sql = 'ALTER TABLE %s MODIFY group_id float'%(ageTable)
-        mm.execute(corpdb, cur, sql)
+        mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
         sql = 'INSERT INTO %s (group_id, feat, value, group_norm, feat_norm, N, bin_center, bin_width) SELECT bin_center, feat, value, group_norm, feat_norm, N, bin_center, bin_width FROM %s'%(ageTable, flexiTable)
-        mm.execute(corpdb, cur, sql)
+        mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
         os.system('/home/lukaszdz/PERMA/ml/featureWorker.py -f \'%s\' -t \'%s\' -c group_id --print_csv /data/ml/fb20/csvs/%s'%(ageTable, ageTable, ageTable.replace('$', '.') + '.csv'))
         sql = 'DROP TABLE %s'%(ageTable)
-        mm.execute(corpdb, cur, sql)
+        mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
     @staticmethod
-    def printTagCloudFromTuples(rList, maxWords, rankOrderFreq = True, rankOrderR = False, colorScheme='multi'):
+    def printTagCloudFromTuples(rList, maxWords, rankOrderFreq = True, rankOrderR = False, colorScheme='multi', use_unicode=True):
         #rlist is a list of (word, correl) tuples
         if len(rList) < 1:
             print "rList has less than no items\n"
@@ -1534,9 +1546,21 @@ class OutcomeAnalyzer(OutcomeGetter):
         for (w, occ, freq) in rList:
             if freq:
                 color = OutcomeAnalyzer.freqToColor(freq, maxFreq, colorScheme=colorScheme)
-                print "%s:%d:%s" % (w.encode('utf-8').replace(' ', '_'), int(occ), color)
+                if use_unicode:
+                    print "%s:%d:%s" % (w.encode('utf-8').replace(' ', '_'), int(occ), color)
+                else:
+                    if len(w) > len(fwc.removeNonAscii(w)): 
+                        mm.warn("Unicode being ignored, %s is being skipped" % w)
+                    else:
+                        print "%s:%d:%s" % (w.replace(' ', '_'), int(occ), color)
             else:
-                print "%s:%d" % (w.encode('utf-8').replace(' ', '_'), int(occ))
+                if use_unicode:
+                    print "%s:%d" % (w.encode('utf-8').replace(' ', '_'), int(occ))
+                else:
+                    if len(w) > len(fwc.removeNonAscii(w)): 
+                        mm.warn("Unicode being ignored, %s is being skipped" % w)
+                    else:
+                        print "%s:%d" % (w.replace(' ', '_'), int(occ))
 
     @staticmethod
     def duplicateFilter(rList, wordFreqs, maxToCheck = 100):
@@ -1632,9 +1656,9 @@ class OutcomeAnalyzer(OutcomeGetter):
             negRs = [(k, float(-1*v)) for k, v in sigRs.iteritems() if v < 0]
 
             print "PositiveRs:\n------------"
-            OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme=colorScheme)
+            OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme=colorScheme, use_unicode=self.use_unicode)
             print "\nNegative Rs:\n-------------"
-            OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme=colorScheme)
+            OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme=colorScheme, use_unicode=self.use_unicode)
 
     @staticmethod
     def generateTagCloudImageFromTuples(rList, maxWords):
@@ -1701,8 +1725,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                 if sort: header += ' or see them <a href="#sorted">sorted by r-values</a>'
                 header += '<br><br></div>'
                 print >>outputFilePtr, header
-                self.outputCorrelMatrixHTML(fwc.reverseDictDict(correlMatrix), pValue, nValue, freq, outputFilePtr=outputFilePtr)
-                if sort: self.outputSortedCorrelHTML(correlMatrix, pValue, nValue, freq, outputFilePtr=outputFilePtr)
+                self.outputCorrelMatrixHTML(fwc.reverseDictDict(correlMatrix), pValue, nValue, freq, outputFilePtr=outputFilePtr, use_unicode=self.use_unicode)
+                if sort: self.outputSortedCorrelHTML(correlMatrix, pValue, nValue, freq, outputFilePtr=outputFilePtr, use_unicode=self.use_unicode)
         else:
             mm.warn("unknown output format: %s"% outputFormat)
       
@@ -1807,7 +1831,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     #HTML OUTPUTS:
     @staticmethod
-    def outputCorrelMatrixHTML(correlMatrix, pValue = True, nValue = True, freq=False, outputFilePtr = sys.stdout):
+    def outputCorrelMatrixHTML(correlMatrix, pValue = True, nValue = True, freq=False, outputFilePtr = sys.stdout, use_unicode=True):
         output="""<style media="screen" type="text/css">
                      table, th, td {border: 1px solid black;padding:2px;}
                      table {border-collapse:collapse;font:10pt verdana,arial,sans-serif;}
@@ -1874,11 +1898,13 @@ class OutcomeAnalyzer(OutcomeGetter):
         output += "</tr></table>\n"
         output += '<a href="#top">Back to top</a>'
         output += '</div>'
-        print >>outputFilePtr, output.encode('utf8') #might be slower
-        #print >>outputFilePtr, output
+        if use_unicode:
+            print >>outputFilePtr, output.encode('utf8') #might be slower
+        else:
+            print >>outputFilePtr, output
 
     @staticmethod
-    def outputSortedCorrelHTML(correlMatrix, pValue = True, nValue = True, freq=False, outputFilePtr = sys.stdout):
+    def outputSortedCorrelHTML(correlMatrix, pValue = True, nValue = True, freq=False, outputFilePtr = sys.stdout, use_unicode=True):
         output="""<style media="screen" type="text/css">
                      table, th, td {border: 1px solid black;padding:2px;}
                      table {border-collapse:collapse;font:10pt verdana,arial,sans-serif;}
@@ -1972,8 +1998,10 @@ class OutcomeAnalyzer(OutcomeGetter):
         output += "</table>\n"
         output += '<div id="bottomSorted"><a href="#top">Back to top</a> or go <a href="#sorted">back to top of sorted features</a></div>'
         output += '</div>'
-        print >>outputFilePtr, output.encode('utf8') #might be slower
-        #print >>outputFilePtr, output
+        if use_unicode:
+            print >>outputFilePtr, output.encode('utf8') #might be slower
+        else:
+            print >>outputFilePtr, output
         print >>outputFilePtr, "</p>"
 
     def printSignificantCoeffs(self, coeffs, outputFile = None, outputFormat='tsv', sort = False, pValue = True, nValue = False, maxP = fwc.DEF_P, paramString = None):
@@ -2053,7 +2081,7 @@ class OutcomeAnalyzer(OutcomeGetter):
     def interraterReliability(self, fields, where, index, method='icc'):
         """calculate irr measures for annotation task, uses the irr R package"""
         """method = icc, kappa2, kappam_fliess, kripp_alpha,  """
-        import pandas.rpy.common as com
+        #import pandas.rpy.common as com
         pandas2ri.activate()
         rIRR = importr('irr') 
         method = [m for m in dir(rIRR) if m.startswith(method)][0]

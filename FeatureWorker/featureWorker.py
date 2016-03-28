@@ -83,7 +83,7 @@ class FeatureWorker(object):
 
     def getWordGetter(self, lexicon_count_table=None):
         from featureGetter import FeatureGetter
-        if lexicon_count_table: mm.warn(lexicon_count_table)
+        if lexicon_count_table: fwc.warn(lexicon_count_table)
         wordTable = self.getWordTable() if not lexicon_count_table else lexicon_count_table
 
         assert mm.tableExists(self.corpdb, self.dbCursor, wordTable), "Need to create word table to use current functionality: %s" % wordTable
@@ -139,7 +139,7 @@ class FeatureWorker(object):
     # def _execute(self, sql, warnMsg=True):
     #     """Executes a given query"""
     #     if warnMsg:
-    #         mm.warn("SQL QUERY: %s"% sql[:fwc.MAX_SQL_PRINT_CHARS])
+    #         fwc.warn("SQL QUERY: %s"% sql[:fwc.MAX_SQL_PRINT_CHARS])
     #     attempts = 0;
     #     while (1):
     #         try:
@@ -147,7 +147,7 @@ class FeatureWorker(object):
     #             break
     #         except MySQLdb.Error, e:
     #             attempts += 1
-    #             mm.warn(" *MYSQL DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
+    #             fwc.warn(" *MYSQL DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
     #             time.sleep(fwc.MYSQL_ERROR_SLEEP*attempts**2)
     #             (self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(self.corpdb, self.mysql_host)
     #             if (attempts > fwc.MAX_ATTEMPTS):
@@ -157,7 +157,7 @@ class FeatureWorker(object):
     # def _executeGetList(self, sql, warnMsg=True):
     #     """Executes a given query, returns results as a list of lists"""
     #     if warnMsg:
-    #         mm.warn("SQL QUERY: %s"% sql[:fwc.MAX_SQL_PRINT_CHARS])
+    #         fwc.warn("SQL QUERY: %s"% sql[:fwc.MAX_SQL_PRINT_CHARS])
     #     data = []
     #     attempts = 0;
     #     while (1):
@@ -167,7 +167,7 @@ class FeatureWorker(object):
     #             break
     #         except MySQLdb.Error, e:
     #             attempts += 1
-    #             mm.warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
+    #             fwc.warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
     #             time.sleep(fwc.MYSQL_ERROR_SLEEP*attempts**2)
     #             (self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(self.corpdb, self.mysql_host)
     #             if (attempts > fwc.MAX_ATTEMPTS):
@@ -176,7 +176,7 @@ class FeatureWorker(object):
 
     # def _executeGetDict(self, sql):
     #     """Executes a given query, returns results as a list of dicts"""
-    #     mm.warn("SQL (DictCursor) QUERY: %s"% sql[:fwc.MAX_SQL_PRINT_CHARS])
+    #     fwc.warn("SQL (DictCursor) QUERY: %s"% sql[:fwc.MAX_SQL_PRINT_CHARS])
     #     data = []
     #     attempts = 0;
     #     while (1):
@@ -186,7 +186,7 @@ class FeatureWorker(object):
     #             break
     #         except MySQLdb.Error, e:
     #             attempts += 1
-    #             mm.warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
+    #             fwc.warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
     #             time.sleep(fwc.MYSQL_ERROR_SLEEP*attempts**2)
     #             (self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(self.corpdb, self.mysql_host)
     #             if (attempts > fwc.MAX_ATTEMPTS):
@@ -196,7 +196,7 @@ class FeatureWorker(object):
     # def _executeGetSSCursor(self, sql, warnMsg = True):
     #     """Executes a given query (ss cursor is good to iterate over for large returns)"""
     #     if warnMsg: 
-    #         mm.warn("SQL (SSCursor) QUERY: %s"% sql[:fwc.MAX_SQL_PRINT_CHARS])
+    #         fwc.warn("SQL (SSCursor) QUERY: %s"% sql[:fwc.MAX_SQL_PRINT_CHARS])
     #     ssCursor = mm.dbConnect(self.corpdb, self.mysql_host)[0].cursor(MySQLdb.cursors.SSCursor)
     #     data = []
     #     attempts = 0;
@@ -206,7 +206,7 @@ class FeatureWorker(object):
     #             break
     #         except MySQLdb.Error, e:
     #             attempts += 1
-    #             mm.warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
+    #             fwc.warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
     #             time.sleep(fwc.MYSQL_ERROR_SLEEP*attempts**2)
     #             ssCursor = mm.dbConnect(self.corpdb, self.mysql_host)[0].cursor(MySQLdb.cursors.SSCursor)
     #             if (attempts > fwc.MAX_ATTEMPTS):
@@ -225,7 +225,7 @@ class FeatureWorker(object):
     #             break
     #         except MySQLdb.Error, e:
     #             attempts += 1
-    #             mm.warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
+    #             fwc.warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
     #             time.sleep(fwc.MYSQL_ERROR_SLEEP*attempts**2)
     #             (self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(self.corpdb, self.mysql_host)
     #             self.writeCursor = self.dbConn.cursor()

@@ -161,8 +161,9 @@ hex_re = re.compile(r'\\x[0-9a-z]{1,4}')
 ######################################################################
 
 class Tokenizer:
-    def __init__(self, preserve_case=False):
+    def __init__(self, preserve_case=False, use_unicode=True):
         self.preserve_case = preserve_case
+        self.use_unicode = use_unicode
 
     def tokenize(self, s):
         """
@@ -170,11 +171,12 @@ class Tokenizer:
         Value: a tokenize list of strings; conatenating this list returns the original string if preserve_case=False
         """        
         # Try to ensure unicode:
-        try:
-            s = unicode(s)
-        except UnicodeDecodeError:
-            s = str(s).encode('string_escape')
-            s = unicode(s)
+        if self.use_unicode:
+            try:
+                s = unicode(s)
+            except UnicodeDecodeError:
+                s = str(s).encode('string_escape')
+                s = unicode(s)
         # Fix HTML character entitites:
         s = self.__html2unicode(s)
         s = self.__removeHex(s)
@@ -184,6 +186,7 @@ class Tokenizer:
         # Possible alter the case, but avoid changing emoticons like :D into :d:
         if not self.preserve_case:            
             words = map((lambda x : x if emoticon_re.search(x) else x.lower()), words)
+        
         return words
 
     def tokenize_random_tweet(self):
@@ -259,4 +262,4 @@ if __name__ == '__main__':
         print "======================================================================"
         print s
         tokenized = tok.tokenize(s)
-        print "\n".join(tokenized).encode('utf8', 'ignore')
+        print "\n".join(tokenized).encode('utf8', 'ignore') if tok.use_unicode else "\n".join(tokenized)

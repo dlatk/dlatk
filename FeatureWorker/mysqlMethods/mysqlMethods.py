@@ -6,7 +6,7 @@ import csv
 from random import sample
 from math import floor
 
-from FeatureWorker.fwConstants import DEF_ENCODING, MAX_SQL_PRINT_CHARS, DEF_UNICODE_SWITCH
+from FeatureWorker.fwConstants import DEF_ENCODING, MAX_SQL_PRINT_CHARS, DEF_UNICODE_SWITCH, warn
 
 #DB INFO:                                                                                         
 HOST = 'localhost'
@@ -15,8 +15,6 @@ PASSWD = ''
 MAX_ATTEMPTS = 5 #max number of times to try a query before exiting                               
 MYSQL_ERROR_SLEEP = 4 #number of seconds to wait before trying a query again (incase there was a \
 
-def warn(string):
-    print >>sys.stderr, string
 
 def executeGetSSCursor(db, sql, warnMsg = True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
     """Executes a given query (ss cursor is good to iterate over for large returns)"""

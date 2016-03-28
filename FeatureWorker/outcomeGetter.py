@@ -28,7 +28,7 @@ class OutcomeGetter(FeatureWorker):
         message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else fwc.DEF_MESSAGE_FIELD
         messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else fwc.DEF_MESSAGEID_FIELD
         encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else fwc.DEF_ENCODING
-        use_unicode = parser.get('constants','use_unicode') if parser.has_option('constants','use_unicode') else fwc.DEF_UNICODE_SWITCH
+        use_unicode = True if parser.get('constants','use_unicode')=="True" else False if parser.has_option('constants','use_unicode') else fwc.DEF_UNICODE_SWITCH
         lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else fwc.DEF_LEXICON_DB
         outcome_table = parser.get('constants','outcometable') if parser.has_option('constants','outcometable') else fwc.DEF_OUTCOME_TABLE
         outcome_value_fields = [o.strip() for o in parser.get('constants','outcomefields').split(",")] if parser.has_option('constants','outcomefields') else [fwc.DEF_OUTCOME_FIELD] # possible list
@@ -223,7 +223,7 @@ class OutcomeGetter(FeatureWorker):
 
     def getGroupsAndOutcomes(self, groupThresh = 0, lexicon_count_table=None, groupsWhere = ''):
         if groupThresh and self.wordTable != self.get1gramTable():
-            mm.warn("""###################################################################
+            fwc.warn("""###################################################################
 WARNING: You specified a --word_table and --group_freq_thresh is
 enabled, so the total word count for your groups might be off
 (remove "--word_table WT" to solve this issue)
@@ -236,7 +236,7 @@ enabled, so the total word count for your groups might be off
         controls = dict()
 
         #get outcome values:
-        mm.warn("Loading Outcomes and Getting Groups for: %s" % str(outcomeFieldList)) #debug
+        fwc.warn("Loading Outcomes and Getting Groups for: %s" % str(outcomeFieldList)) #debug
         if outcomeFieldList:
             for outcomeField in outcomeFieldList:
                 outcomes[outcomeField] = dict(self.getGroupAndOutcomeValues(outcomeField))
@@ -324,7 +324,7 @@ enabled, so the total word count for your groups might be off
     def getAnnotationTableAsDF(self, fields=['unit_id', 'worker_id', 'score'], where='', index=['unit_id', 'worker_id'], pivot=True, fillNA=False):
         """return a dataframe of unit_it, worker_id, score"""
         if fillNA and not pivot:
-            mm.warn("fillNA set to TRUE but pivot set to FALSE. No missing values will be filled.") 
+            fwc.warn("fillNA set to TRUE but pivot set to FALSE. No missing values will be filled.") 
         db_eng = get_db_engine(self.corpdb)
         sql = """SELECT %s, %s, %s from %s""" % tuple(fields + [self.outcome_table])
         if (where): sql += ' WHERE ' + where

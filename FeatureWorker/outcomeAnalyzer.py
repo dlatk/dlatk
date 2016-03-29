@@ -556,8 +556,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 for feat in featRs:
                     newCorrels[outcomeField][self.mapFeatureName(feat, self.featureMapping)] = featRs[feat]
             correls = newCorrels 
-        print correls
-        exit()
+
         return correls
 
     def aucWithFeatures(self, featGetter, groupThresh = 0, bonferroni = False, p_correction_method = 'BH', interaction = None, bootstrapP = None, blacklist=None, 

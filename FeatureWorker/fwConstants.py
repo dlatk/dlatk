@@ -127,7 +127,6 @@ POSSIBLE_VALUE_FUNCS = [
 ##
 #
 
-
 def alignDictsAsLists(dict1, dict2):
     """Converts two dictionaries to vectors, where the values are aligned by keys"""
     coFields = frozenset(dict1.keys()).intersection(frozenset(dict2.keys()))
@@ -150,10 +149,22 @@ def alignDictsAsXy(X, y):
     # print type(listy), type(listy[0])
     return (listX, listy)
 
-def switchColumnsAndRows(X):
-    """Toggles X between rows of columns and columns of rows """
-    if not isinstance(X, np.ndarray): X = array(X)
-    return array([X[0:, c] for c in xrange(len(X[0]))])
+def fiftyChecks(args):
+    Xc, Xend, y, check = args
+    lr = LogisticRegression(penalty='l2', C=1000000, fit_intercept=True)
+    if Xc is not None:
+        r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [np.append(Xc, permutation(Xend), 1) for i in xrange(50)]])
+    else:
+        # newX = permutation(Xend).reshape(len(Xend),1)
+        # print type(Xend)
+        # print dir(Xend)
+        # print y
+        # r = roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1])
+        r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [permutation(Xend).reshape(len(Xend),1) for i in xrange(50)]])
+    #if r: print r
+    return r
+
+
 
 def rowsToColumns(X):
     """Changes each X from being represented in columns to rows """
@@ -186,21 +197,13 @@ def stratifiedZScoreybyX0(X, y):
 
     return (zscore(X), newY)
 
+def switchColumnsAndRows(X):
+    """Toggles X between rows of columns and columns of rows """
+    if not isinstance(X, np.ndarray): X = array(X)
+    return array([X[0:, c] for c in xrange(len(X[0]))])
     
-def fiftyChecks(args):
-    Xc, Xend, y, check = args
-    lr = LogisticRegression(penalty='l2', C=1000000, fit_intercept=True)
-    if Xc is not None:
-        r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [np.append(Xc, permutation(Xend), 1) for i in xrange(50)]])
-    else:
-        # newX = permutation(Xend).reshape(len(Xend),1)
-        # print type(Xend)
-        # print dir(Xend)
-        # print y
-        # r = roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1])
-        r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [permutation(Xend).reshape(len(Xend),1) for i in xrange(50)]])
-    #if r: print r
-    return r
+def warn(string):
+    print >>sys.stderr, string
 
 
 multSpace = re.compile(r'\s\s+')
@@ -269,9 +272,18 @@ def treatNewlines(s):
     return s
 
 def removeNonAscii(s): 
+    #if s:
+    #    return "".join(i for i in s if (ord(i)<128 and ord(i)>20))
     if s:
-        return "".join(i for i in s if (ord(i)<128 and ord(i)>20))
+        new_words = []
+        for w in s.split():
+            if len("".join(i for i in w if (ord(i)<128 and ord(i)>20))) < len(w):
+                new_words.append("<UNICODE>")
+            else:
+                new_words.append(w)
+        return " ".join(new_words)
     return ''
+
 
 def reverseDictDict(d):
     """reverses the order of keys in a dict of dicts"""
@@ -345,110 +357,3 @@ def report(object_description, ii, reporting_int, iterable_length):
     #print ii, reporting_int
     if ii % reporting_int == 0:
         warn("%d out of %d %s processed; %2.2f complete"%(ii, iterable_length, object_description, float(ii)/iterable_length))
-
-#def _dbConnectSQLalchemy(db, host="localhost"):
-#    eng = None
-#    attempts = 0;
-#    while (1):
-#        try:
-#            connInf = sqlalchemy.engine.url.URL(drivername="mysql",
-#                                                host = host,
-#                                                database = db,
-#                                                query={ 'read_default_file' : '~/.my.cnf', 'charset': 'utf8mb4'})
-#            eng = sqlalchemy.create_engine(name_or_url = connInf, pool_recycle=3600)
-#            break
-#        except Exception as e:
-#            attempts += 1
-#            _warn(" *MYSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db, e, attempts))
-#            time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
-#            if (attempts > MAX_ATTEMPTS):
-#                sys.exit(1)
-#    return eng
-#
-#def _dbConnect(db, host="localhost"): 
-#    dbConn = None
-#    attempts = 0;
-#    while (1):
-#        try:
-#            dbConn = MySQLdb.connect(
-#                user = USER,
-#                host = host,
-#                db = db,
-#                charset = 'utf8mb4',
-#                use_unicode = True,
-#                read_default_file="~/.my.cnf"
-#            )
-#            break
-#        except MySQLdb.Error, e:
-#            attempts += 1
-#            _warn(" *MYSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db, e, attempts))
-#            time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
-#            if (attempts > MAX_ATTEMPTS):
-#                sys.exit(1)
-#    dbCursor = dbConn.cursor()
-#    dictCursor = dbConn.cursor(MySQLdb.cursors.DictCursor)
-#    return dbConn, dbCursor, dictCursor
-#
-#def _warn(string):
-#    print >>sys.stderr, string
-
-#import sys, os, gzip, getpass
-#import pdb
-#import time
-#import argparse
-#import MySQLdb
-#import re
-#import json
-#import multiprocessing
-#import pickle
-#import unicodecsv as csv
-#import traceback
-#from collections import deque, OrderedDict, Counter
-#from pprint import pprint
-#from random import randint
-#from itertools import combinations
-#from xml.dom.minidom import parseString as xmlParseString
-#from datetime import MINYEAR, timedelta
-#import datetime
-#from dateutil.parser import parse as dtParse
-#import sqlalchemy
-#import pandas as pd
-#from ConfigParser import SafeConfigParser 
-#
-#sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
-#
-##math / stats:
-#from math import floor, log, ceil, log10
-#from numpy import sqrt, log2, array, mean, std, var, isnan, zeros, fabs, concatenate, round, max as npmax, abs as npabs, append as npappend, multiply
-#from numpy import ones, tile, log as nplog, sort as npsort, isinf
-#from numpy.random import permutation
-#import numpy as np
-#from scipy.stats import zscore, rankdata, ttest_rel
-#from scipy.stats.stats import pearsonr, spearmanr
-#from scipy.stats import t as spt
-#import statsmodels.api as sm
-#from sklearn.metrics import roc_auc_score
-#from sklearn.linear_model import LogisticRegression
-#
-##nltk
-#from nltk.tree import Tree, ParentedTree
-#from nltk.corpus import wordnet as wn
-#import nltk.data
-##from nltk.tokenize import sent_tokenize
-#
-##R
-#import rpy2.robjects as ro
-#from rpy2.robjects.packages import importr
-#
-##local / nlp
-#from lib.happierfuntokenizing import Tokenizer #Potts tokenizer
-##from rFeaturePlot import FeaturePlotter
-#from lib.StanfordParser import StanfordParser
-#from regressionPredictor import RegressionPredictor
-#from lib.TweetNLP import TweetNLP
-#
-##wwbp
-#from lib import notify
-#from lib import wordcloud
-#from mysqlMethods import mysqlMethods as mm
-#from mysqlMethods import mysql_iter_funcs as mif

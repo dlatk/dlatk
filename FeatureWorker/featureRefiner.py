@@ -141,7 +141,7 @@ class FeatureRefiner(FeatureGetter):
         reporting_int = fwc._getReportingInt(reporting_percent, num_groups)
 
         # figure out the bins, i.e. if group_id's 1,2,3 total value is greater than "bin_size" our first bin is 1_3.
-        mm.warn('determining the number of bins...')
+        fwc.warn('determining the number of bins...')
         current_sum = 0
         current_lower_group = groupNs[0][0]
 
@@ -178,7 +178,7 @@ class FeatureRefiner(FeatureGetter):
 
         # for each newly denoted bin: e.g. 1_3, 4_5, 6_6, ... get the new feature value counts / group norms; insert them into the new table
         # e.g. 1 'hi' 5, 2 'hi' 10, 3 'hi' 30 ==> 1_3 'hi' 45  (of course include group_norm also)
-        mm.warn('aggreagating the newly binned feature values / group_norms into the new table...')
+        fwc.warn('aggreagating the newly binned feature values / group_norms into the new table...')
         isql = 'INSERT INTO %s (group_id, feat, value, group_norm, std_dev, N, bin_center, bin_center_w, bin_width) VALUES (%s)'%(newTable, '%s, %s, %s, %s, %s, %s, %s, %s, %s')
         #isql = 'INSERT INTO %s (group_id, feat, value, group_norm, N, bin_center, bin_width) VALUES (%s)'%(newTable, '%s, %s, %s, %s, %s, %s, %s')
         ii_bins = 0
@@ -240,7 +240,7 @@ class FeatureRefiner(FeatureGetter):
             fwc._report('group_id bins', ii_bins, reporting_int, num_bins)
 
         mm.enableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.warn('Done creating new group_id-binned feature table.')
+        fwc.warn('Done creating new group_id-binned feature table.')
 
         outputdata = mm.executeGetList(self.corpdb, self.dbCursor, 'select group_id, N from `%s` group by group_id'%(newTable,), charset=self.encoding, use_unicode=self.use_unicode)
         pprint(outputdata)
@@ -265,7 +265,7 @@ class FeatureRefiner(FeatureGetter):
         numToKeep = len(toKeep)
         newTable = featureTable+'$'+label
         mm.execute(self.corpdb, self.dbCursor, "DROP TABLE IF EXISTS %s" % newTable, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.warn(" %s <new table %s will have %d distinct features.>" %(featureTable, newTable, numToKeep))
+        fwc.warn(" %s <new table %s will have %d distinct features.>" %(featureTable, newTable, numToKeep))
         sql = """CREATE TABLE %s like %s""" % (newTable, featureTable)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
@@ -287,7 +287,7 @@ class FeatureRefiner(FeatureGetter):
             #write those past the filter to the table
                 mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
                 total+= num_at_time
-                if total % 100000 == 0: mm.warn("%.1fm feature instances written" % (total/float(1000000)))
+                if total % 100000 == 0: fwc.warn("%.1fm feature instances written" % (total/float(1000000)))
                 toWrite = []
 
         #catch rest:
@@ -295,9 +295,9 @@ class FeatureRefiner(FeatureGetter):
             #write those past the filter to the table
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
-        mm.warn("Done inserting.\nEnabling keys.")
+        fwc.warn("Done inserting.\nEnabling keys.")
         mm.enableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.warn("done.")
+        fwc.warn("done.")
 
         self.featureTable = newTable
         return newTable
@@ -310,7 +310,7 @@ class FeatureRefiner(FeatureGetter):
         assert totalGroups > 0, 'NO GROUPS TO FILTER BASED ON (LIKELY group_freq_thresh IS TOO HIGH)'
         assert p <= 1, 'p_occ > 1 not implemented yet'
         threshold = int(round(p*totalGroups))
-        mm.warn (" %s [threshold: %d]" %(featureTable, threshold))
+        fwc.warn (" %s [threshold: %d]" %(featureTable, threshold))
 
         #acquire counts per feature (each row will come from a different correl_field)
 
@@ -364,7 +364,7 @@ class FeatureRefiner(FeatureGetter):
                     mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, featNorms, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
                     featNorms = []
                     numWritten += num_at_time
-                    if numWritten % 100000 == 0: mm.warn("%.1fm feature instances updated out of %dm" % 
+                    if numWritten % 100000 == 0: fwc.warn("%.1fm feature instances updated out of %dm" % 
                                                         ((numWritten/float(1000000)), len(groupNorms)/1000000))
                                     
         
@@ -433,9 +433,9 @@ class FeatureRefiner(FeatureGetter):
         #n = the number of words in the ngrams
         #uses pmi to remove uncommon collocations:
         featureTable = self.featureTable
-        mm.warn(featureTable)
+        fwc.warn(featureTable)
         wordGetter = self.getWordGetter()
-        tokenizer = Tokenizer()
+        tokenizer = Tokenizer(use_unicode=self.use_unicode)
 
         jointFreqs = self.getSumValuesByFeat()
         wordFreqs = dict(wordGetter.getSumValuesByFeat())
@@ -464,9 +464,9 @@ class FeatureRefiner(FeatureGetter):
             **pmi_threshold_val is pmi/(num_tokens-1), thats what --feat_colloc_filter is based on
         '''
         featureTable = self.featureTable
-        mm.warn(featureTable)
+        fwc.warn(featureTable)
         wordGetter = self.getWordGetter()
-        tokenizer = Tokenizer()
+        tokenizer = Tokenizer(use_unicode=self.use_unicode)
 
         jointFreqs = self.getSumValuesByFeat()
         wordFreqs = dict(wordGetter.getSumValuesByFeat())
@@ -570,7 +570,7 @@ class FeatureRefiner(FeatureGetter):
             assert len(outcomeGetter.outcome_controls) < 2, 'Currently, only allowed to specify one control.'
             controlField = outcomeGetter.outcome_controls[0]
             if len(controlValuesToAvg) < 1:
-                mm.warn("getting distinct values for controls")
+                fwc.warn("getting distinct values for controls")
                 controlValuesToAvg = outcomeGetter.getDistinctOutcomeValues(outcome = controlField, includeNull = False, where=outcomeRestriction)
 
         #create new table name:
@@ -725,20 +725,20 @@ class FeatureRefiner(FeatureGetter):
 
         mm.disableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
         
-        mm.warn("Inserting group_id, feat, and values")
+        fwc.warn("Inserting group_id, feat, and values")
         sql = "INSERT INTO %s SELECT m.%s, f.feat, sum(f.value), 0 FROM %s AS f, %s AS m where m.%s = f.group_id GROUP BY m.%s, f.feat" % (newTable,self.correl_field, featureTable, self.corptable, oldGroupField, self.correl_field)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
-        mm.warn("Recalculating group_norms")
+        fwc.warn("Recalculating group_norms")
         sql = "UPDATE %s a INNER JOIN (SELECT group_id,sum(value) sum FROM %s GROUP BY group_id) b ON a.group_id=b.group_id SET a.group_norm=a.value/b.sum" % (newTable,newTable)
         
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
   
         # patrick changed this to be all SQL 7/21/15. Values and group norms were being calculated wrong before
 
-        mm.warn("Done inserting.\nEnabling keys.")
+        fwc.warn("Done inserting.\nEnabling keys.")
         mm.enableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.warn("done.")
+        fwc.warn("done.")
 
         self.featureTable = newTable
         return newTable
@@ -772,7 +772,7 @@ class FeatureRefiner(FeatureGetter):
 
         feat_counts = self.getFeatureCounts() #tuples of: feat, count (number of groups feature appears with)
 
-        mm.warn('Inserting idf values into new table')
+        fwc.warn('Inserting idf values into new table')
         counter = 0
         for (feat, dt) in feat_counts:
             idf = log(N/float(dt))
@@ -800,8 +800,7 @@ class FeatureRefiner(FeatureGetter):
                     print '%d tf_idf values inserted!' % (counter)
                 counter += 1
 
-
-        mm.warn('Finished inserting.')
+        fwc.warn('Finished inserting.')
 
 
         return idf_table

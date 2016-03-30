@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 ###########################################################
 ## featureWorker.py
 ##
@@ -82,6 +82,7 @@ DEF_MESSAGEID_FIELD = 'message_id'
 DEF_LEXTABLE = 'wn_O'
 DEF_DATE_FIELD = 'updated_time'
 DEF_ENCODING = 'utf8mb4'
+DEF_UNICODE_SWITCH = True
 
 ##Outcome settings
 DEF_OUTCOME_TABLE = 'masterstats_andy_maxAge64'
@@ -107,6 +108,7 @@ DEF_COLLOCTABLE = 'test_collocs'
 DEF_COLUMN_COLLOC = "feat"
 DEF_COLUMN_PMI_FILTER = "pmi_filter_val"
 DEF_P = 0.05 # p value for printing tagclouds
+DEF_P_CORR = 'BH' #Benjamini, Hochbergasd
 
 ##Mediation Settings:
 DEF_MEDIATION_BOOTSTRAP = 1000
@@ -196,6 +198,8 @@ def main(fn_args = None):
                         help='The database which stores all lexicons.')
     group.add_argument('--encoding', metavar='DB', dest='encoding', default=getInitVar('encoding', conf_parser, DEF_ENCODING),
                         help='MySQL encoding')
+    group.add_argument('--no_unicode', action='store_false', dest='nounicode', default=DEF_UNICODE_SWITCH,
+                       help='Turn off unicode for reading/writing mysql and text processing.')
 
     group = parser.add_argument_group('Feature Variables', 'Use of these is dependent on the action.')
     group.add_argument('-f', '--feat_table', metavar='TABLE', dest='feattable', type=str, nargs='+', default=getInitVar('feattable', conf_parser, None, varList=True),
@@ -338,16 +342,18 @@ def main(fn_args = None):
                        help='Use AUC instead of linear regression/correlation [only works with binary outcome values]') 
     group.add_argument('--zScoreGroup', action='store_true', dest='zScoreGroup', default=False,
                        help="Outputs a certain group's zScore for all feats, which group is determined by the boolean outcome value [MUST be boolean outcome]") 
-    group.add_argument('--p_correction', metavar='METHOD', type=str, dest='p_correction_method', default=getInitVar('p_correction_method', conf_parser, ''),
+    group.add_argument('--p_correction', metavar='METHOD', type=str, dest='p_correction_method', default=getInitVar('p_correction_method', conf_parser, DEF_P_CORR),
                        help='Specify a p-value correction method: simes, holm, hochberg, hommel, bonferroni, BH, BY, fdr, none')
     group.add_argument('--no_bonferroni', action='store_false', dest='bonferroni', default=True,
                        help='Turn off bonferroni correction of p-values.')
+    group.add_argument('--no_correction', action='store_const', const='', dest='p_correction_method',
+                       help='Turn off BH correction of p-values.')
     group.add_argument('--nvalue', type=bool, dest='nvalue', default=True,
                        help='Report n values.')
     group.add_argument('--freq', type=bool, dest='freq', default=True,
                        help='Report freqs.')
     group.add_argument('--tagcloud_colorscheme', type=str, dest='tagcloudcolorscheme', default=getInitVar('tagcloudcolorscheme', conf_parser, 'multi'), 
-                       help='specify a color scheme to use for tagcloud generation. Default: multi, also accepts red, blue, & red-random')
+                       help='specify a color scheme to use for tagcloud generation. Default: multi, also accepts red, blue, red-random, redblue, bluered')
     group.add_argument('--interactions', action='store_true', dest='interactions', default=False,
                        help='Includes interaction terms in multiple regression.')
     group.add_argument('--bootstrapp', '--bootstrap', dest='bootstrapp', type=int, default = 0,
@@ -376,12 +382,10 @@ def main(fn_args = None):
                        help='All mediation analysis variables found corptable. No feature table needed.')
     group.add_argument('--mediation_csv', action='store_true', dest='mediationcsv', default=False,
                        help='Print results to a CSV. Default file name is mediation.csv. Use --output_name to specify file name.')
-    group.add_argument('--mediation_mysql', action='store_true', dest='mediationmysql', default=False,
-                       help='Store results in MySQL database. Database is specified by -d and table name is specified by -output_name')
     group.add_argument('--mediation_no_summary', action='store_false', dest='mediationsummary', default=True,
                        help='Print results to a CSV. Default file name is mediation.csv. Use --output_name to specify file name.')
-    group.add_argument('--mediation_method', metavar='METHOD', type=str, dest='mediation_style', default='barron',
-                       help='Specify a mediation method: barron, imai, both')
+    group.add_argument('--mediation_method', metavar='METHOD', type=str, dest='mediation_style', default='baron',
+                       help='Specify a mediation method: baron, imai, both')
 
 
     group = parser.add_argument_group('Prediction Variables', '')
@@ -488,7 +492,7 @@ def main(fn_args = None):
     group.add_argument('--feat_occ_filter', action='store_true', dest='featoccfilter',
                        help='remove infrequent features. (uses variables feat_table and p_occ).')
     group.add_argument('--combine_feat_tables', type=str, dest='combinefeattables', default=None,
-                       help='Given multiuple feature table, combines them (provide feature name) ')
+                       help='Given multiple feature table, combines them (provide feature name) ')
     group.add_argument('--add_feat_norms', action='store_true', dest='addfeatnorms',
                        help='calculates and adds the mean normalized (feat_norm) value for each row (uses variable feat_table).')
     group.add_argument('--feat_colloc_filter', action='store_true', dest='featcollocfilter',
@@ -501,6 +505,9 @@ def main(fn_args = None):
                        help='Creates a feature table grouped by a given outcome (requires outcome field, can use controls)')
     group.add_argument('--aggregate_feats_by_new_group', action='store_true', dest='aggregategroup', default=False,
                        help='Aggregate feature table by group field (i.e. message_id features by user_ids).')
+    group.add_argument('--tf_idf', action='store_true', dest='tfidf', default=False,
+                       help='Given an ngram feature table, creates a new feature table with tf-idf (uses -f).')
+
 
     group = parser.add_argument_group('Outcome Actions', '')
     group.add_argument('--print_csv', metavar="FILENAME", dest='printcsv', default = None,
@@ -651,29 +658,36 @@ def main(fn_args = None):
                        help='produce histograms and boxplots for specified outcomes. Requires oa. Uses outputdir')
     group.add_argument('--loessplot', type=str, metavar='FEAT(S)', dest='loessplot', nargs='+', default='',
                        help='Output loess plots of the given features.')
-    group.add_argument('--v2', action='store_true', dest='v2',
-                       help='Run commands from other place')
+    # group.add_argument('--v2', action='store_true', dest='v2',
+    #                    help='Run commands from other place')
 
     if fn_args:
         args = parser.parse_args(fn_args.split())
     else:
         args = parser.parse_args(remaining_argv)
 
+    if not args.bonferroni:
+      print "--no_bonf has been depricated. Default p correction method is now Benjamini, Hochberg. Please use --no_correction instead of --no_bonf."
+      sys.exit(1)
 
     ##NON-Specified Defaults:
 
-    if args.v2:
-        from PERMA.code.fwv2 import wwbp
-        if fn_args:
-            wwbp.main(fn_args)
-        else:
-            wwbp.main(" ".join(sys.argv[1:]))
+    # if args.v2:
+    #     from PERMA.code.fwv2 import wwbp
+    #     if fn_args:
+    #         wwbp.main(fn_args)
+    #     else:
+    #         wwbp.main(" ".join(sys.argv[1:]))
 
     ##Argument adjustments: 
     if not args.valuefunc: args.valuefunc = lambda d: d
     if not args.lexvaluefunc: args.lexvaluefunc = lambda d: d
-    if args.bonferroni: args.simes = False
-    if args.p_correction_method: args.bonferroni = False
+
+    if args.p_correction_method.startswith("bonf"):
+        args.p_correction_method = ''
+        args.bonferroni = True
+    else:
+        args.bonferroni = False
 
     if args.feattable and len(args.feattable) == 1:
         args.feattable = args.feattable[0]
@@ -689,24 +703,24 @@ def main(fn_args = None):
 
     ##Process Arguments
     def FE():
-        return FeatureExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, wordTable = args.wordTable)
+        return FeatureExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, wordTable = args.wordTable)
 
     def SE():
-        return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, args.corpdir, wordTable = args.wordTable)
+        return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, args.corpdir, wordTable = args.wordTable)
 
     def OG():
-        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable)
+        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable)
 
     def OA():
-        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
+        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
 
     def FR():
-        return FeatureRefiner(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
+        return FeatureRefiner(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
 
     def FG(featTable = None):
         if not featTable:
             featTable = args.feattable
-        return FeatureGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.lexicondb, featTable, args.featnames, wordTable = args.wordTable)
+        return FeatureGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, featTable, args.featnames, wordTable = args.wordTable)
 
     def FGs(featTable = None):
         if not featTable:
@@ -723,6 +737,7 @@ def main(fn_args = None):
                               args.message_field,
                               args.messageid_field,
                               args.encoding, 
+                              args.nounicode,
                               args.lexicondb, featTable,
                               args.featnames,
                               wordTable = args.wordTable)
@@ -927,7 +942,10 @@ def main(fn_args = None):
             feat_to_label = oa.buildTopicLabelDict(args.topiclexicon, 10) #TODO-finish -- uses topictagcloudwords method
             #pprint(feat_to_label)
         OutcomeGetter.plotFlexibinnedTable(args.corpdb, args.feattable, temp_feature_file, feat_to_label, args.preservebintable)
-       
+    if args.tfidf:
+        if not fr: fr=FR()
+        args.feattable = fr.createTfIdfTable(args.feattable)
+
 
     #if args.addmean: #works, but excessive option
     #    if not fr: fr=FR()

@@ -1,4 +1,3 @@
-#!/usr/bin/python
 ##########################################################
 ## lda.py
 ## builds a bridge between gensim and our infrastucture

@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #########################################
 # Semantic Extractor
 #

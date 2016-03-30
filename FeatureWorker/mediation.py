@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #########################################
 # Mediation Analysis
 #
@@ -33,6 +32,8 @@ from fwConstants import pCorrection
 from operator import itemgetter
 import itertools
 import sys
+
+MAX_SUMMARY_SIZE = 10 # maximum number of results to print in summary for each path start / outcome pair
 
 """
 Mediation analysis
@@ -451,7 +452,7 @@ class MediationResults(object):
 		self.ADE_avg = (self.ADE_ctrl + self.ADE_tx) / 2
 
 
-	def summary(self, alpha=0.05, bonferroni=True, numMeds=1):
+	def summary(self, alpha=0.05, bonferroni=False, numMeds=1):
 		"""
 		Provide a summary of a mediation analysis.
 		"""
@@ -512,7 +513,7 @@ class MediationAnalysis:
 	"""
 
 	def __init__(self, fg, og, path_starts, mediators, outcomes, controls, summary=True, to_csv=False, to_mysql=False, 
-		output_name=None, method="parametric", boot_number=1000, sig_level=0.05, style='barron'):
+		output_name=None, method="parametric", boot_number=1000, sig_level=0.05, style='baron'):
 		
 		self.outcomeGetter = og
 		self.featureGetter = fg
@@ -535,7 +536,7 @@ class MediationAnalysis:
 		self.output_sobel = dict()
 		self.output_p = dict() # [c_p, c'_p, alpha_p, beta_p, sobel_p, ...]
 
-		if style == 'barron':
+		if style == 'baron':
 			self.baron_and_kenny = True
 			self.imai_and_keele = False
 		elif style == 'imai':
@@ -588,14 +589,14 @@ class MediationAnalysis:
 						summary_results.append(results)
 							
 
-		summary_results.sort(key=lambda x: (x[0].lower(), x[1].lower(), -x[3]), reverse=False)
+		summary_results.sort(key=lambda x: (x[0].lower(), x[1].lower(), -abs(x[3])), reverse=False)
 		if len(summary_results) > 0:
 			print "Printing results to: %s" % csv_name
 			with open(csv_name, 'wb') as csvfile:
 				f = csv.writer(csvfile, quotechar='"', quoting=csv.QUOTE_NONNUMERIC, delimiter=',')
 				f.writerow(header)
 				for key, group in itertools.groupby(summary_results, key=lambda x: (x[0], x[1])):
-					for item in list(group)[:10]:
+					for item in list(group)[:MAX_SUMMARY_SIZE]:
 						f.writerow(item)
 		else:
 			print "Summary: nothing passes significance threshold of %s." % (self.sig_level)
@@ -656,8 +657,6 @@ class MediationAnalysis:
 												 + [self.output[path_start][outcome][mediator][36], p_list[14]] + self.output[path_start][outcome][mediator][38:] 
 						f.writerow([path_start, outcome, mediator] + bk_rearranged + med_rearranged)
 
-	def print_mysql(self):
-		return
 		
 	def prep_data(self, path_start, mediator, outcome, controlDict=None, controlNames=None, zscoreRegression=None):
 		"""
@@ -694,7 +693,7 @@ class MediationAnalysis:
 		if not data: print "AAAAAAAAAAAAAAAA", switch, outcome_field, location
 		return data
 
-	def mediate(self, group_freq_thresh = 0, switch="default", spearman = False, bonferroni = True, p_correction_method = None, 
+	def mediate(self, group_freq_thresh = 0, switch="default", spearman = False, bonferroni = False, p_correction_method = 'BH', 
 				zscoreRegression = True, logisticReg = False):
 		"""
 		output =    {path_start_i: 
@@ -824,7 +823,7 @@ class MediationAnalysis:
 							beta_p = outcome_results.pvalues.get('mediator')
 							sobel_p = st.norm.sf(abs(sobel))*2
 
-						self.output_sobel[path_start][outcome][mediator] = np.array([c, c_p, c_prime, c_prime_p, abs(c-c_prime), alpha*beta, alpha, alpha_error, alpha_p, beta, beta_error, beta_p, sobel, sobel_SE, sobel_p])
+						self.output_sobel[path_start][outcome][mediator] = np.array([c, c_p, c_prime, c_prime_p, c-c_prime, alpha*beta, alpha, alpha_error, alpha_p, beta, beta_error, beta_p, sobel, sobel_SE, sobel_p])
 						self.output_p[path_start][outcome][mediator] = self.output_p[path_start][outcome][mediator] + [c_p, c_prime_p, alpha_p, beta_p, sobel_p ]
 
 					# new mediation
@@ -881,6 +880,5 @@ class MediationAnalysis:
 
 		if self.summary: self.print_summary()
 		if self.to_csv: self.print_csv()
-		if self.to_mysql: self.print_mysql()
 
 

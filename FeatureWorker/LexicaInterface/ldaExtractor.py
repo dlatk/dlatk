@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #########################################
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import re
@@ -6,9 +6,10 @@ from numpy import log2, isnan
 import csv
 import os.path, sys
 sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/FeatureWorker/LexicaInterface",""))
+
 from FeatureWorker.featureExtractor import FeatureExtractor
 from FeatureWorker import featureWorker
-
+from FeatureWorker import fwConstants as fwc
 
 from json import loads
 
@@ -17,10 +18,10 @@ DEF_LDA_MSG_TABLE = 'messages_en_lda$msgs_en_tok_a30'
 
 class LDAExtractor(FeatureExtractor):
 
-    def __init__(self, corpdb=featureWorker.DEF_CORPDB, corptable=featureWorker.DEF_CORPTABLE, correl_field=featureWorker.DEF_CORREL_FIELD, 
-                 mysql_host = "localhost", message_field=featureWorker.DEF_MESSAGE_FIELD, messageid_field=featureWorker.DEF_MESSAGEID_FIELD, 
-                 ldaMsgTable = DEF_LDA_MSG_TABLE):
-        super(LDAExtractor, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field)
+    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, 
+                 mysql_host = "localhost", message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, 
+                 encoding=fwc.DEF_ENCODING, use_unicode=fwc.DEF_UNICODE_SWITCH, ldaMsgTable = DEF_LDA_MSG_TABLE):
+        super(LDAExtractor, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode)
         self.ldaMsgTable = ldaMsgTable
 
 
@@ -224,15 +225,15 @@ class LDAExtractorParser(ArgumentParser):
         group = self.add_argument_group('Corpus Variables', 'Defining the data from which features are extracted.')
         group.add_argument('-H', '--host', metavar='HOST', dest='host', default='localhost',
                            help='Host that contains the mysql dbs and tables')
-        group.add_argument('-d', '--corpdb', metavar='DB', dest='corpdb', default=featureWorker.DEF_CORPDB,
+        group.add_argument('-d', '--corpdb', metavar='DB', dest='corpdb', default=fwc.DEF_CORPDB,
                             help='Corpus Database Name.')
-        group.add_argument('-t', '--corptable', metavar='TABLE', dest='corptable', default=featureWorker.DEF_CORPTABLE,
+        group.add_argument('-t', '--corptable', metavar='TABLE', dest='corptable', default=fwc.DEF_CORPTABLE,
                             help='Corpus Table.')
-        group.add_argument('-c', '--correl_field', metavar='FIELD', dest='correl_field', default=featureWorker.DEF_CORREL_FIELD,
+        group.add_argument('-c', '--correl_field', metavar='FIELD', dest='correl_field', default=fwc.DEF_CORREL_FIELD,
                             help='Correlation Field (AKA Group Field): The field which features are aggregated over.')
-        group.add_argument('--message_field', metavar='FIELD', dest='message_field', default=featureWorker.DEF_MESSAGE_FIELD,
+        group.add_argument('--message_field', metavar='FIELD', dest='message_field', default=fwc.DEF_MESSAGE_FIELD,
                             help='The field where the text to be analyzed is located.')
-        group.add_argument('--messageid_field', metavar='FIELD', dest='messageid_field', default=featureWorker.DEF_MESSAGEID_FIELD,
+        group.add_argument('--messageid_field', metavar='FIELD', dest='messageid_field', default=fwc.DEF_MESSAGEID_FIELD,
                             help='The unique identifier for the message.')
 
 
@@ -256,7 +257,7 @@ class LDAExtractorParser(ArgumentParser):
         """Main argument processing area"""
         ##Add Argument Processing here
         
-        self.ldae = LDAExtractor(args.corpdb, args.corptable, args.correl_field, args.host, args.message_field, args.messageid_field, args.ldamsgtbl)
+        self.ldae = LDAExtractor(args.corpdb, args.corptable, args.correl_field, args.host, args.message_field, args.messageid_field, fwc.DEF_ENCODING, args.ldamsgtbl)
 
         if args.createdists:
             self.ldae.createDistributions()

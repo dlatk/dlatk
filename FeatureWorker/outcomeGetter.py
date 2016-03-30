@@ -28,6 +28,7 @@ class OutcomeGetter(FeatureWorker):
         message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else fwc.DEF_MESSAGE_FIELD
         messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else fwc.DEF_MESSAGEID_FIELD
         encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else fwc.DEF_ENCODING
+        use_unicode = True if parser.get('constants','use_unicode')=="True" else False if parser.has_option('constants','use_unicode') else fwc.DEF_UNICODE_SWITCH
         lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else fwc.DEF_LEXICON_DB
         outcome_table = parser.get('constants','outcometable') if parser.has_option('constants','outcometable') else fwc.DEF_OUTCOME_TABLE
         outcome_value_fields = [o.strip() for o in parser.get('constants','outcomefields').split(",")] if parser.has_option('constants','outcomefields') else [fwc.DEF_OUTCOME_FIELD] # possible list
@@ -36,11 +37,11 @@ class OutcomeGetter(FeatureWorker):
         featureMappingTable = parser.get('constants','featlabelmaptable') if parser.has_option('constants','featlabelmaptable') else ''
         featureMappingLex = parser.get('constants','featlabelmaplex') if parser.has_option('constants','featlabelmaplex') else ''
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
-        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex, wordTable=wordTable)
+        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex, wordTable=wordTable)
     
 
-    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host="localhost", message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, lexicondb = fwc.DEF_LEXICON_DB, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls = fwc.DEF_OUTCOME_CONTROLS, outcome_interaction = fwc.DEF_OUTCOME_CONTROLS, featureMappingTable='', featureMappingLex='', wordTable = None):
-        super(OutcomeGetter, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, lexicondb, wordTable = wordTable)
+    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host="localhost", message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, use_unicode=fwc.DEF_UNICODE_SWITCH, lexicondb = fwc.DEF_LEXICON_DB, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls = fwc.DEF_OUTCOME_CONTROLS, outcome_interaction = fwc.DEF_OUTCOME_CONTROLS, featureMappingTable='', featureMappingLex='', wordTable = None):
+        super(OutcomeGetter, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable = wordTable)
         self.outcome_table = outcome_table
 
         if isinstance(outcome_value_fields, basestring):
@@ -103,7 +104,7 @@ class OutcomeGetter(FeatureWorker):
             print dataframe.index
             dtype = {self.correl_field : sqlalchemy.types.VARCHAR(max([len(i) for i in dataframe.index]))}
             print dataframe
-        dataframe.to_sql(tablename, eng, index_label = self.correl_field, if_exists = ifExists, dtype = dtype)
+        dataframe.to_sql(tablename, eng, index_label = self.correl_field, if_exists = ifExists, chunksize=fwc.MYSQL_BATCH_INSERT_SIZE, dtype = dtype)
         print "New table created: %s" % tablename
 
     def getDistinctOutcomeValues(self, outcome = None, includeNull = True, where = ''):
@@ -117,7 +118,7 @@ class OutcomeGetter(FeatureWorker):
             if not includeNull:
                 wheres.append("%s IS NOT NULL" % outcome)
             sql += ' WHERE ' + ' AND '.join(wheres)
-        return map(lambda v: v[0], mm.executeGetList(self.corpdb, self.dbCursor, sql))
+        return map(lambda v: v[0], mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
 
     def getDistinctOutcomeValueCounts(self, outcome = None, requireControls = False, includeNull = True, where = ''):
         """returns a dict of (outcome_value, count)"""
@@ -135,7 +136,7 @@ class OutcomeGetter(FeatureWorker):
             sql += ' WHERE ' + ' AND '.join(wheres)
             
         sql += ' group by %s ' % outcome
-        return dict(mm.executeGetList(self.corpdb, self.dbCursor, sql))
+        return dict(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
 
     def getDistinctOutcomeAndControlValueCounts(self, outcome = None, control = None, includeNull = True, where = ''):
         """returns a dict of (outcome_value, count)"""
@@ -156,7 +157,7 @@ class OutcomeGetter(FeatureWorker):
             
         sql += ' group by %s, %s ' % (outcome, control)
         countDict = dict()
-        for (outcome, control, count) in mm.executeGetList(self.corpdb, self.dbCursor, sql):
+        for (outcome, control, count) in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode):
             if not outcome in countDict:
                 countDict[outcome] = dict()
             countDict[outcome][control] = count
@@ -168,7 +169,7 @@ class OutcomeGetter(FeatureWorker):
         if not outcomeField: outcomeField = self.outcome_value_fields[0]
         sql = "select %s, %s from `%s` WHERE %s IS NOT NULL"%(self.correl_field, outcomeField, self.outcome_table, outcomeField)
         if (where): sql += ' AND ' + where
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, False)
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
 
     def makeContingencyTable(self, featureGetter, featureValueField, outcome_filter_where='', feature_value_group_sum_min=0):
         """makes a contingency table from this outcome value, a featureGetter, and the desired column of the featureGetter, assumes both correl_field's are the same"""
@@ -221,7 +222,7 @@ class OutcomeGetter(FeatureWorker):
 
         # finish the original query with the updated feature table
         sql += "FROM %s AS updatedFeatures GROUP BY %s"%(sql_filtered_feature_table_2, fg.correl_field)
-        return [distinctFeatureList, mm.executeGetList(self.corpdb, self.dbCursor, sql, False)]
+        return [distinctFeatureList, mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)]
 
     def makeBinnedOutcomeTable(self, buckets, mid_aom_list):
         """buckets is a list of tuples"""
@@ -229,7 +230,7 @@ class OutcomeGetter(FeatureWorker):
 
     def getGroupsAndOutcomes(self, groupThresh = 0, lexicon_count_table=None, groupsWhere = ''):
         if groupThresh and self.wordTable != self.get1gramTable():
-            mm.warn("""###################################################################
+            fwc.warn("""###################################################################
 WARNING: You specified a --word_table and --group_freq_thresh is
 enabled, so the total word count for your groups might be off
 (remove "--word_table WT" to solve this issue)
@@ -242,7 +243,7 @@ enabled, so the total word count for your groups might be off
         controls = dict()
 
         #get outcome values:
-        mm.warn("Loading Outcomes and Getting Groups for: %s" % str(outcomeFieldList)) #debug
+        fwc.warn("Loading Outcomes and Getting Groups for: %s" % str(outcomeFieldList)) #debug
         if outcomeFieldList:
             for outcomeField in outcomeFieldList:
                 outcomes[outcomeField] = dict(self.getGroupAndOutcomeValues(outcomeField))
@@ -330,7 +331,7 @@ enabled, so the total word count for your groups might be off
     def getAnnotationTableAsDF(self, fields=['unit_id', 'worker_id', 'score'], where='', index=['unit_id', 'worker_id'], pivot=True, fillNA=False):
         """return a dataframe of unit_it, worker_id, score"""
         if fillNA and not pivot:
-            mm.warn("fillNA set to TRUE but pivot set to FALSE. No missing values will be filled.") 
+            fwc.warn("fillNA set to TRUE but pivot set to FALSE. No missing values will be filled.") 
         db_eng = get_db_engine(self.corpdb)
         sql = """SELECT %s, %s, %s from %s""" % tuple(fields + [self.outcome_table])
         if (where): sql += ' WHERE ' + where

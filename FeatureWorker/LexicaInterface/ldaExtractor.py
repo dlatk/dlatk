@@ -257,7 +257,7 @@ class LDAExtractorParser(ArgumentParser):
         """Main argument processing area"""
         ##Add Argument Processing here
         
-        self.ldae = LDAExtractor(args.corpdb, args.corptable, args.correl_field, args.host, args.message_field, args.messageid_field, fwc.DEF_ENCODING, args.ldamsgtbl)
+        self.ldae = LDAExtractor(args.corpdb, args.corptable, args.correl_field, args.host, args.message_field, args.messageid_field, fwc.DEF_ENCODING, fwc.DEF_UNICODE_SWITCH, args.ldamsgtbl)
 
         if args.createdists:
             self.ldae.createDistributions()

@@ -96,7 +96,14 @@ class OutcomeGetter(FeatureWorker):
 
     def createOutcomeTable(self,tablename,dataframe, ifExists='fail'):
         eng = get_db_engine(self.corpdb, self.mysql_host)
-        dataframe.to_sql(tablename, eng, index_label = self.correl_field, if_exists = ifExists)
+        dtype ={}
+        if isinstance(dataframe.index[0], str):
+            import sqlalchemy
+            dataframe.index = dataframe.index.astype(str)
+            print dataframe.index
+            dtype = {self.correl_field : sqlalchemy.types.VARCHAR(max([len(i) for i in dataframe.index]))}
+            print dataframe
+        dataframe.to_sql(tablename, eng, index_label = self.correl_field, if_exists = ifExists, dtype = dtype)
         print "New table created: %s" % tablename
 
     def getDistinctOutcomeValues(self, outcome = None, includeNull = True, where = ''):

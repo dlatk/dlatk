@@ -227,7 +227,7 @@ class RegressionPredictor:
             #{'alphas': np.array([250000, 100000, 1000000, 2500000, 10000000, 25000000, 100000000])}, #personality, n-grams + 2000 topics
             #{'alphas': np.array([1, .01, .0001, 100, 10000, 1000000])}, #first-pass
             #{'alphas': np.array([1000, 1, .1, 10, 100, 10000, 100000])}, #user-level low num users (~5k) or counties
-            {'alphas': np.array([1000, 10000, 100000])}, #user-level low num users (~5k) or counties
+            {'alphas': np.array([1000, 10000, 100000, 1000000])}, #user-level low num users (~5k) or counties
             #{'alphas': np.array([1000, 100, 10000, 10, 1])}, #county achd (need low for controls)
             #{'alphas': np.array([10000, 100000, 1000, 1000000, 100])}, #message quality
             #{'alphas': np.array([1, .1, .01, .001, .0001, .00001, .000001])} 

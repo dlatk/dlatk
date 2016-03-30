@@ -38,7 +38,7 @@ def executeGetSSCursor(db, sql, warnMsg = True, charset=DEF_ENCODING):
                 sys.exit(1)
     return ssCursor
 
-def dbConnect(db, host=HOST, charset=DEF_ENCODING, unicode_switch=True):
+def dbConnect(db, host=HOST, charset=DEF_ENCODING, unicode_switch=False):
     """ Connects to specified database. Returns tuple of (dbConn, dbCursor, dictCursor) """
     dbConn = None
     attempts = 0;

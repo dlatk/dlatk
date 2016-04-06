@@ -28,7 +28,7 @@ import patsy
 from math import sqrt
 from scipy.stats import zscore
 from scipy.stats.stats import pearsonr, spearmanr
-from fwConstants import pCorrection
+from fwConstants import pCorrection, DEF_P
 from operator import itemgetter
 import itertools
 import sys
@@ -258,8 +258,6 @@ class Mediation(object):
 
 	def _fit_model(self, model, fit_kwargs, boot=False):
 		klass = model.__class__
-		print model.__class__
-		print model.__dict__
 		init_kwargs = model._get_init_kwds()
 		endog = model.endog
 		exog = model.exog
@@ -512,8 +510,7 @@ class MediationAnalysis:
 						--controls from -outcome_table
 	"""
 
-	def __init__(self, fg, og, path_starts, mediators, outcomes, controls, summary=True, to_csv=False, to_mysql=False, 
-		output_name=None, method="parametric", boot_number=1000, sig_level=0.05, style='baron'):
+	def __init__(self, fg, og, path_starts, mediators, outcomes, controls, method="parametric", boot_number=1000, sig_level=DEF_P, style='baron'):
 		
 		self.outcomeGetter = og
 		self.featureGetter = fg
@@ -526,11 +523,6 @@ class MediationAnalysis:
 		self.mediation_method = method
 		self.boot_number = boot_number
 		self.sig_level = sig_level
-
-		self.summary = summary
-		self.to_csv = to_csv
-		self.to_mysql = to_mysql
-		self.output_name = output_name
 
 		self.output = dict()
 		self.output_sobel = dict()
@@ -552,13 +544,13 @@ class MediationAnalysis:
 			for item in list(group)[:max_group_size]:
 				yield item
 
-	def print_summary(self):
+	def print_summary(self, output_name=''):
 		summary_results = []
-		if self.output_name:
-			if ".csv" in self.output_name:
-				csv_name = self.output_name.replace(".csv", "_summary.csv")
+		if output_name:
+			if ".csv" in output_name:
+				csv_name = output_name.replace(".csv", "_summary.csv")
 			else:
-				csv_name = self.output_name + "_summary.csv"
+				csv_name = output_name + "_summary.csv"
 		else:
 			csv_name = "mediation_summary.csv"
 				
@@ -602,9 +594,9 @@ class MediationAnalysis:
 			print "Summary: nothing passes significance threshold of %s." % (self.sig_level)
 			
 
-	def print_csv(self):
-		if self.output_name:
-			csv_name = self.output_name
+	def print_csv(self, output_name=''):
+		if output_name:
+			csv_name = output_name
 		else:
 			csv_name = "mediation.csv"
 				
@@ -690,15 +682,14 @@ class MediationAnalysis:
 				data = features[outcome_field]
 		else:
 			data = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = outcome_field))
-		if not data: print "AAAAAAAAAAAAAAAA", switch, outcome_field, location
 		return data
 
 	def mediate(self, group_freq_thresh = 0, switch="default", spearman = False, bonferroni = False, p_correction_method = 'BH', 
 				zscoreRegression = True, logisticReg = False):
 		"""
 		output =    {path_start_i: 
-						{feature_j: 
-							{outcome_k:
+						{outcome_j: 
+							{mediator_k:
 								["ACME (control)", "ACME (treated)", "ADE (control)", "ADE (treated)",
 								 "Total effect", "Prop. mediated (control)", "Prop. mediated (treated)",
 								 "ACME (average)", "ADE (average)", "Prop. mediated (average)"]
@@ -736,8 +727,8 @@ class MediationAnalysis:
 		elif switch == "default":
 			if len(self.mediatorNames) == 0:
 				self.mediatorNames = allFeatures.keys()
-
-		numMeds = len(self.mediatorNames)
+			numMeds = len(self.mediatorNames)
+			
 		mediation_count = 0
 		total_mediations = str(len(self.pathStartNames)*len(self.mediatorNames)*len(self.outcomeNames))
 
@@ -876,9 +867,4 @@ class MediationAnalysis:
 						p_dict[p] = pCorrection(p_dict[p], p_correction_method, [0.05, 0.01, 0.001], rDict = None)
 					for mediator in self.mediatorNames:
 						self.output_p[path_start][outcome][mediator] = [p_dict[p][mediator] for p in p_list]
-					
-
-		if self.summary: self.print_summary()
-		if self.to_csv: self.print_csv()
-
 

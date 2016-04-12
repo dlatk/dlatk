@@ -196,9 +196,9 @@ def main(fn_args = None):
                         help='Date a message was sent (if avail, for timex processing).')
     group.add_argument('--lexicondb', metavar='DB', dest='lexicondb', default=getInitVar('lexicondb', conf_parser, DEF_LEXICON_DB),
                         help='The database which stores all lexicons.')
-    group.add_argument('--encoding', metavar='DB', dest='encoding', default=getInitVar('encoding', conf_parser, DEF_ENCODING),
+    group.add_argument('--encoding', metavar='DB', dest='encoding', default=getInitVar('encoding', conf_parser, ''),
                         help='MySQL encoding')
-    group.add_argument('--no_unicode', action='store_false', dest='nounicode', default=DEF_UNICODE_SWITCH,
+    group.add_argument('--no_unicode', action='store_false', dest='useunicode', default=DEF_UNICODE_SWITCH,
                        help='Turn off unicode for reading/writing mysql and text processing.')
 
     group = parser.add_argument_group('Feature Variables', 'Use of these is dependent on the action.')
@@ -670,6 +670,13 @@ def main(fn_args = None):
       print "--no_bonf has been depricated. Default p correction method is now Benjamini, Hochberg. Please use --no_correction instead of --no_bonf."
       sys.exit(1)
 
+    # set default encodings if --encoding flag was not present
+    if not args.encoding:
+        if not args.useunicode:
+            args.encoding = 'latin1'
+        else:
+            args.encoding = DEF_ENCODING
+
     ##NON-Specified Defaults:
 
     # if args.v2:
@@ -703,24 +710,24 @@ def main(fn_args = None):
 
     ##Process Arguments
     def FE():
-        return FeatureExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, wordTable = args.wordTable)
+        return FeatureExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
 
     def SE():
-        return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, args.corpdir, wordTable = args.wordTable)
+        return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.corpdir, wordTable = args.wordTable)
 
     def OG():
-        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable)
+        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable)
 
     def OA():
-        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
+        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
 
     def FR():
-        return FeatureRefiner(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
+        return FeatureRefiner(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
 
     def FG(featTable = None):
         if not featTable:
             featTable = args.feattable
-        return FeatureGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.nounicode, args.lexicondb, featTable, args.featnames, wordTable = args.wordTable)
+        return FeatureGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, featTable, args.featnames, wordTable = args.wordTable)
 
     def FGs(featTable = None):
         if not featTable:
@@ -737,7 +744,7 @@ def main(fn_args = None):
                               args.message_field,
                               args.messageid_field,
                               args.encoding, 
-                              args.nounicode,
+                              args.useunicode,
                               args.lexicondb, featTable,
                               args.featnames,
                               wordTable = args.wordTable)
@@ -1250,108 +1257,103 @@ def main(fn_args = None):
     # Mediation Analysis
     if args.mediation:
 
-      # Errors and warnings
+        # more than one feature location flag
+        if sum([args.feat_as_path_start, args.feat_as_outcome, args.feat_as_control, args.no_features]) > 1:
+            print "You must specify only one of the following: --feat_as_path_start, --feat_as_outcome, --feat_as_control, --no_features"
+            sys.exit()
 
-      # more than one feature location flag
-      if sum([args.feat_as_path_start, args.feat_as_outcome, args.feat_as_control, args.no_features]) > 1:
-        print "You must specify only one of the following: --feat_as_path_start, --feat_as_outcome, --feat_as_control, --no_features"
-        sys.exit()
+        # default mode, catch no feature table or no outcome table
+        if not (args.feat_as_path_start or args.feat_as_outcome or args.feat_as_control or args.no_features) and (not args.feattable or args.outcometable == DEF_OUTCOME_TABLE): 
+            print "You must specify a feature table (-f FEAT_TABLE) and an outcome table (--outcome_table OUTCOME_TABLE)"
+            sys.exit()
 
-      # default mode, catch no feature table or no outcome table
-      if not (args.feat_as_path_start or args.feat_as_outcome or args.feat_as_control or args.no_features) and (not args.feattable or args.outcometable == DEF_OUTCOME_TABLE): 
-        print "You must specify a feature table (-f FEAT_TABLE) and an outcome table (--outcome_table OUTCOME_TABLE)"
-        sys.exit()
+        if not args.no_features:
+            if args.feat_as_path_start:
+                if not args.feattable:# or len(args.outcomepathstarts) == 0:
+                    print "You must specify a feature table: -f FEAT_TABLE"
+                    sys.exit()
+                if len(args.outcomefields) == 0 or len(args.outcomemediators) == 0:
+                    print "You must specify at least one mediator and outcome"
+                    sys.exit()
+            elif args.feat_as_outcome:
+                if not args.feattable:
+                    print "You must specify a feature table: -f FEAT_TABLE"
+                    sys.exit()
+                if len(args.outcomepathstarts) == 0 or len(args.outcomemediators) == 0:
+                    print "You must specify at least one mediator and path start"
+                    sys.exit()
+            elif args.feat_as_control:
+                if not args.feattable:
+                    print "You must specify a feature table: -f FEAT_TABLE"
+                    sys.exit()
+                if len(args.outcomepathstarts) == 0 or len(args.outcomemediators) == 0 or len(args.outcomefields) == 0:
+                    print "You must specify at least one mediator, path start and outcome"
+                    sys.exit()
+        else:
+            if args.feattable:
+                print "WARNING: You specified an feature table AND the flag --no_features. This table is being ignored."
+            if args.outcometable == DEF_OUTCOME_TABLE:
+                print "You must specify an outcome table"
+                sys.exit()
+            if len(args.outcomepathstarts) == 0 or len(args.outcomemediators) == 0 or len(args.outcomefields) == 0:
+                print "You must specify at least one mediator, path start and outcome"
+                sys.exit()
 
-      if not args.no_features:
+        path_starts = args.outcomepathstarts
+        mediators = args.outcomemediators
+        outcomes = args.outcomefields
+
+        if args.mediationboot:
+            mediation_method = "boot"
+        else:
+            mediation_method = "parametric"
+
+        med_switch = "default"
+
         if args.feat_as_path_start:
-          if not args.feattable:# or len(args.outcomepathstarts) == 0:
-            print "You must specify a feature table: -f FEAT_TABLE"
-            sys.exit()
-          if len(args.outcomefields) == 0 or len(args.outcomemediators) == 0:
-            print "You must specify at least one mediator and outcome"
-            sys.exit()
+            med_switch = "feat_as_path_start"
+            args.outcomefields = args.outcomemediators + args.outcomefields
+            controls = args.outcomecontrols
         elif args.feat_as_outcome:
-          if not args.feattable:
-            print "You must specify a feature table: -f FEAT_TABLE"
-            sys.exit()
-          if len(args.outcomepathstarts) == 0 or len(args.outcomemediators) == 0:
-            print "You must specify at least one mediator and path start"
-            sys.exit()
+            med_switch = "feat_as_outcome"
+            args.outcomefields = args.outcomepathstarts + args.outcomemediators
+            controls = args.outcomecontrols
         elif args.feat_as_control:
-          if not args.feattable:
-            print "You must specify a feature table: -f FEAT_TABLE"
-            sys.exit()
-          if len(args.outcomepathstarts) == 0 or len(args.outcomemediators) == 0 or len(args.outcomefields) == 0:
-            print "You must specify at least one mediator, path start and outcome"
-            sys.exit()
-      else:
-        if args.feattable:
-          print "WARNING: You specified an feature table AND the flag --no_features. This table is being ignored."
-        if args.outcometable == DEF_OUTCOME_TABLE:
-          print "You must specify an outcome table"
-          sys.exit()
-        if len(args.outcomepathstarts) == 0 or len(args.outcomemediators) == 0 or len(args.outcomefields) == 0:
-            print "You must specify at least one mediator, path start and outcome"
-            sys.exit()
+            med_switch = "feat_as_control"
+            controls = args.outcomecontrols
+            args.outcomecontrols = []
+            args.outcomefields = args.outcomepathstarts + args.outcomemediators + args.outcomefields
+        elif args.no_features:
+            med_switch = "no_features"
+            args.outcomefields = args.outcomepathstarts + args.outcomemediators + args.outcomefields
+            controls = args.outcomecontrols
+        else:
+            args.outcomefields = args.outcomepathstarts + args.outcomefields
+            controls = args.outcomecontrols
 
-      path_starts = args.outcomepathstarts
-      mediators = args.outcomemediators
-      outcomes = args.outcomefields
+        og = OG()
+        fg = FG() if not args.no_features else None
+        
+        # run mediation
+        mg = MediationAnalysis(fg, og, path_starts, mediators, outcomes, controls, 
+                method=mediation_method, boot_number=args.mediationbootnum, sig_level=args.maxP, style=args.mediation_style)
+        mg.mediate(args.groupfreqthresh, med_switch, args.spearman, args.bonferroni, args.p_correction_method, logisticReg=args.logisticReg)
+        
+        # print mediation results
+        if args.mediationsummary: mg.print_summary(args.outputname)
+        if args.mediationcsv: mg.print_csv(args.outputname)
 
-      if args.outputname == '': args.outputname = None
-      if args.mediationboot:
-        mediation_method = "boot"
-        med_boot_number = args.mediationbootnum
-      else:
-        mediation_method = "parametric"
-        med_boot_number = 1000
-
-      if args.feat_as_path_start:
-        args.outcomefields = args.outcomemediators + args.outcomefields
-        fg = FG()
-        og = OG()
-        MediationAnalysis(fg, og, path_starts, mediators, outcomes, args.outcomecontrols, summary=args.mediationsummary, 
-              to_csv=args.mediationcsv, to_mysql=args.mediationmysql, output_name=args.outputname, 
-              method=mediation_method, boot_number=med_boot_number, sig_level=args.maxP, style=args.mediation_style).mediate(args.groupfreqthresh, 
-              "feat_as_path_start", args.spearman, args.bonferroni,
-              args.p_correction_method, logisticReg=args.logisticReg)
-      elif args.feat_as_outcome:
-        args.outcomefields = args.outcomepathstarts + args.outcomemediators
-        fg = FG()
-        og = OG()
-        MediationAnalysis(fg, og, path_starts, mediators, outcomes, args.outcomecontrols, summary=args.mediationsummary, 
-              to_csv=args.mediationcsv, to_mysql=args.mediationmysql, output_name=args.outputname, 
-              method=mediation_method, boot_number=med_boot_number, sig_level=args.maxP, style=args.mediation_style).mediate(args.groupfreqthresh, 
-              "feat_as_outcome", args.spearman, args.bonferroni,
-              args.p_correction_method, logisticReg=args.logisticReg)
-      elif args.feat_as_control:
-        controls = args.outcomecontrols
-        args.outcomecontrols = []
-        args.outcomefields = args.outcomepathstarts + args.outcomemediators + args.outcomefields
-        fg = FG()
-        og = OG()
-        MediationAnalysis(fg, og, path_starts, mediators, outcomes, controls, summary=args.mediationsummary, 
-              to_csv=args.mediationcsv, to_mysql=args.mediationmysql, output_name=args.outputname, 
-              method=mediation_method, boot_number=med_boot_number, sig_level=args.maxP, style=args.mediation_style).mediate(args.groupfreqthresh, 
-              "feat_as_control", args.spearman, args.bonferroni,
-              args.p_correction_method, logisticReg=args.logisticReg)
-      elif args.no_features:
-        args.outcomefields = args.outcomepathstarts + args.outcomemediators + args.outcomefields
-        og = OG()
-        MediationAnalysis(None, og, path_starts, mediators, outcomes, args.outcomecontrols, summary=args.mediationsummary, 
-              to_csv=args.mediationcsv, to_mysql=args.mediationmysql, output_name=args.outputname, 
-              method=mediation_method, boot_number=med_boot_number, sig_level=args.maxP, style=args.mediation_style).mediate(args.groupfreqthresh, 
-              "no_features", args.spearman, args.bonferroni,
-              args.p_correction_method, logisticReg=args.logisticReg)
-      else:
-        args.outcomefields = args.outcomepathstarts + args.outcomefields
-        fg = FG()
-        og = OG()
-        MediationAnalysis(fg, og, path_starts, mediators, outcomes, args.outcomecontrols, summary=args.mediationsummary, 
-              to_csv=args.mediationcsv, to_mysql=args.mediationmysql, output_name=args.outputname, 
-              method=mediation_method, boot_number=med_boot_number, sig_level=args.maxP, style=args.mediation_style).mediate(args.groupfreqthresh, 
-              "default", args.spearman, args.bonferroni,
-              args.p_correction_method, logisticReg=args.logisticReg)
+        #if args.maketopicwordclouds: correls = mg.output_sobel
+        # if args.topictc:
+        #     outputFile = makeOutputFilename(args, fg, oa, suffix='_topic_tagcloud')
+        #     # use plottingWhitelistPickle to link to a pickle file containing the words driving the categories
+        #     oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats)
+        #     # don't want to base on this: maxWords = args.maxtcwords)
+        # if args.maketopicwordclouds:
+        #     if not args.topictc:
+        #         print >>sys.stderr, "ERROR, can't use --make_topic_wordclouds without --topic_tagcloud"
+        #         sys.exit()
+        #     wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True)
 
 
     ##Prediction methods:

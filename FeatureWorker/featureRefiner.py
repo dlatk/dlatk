@@ -549,7 +549,7 @@ class FeatureRefiner(FeatureGetter):
         # featureType = "VARCHAR(30)" # MAARTEN
         #CREATE TABLE feat_3gram_messages_rand1000_user_id (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, user_id ('bigint(20) unsigned',), 3gram VARCHAR(64), VALUE INTEGER
         #sql = """CREATE TABLE %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, group_id %s, feat %s, value %s, group_norm DOUBLE, feat_norm DOUBLE, KEY `correl_field` (`group_id`), KEY `feature` (`feat`)) CHARACTER SET utf8 COLLATE utf8_general_ci""" %(tableName, correl_fieldType, featureType, valueType)
-        sql = """CREATE TABLE %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, group_id %s, feat %s, value %s, group_norm DOUBLE, KEY `correl_field` (`group_id`), KEY `feature` (`feat`)) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin""" %(tableName, correl_fieldType, featureType, valueType)
+        sql = """CREATE TABLE %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, group_id %s, feat %s, value %s, group_norm DOUBLE, KEY `correl_field` (`group_id`), KEY `feature` (`feat`)) CHARACTER SET %s COLLATE %s""" %(tableName, correl_fieldType, featureType, valueType, self.encoding, fwc.DEF_COLLATIONS[self.encoding.lower()])
 
         #run sql
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
@@ -784,7 +784,6 @@ class FeatureRefiner(FeatureGetter):
 
             group_id_freq = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
-
             for (group_id, value, tf) in group_id_freq:
                 tf_idf = tf * idf
 
@@ -802,8 +801,16 @@ class FeatureRefiner(FeatureGetter):
 
         fwc.warn('Finished inserting.')
 
-
         return idf_table
+
+    def createLexTableFromCorp(self, lex_table):
+        '''
+        Creates new feature table where group_norm = tf-idf (term frequency-inverse document frequency)
+        :param lex_table: 
+        :return: output table name
+        Written by Sal
+        '''
+        raise NotImplementedError
 
 ##NOTE - this is not used for the time being, it is slower and less tested than createTableWithRemovedFeats
 ##it is however a little more straightforward and it outputs a ufeat$pocc table

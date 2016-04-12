@@ -16,6 +16,8 @@ import fwConstants
 import argparse
 import mysqlMethods as mm
 
+#testing gitolite
+
 def rgbColorMix(fromColor, toColor, resolution, randomness = False):
     #fromColor, toColor rgb (255 max) tuple
     #resolution, how many truple to return inbetween

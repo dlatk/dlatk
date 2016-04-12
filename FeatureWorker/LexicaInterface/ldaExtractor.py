@@ -35,7 +35,7 @@ class LDAExtractor(FeatureExtractor):
         topic_word_freq = dict() #stores frequencies words being in a particular topics
         all_freq = 0 # stores the number of word encountered
 
-        print("[Generatign whitelist]")
+        print("[Generating whitelist]")
         #whitelist = set(self.getWordWhiteList())
         whitelist = None
         print("[Done]")

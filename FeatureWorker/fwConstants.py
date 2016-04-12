@@ -33,7 +33,7 @@ from rpy2.robjects.packages import importr
 #DB INFO:
 USER = getpass.getuser()
 
-MAX_ATTEMPTS = 10 #max number of times to try a query before exiting
+MAX_ATTEMPTS = 5 #max number of times to try a query before exiting
 PROGRESS_AFTER_ROWS = 5000 #the number of rows to process between each progress updated
 FEATURE_TABLE_PREFIX = 'feats_'
 MYSQL_ERROR_SLEEP = 4 #number of seconds to wait before trying a query again (incase there was a server restart
@@ -56,7 +56,13 @@ DEF_ENCODING = 'utf8mb4'
 DEF_UNICODE_SWITCH = True
 DEF_LEXTABLE = 'wn_O'
 DEF_DATE_FIELD = 'updated_time'
-
+DEF_COLLATIONS = {
+        'utf8mb4': 'utf8mb4_bin',
+        'utf8': 'utf8_general_ci', 
+        'latin1': 'latin1_swedish_ci', 
+        'latin2': 'latin2_general_ci', 
+        'ascii': 'ascii_general_ci',
+    }
 ##Outcome settings
 #DEF_OUTCOME_TABLE = 'SUBSET_spss_cooked_rjoined_shortened'
 DEF_OUTCOME_TABLE = 'masterstats_andy'

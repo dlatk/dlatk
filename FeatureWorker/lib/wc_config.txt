@@ -1,4 +1,4 @@
-font: /home/sgiorgi/newPERMA/CoreInfrastructure/FeatureWorker/lib/meloche_bd.ttf
+font: /home/plu/PERMA/CoreInfrastructure/FeatureWorker/lib/meloche_bd.ttf
 format: tab
 inputencoding: UTF-8
 firstline: data

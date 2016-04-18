@@ -975,9 +975,9 @@ def main(fn_args = None):
     (whitelist, blacklist) = (None, None)
     # Wildcards are not handled!!!
     if args.blacklist:
-        blacklist = FeatureWorker.makeBlackWhiteList(args.feat_blacklist, args.lextable, args.categories, args.lexicondb)
+        blacklist = FeatureWorker.makeBlackWhiteList(args.feat_blacklist, args.lextable, args.categories, args.lexicondb, args.useunicode)
     if args.whitelist:
-        whitelist = FeatureWorker.makeBlackWhiteList(args.feat_whitelist, args.lextable, args.categories, args.lexicondb)
+        whitelist = FeatureWorker.makeBlackWhiteList(args.feat_whitelist, args.lextable, args.categories, args.lexicondb, args.useunicode)
 
     def makeOutputFilename(args, fg=None, og=None, prefix=None, suffix=None):
         if args.outputname:

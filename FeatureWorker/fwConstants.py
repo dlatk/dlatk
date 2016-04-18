@@ -157,6 +157,7 @@ def alignDictsAsXy(X, y):
 
 def fiftyChecks(args):
     Xc, Xend, y, check = args
+    np.random.seed()
     lr = LogisticRegression(penalty='l2', C=1000000, fit_intercept=True)
     if Xc is not None:
         r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [np.append(Xc, permutation(Xend), 1) for i in xrange(50)]])

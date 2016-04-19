@@ -623,6 +623,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                             Xend = X[:,-1][...,None]
                             pool = multiprocessing.Pool(int(fwc.CORES/3))        
                             fCount = sum(pool.map(fwc.fiftyChecks, [(Xc, Xend, y, check)]*int(bootstrapP/50) ) ) 
+
                             tup = (auc, fCount/float(bootstrapP), len(y))
                             pool.close()
                         else:
@@ -655,7 +656,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                             Xc = None
                             #Xend = X[:,-1][...,None]
                             pool = multiprocessing.Pool(int(fwc.CORES/3))
-                            fCount = sum(pool.map(fwc.fiftyChecks, [(Xc, X, y, check)]*int(bootstrapP/50) ) ) 
+                            fCount = sum(pool.map(fwc.fiftyChecks, [(Xc, X, y, check)]*int(bootstrapP/50) ) )
+                            # print fCount
                             # test = fiftyChecks((Xc, X, y, check))
                             # print test
                             # sys.exit()

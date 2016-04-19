@@ -16,6 +16,8 @@ import fwConstants
 import argparse
 import mysqlMethods as mm
 
+#testing gitolite
+
 def rgbColorMix(fromColor, toColor, resolution, randomness = False):
     #fromColor, toColor rgb (255 max) tuple
     #resolution, how many truple to return inbetween
@@ -119,6 +121,25 @@ def getRankedFreqList(word_list, max_size = 75, min_size = 30, scale = 'linear')
 		i += 1
 
 	return freq_list
+
+def normalizeFreqList(old_freq_list, word_count = 15):
+	'''
+	Given a sorted freq_list and a word count, return a normalized freq_list, based on the old sizing algorithm from oa.printTagCloudFromTuples
+	:param old_freq_list: list of sorted, descending integers
+	:param word_count: an integer that shows how big the new_freq_list should be
+	'''
+
+	minR = old_freq_list[-1]
+	maxR = old_freq_list[0]
+	diff = float(maxR - minR)
+	if diff == 0: diff = 0.000001
+	smallDataBump = max((word_count - len(old_freq_list)), 10)
+
+	new_freq_list = [int(((freq-minR)/diff)*word_count) + smallDataBump for freq in old_freq_list]
+
+	return new_freq_list
+
+
 
 # def getRankList(list):
 # 	# i.e. for input [3, 8, 5, 1] returns [1, 3, 2, 0]

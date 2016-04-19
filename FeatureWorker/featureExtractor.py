@@ -134,8 +134,10 @@ class FeatureExtractor(FeatureWorker):
 
             #tokenize msgs:
             # parses = map(lambda m: json.dumps(sentDetector.tokenize(fwc.removeNonAscii(treatNewlines(m.strip())))), messages)
-            parses = map(lambda m: json.dumps(sentDetector.tokenize(fwc.treatNewlines(m.strip()))), messages)
-
+            if self.use_unicode: 
+                parses = map(lambda m: json.dumps(sentDetector.tokenize(fwc.treatNewlines(m.strip()))), messages)
+            else:
+                parses = map(lambda m: json.dumps(sentDetector.tokenize(fwc.removeNonAscii(fwc.treatNewlines(m.strip())))), messages)
             #add msgs into new tables
             sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
                     """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
@@ -156,7 +158,7 @@ class FeatureExtractor(FeatureWorker):
     def printTokenizedLines(self, filename, whiteListFeatTable = None):
         """prints tokenized messages in format mallet can use"""
         reload(sys)
-        sys.setdefaultencoding('utf8')
+        if self.use_unicode: sys.setdefaultencoding('utf8')
         sql = """SELECT %s, %s  from %s""" % (self.messageid_field, self.message_field,self.corptable+'_tok')
         messagesEnc = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         try:
@@ -185,7 +187,7 @@ class FeatureExtractor(FeatureWorker):
     def printJoinedFeatureLines(self, filename, delimeter = ' '):
         """prints tokenized messages in format mallet can use"""
         reload(sys)
-        sys.setdefaultencoding('utf8')
+        if self.use_unicode: sys.setdefaultencoding('utf8')
         f = open(filename, 'w')
         for (gid, featValues) in self.yieldValuesSparseByGroups():
             message = delimeter.join([delimeter.join([feat.replace(' ', '_')]*val) for feat, value in featValues.iteritems()])
@@ -336,11 +338,12 @@ class FeatureExtractor(FeatureWorker):
             self.corptable, self.message_field, self.messageid_field, self.corpdb)
         types = {k:v for k,v in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)}
         sql2 = "CREATE TABLE %s (" % (self.corptable+"_seg")
-        sql2 += "%s %s primary key, %s %s character set utf8mb4 collate utf8mb4_bin " % (self.messageid_field,
+        sql2 += "%s %s primary key, %s %s character set %s collate %s " % (self.messageid_field,
                                                                                          types[self.messageid_field],
                                                                                          self.message_field, 
-                                                                                         types[self.message_field]
-        )
+                                                                                         types[self.message_field],
+                                                                                         self.encoding,
+                                                                                         fwc.DEF_COLLATIONS[self.encoding.lower()])
         sql2 += ")"
         mm.execute(self.corpdb, self.dbCursor, "drop table if exists "+self.corptable+"_seg", charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql2, charset=self.encoding, use_unicode=self.use_unicode)
@@ -1435,9 +1438,9 @@ class FeatureExtractor(FeatureWorker):
         # featureType = "VARCHAR(30)" # MAARTEN
         # CREATE TABLE feat_3gram_messages_rand1000_user_id (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, user_id ('bigint(20) unsigned',), 3gram VARCHAR(64), VALUE INTEGER
         sql = """CREATE TABLE %s (id BIGINT(16) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                 group_id %s, feat %s CHARACTER SET utf8mb4 COLLATE utf8mb4_bin, value %s, group_norm DOUBLE,
+                 group_id %s, feat %s CHARACTER SET %s COLLATE %s, value %s, group_norm DOUBLE,
                  KEY `correl_field` (`group_id`), KEY `feature` (`feat`))
-                 CHARACTER SET utf8mb4 COLLATE utf8mb4_bin ENGINE=MYISAM""" %(tableName, correl_fieldType, featureType, valueType)
+                 CHARACTER SET %s COLLATE %s ENGINE=MYISAM""" %(tableName, correl_fieldType, featureType, self.encoding, fwc.DEF_COLLATIONS[self.encoding.lower()], valueType, self.encoding, fwc.DEF_COLLATIONS[self.encoding.lower()])
 
         #run sql
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
@@ -1798,7 +1801,7 @@ class FeatureExtractor(FeatureWorker):
             if self.use_unicode:
                 rows = [(gid, k.encode('utf-8'), cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.iteritems()]  
             else:
-                rows = [(gid, k.encode('utf-8'), cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.iteritems()]  
+                rows = [(gid, k, cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.iteritems()]  
             rowsToInsert.extend(rows)
 
             if len(rowsToInsert) > fwc.MYSQL_BATCH_INSERT_SIZE:

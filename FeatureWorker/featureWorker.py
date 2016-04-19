@@ -103,9 +103,9 @@ class FeatureWorker(object):
         return dict(wordGetter.getSumValuesByGroup(where))
 
     @staticmethod
-    def makeBlackWhiteList(args_featlist, args_lextable, args_categories, args_lexdb):
+    def makeBlackWhiteList(args_featlist, args_lextable, args_categories, args_lexdb, args_use_unicode):
         newlist = set()
-        if args.use_unicode:
+        if args_use_unicode:
             print "making black or white list: [%s] [%s] [%s]" %([unicode(feat,'utf-8') if isinstance(feat, str) else feat for feat in args_featlist], args_lextable, args_categories)
         else:
             print "making black or white list: [%s] [%s] [%s]" %([feat if isinstance(feat, str) else feat for feat in args_featlist], args_lextable, args_categories)
@@ -120,12 +120,12 @@ class FeatureWorker(object):
                 newlist.add(row[0])
         elif args_featlist:
             for feat in args_featlist:
-                if args.use_unicode:
+                if args_use_unicode:
                     feat = unicode(feat, 'utf-8') if isinstance(feat, str) else feat
                 else:
                     feat = feat if isinstance(feat, str) else feat
                 # newlist.add(feat.lower())
-                if args.use_unicode:
+                if args_use_unicode:
                     newlist.add(feat.upper() if sum(map(unicode.isupper, feat)) > (len(feat)/2) else feat.lower())
                 else:
                     newlist.add(feat.upper() if sum(map(str.isupper, feat)) > (len(feat)/2) else feat.lower())

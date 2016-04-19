@@ -6,14 +6,12 @@ import csv
 from random import sample
 from math import floor
 
-from FeatureWorker.fwConstants import DEF_ENCODING, MAX_SQL_PRINT_CHARS, DEF_UNICODE_SWITCH, warn
+from FeatureWorker.fwConstants import MAX_ATTEMPTS, MYSQL_ERROR_SLEEP, DEF_ENCODING, MAX_SQL_PRINT_CHARS, DEF_UNICODE_SWITCH, warn
 
 #DB INFO:                                                                                         
 HOST = 'localhost'
 USER = getpass.getuser()
-PASSWD = ''
-MAX_ATTEMPTS = 5 #max number of times to try a query before exiting                               
-MYSQL_ERROR_SLEEP = 4 #number of seconds to wait before trying a query again (incase there was a \
+PASSWD = ''                             
 
 
 def executeGetSSCursor(db, sql, warnMsg = True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
@@ -46,8 +44,8 @@ def dbConnect(db, host=HOST, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITC
                 host = host,
                 user = USER,
                 db = db,
-                charset = 'latin1' if not use_unicode else charset,#'latin-2', #_dbConnect
-                use_unicode = use_unicode, #_dbConnect
+                charset = charset,
+                use_unicode = use_unicode, 
                 read_default_file = "~/.my.cnf"
             )
             break
@@ -55,7 +53,6 @@ def dbConnect(db, host=HOST, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITC
             attempts += 1
             warn(" *MYSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db, e, attempts))
             time.sleep(MYSQL_ERROR_SLEEP)
-            #time.sleep(MYSQL_ERROR_SLEEP*attempts**2) #_dbConnect
             if (attempts > MAX_ATTEMPTS):
                 sys.exit(1)
     dbCursor = dbConn.cursor()
@@ -213,12 +210,12 @@ def executeWriteMany( db, dbConn, sql, rows, writeCursor=None, warnQuery=False, 
                 sys.exit(1)
     return writeCursor
 
-def qExecuteWriteMany( db, sql, rows, writeCursor=None, warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def qExecuteWriteMany(db, sql, rows, writeCursor=None, warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
     """Executes a write query"""
     (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)
     return executeWriteMany(db, dbConn, sql, rows, writeCursor, warnQuery, charset=charset, use_unicode=use_unicode)
 
-def gen_clone_query (conn, src_tbl, dst_tbl):
+def gen_clone_query(conn, src_tbl, dst_tbl):
     try:
         cursor = conn.cursor ( )
         cursor.execute ("SHOW CREATE TABLE " + src_tbl)
@@ -240,6 +237,13 @@ def getColumnNamesAndTypes( db, table, charset=DEF_ENCODING, use_unicode=DEF_UNI
     sql = """SELECT column_name, column_type FROM information_schema.columns where TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s'"""%(db, table)
     return dict(qExecuteGetList(db, sql, charset=charset, use_unicode=use_unicode))
 
+def getTableEncoding(db, table=None, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+    """returns the encoding of a given table as a string"""
+    if table: 
+        sql = """SELECT CCSA.character_set_name FROM information_schema.`TABLES` T, information_schema.`COLLATION_CHARACTER_SET_APPLICABILITY` CCSA WHERE CCSA.collation_name = T.table_collation AND T.table_schema = '%s' AND T.table_name = '%s' """ % (db, table)
+    else:
+        sql = """SELECT default_character_set_name FROM information_schema.SCHEMATA WHERE schema_name = '%s'""" % (db)
+    return str(qExecuteGetList1(db, sql, charset=charset, use_unicode=use_unicode)[0])
 
 def cloneExactTable(db, sourceTableName, destinationTableName, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
     warn("making TABLE %s, an exact copy of TABLE %s..."%(destinationTableName, sourceTableName))

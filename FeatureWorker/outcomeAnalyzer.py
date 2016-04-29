@@ -1753,7 +1753,10 @@ class OutcomeAnalyzer(OutcomeGetter):
                 if pValue: row.append(p)
                 if nValue: row.append(n)
                 if freq: row.append(f)
-            writer.writerow(row)
+            try:
+                writer.writerow(row)
+            except UnicodeEncodeError:
+                fwc.warn("Line contains unprintable unicode, skipped: %s" % row)
 
     @staticmethod
     def outputSortedCorrelCSV(correlMatrix, pValue = True, nValue = True, freq=False, outputFilePtr = sys.stdout, topN=50):
@@ -1787,7 +1790,10 @@ class OutcomeAnalyzer(OutcomeGetter):
                     if pValue: row.append(p)
                     if nValue: row.append(n)
                     if freq: row.append(f)
-            writer.writerow(row)
+            try:
+                writer.writerow(row)
+            except UnicodeEncodeError:
+                fwc.warn("Line contains unprintable unicode, skipped: %s" % row)
 
         titlerow = ['rank']            
         for key1 in keys1:

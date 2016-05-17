@@ -917,6 +917,16 @@ class Lexicon(object):
                 else:
                     row.append('')
             print ','.join(row)
+
+    # def printWeightedCSV(self):
+    #     """prints a csv style output of the lexicon"""
+    #     ##print headers:
+    #     for cat, values in self.weightedLexicon.iteritems():
+            
+    #         topWords = sorted(values.items(), key=lambda x: x[1], reverse=True)[:30]
+    #         topWString = ",",join(["'"+k+"',"+str(v) for k,v in topWords])
+    #         print cat+','+topWString
+
             
     def pprint(self):
         """Uses pprint to print the current lexicon"""
@@ -1224,6 +1234,8 @@ if __name__ == "__main__":
                           help="Create a new lexicon table (must supply new lexicon name, and either -f, -g or -n)")
     _optParser.add_option("-p", "--print", action="store_true", dest="printcsv",
                           help="print lexicon to stdout (default csv format)")
+    _optParser.add_option("--print_weighted", action="store_true", dest="printweightedcsv",
+                          help="print lexicon to stdout (weighted csv format)")
     _optParser.add_option("--pprint", action="store_true", dest="pprint",
                           help="print lexicon to stdout as pprint output")
     _optParser.add_option("-w", "--where", dest="where",
@@ -1391,6 +1403,11 @@ if __name__ == "__main__":
             print "Must load a lexicon, either from a file (-f), or from another table (-n)"
             sys.exit()
         myLexicon.printCSV()
+    if _options.printweightedcsv:
+        if not myLexicon:
+            print "Must load a lexicon, either from a file (-f), or from another table (-n)"
+            sys.exit()
+        myLexicon.printWeightedCSV()
     if _options.pprint:
         if not myLexicon:
             print "Must load a lexicon, either from a file (-f), or from another table (-n)"

@@ -25,6 +25,7 @@ from collections import defaultdict
 
 #scikit-learn imports
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler as Scaler
 from sklearn.linear_model import Ridge, RidgeCV, LinearRegression, Lasso, LassoCV, \
     ElasticNet, ElasticNetCV, Lars, LassoLars, LassoLarsCV, SGDRegressor, RandomizedLasso, \
     PassiveAggressiveRegressor
@@ -1674,7 +1675,7 @@ class RegressionPredictor:
             #run transformations:
             if scaler:
                 print "  predict: applying standard scaler to X[%d]: %s" % (i, str(scaler)) #debug
-                X = scaler.transform(X)
+                X = scaler.fit_transform(X)
             if fSelector:
                 print "  predict: applying feature selection to X[%d]: %s" % (i, str(fSelector)) #debug
                 newX = fSelector.transform(X)

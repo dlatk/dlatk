@@ -323,8 +323,13 @@ def wordcloud(word_list, freq_list, output_prefix='test',
             pngFile = output_prefix + '.png'
 
             for tup in word_freq_color_tup:
-                word_row = tup[0].encode("utf-8") + '\t' + str(tup[1]) + '\t' + str(tup[2]) + '\n'
-                f.write(word_row)
+                try:
+                    word_row = tup[0].encode("utf-8") + '\t' + str(tup[1]) + '\t' + str(tup[2]) + '\n'
+                    f.write(word_row)
+                except Exception,e:
+                    print e
+                    print "Line contains unprintable unicode, skipped: ",
+                    print tup
                 #str is necessary in case the words are numbers
 
         command = ['java','-jar', PERMA_path + '/ibm-word-cloud.jar', '-c', 

@@ -1435,8 +1435,6 @@ class FeatureExtractor(FeatureWorker):
 
         #create sql
         drop = """DROP TABLE IF EXISTS %s""" % tableName
-        # featureType = "VARCHAR(30)" # MAARTEN
-        # CREATE TABLE feat_3gram_messages_rand1000_user_id (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, user_id ('bigint(20) unsigned',), 3gram VARCHAR(64), VALUE INTEGER
         sql = """CREATE TABLE %s (id BIGINT(16) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
                  group_id %s, feat %s CHARACTER SET %s COLLATE %s, value %s, group_norm DOUBLE,
                  KEY `correl_field` (`group_id`), KEY `feature` (`feat`))
@@ -1446,7 +1444,124 @@ class FeatureExtractor(FeatureWorker):
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
-        return  tableName;
+        return tableName
+
+    def createLexFeatTable(self, lexiconTableName, lexKeys, isWeighted=False, tableName = None, valueFunc = None, correlField=None, extension = None):
+        """
+        Creates a feature table of the form lex$featureType$messageTable$groupID$valueFunc$ext.
+        This table is used when printing topic tagclouds and looks at the corpus the lexicon is applied to 
+        rather than relying on the posteriors from the model to dictate which words to display for a topic.
+
+        Args:
+            lexiconTableName (str): 
+            lexKeys (list)
+            isWeighted (boolean): 
+            tableName (str): 
+            valueFunc (): 
+            correlField (): 
+            extension (): 
+
+        Returns:
+            tableName (str): name of created feature table
+
+        """
+        #create table name
+        if not tableName: 
+            if isWeighted:
+                lexiconTableName += '_w'
+            tableName = 'lex$cat_' + lexiconTableName + '$' + self.corptable + '$' + self.correl_field
+            if valueFunc: 
+                tableName += '$' + str(16) + 'to' + "%d" % round(valueFunc(16))
+            if extension: 
+                tableName += '$' + extension
+
+        #first create the table:
+        enumCats = "'" + "', '".join(map(lambda k: k.upper().replace("'", "\\'"), lexKeys)) + "'"   
+        drop = """DROP TABLE IF EXISTS """ + tableName
+        sql = """CREATE TABLE IF NOT EXISTS %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, 
+                term VARCHAR(140), category ENUM(%s), weight DOUBLE, INDEX(term), INDEX(category)) ENGINE = MyISAM""" % (tableName, enumCats)
+        #run sql
+        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+
+        return tableName
+
+    def addCorpLexTable(self, lexiconTableName, tableName=None, valueFunc = lambda x: float(x), isWeighted=False, featValueFunc=lambda d: float(d)):
+        """
+        """
+
+        feat_cat_weight = dict()
+        sql = "SELECT * FROM %s.%s"%(self.lexicondb, lexiconTableName)
+        rows = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        categories = set()
+        lexiconHasWildCard = False
+        warnedAboutWeights = False
+
+        for row in rows:
+            term = row[1].strip()
+            category = row[2].strip()
+
+            if term and category:
+                weight = 1
+                if isWeighted:
+                    try:
+                        weight = row[3]
+                    except IndexError:
+                        print '\nERROR: The lexicon you specified is probably not weighted, or there is a problem in the lexicon itself (Check DB)'
+                        sys.exit(2)
+                elif len(row) == 4 and not warnedAboutWeights:
+                    fwc.warn("""###################################################################
+  WARNING: The lexicon you specified has weights, but you didn't
+  specify --weighted_lexicon 
+###################################################################""")
+                    sys.exit(2)
+                    warnedAboutWeights = True
+                if fwc.LOWERCASE_ONLY: term = term.lower()
+                if term == '_intercept':
+                    fwc.warn("Intercept detected %f [category: %s]" % (weight,category))
+                    _intercepts[category] = weight
+                if term[-1] == '*': 
+                    lexiconHasWildCard = True
+                feat_cat_weight[term] = feat_cat_weight.get(term,{})
+                feat_cat_weight[term][category] = weight
+                categories.add(category)
+
+        wordTable = self.getWordTable()
+        fwc.warn("WORD TABLE %s"%(wordTable,))
+
+        if not tableName:
+            tableName = self.createLexFeatTable(lexiconTableName=lexiconTableName, lexKeys=categories,  isWeighted=isWeighted, tableName=tableName, valueFunc=valueFunc, correlField=None, extension=None)
+        
+        rowsToInsert = []
+
+        isql = "INSERT IGNORE INTO "+tableName+" (term, category, weight) values (%s, %s, %s)"
+        reporting_percent = 0.01
+        reporting_int = max(floor(reporting_percent * len(feat_cat_weight)), 1)
+        featIdCounter = 0
+        
+        for feat in feat_cat_weight:
+            sql = """SELECT feat, avg(group_norm) FROM %s WHERE feat LIKE "%s" """ % (wordTable, mm.MySQLdb.escape_string(feat))
+            attributeRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)[0]
+            if attributeRows[0]:
+                rows = [(feat, topic, str(feat_cat_weight[feat][topic]*attributeRows[1])) for topic in feat_cat_weight[feat]]
+
+            rowsToInsert.extend(rows)
+            
+            if len(rowsToInsert) > fwc.MYSQL_BATCH_INSERT_SIZE:
+                mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                rowsToInsert = []
+            featIdCounter += 1
+            if featIdCounter % reporting_int == 0:
+                fwc.warn("%d out of %d features processed; %2.2f complete"%(featIdCounter, len(feat_cat_weight), float(featIdCounter)/len(feat_cat_weight)))
+        
+        if len(rowsToInsert) > 0:
+            mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+            rowsToInsert = []
+            fwc.warn("%d out of %d features processed; %2.2f complete"%(featIdCounter, len(feat_cat_weight), float(featIdCounter)/len(feat_cat_weight)))
+
+#        mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+
+        return tableName
 
     def addLexiconFeat(self, lexiconTableName, tableName=None, valueFunc = lambda x: float(x), isWeighted=False, featValueFunc=lambda d: float(d)):          #16to16
     #def addLexiconFeat(self, lexiconTableName, tableName=None, valueFunc = lambda x: x, isWeighted=False, featValueFunc=lambda d: 2*sqrt(float(d))):  #16to8

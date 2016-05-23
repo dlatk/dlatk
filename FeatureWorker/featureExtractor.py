@@ -700,6 +700,135 @@ class FeatureExtractor(FeatureWorker):
             mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
         fwc.warn("Done\n")
         return featureTableName
+    
+    
+    def addCharNGramTable(self, n, min_freq=1, tableName = None, valueFunc = lambda d: d, metaFeatures = True):
+        """Creates feature tuples (correl_field, feature, values) table where features are ngrams"""
+        """Optional ValueFunc program scales that features by the function given"""
+        ##NOTE: correl_field should have an index for this to be quick
+        #tokenizer = Tokenizer(use_unicode=self.use_unicode)
+
+        #debug: 
+        #print "valueFunc(30) = %f" % valueFunc(float(30)) #debug
+
+        #CREATE TABLE:
+        featureName = str(n)+'Cgram'
+        varcharLength = min((fwc.VARCHAR_WORD_LENGTH-(n-1))*n, 255)
+        featureTableName = self.createFeatureTable(featureName, "VARCHAR(%d)"%varcharLength, 'INTEGER', tableName, valueFunc)
+
+        if metaFeatures:
+            # If metafeats is on, make a metafeature table as well
+            mfLength = 16
+            mfName = "meta_"+featureName
+            mfTableName = self.createFeatureTable(mfName, "VARCHAR(%d)" % mfLength, 'INTEGER', tableName, valueFunc)
+            
+        #SELECT / LOOP ON CORREL FIELD FIRST:
+        usql = """SELECT %s FROM %s GROUP BY %s""" % (
+            self.correl_field, self.corptable, self.correl_field)
+        msgs = 0 # keeps track of the number of messages read
+        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
+        fwc.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
+        if len(cfRows)*n < fwc.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        
+        warnedMaybeForeignLanguage = False
+        for cfRow in cfRows: 
+            cf_id = cfRow[0]
+            
+            mids = set() #currently seen message ids
+            freqs = dict() #holds frequency of n-grams
+            totalGrams = 0 #total number of (non-distinct) n-grams seen for this user
+            totalChars = 0
+
+            #grab n-grams by messages for that cf:
+
+            for messageRow in self.getMessagesForCorrelField(cf_id, warnMsg = False):
+                message_id = messageRow[0]
+                message = messageRow[1]
+                if not message_id in mids and message:
+                    msgs+=1
+                    if msgs % fwc.PROGRESS_AFTER_ROWS == 0: #progress update
+                        fwc.warn("Messages Read: %dk" % int(msgs/1000))
+                    message = fwc.treatNewlines(message)
+                    
+                    if self.use_unicode and not warnedMaybeForeignLanguage and (len(message)-len(fwc.removeNonAscii(message))) > 2:
+                        fwc.warn("\n#############################")
+                        fwc.warn("Unicode characters are not being removed.\n")
+                        warnedMaybeForeignLanguage = True
+                        
+                    message = fwc.shrinkSpace(message)
+
+                    #words = message.split()
+                    if not self.use_unicode: 
+                        words = [fwc.removeNonAscii(w) for w in list(message)]
+                    else:
+                        words = list(message)
+
+                    gram = '' ## MAARTEN
+                    for i in range(0,(len(words) - n)+1):
+                        totalGrams += 1
+                        gram = ' '.join(words[i:i+n])
+                        #truncate:
+                        gram = gram[:varcharLength]
+                        if fwc.LOWERCASE_ONLY: gram = gram.lower()
+
+                        try:
+                            freqs[gram] += 1
+                        except KeyError:
+                            freqs[gram] = 1
+
+                        if metaFeatures:
+                            totalChars += len(gram)
+                    mids.add(message_id)
+                    if metaFeatures:
+                        # why is this in here?
+                        totalChars += len(gram)
+
+            #write n-grams to database (no need for "REPLACE" because we are creating the table)
+            if totalGrams:
+                insert_idx_start = 0
+                insert_idx_end = fwc.MYSQL_BATCH_INSERT_SIZE
+                wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                totalGrams = float(totalGrams) # to avoid casting each time below
+                if self.use_unicode:
+                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                else:
+                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter                
+                
+                while insert_idx_start < len(rows):
+                    insert_rows = rows[insert_idx_start:min(insert_idx_end, len(rows))]
+                    #_warn("Inserting rows %d to %d... " % (insert_idx_start, insert_idx_end))
+                    mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, insert_rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode);
+                    insert_idx_start += fwc.MYSQL_BATCH_INSERT_SIZE
+                    insert_idx_end += fwc.MYSQL_BATCH_INSERT_SIZE
+
+
+                
+                wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                totalGrams = float(totalGrams) # to avoid casting each time below
+                if self.use_unicode:
+                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                else:
+                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                if metaFeatures:
+                    mfRows = []
+                    mfwsql = """INSERT INTO """+mfTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                    avgGramLength = totalChars / totalGrams
+                    avgGramsPerMsg = totalGrams / len(mids)
+                    mfRows.append( ('_avg'+str(n)+'gramLength', avgGramLength, valueFunc(avgGramLength)) )
+                    mfRows.append( ('_avg'+str(n)+'gramsPerMsg', avgGramsPerMsg, valueFunc(avgGramsPerMsg)) )
+                    mfRows.append( ('_total'+str(n)+'grams', totalGrams, valueFunc(totalGrams)) )
+                    mm.executeWriteMany(self.corpdb, self.dbCursor, mfwsql, mfRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                    
+                # mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
+        
+        fwc.warn("Done Reading / Inserting.")
+
+        if len(cfRows)*n < fwc.MAX_TO_DISABLE_KEYS:
+            fwc.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
+            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        fwc.warn("Done\n")
+        return featureTableName
+    
 
     def addNGramTableFromTok(self, n, min_freq=1, tableName = None, valueFunc = lambda d: d, metaFeatures = True):
         """Creates feature tuples (correl_field, feature, values) table where features are ngrams"""

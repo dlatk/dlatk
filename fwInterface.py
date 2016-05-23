@@ -432,6 +432,11 @@ def main(fn_args = None):
     group.add_argument('--colloc_pmi_thresh', metavar="PMI", dest='colloc_pmi_thresh', type=float, default=DEF_PMI,
                        help='The PMI threshold for which multigrams from the colloctable to conscider as valid collocs'
                             'looks at the feat_colloc_filter column of the specified colloc table')
+    
+    group.add_argument('--add_char_ngrams', action='store_true', dest='addcharngrams',
+                       help='add a character n-gram feature table. (uses: n, can flag: sqrt), gzip_csv'
+                       'can be used with or without --use_collocs')
+    
     group.add_argument('--add_lex_table', action='store_true', dest='addlextable',
                        help='add a lexicon-based feature table. (uses: l, weighted_lexicon, can flag: anscombe).')
     group.add_argument('--add_corp_lex_table', action='store_true', dest='addcorplextable',
@@ -801,6 +806,21 @@ def main(fn_args = None):
                 args.feattable = ftables;
             else:
                 args.feattable = ftables[0]
+    
+    if args.addcharngrams:
+        if not fe: fe = FE()
+        
+        #elif args.gzipcsv:
+        #    args.feattable = fe.addNGramTableGzipCsv(args.n, args.gzipcsv, 3, 0, 19, valueFunc = args.valuefunc)
+
+        ftables = list()
+        for n in args.n:
+            ftables.append(fe.addCharNGramTable(n, valueFunc = args.valuefunc, metaFeatures = args.metafeats))
+        if len(ftables) > 1:
+            args.feattable = ftables;
+        else:
+            args.feattable = ftables[0]
+    
     if args.addlextable:
         if not fe: fe = FE()
         args.feattable = fe.addLexiconFeat(args.lextable, valueFunc = args.valuefunc, isWeighted=args.weightedlexicon, featValueFunc=args.lexvaluefunc)

@@ -333,6 +333,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             if counts.shape[1] < 2:
                 print "Your outcomes table is empty!(probably)"
                 raise IndexError
+            print counts
             results['1'] = counts[:,1]
             results['2'] = counts[:,2]
             results['all'] = counts[:,0]

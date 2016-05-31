@@ -288,8 +288,12 @@ def main(fn_args = None):
                        help='Table holding outcomes (make sure correl_field type matches corpus\').')
     group.add_argument('--outcome_fields', '--outcomes',  type=str, metavar='FIELD(S)', dest='outcomefields', nargs='+', default=getInitVar('outcomefields', conf_parser, DEF_OUTCOME_FIELDS, varList=True),
                        help='Fields to compare with.')
+    group.add_argument('--no_outcomes', action='store_const', const=[], dest='outcomefields',
+                       help='Switch to override outcomes listed in init file.')
     group.add_argument('--outcome_controls', '--controls', type=str, metavar='FIELD(S)', dest='outcomecontrols', nargs='+', default=getInitVar('outcomecontrols', conf_parser, DEF_OUTCOME_CONTROLS, varList=True),
                        help='Fields in outcome table to use as controls for correlation(regression).')
+    group.add_argument('--no_controls', action='store_const', const=[], dest='outcomecontrols',
+                       help='Switch to override controls listed in init file.')
     group.add_argument('--outcome_interaction', '--interaction', type=str, metavar='TERM(S)', dest='outcomeinteraction', nargs='+', default=getInitVar('outcomeinteraction', conf_parser, DEF_OUTCOME_CONTROLS, varList=True),
                        help='Fields in outcome table to use as controls and interaction terms for correlation(regression).')
     group.add_argument('--feat_names', type=str, metavar='FIELD(S)', dest='featnames', nargs='+', default=getInitVar('featnames', conf_parser, DEF_FEAT_NAMES, varList=True),

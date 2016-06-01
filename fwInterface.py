@@ -262,7 +262,7 @@ def main(fn_args = None):
                        help='The minimum a feature must occur across all groups, to be kept.')
     group.add_argument('--topic_file', type=str, dest='topicfile', default='',
                        help='Name of topic file to use to build the topic lexicon.')
-    group.add_argument('--num_topic_words', type=int, dest='numtopicwords', default=5,
+    group.add_argument('--num_topic_words', type=int, dest='numtopicwords', default=15,
                        help='Number of topic words to use as labels.')
     group.add_argument('--topic_lexicon', type=str, dest='topiclexicon', default='',
                        help='this is the (topic) lexicon name specified as part of --make_feat_labelmap_lex and --add_topiclex_from_topicfile')
@@ -981,7 +981,7 @@ def main(fn_args = None):
         feat_to_label = None
         if args.topiclexicon:
             if not oa: oa=OA()
-            feat_to_label = oa.buildTopicLabelDict(args.topiclexicon, 10) #TODO-finish -- uses topictagcloudwords method
+            feat_to_label = oa.buildTopicLabelDict(args.topiclexicon, args.numtopicwords) #TODO-finish -- uses topictagcloudwords method
             #pprint(feat_to_label)
         OutcomeGetter.plotFlexibinnedTable(args.corpdb, args.feattable, temp_feature_file, feat_to_label, args.preservebintable)
     if args.tfidf:
@@ -1239,7 +1239,7 @@ def main(fn_args = None):
         if args.corptopictc: oa.lexicondb = oa.corpdb
         outputFile = makeOutputFilename(args, fg, oa, suffix='_topic_tagcloud')
         # use plottingWhitelistPickle to link to a pickle file containing the words driving the categories
-        oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats)
+        oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats, maxWords=args.numtopicwords)
         # don't want to base on this: maxWords = args.maxtcwords)
     if args.maketopicwordclouds:
         if not args.topictc and not args.corptopictc:

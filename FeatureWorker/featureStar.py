@@ -11,11 +11,32 @@ from outcomeGetter import OutcomeGetter
 from outcomeAnalyzer import OutcomeAnalyzer
 
 class FeatureStar(object):
-	"""Generic class for importing all classes in Feature Worker"""
+	"""Generic class for importing an instance of each class in Feature Worker
+
+    Attributes:
+    	fw: FeatureWorker object
+    	fe: FeatureExtractor object
+    	fg: FeatureGetter object
+    	fr: FeatureRefiner object
+    	og: OutcomeGetter object
+    	oa: OutcomeAnalyzer object
+    	allFW (dict): dictionary containing all of the above attributes keyed on object name
+
+    """
 
 	@classmethod
 	def fromFile(cls, initFile, initList=None):
-		"""load variables from file"""
+		"""Loads all class attributed from file
+
+        Args:
+            initFile (string): path to file
+            initList (list): list of string abbreviation for classes to instantiate. 
+
+        Example:
+        	# creates a FeatureStar object with a FeatureGetter and an OutcomeGetter
+        	FeatureStar.fromFile('~/myInit.ini', ['fg','og'])
+
+        """
 		parser = SafeConfigParser()
 		parser.read(initFile)
 		corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else fwc.DEF_CORPDB
@@ -70,6 +91,17 @@ class FeatureStar(object):
 			}
 
 	def combineDFs(self, fg=None, og=None, fillNA=True):
+		"""Method for combining a feature table with an outcome table in a single dataframe
+
+        Args:
+            fg: featureGetter object
+            og: outcomeGetter object
+            fillNA (boolean): option to fill missing or NA values in dataframe, fill value = 0
+
+        Returns:
+            pandas dataframe indexed on group_id (correl_field)
+
+        """
 		if fg:
 			if isinstance(fg, FeatureGetter):
 				fg = fg.getGroupNormsWithZerosAsDF(pivot=True)

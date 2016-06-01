@@ -124,7 +124,7 @@ DEF_COMB_MODELS = ['ridgecv']
 DEF_FOLDS = 5
 
 ##Meta settings
-DEF_INIT_FILE = 'initFile.txt'
+DEF_INIT_FILE = 'initFile.ini'
 
 def _warn(string):
     print >>sys.stderr, string
@@ -204,6 +204,7 @@ def main(fn_args = None):
     group = parser.add_argument_group('Feature Variables', 'Use of these is dependent on the action.')
     group.add_argument('-f', '--feat_table', metavar='TABLE', dest='feattable', type=str, nargs='+', default=getInitVar('feattable', conf_parser, None, varList=True),
                        help='Table containing feature information to work with')
+
     group.add_argument('-n', '--set_n', metavar='N', dest='n', type=int, nargs='+', default=[DEF_N],
                        help='The n value used for n-grams or co-occurence features')
     group.add_argument('--no_metafeats', action='store_false', dest='metafeats', default=True,
@@ -389,6 +390,10 @@ def main(fn_args = None):
 
 
     group = parser.add_argument_group('Prediction Variables', '')
+    group.add_argument('--adapt_tables', metavar='TABLE_NUM', dest='adapttable', type=int, nargs='+', default=getInitVar('adapttable', conf_parser, None, varList=True),
+                       help='Table(s) containing feature information to be adapted') # added by Youngseo
+    group.add_argument('--adapt_control_names', metavar='COLUMN', dest='adaptcolumns', type=str, nargs='+', default=None,
+                        help='Controls to be used for adaptation.') # added by Youngseo
     group.add_argument('--model', type=str, metavar='name', dest='model', default=DEF_MODEL,
                        help='Model to use when predicting: svc, linear-svc, ridge, linear.')
     group.add_argument('--combined_models', type=str, nargs='+', metavar='name', dest='combmodels', default=DEF_COMB_MODELS,
@@ -432,8 +437,15 @@ def main(fn_args = None):
     group.add_argument('--colloc_pmi_thresh', metavar="PMI", dest='colloc_pmi_thresh', type=float, default=DEF_PMI,
                        help='The PMI threshold for which multigrams from the colloctable to conscider as valid collocs'
                             'looks at the feat_colloc_filter column of the specified colloc table')
+    
+    group.add_argument('--add_char_ngrams', action='store_true', dest='addcharngrams',
+                       help='add a character n-gram feature table. (uses: n, can flag: sqrt), gzip_csv'
+                       'can be used with or without --use_collocs')
+    
     group.add_argument('--add_lex_table', action='store_true', dest='addlextable',
                        help='add a lexicon-based feature table. (uses: l, weighted_lexicon, can flag: anscombe).')
+    group.add_argument('--add_corp_lex_table', action='store_true', dest='addcorplextable',
+                       help='add a lexicon-based feature table based on corpus. (uses: l, weighted_lexicon, can flag: anscombe).')
     group.add_argument('--add_phrase_table', action='store_true', dest='addphrasetable',
                        help='add constituent and phrase feature tables. (can flag: sqrt, anscombe).')
     group.add_argument('--add_pos_table', action='store_true', dest='addpostable',
@@ -537,6 +549,8 @@ def main(fn_args = None):
     group.add_argument('--tagcloud', action='store_true', dest='tagcloud',
                        help='produce data for making wordle tag clouds (same variables as correlate).')
     group.add_argument('--topic_tagcloud', action='store_true', dest='topictc', 
+                       help='produce data for making topic wordles (must be used with a topic-based feature table and --topic_lexicon).')
+    group.add_argument('--corp_topic_tagcloud', action='store_true', dest='corptopictc', 
                        help='produce data for making topic wordles (must be used with a topic-based feature table and --topic_lexicon).')
     group.add_argument('--make_wordclouds', action='store_true', dest='makewordclouds',
                        help="make wordclouds from the output tagcloud file.")
@@ -750,7 +764,6 @@ def main(fn_args = None):
                               wordTable = args.wordTable)
                 for featTable in featTable]
 
-
     fe = None
     se = None
     fr = None
@@ -758,6 +771,11 @@ def main(fn_args = None):
     oa = None
     fg = None
     fgs = None #feature getters
+
+    # if not fe:
+    #  fe = FE()
+    # fe.addFeatsToLexTable(args.lextable, valueFunc = args.valuefunc, isWeighted=args.weightedlexicon, featValueFunc=args.lexvaluefunc)
+    # exit()
 
     #Feature Extraction:
     if args.addngrams:
@@ -793,9 +811,31 @@ def main(fn_args = None):
                 args.feattable = ftables;
             else:
                 args.feattable = ftables[0]
+    
+    if args.addcharngrams:
+        if not fe: fe = FE()
+        
+        #elif args.gzipcsv:
+        #    args.feattable = fe.addNGramTableGzipCsv(args.n, args.gzipcsv, 3, 0, 19, valueFunc = args.valuefunc)
+
+        ftables = list()
+        for n in args.n:
+            ftables.append(fe.addCharNGramTable(n, valueFunc = args.valuefunc, metaFeatures = args.metafeats))
+        if len(ftables) > 1:
+            args.feattable = ftables;
+        else:
+            args.feattable = ftables[0]
+    
     if args.addlextable:
         if not fe: fe = FE()
         args.feattable = fe.addLexiconFeat(args.lextable, valueFunc = args.valuefunc, isWeighted=args.weightedlexicon, featValueFunc=args.lexvaluefunc)
+
+    if args.addcorplextable:
+        if not args.lextable:
+            print >>sys.stderr, "Need to specify lex table with -l"
+            sys.exit()
+        if not fe: fe = FE()
+        args.feattable = fe.addCorpLexTable(args.lextable, valueFunc = args.valuefunc, isWeighted=args.weightedlexicon, featValueFunc=args.lexvaluefunc)
 
     if args.addphrasetable:
         if not fe: fe = FE()
@@ -1042,7 +1082,7 @@ def main(fn_args = None):
         if not oa: oa = OA()
         correls = oa.IDPcomparison(fg, args.compTCsample1, args.compTCsample2, groupThresh=args.groupfreqthresh, blacklist=blacklist, whitelist=whitelist)
 
-    if not args.compTagcloud and not args.cca and (args.correlate or args.rmatrix or args.tagcloud or args.topictc or args.barplot or args.featcorrelfilter or args.makewordclouds or args.maketopicwordclouds):
+    if not args.compTagcloud and not args.cca and (args.correlate or args.rmatrix or args.tagcloud or args.topictc or args.corptopictc or args.barplot or args.featcorrelfilter or args.makewordclouds or args.maketopicwordclouds):
         if not oa: oa = OA()
         if not fg: fg = FG()
         if args.interactionDdla:
@@ -1200,14 +1240,15 @@ def main(fn_args = None):
             sys.exit()
         wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True)
 
-    if args.topictc:
+    if args.topictc or args.corptopictc:
+        if args.corptopictc: oa.lexicondb = oa.corpdb
         outputFile = makeOutputFilename(args, fg, oa, suffix='_topic_tagcloud')
         # use plottingWhitelistPickle to link to a pickle file containing the words driving the categories
         oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats)
         # don't want to base on this: maxWords = args.maxtcwords)
     if args.maketopicwordclouds:
-        if not args.topictc:
-            print >>sys.stderr, "ERROR, can't use --make_topic_wordclouds without --topic_tagcloud"
+        if not args.topictc and not args.corptopictc:
+            print >>sys.stderr, "ERROR, can't use --make_topic_wordclouds without --topic_tagcloud or --corp_topic_tagcloud"
             sys.exit()
         wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True)
 
@@ -1473,7 +1514,7 @@ def main(fn_args = None):
     if args.combotestclassifiers:
         comboScores = cp.testControlCombos(groupFreqThresh = args.groupfreqthresh, standardize = args.standardize, sparse = args.sparse, blacklist = blacklist, 
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes, 
-                                           nFolds = args.folds, savePredictions = args.pred_csv, weightedEvalOutcome = args.weightedeval)
+                                           nFolds = args.folds, savePredictions = args.pred_csv, weightedEvalOutcome = args.weightedeval, adaptTables = args.adapttable, adaptColumns = args.adaptcolumns) #edited by Youngseo
         if args.csv:
             outputStream = sys.stdout
             if args.outputname:

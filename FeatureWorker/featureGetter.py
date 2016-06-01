@@ -14,11 +14,39 @@ from mysqlMethods import mysqlMethods as mm
 from mysqlMethods import mysql_iter_funcs as mif
 
 class FeatureGetter(FeatureWorker):
-    """Deals with selecting features"""
+    """ General class for feature selection
+
+        Attributes:
+            corpdb:
+            corptable:
+            correl_field:
+            mysql_host:
+            message_field:
+            messageid_field:
+            encoding:
+            use_unicode:
+            lexicondb:
+            featureTable:
+            featNames:
+            wordTable:
+
+    """
 
     @classmethod
     def fromFile(cls, initFile):
-        """load variables from file"""
+        
+        """
+        Loads specified features from file
+
+        Args: 
+            initFile (string): path to file
+            
+        Example:
+            creates a FeatureGetter Object with the features
+            specified in the initFile
+            FeatureGetter.fromFile('~/myInit.ini')
+        """
+
         parser = SafeConfigParser()
         parser.read(initFile)
         corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else fwc.DEF_CORPDB
@@ -52,13 +80,33 @@ class FeatureGetter(FeatureWorker):
         return mm.disableTableKeys(self.corpdb, self.dbCursor, self.featureTable, charset=self.encoding, use_unicode=self.use_unicode)
 
     def enableFeatTableKeys(self, table = None):
-        """Enables the keys, for use after inserting (and with keys disabled)"""
+        """
+        Enables the keys, for use after inserting (and with keys disabled)
+        
+        Args: 
+            table: ????????????????????????????
+
+        Example: 
+
+        """
         return mm.enableTableKeys(self.corpdb, self.dbCursor, self.featureTable, charset=self.encoding, use_unicode=self.use_unicode)
 
     ## Getters ##
 
     def getFeatureCounts(self, groupFreqThresh = 0, where = '', SS = False, groups = set()):
-        """returns a list of (feature, count) tuples, where count is the number of groups with the feature"""
+        """
+        returns a list of (feature, count) tuples, 
+        where count is the number of groups with the feature
+        
+        Args: 
+            groupFreqThresh (int): Minimum number of words a group must contain to be considered valid
+            where (string):
+            SS (boolean):
+            groups (set): 
+        Returns:
+
+
+        """
 
         if groupFreqThresh:
             groupCnts = self.getGroupWordCounts(where)

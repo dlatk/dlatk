@@ -486,7 +486,7 @@ class FeatureExtractor(FeatureWorker):
         #Create Table:
         drop = """DROP TABLE IF EXISTS %s""" % (tableName)
         sql = """CREATE TABLE %s like %s""" % (tableName, self.corptable)
-        alter = """ALTER TABLE %s MODIFY %s MEDIUMTEXT""" % (tableName, self.message_field)
+        alter = """ALTER TABLE %s MODIFY %s LONGTEXT""" % (tableName, self.message_field)
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, alter, charset=self.encoding, use_unicode=self.use_unicode)
@@ -502,7 +502,7 @@ class FeatureExtractor(FeatureWorker):
         ldaColumnLabels = ['doc', 'message_id', 'index', 'term_id', 'term', 'topic_id']
         labelRange = range(len(ldaColumnLabels))
         ldas = dict() #stored ldas currently being looked at
-        msgsAtTime = 2000
+        msgsAtTime = 100
         msgsWritten = 0
 
         ##iterate through file:

@@ -472,8 +472,8 @@ class ClassifyPredictor:
     #####################################################
     ######## Main Testing Method ########################
     def testControlCombos(self, groupFreqThresh = 0, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
-                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None):
-        """Tests classifier, by pulling out random testPerc percentage as a test set"""
+                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None, adaptTables=None, adaptColumns=None):
+        """Tests classifier, by pulling out random testPerc percentage as a test set""" # edited by Youngseo
         
         ###################################
         #1. setup groups for random folds
@@ -606,10 +606,18 @@ class ClassifyPredictor:
 
                             ################################
                             #4) fit model and test accuracy:
+                            
                             mfclass = Counter(ytrain).most_common(1)[0][0]
-                            (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse)
-                            ypredProbs, ypredClasses = self._multiXpredict(classifier, multiXtest, \
-                                                                           multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse, probs=True)
+                            # Check if the classifier is using controls - Youngseo
+                            if len(controls) > 0:
+                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, adaptTables=adaptTables, adaptColumns=adaptColumns)
+                                ypredProbs, ypredClasses = self._multiXpredict(classifier, multiXtest, \
+                                                                               multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse, probs=True, adaptTables=adaptTables, adaptColumns=adaptColumns)
+                            else:
+                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, adaptTables=None, adaptColumns=None)
+                                ypredProbs, ypredClasses = self._multiXpredict(classifier, multiXtest, \
+                                                                               multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse, probs=True, adaptTables=None, adaptColumns=None)
+
                             ypred = ypredClasses[ypredProbs.argmax(axis=1)]
                             predictions.update(dict(izip(testGroupsOrder,ypred)))
                             predictionProbs.update(dict(izip(testGroupsOrder,ypredProbs)))
@@ -1178,10 +1186,12 @@ class ClassifyPredictor:
             return classifier, scaler, fSelector
 
 
-    def _multiXtrain(self, X, y, standardize = True, sparse = False):
+    def _multiXtrain(self, X, y, standardize = True, sparse = False, adaptTables=None, adaptColumns=None):
         """does the actual classification training, first feature selection: can be used by both train and test
            create multiple scalers and feature selectors
            and just one classification model (of combining the Xes into 1)
+           adapt tables: specifies which table (i.e. index of X) to adapt
+           adapt cols: specifies which columns of the last table (X) to use for adapting the adaptTables 
         """
 
         if not isinstance(X, (list, tuple)):
@@ -1191,11 +1201,29 @@ class ClassifyPredictor:
         multiScalers = []
         multiFSelectors = []
 
-        for i in xrange(len(multiX)):
-            X = multiX[i]
-            if not sparse:
-                X = X.todense()
+        adaptMatrix = np.array([])
+        if adaptTables is not None:
+            #Youngseo
+            print 'MultiX before duplication:', len(multiX)
+            # if adaptCol is empty, it means all columns of the controls table will be used for adaptation.
+            controls_mat=multiX[-1].todense()
+	    if adaptColumns is None:
+		adaptMatrix = controls_mat
+            else:
+		for adaptCol in adaptColumns:
+                    #c =np.insert(c,c.shape[1],thelist[0][:,0],axis=1)
+		    adaptMatrix=np.insert(adaptMatrix,adaptMatrix.shape[1],controls_mat[:,adaptCol],axis=1)
 
+
+
+        #for i in xrange(len(multiX)):
+        i=0
+        while i < len(multiX): # changed to while loop by Youngseo
+            X = multiX[i]
+
+            if not sparse and isinstance(X,csr_matrix): #edited by Youngseo
+                X = X.todense()
+            
             #Standardization:
             scaler = None
             #print " Standardize: ", standardize
@@ -1228,9 +1256,45 @@ class ClassifyPredictor:
                         print "No features selected, so using original full X"
                 print " after feature selection: (N, features): %s" % str(X.shape)
 
+            # Youngseo
+            #adaptation:
+            if adaptTables is not None and i in adaptTables:
+                #print 'adaptaion matrix:', adaptMatrix
+		for j in range(adaptMatrix.shape[1]):
+                    adaptColMult=adaptMatrix[:,j]
+                    #print adaptColMult
+                    adaptX=list()
+                    for k in range(X.shape[0]):
+                        #print np.array(adaptColMult[k] * X[k,:])[0]
+                        #np.vstack([adaptX, np.array(adaptColMult[k] * X[k,:])[0]])
+                        adaptX.append(np.array(adaptColMult[k] * X[k,:])[0])
+                    #print adaptX
+		    # to keep the index of controls table as the last table of multiX
+		    multiX.insert(len(multiX)-1,np.array(adaptX))
+		#Youngseo
+                print 'MultiX length after duplication:', len(multiX)
+		
+            '''
+            if adaptTables is not None and i in adaptTables:
+                    controlsTable=multiX[len(multiX)-1]
+                    # if adaptCol is empty, it means all columns of the controls table will be used for adaptation.
+                    if adaptColumns is None:
+                        for j in range(adaptMatrix.shape[1]):
+                            adaptColMult=adaptMatrix[:,j]
+                            
+                            print adaptColMult
+                            adaptX = X*adaptColMult.reshape((adaptColMult.shape[0],1))
+                            # to keep the index of controls table as the last table of multiX
+                            multiX.insert(len(multiX)-1,adaptX)
+            '''
+                        
+            #if adaptation is set,....
+            
+
             multiX[i] = X
             multiScalers.append(scaler)
-            multiFSelectors.append(fSelector)      
+            multiFSelectors.append(fSelector)
+            i+=1 # added to work with while loop by Youngseo Son
 
         #combine all multiX into one X:
         X = multiX[0]
@@ -1523,18 +1587,34 @@ class ClassifyPredictor:
         
         pp.close()
 
-    def _multiXpredict(self, classifier, X, multiScalers = None, multiFSelectors = None, y = None, sparse = False, probs = False):
+    def _multiXpredict(self, classifier, X, multiScalers = None, multiFSelectors = None, y = None, sparse = False, probs = False, adaptTables = None, adaptColumns = None):
         if not isinstance(X, (list, tuple)):
             X = [X]
 
         multiX = X
         X = None #to avoid errors
 
-        for i in xrange(len(multiX)):
+        adaptMatrix = np.array([])
+        if adaptTables is not None:
+            #Youngseo
+            print 'MultiX length after duplication:', len(multiX)
+                
+            # if adaptCol is empty, it means all columns of the controls table will be used for adaptation.
+	    controls_mat=multiX[-1].todense()
+	    if adaptColumns is None:
+		adaptMatrix = controls_mat
+            else:
+		for adaptCol in adaptColumns:
+                    #c =np.insert(c,c.shape[1],thelist[0][:,0],axis=1)
+		    adaptMatrix=np.insert(adaptMatrix,adaptMatrix.shape[1],controls_mat[:,adaptCol],axis=1)
+		    
+        #for i in xrange(len(multiX)):
+        i=0
+        while i < len(multiX): # changed to while loop by Youngseo
 
             #setup X and transformers:
             X = multiX[i]
-            if not sparse:
+            if not sparse and isinstance(X,csr_matrix): #edited by Youngseo
                 X = X.todense()
             (scaler, fSelector) = (None, None)
             if multiScalers: 
@@ -1553,7 +1633,51 @@ class ClassifyPredictor:
                     X = newX
                 else:
                     print "No features selected, so using original full X"
+            # Youngseo
+            #adaptation:
+            
+            if adaptTables is not None and i in adaptTables:
+                for j in range(adaptMatrix.shape[1]):
+                    adaptColMult=adaptMatrix[:,j]
+                    #print adaptColMult
+                    adaptX=list()
+                    for k in range(X.shape[0]):
+                        #print np.array(adaptColMult[k] * X[k,:])[0]
+                        #np.vstack([adaptX, np.array(adaptColMult[k] * X[k,:])[0]])
+                        adaptX.append(np.array(adaptColMult[k] * X[k,:])[0])
+                    #print adaptX
+		    # to keep the index of controls table as the last table of multiX
+		    multiX.insert(len(multiX)-1,np.array(adaptX))
+		#Youngseo
+                print 'MultiX length after duplication:', len(multiX)
+                '''
+                #print adaptMatrix
+		for j in range(adaptMatrix.shape[1]):
+                    adaptColMult=adaptMatrix[:,j]
+                    adaptX = X*adaptColMult.reshape((adaptColMult.shape[0],1))
+		    # to keep the index of controls table as the last table of multiX
+		    multiX.insert(len(multiX)-1,adaptX)
+		'''
+            '''
+            if adaptTables is not None:
+                if i in adaptTables:
+                    controlsTable=multiX[len(multiX)-1]
+                    # if adaptCol is empty, it means all columns of the controls table will be used for adaptation.
+                    if adaptColumns is None:
+                        for j in range(controlsTable.shape[1]):
+                            adaptColMult=controlsTable[:,j]
+                            adaptX = X*adaptColMult.reshape((adaptColMult.shape[0],1))
+                            # to keep the index of controls table as the last table of multiX
+                            multiX.insert(len(multiX)-1,adaptX)
+                    else:
+                        for adaptCol in adaptColumns:
+                            adaptColMult=controlsTable[:,adaptCol]
+                            adaptX = X*adaptColMult.reshape((adaptColMult.shape[0],1))
+                            # to keep the index of controls table as the last table of multiX
+                            multiX.insert(len(multiX)-1,adaptX)
+            '''
             multiX[i] = X
+            i+=1 # added to work with while loop by Youngseo Son
 
         #combine all multiX into one X:
         X = multiX[0]

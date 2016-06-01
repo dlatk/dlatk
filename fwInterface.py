@@ -204,6 +204,7 @@ def main(fn_args = None):
     group = parser.add_argument_group('Feature Variables', 'Use of these is dependent on the action.')
     group.add_argument('-f', '--feat_table', metavar='TABLE', dest='feattable', type=str, nargs='+', default=getInitVar('feattable', conf_parser, None, varList=True),
                        help='Table containing feature information to work with')
+
     group.add_argument('-n', '--set_n', metavar='N', dest='n', type=int, nargs='+', default=[DEF_N],
                        help='The n value used for n-grams or co-occurence features')
     group.add_argument('--no_metafeats', action='store_false', dest='metafeats', default=True,
@@ -389,6 +390,10 @@ def main(fn_args = None):
 
 
     group = parser.add_argument_group('Prediction Variables', '')
+    group.add_argument('--adapt_tables', metavar='TABLE_NUM', dest='adapttable', type=int, nargs='+', default=getInitVar('adapttable', conf_parser, None, varList=True),
+                       help='Table(s) containing feature information to be adapted') # added by Youngseo
+    group.add_argument('--adapt_control_names', metavar='COLUMN', dest='adaptcolumns', type=str, nargs='+', default=None,
+                        help='Controls to be used for adaptation.') # added by Youngseo
     group.add_argument('--model', type=str, metavar='name', dest='model', default=DEF_MODEL,
                        help='Model to use when predicting: svc, linear-svc, ridge, linear.')
     group.add_argument('--combined_models', type=str, nargs='+', metavar='name', dest='combmodels', default=DEF_COMB_MODELS,
@@ -1509,7 +1514,7 @@ def main(fn_args = None):
     if args.combotestclassifiers:
         comboScores = cp.testControlCombos(groupFreqThresh = args.groupfreqthresh, standardize = args.standardize, sparse = args.sparse, blacklist = blacklist, 
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes, 
-                                           nFolds = args.folds, savePredictions = args.pred_csv, weightedEvalOutcome = args.weightedeval)
+                                           nFolds = args.folds, savePredictions = args.pred_csv, weightedEvalOutcome = args.weightedeval, adaptTables = args.adapttable, adaptColumns = args.adaptcolumns) #edited by Youngseo
         if args.csv:
             outputStream = sys.stdout
             if args.outputname:

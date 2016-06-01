@@ -205,7 +205,7 @@ class ClassifyPredictor:
             #{'C':[0.01, 0.1, 1, 10, 0.001], 'penalty':['l2'], 'dual':[True]} #timex message-level
             #{'C':[0.01], 'penalty':['l2'], 'dual':[True]} #timex message-level
             #with l1 feature selection:
-            #{'C':[0.01, 0.1, 0.001], 'penalty':['l1'], 'dual':[False]}, #FIRST PASS l1 OPTION; swl message-level
+            {'C':[0.01, 0.1, 0.001], 'penalty':['l1'], 'dual':[False]}, #FIRST PASS l1 OPTION; swl message-level
             #{'C':[2.5e-05], 'penalty':['l1'], 'dual':[False]} #L1?
             #{'C':[10, 1, 0.1, 0.01, 0.001, 0.0001, 0.0025, 0.00025, 0.00001, 0.000001, 0.000025, 0.0000001, 0.0000025, 0.00000001, 0.00000025], 'penalty':['l1'], 'dual':[False]} #swl
             #{'C':[0.01], 'penalty':['l1'], 'dual':[False]} #age, general sparse setting #words n phrases, gender (best 0.01=> 91.4 )
@@ -215,7 +215,7 @@ class ClassifyPredictor:
             #{'C':[0.001], 'penalty':['l1'], 'dual':[False]}, # UnivVsMultiv choice Maarten 
             #{'C':[1000000], 'penalty':['l2'], 'dual':[False]} #simulate l0
             #{'C':[1, 10, 0.1, 0.01, 0.05, 0.005], 'penalty':['l1'], 'dual':[False]} #swl/perma message-level
-            {'C':[0.01], 'penalty':['l1'], 'dual':[False]} #gender message-level
+            #{'C':[0.01], 'penalty':['l1'], 'dual':[False]} #gender message-level
             #{'C':[0.01, 0.1, 0.001, 0.0001], 'penalty':['l1'], 'dual':[False]}, 
             #{'C':[0.001, 0.0001, .01], 'penalty':['l1'], 'dual':[False]} #hrb 25_50
             #{'C':[0.00001], 'penalty':['l2']} #hrb 25_50
@@ -294,7 +294,7 @@ class ClassifyPredictor:
     #featureSelectionString = 'ExtraTreesClassifier(n_jobs=10, n_estimators=100, compute_importances=True)'
     #featureSelectionString = \
     #    'Pipeline([("univariate_select", SelectPercentile(f_classif, 33)), ("L1_select", RandomizedLasso(random_state=42, n_jobs=self.cvJobs))])
-    featureSelectionString = 'Pipeline([("1_univariate_select", SelectFwe(f_classif, alpha=30.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
+    #featureSelectionString = 'Pipeline([("1_univariate_select", SelectFwe(f_classif, alpha=30.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
 
 
     #dimensionality reduction (TODO: make a separate step than feature selection)

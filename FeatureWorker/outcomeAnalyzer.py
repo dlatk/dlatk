@@ -19,10 +19,6 @@ import statsmodels.api as sm
 from sklearn.metrics import roc_auc_score
 from sklearn.linear_model import LogisticRegression
 
-#R
-import rpy2.robjects as ro
-from rpy2.robjects.packages import importr
-
 #infrastructure
 from outcomeGetter import OutcomeGetter
 import fwConstants as fwc 
@@ -976,6 +972,13 @@ class OutcomeAnalyzer(OutcomeGetter):
         # pprint(plotData) #debug
 
         import uuid
+        try:
+            import rpy2.robjects as ro
+            from rpy2.robjects.packages import importr
+        except:
+            fwc.warn("You must have rpy2 installed for this.")
+            exit()
+        
         ro.r.library('ggplot2')
         grdevices = importr('grDevices')
         # ro.r('plot = ggplot()')
@@ -2086,16 +2089,4 @@ class OutcomeAnalyzer(OutcomeGetter):
             fwc.warn("unknown output format: %s"% outputFormat)
         pprint(sigCoeffs)
 
-    def interraterReliability(self, fields, where, index, method='icc'):
-        """calculate irr measures for annotation task, uses the irr R package"""
-        """method = icc, kappa2, kappam_fliess, kripp_alpha,  """
-        #import pandas.rpy.common as com
-        pandas2ri.activate()
-        rIRR = importr('irr') 
-        method = [m for m in dir(rIRR) if m.startswith(method)][0]
-        df = self.getAnnotationTableAsDF(fields=fields, where=where, index=index, pivot=True, fillNA=True)
-        try:
-            iccs = eval("rIRR." + method + "(com.convert_to_r_matrix(df))")
-        except Exception,e: 
-            print str(e)
-        return dict(zip(iccs.names, [i[0] for i in list(iccs)]))
+

@@ -8,13 +8,24 @@
 #
 # example usage: ./featureWorker.py --outcome_fields SWL --train_regression
 
+from fwConstants import warn
 import cPickle as pickle
 
-from rpy2.robjects.packages import importr
-import rpy2.robjects as ro
-from rpy2.rinterface import RNULLType
+try:
+    from rpy2.robjects.packages import importr
+    import rpy2.robjects as ro
+    from rpy2.rinterface import RNULLType
+except ImportError:
+    warn("rpy2 cannot be imported")
+    pass
+
 import pandas as pd
-import pandas.rpy.common as com
+try:
+    import pandas.rpy.common as com
+except ImportError:
+    warn("pandas.rpy.common cannot be imported")
+    pass
+
 from inspect import ismethod
 import sys
 import random

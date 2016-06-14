@@ -12,6 +12,8 @@ SETUP
 =====
 
  1. Install the required Ubuntu libraries. Feature Worker has been tested on Ubuntu 14.04.
+ 	The package python-rpy2 can also be omitted if you experience installation issues, though
+ 	this will limit some of the advanced methods in Feature Worker.
  	WARNING: This will install MySQL on your computer.  
 
  		xargs apt-get install < requirements.system

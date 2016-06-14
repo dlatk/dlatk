@@ -46,9 +46,7 @@ from sklearn.base import RegressorMixin
 #modified sklearns: 
 from occurrenceSelection import OccurrenceThreshold
 from pca_mod import RandomizedPCA #allows percentage input
-#spams
-#sys.path.append('/home/lukaszdz/PERMA/code/ml/spams')
-#import spams
+
 #statsmodels (for weighted least squares)
 #import scikits.statsmodels.api as sm
 
@@ -225,10 +223,10 @@ class RegressionPredictor:
             #{'alphas': np.array([100000, 500000, 250000, 25000, 10000, 2500, 1000, 100, 10])}, 
             #{'alphas': np.array([100000, 500000, 250000, 25000, 10000])},
             #{'alphas': np.array([250000, 100000, 1000000, 2500000, 10000000, 25000000, 100000000])}, #personality, n-grams + 2000 topics
-            #{'alphas': np.array([1, .01, .0001, 100, 10000, 1000000])}, #first-pass
+            {'alphas': np.array([1, .01, .0001, 100, 10000, 1000000])}, #first-pass
             #{'alphas': np.array([1000, 1, .1, 10, 100, 10000, 100000])}, #user-level low num users (~5k) or counties
             #{'alphas': np.array([1000, 10000, 100000, 1000000])}, #user-level low num users (~5k) or counties
-            {'alphas': np.array([1000, 100, 10000, 10, 1])}, #county achd (need low for controls)
+            #{'alphas': np.array([1000, 100, 10000, 10, 1])}, #county achd (need low for controls)
             #{'alphas': np.array([10000, 100000, 1000, 1000000, 100])}, #message quality
             #{'alphas': np.array([1, .1, .01, .001, .0001, .00001, .000001])} 
             #{'alphas': np.array([.01, .001, .1, 1, 10, .0001])} #message-level rel_freq no std
@@ -246,6 +244,16 @@ class RegressionPredictor:
             #{'alphas': None}
             #{'alpha': [.001, .01, .0001]}
             ],
+
+        'ridgefirstpasscv': [
+            {'alphas': np.array([1, .01, .0001, 100, 10000, 1000000])}, 
+            ],
+        'ridgehighcv': [
+            {'alphas': np.array([10,100, 1, 1000, 10000, 100000, 1000000])}, 
+        ],
+        'ridgelowcv': [
+            {'alphas': np.array([.01, .1, .001, 1, .0001, .00001])}, 
+        ],
         'rpcridgecv': [
             #{'alphas': np.array([100, 1000, 10000]), 'component_percs':np.array([.01, .02154, .0464, .1, .2154, .464, 1])}, #standard
             #{'alphas': np.array([10, 100, 1000]), 'component_percs':np.array([.01, .02154, .0464, .1, .2154, .464, 1])}, #standard
@@ -326,6 +334,9 @@ class RegressionPredictor:
         'ridge1000' : 'Ridge',
         'ridge100' : 'Ridge',
         'ridgecv' : 'RidgeCV',
+        'ridgefirstpasscv' : 'RidgeCV',
+        'ridgehighcv' : 'RidgeCV',
+        'ridgelowcv' : 'RidgeCV',
         'rpcridgecv' : 'RPCRidgeCV',
         'linear' : 'LinearRegression',
         'svr': 'SVR',
@@ -349,6 +360,9 @@ class RegressionPredictor:
         'ridge1000' : 'coef_',
         'ridge100' : 'coef_',
         'ridgecv' : 'coef_',
+        'ridgefirstpasscv' : 'coef_',
+        'ridgehighcv' : 'coef_',
+        'ridgelowcv' : 'coef_',
         'rpcridgecv' : 'coef_',
         'linear' : 'coef_',
         'svr': 'coef_',

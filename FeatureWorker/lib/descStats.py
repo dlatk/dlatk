@@ -29,8 +29,12 @@ from wwbp import notify
 import wwbp.mysqlMethods as mm
 import array
 from numpy import linspace
-import rpy2.interactive 
-ro.r.library('gregmisc')
+try:
+    import rpy2.interactive 
+    ro.r.library('gregmisc')
+except ImportError:
+    fwc.warn("rpy2 cannot be imported")
+    pass
 
 #DB INFO:
 HOST = 'localhost'

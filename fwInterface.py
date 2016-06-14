@@ -110,6 +110,12 @@ DEF_MODEL = 'ridgecv'
 DEF_CLASS_MODEL = 'svc'
 DEF_COMB_MODELS = ['ridgecv']
 DEF_FOLDS = 5
+DEF_FEATURE_SELECTION_MAPPING = {
+    'magic_sauce': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/max(1.5,len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])', 
+    'univariatefwe': 'SelectFwe(f_regression, alpha=60.0)',
+    'pca':  'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
+    'none': None,
+}
 
 ##Meta settings
 DEF_INIT_FILE = 'initFile.ini'
@@ -409,6 +415,10 @@ def main(fn_args = None):
                        help='Column to weight the evaluation.')
     group.add_argument('--no_standardize', action='store_false', dest='standardize', default=True,
                        help='turn off standardizing variables before prediction')
+    group.add_argument('--feature_selection', '--feat_selection', metavar='NAME', type=str, dest='featureselection', default='',
+                       help='Specify feature selection pipeline in prediction: magic_sauce, univariateFWE, PCA.')
+    group.add_argument('--feature_selection_string', '--feat_selection_string', metavar='NAME', type=str, dest='featureselectionstring', default='',
+                       help='Specify any feature selection pipeline in prediction.')
 
 
     group = parser.add_argument_group('Standard Extraction Actions', '')
@@ -1393,6 +1403,11 @@ def main(fn_args = None):
     crp = None #combined regression predictor
     fgs = None #feature getters
     dr = None #Dimension Reducer
+
+    if args.featureselectionstring:
+        RegressionPredictor.featureSelectionString = args.featureselectionstring
+    elif args.featureselection:
+        RegressionPredictor.featureSelectionString = DEF_FEATURE_SELECTION_MAPPING[args.featureselection]
 
     if args.trainregression or args.testregression or args.combotestregression or args.predictregression or args.predictrtofeats or args.predictalltofeats or args.regrToLex or args.predictRtoOutcomeTable:
         if not og: og = OG()

@@ -4,21 +4,10 @@
 ##
 ## Interface Module to extract features and create tables holding the features
 ##
-## andy schwartz    - fall 2011 - hansens@sas.upenn.edu
-## luke dziurzynski - fall 2011 - lukaszdz@sas.upenn.edu
-##
 ## TODO:
 ## -handle that mysql is not using mixed case (should be lowercase all features?)
 ## -convert argument parser to be its own object that can be inherited
 ## -with zeros should consider that the data may have been transformed...?
-
-__authors__ = "H. Andrew Schwartz, Lukasz Dziurzynski, Megha Agrawal, Sneha Jha @ University of Pennsylvania"
-__copyright__ = "Copyright 2013"
-__credits__ = []
-__license__ = "Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License: http://creativecommons.org/licenses/by-nc-sa/3.0/"
-__version__ = "0.3"
-__maintainer__ = "H. Andrew Schwartz"
-__email__ = "hansens@sas.upenn.edu"
 
 import os, getpass
 import sys
@@ -43,7 +32,6 @@ from FeatureWorker.classifyPredictor import ClassifyPredictor
 from FeatureWorker.clustering import DimensionReducer, CCA
 from FeatureWorker.mediation import MediationAnalysis
 
-# INTERFACE_PATH = '../../data/lexicons/interface' #os.path.dirname(__file__)+'/../../data/lexicons/interface/'
 INTERFACE_PATH = os.path.dirname(os.path.abspath(featureWorker.__file__))+'/LexicaInterface'
 sys.path.append(INTERFACE_PATH)
 try:
@@ -204,7 +192,6 @@ def main(fn_args = None):
     group = parser.add_argument_group('Feature Variables', 'Use of these is dependent on the action.')
     group.add_argument('-f', '--feat_table', metavar='TABLE', dest='feattable', type=str, nargs='+', default=getInitVar('feattable', conf_parser, None, varList=True),
                        help='Table containing feature information to work with')
-
     group.add_argument('-n', '--set_n', metavar='N', dest='n', type=int, nargs='+', default=[DEF_N],
                        help='The n value used for n-grams or co-occurence features')
     group.add_argument('--no_metafeats', action='store_false', dest='metafeats', default=True,
@@ -289,8 +276,12 @@ def main(fn_args = None):
                        help='Table holding outcomes (make sure correl_field type matches corpus\').')
     group.add_argument('--outcome_fields', '--outcomes',  type=str, metavar='FIELD(S)', dest='outcomefields', nargs='+', default=getInitVar('outcomefields', conf_parser, DEF_OUTCOME_FIELDS, varList=True),
                        help='Fields to compare with.')
+    group.add_argument('--no_outcomes', action='store_const', const=[], dest='outcomefields',
+                       help='Switch to override outcomes listed in init file.')
     group.add_argument('--outcome_controls', '--controls', type=str, metavar='FIELD(S)', dest='outcomecontrols', nargs='+', default=getInitVar('outcomecontrols', conf_parser, DEF_OUTCOME_CONTROLS, varList=True),
                        help='Fields in outcome table to use as controls for correlation(regression).')
+    group.add_argument('--no_controls', action='store_const', const=[], dest='outcomecontrols',
+                       help='Switch to override controls listed in init file.')
     group.add_argument('--outcome_interaction', '--interaction', type=str, metavar='TERM(S)', dest='outcomeinteraction', nargs='+', default=getInitVar('outcomeinteraction', conf_parser, DEF_OUTCOME_CONTROLS, varList=True),
                        help='Fields in outcome table to use as controls and interaction terms for correlation(regression).')
     group.add_argument('--feat_names', type=str, metavar='FIELD(S)', dest='featnames', nargs='+', default=getInitVar('featnames', conf_parser, DEF_FEAT_NAMES, varList=True),

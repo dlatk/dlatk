@@ -300,9 +300,6 @@ def loadWeightedLexiconFromTopicCSV(filename, threshold=None):
     """Loads a weighted lexicon 
     returns a dictionary of dictionaries"""
     import csv
-    # filename = '/home/lukaszdz/messages_en_lda.msgs_en_tok_a30.condprob.csv'
-    # filename = '/home/lukaszdz/PERMA/code/luketasks/May/thresh_topics/messages_en_lda.msgs_en_tok_a30.loglik.csv'
-    # threshold = 0.33
     csvReader = csv.reader(open(filename, 'rb'))
     header = csvReader.next() #should be topic_id, word1, ...etc..
     print "Loading %s" % filename

@@ -484,30 +484,34 @@ class MediationResults(object):
 
 class MediationAnalysis:
 	"""
-	Interface between Mediation class and fwInterface
-	flow of switches:
-		--path_starts
-		--outcomes
-		--mediators
-		default: --path_starts from -outcome_table
-				 --mediators from -f
-				 --outcomes from -outcome_table
-		--feat_as_path_start: --path_starts from -f
-							  --mediators from -outcome_table
-							  --outcomes from -outcome_table
-							  --controls from -outcome_table
-		--feat_as_outcome:  --path_starts from -outcome_table
-							--mediators from -outcome_table
-							--outcomes from -f
-							--controls from -outcome_table
-		--feat_as_control:  --path_starts from -outcome_table
-							--mediators from -outcome_table
-							--outcomes from -outcome_table
-							--controls from -f
-		--no_features:  --path_starts from -outcome_table
-						--mediators from -outcome_table
-						--outcomes from -outcome_table
-						--controls from -outcome_table
+	Interface between Mediation class in Statsmodels and FeatureWorker with the addition of standard Baron and Kenny approach. 
+
+	Attributes:
+		outcomeGetter: OutcomeGetter object
+		featureGetter: FeatureGetter object
+		pathStartNames (list): 
+		mediatorNames (list): 
+		outcomeNames (list): 
+		controlNames (list): 
+
+		mediation_method (str): "parametric" or "bootstrap" 
+		boot_number (int): number of bootstrap iterations
+		sig_level (float): significane level for reporting results in summary 
+		output (dict): 
+		output_sobel (dict): 
+		output_p (dict): 
+
+		baron_and_kenny (boolean): if True runs Baron and Kenny method
+		imai_and_keele (boolean): if True runs Imai, Keele, and Tingley method
+
+	References
+	----------
+	Imai, Keele, Tingley (2010).  A general approach to causal mediation
+	analysis. Psychological Methods 15:4, 309-334.
+	http://imai.princeton.edu/research/files/BaronKenny.pdf
+	Tingley, Yamamoto, Hirose, Keele, Imai (2014).  mediation : R
+	package for causal mediation analysis.  Journal of Statistical
+	Software 59:5.  http://www.jstatsoft.org/v59/i05/paper
 	"""
 
 	def __init__(self, fg, og, path_starts, mediators, outcomes, controls, method="parametric", boot_number=1000, sig_level=DEF_P, style='baron'):
@@ -687,17 +691,32 @@ class MediationAnalysis:
 	def mediate(self, group_freq_thresh = 0, switch="default", spearman = False, bonferroni = False, p_correction_method = 'BH', 
 				zscoreRegression = True, logisticReg = False):
 		"""
-		output =    {path_start_i: 
-						{outcome_j: 
-							{mediator_k:
-								["ACME (control)", "ACME (treated)", "ADE (control)", "ADE (treated)",
-								 "Total effect", "Prop. mediated (control)", "Prop. mediated (treated)",
-								 "ACME (average)", "ADE (average)", "Prop. mediated (average)"]
-								X 
-								["Estimate", "Lower CI bound", "Upper CI bound", "P-value"]
-							}
-						}
-					}
+		Runs the medition. 
+
+		Args:
+			group_freq_thresh (int): 
+			switch (str): controls source (FeatureGetter or OutcomeGetter) of variables (path_starts, mediators, outcomes, controls)
+			spearman (boolean): NOT BEING USED
+			bonferroni (boolean): True if using Bonferroni p correction
+			p_correction_method (str): Name of p correction method
+			zscoreRegression (boolean): True if data is z-scored
+			logisticReg (boolean): True if running logistic regression
+		
+		Data sources according to 'switch':
+				"default": 
+					FeatureGetter: mediators
+					OutcomeGetter: path_starts and outcomes
+				"feat_as_path_start":
+					FeatureGetter: path_starts
+					OutcomeGetter: mediators, outcomes and controls
+				"feat_as_outcome":
+					FeatureGetter: outcomes
+					OutcomeGetter: path_starts, mediators and controls
+				"feat_as_control":
+					FeatureGetter: controls
+					OutcomeGetter: path_starts, mediators and outcomes
+				"no_features":
+					OutcomeGetter: path_starts, mediators, outcomes and controls
 		"""
 
 		if "no_features" not in switch:
@@ -748,7 +767,6 @@ class MediationAnalysis:
 					self.output[path_start][outcome][mediator] = []
 					
 					if len(self.controlNames) > 0:
-						#data = self.prep_data(pathstartsDict[path_start], mediatorsDict[mediator], outcomesDict[outcome], controlsDict, self.controlNames, zscoreRegression=zscoreRegression)
 						data = self.prep_data(self.get_data(switch, path_start, "path_start", allFeatures), 
 							self.get_data(switch, mediator, "mediator", allFeatures), 
 							self.get_data(switch, outcome, "outcome", allFeatures), 
@@ -756,7 +774,6 @@ class MediationAnalysis:
 						
 						control_formula = " + " + " + ".join(self.controlNames)
 					else: 
-						#data = self.prep_data(pathstartsDict[path_start], mediatorsDict[mediator], outcomesDict[outcome], zscoreRegression=zscoreRegression)
 						data = self.prep_data(self.get_data(switch, path_start, "path_start", allFeatures), 
 							self.get_data(switch, mediator, "mediator", allFeatures), 
 							self.get_data(switch, outcome, "outcome", allFeatures), 
@@ -817,7 +834,7 @@ class MediationAnalysis:
 						self.output_sobel[path_start][outcome][mediator] = np.array([c, c_p, c_prime, c_prime_p, c-c_prime, alpha*beta, alpha, alpha_error, alpha_p, beta, beta_error, beta_p, sobel, sobel_SE, sobel_p])
 						self.output_p[path_start][outcome][mediator] = self.output_p[path_start][outcome][mediator] + [c_p, c_prime_p, alpha_p, beta_p, sobel_p ]
 
-					# new mediation
+					# imai_and_keele mediation method
 					if self.imai_and_keele:
 						tx_pos = [outcome_exog.columns.tolist().index("path_start"),
 								  mediator_exog.columns.tolist().index("path_start")]

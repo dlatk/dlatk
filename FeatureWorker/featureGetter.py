@@ -56,10 +56,13 @@ class FeatureGetter(FeatureWorker):
         message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else fwc.DEF_MESSAGE_FIELD
         messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else fwc.DEF_MESSAGEID_FIELD
         encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else fwc.DEF_ENCODING
-        use_unicode = True if parser.get('constants','use_unicode')=="True" else False if parser.has_option('constants','use_unicode') else fwc.DEF_UNICODE_SWITCH
+        if parser.has_option('constants','use_unicode'):
+            use_unicode = True if parser.get('constants','use_unicode')=="True" else False
+        else:
+            use_unicode = fwc.DEF_UNICODE_SWITCH
         lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else fwc.DEF_LEXICON_DB
         featureTable = parser.get('constants','feattable') if parser.has_option('constants','feattable') else fwc.DEF_FEAT_TABLE
-        featNames = parser.get('constants','featnames') if parser.has_option('constants','featnames') else fwc. DEF_FEAT_NAMES
+        featNames = parser.get('constants','featnames') if parser.has_option('constants','featnames') else fwc.DEF_FEAT_NAMES
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
         return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, wordTable = None)
 
@@ -189,7 +192,7 @@ class FeatureGetter(FeatureWorker):
         """returns a list of (group_id, feature, group_norm) triples"""
         sql = """SELECT group_id, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, MySQLdb.escape_string(feat))
         if (where): sql += ' AND ' + where
-        return smm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg, charset=self.encoding, use_unicode=self.use_unicode) 
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg, charset=self.encoding, use_unicode=self.use_unicode) 
 
     def getGroupNormsForFeats(self, feats, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""

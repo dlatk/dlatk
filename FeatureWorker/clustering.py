@@ -169,7 +169,7 @@ class DimensionReducer:
     randomState = 42  # percentage of sample to use as test set (the rest is training)
     
     params = {
-            'nmf' : { 'n_components': 50, 'init': 'nndsvd', 'sparseness': None, 'beta': 1, 'eta' : 0.1, 'tol': .0001, 'max_iter' : 200, 'nls_max_iter': 2000, 'random_state' :42 },
+            'nmf' : { 'n_components': 20, 'init': 'nndsvd', 'sparseness': None, 'beta': 1, 'eta' : 0.1, 'tol': .0001, 'max_iter' : 200, 'nls_max_iter': 2000, 'random_state' :42 },
 
             'pca' : { 'n_components': 'mle', 'whiten': False},
             #'pca' : { 'n_components': 'mle', 'whiten': True},
@@ -401,7 +401,7 @@ class DimensionReducer:
                 reduction_dict['rfeat'+str(i)] = dict()
                 for j in xrange(m):
                      if component_mat[i][j] > 0:
-                         print 'feature name: %s', self.featureNames[j] 
+                         print "feature name: %s"% self.featureNames[j] 
                          reduction_dict['rfeat'+str(i)][self.featureNames[j]] = component_mat[i][j]
             lexicons[outcomeName] = reduction_dict
         return lexicons

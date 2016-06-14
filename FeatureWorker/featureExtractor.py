@@ -283,8 +283,9 @@ class FeatureExtractor(FeatureWorker):
             p.start()
             activePs.add(p)
 
-    #wait for remaining processes
-        for proc in activePs:
+        #wait for remaining processes
+        temp = activePs.copy()
+        for proc in temp:
             activePs.remove(proc)
             proc.join()
 
@@ -1091,11 +1092,8 @@ class FeatureExtractor(FeatureWorker):
         """Creates feature tuples (correl_field, feature, values) table where features are ngrams"""
         """Optional ValueFunc program scales that features by the function given"""
         """This assumes each row is a unique message, originally meant for twitter"""
-        # tokenizer = TweetNLP()
-        tokenizer = Tokenizer(use_unicode=self.use_unicode)
 
-        # from datetime import datetime
-        # t1 = datetime.utcnow()
+        tokenizer = Tokenizer(use_unicode=self.use_unicode)
 
         #CREATE TABLE:
         featureName = str(n)+'gram$gz'

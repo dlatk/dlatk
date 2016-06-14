@@ -4,21 +4,10 @@
 ##
 ## Interface Module to extract features and create tables holding the features
 ##
-## andy schwartz    - fall 2011 - hansens@sas.upenn.edu
-## luke dziurzynski - fall 2011 - lukaszdz@sas.upenn.edu
-##
 ## TODO:
 ## -handle that mysql is not using mixed case (should be lowercase all features?)
 ## -convert argument parser to be its own object that can be inherited
 ## -with zeros should consider that the data may have been transformed...?
-
-__authors__ = "H. Andrew Schwartz, Lukasz Dziurzynski, Megha Agrawal, Sneha Jha @ University of Pennsylvania"
-__copyright__ = "Copyright 2013"
-__credits__ = []
-__license__ = "Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License: http://creativecommons.org/licenses/by-nc-sa/3.0/"
-__version__ = "0.3"
-__maintainer__ = "H. Andrew Schwartz"
-__email__ = "hansens@sas.upenn.edu"
 
 import os, getpass
 import sys
@@ -43,7 +32,6 @@ from FeatureWorker.classifyPredictor import ClassifyPredictor
 from FeatureWorker.clustering import DimensionReducer, CCA
 from FeatureWorker.mediation import MediationAnalysis
 
-# INTERFACE_PATH = '../../data/lexicons/interface' #os.path.dirname(__file__)+'/../../data/lexicons/interface/'
 INTERFACE_PATH = os.path.dirname(os.path.abspath(featureWorker.__file__))+'/LexicaInterface'
 sys.path.append(INTERFACE_PATH)
 try:
@@ -262,7 +250,7 @@ def main(fn_args = None):
                        help='The minimum a feature must occur across all groups, to be kept.')
     group.add_argument('--topic_file', type=str, dest='topicfile', default='',
                        help='Name of topic file to use to build the topic lexicon.')
-    group.add_argument('--num_topic_words', type=int, dest='numtopicwords', default=5,
+    group.add_argument('--num_topic_words', type=int, dest='numtopicwords', default=15,
                        help='Number of topic words to use as labels.')
     group.add_argument('--topic_lexicon', type=str, dest='topiclexicon', default='',
                        help='this is the (topic) lexicon name specified as part of --make_feat_labelmap_lex and --add_topiclex_from_topicfile')
@@ -393,6 +381,10 @@ def main(fn_args = None):
 
 
     group = parser.add_argument_group('Prediction Variables', '')
+    group.add_argument('--adapt_tables', metavar='TABLE_NUM', dest='adapttable', type=int, nargs='+', default=getInitVar('adapttable', conf_parser, None, varList=True),
+                       help='Table(s) containing feature information to be adapted') # added by Youngseo
+    group.add_argument('--adapt_control_names', metavar='COLUMN', dest='adaptcolumns', type=str, nargs='+', default=None,
+                        help='Controls to be used for adaptation.') # added by Youngseo
     group.add_argument('--model', type=str, metavar='name', dest='model', default=DEF_MODEL,
                        help='Model to use when predicting: svc, linear-svc, ridge, linear.')
     group.add_argument('--combined_models', type=str, nargs='+', metavar='name', dest='combmodels', default=DEF_COMB_MODELS,
@@ -985,7 +977,7 @@ def main(fn_args = None):
         feat_to_label = None
         if args.topiclexicon:
             if not oa: oa=OA()
-            feat_to_label = oa.buildTopicLabelDict(args.topiclexicon, 10) #TODO-finish -- uses topictagcloudwords method
+            feat_to_label = oa.buildTopicLabelDict(args.topiclexicon, args.numtopicwords) #TODO-finish -- uses topictagcloudwords method
             #pprint(feat_to_label)
         OutcomeGetter.plotFlexibinnedTable(args.corpdb, args.feattable, temp_feature_file, feat_to_label, args.preservebintable)
     if args.tfidf:
@@ -1243,7 +1235,7 @@ def main(fn_args = None):
         if args.corptopictc: oa.lexicondb = oa.corpdb
         outputFile = makeOutputFilename(args, fg, oa, suffix='_topic_tagcloud')
         # use plottingWhitelistPickle to link to a pickle file containing the words driving the categories
-        oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats)
+        oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats, maxWords=args.numtopicwords)
         # don't want to base on this: maxWords = args.maxtcwords)
     if args.maketopicwordclouds:
         if not args.topictc and not args.corptopictc:
@@ -1513,7 +1505,7 @@ def main(fn_args = None):
     if args.combotestclassifiers:
         comboScores = cp.testControlCombos(groupFreqThresh = args.groupfreqthresh, standardize = args.standardize, sparse = args.sparse, blacklist = blacklist, 
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes, 
-                                           nFolds = args.folds, savePredictions = args.pred_csv, weightedEvalOutcome = args.weightedeval)
+                                           nFolds = args.folds, savePredictions = args.pred_csv, weightedEvalOutcome = args.weightedeval, adaptTables = args.adapttable, adaptColumns = args.adaptcolumns) #edited by Youngseo
         if args.csv:
             outputStream = sys.stdout
             if args.outputname:

@@ -1,4 +1,4 @@
-FEATURE WORKER
+FEATURE WORKER v0.6
 ======================
 
 This package offers end to end text analysis: feature extraction, correlation, 
@@ -50,12 +50,21 @@ SETUP
  			wordcloud_algorithm='amueller'
  		to
  		    wordcloud_algorithm='ibm'
- 
- 7. NOTE: Feature Worker is highly dependent on MySQL. You must have this installed.
- 	Any calls to fwInterface.py will open MySQL. With your database any text data 
+
+MYSQL CONFIGURATION
+==============
+
+ 1. Feature Worker is highly dependent on MySQL. You must have this installed (see Step
+	1 in SETUP). 
+
+ 2. Any calls to fwInterface.py will open MySQL. With your database any text data 
  	must have two columns:
  		message: text data
  		message_id: unique numeric identifier for each message
+
+ 3. All lexicon tables are assumed to be in a database called permaLexicon. To change this
+	you must edit line 90 in fwInterface.py:
+		DEF_LEXICON_DB = 'permaLexicon'
 
 EXAMPLE COMMANDS
 ==============

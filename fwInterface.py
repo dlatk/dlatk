@@ -391,7 +391,7 @@ def main(fn_args = None):
                        help='Table(s) containing feature information to be adapted') # added by Youngseo
     group.add_argument('--adapt_control_names', metavar='COLUMN', dest='adaptcolumns', type=str, nargs='+', default=None,
                         help='Controls to be used for adaptation.') # added by Youngseo
-    group.add_argument('--model', type=str, metavar='name', dest='model', default=DEF_MODEL,
+    group.add_argument('--model', type=str, metavar='name', dest='model', default=getInitVar('model', conf_parser, DEF_MODEL),
                        help='Model to use when predicting: svc, linear-svc, ridge, linear.')
     group.add_argument('--combined_models', type=str, nargs='+', metavar='name', dest='combmodels', default=DEF_COMB_MODELS,
                        help='Model to use when predicting: svc, linear-svc, ridge, linear.')
@@ -415,9 +415,9 @@ def main(fn_args = None):
                        help='Column to weight the evaluation.')
     group.add_argument('--no_standardize', action='store_false', dest='standardize', default=True,
                        help='turn off standardizing variables before prediction')
-    group.add_argument('--feature_selection', '--feat_selection', metavar='NAME', type=str, dest='featureselection', default='',
+    group.add_argument('--feature_selection', '--feat_selection', metavar='NAME', type=str, dest='featureselection', default=getInitVar('featureselection', conf_parser, ''),
                        help='Specify feature selection pipeline in prediction: magic_sauce, univariateFWE, PCA.')
-    group.add_argument('--feature_selection_string', '--feat_selection_string', metavar='NAME', type=str, dest='featureselectionstring', default='',
+    group.add_argument('--feature_selection_string', '--feat_selection_string', metavar='NAME', type=str, dest='featureselectionstring', default=getInitVar('featureselectionstring', conf_parser, ''),
                        help='Specify any feature selection pipeline in prediction.')
 
 
@@ -691,6 +691,7 @@ def main(fn_args = None):
             args.encoding = 'latin1'
         else:
             args.encoding = DEF_ENCODING
+
 
     ##NON-Specified Defaults:
 

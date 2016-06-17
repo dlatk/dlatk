@@ -204,21 +204,17 @@ class ClassifyPredictor:
             #{'C':1.0, 'dual':False}, #when N_samples > n_features
             #{'C':[0.01, 0.1, 1, 10, 0.001], 'penalty':['l2'], 'dual':[True]} #timex message-level
             #{'C':[0.01], 'penalty':['l2'], 'dual':[True]} #timex message-level
-            #with l1 feature selection:
-            {'C':[0.01, 0.1, 0.001], 'penalty':['l1'], 'dual':[False]}, #FIRST PASS l1 OPTION; swl message-level
-            #{'C':[2.5e-05], 'penalty':['l1'], 'dual':[False]} #L1?
+
+            ###with l1 feature selection:
+            #{'C':[0.01, 0.1, 0.001], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']}, #FIRST PASS l1 OPTION; swl message-level
             #{'C':[10, 1, 0.1, 0.01, 0.001, 0.0001, 0.0025, 0.00025, 0.00001, 0.000001, 0.000025, 0.0000001, 0.0000025, 0.00000001, 0.00000025], 'penalty':['l1'], 'dual':[False]} #swl
-            #{'C':[0.01], 'penalty':['l1'], 'dual':[False]} #age, general sparse setting #words n phrases, gender (best 0.01=> 91.4 )
+            {'C':[0.01], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']} #age, general sparse setting #words n phrases, gender (best 0.01=> 91.4 )
             #{'C':[0.1], 'penalty':['l1'], 'dual':[False], 'multi_class':['crammer_singer']} #
             #{'C':[0.01, 0.1, 1, 10, 0.001], 'penalty':['l1'], 'dual':[False]} #timex message-level
             #{'C':[0.000001], 'penalty':['l2']}, # UnivVsMultiv choice Maarten 
             #{'C':[0.001], 'penalty':['l1'], 'dual':[False]}, # UnivVsMultiv choice Maarten 
             #{'C':[1000000], 'penalty':['l2'], 'dual':[False]} #simulate l0
             #{'C':[1, 10, 0.1, 0.01, 0.05, 0.005], 'penalty':['l1'], 'dual':[False]} #swl/perma message-level
-            #{'C':[0.01], 'penalty':['l1'], 'dual':[False]} #gender message-level
-            #{'C':[0.01, 0.1, 0.001, 0.0001], 'penalty':['l1'], 'dual':[False]}, 
-            #{'C':[0.001, 0.0001, .01], 'penalty':['l1'], 'dual':[False]} #hrb 25_50
-            #{'C':[0.00001], 'penalty':['l2']} #hrb 25_50
             ],
         'lr': [
             #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l2'], 'dual':[False]}, 
@@ -227,7 +223,8 @@ class ClassifyPredictor:
             #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l1'], 'dual':[False]},
             #{'C':[0.1, 1, 0.01], 'penalty':['l1'], 'dual':[False]} #timex message-level
             #{'C':[10, 1, 100, 1000], 'penalty':['l1'], 'dual':[False]} 
-            #{'C':[0.01, 0.1, 0.001], 'penalty':['l1'], 'dual':[False]} #timex l2 rpca....
+            #{'C':[0.01, 0.1, 0.001, 0.0001, 0.00001], 'penalty':['l1'], 'dual':[False]} #timex l2 rpca....
+            #{'C':[0.1, 1, 10], 'penalty':['l1'], 'dual':[False]} #timex l2 rpca....
             #{'C':[0.00001], 'penalty':['l2']} # UnivVsMultiv choice Maarten 
             {'C':[0.01], 'penalty':['l1']} # UnivVsMultiv choice Maarten
             #{'C':[1000000], 'penalty':['l2'], 'dual':[False]} # for a l0 penalty approximation
@@ -240,7 +237,8 @@ class ClassifyPredictor:
             #{'n_jobs': [10], 'n_estimators': [1000], 'criterion':['gini']}, 
             #{'n_jobs': [10], 'n_estimators': [100], 'criterion':['entropy']}, 
             #{'n_jobs': [12], 'n_estimators': [50], 'max_features': ["sqrt", "log2", None], 'criterion':['gini'], 'min_samples_split': [1]}, 
-            {'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2]}, 
+            #{'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2]}, 
+            {'n_jobs': [12], 'n_estimators': [200], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2]}, 
             ],
         'rfc': [
             {'n_jobs': [10], 'n_estimators': [1000]}, 
@@ -610,11 +608,11 @@ class ClassifyPredictor:
                             mfclass = Counter(ytrain).most_common(1)[0][0]
                             # Check if the classifier is using controls - Youngseo
                             if len(controls) > 0:
-                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, adaptTables=adaptTables, adaptColumns=adaptColumns)
+                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize = standardize, sparse = sparse, adaptTables=adaptTables, adaptColumns=adaptColumns)
                                 ypredProbs, ypredClasses = self._multiXpredict(classifier, multiXtest, \
                                                                                multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse, probs=True, adaptTables=adaptTables, adaptColumns=adaptColumns)
                             else:
-                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, adaptTables=None, adaptColumns=None)
+                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize = standardize, sparse = sparse, adaptTables=None, adaptColumns=None)
                                 ypredProbs, ypredClasses = self._multiXpredict(classifier, multiXtest, \
                                                                                multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse, probs=True, adaptTables=None, adaptColumns=None)
 
@@ -1198,9 +1196,12 @@ class ClassifyPredictor:
             X = [X]
         multiX = X
         X = None #to avoid errors
+        y = np.array(y)
+
         multiScalers = []
         multiFSelectors = []
 
+        #setup for adaptation
         adaptMatrix = np.array([])
         if adaptTables is not None:
             #Youngseo
@@ -1216,23 +1217,39 @@ class ClassifyPredictor:
 
 
 
-        #for i in xrange(len(multiX)):
         i=0
+        #original_size = len(multiX)
         while i < len(multiX): # changed to while loop by Youngseo
             X = multiX[i]
 
             if not sparse and isinstance(X,csr_matrix): #edited by Youngseo
                 X = X.todense()
             
+            print " X[%d]: (N, features): %s" % (i, str(X.shape))
+
+            # Youngseo
+            #adaptation:
+            if adaptTables is not None and i in adaptTables:
+                #print 'adaptaion matrix:', adaptMatrix
+		for j in range(adaptMatrix.shape[1]):
+                    adaptColMult=adaptMatrix[:,j]
+                    if type(X) != type(np.array([1])):
+                        X = np.array(X)
+                    adaptX=X*np.array(adaptColMult)
+		    # to keep the index of controls table as the last table of multiX 
+		    multiX.insert(len(multiX)-1,np.array(adaptX))
+		#Youngseo
+                print 'MultiX length after duplication:', len(multiX)
+
+
             #Standardization:
             scaler = None
             #print " Standardize: ", standardize
-            if standardize == True:
+            if standardize == True: # and i < original_size:
                 scaler = StandardScaler(with_mean = not sparse)
                 print "[Applying StandardScaler to X[%d]: %s]" % (i, str(scaler))
                 X = scaler.fit_transform(X)
-                y = np.array(y)
-            print " X[%d]: (N, features): %s" % (i, str(X.shape))
+                print " afer standardize: X[%d]: (N, features): %s" % (i, str(X.shape))
 
             #Feature Selection
             fSelector = None
@@ -1256,41 +1273,8 @@ class ClassifyPredictor:
                         print "No features selected, so using original full X"
                 print " after feature selection: (N, features): %s" % str(X.shape)
 
-            # Youngseo
-            #adaptation:
-            if adaptTables is not None and i in adaptTables:
-                #print 'adaptaion matrix:', adaptMatrix
-		for j in range(adaptMatrix.shape[1]):
-                    adaptColMult=adaptMatrix[:,j]
-                    #print adaptColMult
-                    adaptX=list()
-                    for k in range(X.shape[0]):
-                        #print np.array(adaptColMult[k] * X[k,:])[0]
-                        #np.vstack([adaptX, np.array(adaptColMult[k] * X[k,:])[0]])
-                        adaptX.append(np.array(adaptColMult[k] * X[k,:])[0])
-                    #print adaptX
-		    # to keep the index of controls table as the last table of multiX
-		    multiX.insert(len(multiX)-1,np.array(adaptX))
-		#Youngseo
-                print 'MultiX length after duplication:', len(multiX)
-		
-            '''
-            if adaptTables is not None and i in adaptTables:
-                    controlsTable=multiX[len(multiX)-1]
-                    # if adaptCol is empty, it means all columns of the controls table will be used for adaptation.
-                    if adaptColumns is None:
-                        for j in range(adaptMatrix.shape[1]):
-                            adaptColMult=adaptMatrix[:,j]
-                            
-                            print adaptColMult
-                            adaptX = X*adaptColMult.reshape((adaptColMult.shape[0],1))
-                            # to keep the index of controls table as the last table of multiX
-                            multiX.insert(len(multiX)-1,adaptX)
-            '''
-                        
-            #if adaptation is set,....
-            
 
+		
             multiX[i] = X
             multiScalers.append(scaler)
             multiFSelectors.append(fSelector)
@@ -1597,7 +1581,6 @@ class ClassifyPredictor:
         adaptMatrix = np.array([])
         if adaptTables is not None:
             #Youngseo
-            print 'MultiX length after duplication:', len(multiX)
                 
             # if adaptCol is empty, it means all columns of the controls table will be used for adaptation.
 	    controls_mat=multiX[-1].todense()
@@ -1623,6 +1606,18 @@ class ClassifyPredictor:
                 fSelector = multiFSelectors[i]
 
             #run transformations:
+            # Youngseo
+            #adaptation:
+            if adaptTables is not None and i in adaptTables:
+                for j in range(adaptMatrix.shape[1]):
+                    adaptColMult=adaptMatrix[:,j]
+                    #print adaptColMult
+                    if type(X) != type(np.array([1])):
+                        X = np.array(X)
+                    adaptX=X * np.array(adaptColMult)
+		    # to keep the index of controls table as the last table of multiX
+		    multiX.insert(len(multiX)-1,np.array(adaptX))
+
             if scaler:
                 print "  predict: applying standard scaler to X[%d]: %s" % (i, str(scaler)) #debug
                 X = scaler.transform(X)
@@ -1633,49 +1628,7 @@ class ClassifyPredictor:
                     X = newX
                 else:
                     print "No features selected, so using original full X"
-            # Youngseo
-            #adaptation:
-            
-            if adaptTables is not None and i in adaptTables:
-                for j in range(adaptMatrix.shape[1]):
-                    adaptColMult=adaptMatrix[:,j]
-                    #print adaptColMult
-                    adaptX=list()
-                    for k in range(X.shape[0]):
-                        #print np.array(adaptColMult[k] * X[k,:])[0]
-                        #np.vstack([adaptX, np.array(adaptColMult[k] * X[k,:])[0]])
-                        adaptX.append(np.array(adaptColMult[k] * X[k,:])[0])
-                    #print adaptX
-		    # to keep the index of controls table as the last table of multiX
-		    multiX.insert(len(multiX)-1,np.array(adaptX))
-		#Youngseo
-                print 'MultiX length after duplication:', len(multiX)
-                '''
-                #print adaptMatrix
-		for j in range(adaptMatrix.shape[1]):
-                    adaptColMult=adaptMatrix[:,j]
-                    adaptX = X*adaptColMult.reshape((adaptColMult.shape[0],1))
-		    # to keep the index of controls table as the last table of multiX
-		    multiX.insert(len(multiX)-1,adaptX)
-		'''
-            '''
-            if adaptTables is not None:
-                if i in adaptTables:
-                    controlsTable=multiX[len(multiX)-1]
-                    # if adaptCol is empty, it means all columns of the controls table will be used for adaptation.
-                    if adaptColumns is None:
-                        for j in range(controlsTable.shape[1]):
-                            adaptColMult=controlsTable[:,j]
-                            adaptX = X*adaptColMult.reshape((adaptColMult.shape[0],1))
-                            # to keep the index of controls table as the last table of multiX
-                            multiX.insert(len(multiX)-1,adaptX)
-                    else:
-                        for adaptCol in adaptColumns:
-                            adaptColMult=controlsTable[:,adaptCol]
-                            adaptX = X*adaptColMult.reshape((adaptColMult.shape[0],1))
-                            # to keep the index of controls table as the last table of multiX
-                            multiX.insert(len(multiX)-1,adaptX)
-            '''
+
             multiX[i] = X
             i+=1 # added to work with while loop by Youngseo Son
 

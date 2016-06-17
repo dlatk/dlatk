@@ -23,15 +23,23 @@ from nltk.tree import ParentedTree
 from nltk.corpus import wordnet as wn
 import nltk.data
 
-#local / nlp
-from lib.happierfuntokenizing import Tokenizer #Potts tokenizer
-from lib.StanfordParser import StanfordParser
-from lib.TweetNLP import TweetNLP
-
 #infrastructure
 from featureWorker import FeatureWorker
 import fwConstants as fwc
 from mysqlMethods import mysqlMethods as mm
+
+#local / nlp
+from lib.happierfuntokenizing import Tokenizer #Potts tokenizer
+try:
+    from lib.StanfordParser import StanfordParser
+except ImportError:
+    fwc.warn("Cannot import StanfordParser (interface with the Stanford Parser)")
+    pass
+try:
+    from lib.TweetNLP import TweetNLP
+except ImportError:
+    fwc.warn("Cannot import TweetNLP (interface with CMU Twitter tokenizer / pos tagger)")
+    pass
 
 #feature extractor constants:
 offsetre = re.compile(r'p(\-?\d+)([a-z])')
@@ -246,7 +254,11 @@ class FeatureExtractor(FeatureWorker):
         groupsAtTime = 100 # if messages
         #groupsAtTime = 10 #if user ids
         psAtTime = fwc.CORES / 4
-        sp = StanfordParser()
+        try:
+            sp = StanfordParser()
+        except NameError:
+            fwc.warn("Method not available without StanfordParser interface")
+            raise
         groupsWritten = 0
         activePs = set()
         for groups in fwc.chunks(cfRows, groupsAtTime): 
@@ -283,8 +295,9 @@ class FeatureExtractor(FeatureWorker):
             p.start()
             activePs.add(p)
 
-    #wait for remaining processes
-        for proc in activePs:
+        #wait for remaining processes
+        temp = activePs.copy()
+        for proc in temp:
             activePs.remove(proc)
             proc.join()
 
@@ -376,7 +389,11 @@ class FeatureExtractor(FeatureWorker):
     def addTweetPOSMessages(self):
         """Creates a POS tagged, by TweetNLP version of the message table"""
         tableName = "%s_tweetpos" %(self.corptable)
-        tagger = TweetNLP()
+        try:
+            tagger = TweetNLP()
+        except NameError:
+            fwc.warn("Method not available without TweetNLP interface")
+            raise
 
         #Create Table:
         drop = """DROP TABLE IF EXISTS %s""" % (tableName)
@@ -428,7 +445,11 @@ class FeatureExtractor(FeatureWorker):
     def addTweetTokenizedMessages(self):
         """Creates a POS tagged, by TweetNLP version of the message table"""
         tableName = "%s_tweettok" %(self.corptable)
-        tokenizer = TweetNLP()
+        try:
+            tagger = TweetNLP()
+        except NameError:
+            fwc.warn("Method not available without TweetNLP interface")
+            raise
 
         #Create Table:
         drop = """DROP TABLE IF EXISTS %s""" % (tableName)
@@ -1091,11 +1112,8 @@ class FeatureExtractor(FeatureWorker):
         """Creates feature tuples (correl_field, feature, values) table where features are ngrams"""
         """Optional ValueFunc program scales that features by the function given"""
         """This assumes each row is a unique message, originally meant for twitter"""
-        # tokenizer = TweetNLP()
-        tokenizer = Tokenizer(use_unicode=self.use_unicode)
 
-        # from datetime import datetime
-        # t1 = datetime.utcnow()
+        tokenizer = Tokenizer(use_unicode=self.use_unicode)
 
         #CREATE TABLE:
         featureName = str(n)+'gram$gz'

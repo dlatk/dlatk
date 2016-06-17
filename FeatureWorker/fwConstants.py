@@ -1,11 +1,3 @@
-__authors__ = "Andy Schwartz, Lukasz Dziurzynski, Megha Agrawal, Maarten Sap, Salvatore Giorgi"
-__copyright__ = "Copyright 2013"
-__credits__ = []
-__license__ = "Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License: http://creativecommons.org/licenses/by-nc-sa/3.0/"
-__version__ = "0.5" 
-__maintainer__ = "Andy Schwartz"
-__email__ = "hansens@sas.upenn.edu"
-
 import sys, os, getpass
 import re
 from random import randint
@@ -20,10 +12,7 @@ import numpy as np
 from scipy.stats import zscore
 from sklearn.metrics import roc_auc_score
 from sklearn.linear_model import LogisticRegression
-
-#R
-import rpy2.robjects as ro
-from rpy2.robjects.packages import importr
+import statsmodels.stats.multitest as mt
 
 ###########################################################
 ### Constants
@@ -81,14 +70,30 @@ DEF_FEAT_NAMES = ['honor']
 DEF_MIN_FREQ = int(1); #min frequency per group to keep (don't advise above 1)
 DEF_P_OCC = float(.01);#percentage of groups a feature must appear in, to keep it
 DEF_MIN_FEAT_SUM = 0 #minimum sum of feature total to keep
-#DEF_STANFORD_POS_MODEL = '/home/hansens/Tools/StanfordTagger/stanford-postagger-2012-01-06/models/english-bidirectional-distsim.tagger'
 DEF_LEXICON_DB = 'permaLexicon'
 #DEF_FEAT_TABLE = ''
 DEF_FEAT_TABLE = 'feat$1gram$messages_en$user_id$16to16$0_01'
 DEF_P = 0.05 # p value for printing tagclouds
 DEF_P_CORR = 'BH' #Benjamini, Hochberg
+DEF_P_MAPPING = { # maps old R method names to statsmodel names
+        "holm": "holm",  
+        "hochberg": "simes-hochberg", 
+        "simes": "simes", 
+        "hommel": "hommel", 
+        "bonferroni": "bonferroni", 
+        "BH": "fdr_bh", 
+        "BY": "fdr_by", 
+        "fdr": "fdr_bh", 
+        "sidak": "sidak", 
+        "holm-sidak": "holm-sidak", 
+        "simes-hochberg": "simes-hochberg",
+        "fdr_bh": "fdr_bh", 
+        "fdr_by": "fdr_by", 
+        "fdr_tsbh": "fdr_tsbh", 
+        "fdr_tsbky": "fdr_tsbky", 
+    }
 
-DEF_CORENLP_DIR = '/home/hansens/Tools/corenlp-python'
+DEF_CORENLP_DIR = '../Tools/corenlp-python'
 DEF_CORENLP_SERVER_COMMAND = './corenlp/corenlp.py'
 DEF_CORENLP_PORT = 20202   #default: 20202
 #CORE NLP PYTHON SERVER COMMAND (must be running): ./corenlp/corenlp.py -p 20202 -q 
@@ -228,8 +233,9 @@ def shrinkSpace(s):
     s = newlines.sub(' <NEWLINE> ',s)
     return s
 
-def pCorrection(pDict, method='simes', pLevelsSimes=[0.05, 0.01, 0.001], rDict = None):
+def pCorrection(pDict, method=DEF_P_CORR, pLevelsSimes=[0.05, 0.01, 0.001], rDict = None):
     """returns corrected p-values given a dict of [key]=> p-value"""
+    method = DEF_P_MAPPING[method]
     pLevelsSimes = list(pLevelsSimes) #copy so it can be popped
     new_pDict = {}
     if method=='simes':
@@ -263,14 +269,57 @@ def pCorrection(pDict, method='simes', pLevelsSimes=[0.05, 0.01, 0.001], rDict =
                         sortedPTuples[ii][1] = round((pMax - .00001) * pMax, 5)
         new_pDict = dict(sortedPTuples)
     else:
-        rstats = importr('stats', robject_translations = {"format.perc" : "r_format_perc"})
         keys = pDict.keys()
-        newpList = list(rstats.p_adjust(ro.FloatVector(pDict.values()), method))
+        reject, pvals_corrected, alphacSidak, alphacBonf  = mt.multipletests(pvals=pDict.values(), method=method)
         i = 0
         for key in keys:
-            new_pDict[key] = newpList[i]
+            new_pDict[key] = pvals_corrected[i]
             i+=1
     return new_pDict
+
+# def pCorrection(pDict, method='simes', pLevelsSimes=[0.05, 0.01, 0.001], rDict = None):
+#     """returns corrected p-values given a dict of [key]=> p-value"""
+#     pLevelsSimes = list(pLevelsSimes) #copy so it can be popped
+#     new_pDict = {}
+#     if method=='simes':
+#         n = len(pDict)
+
+#         #pDictTuples = [[k, 1 if isnan(float(v)) else v] for k, v in pDict.iteritems()]
+#         pDictTuples = [[k, v] for k, v in pDict.iteritems()]
+#         sortDict = rDict if rDict else pDict
+
+#         sortedPTuples = sorted(pDictTuples, key=lambda tup: 0 if isnan(sortDict[tup[0]]) else fabs(sortDict[tup[0]]), reverse=True if rDict else False)
+#         ii = 0
+#         rejectRest = False
+#         pMax = pLevelsSimes.pop()
+#         for ii in xrange(len(sortedPTuples)):
+#             if rejectRest:
+#                 sortedPTuples[ii][1] = 1
+#             else:
+#                 newPValue = sortedPTuples[ii][1] * n / (ii + 1)
+#                 if newPValue < pMax:
+#                     sortedPTuples[ii][1] = round((pMax - .00001) * pMax, 5)
+#                 else:
+#                     while len(pLevelsSimes) > 0 and newPValue >= pMax:
+#                         pMax = pLevelsSimes.pop()
+#                     if len(pLevelsSimes) == 0:
+#                         if newPValue < pMax:
+#                             sortedPTuples[ii][1] = round((pMax - .00001) * pMax, 5)
+#                         else:
+#                             rejectRest = True
+#                             sortedPTuples[ii][1] = 1
+#                     else:
+#                         sortedPTuples[ii][1] = round((pMax - .00001) * pMax, 5)
+#         new_pDict = dict(sortedPTuples)
+#     else:
+#         rstats = importr('stats', robject_translations = {"format.perc" : "r_format_perc"})
+#         keys = pDict.keys()
+#         newpList = list(rstats.p_adjust(ro.FloatVector(pDict.values()), method))
+#         i = 0
+#         for key in keys:
+#             new_pDict[key] = newpList[i]
+#             i+=1
+#     return new_pDict
 
 newlines = re.compile(r'\s*\n\s*')
 

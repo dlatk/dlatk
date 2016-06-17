@@ -4,21 +4,10 @@
 ##
 ## Interface Module to extract features and create tables holding the features
 ##
-## andy schwartz    - fall 2011 - hansens@sas.upenn.edu
-## luke dziurzynski - fall 2011 - lukaszdz@sas.upenn.edu
-##
 ## TODO:
 ## -handle that mysql is not using mixed case (should be lowercase all features?)
 ## -convert argument parser to be its own object that can be inherited
 ## -with zeros should consider that the data may have been transformed...?
-
-__authors__ = "H. Andrew Schwartz, Lukasz Dziurzynski, Megha Agrawal, Sneha Jha @ University of Pennsylvania"
-__copyright__ = "Copyright 2013"
-__credits__ = []
-__license__ = "Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License: http://creativecommons.org/licenses/by-nc-sa/3.0/"
-__version__ = "0.3"
-__maintainer__ = "H. Andrew Schwartz"
-__email__ = "hansens@sas.upenn.edu"
 
 import os, getpass
 import sys
@@ -43,7 +32,6 @@ from FeatureWorker.classifyPredictor import ClassifyPredictor
 from FeatureWorker.clustering import DimensionReducer, CCA
 from FeatureWorker.mediation import MediationAnalysis
 
-# INTERFACE_PATH = '../../data/lexicons/interface' #os.path.dirname(__file__)+'/../../data/lexicons/interface/'
 INTERFACE_PATH = os.path.dirname(os.path.abspath(featureWorker.__file__))+'/LexicaInterface'
 sys.path.append(INTERFACE_PATH)
 try:
@@ -101,7 +89,7 @@ DEF_MIN_FREQ = int(1); #min frequency per group to keep (don't advise above 1)
 DEF_P_OCC = float(.01);#percentage of groups a feature must appear in, to keep it
 DEF_PMI = 3.0;
 DEF_MIN_FEAT_SUM = 0 #minimum sum of feature total to keep
-DEF_STANFORD_POS_MODEL = '/home/hansens/Tools/StanfordTagger/stanford-postagger-2012-01-06/models/english-bidirectional-distsim.tagger'
+DEF_STANFORD_POS_MODEL = '../Tools/StanfordTagger/stanford-postagger-2012-01-06/models/english-bidirectional-distsim.tagger'
 DEF_LEXICON_DB = 'permaLexicon'
 DEF_FEAT_TABLE = 'feat$1gram$messages_en$user_id$16to16$0_01'
 DEF_COLLOCTABLE = 'test_collocs'
@@ -122,6 +110,12 @@ DEF_MODEL = 'ridgecv'
 DEF_CLASS_MODEL = 'svc'
 DEF_COMB_MODELS = ['ridgecv']
 DEF_FOLDS = 5
+DEF_FEATURE_SELECTION_MAPPING = {
+    'magic_sauce': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/max(1.5,len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])', 
+    'univariatefwe': 'SelectFwe(f_regression, alpha=60.0)',
+    'pca':  'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
+    'none': None,
+}
 
 ##Meta settings
 DEF_INIT_FILE = 'initFile.ini'
@@ -204,7 +198,6 @@ def main(fn_args = None):
     group = parser.add_argument_group('Feature Variables', 'Use of these is dependent on the action.')
     group.add_argument('-f', '--feat_table', metavar='TABLE', dest='feattable', type=str, nargs='+', default=getInitVar('feattable', conf_parser, None, varList=True),
                        help='Table containing feature information to work with')
-
     group.add_argument('-n', '--set_n', metavar='N', dest='n', type=int, nargs='+', default=[DEF_N],
                        help='The n value used for n-grams or co-occurence features')
     group.add_argument('--no_metafeats', action='store_false', dest='metafeats', default=True,
@@ -289,8 +282,12 @@ def main(fn_args = None):
                        help='Table holding outcomes (make sure correl_field type matches corpus\').')
     group.add_argument('--outcome_fields', '--outcomes',  type=str, metavar='FIELD(S)', dest='outcomefields', nargs='+', default=getInitVar('outcomefields', conf_parser, DEF_OUTCOME_FIELDS, varList=True),
                        help='Fields to compare with.')
+    group.add_argument('--no_outcomes', action='store_const', const=[], dest='outcomefields',
+                       help='Switch to override outcomes listed in init file.')
     group.add_argument('--outcome_controls', '--controls', type=str, metavar='FIELD(S)', dest='outcomecontrols', nargs='+', default=getInitVar('outcomecontrols', conf_parser, DEF_OUTCOME_CONTROLS, varList=True),
                        help='Fields in outcome table to use as controls for correlation(regression).')
+    group.add_argument('--no_controls', action='store_const', const=[], dest='outcomecontrols',
+                       help='Switch to override controls listed in init file.')
     group.add_argument('--outcome_interaction', '--interaction', type=str, metavar='TERM(S)', dest='outcomeinteraction', nargs='+', default=getInitVar('outcomeinteraction', conf_parser, DEF_OUTCOME_CONTROLS, varList=True),
                        help='Fields in outcome table to use as controls and interaction terms for correlation(regression).')
     group.add_argument('--feat_names', type=str, metavar='FIELD(S)', dest='featnames', nargs='+', default=getInitVar('featnames', conf_parser, DEF_FEAT_NAMES, varList=True),
@@ -418,6 +415,10 @@ def main(fn_args = None):
                        help='Column to weight the evaluation.')
     group.add_argument('--no_standardize', action='store_false', dest='standardize', default=True,
                        help='turn off standardizing variables before prediction')
+    group.add_argument('--feature_selection', '--feat_selection', metavar='NAME', type=str, dest='featureselection', default='',
+                       help='Specify feature selection pipeline in prediction: magic_sauce, univariateFWE, PCA.')
+    group.add_argument('--feature_selection_string', '--feat_selection_string', metavar='NAME', type=str, dest='featureselectionstring', default='',
+                       help='Specify any feature selection pipeline in prediction.')
 
 
     group = parser.add_argument_group('Standard Extraction Actions', '')
@@ -1402,6 +1403,11 @@ def main(fn_args = None):
     crp = None #combined regression predictor
     fgs = None #feature getters
     dr = None #Dimension Reducer
+
+    if args.featureselectionstring:
+        RegressionPredictor.featureSelectionString = args.featureselectionstring
+    elif args.featureselection:
+        RegressionPredictor.featureSelectionString = DEF_FEATURE_SELECTION_MAPPING[args.featureselection]
 
     if args.trainregression or args.testregression or args.combotestregression or args.predictregression or args.predictrtofeats or args.predictalltofeats or args.regrToLex or args.predictRtoOutcomeTable:
         if not og: og = OG()

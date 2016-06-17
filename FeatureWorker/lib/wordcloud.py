@@ -113,9 +113,6 @@ def wordcloud(word_list, freq_list, output_prefix='test',
     wordcloud_algorithm='ibm'):
     """given a list of words and a list of their frequencies, builds a wordle"""
 
-    #font paths:
-    #meloche: /home/plu/PERMA/code/ml/wwbp/meloche bd.ttf
-    #de javu: /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf
     PERMA_path = os.path.dirname(os.path.realpath(__file__))
 
     if font_path == "":
@@ -227,7 +224,6 @@ def wordcloud(word_list, freq_list, output_prefix='test',
             except ValueError:
                 return 'black'
 
-        #mask_loc="/home/plu/PERMA/code/ml/oval_mask.png" #TODO: ABSOLUTE PATH ABSOLUTELY NOT
         img_dir = os.path.dirname(os.path.abspath(__file__))
         if (big_mask is True or len(word_list) > 75): #arbitrary number for choosing mask
             img = Image.open(os.path.join(img_dir, 'oval_big_mask.png'))
@@ -552,33 +548,5 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
 
 
 if __name__=='__main__':
-    # tagcloudToWordcloud('healthV4.2', directory='/home/lukaszdz/PERMA/code/luketasks/dec-jan-feb/twitterGH-health/', withTitle=True, toFolders=True, fontStyle="bold")
-    # tagcloudToWordcloud('2kall4.5.test', directory='/data/ml/wordR/twitterGH-health/2kall4-5', withTitle=True, toFolders=True, fontStyle="bold")
-    # tagcloudToWordcloud('2kall4.5.word-titles', directory='/data/ml/wordR/twitterGH-health/2kall4-5', withTitle=True, toFolders=True, fontStyle="bold")
-
-    # _tagcloudToWordcloud('topic2k.cty187g1occ10.countyHealthRankings2012.cty_id.wc.tagcloud.txt', '/home/lukaszdz/PERMA/code/luketasks/dec/wc-gen')
-    # tagcloudToWordcloud('topic2k.cty187g1occ10.countyHealthRankings2012.cty_id.wc.tagcloud.txt', '/home/lukaszdz/PERMA/code/luketasks/dec/wc-gen/rtw2012-cty_id-CHR')
-
-    # tagcloudToWordcloud('1to3gram.cty187g1occ10.occ50.ctl.CHR-2012-CTL.tr.cty_id.wc.tagcloud.txt', directory='/home/lukaszdz/PERMA/code/luketasks/dec/wc-gen/rtw2012-cty_id-CHR12-CTL-1to3grams-controlled', withTitle=True)
-    # tagcloudToWordcloud(filename='ueberV3.cty187g1occ10.CHR-2012-CTL.ctl.cty_id.wc.tagcloud.txt', directory='/home/lukaszdz/PERMA/code/luketasks/dec/wc-gen/rtw2012-cty_id-CHR12CTL-ueberV3-2012-controlled', withTitle=True)
-    # tagcloudToWordcloud(filename='ueberV3.cty187g1occ10.CHR-2012-CTL.uncontrolled.cty_id.wc.tagcloud.txt', directory='/home/lukaszdz/PERMA/code/luketasks/dec/wc-gen/rtw2012-cty_id-CHR12CTL-ueberV3-2012-uncontrolled', withTitle=True)
-
-    # fonts = 'Abandon,comic andy,ObelixPro,BadaBoom BB,Freshman,Cheri,GROBOLD,Cheri Liney,Janda Manatee Bubble,College,Janda Manatee Solid,Varsity Regular,Mickey,Wanted M54,College Condensed,College Semi-condensed,Minnie,Yikes!,nebraska'.split(',')
-
-    # fonts = "Abandon, BadaBoom BB, Cheri, Cheri Liney, College, College Condensed, College Semi-condensed, comic andy, Freshman, GROBOLD, Janda Manatee Bubble, Janda Manatee Solid, Mickey, Minnie, nebraska, ObelixPro, Varsity Regular, Wanted M54, Yikes!, Agent Orange, Bambi Bold, BorisBlackBloxx, Calvin and Hobbes, Charles S., Counter-Strike, Disko, Karate, Keep on Truckin, Korean Calligraphy, Love Ya Like A Sister, Love Ya Like A Sister Solid, Neverwinter, Final Fantasy , OptimusPrinceps, OptimusPrincepsSemiBold, Serif Black, Serif BlackItalic, Serif Medium, Serif Medium Italic, Serif Narrow, Serif Narrow Italic, Starcraft, Tribal, Tribal Two, [z] Arista, [z] Arista ExtraFilled, [z] Arista Light".split(', ')
-    # #font "Social Logos" was not working
-    # fonts = "Starcraft, Tribal, Tribal Two, [z] Arista, [z] Arista ExtraFilled, [z] Arista Light".split(', ')
-
-    # for font in fonts:
-    #     print "########FONTY## " + font + " ########" 
-    #     print "###############################" 
-    #     tagcloudToWordcloud('1to3gram.cty187g1occ10.occ50.ctl.CHR-2012-CTL.tr.cty_id.wc.tagcloud.txt', '/home/lukaszdz/PERMA/code/luketasks/dec/wc-gen/test', withTitle=True, fontFamily=font)
-    #     font = font.replace(' ', '_')
-    #     outDir = "/home/lukaszdz/PERMA/code/luketasks/dec/wc-gen/test/" + font
-    #     try:
-    #         check_call(["mkdir", outDir])
-    #     except (OSError, CalledProcessError) as e:
-    #         print 'WARNING:', e
-    #     os.system("mv " + outDir.split('/'+font)[0] + "/*.jpg " + outDir)
 
     print 'wordcloud sleeps peacefully in the shade, its work is happily done.'

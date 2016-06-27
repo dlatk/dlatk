@@ -25,8 +25,11 @@ import subprocess
 from PIL import Image
 from numpy import array
 
-ro.r.library('Cairo')       #Optional, only used for old wordcloud module
-ro.r.library('wordcloud')   #Optional, only used for old wordcloud module
+try:
+    ro.r.library('Cairo')       #Optional, only used for old wordcloud module
+    ro.r.library('wordcloud')   #Optional, only used for old wordcloud module
+except:
+    print 'R wordcloud library not imported'
 #ro.r.library('extrafont')
 #ro.r.loadfonts()
 #ro.r.font_import()

@@ -5,8 +5,8 @@ import pdb
 import struct
 import string
 from glob import glob
-import rpy2.robjects as ro
 from random import uniform as runif
+import rpy2.robjects as ro
 from rpy2.robjects.packages import importr
 from subprocess import check_call, CalledProcessError
 

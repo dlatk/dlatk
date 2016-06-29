@@ -19,9 +19,12 @@ from math import floor, log10
 from numpy import mean, std
 
 #nltk
-from nltk.tree import ParentedTree
-from nltk.corpus import wordnet as wn
-import nltk.data
+try:
+    from nltk.tree import ParentedTree
+    from nltk.corpus import wordnet as wn
+    import nltk.data
+except ImportError:
+    print "warning: unable to import nltk.tree or nltk.corpus or nltk.data"
 
 #infrastructure
 from featureWorker import FeatureWorker

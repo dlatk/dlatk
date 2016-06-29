@@ -41,14 +41,14 @@ class FeatureWorker(object):
         if not messageTable: messageTable = self.corptable
         msql = """SELECT %s, %s FROM %s"""% (self.messageid_field, self.message_field, messageTable)
         if where: msql += " WHERE " + where
-        return mm.executeGetSSCursor(self.corpdb, msql, charset=self.encoding, use_unicode=self.use_unicode)
+        return mm.executeGetSSCursor(self.corpdb, msql, charset=self.encoding, use_unicode=self.use_unicode, host=self.mysql_host)
 
     def getMessagesForCorrelField(self, cf_id, messageTable = None, warnMsg = True):
         """..."""
         if not messageTable: messageTable = self.corptable
         msql = """SELECT %s, %s FROM %s WHERE %s = '%s'""" % (
             self.messageid_field, self.message_field, messageTable, self.correl_field, cf_id)
-        #return self._executeGetSSCursor(msql, warnMsg)
+        #return self._executeGetSSCursor(msql, warnMsg, host=self.mysql_host)
         return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding, use_unicode=self.use_unicode)
 
     def getMessagesWithFieldForCorrelField(self, cf_id, extraField, messageTable = None, warnMsg = True):

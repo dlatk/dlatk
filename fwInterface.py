@@ -24,7 +24,10 @@ try:
     from FeatureWorker.lib.StanfordSegmenter import StanfordSegmenter
 except ImportError:
     print 'warning: StanfordSegmenter not found.'
-from FeatureWorker.lib import wordcloud
+try:
+    from FeatureWorker.lib import wordcloud
+except ImportError:
+    print 'warning: wordcloud not found.'
 from FeatureWorker.semanticsExtractor import SemanticsExtractor
 import FeatureWorker.featureWorker as featureWorker
 from FeatureWorker.regressionPredictor import RegressionPredictor, CombinedRegressionPredictor, ClassifyToRegressionPredictor

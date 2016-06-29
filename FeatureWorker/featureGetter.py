@@ -125,7 +125,7 @@ class FeatureGetter(FeatureWorker):
             where = " WHERE group_id in ('%s')" % "','".join(str(g) for g in groups)
         sql = """select feat, count(*) from %s %s group by feat"""%(self.featureTable, where)
         if SS:
-            mm.executeGetSSCursor(self.corpdb, sql, charset=self.encoding, use_unicode=self.use_unicode)
+            mm.executeGetSSCursor(self.corpdb, sql, charset=self.encoding, use_unicode=self.use_unicode, host=self.mysql_host)
         return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode) 
 
     def getFeatureCountsSS(self, groupFreqThresh = 0, where = ''):
@@ -525,7 +525,7 @@ class FeatureGetter(FeatureWorker):
         """returns a server-side cursor pointing to (group_id, feature, feat_norm) triples"""
         sql = """select group_id, feat, feat_norm from %s"""%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return mm.executeGetSSCursor(self.corpdb, sql, charset=self.encoding, use_unicode=self.use_unicode) 
+        return mm.executeGetSSCursor(self.corpdb, sql, charset=self.encoding, use_unicode=self.use_unicode, host=self.mysql_host) 
 
     def getFeatNormsWithZeros(self, groups = [], where = ''):
         """returns a dict of (group_id => feature => feat_norm) """
@@ -618,7 +618,7 @@ class FeatureGetter(FeatureWorker):
         """returns a list of (group_id, feature, value, group_norm) tuples"""
         sql = """select group_id, feat, value, group_norm from %s"""%(self.featureTable) if featNorm else """select group_id, feat, value, group_norm from %s"""%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return mm.executeGetSSCursor(self.corpdb, sql, charset=self.encoding, use_unicode=self.use_unicode) 
+        return mm.executeGetSSCursor(self.corpdb, sql, charset=self.encoding, use_unicode=self.use_unicode, host=self.mysql_host) 
 
     def countGroups(self, groupThresh = 0, where=''):
         """returns the number of distinct groups (note that this runs on the corptable to be accurate)"""

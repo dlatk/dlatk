@@ -98,16 +98,16 @@ class FeatureGetter(FeatureWorker):
 
     def getFeatureCounts(self, groupFreqThresh = 0, where = '', SS = False, groups = set()):
         """
-        returns a list of (feature, count) tuples, 
-        where count is the number of groups with the feature
+        Gets feature occurence by group
         
         Args: 
             groupFreqThresh (int): Minimum number of words a group must contain to be considered valid
-            where (string):
-            SS (boolean):
-            groups (set): 
+            where (string): Conditional sql string to limit the search to elements meeting a specified criteria
+            SS (boolean): Indicates the use of SSCursor (true use SSCursor to access MySQL)
+            groups (set): Set of group ID's
         Returns:
-
+            returns a list of (feature, count) tuples, 
+            where count is the feature occurence in each group
 
         """
 
@@ -129,7 +129,16 @@ class FeatureGetter(FeatureWorker):
         return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode) 
 
     def getFeatureCountsSS(self, groupFreqThresh = 0, where = ''):
-        """returns a list of (feature, count) tuples, where count is the number of groups with the feature"""
+        """
+        Gets feature occurence by group
+        
+        Args: 
+            groupFreqThresh (int): Minimum number of words a group must contain to be considered valid
+            where (string): Conditional sql string to limit the search to elements meeting a specified criteria
+        Returns:  
+            returns a list of (feature, count) tuples, 
+            where count is the feature occurence in each group
+        """
         return self.getFeatureCounts(groupFreqThresh, where, True)
 
     def getFeatureValueSums(self, where = ''):

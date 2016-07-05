@@ -1,4 +1,4 @@
-FEATURE WORKER v0.6
+FEATURE WORKER v0.6.1
 ======================
 
 This package offers end to end text analysis: feature extraction, correlation, 
@@ -8,21 +8,72 @@ information
   http://wwbp.org
   http://wiki.wwbp.org
 
-SETUP
+SETUP (Linux)
 =====
+ Feature Worker has been tested on Ubuntu 14.04.
 
- 1. Install the required Ubuntu libraries. Feature Worker has been tested on Ubuntu 14.04.
- 	The package python-rpy2 can also be omitted if you experience installation issues, though
- 	this will limit some of the advanced methods in Feature Worker.
+ 1. Install the required Ubuntu libraries. The package python-rpy2 can also be omitted if 	
+ 	you experience installation issues, thought his will limit some of the advanced methods in Feature Worker.
  	WARNING: This will install MySQL on your computer.  
 
- 		xargs apt-get install < requirements.system
+ 		xargs apt-get install < install/requirements.system
 
  2. Install python dependencies.
 
-    	pip install -r requirements.txt
+    	pip install -r install/requirements.txt
 
  3. Load NLTK corpus
+
+    	python -c "import nltk; nltk.download('wordnet')"
+
+ 4. Install Stanford parser
+
+ 	Download the zip file from http://nlp.stanford.edu/software/lex-parser.shtml. 
+ 	Extract into ../FeatureWorker/Tools/StanfordParser/. Move 
+ 	../FeatureWorker/Tools/StanfordParser/oneline.sh into the folder you extracted:
+ 	../FeatureWorker/Tools/StanfordParser/stanford-parser-full*/.
+    
+ 5. Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)
+
+ 	Download the tgz file (for version 0.3) from http://www.cs.cmu.edu/~ark/TweetNLP/.
+ 	Extract this file into ../FeatureWorker/Tools/TwitterTagger/.
+
+ 6. (Optional) Install the IBM Wordcloud jar file. 
+
+ 	The default wordcloud module is installed in Step 2 via pip. This can be changed 
+ 	to the IBM wordcloud module which produces nicer wordclouds. To do this:
+ 	
+ 	 a.	You must sign up for a IBM DeveloperWorks account and download
+ 		ibm-word-cloud.jar. Place this file into ../FeatureWorker/lib/. 
+
+ 	 b.	Change line number 108 in ../FeatureWorker/lib/wordcloud.py from
+ 			wordcloud_algorithm='amueller'
+ 		to
+ 		    wordcloud_algorithm='ibm'
+
+SETUP (OSX)
+=====
+ Feature Worker has been tested on OSX 10.11.
+
+ 1. Install pip.
+
+ 		sudo easy_install pip
+
+ 2. Install brew. See www.brew.sh for information.
+
+
+ 3. Install mysql.
+
+    	brew install $(<install/requirementsOSX.system)
+
+ 4. Install python dependencies. Note that there is an issue when running this 
+ 	on OSX El Capitan which can be fixed by adding '--ignore-installed six' to the
+ 	end of the following command. This issue does not seem to be an issue if 
+ 	anaconda is installed.
+
+    	pip install -r install/requirementsOSX.txt
+
+ 5. Load NLTK corpus
 
     	python -c "import nltk; nltk.download('wordnet')"
 

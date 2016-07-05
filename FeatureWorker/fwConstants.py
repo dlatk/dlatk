@@ -27,6 +27,7 @@ PROGRESS_AFTER_ROWS = 5000 #the number of rows to process between each progress 
 FEATURE_TABLE_PREFIX = 'feats_'
 MYSQL_ERROR_SLEEP = 4 #number of seconds to wait before trying a query again (incase there was a server restart
 MYSQL_BATCH_INSERT_SIZE = 10000 # how many rows are inserted into mysql at a time
+MYSQL_HOST = '127.0.0.1'
 VARCHAR_WORD_LENGTH = 28 #length to allocate var chars per words
 VARCHAR_WORD_LENGTH = 36 #length to allocate var chars per words
 LOWERCASE_ONLY = 1#if the db is case insensitive, set to 1

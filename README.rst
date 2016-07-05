@@ -62,7 +62,7 @@ SETUP (OSX)
  2. Install brew. See www.brew.sh for information.
 
 
- 3. Install mysql.
+ 3. Install dependencies with brew. WARNING: This will install MySQL on your computer.
 
     	brew install $(<install/requirementsOSX.system)
 
@@ -106,7 +106,7 @@ MYSQL CONFIGURATION
 ==============
 
  1. Feature Worker is highly dependent on MySQL. You must have this installed (see Step
-	1 in SETUP). 
+	1 in SETUP (Linux) or Step 3 in SETUP (OSX)). 
 
  2. Any calls to fwInterface.py will open MySQL. With your database any text data 
  	must have two columns:

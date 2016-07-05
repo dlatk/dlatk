@@ -6,7 +6,7 @@ pd.set_option('display.max_colwidth',100)
 
 import gzip
 import json
-import argparse
+
 import sys
 
 from unidecode import unidecode
@@ -75,53 +75,53 @@ if __name__ == "__main__":
     parser.add_argument('--glob', dest='fileglob', type=str, default='*.gz')
     parser.add_argument('-d', '--database', dest='database', type=str, default='ws16pcrut')
 
-args = parser.parse_args()
+    args = parser.parse_args()
 
 
-jsondir = args.jsondir
+    jsondir = args.jsondir
 
-myDB = URL(drivername='mysql', database=args.database, query={ 'read_default_file' : '~/.my.cnf' })
-engine = create_engine(name_or_url=myDB, encoding="utf-8")
+    myDB = URL(drivername='mysql', database=args.database, query={ 'read_default_file' : '~/.my.cnf' })
+    engine = create_engine(name_or_url=myDB, encoding="utf-8")
 
-files = glob(os.path.join(jsondir,args.fileglob))
+    files = glob(os.path.join(jsondir,args.fileglob))
 
-sqltable = os.path.split(jsondir)[-1]
+    sqltable = os.path.split(jsondir)[-1]
 
-# i = 0
-# f = files[0]
+    # i = 0
+    # f = files[0]
 
-# print f
+    # print f
 
-# df = gzJsonFileToDf(f)
-# df = unpackJsonCols(df)
-# df = stringifyDfListCols(df)
-# df = unidecodeDf(df)
-
-
-sqldtypes = {u'created_at':mysql.DATETIME, u'message_id':mysql.BIGINT(20),u'message':mysql.TEXT,u'from_id':mysql.VARCHAR(20)}
+    # df = gzJsonFileToDf(f)
+    # df = unpackJsonCols(df)
+    # df = stringifyDfListCols(df)
+    # df = unidecodeDf(df)
 
 
+    sqldtypes = {u'created_at':mysql.DATETIME, u'message_id':mysql.BIGINT(20),u'message':mysql.TEXT,u'from_id':mysql.VARCHAR(20)}
 
-for i,f in enumerate(files):
-    print f
-    username = os.path.basename(f).split('.')[0]
-    tdf = gzJsonFileToDf(f)
-    tdf = unpackJsonCols(tdf)
-    tdf = tdf.loc[:,[u'created_at', u'id',u'text',u'user__screen_name']]
-    tdf['created_at'] = pd.to_datetime(tdf['created_at'])
-    tdf['user__screen_name'] = username
-    tdf.columns = [u'created_at', u'message_id',u'message',u'from_id']
-    tdf = stringifyDfListCols(tdf)
-    tdf = unidecodeDf(tdf)
-    tdf = tdf.set_index(['message_id','from_id'])
-    #df = df.append(tdf)
-    
-    if i ==0:
-        existsBeh = 'replace'
-    else:
-        existsBeh = 'append'
 
-    tdf.to_sql(sqltable, engine, if_exists=existsBeh, chunksize=1000, dtype=sqldtypes)
+
+    for i,f in enumerate(files):
+        print f
+        username = os.path.basename(f).split('.')[0]
+        tdf = gzJsonFileToDf(f)
+        tdf = unpackJsonCols(tdf)
+        tdf = tdf.loc[:,[u'created_at', u'id',u'text',u'user__screen_name']]
+        tdf['created_at'] = pd.to_datetime(tdf['created_at'])
+        tdf['user__screen_name'] = username
+        tdf.columns = [u'created_at', u'message_id',u'message',u'from_id']
+        tdf = stringifyDfListCols(tdf)
+        tdf = unidecodeDf(tdf)
+        tdf = tdf.set_index(['message_id','from_id'])
+        #df = df.append(tdf)
+        
+        if i ==0:
+            existsBeh = 'replace'
+        else:
+            existsBeh = 'append'
+
+        tdf.to_sql(sqltable, engine, if_exists=existsBeh, chunksize=1000, dtype=sqldtypes)
 
 
 

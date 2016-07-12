@@ -682,6 +682,10 @@ def main(fn_args = None):
         args = parser.parse_args(remaining_argv)
 
     
+    ##Warnings
+    if not args.bonferroni:
+      print "--no_bonf has been depricated. Default p correction method is now Benjamini, Hochberg. Please use --no_correction instead of --no_bonf."
+      sys.exit(1)
 
 
     ##NON-Specified Defaults:
@@ -728,10 +732,7 @@ def main(fn_args = None):
         else:
             args.encoding = DEF_ENCODING
 
-    ##Warnings
-    if not args.bonferroni:
-      print "--no_bonf has been depricated. Default p correction method is now Benjamini, Hochberg. Please use --no_correction instead of --no_bonf."
-      sys.exit(1)
+
 
 
     # DEF_LEXICON_DB = args.lexicondb

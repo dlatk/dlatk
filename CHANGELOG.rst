@@ -5,7 +5,7 @@ Changelog
 ------------------
   - New feature: install notes for OSX
   - Bug fix: using multiple feature tables with --to_file
-  - Default MySQL host changed from 'localhost' to 127.0.0.1
+  - Improving feature: Default MySQL host changed from 'localhost' to 127.0.0.1
 
 0.6.0 (2016-06-15)
 ------------------

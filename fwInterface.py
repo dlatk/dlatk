@@ -681,16 +681,7 @@ def main(fn_args = None):
     else:
         args = parser.parse_args(remaining_argv)
 
-    if not args.bonferroni:
-      print "--no_bonf has been depricated. Default p correction method is now Benjamini, Hochberg. Please use --no_correction instead of --no_bonf."
-      sys.exit(1)
-
-    # set default encodings if --encoding flag was not present
-    if not args.encoding:
-        if not args.useunicode:
-            args.encoding = 'latin1'
-        else:
-            args.encoding = DEF_ENCODING
+    
 
 
     ##NON-Specified Defaults:
@@ -720,6 +711,28 @@ def main(fn_args = None):
 
     if args.weightedeval:
         args.outcomefields.append(args.weightedeval)
+
+    if args.makewordclouds:
+        if not args.tagcloud:
+            print "WARNING: --make_wordclouds used without --tagcloud, setting --tagcloud to True"
+            args.tagcloud = True
+
+    if args.maketopicwordclouds:
+        if not args.topictc and not args.corptopictc:
+            print "WARNING: --make_topic_wordcloud used without --topic_tagcloud or --corp_topic_tagcloud, setting --topic_tagcloud to True"
+            args.topictc = True
+
+    if not args.encoding:
+        if not args.useunicode:
+            args.encoding = 'latin1'
+        else:
+            args.encoding = DEF_ENCODING
+
+    ##Warnings
+    if not args.bonferroni:
+      print "--no_bonf has been depricated. Default p correction method is now Benjamini, Hochberg. Please use --no_correction instead of --no_bonf."
+      sys.exit(1)
+
 
     # DEF_LEXICON_DB = args.lexicondb
     FeatureWorker.lexicon_db = args.lexicondb
@@ -1709,7 +1722,7 @@ def main(fn_args = None):
         if (args.outputname): init_file.write("outputname = " + str(args.outputname)+"\n")
         if (args.groupfreqthresh and args.groupfreqthresh != int(DEF_GROUP_FREQ_THRESHOLD)): init_file.write("groupfreqthresh = " + str(args.groupfreqthresh)+"\n")
         if (args.lextable): init_file.write("lextable = " + str(args.lextable)+"\n")
-        if (args.p_correction_method): init_file.write("p_correction_method = " + str(args.p_correction_method)+"\n")
+        if (args.p_correction_method and args.p_correction_method != DEF_P_CORR): init_file.write("p_correction_method = " + str(args.p_correction_method)+"\n")
         if (args.tagcloudcolorscheme and args.tagcloudcolorscheme != 'multi'): init_file.write("tagcloudcolorscheme = " + str(args.tagcloudcolorscheme)+"\n")
         if (args.maxP and args.maxP != float(DEF_P)): init_file.write("maxP = " + str(args.maxP)+"\n")
         

@@ -77,19 +77,19 @@ SETUP (OSX)
 
     	python -c "import nltk; nltk.download('wordnet')"
 
- 4. Install Stanford parser
+ 5. Install Stanford parser
 
  	Download the zip file from http://nlp.stanford.edu/software/lex-parser.shtml. 
  	Extract into ../FeatureWorker/Tools/StanfordParser/. Move 
  	../FeatureWorker/Tools/StanfordParser/oneline.sh into the folder you extracted:
  	../FeatureWorker/Tools/StanfordParser/stanford-parser-full*/.
     
- 5. Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)
+ 6. Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)
 
  	Download the tgz file (for version 0.3) from http://www.cs.cmu.edu/~ark/TweetNLP/.
  	Extract this file into ../FeatureWorker/Tools/TwitterTagger/.
 
- 6. (Optional) Install the IBM Wordcloud jar file. 
+ 7. (Optional) Install the IBM Wordcloud jar file. 
 
  	The default wordcloud module is installed in Step 2 via pip. This can be changed 
  	to the IBM wordcloud module which produces nicer wordclouds. To do this:

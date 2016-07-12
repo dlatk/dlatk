@@ -31,7 +31,7 @@ VARCHAR_WORD_LENGTH = 28 #length to allocate var chars per words
 VARCHAR_WORD_LENGTH = 36 #length to allocate var chars per words
 LOWERCASE_ONLY = 1#if the db is case insensitive, set to 1
 # MAX_TO_DISABLE_KEYS = 300000 #number of groups * n must be less than this to disable keys
-MAX_TO_DISABLE_KEYS = 50000 #number of groups * n must be less than this to disable keys
+MAX_TO_DISABLE_KEYS = 100000 #number of groups * n must be less than this to disable keys
 MAX_SQL_PRINT_CHARS = 256
 
 ##Corpus Settings:

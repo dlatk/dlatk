@@ -391,7 +391,7 @@ def main(fn_args = None):
                        help='Table(s) containing feature information to be adapted') # added by Youngseo
     group.add_argument('--adapt_control_names', metavar='COLUMN', dest='adaptcolumns', type=str, nargs='+', default=None,
                         help='Controls to be used for adaptation.') # added by Youngseo
-    group.add_argument('--model', type=str, metavar='name', dest='model', default=DEF_MODEL,
+    group.add_argument('--model', type=str, metavar='name', dest='model', default=getInitVar('model', conf_parser, DEF_MODEL),
                        help='Model to use when predicting: svc, linear-svc, ridge, linear.')
     group.add_argument('--combined_models', type=str, nargs='+', metavar='name', dest='combmodels', default=DEF_COMB_MODELS,
                        help='Model to use when predicting: svc, linear-svc, ridge, linear.')
@@ -415,9 +415,9 @@ def main(fn_args = None):
                        help='Column to weight the evaluation.')
     group.add_argument('--no_standardize', action='store_false', dest='standardize', default=True,
                        help='turn off standardizing variables before prediction')
-    group.add_argument('--feature_selection', '--feat_selection', metavar='NAME', type=str, dest='featureselection', default='',
+    group.add_argument('--feature_selection', '--feat_selection', metavar='NAME', type=str, dest='featureselection', default=getInitVar('featureselection', conf_parser, ''),
                        help='Specify feature selection pipeline in prediction: magic_sauce, univariateFWE, PCA.')
-    group.add_argument('--feature_selection_string', '--feat_selection_string', metavar='NAME', type=str, dest='featureselectionstring', default='',
+    group.add_argument('--feature_selection_string', '--feat_selection_string', metavar='NAME', type=str, dest='featureselectionstring', default=getInitVar('featureselectionstring', conf_parser, ''),
                        help='Specify any feature selection pipeline in prediction.')
 
 
@@ -681,16 +681,12 @@ def main(fn_args = None):
     else:
         args = parser.parse_args(remaining_argv)
 
+    
+    ##Warnings
     if not args.bonferroni:
       print "--no_bonf has been depricated. Default p correction method is now Benjamini, Hochberg. Please use --no_correction instead of --no_bonf."
       sys.exit(1)
 
-    # set default encodings if --encoding flag was not present
-    if not args.encoding:
-        if not args.useunicode:
-            args.encoding = 'latin1'
-        else:
-            args.encoding = DEF_ENCODING
 
     ##NON-Specified Defaults:
 
@@ -719,6 +715,25 @@ def main(fn_args = None):
 
     if args.weightedeval:
         args.outcomefields.append(args.weightedeval)
+
+    if args.makewordclouds:
+        if not args.tagcloud:
+            print "WARNING: --make_wordclouds used without --tagcloud, setting --tagcloud to True"
+            args.tagcloud = True
+
+    if args.maketopicwordclouds:
+        if not args.topictc and not args.corptopictc:
+            print "WARNING: --make_topic_wordcloud used without --topic_tagcloud or --corp_topic_tagcloud, setting --topic_tagcloud to True"
+            args.topictc = True
+
+    if not args.encoding:
+        if not args.useunicode:
+            args.encoding = 'latin1'
+        else:
+            args.encoding = DEF_ENCODING
+
+
+
 
     # DEF_LEXICON_DB = args.lexicondb
     FeatureWorker.lexicon_db = args.lexicondb
@@ -1689,13 +1704,13 @@ def main(fn_args = None):
         
         if (args.corpdb and args.corpdb != DEF_CORPDB): init_file.write("corpdb = " + str(args.corpdb)+"\n") 
         if (args.corptable and args.corptable != DEF_CORPTABLE): init_file.write("corptable = " + str(args.corptable)+"\n") 
-        if (args.correl_field and args.correl_field != DEF_CORREL_FIELD): init_file.write("correl_field = " + str(args.correl_field)+"\n") 
+        if (args.correl_field): init_file.write("correl_field = " + str(args.correl_field)+"\n") 
         if (args.mysql_host and args.mysql_host != "localhost"): init_file.write("mysql_host = " + str(args.mysql_host)+"\n") 
         if (args.message_field and args.message_field != DEF_MESSAGE_FIELD): init_file.write("message_field = " + str(args.message_field)+"\n") 
         if (args.messageid_field and args.messageid_field != DEF_MESSAGEID_FIELD): init_file.write("messageid_field = " + str(args.messageid_field)+"\n") 
         if (args.encoding and args.encoding != DEF_ENCODING): init_file.write("encoding = " + str(args.encoding)+"\n") 
         if (args.lexicondb and args.lexicondb != DEF_LEXICON_DB): init_file.write("lexicondb = " + str(args.lexicondb)+"\n") 
-        if (args.feattable and args.feattable != DEF_FEAT_TABLE): init_file.write("feattable = " + str(args.feattable)+"\n") 
+        if (args.feattable and args.feattable != DEF_FEAT_TABLE): init_file.write("feattable = " + ", ".join([str(out) for out in args.feattable])+"\n")
         if (args.featnames and args.featnames != DEF_FEAT_NAMES): init_file.write("featnames = " + ", ".join([str(feat) for feat in args.featnames])+"\n") 
         if (args.date_field and args.date_field != DEF_DATE_FIELD): init_file.write("date_field = " + str(args.date_field)+"\n")
         if (args.outcometable and args.outcometable != DEF_OUTCOME_TABLE): init_file.write("outcometable = " + str(args.outcometable)+"\n") 
@@ -1708,7 +1723,7 @@ def main(fn_args = None):
         if (args.outputname): init_file.write("outputname = " + str(args.outputname)+"\n")
         if (args.groupfreqthresh and args.groupfreqthresh != int(DEF_GROUP_FREQ_THRESHOLD)): init_file.write("groupfreqthresh = " + str(args.groupfreqthresh)+"\n")
         if (args.lextable): init_file.write("lextable = " + str(args.lextable)+"\n")
-        if (args.p_correction_method): init_file.write("p_correction_method = " + str(args.p_correction_method)+"\n")
+        if (args.p_correction_method and args.p_correction_method != DEF_P_CORR): init_file.write("p_correction_method = " + str(args.p_correction_method)+"\n")
         if (args.tagcloudcolorscheme and args.tagcloudcolorscheme != 'multi'): init_file.write("tagcloudcolorscheme = " + str(args.tagcloudcolorscheme)+"\n")
         if (args.maxP and args.maxP != float(DEF_P)): init_file.write("maxP = " + str(args.maxP)+"\n")
         

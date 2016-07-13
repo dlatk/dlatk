@@ -6,10 +6,9 @@ import csv
 from random import sample
 from math import floor
 
-from FeatureWorker.fwConstants import MAX_ATTEMPTS, MYSQL_ERROR_SLEEP, DEF_ENCODING, MAX_SQL_PRINT_CHARS, DEF_UNICODE_SWITCH, warn
+from FeatureWorker.fwConstants import MAX_ATTEMPTS, MYSQL_ERROR_SLEEP, MYSQL_HOST, DEF_ENCODING, MAX_SQL_PRINT_CHARS, DEF_UNICODE_SWITCH, warn
 
-#DB INFO:                                                                                         
-HOST = 'localhost'
+#DB INFO:
 USER = getpass.getuser()
 PASSWD = ''                             
 
@@ -34,7 +33,7 @@ def executeGetSSCursor(db, sql, warnMsg = True, charset=DEF_ENCODING, use_unicod
                 sys.exit(1)
     return ssCursor
 
-def dbConnect(db, host=HOST, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def dbConnect(db, host=MYSQL_HOST, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
     """ Connects to specified database. Returns tuple of (dbConn, dbCursor, dictCursor) """
     dbConn = None
     attempts = 0;
@@ -358,7 +357,7 @@ def oConnect(db):
     attempts = 0;
     while (1):
         try:
-            dbConn = oursql.connect(host=HOST, user=USER, passwd=PASSWD, db=db)
+            dbConn = oursql.connect(host=MYSQL_HOST, user=USER, passwd=PASSWD, db=db)
             break
         except e:
             attempts += 1

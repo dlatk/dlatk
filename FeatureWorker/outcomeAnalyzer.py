@@ -108,9 +108,10 @@ class OutcomeAnalyzer(OutcomeGetter):
         raise NotImplementedError()
 
 
-    def yieldDataForOneFeatAtATime(self, featGetter, groupThresh = 0, blacklist=None, whitelist=None,outcomeWithOutcome=False, includeFreqs = False, groupWhere = ''):
+    def yieldDataForOneFeatAtATime(self, featGetter, groupThresh = 0, blacklist=None, whitelist=None, outcomeWithOutcome=False, includeFreqs = False, groupWhere = '', outcomeWithOutcomeOnly = False, ):
         """Finds the correlations between features and outcomes"""
-        assert mm.tableExists(self.corpdb, self.dbCursor, featGetter.featureTable, charset=self.encoding, use_unicode=self.use_unicode), 'feature table does not exist (make sure to quote it)'
+        if not outcomeWithOutcomeOnly:
+            assert mm.tableExists(self.corpdb, self.dbCursor, featGetter.featureTable, charset=self.encoding, use_unicode=self.use_unicode), 'feature table does not exist (make sure to quote it)'
         lexicon_count_table = None
         # if 'cat_' in featGetter.featureTable.split('$')[1]:
         #     lexicon_count_table = featGetter.featureTable
@@ -123,20 +124,24 @@ class OutcomeAnalyzer(OutcomeGetter):
         featFreqs = None
         if includeFreqs:
             where = """ group_id in ('%s')""" % ("','".join(str(g) for g in groups))
-            if self.use_unicode:
-                featFreqs = dict([ (unicode(k), v) for k, v in  featGetter.getSumValuesByFeat(where = where) ])
+            if outcomeWithOutcomeOnly:
+                featFreqs = dict([('outcome_'+k, len(v)) for k, v in allOutcomes.iteritems()])
             else:
-                featFreqs = dict([ (k, v) for k, v in  featGetter.getSumValuesByFeat(where = where) ])
-            if outcomeWithOutcome :
-                featFreqs.update(dict([('outcome_'+k, len(v)) for k, v in allOutcomes.iteritems()]))
-                                
+                if self.use_unicode:
+                    featFreqs = dict([ (unicode(k), v) for k, v in  featGetter.getSumValuesByFeat(where = where) ])
+                else:
+                    featFreqs = dict([ (k, v) for k, v in  featGetter.getSumValuesByFeat(where = where) ])
+                if outcomeWithOutcome :
+                    featFreqs.update(dict([('outcome_'+k, len(v)) for k, v in allOutcomes.iteritems()]))
+                
         #run correlations:
         fwc.warn("Yielding data to correlate over %s, adjusting for: %s%s" % (str(self.outcome_value_fields),
                                                                             str(self.outcome_controls),
                                                                             " interaction with "+str(self.outcome_interaction) if self.outcome_interaction else "."))
         if whitelist:
             fwc.warn(" (number of features above may be off due to whitelist)")
-        assert featGetter and featGetter.featureTable, "Correlate requires a specified feature table"
+        if not outcomeWithOutcomeOnly:
+            assert featGetter and featGetter.featureTable, "Correlate requires a specified feature table"
         featsToYield = []
         has_wildcards = False
         if blacklist:
@@ -157,24 +162,24 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         # _warn('these are the features of yield...')
         # _warn(str(featsToYield))
+        if not outcomeWithOutcomeOnly:
+            for (feat, dataDict, numFeats) in featGetter.yieldGroupNormsWithZerosByFeat(groups, feats = featsToYield): #switched to iter
+                #Apply Whitelist, Blacklist
+                if blacklist:
+                    bl = False
+                    bl = feat in blacklist or (has_wildcards and self.wildcardMatch(feat, blacklist))
+                    for term in blacklist:
+                        bl = bl or term in feat
+                    if bl:
+                        continue
+                        
+                if whitelist:
+                    if not (feat in whitelist or (has_wildcards and self.wildcardMatch(feat, whitelist))):
+                        #print "feat did not match: %s" % feat
+                        continue
+                yield (groups, allOutcomes, controls, feat, dataDict, numFeats, featFreqs)
         
-        for (feat, dataDict, numFeats) in featGetter.yieldGroupNormsWithZerosByFeat(groups, feats = featsToYield): #switched to iter
-            #Apply Whitelist, Blacklist
-            if blacklist:
-                bl = False
-                bl = feat in blacklist or (has_wildcards and self.wildcardMatch(feat, blacklist))
-                for term in blacklist:
-                    bl = bl or term in feat
-                if bl:
-                    continue
-                    
-            if whitelist:
-                if not (feat in whitelist or (has_wildcards and self.wildcardMatch(feat, whitelist))):
-                    #print "feat did not match: %s" % feat
-                    continue
-            yield (groups, allOutcomes, controls, feat, dataDict, numFeats, featFreqs)
-        
-        if outcomeWithOutcome :
+        if outcomeWithOutcome or outcomeWithOutcomeOnly:
             numOutcomes = len(allOutcomes)
             for outcomeName,datadict in allOutcomes.iteritems(): 
                 yield (groups, allOutcomes, controls, 'outcome_'+outcomeName, datadict, numOutcomes, featFreqs)
@@ -393,7 +398,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         return correls
 
     def correlateWithFeatures(self, featGetter, groupThresh = 0, spearman = False, bonferroni = False, p_correction_method = 'BH', interaction = None, 
-                              blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False, zscoreRegression = True, logisticReg = False, outputInteraction = False, groupWhere = ''):
+                              blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False, outcomeWithOutcomeOnly = False, zscoreRegression = True, logisticReg = False, outputInteraction = False, groupWhere = ''):
         """Finds the correlations between features and outcomes"""
         
         correls = dict() #dict of outcome=>feature=>(R, p, numGroups, featFreqs)
@@ -403,7 +408,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         #print "WHITELIST: %s" % str(whitelist) #debug
 
         # Yields data for one feature at a time
-        for (groups, allOutcomes, controls, feat, dataDict, numFeats, featFreqs) in self.yieldDataForOneFeatAtATime(featGetter, groupThresh, blacklist, whitelist, outcomeWithOutcome, includeFreqs, groupWhere):
+        for (groups, allOutcomes, controls, feat, dataDict, numFeats, featFreqs) in self.yieldDataForOneFeatAtATime(featGetter, groupThresh, blacklist, whitelist, outcomeWithOutcome, includeFreqs, groupWhere, outcomeWithOutcomeOnly):
             # Looping over outcomes
             for outcomeField, outcomes in allOutcomes.iteritems() :
                 tup = ()

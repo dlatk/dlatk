@@ -561,6 +561,8 @@ def main(fn_args = None):
                        help='use 1gram table to be used as a whitelist when plotting')
     group.add_argument('--outcome_with_outcome', action='store_true', dest='outcomeWithOutcome',
                        help="correlates all outcomes in --outcomes with each other in addition to the features")
+    group.add_argument('--outcome_with_outcome_only', action='store_true', dest='outcomeWithOutcomeOnly',
+                       help="correlates all outcomes in --outcomes with each other in WITHOUT the features")
     group.add_argument('--output_interaction_terms', action='store_true', dest='outputInteractionTerms',
                        help='with this flag, outputs the coefficients from the interaction terms as r values '+
                        'the outcome coefficients. Use with --outcome_interaction FIELD1 [FIELD2 ...]')
@@ -700,6 +702,9 @@ def main(fn_args = None):
     ##Argument adjustments: 
     if not args.valuefunc: args.valuefunc = lambda d: d
     if not args.lexvaluefunc: args.lexvaluefunc = lambda d: d
+
+    if args.outcomeWithOutcomeOnly and not args.feattable:
+        args.groupfreqthresh = 0
 
     if args.p_correction_method.startswith("bonf"):
         args.p_correction_method = ''
@@ -1098,7 +1103,7 @@ def main(fn_args = None):
         if not oa: oa = OA()
         correls = oa.IDPcomparison(fg, args.compTCsample1, args.compTCsample2, groupThresh=args.groupfreqthresh, blacklist=blacklist, whitelist=whitelist)
 
-    if not args.compTagcloud and not args.cca and (args.correlate or args.rmatrix or args.tagcloud or args.topictc or args.corptopictc or args.barplot or args.featcorrelfilter or args.makewordclouds or args.maketopicwordclouds):
+    if not args.compTagcloud and not args.cca and (args.correlate or args.rmatrix or args.tagcloud or args.topictc or args.corptopictc or args.barplot or args.featcorrelfilter or args.makewordclouds or args.maketopicwordclouds or args.outcomeWithOutcomeOnly):
         if not oa: oa = OA()
         if not fg: fg = FG()
         if args.interactionDdla:
@@ -1109,7 +1114,7 @@ def main(fn_args = None):
             print "##### STEP 1: Finding features with significant interaction term"
             correls = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni,
                                                args.p_correction_method, args.outcomeinteraction, blacklist,
-                                               whitelist, args.showfeatfreqs, args.outcomeWithOutcome,
+                                               whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly,
                                                logisticReg=args.logisticReg, outputInteraction=True)
             inter_keys = [i for i in correls.keys() if " * " in i]
             # correls = {outcome1: {feat: (R,p,N,freq)}}
@@ -1140,7 +1145,7 @@ def main(fn_args = None):
                 where = args.interactionDdla+"=1"
                 correls_1 = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni,
                                                      args.p_correction_method, args.outcomeinteraction, blacklist,
-                                                     whitelist, args.showfeatfreqs, args.outcomeWithOutcome,
+                                                     whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly,
                                                      logisticReg=args.logisticReg, groupWhere = where)
                 
                 correls.update({"["+k+"]_1": v for k, v in correls_1.iteritems()})
@@ -1148,7 +1153,7 @@ def main(fn_args = None):
                 where = args.interactionDdla+"=0"
                 correls_0 = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni,
                                                      args.p_correction_method, args.outcomeinteraction, blacklist,
-                                                     whitelist, args.showfeatfreqs, args.outcomeWithOutcome,
+                                                     whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly,
                                                      logisticReg=args.logisticReg, groupWhere = where)
                 correls.update({"["+k+"]_0": v for k, v in correls_0.iteritems()})
 
@@ -1159,7 +1164,7 @@ def main(fn_args = None):
         elif args.auc:        
             correls = oa.aucWithFeatures(fg, groupThresh=args.groupfreqthresh, bonferroni = args.bonferroni, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs,blacklist=blacklist, whitelist=whitelist, bootstrapP = args.bootstrapp) 
         else:
-            correls = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni, args.p_correction_method, args.outcomeinteraction, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, logisticReg=args.logisticReg, outputInteraction=args.outputInteractionTerms)
+            correls = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni, args.p_correction_method, args.outcomeinteraction, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly, logisticReg=args.logisticReg, outputInteraction=args.outputInteractionTerms)
         if args.topicdupefilter:#remove duplicate topics (keeps those correlated more strongly)
             correls = oa.topicDupeFilterCorrels(correls, args.topiclexicon)
 

@@ -251,8 +251,11 @@ class FeatureExtractor(FeatureWorker):
             mm.disableTableKeys(self.corpdb, self.dbCursor, name, charset=self.encoding, use_unicode=self.use_unicode)
         
         #iterate through groups in chunks
-        groupsAtTime = 100 # if messages
-        #groupsAtTime = 10 #if user ids
+        if "mess" in self.correl_field:
+            groupsAtTime = 100 # if messages
+        else:
+            groupsAtTime = 10 # if user ids
+        
         psAtTime = fwc.CORES / 4
         try:
             sp = StanfordParser()

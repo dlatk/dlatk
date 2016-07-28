@@ -358,6 +358,8 @@ def main(fn_args = None):
                        help="Bootstrap p-values (only works for AUCs for now) ")
     group.add_argument("--p_value", type=float, metavar='P', dest="maxP", default = getInitVar('maxP', conf_parser, float(DEF_P)),
                        help="Significance threshold for returning results. Default = 0.05.")
+    group.add_argument("--where", type=str, dest="groupwhere", default = '',
+                       help="Filter groups with sql-style call. ")
 
     group = parser.add_argument_group('Mediation Variables', '')
     group.add_argument('--mediation', action='store_true', dest='mediation', default=False,
@@ -1115,7 +1117,7 @@ def main(fn_args = None):
             correls = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni,
                                                args.p_correction_method, args.outcomeinteraction, blacklist,
                                                whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly,
-                                               logisticReg=args.logisticReg, outputInteraction=True)
+                                               logisticReg=args.logisticReg, outputInteraction=True, groupWhere=args.groupwhere)
             inter_keys = [i for i in correls.keys() if " * " in i]
             # correls = {outcome1: {feat: (R,p,N,freq)}}
             
@@ -1142,7 +1144,10 @@ def main(fn_args = None):
                 args.outcomeinteraction = []
                 args.outcomefields = [out]
                 og = OG()
-                where = args.interactionDdla+"=1"
+                if args.groupwhere:
+                    where = args.interactionDdla + "=1 and WHERE " + args.groupwhere
+                else:
+                    where = args.interactionDdla+"=1"
                 correls_1 = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni,
                                                      args.p_correction_method, args.outcomeinteraction, blacklist,
                                                      whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly,
@@ -1150,7 +1155,10 @@ def main(fn_args = None):
                 
                 correls.update({"["+k+"]_1": v for k, v in correls_1.iteritems()})
                 og = OG()
-                where = args.interactionDdla+"=0"
+                if args.groupwhere:
+                    where = args.interactionDdla + "=0 and WHERE " + args.groupwhere
+                else:
+                    where = args.interactionDdla+"=0"
                 correls_0 = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni,
                                                      args.p_correction_method, args.outcomeinteraction, blacklist,
                                                      whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly,
@@ -1161,10 +1169,10 @@ def main(fn_args = None):
             correls = oa.IDP_correlate(fg, groupThresh=args.groupfreqthresh, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs,blacklist=blacklist, whitelist=whitelist ) 
         elif args.zScoreGroup:
             correls = oa.zScoreGroup(fg, groupThresh=args.groupfreqthresh, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs, blacklist=blacklist, whitelist=whitelist)
-        elif args.auc:        
-            correls = oa.aucWithFeatures(fg, groupThresh=args.groupfreqthresh, bonferroni = args.bonferroni, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs,blacklist=blacklist, whitelist=whitelist, bootstrapP = args.bootstrapp) 
+        elif args.auc:     
+            correls = oa.aucWithFeatures(fg, groupThresh=args.groupfreqthresh, bonferroni = args.bonferroni, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs,blacklist=blacklist, whitelist=whitelist, bootstrapP = args.bootstrapp, groupWhere=args.groupwhere) 
         else:
-            correls = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni, args.p_correction_method, args.outcomeinteraction, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly, logisticReg=args.logisticReg, outputInteraction=args.outputInteractionTerms)
+            correls = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni, args.p_correction_method, args.outcomeinteraction, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly, logisticReg=args.logisticReg, outputInteraction=args.outputInteractionTerms, groupWhere=args.groupwhere)
         if args.topicdupefilter:#remove duplicate topics (keeps those correlated more strongly)
             correls = oa.topicDupeFilterCorrels(correls, args.topiclexicon)
 
@@ -1731,6 +1739,7 @@ def main(fn_args = None):
         if (args.p_correction_method and args.p_correction_method != DEF_P_CORR): init_file.write("p_correction_method = " + str(args.p_correction_method)+"\n")
         if (args.tagcloudcolorscheme and args.tagcloudcolorscheme != 'multi'): init_file.write("tagcloudcolorscheme = " + str(args.tagcloudcolorscheme)+"\n")
         if (args.maxP and args.maxP != float(DEF_P)): init_file.write("maxP = " + str(args.maxP)+"\n")
+        if (args.model and args.model != DEF_MODEL): init_file.write("model = " + str(args.model)+"\n")
         
         init_file.close()                
 

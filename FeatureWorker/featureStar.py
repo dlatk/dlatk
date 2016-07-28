@@ -9,6 +9,8 @@ from featureExtractor import FeatureExtractor
 from featureRefiner import FeatureRefiner
 from outcomeGetter import OutcomeGetter
 from outcomeAnalyzer import OutcomeAnalyzer
+from regressionPredictor import RegressionPredictor
+from classifyPredictor import ClassifyPredictor
 
 class FeatureStar(object):
 	"""
@@ -64,14 +66,20 @@ class FeatureStar(object):
 		featureMappingLex = parser.get('constants','featlabelmaplex') if parser.has_option('constants','featlabelmaplex') else ''
 		output_name = parser.get('constants','outputname') if parser.has_option('constants','outputname') else ''
 		wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
+		model =  parser.get('constants','model') if parser.has_option('constants','model') else fwc.DEF_MODEL
+		feature_selection = parser.get('constants','featureselection') if parser.has_option('constants','featureselection') else ''
+		feature_selection_string = fwc.DEF_FEATURE_SELECTION_MAPPING[parser.get('constants','featureselectionstring')] if parser.has_option('constants','featureselectionstring') else ''
 		if initList:
 			init = initList
 		else:
-			init = [o.strip() for o in parser.get('constants','init').split(",")] if parser.has_option('constants','init') else ['fw', 'fg', 'fe', 'fr', 'og', 'oa']
-		return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, date_field=date_field, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable, init=init)
+			init = [o.strip() for o in parser.get('constants','init').split(",")] if parser.has_option('constants','init') else ['fw', 'fg', 'fe', 'fr', 'og', 'oa', 'rp', 'cp']
+		return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, date_field=date_field, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable, model=model, feature_selection=feature_selection, feature_selection_string = feature_selection_string, init=init)
 	
-	def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host="localhost", message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, use_unicode=fwc.DEF_UNICODE_SWITCH, lexicondb=fwc.DEF_LEXICON_DB, featureTable=fwc.DEF_FEAT_TABLE, featNames=fwc.DEF_FEAT_NAMES, date_field=fwc.DEF_DATE_FIELD, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls = fwc.DEF_OUTCOME_CONTROLS, outcome_interaction = fwc.DEF_OUTCOME_CONTROLS, featureMappingTable='', featureMappingLex='',  output_name='', wordTable=None, init=None):
+	def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host="localhost", message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, use_unicode=fwc.DEF_UNICODE_SWITCH, lexicondb=fwc.DEF_LEXICON_DB, featureTable=fwc.DEF_FEAT_TABLE, featNames=fwc.DEF_FEAT_NAMES, date_field=fwc.DEF_DATE_FIELD, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls = fwc.DEF_OUTCOME_CONTROLS, outcome_interaction = fwc.DEF_OUTCOME_CONTROLS, featureMappingTable='', featureMappingLex='',  output_name='', wordTable=None, model=fwc.DEF_MODEL, feature_selection='', feature_selection_string = '', init=None):
 		
+		if feature_selection_string or feature_selection:
+			RegressionPredictor.featureSelectionString = feature_selection if feature_selection else feature_selection_string
+
 		if init:
 			self.fw = FeatureWorker(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, date_field, wordTable) if 'fw' in init else None
 			self.fg = FeatureGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable) if 'fg' in init else None
@@ -79,6 +87,9 @@ class FeatureStar(object):
 			self.fr = FeatureRefiner(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable) if 'fr' in init else None
 			self.og = OutcomeGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, featureMappingTable, featureMappingLex, wordTable) if 'og' in init else None
 			self.oa = OutcomeAnalyzer(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, featureMappingTable, featureMappingLex, output_name, wordTable) if 'oa' in init else None
+			self.rp = RegressionPredictor(self.og, self.fg, model) if 'rp' in init else None
+			self.cp = ClassifyPredictor(self.og, self.fg, model) if 'cp' in init else None
+
 		else: 
 			self.fw = FeatureWorker(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, date_field, wordTable)
 			self.fg = FeatureGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable)
@@ -86,6 +97,8 @@ class FeatureStar(object):
 			self.fr = FeatureRefiner(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable)
 			self.og = OutcomeGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, featureMappingTable, featureMappingLex, wordTable)
 			self.oa = OutcomeAnalyzer(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, featureMappingTable, featureMappingLex, output_name, wordTable)
+			self.rp = RegressionPredictor(self.og, self.fg, model)
+			self.cp = ClassifyPredictor(self.og, self.fg, model)
 		
 		self.allFW = {
 				"FeatureWorker": self.fw,
@@ -93,7 +106,9 @@ class FeatureStar(object):
 				"FeatureExtractor": self.fe,
 				"FeatureRefiner": self.fr,
 				"OutcomeGetter": self.og,
-				"OutcomeAnalyzer": self.oa
+				"OutcomeAnalyzer": self.oa,
+				"RegressionPredictor": self.rp,
+				"ClassifyPredictor": self.cp,
 			}
 
 	def combineDFs(self, fg=None, og=None, fillNA=True):

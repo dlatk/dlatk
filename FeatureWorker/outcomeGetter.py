@@ -70,7 +70,7 @@ class OutcomeGetter(FeatureWorker):
         self.outcome_controls = outcome_controls
         self.outcome_interaction = outcome_interaction
         self.featureMapping = self.getFeatureMapping(featureMappingTable, featureMappingLex, False)
-        self.oneGroupSetForAllOutcomes = False #whether to use groups in common for all outcomes
+        self.oneGroupSetForAllOutcomes = False # whether to use groups in common for all outcomes
 
     def hasOutcomes(self):
         if len(self.outcome_value_fields) > 0:
@@ -98,7 +98,7 @@ class OutcomeGetter(FeatureWorker):
             
         return feat_to_label
 
-    def createOutcomeTable(self,tablename,dataframe, ifExists='fail'):
+    def createOutcomeTable(self, tablename, dataframe, ifExists='fail'):
         eng = get_db_engine(self.corpdb, self.mysql_host)
         dtype ={}
         if isinstance(dataframe.index[0], str):
@@ -273,15 +273,16 @@ enabled, so the total word count for your groups might be off
             for k in self.outcome_controls + self.outcome_interaction:
                 groups = groups & set(outcomes[k].keys()) #always intersect with controls
             if groupsWhere:
-                outcm = groupsWhere.split('=')[0].strip()
-                val = groupsWhere.split('=')[1].strip()
-                # print "Maarten getGroupsAndOutcomes", [groupsWhere, outcm, val]
-                whereusers = set([i[0] for i in self.getGroupAndOutcomeValues(outcm) if str(i[1]) == val])
+                outcm = groupsWhere.split()[0].strip()
+                # val = groupsWhere.split('=')[1].strip()
+                # # print "Maarten getGroupsAndOutcomes", [groupsWhere, outcm, val]
+                # whereusers = set([i[0] for i in self.getGroupAndOutcomeValues(outcm) if str(i[1]) == val])
+                whereusers = set([i[0] for i in self.getGroupAndOutcomeValues(outcm, where=groupsWhere)])
                 groups = groups & whereusers
 
             if self.oneGroupSetForAllOutcomes:
                 for k in self.outcome_value_fields:
-                    groups = groups & set(outcomes[k].keys()) #only intersect if wanting all the same groups
+                    groups = groups & set(outcomes[k].keys()) # only intersect if wanting all the same groups
             
             #split into outcomes and controls:
             ocs = dict()

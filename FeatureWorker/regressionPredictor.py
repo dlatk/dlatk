@@ -449,12 +449,12 @@ class RegressionPredictor:
         self.multiScalers = None
         self.multiXOn = False #whether multiX was used for training
 
-    def train(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None):
+    def train(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
         """Train Regressors"""
 
         ################
         #1. setup groups
-        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
         if restrictToGroups: #restrict to groups
             rGroups = restrictToGroups
             if isinstance(restrictToGroups, dict):
@@ -524,13 +524,13 @@ class RegressionPredictor:
 
     ##################
     ## Old testing Method (random split rather than cross-val)
-    def test(self, groupFreqThresh = 0, standardize = True, sparse = False, saveModels = False, blacklist = None):
+    def test(self, groupFreqThresh = 0, standardize = True, sparse = False, saveModels = False, blacklist = None, groupsWhere = ''):
         """Tests classifier, by pulling out random testPerc percentage as a test set"""
         
         print
         print "USING BLACKLIST: %s" %str(blacklist)
         #1. get data possible ys (outcomes)
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
         print "[number of groups: %d]" % len(groups)
 
         #2. get data for X:
@@ -580,13 +580,13 @@ class RegressionPredictor:
     #####################################################
     ####### Meain Testing Method ########################
     def testControlCombos(self, groupFreqThresh = 0, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
-                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None, residualizedControls = False):
+                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None, residualizedControls = False, groupsWhere = ''):
         """Tests regressors, by cross-validating over folds with different combinations of controls"""
         
         ###################################
         #1. setup groups for random folds
         if blacklist: print "USING BLACKLIST: %s" %str(blacklist)
-        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
         print "[number of groups: %d (%d Folds)]" % (len(groups), nFolds)
         random.seed(self.randomState)
         groupList = sorted(list(groups), reverse=True)
@@ -881,12 +881,12 @@ class RegressionPredictor:
         print "\n[TEST COMPLETE]\n"
         return scores
 
-    def adjustOutcomesFromControls(self, groupFreqThresh = 0, standardize = True, sparse = False, saveModels = False, allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = True):
+    def adjustOutcomesFromControls(self, groupFreqThresh = 0, standardize = True, sparse = False, saveModels = False, allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = True, groupsWhere = ''):
         """Produces adjusted outcomes given the controls"""
         
         ###################################
         #1. setup groups for random folds
-        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
         print "[number of groups: %d (%d Folds)]" % (len(groups), nFolds)
         random.seed(self.randomState)
         groupList = sorted(list(groups), reverse=True)
@@ -1025,14 +1025,14 @@ class RegressionPredictor:
     #################################################
     #################################################
 
-    def predict(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None):
+    def predict(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
         if not self.multiXOn:
             print "\n!! model trained without multiX, reverting to old predict !!\n"
             return self.old_predict(groupFreqThresh, standardize, sparse, restrictToGroups)
 
         ################
         #1. setup groups
-        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
 
         if restrictToGroups: #restrict to groups
             rGroups = restrictToGroups
@@ -1249,7 +1249,7 @@ class RegressionPredictor:
 
 
 
-    def predictAllToFeatureTable(self, groupFreqThresh = 0, standardize = True, sparse = False, fe = None, name = None, nFolds = 10):
+    def predictAllToFeatureTable(self, groupFreqThresh = 0, standardize = True, sparse = False, fe = None, name = None, nFolds = 10, groupsWhere = ''):
 
         print "\n !! Mostly sure but not completely that this will produce same resutls as combo_test_reg !! \n"
 
@@ -1259,7 +1259,7 @@ class RegressionPredictor:
 
         #1. get all groups
         
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
         
         #split groups into n chunks (same as comboControlTest)
         random.seed(self.randomState)
@@ -1304,13 +1304,13 @@ class RegressionPredictor:
             rows = [(k, v, v) for k, v in preds.iteritems()] #adds group_norm and applies freq filter
             mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
 
-    def predictToFeatureTable(self, groupFreqThresh = 0, standardize = True, sparse = False, fe = None, name = None):
+    def predictToFeatureTable(self, groupFreqThresh = 0, standardize = True, sparse = False, fe = None, name = None, groupsWhere = ''):
         if not fe:
             print "Must provide a feature extractor object"
             sys.exit(0)
 
         # handle large amount of predictions:
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
 
         if len(allOutcomes) == 0:
             print """
@@ -1981,11 +1981,11 @@ class CombinedRegressionPredictor(RegressionPredictor):
         """Trains regression models"""
         raise NotImplementedError
 
-    def test(self, groupFreqThresh = 0, standardize = True, sparse = False, saveModels = False):
+    def test(self, groupFreqThresh = 0, standardize = True, sparse = False, saveModels = False, groupsWhere = ''):
         """Tests combined regression"""
 
         #1. get data possible ys (outcomes)
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
         print "[combined regression: number of groups: %d]" % len(groups)
         
         #2: pick trainModels/traincombined / test split based only on groups:
@@ -2098,12 +2098,12 @@ class ClassifyToRegressionPredictor:
         self.regressionPredictor = RegressionPredictor(og, fg, modelR)
         self.keepClasses = DEF_KEEP_CLASSES
 
-    def train(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None, nFolds = 4, trainRegOnAll = True, classifierAsFeat = True):
+    def train(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None, nFolds = 4, trainRegOnAll = True, classifierAsFeat = True, groupsWhere = ''):
 
         #1. get groups for both:
         print "[ClassifytoRegression: Getting all Groups]"            
-        (classifyGroups, _, _) = self.classifyPredictor.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
-        (regressionGroups, _, _) = self.regressionPredictor.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (classifyGroups, _, _) = self.classifyPredictor.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
+        (regressionGroups, _, _) = self.regressionPredictor.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
         if restrictToGroups:
             classifyGroups = set(classifyGroups) & set(restrictToGroups)
             regressionGroups = set(regressionGroups) & set(restrictToGroups)
@@ -2146,11 +2146,11 @@ class ClassifyToRegressionPredictor:
         print "[DONE TRAINING C2R MODELS]"
         
 
-    def test(self, groupFreqThresh = 0, standardize = True, sparse = False, saveModels = False):
+    def test(self, groupFreqThresh = 0, standardize = True, sparse = False, saveModels = False, groupsWhere = ''):
         #1. get groups for both
         print "[ClassifytoRegression: Getting all Groups]"            
-        (classifyGroups, _, _) = self.classifyPredictor.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
-        (regressionGroups, _, _) = self.regressionPredictor.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (classifyGroups, _, _) = self.classifyPredictor.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
+        (regressionGroups, _, _) = self.regressionPredictor.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
         groups = list(set(classifyGroups) & set(regressionGroups))
         if len(groups) < len(classifyGroups) or len(groups) < len(regressionGroups):
             print >> sys.stderr, "intersecting groups not equal to original sizes. cGroups: %d, rGroups: %d, intersection: %d" % \
@@ -2172,7 +2172,7 @@ class ClassifyToRegressionPredictor:
         """Predicts with the classifier and regressor. zero must be the false prediction from classifier """
         #1. run classifier
         print "[C2R: Predicting with classifier]"
-        cPreds = self.classifyPredictor.predict(groupFreqThresh, standardize, sparse, restrictToGroups = restrictToGroups)
+        cPreds = self.classifyPredictor.predict(groupFreqThresh, standardize, sparse, restrictToGroups = restrictToGroups, groupsWhere = '')
 
         #2. pick groups where classified as keeps
         restrictRegGroups = dict()
@@ -2200,7 +2200,7 @@ class ClassifyToRegressionPredictor:
 
         #5. evaluate
         print "[C2R: Done Predicting. Evaluating Overall]"
-        (groups, outcomes, controls) = self.regressionPredictor.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, outcomes, controls) = self.regressionPredictor.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
         for outcome, yhats in rPreds.iteritems():
             print "\n= %s =\n%s"%(outcome, '-'*(len(outcome)+4))
             ytest, ypred = alignDictsAsy(outcomes[outcome], yhats)

@@ -358,7 +358,7 @@ def main(fn_args = None):
                        help="Bootstrap p-values (only works for AUCs for now) ")
     group.add_argument("--p_value", type=float, metavar='P', dest="maxP", default = getInitVar('maxP', conf_parser, float(DEF_P)),
                        help="Significance threshold for returning results. Default = 0.05.")
-    group.add_argument("--where", type=str, dest="groupwhere", default = '',
+    group.add_argument("--where", type=str, dest="groupswhere", default = '',
                        help="Filter groups with sql-style call. ")
 
     group = parser.add_argument_group('Mediation Variables', '')
@@ -1117,7 +1117,7 @@ def main(fn_args = None):
             correls = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni,
                                                args.p_correction_method, args.outcomeinteraction, blacklist,
                                                whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly,
-                                               logisticReg=args.logisticReg, outputInteraction=True, groupWhere=args.groupwhere)
+                                               logisticReg=args.logisticReg, outputInteraction=True, groupsWhere=args.groupswhere)
             inter_keys = [i for i in correls.keys() if " * " in i]
             # correls = {outcome1: {feat: (R,p,N,freq)}}
             
@@ -1144,25 +1144,25 @@ def main(fn_args = None):
                 args.outcomeinteraction = []
                 args.outcomefields = [out]
                 og = OG()
-                if args.groupwhere:
-                    where = args.interactionDdla + "=1 and WHERE " + args.groupwhere
+                if args.groupswhere:
+                    where = args.interactionDdla + "=1 and WHERE " + args.groupswhere
                 else:
                     where = args.interactionDdla+"=1"
                 correls_1 = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni,
                                                      args.p_correction_method, args.outcomeinteraction, blacklist,
                                                      whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly,
-                                                     logisticReg=args.logisticReg, groupWhere = where)
+                                                     logisticReg=args.logisticReg, groupsWhere = where)
                 
                 correls.update({"["+k+"]_1": v for k, v in correls_1.iteritems()})
                 og = OG()
-                if args.groupwhere:
-                    where = args.interactionDdla + "=0 and WHERE " + args.groupwhere
+                if args.groupswhere:
+                    where = args.interactionDdla + "=0 and WHERE " + args.groupswhere
                 else:
                     where = args.interactionDdla+"=0"
                 correls_0 = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni,
                                                      args.p_correction_method, args.outcomeinteraction, blacklist,
                                                      whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly,
-                                                     logisticReg=args.logisticReg, groupWhere = where)
+                                                     logisticReg=args.logisticReg, groupsWhere = where)
                 correls.update({"["+k+"]_0": v for k, v in correls_0.iteritems()})
 
         elif args.IDP:        
@@ -1170,9 +1170,9 @@ def main(fn_args = None):
         elif args.zScoreGroup:
             correls = oa.zScoreGroup(fg, groupThresh=args.groupfreqthresh, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs, blacklist=blacklist, whitelist=whitelist)
         elif args.auc:     
-            correls = oa.aucWithFeatures(fg, groupThresh=args.groupfreqthresh, bonferroni = args.bonferroni, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs,blacklist=blacklist, whitelist=whitelist, bootstrapP = args.bootstrapp, groupWhere=args.groupwhere) 
+            correls = oa.aucWithFeatures(fg, groupThresh=args.groupfreqthresh, bonferroni = args.bonferroni, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs,blacklist=blacklist, whitelist=whitelist, bootstrapP = args.bootstrapp, groupsWhere=args.groupswhere) 
         else:
-            correls = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni, args.p_correction_method, args.outcomeinteraction, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly, logisticReg=args.logisticReg, outputInteraction=args.outputInteractionTerms, groupWhere=args.groupwhere)
+            correls = oa.correlateWithFeatures(fg, args.groupfreqthresh, args.spearman, args.bonferroni, args.p_correction_method, args.outcomeinteraction, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly, logisticReg=args.logisticReg, outputInteraction=args.outputInteractionTerms, groupsWhere=args.groupswhere)
         if args.topicdupefilter:#remove duplicate topics (keeps those correlated more strongly)
             correls = oa.topicDupeFilterCorrels(correls, args.topiclexicon)
 
@@ -1460,10 +1460,10 @@ def main(fn_args = None):
         print "WARNING: using an non 16to16 feature table"
         
     if args.trainregression:
-        rp.train(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse,  standardize = args.standardize)
+        rp.train(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere)
 
     if args.testregression:
-        rp.test(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, blacklist = blacklist,  standardize = args.standardize)
+        rp.test(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, blacklist = blacklist,  standardize = args.standardize, groupsWhere = args.groupswhere)
 
     comboScores = None
     if args.combotestregression or args.controladjustreg:
@@ -1476,11 +1476,11 @@ def main(fn_args = None):
             comboScores = rp.testControlCombos(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, blacklist = blacklist, 
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes, 
                                            nFolds = args.folds, savePredictions = args.pred_csv, weightedEvalOutcome = args.weightedeval,
-                                           standardize = args.standardize, residualizedControls = args.res_controls)
+                                           standardize = args.standardize, residualizedControls = args.res_controls, groupsWhere = args.groupswhere)
         elif args.controladjustreg:
             comboScores = rp.adjustOutcomesFromControls(groupFreqThresh = args.groupfreqthresh, standardize = args.standardize, sparse = args.sparse, 
                                                         allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes, 
-                                                        nFolds = args.folds, savePredictions = args.pred_csv)
+                                                        nFolds = args.folds, savePredictions = args.pred_csv, groupsWhere = args.groupswhere)
         if args.pred_csv:
             outputStream = sys.stdout
             if args.outputname:
@@ -1503,14 +1503,14 @@ def main(fn_args = None):
 
 
     if args.testcombregression:
-        crp.test(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, standardize = args.standardize)
+        crp.test(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere)
 
     if args.predictregression:
-        rp.predict(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, standardize = args.standardize)
+        rp.predict(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere)
 
     if args.predictrtofeats and rp:
         if not fe: fe = FE()
-        rp.predictToFeatureTable(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, fe = fe, name = args.predictrtofeats, standardize = args.standardize)
+        rp.predictToFeatureTable(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, fe = fe, name = args.predictrtofeats, standardize = args.standardize, groupsWhere = args.groupswhere)
     
     if args.predictRtoOutcomeTable:
         if not fgs: fgs = FGs()
@@ -1520,7 +1520,7 @@ def main(fn_args = None):
     if args.predictalltofeats and rp:
         if not fe: fe = FE()
         rp.predictAllToFeatureTable(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, fe = fe, name = args.predictalltofeats, \
-                                        standardize = args.standardize, nFolds = args.folds)
+                                        standardize = args.standardize, nFolds = args.folds, groupsWhere = args.groupswhere)
         
     if args.savemodels and rp:
         rp.save(args.picklefile)
@@ -1539,16 +1539,16 @@ def main(fn_args = None):
         cp.load(args.picklefile)
 
     if args.trainclassifiers:
-        cp.train(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, standardize = args.standardize)
+        cp.train(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere)
 
     if args.testclassifiers:
-        cp.test(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, standardize = args.standardize)
+        cp.test(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere)
 
     comboScores = None
     if args.combotestclassifiers:
         comboScores = cp.testControlCombos(groupFreqThresh = args.groupfreqthresh, standardize = args.standardize, sparse = args.sparse, blacklist = blacklist, 
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes, 
-                                           nFolds = args.folds, savePredictions = args.pred_csv, weightedEvalOutcome = args.weightedeval, adaptTables = args.adapttable, adaptColumns = args.adaptcolumns) #edited by Youngseo
+                                           nFolds = args.folds, savePredictions = args.pred_csv, weightedEvalOutcome = args.weightedeval, adaptTables = args.adapttable, adaptColumns = args.adaptcolumns, groupsWhere = args.groupswhere) #edited by Youngseo
         if args.csv:
             outputStream = sys.stdout
             if args.outputname:
@@ -1567,14 +1567,14 @@ def main(fn_args = None):
             outputStream.close()
 
     if args.predictclassifiers:
-        cp.predict(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse)
+        cp.predict(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, groupsWhere = args.groupswhere)
 
     if args.roc:
-        cp.roc(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, output_name = args.outputname if args.outputname else "ROC",  standardize = args.standardize)
+        cp.roc(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, output_name = args.outputname if args.outputname else "ROC",  standardize = args.standardize, groupsWhere = args.groupswhere)
 
     if args.predictctofeats and cp:
         if not fe: fe = FE()
-        cp.predictToFeatureTable(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, fe = fe, name = args.predictctofeats)
+        cp.predictToFeatureTable(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, fe = fe, name = args.predictctofeats, groupsWhere = args.groupswhere)
 
     if args.predictCtoOutcomeTable:
         if not fgs: fgs = FGs()
@@ -1584,7 +1584,7 @@ def main(fn_args = None):
     if args.predictalltofeats and cp:
         if not fe: fe = FE()
         cp.predictAllToFeatureTable(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, fe = fe, name = args.predictalltofeats, \
-                                        standardize = args.standardize, nFolds = args.folds)
+                                        standardize = args.standardize, nFolds = args.folds, groupsWhere = args.groupswhere)
 
     c2rp = None
     if args.trainclasstoreg or args.testclasstoreg or args.predictclasstoreg:
@@ -1593,13 +1593,13 @@ def main(fn_args = None):
         c2rp = ClassifyToRegressionPredictor(og, fg, modelR = args.model) #todo change to a method variables (like og...etc..)
 
     if args.trainclasstoreg:
-        c2rp.train(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse)
+        c2rp.train(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, groupsWhere = args.groupswhere)
 
     if args.testclasstoreg:
-        c2rp.test(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse)
+        c2rp.test(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, groupsWhere = args.groupswhere)
 
     if args.predictclasstoreg:
-        c2rp.predict(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse)
+        c2rp.predict(groupFreqThresh = args.groupfreqthresh, sparse = args.sparse, groupsWhere = args.groupswhere)
 
     if args.savemodels and cp:
         cp.save(args.picklefile)

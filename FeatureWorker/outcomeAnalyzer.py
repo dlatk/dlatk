@@ -108,7 +108,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         raise NotImplementedError()
 
 
-    def yieldDataForOneFeatAtATime(self, featGetter, groupThresh = 0, blacklist=None, whitelist=None, outcomeWithOutcome=False, includeFreqs = False, groupWhere = '', outcomeWithOutcomeOnly = False, ):
+    def yieldDataForOneFeatAtATime(self, featGetter, groupThresh = 0, blacklist=None, whitelist=None, outcomeWithOutcome=False, includeFreqs = False, groupsWhere = '', outcomeWithOutcomeOnly = False, ):
         """Finds the correlations between features and outcomes"""
         if not outcomeWithOutcomeOnly:
             assert mm.tableExists(self.corpdb, self.dbCursor, featGetter.featureTable, charset=self.encoding, use_unicode=self.use_unicode), 'feature table does not exist (make sure to quote it)'
@@ -118,7 +118,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         # LAD TODO NOTE: should implement the whitelist above so it doesn't take so long to select the groups and outcomes...
 
         #get outcome data to work with
-        (groups, allOutcomes, controls) = self.getGroupsAndOutcomes(groupThresh, lexicon_count_table, groupWhere)
+        (groups, allOutcomes, controls) = self.getGroupsAndOutcomes(groupThresh, lexicon_count_table, groupsWhere)
         
         assert len(groups) > 0, "Something is wrong, there aren't any groups left. Maybe the group_freq_thresh is too high, maybe your group field columns are different types"
         featFreqs = None
@@ -398,7 +398,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         return correls
 
     def correlateWithFeatures(self, featGetter, groupThresh = 0, spearman = False, bonferroni = False, p_correction_method = 'BH', interaction = None, 
-                              blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False, outcomeWithOutcomeOnly = False, zscoreRegression = True, logisticReg = False, outputInteraction = False, groupWhere = ''):
+                              blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False, outcomeWithOutcomeOnly = False, zscoreRegression = True, logisticReg = False, outputInteraction = False, groupsWhere = ''):
         """Finds the correlations between features and outcomes"""
         
         correls = dict() #dict of outcome=>feature=>(R, p, numGroups, featFreqs)
@@ -408,7 +408,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         #print "WHITELIST: %s" % str(whitelist) #debug
 
         # Yields data for one feature at a time
-        for (groups, allOutcomes, controls, feat, dataDict, numFeats, featFreqs) in self.yieldDataForOneFeatAtATime(featGetter, groupThresh, blacklist, whitelist, outcomeWithOutcome, includeFreqs, groupWhere, outcomeWithOutcomeOnly):
+        for (groups, allOutcomes, controls, feat, dataDict, numFeats, featFreqs) in self.yieldDataForOneFeatAtATime(featGetter, groupThresh, blacklist, whitelist, outcomeWithOutcome, includeFreqs, groupsWhere, outcomeWithOutcomeOnly):
             # Looping over outcomes
             for outcomeField, outcomes in allOutcomes.iteritems() :
                 tup = ()
@@ -562,7 +562,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         return correls
 
     def aucWithFeatures(self, featGetter, groupThresh = 0, bonferroni = False, p_correction_method = 'BH', interaction = None, bootstrapP = None, blacklist=None, 
-                        whitelist=None, includeFreqs = False, outcomeWithOutcome = False, zscoreRegression = True, outputInteraction = False, groupWhere = ''):
+                        whitelist=None, includeFreqs = False, outcomeWithOutcome = False, zscoreRegression = True, outputInteraction = False, groupsWhere = ''):
         """Finds the auc between features and dichotamous outcomes"""
         
         aucs = dict() #dict of outcome=>feature=>(auc, p, numGroups, featFreqs)
@@ -573,7 +573,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         #print "WHITELIST: %s" % str(whitelist) #debug
 
         # Yields data for one feature at a time
-        for (groups, allOutcomes, controls, feat, dataDict, numFeats, featFreqs) in self.yieldDataForOneFeatAtATime(featGetter, groupThresh, blacklist, whitelist, outcomeWithOutcome, includeFreqs, groupWhere):
+        for (groups, allOutcomes, controls, feat, dataDict, numFeats, featFreqs) in self.yieldDataForOneFeatAtATime(featGetter, groupThresh, blacklist, whitelist, outcomeWithOutcome, includeFreqs, groupsWhere):
             # Looping over outcomes
             featNum += 1
             for outcomeField, outcomes in allOutcomes.iteritems() :

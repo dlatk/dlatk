@@ -340,12 +340,12 @@ class ClassifyPredictor:
         self.multiScalers = None
         self.multiXOn = False #whether multiX was used for training
 
-    def train(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None):
+    def train(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
         """Tests classifier, by pulling out random testPerc percentage as a test set"""
         
         ################
         #1. setup groups
-        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
         if restrictToGroups: #restrict to groups
             rGroups = restrictToGroups
             if isinstance(restrictToGroups, dict):
@@ -414,13 +414,13 @@ class ClassifyPredictor:
         print "\n[TRAINING COMPLETE]\n"
         self.featureNamesList = featureNamesList
 
-    def test(self, groupFreqThresh = 0, standardize = True, sparse = False, saveModels = False, blacklist = None):
+    def test(self, groupFreqThresh = 0, standardize = True, sparse = False, saveModels = False, blacklist = None, groupsWhere = ''):
         """Tests classifier, by pulling out random testPerc percentage as a test set"""
         
         print
         print "USING BLACKLIST: %s" %str(blacklist)
         #1. get data possible ys (outcomes)
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
         print "[number of groups: %d]" % len(groups)
 
         #2. get data for X:
@@ -470,13 +470,13 @@ class ClassifyPredictor:
     #####################################################
     ######## Main Testing Method ########################
     def testControlCombos(self, groupFreqThresh = 0, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
-                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None, adaptTables=None, adaptColumns=None):
+                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None, adaptTables=None, adaptColumns=None, groupsWhere = ''):
         """Tests classifier, by pulling out random testPerc percentage as a test set""" # edited by Youngseo
         
         ###################################
         #1. setup groups for random folds
         if blacklist: print "USING BLACKLIST: %s" %str(blacklist)
-        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
         print "[number of groups: %d (%d Folds)]" % (len(groups), nFolds)
         random.seed(self.randomState)
         groupList = list(groups)
@@ -697,7 +697,7 @@ class ClassifyPredictor:
     #################################################
     #################################################
 
-    def predict(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None):
+    def predict(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
         
         if not self.multiXOn:
             print "model trained without multiX, reverting to old predict"
@@ -705,7 +705,7 @@ class ClassifyPredictor:
 
         ################
         #1. setup groups
-        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
         if restrictToGroups: #restrict to groups
             rGroups = restrictToGroups
             if isinstance(restrictToGroups, dict):
@@ -881,14 +881,14 @@ class ClassifyPredictor:
         return predictions
 
 
-    def predictAllToFeatureTable(self, groupFreqThresh = 0, standardize = True, sparse = False, fe = None, name = None, nFolds = 10):
+    def predictAllToFeatureTable(self, groupFreqThresh = 0, standardize = True, sparse = False, fe = None, name = None, nFolds = 10, groupsWhere = ''):
         if not fe:
             print "Must provide a feature extractor object"
             sys.exit(0)
 
         #1. get all groups
         
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
         #split groups into 10 chunks
         groups = list(groups)
         random.seed(self.randomState)
@@ -973,13 +973,13 @@ class ClassifyPredictor:
         # 4: use self.outcomeGetter.createOutcomeTable(tableName, dataFrame)
         self.outcomeGetter.createOutcomeTable(name, predDF, 'replace')
 
-    def predictToFeatureTable(self, groupFreqThresh = 0, standardize = True, sparse = False, fe = None, name = None):
+    def predictToFeatureTable(self, groupFreqThresh = 0, standardize = True, sparse = False, fe = None, name = None, groupsWhere = ''):
         if not fe:
             print "Must provide a feature extractor object"
             sys.exit(0)
 
         #handle large amount of predictions:
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
         groups = list(groups)
         chunks = [groups]
         #split groups into chunks
@@ -1336,12 +1336,12 @@ class ClassifyPredictor:
 
         return classifier.predict(X)
 
-    def roc(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None, output_name = None):
+    def roc(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None, output_name = None, groupsWhere = ''):
         """Tests classifier, by pulling out random testPerc percentage as a test set"""
         
         ################
         #1. setup groups
-        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
         if restrictToGroups: #restrict to groups
             rGroups = restrictToGroups
             if isinstance(restrictToGroups, dict):

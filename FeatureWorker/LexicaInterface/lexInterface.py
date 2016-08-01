@@ -19,7 +19,11 @@ import MySQLdb
 import random
 
 from optparse import OptionParser, OptionGroup
-from nltk.corpus import wordnet as wn
+try:
+    from nltk.corpus import wordnet as wn
+except ImportError:
+    print 'LexInterface:warning: nltk.corpus module not imported.'
+
 
 #MySQLdb.paramstyle 
   	
@@ -348,12 +352,13 @@ def abstractDBConnect(host, user, db):
     return (dbConn, dbCursor)
 
 
-POSs = {wn.NOUN: 'noun', wn.VERB: 'verb', wn.ADJ: 'adjective', wn.ADV: 'adverb'}
+
 def interactiveGetSenses(cat, word):
     os.system('clear')
     print "\n[%s] \033[92m%s\033[0m\n%s" %(PERMA_CODES[cat].title(), word, '='*(len(word)+20))
     print "\033[90m%s\033[0m\n"%PERMA_LONG_DEF[cat]
     currentSenses = set()
+    POSs = {wn.NOUN: 'noun', wn.VERB: 'verb', wn.ADJ: 'adjective', wn.ADV: 'adverb'}
     for pos, posName in POSs.iteritems():
         synsets = wn.synsets(word, pos)
         if synsets:

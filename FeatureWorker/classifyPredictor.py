@@ -58,7 +58,8 @@ from scipy.stats import zscore
 from scipy.stats.stats import pearsonr, spearmanr
 from scipy.sparse import csr_matrix, vstack, hstack, spmatrix
 import numpy as np
-from numpy import sqrt, array, std, mean, bincount, int64
+from numpy import sqrt, array, std, mean, bincount, int64, ceil, absolute, append, log
+
 import math
 
 #For ROC curves
@@ -276,7 +277,7 @@ class ClassifyPredictor:
 
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
-    maxPredictAtTime = 150000
+    maxPredictAtTime = 30000
     backOffPerc = .00 #when the num_featrue / training_insts is less than this backoff to backoffmodel
     backOffModel = 'linear-svc'
     #backOffModel = 'linear'
@@ -886,48 +887,84 @@ class ClassifyPredictor:
             print "Must provide a feature extractor object"
             sys.exit(0)
 
-        #1. get all groups
-        
+        # handle large amount of predictions:
         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
-        #split groups into 10 chunks
+
+        if len(allOutcomes) == 0:
+            print """
+      ERROR: predictToFeatureTable doesn't work when --outcome_table
+             and --outcomes are not specified, please make a dummy
+             table containing zero-ed outcome columns
+             """
+            sys.exit(0)
+
         groups = list(groups)
-        random.seed(self.randomState)
-        random.shuffle(groups)        
-        chunks =  [x for x in foldN(groups, nFolds)]
-        predictions = dict() #outcomes->groups->prediction               
-        #for loop over testChunks, changing which one is teh test (not test = training)
-        for testChunk in xrange(0, len(chunks)):
-            trainGroups = set()
-            for chunk in (chunks[:testChunk]+chunks[(testChunk+1):]):
-                for c in chunk:
-                    trainGroups.add(c)
-            testGroups = set(chunks[testChunk])
-            self.train(groupFreqThresh, standardize, sparse, restrictToGroups = trainGroups)
-            chunkPredictions = self.predict(groupFreqThresh, standardize, sparse, testGroups )
-            #predictions is now outcomeName => group_id => value (outcomeName can become feat)
-            #merge chunk predictions into predictions:
-            for outcomeName in allOutcomes.keys():
-                if outcomeName in predictions:
-                    predictions[outcomeName].update(chunkPredictions[outcomeName]) ##check if & works
-                else:
+        # groups contains all groups that are in the outcome table and that have outcome values not null
+        
+        chunks = [groups]
+        #split groups into chunks
+        if len(groups) > self.maxPredictAtTime:
+            random.seed(self.randomState)
+            random.shuffle(groups)        
+            chunks =  [x for x in foldN(groups, int(ceil(len(groups) / self.maxPredictAtTime)))]
+        predictions = dict()
+        totalPred = 0
+
+        featNames = None
+        featLength = None
+        featureTableName = ""
+
+        for chunk in chunks:
+            if len(chunk) == len(groups):
+                print "len(chunk) == len(groups): True"
+                # chunk = None
+
+            chunkPredictions = self.predict(groupFreqThresh, standardize, sparse, chunk)
+
+            # predictions is now outcomeName => group_id => value (outcomeName can become feat)
+            # merge chunk predictions into predictions:
+            for outcomeName in chunkPredictions.iterkeys():
+                try:
+                    predictions[outcomeName].update(chunkPredictions[outcomeName])
+                except KeyError:
                     predictions[outcomeName] = chunkPredictions[outcomeName]
+            totalPred += len(chunk)
+            print " Total Predicted: %d" % totalPred
+            
+            # INSERTING the chunk into MySQL
+            #Creating table if not done yet
+            if not featNames:
+                featNames = chunkPredictions.keys()
+                featLength = max(map(lambda s: len(s), featNames))
+                # CREATE TABLE, and insert into it progressively:
+                featureName = "p_%s" % self.modelName[:4]
+                if name: featureName += '_' + name
+                featureTableName = fe.createFeatureTable(featureName, "VARCHAR(%d)"%featLength, 'DOUBLE')
 
-        #output to table:
-        featNames = predictions.keys()
-        featLength = max(map(lambda s: len(s), featNames))
-
-        #CREATE TABLE:
-        featureName = "p_%s" % self.modelName[:4]
-        if name: featureName += '_' + name
-        featureTableName = fe.createFeatureTable(featureName, "VARCHAR(%d)"%featLength, 'INTEGER')
-
-        for feat in featNames:
-            preds = predictions[feat]
-
-            print "[Inserting Predictions as Feature values for %s]" % feat
-            wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
-            rows = [(k, v, v) for k, v in preds.iteritems()] #adds group_norm and applies freq filter
-            mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
+            written = 0
+            rows = []
+            for feat in featNames:
+                preds = chunkPredictions[feat]
+                #pprint(preds)#DEBUG
+                print "[Inserting Predictions as Feature values for feature: %s]" % feat
+                wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
+                wCursor = mm.dbConnect(self.corpdb, host=self.mysql_host, charset=self.encoding, use_unicode=self.use_unicode)[1]
+                
+                for k, v in preds.iteritems():
+                    rows.append((k, v, v))
+                    if len(rows) >  self.maxPredictAtTime or len(rows) >= len(preds):
+                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=wCursor, charset=fe.encoding, use_unicode=fe.use_unicode)
+                        written += len(rows)
+                        print "   %d feature rows written" % written
+                        rows = []
+            # if there's rows left
+            if rows:
+                wCursor = mm.dbConnect(self.corpdb, host=self.mysql_host, charset=self.encoding, use_unicode=self.use_unicode)[1]
+                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=wCursor, charset=fe.encoding, use_unicode=fe.use_unicode)
+                written += len(rows)
+                print "   %d feature rows written" % written
+        return
+                             
 
     def predictToOutcomeTable(self, groupFreqThresh = 0, standardize = True, sparse = False, fe = None, name = None, nFolds = 10):
 
@@ -978,59 +1015,81 @@ class ClassifyPredictor:
             print "Must provide a feature extractor object"
             sys.exit(0)
 
-        #handle large amount of predictions:
+        # handle large amount of predictions:
         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+
+        if len(allOutcomes) == 0:
+            print """
+      ERROR: predictToFeatureTable doesn't work when --outcome_table
+             and --outcomes are not specified, please make a dummy
+             table containing zero-ed outcome columns
+             """
+            sys.exit(0)
+
         groups = list(groups)
+        # groups contains all groups that are in the outcome table and that have outcome values not null
+        
         chunks = [groups]
         #split groups into chunks
         if len(groups) > self.maxPredictAtTime:
-            numChunks = int(len(groups) / float(self.maxPredictAtTime)) + 1
-            print "TOTAL GROUPS (%d) TOO LARGE. Breaking up to run in %d chunks." % (len(groups), numChunks)
             random.seed(self.randomState)
             random.shuffle(groups)        
-            chunks =  [x for x in foldN(groups, numChunks)]
+            chunks =  [x for x in foldN(groups, int(ceil(len(groups) / self.maxPredictAtTime)))]
         predictions = dict()
         totalPred = 0
-        c = 0
+
+        featNames = None
+        featLength = None
+        featureTableName = ""
+
         for chunk in chunks:
-            print "\n\n**CHUNK %d\n" % c
             if len(chunk) == len(groups):
-                chunk = None
+                print "len(chunk) == len(groups): True"
+                # chunk = None
+
             chunkPredictions = self.predict(groupFreqThresh, standardize, sparse, chunk)
-            #predictions is now outcomeName => group_id => value (outcomeName can become feat)
-            #merge chunk predictions into predictions:
+
+            # predictions is now outcomeName => group_id => value (outcomeName can become feat)
+            # merge chunk predictions into predictions:
             for outcomeName in chunkPredictions.iterkeys():
                 try:
                     predictions[outcomeName].update(chunkPredictions[outcomeName])
                 except KeyError:
                     predictions[outcomeName] = chunkPredictions[outcomeName]
-            if chunk:
-                totalPred += len(chunk)
-            else: totalPred = len(groups)
+            totalPred += len(chunk)
             print " Total Predicted: %d" % totalPred
-            c+=1
+            
+            # INSERTING the chunk into MySQL
+            #Creating table if not done yet
+            if not featNames:
+                featNames = chunkPredictions.keys()
+                featLength = max(map(lambda s: len(s), featNames))
+                # CREATE TABLE, and insert into it progressively:
+                featureName = "p_%s" % self.modelName[:4]
+                if name: featureName += '_' + name
+                featureTableName = fe.createFeatureTable(featureName, "VARCHAR(%d)"%featLength, 'DOUBLE')
 
-        featNames = predictions.keys()
-        featLength = max(map(lambda s: len(s), featNames))
-
-        #CREATE TABLE:
-        featureName = "p_%s" % self.modelName[:4]
-        if name: featureName += '_' + name
-        featureTableName = fe.createFeatureTable(featureName, "VARCHAR(%d)"%featLength, 'INTEGER')
-
-        for feat in featNames:
-            preds = predictions[feat]
-
-            print "[Inserting %d Predictions as Feature values for %s]" % (len(preds), feat)
-            wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
-            rows = []
             written = 0
-            for k, v in preds.iteritems():
-                rows.append((k, v, v))
-
-            mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
-            written += len(rows)
-            print "   %d feature rows written" % written
+            rows = []
+            for feat in featNames:
+                preds = chunkPredictions[feat]
+                pprint(preds)#DEBUG
+                print "[Inserting Predictions as Feature values for feature: %s]" % feat
+                wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
+                
+                for k, v in preds.iteritems():
+                    rows.append((k, v, v))
+                    if len(rows) >  self.maxPredictAtTime or len(rows) >= len(preds):
+                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                        written += len(rows)
+                        print "   %d feature rows written" % written
+                        rows = []
+            # if there's rows left
+            if rows:
+                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                written += len(rows)
+                print "   %d feature rows written" % written
+        return
 
 
     def getWeightsForFeaturesAsADict(self): 

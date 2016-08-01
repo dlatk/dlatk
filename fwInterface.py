@@ -37,10 +37,12 @@ from FeatureWorker.mediation import MediationAnalysis
 
 INTERFACE_PATH = os.path.dirname(os.path.abspath(featureWorker.__file__))+'/LexicaInterface'
 sys.path.append(INTERFACE_PATH)
-try:
-    import lexInterface
-except ImportError:
-    print 'warning: interface module not imported..'
+from FeatureWorker.LexicaInterface import lexInterface
+#try:
+    #from FeatureWorker.LexicaInterface import lexInterface
+    #import lexInterface
+#except ImportError:
+#    print 'warning: interface module not imported..'
 
 from FeatureWorker.featureWorker import FeatureWorker
 from FeatureWorker.featureExtractor import FeatureExtractor

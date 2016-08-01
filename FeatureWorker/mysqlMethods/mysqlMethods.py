@@ -11,7 +11,7 @@ from FeatureWorker.fwConstants import MAX_ATTEMPTS, MYSQL_ERROR_SLEEP, MYSQL_HOS
 #DB INFO:
 USER = getpass.getuser()
 PASSWD = ''                             
-
+HOST = '127.0.0.1'
 
 def executeGetSSCursor(db, sql, warnMsg = True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH,host=HOST):
     """Executes a given query (ss cursor is good to iterate over for large returns)"""

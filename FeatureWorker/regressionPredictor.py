@@ -376,7 +376,7 @@ class RegressionPredictor:
     cvJobs = 8 #resource-heavy
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
-    maxPredictAtTime = 150000
+    maxPredictAtTime = 60000
     backOffPerc = .05 #when the num_featrue / training_insts is less than this backoff to backoffmodel
     #backOffModel = 'ridgecv'
     backOffModel = 'linear'

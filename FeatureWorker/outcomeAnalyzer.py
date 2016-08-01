@@ -422,6 +422,9 @@ class OutcomeAnalyzer(OutcomeGetter):
                         # i.e. show the coefficients from the controls alone
                         
                         (X, y) = fwc.alignDictsAsXy([controls[k] for k in sorted(controls.keys())], outcomes)
+                        #X = np.array(X).astype(np.float)#debug: we should be able to avoid this by casting correctly originally
+                        #y = np.array(y).astype(np.float)#debug: we should be able to avoid this by casting correctly originally
+ 
                         # print "alignDict time: %f"% float(time.time() - t0)#debug
                         if spearman:
                             X = fwc.switchColumnsAndRows([rankdata(x)
@@ -467,6 +470,9 @@ class OutcomeAnalyzer(OutcomeGetter):
                     if spearman: 
                         X = fwc.switchColumnsAndRows([rankdata(x) for x in fwc.switchColumnsAndRows(X)])
                         y = rankdata(y)
+                    #X = np.array(X).astype(np.float)#debug: we should be able to avoid this by casting correctly originally
+                    #y = np.array(y).astype(np.float)#debug: we should be able to avoid this by casting correctly originally
+
                     if zscoreRegression: (X, y) = (zscore(X), zscore(y) if not logisticReg else y)
 
                     results = None

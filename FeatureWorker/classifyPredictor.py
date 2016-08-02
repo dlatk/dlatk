@@ -471,13 +471,23 @@ class ClassifyPredictor:
     #####################################################
     ######## Main Testing Method ########################
     def testControlCombos(self, groupFreqThresh = 0, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
-                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None, adaptTables=None, adaptColumns=None):
+                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None,  stratifyFolds = True, adaptTables=None, adaptColumns=None):
         """Tests classifier, by pulling out random testPerc percentage as a test set""" # edited by Youngseo
         
         ###################################
         #1. setup groups for random folds
         if blacklist: print "USING BLACKLIST: %s" %str(blacklist)
         (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        groupFolds = []
+        if not stratifyFolds:
+            print "[number of groups: %d (%d Folds)] non-stratified / using same folds for all outcomes" % (len(groups), nFolds)
+            random.seed(self.randomState)
+            groupList = list(groups)
+            random.shuffle(groupList)
+            groupFolds = foldN(groupList, nFolds)
+        else:
+            print "    using stratified folds; different folds per outcome"
+
         print "[number of groups: %d (%d Folds)]" % (len(groups), nFolds)
         random.seed(self.randomState)
         groupList = list(groups)
@@ -550,6 +560,16 @@ class ClassifyPredictor:
                     thisOutcomeGroups = set(outcomes.keys()) & UGroups #this intersects with UGroups
                     if not outcomeName in scores:
                         scores[outcomeName] = dict()
+
+                    if stratifyFolds:
+                        #even classes across the outcomes
+                        print "Warning: Stratifying outcome classes across folds (thus, folds will differ across outcomes)."
+                        groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = 42)
+
+                    #for warmStartControls or controlCombinedProbs
+                    lastClassifiers= [None]*nFolds
+                    savedControlYpp = None
+
                     for withLanguage in xrange(2):
                         if withLanguage: 
                             if noLang or (allControlsOnly and (r > 1) and (r < len(controlKeys))):#skip to next
@@ -2039,16 +2059,54 @@ def grouper(folds, iterable, padvalue=None):
     n = len(l) / folds
     return izip_longest(*[iter(iterable)]*n, fillvalue=padvalue)
 
-def foldN(l, folds):
+
+def xFoldN(l, folds):
     """ Yield successive n-sized chunks from l."""
     n = len(l) / folds
     last = len(l) % folds
-    for i in xrange(0, n*folds, n):
-        if i+n+last >= len(l):
-            yield l[i:i+n+last]
-            break
-        else: 
+    i = 0
+    for f in xrange(folds):
+        if last > 0:
+            yield l[i:i+n+1]
+            last -= 1
+            i+= n+1
+        else:
             yield l[i:i+n]
+            i+= n
+
+def foldN(l, folds):
+    return [f for f in xFoldN(l, folds)]
+
+def stratifyGroups(groups, outcomes, folds, randomState = 42):
+    """breaks groups up into folds such that each fold has at most 1 more of a class than other folds """
+    random.seed(randomState)
+    xGroups = sorted(list(set(groups) & set(outcomes.keys())))
+    outcomesByClass = {}
+    for g in xGroups:
+        try:
+            outcomesByClass[outcomes[g]].append(g)
+        except:
+            outcomesByClass[outcomes[g]] = [g]
+
+    groupsPerFold = {f: [] for f in xrange(folds)}
+    countPerFold = {f: 0 for f in xrange(folds)}
+
+    #add groups to folds per class, keeping track of balance
+    for c, gs in outcomesByClass.iteritems():
+        foldsOrder = [x[0] for x in sorted(countPerFold.items(), key=lambda x: (x[1], x[0]))]
+        currentGFolds = foldN(gs, folds)
+        i = 0
+        for f in foldsOrder:
+            groupsPerFold[f].extend(currentGFolds[i])
+            countPerFold[f] += len(currentGFolds[i])
+            i+=1
+
+    #make sure all outcomes aren't together in the groups:
+    for gs in groupsPerFold.values():
+        random.shuffle(gs)
+
+    return groupsPerFold.values()
+
 
 def hasMultValuesPerItem(listOfD):
     """returns true if the dictionary has a list with more than one element"""

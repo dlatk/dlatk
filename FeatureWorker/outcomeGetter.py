@@ -37,13 +37,14 @@ class OutcomeGetter(FeatureWorker):
         outcome_value_fields = [o.strip() for o in parser.get('constants','outcomefields').split(",")] if parser.has_option('constants','outcomefields') else [fwc.DEF_OUTCOME_FIELD] # possible list
         outcome_controls = [o.strip() for o in parser.get('constants','outcomecontrols').split(",")] if parser.has_option('constants','outcomecontrols') else fwc.DEF_OUTCOME_CONTROLS # possible list
         outcome_interaction = [o.strip() for o in parser.get('constants','outcomeinteraction').split(",")] if parser.has_option('constants','outcomeinteraction') else fwc.DEF_OUTCOME_CONTROLS # possible list
+        group_freq_thresh = parser.get('constants','groupfreqthresh') if parser.has_option('constants','groupfreqthresh') else fwc.getGroupFreqThresh(correl_field)
         featureMappingTable = parser.get('constants','featlabelmaptable') if parser.has_option('constants','featlabelmaptable') else ''
         featureMappingLex = parser.get('constants','featlabelmaplex') if parser.has_option('constants','featlabelmaplex') else ''
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
-        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex, wordTable=wordTable)
+        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, group_freq_thresh=group_freq_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex, wordTable=wordTable)
     
 
-    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host="localhost", message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, use_unicode=fwc.DEF_UNICODE_SWITCH, lexicondb = fwc.DEF_LEXICON_DB, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls = fwc.DEF_OUTCOME_CONTROLS, outcome_interaction = fwc.DEF_OUTCOME_CONTROLS, featureMappingTable='', featureMappingLex='', wordTable = None):
+    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host="localhost", message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, use_unicode=fwc.DEF_UNICODE_SWITCH, lexicondb = fwc.DEF_LEXICON_DB, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls = fwc.DEF_OUTCOME_CONTROLS, outcome_interaction = fwc.DEF_OUTCOME_CONTROLS, group_freq_thresh = None, featureMappingTable='', featureMappingLex='', wordTable = None):
         super(OutcomeGetter, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable = wordTable)
         self.outcome_table = outcome_table
 
@@ -69,6 +70,7 @@ class OutcomeGetter(FeatureWorker):
         self.outcome_value_fields = outcome_value_fields
         self.outcome_controls = outcome_controls
         self.outcome_interaction = outcome_interaction
+        self.group_freq_thresh = group_freq_thresh if group_freq_thresh else fwc.getGroupFreqThresh(self.correl_field)
         self.featureMapping = self.getFeatureMapping(featureMappingTable, featureMappingLex, False)
         self.oneGroupSetForAllOutcomes = False # whether to use groups in common for all outcomes
 
@@ -231,13 +233,11 @@ class OutcomeGetter(FeatureWorker):
         """buckets is a list of tuples"""
         raise NotImplementedError
 
-    def getGroupsAndOutcomes(self, groupThresh = 0, lexicon_count_table=None, groupsWhere = ''):
-        if groupThresh and self.wordTable != self.get1gramTable():
-            fwc.warn("""###################################################################
-WARNING: You specified a --word_table and --group_freq_thresh is
+    def getGroupsAndOutcomes(self, lexicon_count_table=None, groupsWhere = ''):
+        if self.group_freq_thresh and self.wordTable != self.get1gramTable():
+            fwc.warn("""You specified a --word_table and --group_freq_thresh is
 enabled, so the total word count for your groups might be off
-(remove "--word_table WT" to solve this issue)
-###################################################################""")
+(remove "--word_table WT" to solve this issue)""", attention=False)
             
         groups = set()
         outcomes = dict()
@@ -254,14 +254,14 @@ enabled, so the total word count for your groups might be off
                     groups.update(outcomes[outcomeField].keys())
             
 
-            if groupThresh:
+            if self.group_freq_thresh:
                 where = """ group_id in ('%s')""" % ("','".join(str(g) for g in groups))
                 groupCnts = self.getGroupWordCounts(where, lexicon_count_table = lexicon_count_table)
                 groups = set()
                 for outcomeField, outcomeValues in outcomes.iteritems():
                     newOutcomes = dict()
                     for gId in outcomeValues.iterkeys():
-                        if (gId in groupCnts) and (groupCnts[gId] >= groupThresh):
+                        if (gId in groupCnts) and (groupCnts[gId] >= self.group_freq_thresh):
                             #keep
                             # newOutcomes[gId] = float(outcomeValues[gId])
                             newOutcomes[gId] = outcomeValues[gId]
@@ -295,11 +295,11 @@ enabled, so the total word count for your groups might be off
                 outcomeDict = outcomes[k]
                 outcomeDict = dict([(g, v) for g, v in outcomeDict.iteritems() if g in groups])
                 ocs[k] = outcomeDict
-        elif groupThresh:
+        elif self.group_freq_thresh:
             groupCnts = self.getGroupWordCounts(where = None, lexicon_count_table = lexicon_count_table)
             groups = set()
             for gId, cnt in groupCnts.iteritems():
-                if cnt >= groupThresh:
+                if cnt >= self.group_freq_thresh:
                     groups.add(gId)
             if groupsWhere:
                 outcm = groupsWhere.split('=')[0].strip()
@@ -319,8 +319,8 @@ enabled, so the total word count for your groups might be off
         index = self.correl_field
         return pd.read_sql(sql=sql, con=db_eng, index_col=index)
 
-    def getGroupsAndOutcomesAsDF(self, groupThresh = 0, lexicon_count_table=None, groupsWhere = '', sparse=False):
-        (groups, allOutcomes, controls) = self.getGroupsAndOutcomes(groupThresh, lexicon_count_table, groupsWhere)
+    def getGroupsAndOutcomesAsDF(self, lexicon_count_table=None, groupsWhere = '', sparse=False):
+        (groups, allOutcomes, controls) = self.getGroupsAndOutcomes(lexicon_count_table, groupsWhere)
         o_df = pd.DataFrame(allOutcomes)
         c_df = pd.DataFrame(controls)
         if sparse:
@@ -347,10 +347,10 @@ enabled, so the total word count for your groups might be off
         else:
             return pd.read_sql(sql=sql, con=db_eng, index_col=index) 
     
-    def numGroupsPerOutcome(self, featGetter, outputfile, groupThresh=0, where = ''):
+    def numGroupsPerOutcome(self, featGetter, outputfile, where = ''):
         """prints sas-style csv file output"""
         #get outcome data to work with
-        (groups, allOutcomes, controls) = self.getGroupsAndOutcomes(groupThresh)
+        (groups, allOutcomes, controls) = self.getGroupsAndOutcomes()
 
         #adjust keys for outcomes and controls:
         countGroups = dict()

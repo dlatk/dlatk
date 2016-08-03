@@ -450,7 +450,7 @@ class MediationResults(object):
 		self.ADE_avg = (self.ADE_ctrl + self.ADE_tx) / 2
 
 
-	def summary(self, alpha=0.05, bonferroni=False, numMeds=1):
+	def summary(self, alpha=0.05, p_correction_method='', numMeds=1):
 		"""
 		Provide a summary of a mediation analysis.
 		"""
@@ -473,7 +473,7 @@ class MediationResults(object):
 				smry.iloc[i, 0] = vec.mean()
 			smry.iloc[i, 1] = np.percentile(vec, 100 * alpha / 2)
 			smry.iloc[i, 2] = np.percentile(vec, 100 * (1 - alpha / 2))
-			if bonferroni:
+			if p_correction_method.startswith("bonf"):
 				smry.iloc[i, 3] = _pvalue(vec)*numMeds
 			else:
 				smry.iloc[i, 3] = _pvalue(vec)
@@ -688,7 +688,7 @@ class MediationAnalysis:
 			data = dict((x, y) for x, y in self.outcomeGetter.getGroupAndOutcomeValues(outcomeField = outcome_field))
 		return data
 
-	def mediate(self, group_freq_thresh = 0, switch="default", spearman = False, bonferroni = False, p_correction_method = 'BH', 
+	def mediate(self, group_freq_thresh = 0, switch="default", spearman = False, p_correction_method = 'BH', 
 				zscoreRegression = True, logisticReg = False):
 		"""
 		Runs the medition. 
@@ -697,7 +697,6 @@ class MediationAnalysis:
 			group_freq_thresh (int): 
 			switch (str): controls source (FeatureGetter or OutcomeGetter) of variables (path_starts, mediators, outcomes, controls)
 			spearman (boolean): NOT BEING USED
-			bonferroni (boolean): True if using Bonferroni p correction
 			p_correction_method (str): Name of p correction method
 			zscoreRegression (boolean): True if data is z-scored
 			logisticReg (boolean): True if running logistic regression
@@ -818,7 +817,7 @@ class MediationAnalysis:
 						sobel_SE = sqrt(beta*beta*alpha_error*alpha_error + alpha*alpha*beta_error*beta_error)
 						sobel = (alpha*beta)/ sobel_SE
 
-						if bonferroni:
+						if p_correction_method.startswith("bonf"):
 							c_p = direct_results.pvalues.get('path_start')*numMeds
 							c_prime_p = outcome_results.pvalues.get('path_start')*numMeds
 							alpha_p = mediator_results.pvalues.get('path_start')*numMeds
@@ -843,7 +842,7 @@ class MediationAnalysis:
 						med = Mediation(outcome_model, mediator_model, tx_pos, med_pos)
 
 						med_result = med.fit(method=self.mediation_method, n_rep=self.boot_number)
-						summary = med_result.summary(bonferroni = bonferroni, numMeds=numMeds)
+						summary = med_result.summary(p_correction_method = p_correction_method, numMeds=numMeds)
 						summary_array = np.reshape(summary.values, 40).tolist()
 						
 						self.output[path_start][outcome][mediator] = summary_array
@@ -865,7 +864,7 @@ class MediationAnalysis:
 						print summary
 					print ""
 
-		if p_correction_method:
+		if p_correction_method and not p_correction_method.startswith("bonf"):
 			p_list = []
 			if self.baron_and_kenny:
 				p_list = p_list + ["C_p", "C'_p", "alpha_p", "beta_p", "sobel_p"]

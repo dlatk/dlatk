@@ -340,12 +340,12 @@ class ClassifyPredictor:
         self.multiScalers = None
         self.multiXOn = False #whether multiX was used for training
 
-    def train(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
+    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
         """Tests classifier, by pulling out random testPerc percentage as a test set"""
         
         ################
         #1. setup groups
-        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
+        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
         if restrictToGroups: #restrict to groups
             rGroups = restrictToGroups
             if isinstance(restrictToGroups, dict):
@@ -414,13 +414,13 @@ class ClassifyPredictor:
         print "\n[TRAINING COMPLETE]\n"
         self.featureNamesList = featureNamesList
 
-    def test(self, groupFreqThresh = 0, standardize = True, sparse = False, saveModels = False, blacklist = None, groupsWhere = ''):
+    def test(self, standardize = True, sparse = False, saveModels = False, blacklist = None, groupsWhere = ''):
         """Tests classifier, by pulling out random testPerc percentage as a test set"""
         
         print
         print "USING BLACKLIST: %s" %str(blacklist)
         #1. get data possible ys (outcomes)
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
         print "[number of groups: %d]" % len(groups)
 
         #2. get data for X:
@@ -469,14 +469,14 @@ class ClassifyPredictor:
 
     #####################################################
     ######## Main Testing Method ########################
-    def testControlCombos(self, groupFreqThresh = 0, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
+    def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
                           allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None, adaptTables=None, adaptColumns=None, groupsWhere = ''):
         """Tests classifier, by pulling out random testPerc percentage as a test set""" # edited by Youngseo
         
         ###################################
         #1. setup groups for random folds
         if blacklist: print "USING BLACKLIST: %s" %str(blacklist)
-        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
+        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
         print "[number of groups: %d (%d Folds)]" % (len(groups), nFolds)
         random.seed(self.randomState)
         groupList = list(groups)
@@ -697,15 +697,15 @@ class ClassifyPredictor:
     #################################################
     #################################################
 
-    def predict(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
+    def predict(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
         
         if not self.multiXOn:
             print "model trained without multiX, reverting to old predict"
-            return self.old_predict(groupFreqThresh, standardize, sparse, restrictToGroups)
+            return self.old_predict(standardize, sparse, restrictToGroups)
 
         ################
         #1. setup groups
-        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
+        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
         if restrictToGroups: #restrict to groups
             rGroups = restrictToGroups
             if isinstance(restrictToGroups, dict):
@@ -802,7 +802,7 @@ class ClassifyPredictor:
         # print "Maarten \n", pd.DataFrame(predictions)
         return predictions
 
-    def predictNoOutcomeGetter(self, groups, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None):
+    def predictNoOutcomeGetter(self, groups, standardize = True, sparse = False, restrictToGroups = None):
         
         outcomes = list(self.classificationModels.keys())
 
@@ -881,14 +881,14 @@ class ClassifyPredictor:
         return predictions
 
 
-    def predictAllToFeatureTable(self, groupFreqThresh = 0, standardize = True, sparse = False, fe = None, name = None, nFolds = 10, groupsWhere = ''):
+    def predictAllToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, nFolds = 10, groupsWhere = ''):
         if not fe:
             print "Must provide a feature extractor object"
             sys.exit(0)
 
         #1. get all groups
         
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
         #split groups into 10 chunks
         groups = list(groups)
         random.seed(self.randomState)
@@ -902,8 +902,8 @@ class ClassifyPredictor:
                 for c in chunk:
                     trainGroups.add(c)
             testGroups = set(chunks[testChunk])
-            self.train(groupFreqThresh, standardize, sparse, restrictToGroups = trainGroups)
-            chunkPredictions = self.predict(groupFreqThresh, standardize, sparse, testGroups )
+            self.train(standardize, sparse, restrictToGroups = trainGroups)
+            chunkPredictions = self.predict(standardize, sparse, testGroups )
             #predictions is now outcomeName => group_id => value (outcomeName can become feat)
             #merge chunk predictions into predictions:
             for outcomeName in allOutcomes.keys():
@@ -929,7 +929,7 @@ class ClassifyPredictor:
             rows = [(k, v, v) for k, v in preds.iteritems()] #adds group_norm and applies freq filter
             mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
 
-    def predictToOutcomeTable(self, groupFreqThresh = 0, standardize = True, sparse = False, fe = None, name = None, nFolds = 10):
+    def predictToOutcomeTable(self, standardize = True, sparse = False, fe = None, name = None, nFolds = 10):
 
         # step1: get groups from feature table
         groups = self.featureGetter.getDistinctGroupsFromFeatTable()
@@ -952,7 +952,7 @@ class ClassifyPredictor:
 
             # 3: predict for each chunk for each outcome
             
-            chunkPredictions = self.predictNoOutcomeGetter(chunk, groupFreqThresh, standardize, sparse)
+            chunkPredictions = self.predictNoOutcomeGetter(chunk, standardize, sparse)
             #predictions is now outcomeName => group_id => value (outcomeName can become feat)
             #merge chunk predictions into predictions:
             for outcomeName in chunkPredictions.iterkeys():
@@ -973,13 +973,13 @@ class ClassifyPredictor:
         # 4: use self.outcomeGetter.createOutcomeTable(tableName, dataFrame)
         self.outcomeGetter.createOutcomeTable(name, predDF, 'replace')
 
-    def predictToFeatureTable(self, groupFreqThresh = 0, standardize = True, sparse = False, fe = None, name = None, groupsWhere = ''):
+    def predictToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = ''):
         if not fe:
             print "Must provide a feature extractor object"
             sys.exit(0)
 
         #handle large amount of predictions:
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
         groups = list(groups)
         chunks = [groups]
         #split groups into chunks
@@ -996,7 +996,7 @@ class ClassifyPredictor:
             print "\n\n**CHUNK %d\n" % c
             if len(chunk) == len(groups):
                 chunk = None
-            chunkPredictions = self.predict(groupFreqThresh, standardize, sparse, chunk)
+            chunkPredictions = self.predict(standardize, sparse, chunk)
             #predictions is now outcomeName => group_id => value (outcomeName can become feat)
             #merge chunk predictions into predictions:
             for outcomeName in chunkPredictions.iterkeys():
@@ -1336,12 +1336,12 @@ class ClassifyPredictor:
 
         return classifier.predict(X)
 
-    def roc(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None, output_name = None, groupsWhere = ''):
+    def roc(self, standardize = True, sparse = False, restrictToGroups = None, output_name = None, groupsWhere = ''):
         """Tests classifier, by pulling out random testPerc percentage as a test set"""
         
         ################
         #1. setup groups
-        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh, groupsWhere = groupsWhere)
+        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
         if restrictToGroups: #restrict to groups
             rGroups = restrictToGroups
             if isinstance(restrictToGroups, dict):
@@ -1753,13 +1753,13 @@ class ClassifyPredictor:
         
     #################
     ## Deprecated:
-    def old_train(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None):
+    def old_train(self, standardize = True, sparse = False, restrictToGroups = None):
         """Trains classification models"""
         #if restrictToGroups is a dict than it is an outcome-specific restriction
 
         print
         #1. get data possible ys (outcomes)
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
         if restrictToGroups: #restrict to groups
             rGroups = restrictToGroups
             if isinstance(restrictToGroups, dict):
@@ -1797,11 +1797,11 @@ class ClassifyPredictor:
 
         print "[Done Training All Outcomes]"
 
-    def old_predict(self, groupFreqThresh = 0, standardize = True, sparse = False, restrictToGroups = None):
+    def old_predict(self, standardize = True, sparse = False, restrictToGroups = None):
         #predict works with all sklearn models
         #1. get data possible ys (outcomes)
         print
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
         if restrictToGroups: #restrict to groups
             rGroups = restrictToGroups
             if isinstance(restrictToGroups, dict):

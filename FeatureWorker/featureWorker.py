@@ -102,6 +102,11 @@ class FeatureWorker(object):
         wordGetter = self.getWordGetter(lexicon_count_table)
         return dict(wordGetter.getSumValuesByGroup(where))
 
+    def getFeatureTables(self, where = ''):
+        """Return all available feature tables for the given corpdb, corptable and correl_field"""
+        sql = """SHOW TABLES FROM %s LIKE 'feat$%%$%s$%s$%%' """ % (self.corpdb, self.corptable, self.correl_field)
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+
     @staticmethod
     def makeBlackWhiteList(args_featlist, args_lextable, args_categories, args_lexdb, args_use_unicode):
         newlist = set()

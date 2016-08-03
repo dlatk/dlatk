@@ -217,10 +217,9 @@ class DimensionReducer:
         
         self.featureNames = []  # holds the order the features are expected in
 
-    def fit(self, groupFreqThresh=0, standardize=True, sparse=False, restrictToGroups=None):
+    def fit(self, standardize=True, sparse=False, restrictToGroups=None):
         """Create clusters"""
         # restrictToGroups: list of groups to which the algorithm should restrict itself
-        # groupFreqThresh : minimum number of groups a word should be in to be considered
 
         print
         # 1. get data possible ys (outcomes)
@@ -229,7 +228,7 @@ class DimensionReducer:
         controlValues = None
         allOutcomes = None
         if self.outcomeGetter != None: # and self.outcomeGetter.hasOutcomes():
-            (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+            (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
             if restrictToGroups:  # restrict to groups 
                 groups = groups.intersection(restrictToGroups)
                 for outcomeName, outcomes in allOutcomes.iteritems():
@@ -324,12 +323,12 @@ class DimensionReducer:
 
         return cluster, scaler, fSelector
     
-    def transform(self, groupFreqThresh=0, standardize=True, sparse=False, restrictToGroups=None):
+    def transform(self, standardize=True, sparse=False, restrictToGroups=None):
         groups = []
         controlValues = None
         allOutcomes = None
         if self.outcomeGetter != None:
-            (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+            (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
             if restrictToGroups:  # restrict to groups
                 groups = groups.intersection(restrictToGroups)
                 for outcomeName, outcomes in allOutcomes.iteritems():
@@ -569,8 +568,8 @@ class CCA:
         return X, Z, Xfreqs.to_dict(), Zfreqs.to_dict()
 
 
-    def predictCompsToSQL(self,tablename=None,  groupFreqThresh = 0, csv = False, outputname = None, NAthresh = 4, useXmatrix = False):
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+    def predictCompsToSQL(self,tablename=None,  csv = False, outputname = None, NAthresh = 4, useXmatrix = False):
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
         # groups: set(group_ids)
         # allOutcomes: {outcome: {group_id: value}}
         # controls: {control: {group_id: value}}
@@ -635,9 +634,9 @@ class CCA:
         cca['nGroups'] = nGroups
         return cca
         
-    def ccaOutcomesVsControls(self, groupFreqThresh = 0, penaltyX = None, penaltyZ = None, NAthresh = 4):
+    def ccaOutcomesVsControls(self, penaltyX = None, penaltyZ = None, NAthresh = 4):
         """Performs CCA using controls and outcomes, no language"""
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
         # groups: set(group_ids)
         # allOutcomes: {outcome: {group_id: value}}
         # controls: {control: {group_id: value}}
@@ -696,9 +695,9 @@ class CCA:
         d_dict = dict(zip(Zcomp.columns,d))
         return Xcomp_dict, Zcomp_dict, d_dict
 
-    def cca(self, groupFreqThresh = 0, penaltyX = None, penaltyZ = None, NAthresh = 4, controlsWithFeats = False):
+    def cca(self, penaltyX = None, penaltyZ = None, NAthresh = 4, controlsWithFeats = False):
         """Performs CCA based on the outcomes and controls (X: features, Z: outcomes)"""
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
         # groups: set(group_ids)
         # allOutcomes: {outcome: {group_id: value}}
         # controls: {control: {group_id: value}}
@@ -807,8 +806,8 @@ class CCA:
         print "Best L1 bound for x: %.5f" % com.convert_robj(cca_permute["bestpenaltyx"])[0]
         print "Best L1 bound for z: %.5f" % com.convert_robj(cca_permute["bestpenaltyz"])[0]
 
-    def ccaPermuteOutcomesVsControls(self, groupFreqThresh = 0, nPerms = 25, penaltyXs = None , penaltyZs = None):
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+    def ccaPermuteOutcomesVsControls(self, nPerms = 25, penaltyXs = None , penaltyZs = None):
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
         # groups: set(group_ids)
         # allOutcomes: {outcome: {group_id: value}}
         # controls: {control: {group_id: value}}
@@ -834,8 +833,8 @@ class CCA:
         
         self._ccaPermute(X,Z, **kwParams)
         
-    def ccaPermute(self, groupFreqThresh = 0, nPerms = 25, penaltyXs = None , penaltyZs = None, controlsWithFeats = False):
-        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
+    def ccaPermute(self, nPerms = 25, penaltyXs = None , penaltyZs = None, controlsWithFeats = False):
+        (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
         # groups: set(group_ids)
         # allOutcomes: {outcome: {group_id: value}}
         # controls: {control: {group_id: value}}

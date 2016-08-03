@@ -251,11 +251,12 @@ class FeatureExtractor(FeatureWorker):
             mm.disableTableKeys(self.corpdb, self.dbCursor, name, charset=self.encoding, use_unicode=self.use_unicode)
         
         #iterate through groups in chunks
-        if "mess" in self.correl_field:
+        if any(field in self.correl_field.lower() for field in ["mess", "msg"]) or self.correl_field.lower().startswith("id"):
             groupsAtTime = 100 # if messages
         else:
             groupsAtTime = 10 # if user ids
-        
+            fwc.warn("""Parsing at the non-message level is not recommended. Please rerun at message level""", attention=True)
+
         psAtTime = fwc.CORES / 4
         try:
             sp = StanfordParser()
@@ -267,7 +268,7 @@ class FeatureExtractor(FeatureWorker):
         for groups in fwc.chunks(cfRows, groupsAtTime): 
             #get msgs for groups:
             sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
-            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))#, False)
+            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
             rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
             messages = map(lambda r: r[messageIndex], rows)
             messages = map(lambda m: m if m else '_', messages)
@@ -374,9 +375,8 @@ class FeatureExtractor(FeatureWorker):
         
 
     def parseAndWriteMessages(self, sp, tableNames, messages, messageIndex, columnNames, rows):
-        """Prases, then write messages, used for parallelizing parsing"""
+        """Parses, then write messages, used for parallelizing parsing"""
         parses = sp.parse(messages)
-
         #add msgs into new tables
         for pt, tableName in tableNames.items():
             sql = """REPLACE INTO """+tableName+""" ("""+', '.join(columnNames)+\
@@ -384,9 +384,8 @@ class FeatureExtractor(FeatureWorker):
             for i in xrange(len(rows)):
                 rows[i] = list(rows[i])
                 rows[i][messageIndex] = str(parses[i][pt])
-            #pprint(rows)
+            
             mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
-
         return True
 
     def addTweetPOSMessages(self):
@@ -575,25 +574,11 @@ class FeatureExtractor(FeatureWorker):
                 newRow = list(row)
                 newRow[messageIndex] = json.dumps(ldas[str(row[messageIdIndex])])
                 newRows.append(newRow)
-        
-        #set the packet size to be bigger
-        #try:
-        #    self.dbCursor.execute('SET GLOBAL max_allowed_packet=200663296')
-        #except MySQLdb.Error, e:
-        #    _warn(" *MYSQL DB ERROR on %s:\n%s (X attempt)"% (sql, e))
-        #    _warn(" skipping global change")
 
         #insert
         sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
             """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
         mm.executeWriteMany(self.corpdb, self.dbCursor, sql, newRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-
-        #self._execute('SET GLOBAL max_allowed_packet=50331648')
-        #try:
-        #    self.dbCursor.execute('SET GLOBAL max_allowed_packet=50331648')
-        #except MySQLdb.Error, e:
-        #    _warn(" *MYSQL DB ERROR on %s:\n%s (X attempt)"% (sql, e))
-        #    _warn(" skipping global change")
 
 
     ##Feature Tables ##
@@ -2092,10 +2077,14 @@ class FeatureExtractor(FeatureWorker):
         """Creates feature tuples (correl_field, feature, values) table where features are parts of speech"""
         # keep_words means it's not going to just count "JJ" or "PP", but "nice/JJ" etc.
         #CREATE TABLEs:
+        
+        alter_table = False
         if keep_words:
-            posFeatTableName = self.createFeatureTable('1gram_pos', "VARCHAR(64)", 'INTEGER', tableName, valueFunc)
+            min_varchar_length = 64
+            posFeatTableName = self.createFeatureTable('1gram_pos', "VARCHAR(%s)" % min_varchar_length, 'INTEGER', tableName, valueFunc)
         else:
-            posFeatTableName = self.createFeatureTable('pos', "VARCHAR(12)", 'INTEGER', tableName, valueFunc)
+            min_varchar_length = 12
+            posFeatTableName = self.createFeatureTable('pos', "VARCHAR(%s)" % min_varchar_length, 'INTEGER', tableName, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
         posMessageTable = self.corptable+'_pos'
@@ -2133,8 +2122,15 @@ class FeatureExtractor(FeatureWorker):
                         # Just extract the POSes if not needed to keep the ngrams
                         pos_list = map(lambda x: x.split('/')[-1], pos_message.split())
 
-                    #posDict = find pos frequencies in pos_message
+                    # posDict = find pos frequencies in pos_message
                     for pos in pos_list:
+                        # check that we can write pos to table: len(pos) < varchar(*)
+                        if len(pos) > min_varchar_length and min_varchar_length != fwc.MAX_SQL_PRINT_CHARS:
+                            if len(pos) >= fwc.MAX_SQL_PRINT_CHARS:
+                                min_varchar_length = fwc.MAX_SQL_PRINT_CHARS
+                            else:
+                                min_varchar_length = len(pos)
+                            alter_table = True
                         totalTokens += 1
                         if pos in freqsPOS:
                             freqsPOS[pos] += 1
@@ -2144,6 +2140,11 @@ class FeatureExtractor(FeatureWorker):
             wsql = """INSERT INTO """+posFeatTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
             totalTokens = float(totalTokens)
             phraseRows = [(k, v, valueFunc((v / totalTokens))) for k, v in freqsPOS.iteritems()] #adds group_norm and applies freq filter
+            if alter_table: 
+                fwc.warn("WARNING: varchar length of feat column is too small, adjusting table.")
+                alter_sql = """ALTER TABLE %s CHANGE COLUMN `feat` `feat` VARCHAR(%s)""" %(posFeatTableName, min_varchar_length)
+                mm.execute(self.corpdb, self.dbCursor, alter_sql, charset=self.encoding, use_unicode=self.use_unicode)
+                alter_table = False
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, phraseRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
        
         fwc.warn("Done Reading / Inserting.")

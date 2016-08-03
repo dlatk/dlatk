@@ -60,6 +60,7 @@ def getInitVar(variable, parser, default, varList=False):
 ### Main / Command-Line Processing:
 ##
 #
+
 def main(fn_args = None):
     '''
     :param fn_args: string - ex "-d testing -t msgs -c user_id --add_ngrams -n 1 "
@@ -708,7 +709,7 @@ def main(fn_args = None):
     # Show feature tables
     if args.listfeattables:
         if not fw: fw = FW()
-        feat_tables = fw.showFeatureTables()
+        feat_tables = fw.getFeatureTables()
         print 'Found %s available feature tables' % (len(feat_tables))
         for table in feat_tables: print str(table[0])
 

@@ -16,14 +16,13 @@ import argparse
 import time
 from pprint import pprint
 from numpy import isnan, sqrt, log2
-from FeatureWorker import DDLA
 from ConfigParser import SafeConfigParser
 
 #wwbp
-try:
-    from FeatureWorker.lib.StanfordSegmenter import StanfordSegmenter
-except ImportError:
-    print 'warning: StanfordSegmenter not found.'
+#try:
+#    from FeatureWorker.lib.StanfordSegmenter import StanfordSegmenter
+#except ImportError:
+#    print 'warning: StanfordSegmenter not found.'
 try:
     from FeatureWorker.lib import wordcloud
 except ImportError:
@@ -34,6 +33,7 @@ from FeatureWorker.regressionPredictor import RegressionPredictor, CombinedRegre
 from FeatureWorker.classifyPredictor import ClassifyPredictor
 from FeatureWorker.clustering import DimensionReducer, CCA
 from FeatureWorker.mediation import MediationAnalysis
+from FeatureWorker import DDLA
 
 INTERFACE_PATH = os.path.dirname(os.path.abspath(featureWorker.__file__))+'/LexicaInterface'
 sys.path.append(INTERFACE_PATH)

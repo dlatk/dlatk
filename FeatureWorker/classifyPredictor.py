@@ -564,7 +564,12 @@ class ClassifyPredictor:
                     if stratifyFolds:
                         #even classes across the outcomes
                         print "Warning: Stratifying outcome classes across folds (thus, folds will differ across outcomes)."
-                        groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = 42)
+                        #groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = 42)
+                        ##DEBUG: below is using random folds to do bootstrapping; should change back to above.
+                        print "Warning: using random folds for bootstrapping; classifyPredictor.py to fix"
+                        groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = np.random.randint(0, 10000))
+                        del groupFolds[np.random.randint(0, len(groupFolds))]
+
 
                     #for warmStartControls or controlCombinedProbs
                     lastClassifiers= [None]*nFolds

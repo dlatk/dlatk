@@ -8,13 +8,13 @@ import warnings
 import sys
 import time
 
-from FeatureWorker.fwConstants import DEF_ENCODING, MYSQL_ERROR_SLEEP, MAX_ATTEMPTS, warn
+from FeatureWorker.fwConstants import DEF_ENCODING, MYSQL_ERROR_SLEEP, MYSQL_HOST, MAX_ATTEMPTS, warn
 
 def get_db_engine(db_schema, db_host = None, charset=DEF_ENCODING, db_config = '~/.my.cnf', port=3306):
     eng = None
     attempts = 0;
     if not db_host:
-        db_host = 'localhost' if socket.gethostname()=='wwbp' else 'wwbp-venti'
+        db_host = MYSQL_HOST if socket.gethostname()=='wwbp' else 'wwbp-venti'
     while (1):
         try:
             db_url = URL(drivername='mysql', host=db_host, port=port,
@@ -197,23 +197,3 @@ def mysql_multitable(db_eng, dict_iter, table_prefix, table_column, table_column
 def dictify(my_iter, columns):
     for item in my_iter:
         yield dict(zip(columns, item))
-
-
-# def _dbConnectSQLalchemy(db, host="localhost"):
-#     eng = None
-#     attempts = 0;
-#     while (1):
-#         try:
-#             connInf = sqlalchemy.engine.url.URL(drivername="mysql",
-#                                                 host = host,
-#                                                 database = db,
-#                                                 query={ 'read_default_file' : '~/.my.cnf', 'charset': 'utf8mb4'})
-#             eng = sqlalchemy.create_engine(name_or_url = connInf, pool_recycle=3600)
-#             break
-#         except Exception as e:
-#             attempts += 1
-#             _warn(" *MYSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db, e, attempts))
-#             time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
-#             if (attempts > MAX_ATTEMPTS):
-#                 sys.exit(1)
-#     return eng

@@ -103,7 +103,7 @@ class FeatureRefiner(FeatureGetter):
         return featureTableName
 
 
-    def createTableWithBinnedFeats(self, num_bins, group_id_range, groupfreqthresh, valueFunc = lambda x:x, 
+    def createTableWithBinnedFeats(self, num_bins, group_id_range, valueFunc = lambda x:x, 
                                    gender=None, genderattack=False, reporting_percent=0.04, outcomeTable = fwc.DEF_OUTCOME_TABLE, skip_binning=False):
         featureTable = self.featureTable
         group_id_range = map(int, group_id_range)
@@ -115,25 +115,8 @@ class FeatureRefiner(FeatureGetter):
         sql = "CREATE TABLE %s like %s" % (newTable, featureTable)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
-        #groupValues = self.getSumValuesByGroup(where) # [(gid1, val1), ...]
-        # OLD N calculation.... same as new one....
-        # sql = 'SELECT age, COUNT(DISTINCT user_id) from userstats_en_ageadj where age >= %d AND age <= %d AND uwt >= %d'%(group_id_range[0], group_id_range[1], groupfreqthresh)
-        # if gender:
-        #     gender = gender.lower()
-        #     if gender == 'm':
-        #         gender = 0
-        #     elif gender == 'f':
-        #         gender = 1
-        #     sql += ' AND gender = %d'%gender
-        # else:
-        #     sql += ' AND gender IS NOT NULL'
-        # sql += ' group by age'
-        # groupValues = mm.executeGetList(self.corpdb, self.dbCursor, sql) # [(gid1, N1), ...]
-        # groupIdToN = dict(groupValues)
         groupNs = mm.executeGetList(self.corpdb, self.dbCursor, 'SELECT group_id, N FROM %s GROUP BY group_id'%self.featureTable, charset=self.encoding, use_unicode=self.use_unicode)
         groupIdToN = dict(groupNs)
-        #pprint(groupIdToN)
-        #pprint(groupIdToN)
         total_freq = sum(map(lambda x:x[1], groupNs))
         bin_size = float(total_freq) / float(num_bins+2)
 
@@ -248,8 +231,10 @@ class FeatureRefiner(FeatureGetter):
         # mm.execute(self.corpdb, self.dbCursor, 'drop table if exists `%s`'%(newTable,))
         return newTable
 
-    def createTableWithRemovedFeats(self, p, minimumFeatSum = 0, groupFreqThresh = 0):
+    def createTableWithRemovedFeats(self, p, minimumFeatSum = 0, groupFreqThresh = 0, setGFTWarning = False):
         """creates a new table with features that appear in more than p*|correl_field| rows, only considering groups above groupfreqthresh"""
+        if not setGFTWarning:
+            fwc.warn("""group_freq_thresh is set to %s. Be aware that groups might be removed during this process and your group norms will reflect this.""" % (groupFreqThresh), attention=True)
         toKeep = self._getKeepSet(p, minimumFeatSum, groupFreqThresh)
         label = str(p).replace('.', '_')
         if 'e' in label:
@@ -802,68 +787,3 @@ class FeatureRefiner(FeatureGetter):
         fwc.warn('Finished inserting.')
 
         return idf_table
-
-    def createLexTableFromCorp(self, lex_table):
-        '''
-        Creates new feature table where group_norm = tf-idf (term frequency-inverse document frequency)
-        :param lex_table: 
-        :return: output table name
-        Written by Sal
-        '''
-        raise NotImplementedError
-
-##NOTE - this is not used for the time being, it is slower and less tested than createTableWithRemovedFeats
-##it is however a little more straightforward and it outputs a ufeat$pocc table
-    def poccFilter(self, pocc_thresh, group_freq_thresh, feature_tablename, word_tablename = None):
-        '''
-        Generates a table that has been filtered to have features that are used by >x percent of groups, after filtering groups that used at least n words/collocations
-        :param pocc_val: in how many groups has this word occured? this is a ratio
-        :param groupfreqthresh_val: how many words or collocs a group must have used in order to be considered in pocc calculations
-        :param feature_table: table containing words, ngrams, collocs, etc...
-        :param word_table: table containing only 1grams or collocs, used to calculated group 'frequency'
-        :return: output table name
-        Written by Selah - let me know if it's confusing or has bugs!
-        '''
-
-        print("Filtering by pocc...")
-
-        if not word_tablename:
-            word_table = feature_tablename
-
-        db_engine = get_db_engine(db_schema=self.corpdb, db_host=self.mysql_host)
-
-        #Which are my valid groups?
-        res = db_engine.execute("SELECT group_id FROM {} GROUP BY group_id HAVING SUM(value) > {}".format(word_table, group_freq_thresh))
-        num_valid_groups = res.rowcount
-        if num_valid_groups == 0:
-            raise Exception, "--group_freq_thresh of {} filtered out ALL groups!".format(group_freq_thresh)
-        valid_groups = [row[0] for row in res]
-
-        print("Counting how many valid groups use each feature...")
-        feat_count_dict = dict()
-        res = db_engine.execute("SELECT feat, group_id FROM {}".format(feature_tablename))
-        for row in res:
-            if row['group_id'] in valid_groups:
-                feat = row['feat']
-                #increment entry in feat_count_dict
-                if feat not in feat_count_dict:
-                    feat_count_dict[feat] = 0
-                feat_count_dict[feat] += 1
-
-        print("Saving pocc values to table...")
-        ufeat_pocc_tablename = "ufeat$pocc_gft{}${}".format(group_freq_thresh, self.corptable)
-        db_engine.execute("DROP TABLE IF EXISTS {}".format(ufeat_pocc_tablename))
-        db_engine.execute("CREATE TABLE {} (feat VARCHAR(78), pocc DOUBLE)".format(ufeat_pocc_tablename))
-        for feat in feat_count_dict:
-            pocc = float(feat_count_dict[feat])/float(num_valid_groups)
-            db_engine.execute("INSERT INTO {} (feat, pocc) VALUES (%s, %s)".format(ufeat_pocc_tablename), feat, pocc)
-        db_engine.execute("ALTER TABLE {} ADD INDEX (feat)".format(ufeat_pocc_tablename))
-
-        print("Generating filtered feature table...")
-        pocc_suffix = str(pocc_thresh).replace('.', '_')
-        filtered_tablename = feature_tablename + '$' + pocc_suffix
-        db_engine.execute("DROP TABLE IF EXISTS {}".format(filtered_tablename))
-        db_engine.execute("CREATE TABLE {} LIKE {}".format(filtered_tablename, feature_tablename))
-        db_engine.execute("INSERT INTO {} SELECT a.* FROM {} a INNER JOIN {} b ON a.feat = b.feat WHERE b.pocc > {}".format(filtered_tablename, feature_tablename, ufeat_pocc_tablename, pocc_thresh))
-
-        return filtered_tablename

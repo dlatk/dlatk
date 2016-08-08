@@ -17,14 +17,21 @@ import subprocess
 import random
 import re
 from pprint import pprint
+import glob
+
+##DEFAULTS FOR RELEASED VERSION
+#_InstallPath = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '/Tools/StanfordParser/' # folder
+#_InstallDir = glob.glob(_InstallPath + "stanford-parser-full*")[0]
 
 ##DEFAULTS:
+_InstallPath = '/home/hansens/Tools/StanfordParser/' # folder
+_InstallDir = 'stanford-parser-2012-02-03'
 _DefaultParams ={
     'save_file' : 'parsed.data',
-    'save_dir' : '/home/hansens/Tools/StanfordParser/backupParses',
-    'parser_dir' : '/home/hansens/Tools/StanfordParser/stanford-parser-2012-02-03',
+    'save_dir' : 'backupParses',
+    'parser_dir' : _InstallPath + _InstallDir,
     'parser_command' : 'oneline.sh', #note this was an edited lexparser.csh to include oneline output option to make the tree easier to handle
-    'temp_file' : '/home/hansens/Tools/StanfordParser/temp.file', #holds sentences to be parsed
+    'temp_file' : _InstallPath + 'temp.file', #holds sentences to be parsed
     'max_sent_words' : int(60),
     #'split' : 0,#whether to ask the parse to split sentences.(NOTE: when on, also sets a maximum sentence size)
     };

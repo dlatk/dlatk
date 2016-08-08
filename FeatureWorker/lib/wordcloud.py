@@ -25,8 +25,8 @@ import subprocess
 from PIL import Image
 from numpy import array
 
-ro.r.library('Cairo')       #Optional, only used for old wordcloud module
-ro.r.library('wordcloud')   #Optional, only used for old wordcloud module
+#ro.r.library('Cairo')       #Optional, only used for old wordcloud module
+#ro.r.library('wordcloud')   #Optional, only used for old wordcloud module
 #ro.r.library('extrafont')
 #ro.r.loadfonts()
 #ro.r.font_import()
@@ -36,8 +36,8 @@ font_ii = 1
 # requires rpy2, Cairo(rpackage), Wordcloud(rpackage), extrafont(Rpackage), ImageMagick (installed on the system)
 # also: sudo apt-get install libcairo2-dev libxt-dev
 
-GRDEVICES = importr('grDevices')
-brewer = importr('RColorBrewer')
+#GRDEVICES = importr('grDevices')
+#brewer = importr('RColorBrewer')
 
 def rgb(hex_str):
     """converts a hex string to an rgb tuple"""
@@ -119,6 +119,11 @@ def wordcloud(word_list, freq_list, output_prefix='test',
         font_path = PERMA_path + "/meloche_bd.ttf"
     
     if wordcloud_algorithm == 'old': #old wordcloud function
+        ro.r.library('Cairo')       #Optional, only used for old wordcloud module                                                                                                                              
+        ro.r.library('wordcloud')   #Optional, only used for old wordcloud module 
+        GRDEVICES = importr('grDevices')
+        brewer = importr('RColorBrewer')
+        
         assert(len(word_list) == len(freq_list))
 
         if width is None:

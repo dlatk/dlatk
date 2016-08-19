@@ -12,13 +12,7 @@ from subprocess import check_call, CalledProcessError
 
 
 import imp, sys
-f, pathname, desc = imp.find_module('wordcloud', sys.path[1:])
-wc = imp.load_module('wc', f, pathname, desc)
-if f is not None:
-    f.close()
-#explicitly import amueller's wordcloud library
-#for all intents that block above is equivalent to: import wordcloud as wc
-#this is needed as both the local module and amueller's package are both called 'wordcloud'
+
 
 import subprocess
 
@@ -186,6 +180,14 @@ def wordcloud(word_list, freq_list, output_prefix='test',
                 check_call(["rm", pdfFile])
 
     elif wordcloud_algorithm == 'amueller':   #new wordcloud function
+        f, pathname, desc = imp.find_module('wordcloud', sys.path[1:])
+        wc = imp.load_module('wc', f, pathname, desc)
+        if f is not None:
+            f.close()
+        #explicitly import amueller's wordcloud library
+        #for all intents that block above is equivalent to: import wordcloud as wc
+        #this is needed as both the local module and amueller's package are both called 'wordcloud'
+
         assert(len(word_list) == len(freq_list))
         color_string_list = None
         if width is None:

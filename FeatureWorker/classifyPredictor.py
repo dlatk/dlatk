@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #########################################
 # Classify Predictor
 #
@@ -47,13 +48,13 @@ from sklearn.grid_search import GridSearchCV
 from sklearn import metrics
 
 from sklearn.utils import shuffle
-from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
+from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier, GradientBoostingClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model.base import LinearModel
 from sklearn.base import ClassifierMixin
 
 #scipy
-import pylab as pl
+import scipy.stats as ss
 from scipy.stats import zscore
 from scipy.stats.stats import pearsonr, spearmanr
 from scipy.sparse import csr_matrix, vstack, hstack, spmatrix
@@ -125,7 +126,7 @@ def alignDictsAsXyWithFeats(X, y,feats):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
     keys = frozenset(y.keys())
     # keys = keys.intersection(*[x.keys() for x in X])
-    keys = keys.intersection(X.keys())	
+    keys = keys.intersection(X.keys())  
     keys = list(keys) #to make sure it stays in order
     feats = list(feats)
     listy = map(lambda k: y[k], keys)
@@ -208,7 +209,7 @@ class ClassifyPredictor:
             ###with l1 feature selection:
             #{'C':[0.01, 0.1, 0.001], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']}, #FIRST PASS l1 OPTION; swl message-level
             #{'C':[10, 1, 0.1, 0.01, 0.001, 0.0001, 0.0025, 0.00025, 0.00001, 0.000001, 0.000025, 0.0000001, 0.0000025, 0.00000001, 0.00000025], 'penalty':['l1'], 'dual':[False]} #swl
-            {'C':[0.01], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']} #age, general sparse setting #words n phrases, gender (best 0.01=> 91.4 )
+            {'C':[0.01], 'penalty':['l1'], 'dual':[False]} #age, general sparse setting #words n phrases, gender (best 0.01=> 91.4 )
             #{'C':[0.1], 'penalty':['l1'], 'dual':[False], 'multi_class':['crammer_singer']} #
             #{'C':[0.01, 0.1, 1, 10, 0.001], 'penalty':['l1'], 'dual':[False]} #timex message-level
             #{'C':[0.000001], 'penalty':['l2']}, # UnivVsMultiv choice Maarten 
@@ -239,9 +240,20 @@ class ClassifyPredictor:
             #{'n_jobs': [12], 'n_estimators': [50], 'max_features': ["sqrt", "log2", None], 'criterion':['gini'], 'min_samples_split': [1]}, 
             #{'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2]}, 
             {'n_jobs': [12], 'n_estimators': [200], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2]}, 
+            {'n_jobs': [9], 'n_estimators': [1500], 'max_features': ["sqrt"], 'criterion':['gini'], 
+             'min_samples_split': [2], 'class_weight': ['auto'], 'random_state': [42]}, 
+            ],
+        'etcsmall': [ 
+            {'n_jobs': [8], 'n_estimators': [1500], 'max_features': [1.00], 'criterion':['gini'], 
+             'min_samples_split': [2], 'class_weight': ['auto'], 'bootstrap': [True], 
+             'random_state': [42], 'oob_score':[True]}, 
             ],
         'rfc': [
-            {'n_jobs': [10], 'n_estimators': [1000]}, 
+
+            #{'n_jobs': [10], 'n_estimators': [1000]}, 
+            {'n_jobs': [8], 'n_estimators': [1500], 'max_features': ["sqrt"], 'criterion':['gini'], 
+             'min_samples_split': [2], 'class_weight': ['auto'], 'bootstrap': [True], 
+             'random_state': [42], 'oob_score':[True]}, 
             ],
         'pac': [
             {'n_jobs': [10], 'C': [1, .1, 10]}, 
@@ -249,7 +261,10 @@ class ClassifyPredictor:
         'lda': [
             {}, 
             ],
-
+        'gbc': [
+            {'n_estimators': [500], 'random_state': [42], 
+             'subsample':[0.4], 'max_depth': [5]  },
+            ],
 
         }
 
@@ -258,9 +273,11 @@ class ClassifyPredictor:
         'linear-svc' : 'LinearSVC',
         'svc' : 'SVC',
         'etc' : 'ExtraTreesClassifier',
+        'etcsmall' : 'ExtraTreesClassifier',
         'rfc' : 'RandomForestClassifier',
         'pac' : 'PassiveAggressiveClassifier',
         'lda' : 'LDA', #linear discriminant analysis
+        'gbc' : 'GradientBoostingClassifier',
         }
     
     modelToCoeffsName = {
@@ -279,6 +296,7 @@ class ClassifyPredictor:
     maxPredictAtTime = 150000
     backOffPerc = .00 #when the num_featrue / training_insts is less than this backoff to backoffmodel
     backOffModel = 'linear-svc'
+    #backOffModel = 'lr'
     #backOffModel = 'linear'
 
     # feature selection:
@@ -436,7 +454,7 @@ class ClassifyPredictor:
             (groupNorms, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups, blacklist = blacklist)
         groupNormValues = groupNorms.values() #list of dictionaries of group => group_norm
         controlValues = controls.values() #list of dictionaries of group=>group_norm
-	#     this will return a dictionary of dictionaries
+    #     this will return a dictionary of dictionaries
 
         #3. test classifiers for each possible y:
         for outcomeName, outcomes in sorted(allOutcomes.items()):
@@ -469,19 +487,27 @@ class ClassifyPredictor:
 
     #####################################################
     ######## Main Testing Method ########################
-    def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
-                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None, adaptTables=None, adaptColumns=None, groupsWhere = ''):
-        """Tests classifier, by pulling out random testPerc percentage as a test set""" # edited by Youngseo
+    def testControlCombos(self, standardize = True, sparse = False, saveModels = False, 
+                          blacklist = None, noLang = False, allControlsOnly = False, comboSizes = None, 
+                          nFolds = 2, savePredictions = False, weightedEvalOutcome = None, 
+                          stratifyFolds = True, warmStartControls = False, controlCombineProbs = True, groupsWhere = ''):
+        """Tests classifier, by pulling out random testPerc percentage as a test set"""
+
+        ##TODO ADD RESIDUALIZED CONTROLS: use "warm_start" with ETC or gradient boosting
         
         ###################################
         #1. setup groups for random folds
         if blacklist: print "USING BLACKLIST: %s" %str(blacklist)
         (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
-        print "[number of groups: %d (%d Folds)]" % (len(groups), nFolds)
-        random.seed(self.randomState)
-        groupList = list(groups)
-        random.shuffle(groupList)
-        groupFolds =  [x for x in foldN(groupList, nFolds)]
+        groupFolds = []
+        if not stratifyFolds: 
+            print "[number of groups: %d (%d Folds)] non-stratified / using same folds for all outcomes" % (len(groups), nFolds)
+            random.seed(self.randomState)
+            groupList = list(groups)
+            random.shuffle(groupList)
+            groupFolds = foldN(groupList, nFolds)
+        else:
+            print "    using stratified folds; different folds per outcome"
 
         ####
         #1a: setup weightedEval
@@ -549,7 +575,18 @@ class ClassifyPredictor:
                     thisOutcomeGroups = set(outcomes.keys()) & UGroups #this intersects with UGroups
                     if not outcomeName in scores:
                         scores[outcomeName] = dict()
+                        
+                    if stratifyFolds: 
+                        #even classes across the outcomes
+                        print "Warning: Stratifying outcome classes across folds (thus, folds will differ across outcomes)."
+                        groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = 42)
+
+                    #for warmStartControls or controlCombinedProbs
+                    lastClassifiers= [None]*nFolds
+                    savedControlYpp = None
+
                     for withLanguage in xrange(2):
+                        classifier = None
                         if withLanguage: 
                             if noLang or (allControlsOnly and (r > 1) and (r < len(controlKeys))):#skip to next
                                 continue
@@ -564,7 +601,8 @@ class ClassifyPredictor:
                             testStats.update({'r-wghtd' : [], 'r-wghtd-p' : []})
                         predictions = {}
                         predictionProbs = {}
-                        
+
+
                         ###############################
                         #3a) iterate over nfold groups:
                         for testChunk in xrange(0, len(groupFolds)):
@@ -604,18 +642,17 @@ class ClassifyPredictor:
 
                             ################################
                             #4) fit model and test accuracy:
-                            
                             mfclass = Counter(ytrain).most_common(1)[0][0]
-                            # Check if the classifier is using controls - Youngseo
-                            if len(controls) > 0:
-                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize = standardize, sparse = sparse, adaptTables=adaptTables, adaptColumns=adaptColumns)
-                                ypredProbs, ypredClasses = self._multiXpredict(classifier, multiXtest, \
-                                                                               multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse, probs=True, adaptTables=adaptTables, adaptColumns=adaptColumns)
+                            (classifier, multiScalers, multiFSelectors) = (None, None, None)
+                            if warmStartControls:
+                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, warmStartClassifier = lastClassifiers[testChunk])
+                                lastClassifiers[testChunk] = classifier
                             else:
-                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize = standardize, sparse = sparse, adaptTables=None, adaptColumns=None)
-                                ypredProbs, ypredClasses = self._multiXpredict(classifier, multiXtest, \
-                                                                               multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse, probs=True, adaptTables=None, adaptColumns=None)
+                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse)
+                                
 
+                            ypredProbs, ypredClasses = self._multiXpredict(classifier, multiXtest, \
+                                                                           multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse, probs=True)
                             ypred = ypredClasses[ypredProbs.argmax(axis=1)]
                             predictions.update(dict(izip(testGroupsOrder,ypred)))
                             predictionProbs.update(dict(izip(testGroupsOrder,ypredProbs)))
@@ -672,12 +709,29 @@ class ClassifyPredictor:
                         ypredProbs = array(ypredProbs)
                         reportStats['acc'] = accuracy_score(ytrue, ypred)
                         reportStats['f1'] = f1_score(ytrue, ypred)
-                        reportStats['auc'] = pos_neg_auc(ytrue, ypredProbs[:,-1])
+                        reportStats['a'] = pos_neg_auc(ytrue, ypredProbs[:,-1])
+
+                        reportStats['auc_cntl_comb'] = 0.0
+                        reportStats['auc_cntl_comb2'] = 0.0
+                        reportStats['auc_cntl_comb_p'] = 1.0
+                        reportStats['auc_cntl_comb_t'] = 0.0
+                        if controlCombineProbs:
+                            if withLanguage and savedControlYpp is not None:
+                                newprobs = np.array(easyNFoldLR( np.array([ypredProbs[:,-1], savedControlYpp]).T, ytrue, len(groupFolds)))[:,-1]
+                                newprobs2 = np.array(easyNFoldAUCWeight( np.array([ypredProbs[:,-1], savedControlYpp]).T, ytrue, len(groupFolds)))[:,-1]
+                                #newprobs2 = (ypredProbs[:,-1] + savedControlYpp)/2.0
+                                #newprobs = ensembleDecisionFuncs(outcomes, groupFolds, ypredProbs[:,-1], savedControlYpp)
+                                reportStats['auc_cntl_comb'] = pos_neg_auc(ytrue, newprobs)
+                                reportStats['auc_cntl_comb_t'], reportStats['auc_cntl_comb_p'] = paired_t_1tail_on_errors(newprobs, savedControlYpp, ytrue)
+                                reportStats['auc_cntl_comb2'] = pos_neg_auc(ytrue, newprobs2)
+                            else: #save probs for next round
+                                savedControlYpp = ypredProbs[:,-1]
+
                         testCounter = Counter(ytrue)
                         reportStats['mfclass_acc'] = testCounter[mfclass] / float(len(ytrue))
-
                         if savePredictions: 
                             reportStats['predictions'] = predictions
+                            reportStats['predictionProbs'] = {k:v[-1] for k,v in predictionProbs.iteritems()}
                         #pprint(reportStats) #debug
                         mfclass = Counter(ytest).most_common(1)[0][0]
                         print "* Overall Fold Acc: %.4f (+- %.4f) vs. MFC Accuracy: %.4f (based on test rather than train)"% (reportStats['folds_acc'], reportStats['folds_se_acc'], reportStats['folds_mfclass_acc'])
@@ -799,7 +853,6 @@ class ClassifyPredictor:
 
         print "[Prediction Complete]"
 
-        # print "Maarten \n", pd.DataFrame(predictions)
         return predictions
 
     def predictNoOutcomeGetter(self, groups, standardize = True, sparse = False, restrictToGroups = None):
@@ -857,7 +910,7 @@ class ClassifyPredictor:
                 groupNormValues = groupNormsList[i] # basically a feature table in list(dict) form
                 # We want the dictionaries to turn into a list that is aligned
                 gns = dict(zip(self.featureNamesList[i], groupNormValues))
-                # print "Maarten", str(gns)[:150]
+
                 df = pd.DataFrame(data=gns)
                 df = df.fillna(0.0)
                 df = df[self.featureNamesList[i]]
@@ -865,8 +918,7 @@ class ClassifyPredictor:
                 print "  (feature group: %d)" % (i)
 
                 multiXtest.append(csr_matrix(df.values))
-                # print "Maarten", csr_matrix(df.values).shape, csr_matrix(df.values).todense()
-
+                
             #############
             #4) predict
             ypred = self._multiXpredict(self.classificationModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
@@ -893,7 +945,7 @@ class ClassifyPredictor:
         groups = list(groups)
         random.seed(self.randomState)
         random.shuffle(groups)        
-        chunks =  [x for x in foldN(groups, nFolds)]
+        chunks = foldN(groups, nFolds)
         predictions = dict() #outcomes->groups->prediction               
         #for loop over testChunks, changing which one is teh test (not test = training)
         for testChunk in xrange(0, len(chunks)):
@@ -942,7 +994,7 @@ class ClassifyPredictor:
             print "TOTAL GROUPS (%d) TOO LARGE. Breaking up to run in %d chunks." % (len(groups), numChunks)
             random.seed(self.randomState)
             random.shuffle(groups)        
-            chunks =  [x for x in foldN(groups, numChunks)]
+            chunks =  foldN(groups, numChunks)
 
         predictions = dict() #outcomes->groups->prediction               
 
@@ -988,7 +1040,7 @@ class ClassifyPredictor:
             print "TOTAL GROUPS (%d) TOO LARGE. Breaking up to run in %d chunks." % (len(groups), numChunks)
             random.seed(self.randomState)
             random.shuffle(groups)        
-            chunks =  [x for x in foldN(groups, numChunks)]
+            chunks =  foldN(groups, numChunks)
         predictions = dict()
         totalPred = 0
         c = 0
@@ -1041,9 +1093,7 @@ class ClassifyPredictor:
         weights_dict = dict()
 
         featTables = [fg.featureTable for fg in self.featureGetters]
-        # MAARTEN
-        # pprint(self.classificationModels)
-        # pprint([feat[:20] for feat in self.featureNamesList])
+        
         startIndex = 0 # for multiX classification
         for i, featTableFeats in enumerate(self.featureNamesList):
             weights_dict[featTables[i]] = dict()
@@ -1184,72 +1234,33 @@ class ClassifyPredictor:
             return classifier, scaler, fSelector
 
 
-    def _multiXtrain(self, X, y, standardize = True, sparse = False, adaptTables=None, adaptColumns=None):
+    def _multiXtrain(self, X, y, standardize = True, sparse = False, warmStartClassifier = None):
         """does the actual classification training, first feature selection: can be used by both train and test
            create multiple scalers and feature selectors
            and just one classification model (of combining the Xes into 1)
-           adapt tables: specifies which table (i.e. index of X) to adapt
-           adapt cols: specifies which columns of the last table (X) to use for adapting the adaptTables 
         """
 
         if not isinstance(X, (list, tuple)):
             X = [X]
         multiX = X
         X = None #to avoid errors
-        y = np.array(y)
-
         multiScalers = []
         multiFSelectors = []
 
-        #setup for adaptation
-        adaptMatrix = np.array([])
-        if adaptTables is not None:
-            #Youngseo
-            print 'MultiX before duplication:', len(multiX)
-            # if adaptCol is empty, it means all columns of the controls table will be used for adaptation.
-            controls_mat=multiX[-1].todense()
-	    if adaptColumns is None:
-		adaptMatrix = controls_mat
-            else:
-		for adaptCol in adaptColumns:
-                    #c =np.insert(c,c.shape[1],thelist[0][:,0],axis=1)
-		    adaptMatrix=np.insert(adaptMatrix,adaptMatrix.shape[1],controls_mat[:,adaptCol],axis=1)
-
-
-
-        i=0
-        #original_size = len(multiX)
-        while i < len(multiX): # changed to while loop by Youngseo
+        for i in xrange(len(multiX)):
             X = multiX[i]
-
-            if not sparse and isinstance(X,csr_matrix): #edited by Youngseo
+            if not sparse:
                 X = X.todense()
-            
-            print " X[%d]: (N, features): %s" % (i, str(X.shape))
-
-            # Youngseo
-            #adaptation:
-            if adaptTables is not None and i in adaptTables:
-                #print 'adaptaion matrix:', adaptMatrix
-		for j in range(adaptMatrix.shape[1]):
-                    adaptColMult=adaptMatrix[:,j]
-                    if type(X) != type(np.array([1])):
-                        X = np.array(X)
-                    adaptX=X*np.array(adaptColMult)
-		    # to keep the index of controls table as the last table of multiX 
-		    multiX.insert(len(multiX)-1,np.array(adaptX))
-		#Youngseo
-                print 'MultiX length after duplication:', len(multiX)
-
 
             #Standardization:
             scaler = None
             #print " Standardize: ", standardize
-            if standardize == True: # and i < original_size:
+            if standardize == True:
                 scaler = StandardScaler(with_mean = not sparse)
                 print "[Applying StandardScaler to X[%d]: %s]" % (i, str(scaler))
                 X = scaler.fit_transform(X)
-                print " afer standardize: X[%d]: (N, features): %s" % (i, str(X.shape))
+                y = np.array(y)
+            print " X[%d]: (N, features): %s" % (i, str(X.shape))
 
             #Feature Selection
             fSelector = None
@@ -1273,12 +1284,9 @@ class ClassifyPredictor:
                         print "No features selected, so using original full X"
                 print " after feature selection: (N, features): %s" % str(X.shape)
 
-
-		
             multiX[i] = X
             multiScalers.append(scaler)
-            multiFSelectors.append(fSelector)
-            i+=1 # added to work with while loop by Youngseo Son
+            multiFSelectors.append(fSelector)      
 
         #combine all multiX into one X:
         X = multiX[0]
@@ -1296,6 +1304,8 @@ class ClassifyPredictor:
 
         if hasMultValuesPerItem(self.cvParams[modelName]) and modelName[-2:] != 'cv':
             #grid search for classifier params:
+            if warmStartClassifier:
+                raise Exception('Warm start classifier not implemented with grid search')
             gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
                               self.cvParams[modelName], n_jobs = self.cvJobs,
                               cv=ShuffleSplit(len(y), n_iter=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
@@ -1307,7 +1317,12 @@ class ClassifyPredictor:
         else:
             # no grid search
             print "[Training classification model: %s]" % modelName
-            classifier = eval(self.modelToClassName[modelName]+'()')
+            classifier = None
+            if warmStartClassifier:
+                classifier = warmStartClassifier
+                classifier.set_params(warm_start=True)
+            if not classifier:
+                classifier = eval(self.modelToClassName[modelName]+'()')
             try: 
                 classifier.set_params(**dict((k, v[0] if isinstance(v, list) else v) for k,v in self.cvParams[modelName][0].iteritems()))
             except IndexError: 
@@ -1323,7 +1338,6 @@ class ClassifyPredictor:
                 print "  selected alpha: %f" % classifier.alpha_
             return classifier, multiScalers, multiFSelectors
 
-    
     def _predict(self, classifier, X, scaler = None, fSelector = None, y = None):
         if scaler:
             X = scaler.transform(X)
@@ -1571,33 +1585,18 @@ class ClassifyPredictor:
         
         pp.close()
 
-    def _multiXpredict(self, classifier, X, multiScalers = None, multiFSelectors = None, y = None, sparse = False, probs = False, adaptTables = None, adaptColumns = None):
+    def _multiXpredict(self, classifier, X, multiScalers = None, multiFSelectors = None, y = None, sparse = False, probs = False):
         if not isinstance(X, (list, tuple)):
             X = [X]
 
         multiX = X
         X = None #to avoid errors
 
-        adaptMatrix = np.array([])
-        if adaptTables is not None:
-            #Youngseo
-                
-            # if adaptCol is empty, it means all columns of the controls table will be used for adaptation.
-	    controls_mat=multiX[-1].todense()
-	    if adaptColumns is None:
-		adaptMatrix = controls_mat
-            else:
-		for adaptCol in adaptColumns:
-                    #c =np.insert(c,c.shape[1],thelist[0][:,0],axis=1)
-		    adaptMatrix=np.insert(adaptMatrix,adaptMatrix.shape[1],controls_mat[:,adaptCol],axis=1)
-		    
-        #for i in xrange(len(multiX)):
-        i=0
-        while i < len(multiX): # changed to while loop by Youngseo
+        for i in xrange(len(multiX)):
 
             #setup X and transformers:
             X = multiX[i]
-            if not sparse and isinstance(X,csr_matrix): #edited by Youngseo
+            if not sparse:
                 X = X.todense()
             (scaler, fSelector) = (None, None)
             if multiScalers: 
@@ -1606,18 +1605,6 @@ class ClassifyPredictor:
                 fSelector = multiFSelectors[i]
 
             #run transformations:
-            # Youngseo
-            #adaptation:
-            if adaptTables is not None and i in adaptTables:
-                for j in range(adaptMatrix.shape[1]):
-                    adaptColMult=adaptMatrix[:,j]
-                    #print adaptColMult
-                    if type(X) != type(np.array([1])):
-                        X = np.array(X)
-                    adaptX=X * np.array(adaptColMult)
-		    # to keep the index of controls table as the last table of multiX
-		    multiX.insert(len(multiX)-1,np.array(adaptX))
-
             if scaler:
                 print "  predict: applying standard scaler to X[%d]: %s" % (i, str(scaler)) #debug
                 X = scaler.transform(X)
@@ -1628,9 +1615,7 @@ class ClassifyPredictor:
                     X = newX
                 else:
                     print "No features selected, so using original full X"
-
             multiX[i] = X
-            i+=1 # added to work with while loop by Youngseo Son
 
         #combine all multiX into one X:
         X = multiX[0]
@@ -1717,8 +1702,9 @@ class ClassifyPredictor:
                     for cn in controlNames:
                         rowDict[cn] = 1 if cn in rk else 0
                     rowDict['w/ lang.'] = withLang
-                    rowDict.update({(k,v) for (k,v) in sc.items() if k is not 'predictions'})
+                    rowDict.update({(k,v) for (k,v) in sc.items() if ((k is not 'predictions') and k is not 'predictionProbs')})
                     csvOut.writerow(rowDict)
+    
     @staticmethod
     def printComboControlPredictionsToCSV(scores, outputstream, paramString = None, delimiter='|'):
         """prints predictions with all combinations of controls to csv)"""
@@ -1750,6 +1736,38 @@ class ClassifyPredictor:
         for k,v in data.iteritems():
            v.insert(0,k)  
            writer.writerow(v)
+
+    @staticmethod
+    def printComboControlPredictionProbsToCSV(scores, outputstream, paramString = None, delimiter='|'):
+         """prints predictions with all combinations of controls to csv)"""
+         predictionData = {}
+         data = defaultdict(list)
+         columns = ["Id"]
+         if paramString:
+             print >>outputstream, paramString+"\n"
+         i = 0
+         outcomeKeys = sorted(scores.keys())
+         previousColumnNames = []
+         for outcomeName in outcomeKeys:
+             outcomeScores = scores[outcomeName]
+             controlNames = sorted(list(set([controlName for controlTuple in outcomeScores.keys() for controlName in controlTuple])))
+             rowKeys = sorted(outcomeScores.keys(), key = lambda k: len(k))
+             for rk in rowKeys:
+                 for withLang, s in outcomeScores[rk].iteritems():
+                     i+=1
+                     mc = "_".join(rk)
+                     if(withLang):
+                         mc += "_withLanguage"
+                     columns.append(outcomeName+'_'+mc)
+                     predictionData[str(i)+'_'+outcomeName+'_'+mc] = s['predictionProbs']
+                     for k,v in s['predictionProbs'].iteritems():
+                         data[k].append(v)
+
+         writer = csv.writer(outputstream)
+         writer.writerow(columns)
+         for k,v in data.iteritems():
+            v.insert(0,k)
+            writer.writerow(v)
         
     #################
     ## Deprecated:
@@ -1783,7 +1801,7 @@ class ClassifyPredictor:
         self.featureNames = groupNorms.keys() #holds the order to expect features
         groupNormValues = groupNorms.values() #list of dictionaries of group => group_norm
         controlValues = controls.values() #list of dictionaries of group=>group_norm
-	#     this will return a dictionary of dictionaries
+    #     this will return a dictionary of dictionaries
 
 
         #3. Create classifiers for each possible y:
@@ -1839,7 +1857,7 @@ class ClassifyPredictor:
         #groupNormValues = groupNorms.values() #list of dictionaries of group => group_norm
         print "number of features after alignment: %d" % len(groupNormValues)
         controlValues = controls.values() #list of dictionaries of group=>group_norm (TODO: including controls for predict might mess things up)
-	#     this will return a dictionary of dictionaries
+    #     this will return a dictionary of dictionaries
 
         #3. Predict ys for each model:
         predictions = dict() #outcome=>group_id=>value
@@ -1980,16 +1998,52 @@ def grouper(folds, iterable, padvalue=None):
     n = len(l) / folds
     return izip_longest(*[iter(iterable)]*n, fillvalue=padvalue)
 
-def foldN(l, folds):
+def xFoldN(l, folds):
     """ Yield successive n-sized chunks from l."""
     n = len(l) / folds
     last = len(l) % folds
-    for i in xrange(0, n*folds, n):
-        if i+n+last >= len(l):
-            yield l[i:i+n+last]
-            break
+    i = 0
+    for f in xrange(folds):
+        if last > 0:
+            yield l[i:i+n+1]
+            last -= 1
+            i+= n+1
         else: 
             yield l[i:i+n]
+            i+= n
+
+def foldN(l, folds):
+    return [f for f in xFoldN(l, folds)]
+
+def stratifyGroups(groups, outcomes, folds, randomState = 42):
+    """breaks groups up into folds such that each fold has at most 1 more of a class than other folds """
+    random.seed(randomState)
+    xGroups = sorted(list(set(groups) & set(outcomes.keys())))
+    outcomesByClass = {}
+    for g in xGroups:
+        try: 
+            outcomesByClass[outcomes[g]].append(g)
+        except:
+            outcomesByClass[outcomes[g]] = [g]
+
+    groupsPerFold = {f: [] for f in xrange(folds)}
+    countPerFold = {f: 0 for f in xrange(folds)}
+
+    #add groups to folds per class, keeping track of balance
+    for c, gs in outcomesByClass.iteritems():
+        foldsOrder = [x[0] for x in sorted(countPerFold.items(), key=lambda x: (x[1], x[0]))]
+        currentGFolds = foldN(gs, folds)
+        i = 0
+        for f in foldsOrder:
+            groupsPerFold[f].extend(currentGFolds[i])
+            countPerFold[f] += len(currentGFolds[i])
+            i+=1
+
+    #make sure all outcomes aren't together in the groups:
+    for gs in groupsPerFold.values():                
+        random.shuffle(gs)
+
+    return groupsPerFold.values()
 
 def hasMultValuesPerItem(listOfD):
     """returns true if the dictionary has a list with more than one element"""
@@ -2002,8 +2056,6 @@ def hasMultValuesPerItem(listOfD):
 
 def getGroupsFromGroupNormValues(gnvs):
     return set([k for gns in gnvs for k in gns.iterkeys()])
-
-
 
 def matrixAppendHoriz(A, B):
     if isinstance(A, spmatrix) and isinstance(B, spmatrix):
@@ -2027,3 +2079,86 @@ def r2simple(ytrue, ypred):
     ss_err = sum((yi-fi)**2 for yi,fi in zip(ytrue,ypred))
     r2 = 1 - (ss_err/ss_tot)
     return r2
+
+def easyNFoldLR(X, y, folds):
+    """build logistic regressor given two sets of decision function outputs, return new probs """
+    yscores = []
+    X = zscore(X)
+    y = np.array(y)
+    print "[NFOLD TRAIN TESTING Easy LR]"
+    groups = range(len(y))
+    outcomes = dict(zip(groups, y))
+    groupFolds = stratifyGroups(groups, outcomes, folds, randomState = 42)
+    ymap = []
+    for testgs in groupFolds:
+        testgs = np.array(testgs)
+        setgs = set(testgs)
+        traings = [i for i in groups if i not in setgs]
+        ytest = y[testgs]
+        Xtest = X[testgs]
+        ytrain = y[traings]
+        Xtrain = X[traings]
+
+        #lr = LogisticRegression(C = 100000, penalty = 'l2',  class_weight='auto')
+        lr = LogisticRegression(C = 100000, penalty = 'l2',  class_weight='auto', fit_intercept=False)
+        fitted_model = lr.fit(Xtrain, ytrain)
+        #print fitted_model.coef_
+        ypred_probs = fitted_model.predict_proba(Xtest)
+        print "   EASY LR AUC: %.4f" %  pos_neg_auc(ytest, ypred_probs[:,-1])
+        yscores.extend(ypred_probs)
+        ymap.extend(testgs)
+    newyscores = [0]*len(y)
+    for i in groups:
+        newyscores[ymap[i]] = yscores[i]
+    print "[Done]"
+    print " FINAL EASY LR AUC: %.4f" %  pos_neg_auc(y, np.array(newyscores)[:,-1])
+    return newyscores
+
+def easyNFoldAUCWeight(X, y, folds):
+    """build logistic regressor given two sets of decision function outputs, return new probs """
+    yscores = []
+    X = zscore(X)
+    y = np.array(y)
+    print "[NFOLD TRAIN TESTING Easy LR]"
+    groups = range(len(y))
+    outcomes = dict(zip(groups, y))
+    groupFolds = stratifyGroups(groups, outcomes, folds, randomState = 42)
+    ymap = []
+    for testgs in groupFolds:
+        testgs = np.array(testgs)
+        setgs = set(testgs)
+        traings = [i for i in groups if i not in setgs]
+        ytest = y[testgs]
+        Xtest = X[testgs]
+        ytrain = y[traings]
+        Xtrain = X[traings]
+
+        weights = np.array([0.0]*Xtest.shape[1])
+        sumWeights = 0.0
+        for c in range(Xtrain.shape[1]):
+            weights[c] = ((np.absolute(pos_neg_auc(ytrain, Xtrain[:,c])) - 0.5) / 0.5)**2
+            sumWeights += weights[c]
+        weights = np.array([weights / sumWeights])
+        print weights
+        ypred_probs = np.dot(Xtest, weights.T)
+        print "   EASY LR AUC: %.4f" %  pos_neg_auc(ytest, ypred_probs[:,-1])
+        yscores.extend(ypred_probs)
+        ymap.extend(testgs)
+    newyscores = [0]*len(y)
+    for i in groups:
+        newyscores[ymap[i]] = yscores[i]
+    print "[Done]"
+    print " FINAL EASY LR AUC: %.4f" %  pos_neg_auc(y, np.array(newyscores)[:,-1])
+    return newyscores
+
+
+def paired_t_1tail_on_errors(newprobs, oldprobs, ytrue):
+    #checks if 
+    n = len(ytrue)
+    newprobs_res_abs = np.absolute(array(ytrue) - array(newprobs))
+    oldprobs_res_abs = np.absolute(array(ytrue) - array(oldprobs))
+    ypp_diff = newprobs_res_abs - oldprobs_res_abs #old should be smaller
+    ypp_diff_mean, ypp_sd = np.mean(ypp_diff), np.std(ypp_diff)
+    ypp_diff_t = ypp_diff_mean / (ypp_sd / sqrt(n))
+    ypp_diff_p = ss.t.sf(np.absolute(ypp_diff_t), n-1)
+    return ypp_diff_t, ypp_diff_p

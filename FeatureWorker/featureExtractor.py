@@ -19,9 +19,12 @@ from math import floor, log10
 from numpy import mean, std
 
 #nltk
-from nltk.tree import ParentedTree
-from nltk.corpus import wordnet as wn
-import nltk.data
+try:
+    from nltk.tree import ParentedTree
+    from nltk.corpus import wordnet as wn
+    import nltk.data
+except ImportError:
+    print "warning: unable to import nltk.tree or nltk.corpus or nltk.data"
 
 #infrastructure
 from featureWorker import FeatureWorker
@@ -1755,6 +1758,7 @@ class FeatureExtractor(FeatureWorker):
         
         tableName = self.createFeatureTable("cat_%s"%lexiconTableName, 'VARCHAR(%d)'%max_category_string_length, 'INTEGER', tableName, valueFunc)
 
+
         #4. grab all distinct group ids
         wordTable = self.getWordTable()
         fwc.warn("WORD TABLE %s"%(wordTable,))
@@ -1764,8 +1768,8 @@ class FeatureExtractor(FeatureWorker):
         groupIdRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
 
         #5. disable keys on that table if we have too many entries
-        if (len(categories)* len(groupIdRows)) < fwc.MAX_TO_DISABLE_KEYS:
-            mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode) #for faster, when enough space for repair by sorting
+        #if (len(categories)* len(groupIdRows)) < fwc.MAX_TO_DISABLE_KEYS:
+        mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode) #for faster, when enough space for repair by sorting
 
         #6. iterate through source feature table by group_id (fixed, column name will always be group_id)
         rowsToInsert = []
@@ -1851,8 +1855,8 @@ class FeatureExtractor(FeatureWorker):
             fwc.warn("%d out of %d group Id's processed; %2.2f complete"%(groupIdCounter, len(groupIdRows), float(groupIdCounter)/len(groupIdRows)))
 
         #8. enable keys on the new feature table
-        if (len(categories)* len(groupIdRows)) < fwc.MAX_TO_DISABLE_KEYS: 
-            mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        #if (len(categories)* len(groupIdRows)) < fwc.MAX_TO_DISABLE_KEYS: 
+        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
         
         #9. exit with success, return the newly created feature table
         return tableName

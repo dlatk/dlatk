@@ -16,28 +16,33 @@ import argparse
 import time
 from pprint import pprint
 from numpy import isnan, sqrt, log2
-from FeatureWorker import DDLA
 from ConfigParser import SafeConfigParser
 
 #wwbp
+#try:
+#    from FeatureWorker.lib.StanfordSegmenter import StanfordSegmenter
+#except ImportError:
+#    print 'warning: StanfordSegmenter not found.'
 try:
-    from FeatureWorker.lib.StanfordSegmenter import StanfordSegmenter
+    from FeatureWorker.lib import wordcloud
 except ImportError:
-    print 'warning: StanfordSegmenter not found.'
-from FeatureWorker.lib import wordcloud
+    print 'warning: wordcloud not found.'
 from FeatureWorker.semanticsExtractor import SemanticsExtractor
 import FeatureWorker.featureWorker as featureWorker
 from FeatureWorker.regressionPredictor import RegressionPredictor, CombinedRegressionPredictor, ClassifyToRegressionPredictor
 from FeatureWorker.classifyPredictor import ClassifyPredictor
 from FeatureWorker.clustering import DimensionReducer, CCA
 from FeatureWorker.mediation import MediationAnalysis
+from FeatureWorker import DDLA
 
 INTERFACE_PATH = os.path.dirname(os.path.abspath(featureWorker.__file__))+'/LexicaInterface'
 sys.path.append(INTERFACE_PATH)
-try:
-    import lexInterface
-except ImportError:
-    print 'warning: interface module not imported..'
+from FeatureWorker.LexicaInterface import lexInterface
+#try:
+    #from FeatureWorker.LexicaInterface import lexInterface
+    #import lexInterface
+#except ImportError:
+#    print 'warning: interface module not imported..'
 
 from FeatureWorker.featureWorker import FeatureWorker
 from FeatureWorker.featureExtractor import FeatureExtractor

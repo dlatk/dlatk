@@ -180,7 +180,8 @@ class DimensionReducer:
     randomState = 42  # percentage of sample to use as test set (the rest is training)
     
     params = {
-            'nmf' : { 'n_components': 20, 'init': 'nndsvd', 'sparseness': None, 'beta': 1, 'eta' : 0.1, 'tol': .0001, 'max_iter' : 200, 'nls_max_iter': 2000, 'random_state' :42 },
+            #'nmf' : { 'n_components': 15, 'init': 'nndsvd', 'sparseness': None, 'beta': 1, 'eta' : 0.1, 'tol': .0001, 'max_iter' : 200, 'nls_max_iter': 2000, 'random_state' :42 },
+            'nmf' : { 'n_components': 15, 'init': 'nndsvd', 'solver':'cd', 'l1_ratio': 0.95, 'alpha': 10, 'max_iter' : 200, 'nls_max_iter': 2000, 'random_state' :42 },
 
             'pca' : { 'n_components': 'mle', 'whiten': False},
             #'pca' : { 'n_components': 'mle', 'whiten': True},
@@ -188,7 +189,9 @@ class DimensionReducer:
             #'sparsepca': {'n_components':None, 'alpha':1, 'ridge_alpha':0.01, 'method': 'lars', 'n_jobs':4, 'random_state':42},
             'sparsepca': {'n_components':None, 'alpha':1, 'ridge_alpha':0.01, 'method': 'cd', 'n_jobs':4, 'random_state':42},
             
-            'lda': { 'nb_topics':50, 'dictionary':None, 'alpha':None }
+            'lda': { 'nb_topics':50, 'dictionary':None, 'alpha':None },
+
+            'rpca': {'n_components':15, 'random_state':42, 'whiten':False, 'iterated_power':3},
 
             }
     # maps the identifier of the algorithm used to the actual class name from the module
@@ -196,7 +199,8 @@ class DimensionReducer:
         'nmf' : 'NMF',
         'pca' : 'PCA',
         'sparsepca': 'SparsePCA',
-        'lda' : 'LDA'
+        'lda' : 'LDA',
+        'rpca' : 'RandomizedPCA',
         }
 
     def __init__(self, fg, modelName='nmf', og=None):
@@ -411,7 +415,7 @@ class DimensionReducer:
                 reduction_dict['rfeat'+str(i)] = dict()
                 for j in xrange(m):
                      if component_mat[i][j] > 0:
-                         print "feature name: %s"% self.featureNames[j] 
+                         #print "feature name: %s"% self.featureNames[j] 
                          reduction_dict['rfeat'+str(i)][self.featureNames[j]] = component_mat[i][j]
             lexicons[outcomeName] = reduction_dict
         return lexicons

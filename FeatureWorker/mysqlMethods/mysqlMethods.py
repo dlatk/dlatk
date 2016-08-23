@@ -11,13 +11,17 @@ from FeatureWorker.fwConstants import MAX_ATTEMPTS, MYSQL_ERROR_SLEEP, MYSQL_HOS
 #DB INFO:
 USER = getpass.getuser()
 PASSWD = ''                             
+HOST = '127.0.0.1'
 
-
-def executeGetSSCursor(db, sql, warnMsg = True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def executeGetSSCursor(db, sql, warnMsg = True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH,host=HOST):
     """Executes a given query (ss cursor is good to iterate over for large returns)"""
     if warnMsg: 
         warn("SQL (SSCursor) QUERY: %s"% sql[:MAX_SQL_PRINT_CHARS])
-    ssCursor = dbConnect(db, charset=charset, use_unicode=use_unicode)[0].cursor(MySQLdb.cursors.SSCursor)
+    ssCursor = dbConnect(db, 
+                         charset=charset, 
+                         use_unicode=use_unicode,
+                         host = host,
+                         )[0].cursor(MySQLdb.cursors.SSCursor)
     data = []
     attempts = 0;
     while (1):

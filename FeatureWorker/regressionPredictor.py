@@ -376,7 +376,7 @@ class RegressionPredictor:
     cvJobs = 8 #resource-heavy
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
-    maxPredictAtTime = 150000
+    maxPredictAtTime = 60000
     backOffPerc = .05 #when the num_featrue / training_insts is less than this backoff to backoffmodel
     #backOffModel = 'ridgecv'
     backOffModel = 'linear'
@@ -1302,7 +1302,7 @@ class RegressionPredictor:
             print "[Inserting Predictions as Feature values for %s]" % feat
             wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
             rows = [(k, v, v) for k, v in preds.iteritems()] #adds group_norm and applies freq filter
-            mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
+            mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
 
     def predictToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = ''):
         if not fe:
@@ -1374,13 +1374,13 @@ class RegressionPredictor:
                 for k, v in preds.iteritems():
                     rows.append((k, v, v))
                     if len(rows) >  self.maxPredictAtTime or len(rows) >= len(preds):
-                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
+                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
                         written += len(rows)
                         print "   %d feature rows written" % written
                         rows = []
             # if there's rows left
             if rows:
-                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
+                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
                 written += len(rows)
                 print "   %d feature rows written" % written
         return

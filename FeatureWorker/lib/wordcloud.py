@@ -5,22 +5,24 @@ import pdb
 import struct
 import string
 from glob import glob
-import rpy2.robjects as ro
 from random import uniform as runif
+import rpy2.robjects as ro
 from rpy2.robjects.packages import importr
-from subprocess import check_call, CalledProcessError
-
 
 import imp, sys
 
-
 import subprocess
+from subprocess import check_call, CalledProcessError
 
 from PIL import Image
 from numpy import array
 
-#ro.r.library('Cairo')       #Optional, only used for old wordcloud module
-#ro.r.library('wordcloud')   #Optional, only used for old wordcloud module
+try:
+    ro.r.library('Cairo')       #Optional, only used for old wordcloud module
+    ro.r.library('wordcloud')   #Optional, only used for old wordcloud module
+except:
+    print 'R wordcloud library not imported'
+
 #ro.r.library('extrafont')
 #ro.r.loadfonts()
 #ro.r.font_import()

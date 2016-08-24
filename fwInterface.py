@@ -16,7 +16,7 @@ import argparse
 import time
 from pprint import pprint
 from numpy import isnan, sqrt, log2
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 
 #wwbp
 #try:
@@ -26,7 +26,7 @@ from ConfigParser import SafeConfigParser
 try:
     from FeatureWorker.lib import wordcloud
 except ImportError:
-    print 'warning: wordcloud not found.'
+    print('warning: wordcloud not found.')
 from FeatureWorker.semanticsExtractor import SemanticsExtractor
 import FeatureWorker.featureWorker as featureWorker
 from FeatureWorker.regressionPredictor import RegressionPredictor, CombinedRegressionPredictor, ClassifyToRegressionPredictor
@@ -598,7 +598,7 @@ def main(fn_args = None):
     
     ##Warnings
     if not args.bonferroni:
-      print "--no_bonf has been depricated. Default p correction method is now Benjamini, Hochberg. Please use --no_correction instead of --no_bonf."
+      print("--no_bonf has been depricated. Default p correction method is now Benjamini, Hochberg. Please use --no_correction instead of --no_bonf.")
       sys.exit(1)
 
 
@@ -630,12 +630,12 @@ def main(fn_args = None):
 
     if args.makewordclouds:
         if not args.tagcloud:
-            print "WARNING: --make_wordclouds used without --tagcloud, setting --tagcloud to True"
+            print("WARNING: --make_wordclouds used without --tagcloud, setting --tagcloud to True")
             args.tagcloud = True
 
     if args.maketopicwordclouds:
         if not args.topictc and not args.corptopictc:
-            print "WARNING: --make_topic_wordcloud used without --topic_tagcloud or --corp_topic_tagcloud, setting --topic_tagcloud to True"
+            print("WARNING: --make_topic_wordcloud used without --topic_tagcloud or --corp_topic_tagcloud, setting --topic_tagcloud to True")
             args.topictc = True
 
     if not args.encoding:
@@ -680,9 +680,9 @@ def main(fn_args = None):
         if not featTable:
             featTable = args.feattable
             if not featTable:
-                print "Need to specify feature table(s)"
+                print("Need to specify feature table(s)")
                 sys.exit(1)
-        if isinstance(featTable, basestring):
+        if isinstance(featTable, str):
             featTable = [featTable]
         return [FeatureGetter(args.corpdb,
                               args.corptable,
@@ -715,8 +715,8 @@ def main(fn_args = None):
     if args.listfeattables:
         if not fw: fw = FW()
         feat_tables = fw.getFeatureTables()
-        print 'Found %s available feature tables' % (len(feat_tables))
-        for table in feat_tables: print str(table[0])
+        print('Found %s available feature tables' % (len(feat_tables)))
+        for table in feat_tables: print(str(table[0]))
 
     #Feature Extraction:
     if args.addngrams:
@@ -773,7 +773,7 @@ def main(fn_args = None):
 
     if args.addcorplextable:
         if not args.lextable:
-            print >>sys.stderr, "Need to specify lex table with -l"
+            print("Need to specify lex table with -l", file=sys.stderr)
             sys.exit()
         if not fe: fe = FE()
         args.feattable = fe.addCorpLexTable(args.lextable, valueFunc = args.valuefunc, isWeighted=args.weightedlexicon, featValueFunc=args.lexvaluefunc)
@@ -945,13 +945,13 @@ def main(fn_args = None):
 
     #create whitelist / blacklist
     if args.categories:
-        if isinstance(args.categories, basestring):
+        if isinstance(args.categories, str):
             args.categories = [args.categories]
     if args.feat_blacklist:
-        if isinstance(args.feat_blacklist, basestring):
+        if isinstance(args.feat_blacklist, str):
             args.feat_blacklist = [args.feat_blacklist]
     if args.feat_whitelist:
-        if isinstance(args.feat_whitelist, basestring):
+        if isinstance(args.feat_whitelist, str):
             args.feat_whitelist = [args.feat_whitelist] 
     (whitelist, blacklist) = (None, None)
     # Wildcards are not handled!!!
@@ -985,7 +985,7 @@ def main(fn_args = None):
         if suffix: filePieces.append(suffix)
         outputFile += '.'.join(filePieces)
         outputFile = outputFile.replace("$", ".")
-        print "Created output filename: %s" % outputFile
+        print("Created output filename: %s" % outputFile)
         return outputFile
 
     #Outcome Only options:
@@ -1031,25 +1031,25 @@ def main(fn_args = None):
             # Step 1 Interaction
             args.outcomeinteraction = [args.interactionDdla]
             oa = OA()
-            print "##### STEP 1: Finding features with significant interaction term"
+            print("##### STEP 1: Finding features with significant interaction term")
             correls = oa.correlateWithFeatures(fg, args.spearman,
                                                args.p_correction_method, args.outcomeinteraction, blacklist,
                                                whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly,
                                                logisticReg=args.logisticReg, outputInteraction=True, groupsWhere=args.groupswhere)
-            inter_keys = [i for i in correls.keys() if " * " in i]
+            inter_keys = [i for i in list(correls.keys()) if " * " in i]
             # correls = {outcome1: {feat: (R,p,N,freq)}}
             
             # whitelist should be different for multiple outcomes
-            ddla_whitelists = {inter_key: [k for k, i in correls[inter_key].iteritems() if i[1] < args.ddlaSignificance] for inter_key in inter_keys}
-            print "Maarten", ddla_whitelists
+            ddla_whitelists = {inter_key: [k for k, i in correls[inter_key].items() if i[1] < args.ddlaSignificance] for inter_key in inter_keys}
+            print("Maarten", ddla_whitelists)
 
-            correls = {"INTER["+k+"]": v for k, v in correls.iteritems()}
+            correls = {"INTER["+k+"]": v for k, v in correls.items()}
             
-            for out_name, ddla_whitelist in ddla_whitelists.iteritems():
+            for out_name, ddla_whitelist in ddla_whitelists.items():
                 if not ddla_whitelist:
                     continue
                 out = out_name.split(" from ")[-1]
-                print "Maarten", out_name, out
+                print("Maarten", out_name, out)
                 
                 whitelist = FeatureWorker.makeBlackWhiteList(ddla_whitelist, '', [], args.lexicondb)                
                 
@@ -1057,8 +1057,8 @@ def main(fn_args = None):
                 # exit()
                 # Step 2: do correlations on both ends of the interaction variable
                 
-                print "##### STEP 2: getting correlations within groups"
-                print "args.outcomecontrols", args
+                print("##### STEP 2: getting correlations within groups")
+                print("args.outcomecontrols", args)
                 args.outcomeinteraction = []
                 args.outcomefields = [out]
                 og = OG()
@@ -1071,7 +1071,7 @@ def main(fn_args = None):
                                                      whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly,
                                                      logisticReg=args.logisticReg, groupsWhere = where)
                 
-                correls.update({"["+k+"]_1": v for k, v in correls_1.iteritems()})
+                correls.update({"["+k+"]_1": v for k, v in correls_1.items()})
                 og = OG()
                 if args.groupswhere:
                     where = args.interactionDdla + "=0 and WHERE " + args.groupswhere
@@ -1081,7 +1081,7 @@ def main(fn_args = None):
                                                      args.p_correction_method, args.outcomeinteraction, blacklist,
                                                      whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly,
                                                      logisticReg=args.logisticReg, groupsWhere = where)
-                correls.update({"["+k+"]_0": v for k, v in correls_0.iteritems()})
+                correls.update({"["+k+"]_0": v for k, v in correls_0.items()})
 
         elif args.IDP:        
             correls = oa.IDP_correlate(fg, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs,blacklist=blacklist, whitelist=whitelist ) 
@@ -1149,13 +1149,13 @@ def main(fn_args = None):
 
     if args.correlate:
         pprint(args)
-        for outcomeField, featRs in correls.iteritems():
-            print "\n%s:" % outcomeField
+        for outcomeField, featRs in correls.items():
+            print("\n%s:" % outcomeField)
             cnt = 0
-            for featR in featRs.iteritems():
+            for featR in featRs.items():
                 if featR[1][1] < args.maxP: cnt +=1 
-            pprint(sorted(featRs.items(), key= lambda f: f[1] if not isnan(f[1][0]) else 0))
-            print "\n%d features significant at p < %s" % (cnt, args.maxP)
+            pprint(sorted(list(featRs.items()), key= lambda f: f[1] if not isnan(f[1][0]) else 0))
+            print("\n%d features significant at p < %s" % (cnt, args.maxP))
 
     if args.rmatrix and not args.cca: 
         if args.outputname:
@@ -1180,7 +1180,7 @@ def main(fn_args = None):
         oa.printTagCloudData(correls, args.maxP, outputFile, str(args), maxWords = args.maxtcwords, duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme)
     if args.makewordclouds:
         if not args.tagcloud:
-            print >>sys.stderr, "ERROR, can't use --make_wordclouds without --tagcloud"
+            print("ERROR, can't use --make_wordclouds without --tagcloud", file=sys.stderr)
             sys.exit()
         wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True)
 
@@ -1192,7 +1192,7 @@ def main(fn_args = None):
         # don't want to base on this: maxWords = args.maxtcwords)
     if args.maketopicwordclouds:
         if not args.topictc and not args.corptopictc:
-            print >>sys.stderr, "ERROR, can't use --make_topic_wordclouds without --topic_tagcloud or --corp_topic_tagcloud"
+            print("ERROR, can't use --make_topic_wordclouds without --topic_tagcloud or --corp_topic_tagcloud", file=sys.stderr)
             sys.exit()
         wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True)
 
@@ -1244,44 +1244,44 @@ def main(fn_args = None):
 
         # more than one feature location flag
         if sum([args.feat_as_path_start, args.feat_as_outcome, args.feat_as_control, args.no_features]) > 1:
-            print "You must specify only one of the following: --feat_as_path_start, --feat_as_outcome, --feat_as_control, --no_features"
+            print("You must specify only one of the following: --feat_as_path_start, --feat_as_outcome, --feat_as_control, --no_features")
             sys.exit()
 
         # default mode, catch no feature table or no outcome table
         if not (args.feat_as_path_start or args.feat_as_outcome or args.feat_as_control or args.no_features) and (not args.feattable or args.outcometable == fwc.DEF_OUTCOME_TABLE): 
-            print "You must specify a feature table (-f FEAT_TABLE) and an outcome table (--outcome_table OUTCOME_TABLE)"
+            print("You must specify a feature table (-f FEAT_TABLE) and an outcome table (--outcome_table OUTCOME_TABLE)")
             sys.exit()
 
         if not args.no_features:
             if args.feat_as_path_start:
                 if not args.feattable:# or len(args.outcomepathstarts) == 0:
-                    print "You must specify a feature table: -f FEAT_TABLE"
+                    print("You must specify a feature table: -f FEAT_TABLE")
                     sys.exit()
                 if len(args.outcomefields) == 0 or len(args.outcomemediators) == 0:
-                    print "You must specify at least one mediator and outcome"
+                    print("You must specify at least one mediator and outcome")
                     sys.exit()
             elif args.feat_as_outcome:
                 if not args.feattable:
-                    print "You must specify a feature table: -f FEAT_TABLE"
+                    print("You must specify a feature table: -f FEAT_TABLE")
                     sys.exit()
                 if len(args.outcomepathstarts) == 0 or len(args.outcomemediators) == 0:
-                    print "You must specify at least one mediator and path start"
+                    print("You must specify at least one mediator and path start")
                     sys.exit()
             elif args.feat_as_control:
                 if not args.feattable:
-                    print "You must specify a feature table: -f FEAT_TABLE"
+                    print("You must specify a feature table: -f FEAT_TABLE")
                     sys.exit()
                 if len(args.outcomepathstarts) == 0 or len(args.outcomemediators) == 0 or len(args.outcomefields) == 0:
-                    print "You must specify at least one mediator, path start and outcome"
+                    print("You must specify at least one mediator, path start and outcome")
                     sys.exit()
         else:
             if args.feattable:
-                print "WARNING: You specified an feature table AND the flag --no_features. This table is being ignored."
+                print("WARNING: You specified an feature table AND the flag --no_features. This table is being ignored.")
             if args.outcometable == fwc.DEF_OUTCOME_TABLE:
-                print "You must specify an outcome table"
+                print("You must specify an outcome table")
                 sys.exit()
             if len(args.outcomepathstarts) == 0 or len(args.outcomemediators) == 0 or len(args.outcomefields) == 0:
-                print "You must specify at least one mediator, path start and outcome"
+                print("You must specify at least one mediator, path start and outcome")
                 sys.exit()
 
         path_starts = args.outcomepathstarts
@@ -1369,10 +1369,10 @@ def main(fn_args = None):
         rp.load(args.picklefile)
     
     if (args.regrToLex or args.classToLex) and isinstance(args.feattable, list):
-        print "Multiple feature tables are not handled with option --prediction_to_lexicon"
+        print("Multiple feature tables are not handled with option --prediction_to_lexicon")
         exit(1)
     elif (args.regrToLex or args.classToLex) and '16to' in args.feattable and '16to16' not in args.feattable:
-        print "WARNING: using an non 16to16 feature table"
+        print("WARNING: using an non 16to16 feature table")
         
     if args.trainregression:
         rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere)
@@ -1401,7 +1401,7 @@ def main(fn_args = None):
             if args.outputname:
                 outputStream = open(args.outputname+'.predicted_data.csv', 'w')
             RegressionPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
-            print "Wrote to: %s" % str(outputStream)
+            print("Wrote to: %s" % str(outputStream))
             outputStream.close()
         #TODO:
         # if args.pred_feat:
@@ -1411,7 +1411,7 @@ def main(fn_args = None):
             if args.outputname:
                 outputStream = open(args.outputname+'.variance_data.csv', 'w')
             RegressionPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
-            print "Wrote to: %s" % str(outputStream)
+            print("Wrote to: %s" % str(outputStream))
             outputStream.close()
         elif not args.pred_csv:
             pprint(comboScores)
@@ -1469,7 +1469,7 @@ def main(fn_args = None):
             if args.outputname:
                 outputStream = open(args.outputname+'.variance_data.csv', 'w')
             ClassifyPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
-            print "Wrote to: %s" % str(outputStream)
+            print("Wrote to: %s" % str(outputStream))
             outputStream.close()
         else:
             pprint(comboScores)
@@ -1478,7 +1478,7 @@ def main(fn_args = None):
             if args.outputname:
                 outputStream = open(args.outputname+'.predicted_data.csv', 'w')
             ClassifyPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
-            print "Wrote to: %s" % str(outputStream)
+            print("Wrote to: %s" % str(outputStream))
             outputStream.close()
 
     if args.predictclassifiers:
@@ -1525,15 +1525,15 @@ def main(fn_args = None):
     if args.classToLex or args.regrToLex:
         lexicon_dict = None
         if rp and not cp:
-            print "----- Detected a regressor"
+            print("----- Detected a regressor")
             lexicon_dict = rp.getWeightsForFeaturesAsADict()  #returns featTable -> category -> term -> weight
         elif cp:
-            print "----- Detected a classifier"
+            print("----- Detected a classifier")
             lexicon_dict = cp.getWeightsForFeaturesAsADict()  #returns featTable -> category -> term -> weight
         
-        lex_dict_with_name = {args.classToLex: v for featTableName,v in lexicon_dict.iteritems()} if args.classToLex else {args.regrToLex: v for featTableName,v in lexicon_dict.iteritems()}
+        lex_dict_with_name = {args.classToLex: v for featTableName,v in lexicon_dict.items()} if args.classToLex else {args.regrToLex: v for featTableName,v in lexicon_dict.items()}
         # print lex_dict_with_name.items()
-        for lexName, lexicon in lex_dict_with_name.iteritems():
+        for lexName, lexicon in lex_dict_with_name.items():
             lex = lexInterface.WeightedLexicon(lexicon, mysql_host = args.mysql_host)
             lex.createWeightedLexiconTable('dd_'+lexName)
 
@@ -1543,7 +1543,7 @@ def main(fn_args = None):
     
     if args.reducertolexicon:
         lexicons = dr.modelToLexicon()
-        for outcomeName, lexDict in lexicons.iteritems():
+        for outcomeName, lexDict in lexicons.items():
             lexiconName = args.reducertolexicon
             if outcomeName != 'noOutcome':
                 lexiconName += '_'+outcomeName
@@ -1561,7 +1561,7 @@ def main(fn_args = None):
     if args.descplot:
         if not og: og=OG()
         (groups, outcome_to_gid_to_value, controls) = og.getGroupsAndOutcomes()
-        outcome_to_values = dict(  map(lambda (k,v): (k, v.values()), outcome_to_gid_to_value.items())  )
+        outcome_to_values = dict(  [(k_v[0], list(k_v[1].values())) for k_v in list(outcome_to_gid_to_value.items())]  )
         outputFile = makeOutputFilename(args, None, og, "desc_stats")
         from FeatureWorker.lib.descStats import StatsPlotter
         sp = StatsPlotter(args.corpdb)

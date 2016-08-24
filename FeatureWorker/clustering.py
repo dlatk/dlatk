@@ -8,8 +8,8 @@
 #
 # example usage: ./featureWorker.py --outcome_fields SWL --train_regression
 
-from fwConstants import warn
-import cPickle as pickle
+from .fwConstants import warn
+import pickle as pickle
 
 try:
     from rpy2.robjects.packages import importr
@@ -46,7 +46,7 @@ from sklearn.linear_model.base import LinearModel
 
 import pylab as pl
 
-from lda import LDA
+from .lda import LDA
 from scipy.stats import zscore
 from scipy.stats.stats import pearsonr, spearmanr
 from scipy.sparse import csr_matrix
@@ -59,38 +59,38 @@ import math
 def alignDictsAsXZ(X,Z):
 
     # X is {feat: {group_id: gn}}, Z is {outcome: {group_id: value}}
-    xKeys = set([gid for feat, gnsDict in X.iteritems() for gid in gnsDict.keys()])
+    xKeys = set([gid for feat, gnsDict in X.items() for gid in list(gnsDict.keys())])
     xCols = list(X.keys())
-    zKeys = set([gid for feat, gnsDict in Z.iteritems() for gid in gnsDict.keys()])
+    zKeys = set([gid for feat, gnsDict in Z.items() for gid in list(gnsDict.keys())])
     zCols = list(Z.keys())
     group_ids = list(xKeys & zKeys)
 
-    listX = map(lambda gid: map(lambda feat: X[feat][gid],xCols), group_ids)
-    print len(listX), len(listX[0]), str(listX)[:150]
-    print any([len(row) != 2000 for row in listX])
+    listX = [[X[feat][gid] for feat in xCols] for gid in group_ids]
+    print(len(listX), len(listX[0]), str(listX)[:150])
+    print(any([len(row) != 2000 for row in listX]))
 
-    listZ = map(lambda gid: map(lambda outcome: Z[outcome].get(gid,float("nan")),zCols), group_ids)
-    print len(listZ), len(listZ[0]), str(listZ)[:150]
-    print any([len(row)!= 15 for row in listZ])
+    listZ = [[Z[outcome].get(gid,float("nan")) for outcome in zCols] for gid in group_ids]
+    print(len(listZ), len(listZ[0]), str(listZ)[:150])
+    print(any([len(row)!= 15 for row in listZ]))
 
 
 def alignDictsAsXy(X, y, sparse=False, returnKeyList=False):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
-    keys = frozenset(y.keys())
+    keys = frozenset(list(y.keys()))
     if sparse:
         keys = keys.intersection([item for sublist in X for item in sublist])  # union X keys
     else:
-        keys = keys.intersection(*[x.keys() for x in X])  # intersect X keys
+        keys = keys.intersection(*[list(x.keys()) for x in X])  # intersect X keys
     keys = list(keys)  # to make sure it stays in order
-    listy = map(lambda k: y[k], keys)
+    listy = [y[k] for k in keys]
     if sparse:
-        keyToIndex = dict([(keys[i], i) for i in xrange(len(keys))])
+        keyToIndex = dict([(keys[i], i) for i in range(len(keys))])
         row = []
         col = []
         data = []
-        for c in xrange(len(X)):
+        for c in range(len(X)):
             column = X[c]
-            for keyid, value in column.iteritems():
+            for keyid, value in column.items():
                 if keyid in keyToIndex:
                     row.append(keyToIndex[keyid])
                     col.append(c)
@@ -103,7 +103,7 @@ def alignDictsAsXy(X, y, sparse=False, returnKeyList=False):
 
         
     else: 
-        listX = map(lambda k: [x[k] for x in X], keys)
+        listX = [[x[k] for x in X] for k in keys]
         if returnKeyList:
             return (listX, listy, keys)
         else:
@@ -115,16 +115,16 @@ def alignDictsAsX(X, sparse=False, returnKeyList=False):
     if sparse:
         keys = frozenset([item for sublist in X for item in sublist])  # union X keys
     else:
-        keys = frozenset(X[0].keys()). intersection(*[x.keys() for x in X[1:]])  # intersect X keys
+        keys = frozenset(list(X[0].keys())). intersection(*[list(x.keys()) for x in X[1:]])  # intersect X keys
     keys = list(keys)  # to make sure it stays in order
     if sparse:
-        keyToIndex = dict([(keys[i], i) for i in xrange(len(keys))])
+        keyToIndex = dict([(keys[i], i) for i in range(len(keys))])
         row = []
         col = []
         data = []
-        for c in xrange(len(X)):
+        for c in range(len(X)):
             column = X[c]
-            for keyid, value in column.iteritems():
+            for keyid, value in column.items():
                 if keyid in keyToIndex:
                     row.append(keyToIndex[keyid])
                     col.append(c)
@@ -135,7 +135,7 @@ def alignDictsAsX(X, sparse=False, returnKeyList=False):
         else:
             return (sparseX)
     else: 
-        listX = map(lambda k: [x[k] for x in X], keys)
+        listX = [[x[k] for x in X] for k in keys]
         if returnKeyList:
             return (listX, keys)
         else:
@@ -144,13 +144,13 @@ def alignDictsAsX(X, sparse=False, returnKeyList=False):
     
 def alignDictsAsXyWithFeats(X, y, feats):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
-    keys = frozenset(y.keys())
+    keys = frozenset(list(y.keys()))
     # keys = keys.intersection(*[x.keys() for x in X])
-    keys = keys.intersection(X.keys())    
+    keys = keys.intersection(list(X.keys()))    
     keys = list(keys)  # to make sure it stays in order
     feats = list(feats)
-    listy = map(lambda k: y[k], keys)
-    listX = map(lambda k: map(lambda l: X[k][l], feats), keys)
+    listy = [y[k] for k in keys]
+    listX = [[X[k][l] for l in feats] for k in keys]
     return (listX, listy)
 
 class DimensionReducer:
@@ -225,7 +225,7 @@ class DimensionReducer:
         """Create clusters"""
         # restrictToGroups: list of groups to which the algorithm should restrict itself
 
-        print
+        print()
         # 1. get data possible ys (outcomes)
         groups = []
         #list of control values for groups
@@ -235,14 +235,14 @@ class DimensionReducer:
             (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
             if restrictToGroups:  # restrict to groups 
                 groups = groups.intersection(restrictToGroups)
-                for outcomeName, outcomes in allOutcomes.iteritems():
+                for outcomeName, outcomes in allOutcomes.items():
                     allOutcomes[outcomeName] = dict([(g, outcomes[g]) for g in groups if (g in outcomes)])
-                for controlName, controlValues in controls.iteritems():
+                for controlName, controlValues in controls.items():
                     controls[controlName] = dict([(g, controlValues[g]) for g in groups])
-            print "[number of groups: %d]" % len(groups)
-            controlValues = controls.values()  # list of dictionaries of group=>group_norm
+            print("[number of groups: %d]" % len(groups))
+            controlValues = list(controls.values())  # list of dictionaries of group=>group_norm
         elif restrictToGroups:
-            print "[Not using outcomes]"
+            print("[Not using outcomes]")
             groups = restrictToGroups
 
         # 2. get data for X:
@@ -252,16 +252,16 @@ class DimensionReducer:
         else:
             (groupNorms, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups)
 
-        self.featureNames = groupNorms.keys()  # holds the order to expect features
-        groupNormValues = groupNorms.values()  # list of dictionaries of group => group_norm
+        self.featureNames = list(groupNorms.keys())  # holds the order to expect features
+        groupNormValues = list(groupNorms.values())  # list of dictionaries of group => group_norm
         
     #     this will return a dictionary of dictionaries
 
         # 3. Create models for each possible y:
         if allOutcomes:
-            for outcomeName, outcomes in allOutcomes.iteritems():
-                print "\n= %s =\n%s" % (outcomeName, '-' * (len(outcomeName) + 4))
-                print "[Aligning Dicts to get X and y]"
+            for outcomeName, outcomes in allOutcomes.items():
+                print("\n= %s =\n%s" % (outcomeName, '-' * (len(outcomeName) + 4)))
+                print("[Aligning Dicts to get X and y]")
                 (X, y) = alignDictsAsXy(groupNormValues + controlValues, outcomes, sparse)
                 (self.clusterModels[outcomeName], self.scalers[outcomeName], self.fSelectors[outcomeName]) = self._fit(X, y, standardize)
         else:
@@ -279,7 +279,7 @@ class DimensionReducer:
         scaler = None
         if standardize == True:
             scaler = StandardScaler(with_mean=not sparse)
-            print "[Applying StandardScaler to X: %s]" % str(scaler)
+            print("[Applying StandardScaler to X: %s]" % str(scaler))
             X = scaler.fit_transform(X)
 
         if 'nmf' in self.modelName.lower():
@@ -289,14 +289,14 @@ class DimensionReducer:
         #if y:
         #    y = np.array(y)
         
-        print " (N, features): %s" % str(X.shape)
+        print(" (N, features): %s" % str(X.shape))
 
         fSelector = None
         if self.featureSelectionString:
             fSelector = eval(self.featureSelectionString)
-            print "[Applying Feature Selection to X: %s]" % str(fSelector)
+            print("[Applying Feature Selection to X: %s]" % str(fSelector))
             X = fSelector.fit_transform(X, y)
-            print " after feature selection: (N, features): %s" % str(X.shape)
+            print(" after feature selection: (N, features): %s" % str(X.shape))
 
            
 #        if hasMultValuesPerItem(self.cvParams[self.modelName.lower()]) and self.modelName.lower()[-2:] != 'cv':
@@ -310,7 +310,7 @@ class DimensionReducer:
 #            return gs.best_estimator_, scaler, fSelector
 #        else:
         # no grid search
-        print "[Doing clustering using : %s]" % self.modelName.lower()
+        print("[Doing clustering using : %s]" % self.modelName.lower())
         cluster = eval(self.modelToClassName[self.modelName.lower()] + '()')
         if 'lda' in self.modelName.lower():
             self.params['lda']['dictionary'] = self.featureNames        
@@ -323,7 +323,7 @@ class DimensionReducer:
             
 #        print "coefs"
 #        print cluster.coef_
-        print "model: %s " % str(cluster)
+        print("model: %s " % str(cluster))
 
         return cluster, scaler, fSelector
     
@@ -335,12 +335,12 @@ class DimensionReducer:
             (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
             if restrictToGroups:  # restrict to groups
                 groups = groups.intersection(restrictToGroups)
-                for outcomeName, outcomes in allOutcomes.iteritems():
+                for outcomeName, outcomes in allOutcomes.items():
                     allOutcomes[outcomeName] = dict([(g, outcomes[g]) for g in groups if (g in outcomes)])
-                for controlName, controlValues in controls.iteritems():
+                for controlName, controlValues in controls.items():
                     controls[controlName] = dict([(g, controlValues[g]) for g in groups])
-            print "[number of groups: %d]" % len(groups)
-            controlValues = controls.values()  # list of dictionaries of group=>group_norm
+            print("[number of groups: %d]" % len(groups))
+            controlValues = list(controls.values())  # list of dictionaries of group=>group_norm
         elif restrictToGroups:
             groups = restrictToGroups
 
@@ -353,7 +353,7 @@ class DimensionReducer:
 
         groupNormValues = []
         transformGroups = None
-        print "[Aligning current X with training X]\n"
+        print("[Aligning current X with training X]\n")
         for feat in self.featureNames:
             if feat in groupNorms:
                 groupNormValues.append(groupNorms[feat])
@@ -362,15 +362,15 @@ class DimensionReducer:
                     groupNormValues.append(dict())
                 else: #need to insert 0s
                     if not transformGroups:
-                        transformGroups = groupNorms[groupNorms.iterkeys().next()].keys()
+                        transformGroups = list(groupNorms[next(iter(groupNorms.keys()))].keys())
                     groupNormValues.append(dict([(k, 0.0) for k in transformGroups]))
         #groupNormValues = groupNorms.values() #list of dictionaries of group => group_norm
-        print "number of features after alignment: %d" % len(groupNormValues)
+        print("number of features after alignment: %d" % len(groupNormValues))
         transformedX = dict()
         group_ids = []
         if allOutcomes:
-            for outcomeName, outcomes in allOutcomes.iteritems():
-                print "\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4))
+            for outcomeName, outcomes in allOutcomes.items():
+                print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
                 X, group_ids = alignDictAsX(groupNormValues + controlValues, sparse, returnKeyList=True)
                 (cluster, scaler, fSelector) = (self.clusterModels[outcomeName], self.scalers[outcomeName], self.fSelectors[outcomeName])
                 transformedX[outcomeName] = _transform(cluster, scaler, fSelector)
@@ -379,13 +379,13 @@ class DimensionReducer:
             (cluster, scaler, fSelector) = (self.clusterModels['noOutcome'], self.scalers['noOutcome'], self.fSelectors['noOutcome'])
             transformedX['noOutcome'] = _transform(cluster, scaler, fSelector)
             
-        for outcomeName, outcomeX  in transformedX.iteritems():
+        for outcomeName, outcomeX  in transformedX.items():
             if not isinstance(outcomeX, csr_matrix):
                 dictX = dict()
                 (n, m) = outcomeX.shape
-                for j in xrange(m):
+                for j in range(m):
                     dictX[group_ids[j]] = dict()
-                    for i in xrange(n):
+                    for i in range(n):
                         dictX[group_ids[j]]['rfeat'+str(i)]= outcomeX[i][j]
                 transformedX[outcomeName] = dictX
             else:
@@ -403,17 +403,17 @@ class DimensionReducer:
     
     def modelToLexicon(self):
         lexicons = dict()
-        for outcomeName, model in self.clusterModels.iteritems():
+        for outcomeName, model in self.clusterModels.items():
             reduction_dict = dict()
             if self.fSelectors[outcomeName]:
-                print 'Error: Does not handle writing models with feature selection to a lexicon (yet)'
+                print('Error: Does not handle writing models with feature selection to a lexicon (yet)')
                 raise NotImplementedError
             component_mat = model.components_
             (n,m) = component_mat.shape
-            print 'components shape : %s', str(component_mat.shape)
-            for i in xrange(n):
+            print('components shape : %s', str(component_mat.shape))
+            for i in range(n):
                 reduction_dict['rfeat'+str(i)] = dict()
-                for j in xrange(m):
+                for j in range(m):
                      if component_mat[i][j] > 0:
                          #print "feature name: %s"% self.featureNames[j] 
                          reduction_dict['rfeat'+str(i)][self.featureNames[j]] = component_mat[i][j]
@@ -422,7 +422,7 @@ class DimensionReducer:
         
     ######################
     def load(self, filename):
-        print "[Loading %s]" % filename
+        print("[Loading %s]" % filename)
         f = open(filename, 'rb')
         tmp_dict = pickle.load(f)
         f.close()          
@@ -430,7 +430,7 @@ class DimensionReducer:
         self.__dict__.update(tmp_dict) 
 
     def save(self, filename):
-        print "[Saving %s]" % filename
+        print("[Saving %s]" % filename)
         f = open(filename, 'wb')
         toDump = {'modelName': self.modelName,
                   'clusterModels': self.clusterModels,
@@ -450,7 +450,7 @@ def chunks(X, y, size):
     size = max(len(y), size)
 
     
-    for i in xrange(0, len(y), size):
+    for i in range(0, len(y), size):
         yield X[i:i + size], y[i:i + size]
 
 def hasMultValuesPerItem(listOfD):
@@ -458,7 +458,7 @@ def hasMultValuesPerItem(listOfD):
     if len(listOfD) > 1:
         return True
     for d in listOfD:
-        for value in d.itervalues():
+        for value in d.values():
             if len(value) > 1: return True
     return False
 
@@ -485,12 +485,12 @@ class CCA:
                   }
 
     def saveModel(self,filename):
-        print "Saving model to %s" % filename
+        print("Saving model to %s" % filename)
         with open(filename, "wb+") as f:
             pickle.dump(self.model, f)
 
     def loadModel(self, filename):
-        print "Loading model from %s" % filename
+        print("Loading model from %s" % filename)
         with open(filename, "rb") as f:
             self.model = pickle.load(f)
         
@@ -504,7 +504,7 @@ class CCA:
     def prepMatricesTogether(self, X, Z, NAthresh = 4):
         """\tConcatenates X and Z, then completes the resulting matrix, splits the matrix back"""
 
-        print "Performing SoftImpute on the concatenated controls+outcomes matrix"
+        print("Performing SoftImpute on the concatenated controls+outcomes matrix")
         # Concatenate matrices together
         Zcols = Z.columns
         Xcols = X.columns
@@ -632,9 +632,9 @@ class CCA:
 
         nGroups = com.convert_robj(ro.r["nrow"](X)[0])
         
-        print "\tCCA parameters:", kwParams
+        print("\tCCA parameters:", kwParams)
         cca = pma.CCA(X, Z, **kwParams)
-        cca = {k:v for k, v in cca.items()}
+        cca = {k:v for k, v in list(cca.items())}
         cca['nGroups'] = nGroups
         return cca
         
@@ -645,13 +645,13 @@ class CCA:
         # allOutcomes: {outcome: {group_id: value}}
         # controls: {control: {group_id: value}}
 
-        print "X: controls\nZ: outcomes"
+        print("X: controls\nZ: outcomes")
         Zdict = allOutcomes
         Xdict = controls
 
         # R doesn't handle '$'s in column names
-        Xdict = {k.replace('$','.'):v for k, v in Xdict.iteritems()}
-        Zdict = {k.replace('$','.'):v for k, v in Zdict.iteritems()}
+        Xdict = {k.replace('$','.'):v for k, v in Xdict.items()}
+        Zdict = {k.replace('$','.'):v for k, v in Zdict.items()}
 
         Xdf = pd.DataFrame(data=Xdict)
         Zdf = pd.DataFrame(data=Zdict)
@@ -678,25 +678,25 @@ class CCA:
 
         featureNames = X.columns
         Xcomp.index = [i.strip("X") for i in featureNames]
-        Xfreqs = {k.strip("X"): v for k,v in Xfreqs.iteritems()}
-        Xcomp.columns = ["%.2d_comp" % i for i in xrange(Xcomp.shape[1])]
+        Xfreqs = {k.strip("X"): v for k,v in Xfreqs.items()}
+        Xcomp.columns = ["%.2d_comp" % i for i in range(Xcomp.shape[1])]
 
         outcomeNames = Z.columns
         Zcomp.index = [i.strip("X") for i in outcomeNames]
-        Zfreqs = {k.strip("X"): v for k,v in Zfreqs.iteritems()}
-        Zcomp.columns = ["%.2d_comp" % i for i in xrange(Zcomp.shape[1])]
+        Zfreqs = {k.strip("X"): v for k,v in Zfreqs.items()}
+        Zcomp.columns = ["%.2d_comp" % i for i in range(Zcomp.shape[1])]
         
         Zcomp2 = pd.concat([Xcomp, Zcomp])
         
         Xcomp_dict = {k: {i:(j,
                              0.0 if j != 0 else 1,
                              cca["nGroups"],
-                             Xfreqs[i]) for i, j in v.iteritems()} for k, v in Xcomp.to_dict().iteritems()}
+                             Xfreqs[i]) for i, j in v.items()} for k, v in Xcomp.to_dict().items()}
         Zcomp_dict = {k: {i:(j,0.0 if j != 0 else 1,cca["nGroups"],
-                             Zfreqs[i] if i in Zfreqs.keys() else Xfreqs[i]
-                         ) for i, j in v.iteritems()} for k, v in Zcomp2.to_dict().iteritems()}
+                             Zfreqs[i] if i in list(Zfreqs.keys()) else Xfreqs[i]
+                         ) for i, j in v.items()} for k, v in Zcomp2.to_dict().items()}
 
-        d_dict = dict(zip(Zcomp.columns,d))
+        d_dict = dict(list(zip(Zcomp.columns,d)))
         return Xcomp_dict, Zcomp_dict, d_dict
 
     def cca(self, penaltyX = None, penaltyZ = None, NAthresh = 4, controlsWithFeats = False):
@@ -713,15 +713,15 @@ class CCA:
         Xdict = groupNorms
         
         if controlsWithFeats:
-            print "Appending controls to X"
+            print("Appending controls to X")
             Xdict.update(controls)
         else:
-            print "Appending controls to Z"
+            print("Appending controls to Z")
             Zdict.update(controls)        
 
         # R doesn't handle '$'s in column names
-        Xdict = {k.replace('$','.'):v for k, v in Xdict.iteritems()}
-        Zdict = {k.replace('$','.'):v for k, v in Zdict.iteritems()}
+        Xdict = {k.replace('$','.'):v for k, v in Xdict.items()}
+        Zdict = {k.replace('$','.'):v for k, v in Zdict.items()}
 
         # TO DO: get topic frequencies?
 
@@ -752,34 +752,34 @@ class CCA:
         }
 
         with open("/localdata/county-disease/CCA/Xt_Z.Xcomp.Zcomp.d.pickle","wb+") as f:
-            print "Dumping data to /localdata/county-disease/CCA/Xt_Z.Xcomp.Zcomp.d.pickle"
+            print("Dumping data to /localdata/county-disease/CCA/Xt_Z.Xcomp.Zcomp.d.pickle")
             pickle.dump((Xt_Z, Xcomp, Zcomp, d), f)
-            print "Dumping data to /localdata/county-disease/CCA/X.Z.pickle"
+            print("Dumping data to /localdata/county-disease/CCA/X.Z.pickle")
             pickle.dump((X,Z), f)
         
         reconstruction_err = [ 
             sum(np.linalg.norm(np.outer(Xcomp[i]*d_i,Zcomp[i].transpose()),axis=0))/sum(np.linalg.norm(Xt_Z, axis=0))
             for i, d_i in enumerate(d)
         ]
-        print reconstruction_err
+        print(reconstruction_err)
         
         featureNames = X.columns
         Xcomp.index = [i.strip("X") for i in featureNames]
-        Xfreqs = {k.strip("X"): v for k,v in Xfreqs.iteritems()}
-        Xcomp.columns = ["%.2d_comp" % i for i in xrange(Xcomp.shape[1])]
+        Xfreqs = {k.strip("X"): v for k,v in Xfreqs.items()}
+        Xcomp.columns = ["%.2d_comp" % i for i in range(Xcomp.shape[1])]
 
         outcomeNames = Z.columns
         Zcomp.index = [i.strip("X") for i in outcomeNames]
-        Zfreqs = {k.strip("X"): v for k,v in Zfreqs.iteritems()}
-        Zcomp.columns = ["%.2d_comp" % i for i in xrange(Zcomp.shape[1])]
+        Zfreqs = {k.strip("X"): v for k,v in Zfreqs.items()}
+        Zcomp.columns = ["%.2d_comp" % i for i in range(Zcomp.shape[1])]
         
-        d_dict = dict(zip(Zcomp.columns,d))
+        d_dict = dict(list(zip(Zcomp.columns,d)))
                 
         Xcomp_dict = {k: {i:(j,
                              0.0 if j != 0 else 1,
                              cca["nGroups"],
-                             Xfreqs[i]) for i, j in v.iteritems()} for k, v in Xcomp.to_dict().iteritems()}
-        Zcomp_dict = {k: {i:(j,0.0 if j != 0 else 1,cca["nGroups"],Zfreqs[i]) for i, j in v.iteritems()} for k, v in Zcomp.to_dict().iteritems()}
+                             Xfreqs[i]) for i, j in v.items()} for k, v in Xcomp.to_dict().items()}
+        Zcomp_dict = {k: {i:(j,0.0 if j != 0 else 1,cca["nGroups"],Zfreqs[i]) for i, j in v.items()} for k, v in Zcomp.to_dict().items()}
 
         return Xcomp_dict, Zcomp_dict, d_dict
         ## output: {outcome: feat: (r,p,n,freq)}
@@ -793,22 +793,22 @@ class CCA:
                     "trace": True}
         kwParams.update(params)
 
-        print "\tCCA permute parameters:", kwParams
+        print("\tCCA permute parameters:", kwParams)
         
         cca_permute = ro.r['CCA.permute'](X, Z, **kwParams)
         header = ['penaltyxs', 'penaltyzs', 'zstats', 'pvals','cors', 'ft.corperms', 'nnonzerous', 'nnonzerovs']
         header2 = ["X Penalty", "Z Penalty", "Z-Stat", "P-Value", "Cors", "FT(Cors)", "# U's Non-Zero", "# Vs Non-Zero"]
 
-        cca_permute = {k:v for k,v in cca_permute.items()}
+        cca_permute = {k:v for k,v in list(cca_permute.items())}
 
         df = pd.DataFrame({h:com.convert_robj(cca_permute[h]) for h in header}, columns=header)
         df.columns = header2
-        df.index = xrange(1,18)
+        df.index = range(1,18)
 
-        print "\n", df
-        print 
-        print "Best L1 bound for x: %.5f" % com.convert_robj(cca_permute["bestpenaltyx"])[0]
-        print "Best L1 bound for z: %.5f" % com.convert_robj(cca_permute["bestpenaltyz"])[0]
+        print("\n", df)
+        print() 
+        print("Best L1 bound for x: %.5f" % com.convert_robj(cca_permute["bestpenaltyx"])[0])
+        print("Best L1 bound for z: %.5f" % com.convert_robj(cca_permute["bestpenaltyz"])[0])
 
     def ccaPermuteOutcomesVsControls(self, nPerms = 25, penaltyXs = None , penaltyZs = None):
         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
@@ -821,8 +821,8 @@ class CCA:
         Xdict = controls
         
         # R doesn't handle '$'s in column names
-        Xdict = {k.replace('$','.'):v for k, v in Xdict.iteritems()}
-        Zdict = {k.replace('$','.'):v for k, v in Zdict.iteritems()}
+        Xdict = {k.replace('$','.'):v for k, v in Xdict.items()}
+        Zdict = {k.replace('$','.'):v for k, v in Zdict.items()}
         
         # X, Z, Xfreqs, Zfreqs = self.prepMatrices(pd.DataFrame(data=Xdict),pd.DataFrame(data=Zdict), softImputeXtoo=True)
         X, Z, Xfreqs, Zfreqs = self.prepMatricesTogether(pd.DataFrame(data=Xdict), pd.DataFrame(data=Zdict))
@@ -849,10 +849,10 @@ class CCA:
         Xdict = groupNorms
         
         if controlsWithFeats:
-            print "Appending controls to X"
+            print("Appending controls to X")
             Xdict.update(controls)
         else:
-            print "Appending controls to Z"
+            print("Appending controls to Z")
             Zdict.update(controls)        
 
         # TO DO: get topic frequencies?

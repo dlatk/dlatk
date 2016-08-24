@@ -67,8 +67,8 @@ class OccurrenceThreshold(BaseEstimator, SelectorMixin):
 
         self.ranks_ = self.means_.shape[0] - rankdata(self.means_, method='ordinal')
         if isinstance(self.threshold, float):
-            self.threshold = long(round(X.shape[0]*self.threshold))
-        print "SET THRESHOLD %s" % self.threshold #debug
+            self.threshold = int(round(X.shape[0]*self.threshold))
+        print("SET THRESHOLD %s" % self.threshold) #debug
 
         #print "RANKS: %s" % str(self.ranks_)[:30]
 

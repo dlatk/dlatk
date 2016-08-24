@@ -26,10 +26,10 @@ def rgbColorMix(fromColor, toColor, resolution, randomness = False):
     fromTo = toColor - fromColor #how to get from fromColor to toColor
     fromToInc = fromTo / float(resolution)
     gradientColors = []
-    for i in xrange(resolution):
+    for i in range(resolution):
         gradientColors.append(tuple([int(x) for x in round(fromColor + (i * fromToInc))]))
     if randomness: 
-        for i in xrange(len(gradientColors)): 
+        for i in range(len(gradientColors)): 
             color = gradientColors[i]
             newcolor = []
             for value in color:
@@ -151,7 +151,7 @@ def getColorList(word_list, freq_list = [], randomize = False, colorScheme = 'mu
 	color_list = []
 
 	max_freq = 1000
-	for i in xrange(len(word_list)):
+	for i in range(len(word_list)):
 		if randomize:
 			#print 'Randomizing colors'
 			freq = (random() * max_freq) + 1 #a number from 1 to max_freq
@@ -163,7 +163,7 @@ def getColorList(word_list, freq_list = [], randomize = False, colorScheme = 'mu
 			rank_list = rankdata(freq_list, method = 'ordinal') #, method = 'ordinal'
 			#print rank_list
 			if scale == 'sqrt':
-				max_size = max(map(lambda x: sqrt(x), freq_list)) #scaled via sqrt
+				max_size = max([sqrt(x) for x in freq_list]) #scaled via sqrt
 				freq = sqrt(freq_list[i])
 
 			elif scale == 'linear':
@@ -176,7 +176,7 @@ def getColorList(word_list, freq_list = [], randomize = False, colorScheme = 'mu
 			color_list.append(colorHex)
 			#print '{} {}'.format(word_list[i], max_size)
 		else:
-			print 'Randomize is False, but freq_list is not provided.'
+			print('Randomize is False, but freq_list is not provided.')
 
 
 
@@ -195,7 +195,7 @@ def getFeatValueAndZ(user, schema, ngramTable, min_value = 5, ordered = True, z_
 
 
 	query = 'SELECT feat, value, z FROM {}.{} WHERE group_id = \'{}\' and value >= {}{}{};'.format(schema, ngramTable, user, min_value, pos_z, order_by)
-	print query
+	print(query)
 	list = mm.executeGetList(schema, dbCursor, query)
 	#return map(lambda x: x[0], list)
 	return list
@@ -227,7 +227,7 @@ def getMeanAndStd(word, ngramTable, schema, num_groups = -1, distTable = '', dis
 		sum = 0.0
 		diff_squared_sum = 0.0
 		#for group_norm in session.query(Feature.group_norm).filter(Feature.feat == word):
-		query = u'SELECT group_norm FROM {}.{} WHERE feat = \'{}\''.format(schema, ngramTable, word)
+		query = 'SELECT group_norm FROM {}.{} WHERE feat = \'{}\''.format(schema, ngramTable, word)
 		group_norms = mm.executeGetList(schema, dbCursor, query)
 		#print 'SELECT group_norm FROM {}.{} WHERE feat = \'{}\''.format(schema, ngramTable, word)
 		num_groups = len(group_norms)
@@ -278,7 +278,7 @@ def getNgrams(ngramTable, schema):
 def getUsers(schema, ngramTable):
 	(dbConn, dbCursor, dictCursor) = mm.dbConnect(schema)
 	query = "SELECT distinct(group_id) FROM {}.{};".format(schema, ngramTable)
-	return map(lambda user: user[0], mm.executeGetList(schema, dbCursor, query))
+	return [user[0] for user in mm.executeGetList(schema, dbCursor, query)]
 
 def updateZscore(schema, ngramTable, user = '', use_feat_table = False, 
 					distTable = ''):
@@ -294,7 +294,7 @@ def updateZscore(schema, ngramTable, user = '', use_feat_table = False,
 		users = getUsers(schema, ngramTable)
 
 	for user in users:
-		for ngram in map(lambda x: x[0], getNgrams(ngramTable, schema)):
+		for ngram in [x[0] for x in getNgrams(ngramTable, schema)]:
 			if use_feat_table:
 				z = getZscore(ngram, user, ngramTable, schema)
 			else:
@@ -309,7 +309,7 @@ def updateZscore(schema, ngramTable, user = '', use_feat_table = False,
 				query = "UPDATE {}.{} SET z = 0 where group_id = \'{}\' and feat=\'{}\'".format(schema, ngramTable, user, ngram.encode('utf-8'))		
 				
 
-			if counter % 1000 == 0: print query
+			if counter % 1000 == 0: print(query)
 			mm.executeGetList(schema, dbCursor, query)
 			counter += 1
 
@@ -352,7 +352,7 @@ def createZColumn(schema, ngramTable):
 def getOneGram(schema, ngramTable):
 	(dbConn, dbCursor, dictCursor) = mm.dbConnect(schema)
 	query = "SELECT feat, sum(value) as count FROM {}.{} group by feat".format(schema, ngramTable)
-	print query
+	print(query)
 	return mm.executeGetList(schema, dbCursor, query)
 
 def getUniqueNgrams(schema, ngramTable, user = '', max = -1):

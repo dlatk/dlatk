@@ -15,7 +15,7 @@ def sendEmail(subject, message, email_address):
     message = quote(message)
     subject = quote(subject)
     cmd = "echo "+message+" | mailx -s "+subject+" " + email_address
-    print( "command issued, [["+cmd+"]]")
+    print(( "command issued, [["+cmd+"]]"))
     os.system(cmd)
 
 def sendEmail(subject, message, email_address):

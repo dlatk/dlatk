@@ -162,20 +162,20 @@ WARNING_STRING = "\n".join(["#"*68, "#"*68, "WARNING: %s", "#"*68, "#"*68])
 
 def alignDictsAsLists(dict1, dict2):
     """Converts two dictionaries to vectors, where the values are aligned by keys"""
-    coFields = frozenset(dict1.keys()).intersection(frozenset(dict2.keys()))
-    list1 = map(lambda c: dict1[c], coFields)
+    coFields = frozenset(list(dict1.keys())).intersection(frozenset(list(dict2.keys())))
+    list1 = [dict1[c] for c in coFields]
     #list1 = [dict1[c] for c in coFields] #equivalent to above
-    list2 = map(lambda c: dict2[c], coFields)
+    list2 = [dict2[c] for c in coFields]
     return (list1, list2)
 
 def alignDictsAsXy(X, y):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
-    keys = frozenset(y.keys())
-    keys = keys.intersection(*[x.keys() for x in X])
+    keys = frozenset(list(y.keys()))
+    keys = keys.intersection(*[list(x.keys()) for x in X])
     keys = list(keys) #to make sure it stays in order
-    listy = map(lambda k: y[k], keys)
+    listy = [y[k] for k in keys]
     # Order of columns of X is preserved
-    listX = map(lambda k: [x[k] for x in X], keys)
+    listX = [[x[k] for x in X] for k in keys]
     # print type(listy), type(listy[0])
     import decimal
     listy = [float(v) for v in listy] if isinstance(listy,list) and isinstance(listy[0],decimal.Decimal) else listy
@@ -187,27 +187,27 @@ def fiftyChecks(args):
     np.random.seed()
     lr = LogisticRegression(penalty='l2', C=1000000, fit_intercept=True)
     if Xc is not None:
-        r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [np.append(Xc, permutation(Xend), 1) for i in xrange(50)]])
+        r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [np.append(Xc, permutation(Xend), 1) for i in range(50)]])
     else:
         # newX = permutation(Xend).reshape(len(Xend),1)
         # print type(Xend)
         # print dir(Xend)
         # print y
         # r = roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1])
-        r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [permutation(Xend).reshape(len(Xend),1) for i in xrange(50)]])
+        r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [permutation(Xend).reshape(len(Xend),1) for i in range(50)]])
     #if r: print r
     return r
 
 def rowsToColumns(X):
     """Changes each X from being represented in columns to rows """
-    return [X[0:, c] for c in xrange(len(X[0]))]
+    return [X[0:, c] for c in range(len(X[0]))]
 
 def stratifiedZScoreybyX0(X, y):
     """zscores based on the means of all unique ys"""
     #TODO: probably faster in vector operations
     #first separate all rows for each y
     X0sToYs = dict()
-    for i in xrange(len(y)):
+    for i in range(len(y)):
         try: 
             X0sToYs[X[i][0]].append(y[i])
         except KeyError:
@@ -215,7 +215,7 @@ def stratifiedZScoreybyX0(X, y):
 
     #next figure out the mean for x, for each unique y
     meanYforX0s = []
-    for ys in X0sToYs.itervalues():
+    for ys in X0sToYs.values():
         meanYforX0s.append(mean(ys)) #should turn into a row
         
     #figure out mean and std-dev for meanXs:
@@ -232,11 +232,11 @@ def stratifiedZScoreybyX0(X, y):
 def switchColumnsAndRows(X):
     """Toggles X between rows of columns and columns of rows """
     if not isinstance(X, np.ndarray): X = array(X)
-    return array([X[0:, c] for c in xrange(len(X[0]))])
+    return array([X[0:, c] for c in range(len(X[0]))])
     
 def warn(string, attention=False):
     if attention: string = WARNING_STRING % string
-    print >>sys.stderr, string
+    print(string, file=sys.stderr)
 
 
 multSpace = re.compile(r'\s\s+')
@@ -280,14 +280,14 @@ def pCorrection(pDict, method=DEF_P_CORR, pLevelsSimes=[0.05, 0.01, 0.001], rDic
         n = len(pDict)
 
         #pDictTuples = [[k, 1 if isnan(float(v)) else v] for k, v in pDict.iteritems()]
-        pDictTuples = [[k, v] for k, v in pDict.iteritems()]
+        pDictTuples = [[k, v] for k, v in pDict.items()]
         sortDict = rDict if rDict else pDict
 
         sortedPTuples = sorted(pDictTuples, key=lambda tup: 0 if isnan(sortDict[tup[0]]) else fabs(sortDict[tup[0]]), reverse=True if rDict else False)
         ii = 0
         rejectRest = False
         pMax = pLevelsSimes.pop()
-        for ii in xrange(len(sortedPTuples)):
+        for ii in range(len(sortedPTuples)):
             if rejectRest:
                 sortedPTuples[ii][1] = 1
             else:
@@ -307,8 +307,8 @@ def pCorrection(pDict, method=DEF_P_CORR, pLevelsSimes=[0.05, 0.01, 0.001], rDic
                         sortedPTuples[ii][1] = round((pMax - .00001) * pMax, 5)
         new_pDict = dict(sortedPTuples)
     else:
-        keys = pDict.keys()
-        reject, pvals_corrected, alphacSidak, alphacBonf  = mt.multipletests(pvals=pDict.values(), method=method)
+        keys = list(pDict.keys())
+        reject, pvals_corrected, alphacSidak, alphacBonf  = mt.multipletests(pvals=list(pDict.values()), method=method)
         i = 0
         for key in keys:
             new_pDict[key] = pvals_corrected[i]
@@ -335,10 +335,10 @@ def removeNonAscii(s):
 
 def reverseDictDict(d):
     """reverses the order of keys in a dict of dicts"""
-    assert isinstance(d.itervalues().next(), dict), 'reverseDictDict not given a dictionary of dictionaries'
+    assert isinstance(next(iter(d.values())), dict), 'reverseDictDict not given a dictionary of dictionaries'
     revDict = dict()
-    for key1, subd in d.iteritems():
-        for key2, value in subd.iteritems():
+    for key1, subd in d.items():
+        for key2, value in subd.items():
             if not key2 in revDict:
                 revDict[key2] = dict()
             revDict[key2][key1] = value
@@ -346,7 +346,7 @@ def reverseDictDict(d):
 
 def chunks(l, n):
     """ Yield successive n-sized chunks from l."""
-    for i in xrange(0, len(l), n):
+    for i in range(0, len(l), n):
         yield l[i:i+n]
 
 def permaSortedKey(s):
@@ -367,7 +367,7 @@ def tupleToStr(tp):
 def unionDictsMaxOnCollision(d1, d2):
     """unions d1 and 2 always choosing the max between the two on a collision"""
     newD = d1.copy()
-    for k2, v2 in d2.iteritems():
+    for k2, v2 in d2.items():
         if (not k2 in newD) or v2 > newD[k2]:
             newD[k2] = v2
     return newD
@@ -380,10 +380,10 @@ def rgbColorMix(fromColor, toColor, resolution, randomness = False):
     fromTo = toColor - fromColor #how to get from fromColor to toColor
     fromToInc = fromTo / float(resolution)
     gradientColors = []
-    for i in xrange(resolution):
+    for i in range(resolution):
         gradientColors.append(tuple([int(x) for x in round(fromColor + (i * fromToInc))]))
     if randomness: 
-        for i in xrange(len(gradientColors)): 
+        for i in range(len(gradientColors)): 
             color = gradientColors[i]
             newcolor = []
             for value in color:

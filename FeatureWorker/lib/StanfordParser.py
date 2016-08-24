@@ -66,13 +66,13 @@ class StanfordParser:
         #print output #debug
         parseDicts = self.getParseDicts(output)
         if not len(parseDicts) == len(sents):
-            for i in xrange(min(len(parseDicts), len(sents))):
+            for i in range(min(len(parseDicts), len(sents))):
                 pprint((sents[i], parseDicts[i]['pos']))
-                print "\n"
-            print "Number of parses does not match number of sents"
-            print " number of sents:  %d" % len(sents)
-            print " number of parses: %d" % len(parseDicts)
-            print sys.stderr.write("!!ERROR!! sents and parses do not match") 
+                print("\n")
+            print("Number of parses does not match number of sents")
+            print(" number of sents:  %d" % len(sents))
+            print(" number of parses: %d" % len(parseDicts))
+            print(sys.stderr.write("!!ERROR!! sents and parses do not match")) 
             sys.exit(0)
 
         os.remove(tempFileName)
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Test the stanford parser python interface.', prefix_chars='-+', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    for param, value in _DefaultParams.iteritems():
+    for param, value in _DefaultParams.items():
         parser.add_argument('--'+str(param), metavar='string', dest=str(param), default=str(value),
                         help="%s default param" % param)
 

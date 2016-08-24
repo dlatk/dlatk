@@ -22,7 +22,7 @@ from optparse import OptionParser, OptionGroup
 try:
     from nltk.corpus import wordnet as wn
 except ImportError:
-    print 'LexInterface:warning: nltk.corpus module not imported.'
+    print('LexInterface:warning: nltk.corpus module not imported.')
 
 
 #MySQLdb.paramstyle 
@@ -82,7 +82,7 @@ MAX_WRITE_RECORDS = 1000 #maximum number of records to write at a time (for add_
 ## Class / Static Methods
 
 def warn(string):
-    print >>sys.stderr, string
+    print(string, file=sys.stderr)
 
 def loadLexiconFromFile(filename):
     """Loads the perma lexicon, using standard formatting
@@ -127,7 +127,7 @@ def loadLexiconFromGFile(filename, using_filter):
             this_cat = line_split[1]
             this_term = line_split[0]
             this_keep = int(line_split[2])
-            if lexicon.has_key(this_cat):
+            if this_cat in lexicon:
                 if using_filter:
                     if this_keep == 1:
                         lexicon[this_cat].append(this_term)
@@ -159,7 +159,7 @@ def loadLexiconFromSparse(filename):
             if term: 
                 lexicon[cat].append(term)
     
-    for cat in lexicon.keys():
+    for cat in list(lexicon.keys()):
         lexicon[cat] = frozenset(lexicon[cat])
 
     return lexicon
@@ -175,7 +175,7 @@ def loadWeightedLexiconFromSparse(filename):
         items = comma.split(line.rstrip())
         terms = items[0:-2]
         cat = items[-2]
-	weight = items[-1]
+        weight = items[-1]
         if cat not in lexicon:
             lexicon[cat] = dict()
         for term in terms:
@@ -209,13 +209,13 @@ def loadLexiconFromDic(filename):
             else:
                 word = line_split[0]
                 if line_split[1][0] == '(':
-                    print 'warning: line [%s] partially discarded due to inconsistent formatting'%(line, )
+                    print('warning: line [%s] partially discarded due to inconsistent formatting'%(line, ))
                     continue
                 try:
-                    word_categories = map(lambda x: cat_map[x], map(int, line_split[1:]))
+                    word_categories = [cat_map[x] for x in list(map(int, line_split[1:]))]
                 except KeyError as e:
-                    print "Category", line_split.pop(line_split.index(str(e.args[0]))), "doesn't exist [word: %s]" % line_split[0]
-                word_categories = map(lambda x: cat_map[x], map(int, line_split[1:]))
+                    print("Category", line_split.pop(line_split.index(str(e.args[0]))), "doesn't exist [word: %s]" % line_split[0])
+                word_categories = [cat_map[x] for x in list(map(int, line_split[1:]))]
                 for category in word_categories:
                     try:
                         lexicon[category].add(word)
@@ -223,7 +223,7 @@ def loadLexiconFromDic(filename):
                         lexicon[category] = set()
                         lexicon[category].add(word)
 
-    for category in lexicon.keys():
+    for category in list(lexicon.keys()):
         lexicon[category] = frozenset(lexicon[category])
 
     return lexicon
@@ -233,7 +233,7 @@ def loadLexiconFeatMapFromCSV(filename):
     """Load a lexicon from a csv"""
     import csv
     csvReader = csv.reader(open(filename, 'rUb'))
-    header = csvReader.next() #should be topic, topic_label, ....
+    header = next(csvReader) #should be topic, topic_label, ....
     
     lexicon = {}
     labels_used = {}
@@ -242,7 +242,7 @@ def loadLexiconFeatMapFromCSV(filename):
         original_label = label.lower()
         new_label = None
         
-        if labels_used.has_key(original_label):
+        if original_label in labels_used:
             labels_used[original_label] += 1
             new_label = '%s_%d'%(original_label, labels_used[original_label] + 1)
 
@@ -255,7 +255,7 @@ def loadLexiconFeatMapFromCSV(filename):
             
         labels_used[original_label] = labels_used.get(original_label, 1)
 
-        print topic, original_label, new_label
+        print(topic, original_label, new_label)
 
     return lexicon
 
@@ -276,7 +276,7 @@ def loadLexiconFromTopicFile(filename):
                 if term != '\n':
                     lexicon[category].add(term)
 
-    for category in lexicon.keys():
+    for category in list(lexicon.keys()):
         lexicon[category] = frozenset(lexicon[category])
 
     return lexicon
@@ -305,15 +305,15 @@ def loadWeightedLexiconFromTopicCSV(filename, threshold=None):
     returns a dictionary of dictionaries"""
     import csv
     csvReader = csv.reader(open(filename, 'rb'))
-    header = csvReader.next() #should be topic_id, word1, ...etc..
-    print "Loading %s" % filename
+    header = next(csvReader) #should be topic_id, word1, ...etc..
+    print("Loading %s" % filename)
     lexicon = {}
     for row in csvReader:
          topic = row[0]
          wordScores = row[1:]
          words = wordScores[::2]
          weights = wordScores[1::2]
-         weights = map(float, weights)
+         weights = list(map(float, weights))
 
          if threshold:
              new_words = []
@@ -330,10 +330,10 @@ def loadWeightedLexiconFromTopicCSV(filename, threshold=None):
 
          #now the weight for word[i] is weight[i]
          lexicon[topic] = {}
-         for ii in xrange(0, len(words)):
+         for ii in range(0, len(words)):
              lexicon[topic][words[ii]] = weights[ii]
              #print >> sys.stderr, "topic: %s, word: %s, weight: %2.2f"%(topic, words[ii], weights[ii])
-    print "Done, num_topics: %d" % len(lexicon)
+    print("Done, num_topics: %d" % len(lexicon))
     return lexicon
 
      
@@ -355,31 +355,31 @@ def abstractDBConnect(host, user, db):
 
 def interactiveGetSenses(cat, word):
     os.system('clear')
-    print "\n[%s] \033[92m%s\033[0m\n%s" %(PERMA_CODES[cat].title(), word, '='*(len(word)+20))
-    print "\033[90m%s\033[0m\n"%PERMA_LONG_DEF[cat]
+    print("\n[%s] \033[92m%s\033[0m\n%s" %(PERMA_CODES[cat].title(), word, '='*(len(word)+20)))
+    print("\033[90m%s\033[0m\n"%PERMA_LONG_DEF[cat])
     currentSenses = set()
     POSs = {wn.NOUN: 'noun', wn.VERB: 'verb', wn.ADJ: 'adjective', wn.ADV: 'adverb'}
-    for pos, posName in POSs.iteritems():
+    for pos, posName in POSs.items():
         synsets = wn.synsets(word, pos)
         if synsets:
-            print "\t%s:" % posName
+            print("\t%s:" % posName)
             i = 1
             wss = [None,]
             for syns in synsets:
                 wss.append(syns.name+'.'+word)
-                print "\t\t\033[92m %d: \033[0m(%s)\033[92m %s\033[0m" % (i, ', '.join([lemma.name for lemma in syns.lemmas]), syns.definition)
+                print("\t\t\033[92m %d: \033[0m(%s)\033[92m %s\033[0m" % (i, ', '.join([lemma.name for lemma in syns.lemmas]), syns.definition))
                 i+=1
             answered = False
             senses = None
             while not senses: 
                 
-                print "\n\tWhich of the above senses expresses \033[1m%s (i.e. %s)\033[0m?" % (PERMA_CODES[cat].title(), PERMA_SHORT_DEF[cat])
-                senses = raw_input("\t(separate with spaces; 0 => none; cntrl-c to quit)? ")
+                print("\n\tWhich of the above senses expresses \033[1m%s (i.e. %s)\033[0m?" % (PERMA_CODES[cat].title(), PERMA_SHORT_DEF[cat]))
+                senses = input("\t(separate with spaces; 0 => none; cntrl-c to quit)? ")
 
                 #validity check:
                 senses = senses.strip()
                 if not re.match(r'^[0-9, ]+$', senses):
-                    print "entered non-numeric character"
+                    print("entered non-numeric character")
                     senses = None
                     continue
                 senses = re.findall(r'\d+', senses)
@@ -387,20 +387,20 @@ def interactiveGetSenses(cat, word):
                 for s in senses:
                     s = int(s)
                     if s == 0 and len(senses) > 1:
-                        print "entered 0 along with other senses"
+                        print("entered 0 along with other senses")
                         senses = None
                     if s not in ins:
-                        print "%d not a choice" % s
+                        print("%d not a choice" % s)
                         senses = None
 
                 #add to set:
             for s in senses:
                 if s > 0:
                     ws = wss[int(s)]
-                    print "\t\t\tadding %s" % ws
+                    print("\t\t\tadding %s" % ws)
                     currentSenses.add(ws)
 
-    print "The following will be added: %s" % currentSenses
+    print("The following will be added: %s" % currentSenses)
     return currentSenses
                 
 
@@ -432,16 +432,16 @@ class Lexicon(object):
         """Creates a lexicon table from the instances lexicon variable"""
         
         #first create the table:
-        enumCats = "'"+"', '".join(map(lambda k: k.upper().replace("'", "\\'"), self.currentLexicon.keys()))+"'"   
+        enumCats = "'"+"', '".join([k.upper().replace("'", "\\'") for k in list(self.currentLexicon.keys())])+"'"   
         drop = """DROP TABLE IF EXISTS """+tablename
         sql = """CREATE TABLE IF NOT EXISTS %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
                  term VARCHAR(128), category ENUM(%s), INDEX(term), INDEX(category)) CHARACTER SET utf8 COLLATE utf8_general_ci ENGINE = MyISAM""" % (tablename, enumCats)
-        print "Running: ", drop
-        print "and:     ", sql
+        print("Running: ", drop)
+        print("and:     ", sql)
         try:
             self.dbCursor.execute(drop)
             self.dbCursor.execute(sql)
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             warn("MYSQL ERROR in createLexiconTable" + str(e))
             sys.exit(1)
 
@@ -454,12 +454,12 @@ class Lexicon(object):
         #SETUP QUERY:
         sqlQuery = """INSERT INTO """+tablename+""" (term, category) values (%s, %s)"""
         values = []
-        for cat, terms in lex.iteritems():
-            values.extend(map(lambda term: [term, cat.upper()], terms))
+        for cat, terms in lex.items():
+            values.extend([[term, cat.upper()] for term in terms])
         
         try:
             self.dbCursor.executemany(sqlQuery, values)
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             warn("MYSQL ERROR in insertLexiconRows:" + str(e) + sqlQuery);
             sys.exit(1)
 
@@ -489,7 +489,7 @@ class Lexicon(object):
             lexicon[row[1]].append(row[0])
 
         self.currentLexicon = {}
-        for cat, terms in lexicon.iteritems():
+        for cat, terms in lexicon.items():
             self.currentLexicon[cat] = frozenset(terms)
 
         return self.currentLexicon
@@ -498,13 +498,13 @@ class Lexicon(object):
         newDict = {}
         myDict = self.currentLexicon
 
-        for cat in myDict.keys():
+        for cat in list(myDict.keys()):
             newCat = cat.rstrip('+').rstrip('-')
             if not newCat in newDict:
                 newDict[newCat] = []
             newDict[newCat].extend(myDict[cat])
             
-        for newCat in newDict.keys():
+        for newCat in list(newDict.keys()):
             newDict[newCat] = frozenset(newDict[newCat])
 
         newLexicon = Lexicon()
@@ -515,11 +515,11 @@ class Lexicon(object):
         newDict = {}
         myDict = self.currentLexicon
 
-        for cat, terms in myDict.iteritems():
+        for cat, terms in myDict.items():
             for term in terms:
                 newDict[term.replace(' ', '_')+"_"+cat] = [term]
             
-        for newCat in newDict.keys():
+        for newCat in list(newDict.keys()):
             newDict[newCat] = frozenset(newDict[newCat])
 
         newLexicon = Lexicon()
@@ -565,15 +565,15 @@ class Lexicon(object):
     def randomize(self):
         """randomizes the categories of the current lexicon"""
         myDict = self.currentLexicon
-        myKeys = myDict.keys()
+        myKeys = list(myDict.keys())
         newDict = {}
-        for terms in self.currentLexicon.values():
+        for terms in list(self.currentLexicon.values()):
             for term in terms:
                 randKey = myKeys[random.randint(0,len(myKeys)-1)]
                 if not(randKey in newDict):
                     newDict[randKey] = []
                 newDict[randKey].append(term)
-        for cat, terms in newDict.iteritems():
+        for cat, terms in newDict.items():
             newDict[cat] = frozenset(terms)
         newLex = Lexicon(newDict)
         newLex.setLexicon(newDict)
@@ -584,7 +584,7 @@ class Lexicon(object):
         """find rows with terms from lexicon and insert them back in as annotated rows"""
         #TODO: num_words and num_matches is hard-coded
         termList = set()
-        for terms in self.currentLexicon.values():
+        for terms in list(self.currentLexicon.values()):
             termList = termList.union(terms)
         termREs = {}
         #escapedTerm = re.escape(term).replace('\\*', '\w*') #handle punctuation / add wildcard
@@ -596,18 +596,18 @@ class Lexicon(object):
         #(corpDb, writeCursor) = abstractDBConnect(HOST, USER, corpdb)
         #get field list:
         sql = """SELECT column_name FROM information_schema.columns WHERE table_name='%s' and table_schema='%s'""" % (corptable, corpdb)
-        print sql
+        print(sql)
         corpCursor.execute(sql)
         rows = corpCursor.fetchall()
-        fields = map(lambda r: r[0], rows)
+        fields = [r[0] for r in rows]
         fieldIndex = dict((fields[i], i) for i in range(len(fields)))
 
         #Go through each message      
         try:
             sql = """SELECT * FROM %s GROUP BY %s""" % (corptable, messageidfield)
-            print sql
+            print(sql)
             corpCursor.execute(sql)
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             warn("MYSQL ERROR in addTermsToCorpus:" + str(e) + sqlQuery);
             sys.exit(1)
         newRows = []
@@ -633,7 +633,7 @@ class Lexicon(object):
                 try:
                         #newRows = map (lambda r: r[f] = r[f].replace("'",  for f in range(fields))
                     writeCursor.execute(updateSql)
-                except Exception, e:
+                except Exception as e:
                     warn("Exception during mysql call:" + str(e) + ': ' + sqlQuery);
                     pprint.PrettyPrinter().pprint(newRows) #debug
                     sys.exit(1)
@@ -650,23 +650,23 @@ class Lexicon(object):
                             newRow[fieldIndex['id']] = str(row[fieldIndex[messageidfield]])+'.'+term
                             newRows.append(newRow)
                 if record % MAX_WRITE_RECORDS == 0: 
-                    print "\n writing new rows up to: %d " % record
+                    print("\n writing new rows up to: %d " % record)
                     #write them back in:
                     try:
                         #newRows = map (lambda r: r[f] = r[f].replace("'",  for f in range(fields))
                         writeCursor.executemany(sqlQuery, newRows)
                         newRows = []
-                    except Exception, e:
+                    except Exception as e:
                         warn("Exception during mysql call:" + str(e) + ': ' + sqlQuery);
                         pprint.PrettyPrinter().pprint(newRows) #debug
                         sys.exit(1)
 
             row = corpCursor.fetchone()
 
-        print "Writing remaining. %d total rows checked" % record
+        print("Writing remaining. %d total rows checked" % record)
         try:
             writeCursor.executemany(sqlQuery, newRows)
-        except Exception, e:
+        except Exception as e:
             warn("Exception during mysql call:" + str(e) + ': ' + sqlQuery);
             sys.exit(1)
 
@@ -684,7 +684,7 @@ class Lexicon(object):
                 sql += """ GROUP BY %s""" %  messageidfield
             warn(sql+"\n")
             corpCursor.execute(sql)
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             warn("MYSQL ERROR1:" + str(e) + sqlQuery)
             sys.exit(1)
         row = corpCursor.fetchone()
@@ -703,7 +703,7 @@ class Lexicon(object):
 
         #now create a set based on the words that occur more than minwordfreq
         lex = set()
-        for word, freq in wordList.iteritems():
+        for word, freq in wordList.items():
             if (freq >= minwordfreq):
                 lex.add(word)
         
@@ -715,8 +715,8 @@ class Lexicon(object):
         senseLexicon = WeightedLexicon()
         try: 
             senseLexicon.loadLexicon(newLexiconName)
-        except MySQLdb.Error, e:
-            print "in except"
+        except MySQLdb.Error as e:
+            print("in except")
             #couldn't load lexicon, create it but empty
             createLike = """CREATE TABLE %s LIKE %s""" % (newLexiconName, currentName)
             self.dbCursor.execute(createLike)
@@ -728,7 +728,7 @@ class Lexicon(object):
 
         #find what's been done
         seenWords = set()
-        for cat, words in newLexicon.iteritems():
+        for cat, words in newLexicon.items():
             cat = cat.lower()
             for ws in words:
                 if ws:
@@ -736,16 +736,16 @@ class Lexicon(object):
                     seenWords.add(cat+'#'+word)
 
         #prompt for new words
-        for cat, words in oldLexicon.iteritems():
+        for cat, words in oldLexicon.items():
             cat = cat.lower()
             for word in words:
                 if cat+'#'+word in seenWords:
-                    print "already annotated %s: %s (skipping)" % (cat, word)
+                    print("already annotated %s: %s (skipping)" % (cat, word))
                 else:
                     senses = interactiveGetSenses(cat, word)
                     if senses:
                         if weighted:
-                            smallNewLex = {cat: dict(zip(senses, [words[word]]*len(senses)))}
+                            smallNewLex = {cat: dict(list(zip(senses, [words[word]]*len(senses))))}
                             sys.stderr.write("newLexiconName %s \n" % newLexiconName)
                             self.insertWeightedLexiconRows(newLexiconName, smallNewLex)
                         else: 
@@ -755,10 +755,10 @@ class Lexicon(object):
     def expand(self):
         """Expands a lexicon to contain more words"""
         newLexicon = dict()
-        for cat, words in self.currentLexicon.iteritems():
+        for cat, words in self.currentLexicon.items():
             newLexicon[cat] = set()
             for word in words:
-                print word #debug
+                print(word) #debug
                 otherWords = Lexicon.wordExpand(word)
                 newLexicon[cat] = newLexicon[cat].union(otherWords)
         
@@ -829,18 +829,18 @@ class Lexicon(object):
     def likeExamples(self, corpdb, corptable, messagefield, numForEach = 60, onlyPrintIfMin = True, onlyPrintStartingAlpha = True):
         (corpDb, corpCursor) = abstractDBConnect(HOST, USER, corpdb)
 
-        print "<html><head>"
-        print "<style>"
-        print "br {line-height: 6pt;}"
-        print "li {margin:0; padding:0; margin-bottom:10pt;}"
-        print "</style></head><body><table>"
+        print("<html><head>")
+        print("<style>")
+        print("br {line-height: 6pt;}")
+        print("li {margin:0; padding:0; margin-bottom:10pt;}")
+        print("</style></head><body><table>")
 
 
         #csvFile = open('/tmp/examples.csv', 'w')
 
-        for cat, terms in self.currentLexicon.iteritems():
-            print "<tr><td colspan=3> </td></tr>"
-            print "<tr><td colspan=3><h3>%s</h3></td></tr>" % (cat)
+        for cat, terms in self.currentLexicon.items():
+            print("<tr><td colspan=3> </td></tr>")
+            print("<tr><td colspan=3><h3>%s</h3></td></tr>" % (cat))
 
             for term in sorted(terms):
                 if term[0].isalpha() or not onlyPrintStartingAlpha:
@@ -851,8 +851,8 @@ class Lexicon(object):
                     messages = [x[0] for x in corpCursor.fetchall()]
                     lenmsgs = len(messages)
                     if not onlyPrintIfMin or lenmsgs >= numForEach:
-                        print "<tr><td><b>%s</b></td><td><b>%s</b></td><td><em>%d occurrences</em></td></tr>" % (cat, term, lenmsgs)
-                        print "<tr><td><b>%s</b></td><td><b>%s</b></td><td><b>%s</b></td></tr>" % ("Correct?", "term", "comment")
+                        print("<tr><td><b>%s</b></td><td><b>%s</b></td><td><em>%d occurrences</em></td></tr>" % (cat, term, lenmsgs))
+                        print("<tr><td><b>%s</b></td><td><b>%s</b></td><td><b>%s</b></td></tr>" % ("Correct?", "term", "comment"))
 
                         toPrint = [] #holds messages to print
                         if lenmsgs < numForEach:
@@ -867,10 +867,10 @@ class Lexicon(object):
 
                         tre = re.compile("\\b%s\\b"%(term), re.I)
                         for m in toPrint:
-                            print "<tr><td></td><td>%s</td><td>%s</td></tr>" % (term, tre.sub("<b>%s</b>"%term, m))
-                        print "<tr><td colspan=3> </td></tr>"
+                            print("<tr><td></td><td>%s</td><td>%s</td></tr>" % (term, tre.sub("<b>%s</b>"%term, m)))
+                        print("<tr><td colspan=3> </td></tr>")
         
-        print "</table></body></html>"
+        print("</table></body></html>")
 
     def likeSamples(self, corpdb, corptable, messagefield, category, lexicon_name, number_of_messages):
         (corpDb, corpCursor) = abstractDBConnect(HOST, USER, corpdb)
@@ -879,7 +879,8 @@ class Lexicon(object):
         csvFile = open(lexicon_name+"_"+category+'.csv','wb')
 #        csvFile.write('"id", "message", "term"\n')
         messages = list()
-        def findTerm((m_id, string, term)):
+        def findTerm(xxx_todo_changeme):
+            (m_id, string, term) = xxx_todo_changeme
             if 'space' in term:
                 term = re.sub(r"\[\[:space:\]\]",r"\s",term, re.I)
             match = re.findall(term, string, re.I)
@@ -889,9 +890,9 @@ class Lexicon(object):
             sql = """SELECT id, %s FROM %s WHERE %s RLIKE '[[:<:]]%s[[:>:]]'""" % (messagefield, corptable, messagefield, escTerm);
                 #print sql #debug
             corpCursor.execute(sql)
-            print "Looking for messages containing %s" %  escTerm
+            print("Looking for messages containing %s" %  escTerm)
             new_ones = [(x[0],x[1],escTerm) for x in corpCursor.fetchall()]
-            new_ones = map(findTerm,new_ones)
+            new_ones = list(map(findTerm,new_ones))
             messages.extend(new_ones)
         
         writer=csv.writer(csvFile,dialect='excel')
@@ -902,23 +903,23 @@ class Lexicon(object):
     def printCSV(self):
         """prints a csv style output of the lexicon"""
         ##print headers:
-        print ','.join(self.currentLexicon.iterkeys())
+        print(','.join(iter(self.currentLexicon.keys())))
 
         ##turn sets into lists
         lexList = {}
         longest = 0;
-        for cat, terms in self.currentLexicon.iteritems():
+        for cat, terms in self.currentLexicon.items():
             lexList[cat] = list(terms)
             longest = max(longest, len(terms))
         
         for i in range(longest):
             row = []
-            for cat in self.currentLexicon.iterkeys():
+            for cat in self.currentLexicon.keys():
                 if (i < len(lexList[cat])):
                     row.append(lexList[cat][i])
                 else:
                     row.append('')
-            print ','.join(row)
+            print(','.join(row))
 
     # def printWeightedCSV(self):
     #     """prints a csv style output of the lexicon"""
@@ -961,7 +962,7 @@ class WeightedLexicon(Lexicon):
     """WeightedLexicons have an additional dictionary with weights for each term in the regular lexicon"""
     def __init__(self, weightedLexicon=None, lex=None, mysql_host = HOST):
         super(WeightedLexicon, self).__init__(lex, mysql_host = mysql_host)
-        print self.mysql_host
+        print(self.mysql_host)
         self.weightedLexicon = weightedLexicon
      
     def isTableLexiconWeighted(self, tablename):
@@ -986,7 +987,7 @@ class WeightedLexicon(Lexicon):
         
     def isSelfLexiconWeighted(self):
         if self.weightedLexicon and isinstance(self.weightedLexicon, dict):
-            for words in self.weightedLexicon.itervalues():
+            for words in self.weightedLexicon.values():
                 if isinstance(words, dict):
                     return True
                 else:
@@ -1029,31 +1030,31 @@ class WeightedLexicon(Lexicon):
     def createLexiconTable(self, tablename):
         """Loads a lexicon, checking to see if it is weighted or not, then responding accordingly"""
         if self.isSelfLexiconWeighted():
-            print "Creating weighted lexicon table"
+            print("Creating weighted lexicon table")
             return self.createWeightedLexiconTable(tablename)
         else:
-            print "Creating unweighted lexicon table"
+            print("Creating unweighted lexicon table")
             return super(WeightedLexicon, self).createLexiconTable(tablename)
 
     def createWeightedLexiconTable(self, tablename):
         """Creates a lexicon table from the instance's lexicon variable"""
         
         #first create the table:
-        enumCats = "'"+"', '".join(map(lambda k: k.upper().replace("'", "\\'"), self.weightedLexicon.keys()))+"'"   
+        enumCats = "'"+"', '".join([k.upper().replace("'", "\\'") for k in list(self.weightedLexicon.keys())])+"'"   
         drop = """DROP TABLE IF EXISTS """+tablename
         sql = """CREATE TABLE IF NOT EXISTS %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, term VARCHAR(140), category ENUM(%s), weight DOUBLE, INDEX(term), INDEX(category)) ENGINE = MyISAM""" % (tablename, enumCats)
-        print "Running: ", drop
-        print "and:     ", sql
+        print("Running: ", drop)
+        print("and:     ", sql)
         try:
             self.dbCursor.execute(drop)
             self.dbCursor.execute(sql)
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             warn("MYSQL ERROR2" + str(e))
             sys.exit(1)
 
         #next insert rows:
         self.insertWeightedLexiconRows(tablename)
-        print "Done creating lexicon: %s" % tablename
+        print("Done creating lexicon: %s" % tablename)
 
     def insertWeightedLexiconRows(self, tablename, lex = None):
         """Adds rows, taken from the lexicon variable to mysql"""
@@ -1073,12 +1074,12 @@ class WeightedLexicon(Lexicon):
             remainingValues = values[nbInserted:]
             if remainingValues:
                 nbInserted += self.dbCursor.executemany(sqlQuery, remainingValues)
-            print "Inserted %d terms into the lexicon" % nbInserted
+            print("Inserted %d terms into the lexicon" % nbInserted)
             if nbInserted != length:
-                print "Warning the number of rows inserted doesn't match the total number of rows"
+                print("Warning the number of rows inserted doesn't match the total number of rows")
                 
 
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             warn("MYSQL ERROR:" + str(e) + sqlQuery);
             sys.exit(1)
 
@@ -1087,24 +1088,24 @@ class WeightedLexicon(Lexicon):
         lex = self.weightedLexicon #category->word->weight ; lex[cat][word]
         mapping = superLexiconMapping.weightedLexicon
         superTopicDict = dict() #[word] -> [super_topic]-> [combined_weight]
-        for superTopic, topicDict in mapping.iteritems(): #super-topics
+        for superTopic, topicDict in mapping.items(): #super-topics
             superTopicDict[superTopic] = dict()
-            for topic, topicWeight in topicDict.iteritems():
+            for topic, topicWeight in topicDict.items():
                 if topic in lex:
-                    for word, wordWeight in lex[topic].iteritems():
+                    for word, wordWeight in lex[topic].items():
                         try: 
                             superTopicDict[superTopic][word] += wordWeight*topicWeight
                         except KeyError:
                             superTopicDict[superTopic][word] = wordWeight*topicWeight
                 else:
-                    print "Warning topic %s in super-topic but not original topic lexicon" % str(topic)
+                    print("Warning topic %s in super-topic but not original topic lexicon" % str(topic))
 
         return WeightedLexicon(weightedLexicon=superTopicDict)
             
     def union(self, otherLexicon):
         """union self lexicon with another and returns the result"""
         if not self.isSelfLexiconWeighted():
-            print "union: not weighted"
+            print("union: not weighted")
             return super(WeightedLexicon, self).union(otherLexicon)
         newDict = {}
         otherDict = otherLexicon.weightedLexicon
@@ -1112,7 +1113,7 @@ class WeightedLexicon(Lexicon):
         unionKeys = set(myDict.keys()).union(set(otherDict.keys()))
         for cat in unionKeys:
             if (cat in myDict) and (cat in otherDict):
-                newDict[cat] = dict(myDict.items() + otherDict.items())
+                newDict[cat] = dict(list(myDict.items()) + list(otherDict.items()))
             else:
                 if (cat in myDict):
                     newDict[cat] = myDict[cat]
@@ -1147,11 +1148,11 @@ class WeightedLexicon(Lexicon):
 
         else:
             ##print headers:
-            print "category, term1, w1, term2, w2, ..."
+            print("category, term1, w1, term2, w2, ...")
 
             ##print categories
-            for cat, terms in self.weightedLexicon.iteritems():
-                print cat+','+','.join(["%s,%d"%(term, w) for term, w in sorted(terms.iteritems(), key = lambda x: x[1], reverse=True)[:20]])
+            for cat, terms in self.weightedLexicon.items():
+                print(cat+','+','.join(["%s,%d"%(term, w) for term, w in sorted(iter(terms.items()), key = lambda x: x[1], reverse=True)[:20]]))
                 
 
 
@@ -1160,11 +1161,11 @@ class WeightedLexicon(Lexicon):
         """Compares two weighted lexicons"""
         #both wLex1 and wLex2 are dict of dicts: [category][word] = weight
         #TODO: Achal
-        print "comparing weighted to weighted" #debug
+        print("comparing weighted to weighted") #debug
         similarity = dict() #[cat1][cat2] = similarity_value
-        for cat1 in wLex1.iterkeys():
+        for cat1 in wLex1.keys():
             similarity[cat1] = dict()
-            for cat2 in wLex2.iterkeys():
+            for cat2 in wLex2.keys():
                 similarity[cat1][cat2] = 0 #TODO
 
         return similarity
@@ -1178,11 +1179,11 @@ class WeightedLexicon(Lexicon):
         # shoudl either convert uLex2 to wLex2 and run compareWeighted.. or
         # convert wLex1 to uLex1 (by thresholding) and run compareUnweighted
         #(may not even use this code below)
-        print "comparing weighted to unweighted" #debug
+        print("comparing weighted to unweighted") #debug
         similarity = dict() #[cat1][cat2] = similarity_value
-        for cat1 in wLex1.iterkeys():
+        for cat1 in wLex1.keys():
             similarity[cat1] = dict()
-            for cat2 in uLex2.iterkeys():
+            for cat2 in uLex2.keys():
                 similarity[cat1][cat2] = 0 #TODO
 
         return similarity
@@ -1193,11 +1194,11 @@ class WeightedLexicon(Lexicon):
         #both uLex1 and uLex2 are dict of sets
         #TODO: Achal
         #run either jaccard or cosine sim (with probs equal to 1)
-        print "comparing unweighted to unweighted" #debug
+        print("comparing unweighted to unweighted") #debug
         similarity = dict() #[cat1][cat2] = similarity_value
-        for cat1 in uLex1.iterkeys():
+        for cat1 in uLex1.keys():
             similarity[cat1] = dict()
-            for cat2 in uLex2.iterkeys():
+            for cat2 in uLex2.keys():
                 similarity[cat1][cat2] = 0 #TODO
 
         return similarity
@@ -1329,14 +1330,14 @@ if __name__ == "__main__":
         myLexicon.createLexiconFromCorpus(_options.corpdb, _options.corptable, _options.messagefield, _options.messageidfield, _options.minwordfreq)
     if _options.union:
         if not myLexicon:
-            print "Must load a lexicon, either from a file (-f), or from another table (-n)"
+            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
             sys.exit()
         otherLexicon = WeightedLexicon()
         otherLexicon.loadLexicon(_options.union)
         myLexicon = myLexicon.union(otherLexicon)
     if _options.intersect:
         if not myLexicon:
-            print "Must load a lexicon, either from a file (-f), or from another table (-n)"
+            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
             sys.exit()
         otherLexicon = WeightedLexicon()
         otherLexicon.loadLexicon(_options.intersect)
@@ -1347,22 +1348,22 @@ if __name__ == "__main__":
         myLexicon = myLexicon.mapToSuperLexicon(superLexiconMapping)
     if _options.randomize:
         if not myLexicon:
-            print "Must load a lexicon, either from a file (-f), or from another table (-n)"
+            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
             sys.exit()
         myLexicon = myLexicon.randomize()
     if _options.depol:
         if not myLexicon:
-            print "Must load a lexicon, either from a file (-f), or from another table (-n)"
+            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
             sys.exit()
         myLexicon = myLexicon.depolCategories()
     if _options.ungroup:
         if not myLexicon:
-            print "Must load a lexicon, either from a file (-f), or from another table (-n)"
+            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
             sys.exit()
         myLexicon = myLexicon.unGroupCategories()
     if _options.compare:
         if not myLexicon:
-            print "Must load a lexicon, either from a file (-f), or from another table (-n)"
+            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
             sys.exit()
         otherLexicon = WeightedLexicon()
         otherLexicon.loadLexicon(_options.compare)
@@ -1370,49 +1371,49 @@ if __name__ == "__main__":
 
     if _options.sense_annotated_lex:
         if not myLexicon:
-            print "Must load a lexicon, either from a file (-f), or from another table (-n)"
+            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
             sys.exit()
         myLexicon.annotateSenses(_options.name, _options.sense_annotated_lex)
 
     if _options.expand:
         if not myLexicon:
-            print "Must load a lexicon, either from a file (-f), or from another table (-n)"
+            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
             sys.exit()
         myLexicon = myLexicon.expand()
 
     if _options.create:
         if not myLexicon:
-            print "Must load a lexicon, either from a file (-f), or from another table (-n)"
+            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
             sys.exit()
         myLexicon.createLexiconTable(_options.create)
     if _options.addterms:
         if not myLexicon:
-            print "Must load a lexicon, either from a file (-f), or from another table (-n)"
+            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
             sys.exit()
         myLexicon.addTermsToCorpus(_options.corpdb, _options.corptable, _options.termfield, _options.messagefield, _options.messageidfield, _options.fulltext)
     if _options.examples:
         if not myLexicon:
-            print "Must load a lexicon, either from a file (-f), or from another table (-n)"
+            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
             sys.exit()
         myLexicon.likeExamples(_options.corpdb, _options.corptable, _options.messagefield)
     if _options.samples:
         if not _options.lexicon_cat:
-            print "Must specify a lexicon category with option '--lexicon_cat'"
+            print("Must specify a lexicon category with option '--lexicon_cat'")
             sys.exit()
         myLexicon.likeSamples(_options.corpdb, _options.corptable, _options.messagefield, _options.lexicon_cat, _options.name, _options.num_messages)
     if _options.printcsv:
         if not myLexicon:
-            print "Must load a lexicon, either from a file (-f), or from another table (-n)"
+            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
             sys.exit()
         myLexicon.printCSV()
     if _options.printweightedcsv:
         if not myLexicon:
-            print "Must load a lexicon, either from a file (-f), or from another table (-n)"
+            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
             sys.exit()
         myLexicon.printWeightedCSV()
     if _options.pprint:
         if not myLexicon:
-            print "Must load a lexicon, either from a file (-f), or from another table (-n)"
+            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
             sys.exit()
         myLexicon.pprint()
 

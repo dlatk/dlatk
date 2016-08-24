@@ -119,7 +119,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Test the TweetNLP python interface.', prefix_chars='-+', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    for param, value in _DefaultParams.iteritems():
+    for param, value in _DefaultParams.items():
         parser.add_argument('--'+str(param), metavar='string', dest=str(param), default=str(value),
                         help="%s default param" % param)
 

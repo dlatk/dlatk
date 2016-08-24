@@ -28,7 +28,7 @@ def executeGetSSCursor(db, sql, warnMsg = True, charset=DEF_ENCODING, use_unicod
         try:
             ssCursor.execute(sql)
             break
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             attempts += 1
             warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
             time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
@@ -52,7 +52,7 @@ def dbConnect(db, host=MYSQL_HOST, charset=DEF_ENCODING, use_unicode=DEF_UNICODE
                 read_default_file = "~/.my.cnf"
             )
             break
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             attempts += 1
             warn(" *MYSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db, e, attempts))
             time.sleep(MYSQL_ERROR_SLEEP)
@@ -67,7 +67,7 @@ def getTableColumnNames(db, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE
     (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)
     sql = "SELECT column_name FROM information_schema.columns WHERE table_schema='%s' AND table_name='%s'"%(db, table)
     columnNamesOfTable = executeGetList(db, dbCursor, sql)
-    return map(lambda x: x[0], columnNamesOfTable)
+    return [x[0] for x in columnNamesOfTable]
 
 def getTableColumnNamesTypes(db, table, charset=DEF_ENCODING):
     """Returns a list of column names and types from a db table"""
@@ -98,7 +98,7 @@ def execute( db, dbCursor, sql, warnQuery=True, charset=DEF_ENCODING, use_unicod
         try:
             dbCursor.execute(sql)
             break
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             attempts += 1
             warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
             time.sleep(MYSQL_ERROR_SLEEP)
@@ -123,7 +123,7 @@ def executeGetDict( db, dictCursor, sql, warnQuery=False, charset=DEF_ENCODING, 
             dictCursor.execute(sql)
             data = dictCursor.fetchall()
             break
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             attempts += 1
             warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
             time.sleep(MYSQL_ERROR_SLEEP)
@@ -143,7 +143,7 @@ def executeGetList( db, dbCursor, sql, warnQuery=True, charset=DEF_ENCODING, use
             dbCursor.execute(sql)
             data = dbCursor.fetchall()
             break
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             attempts += 1
             warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
             time.sleep(MYSQL_ERROR_SLEEP)
@@ -154,7 +154,7 @@ def executeGetList( db, dbCursor, sql, warnQuery=True, charset=DEF_ENCODING, use
 
 def executeGetList1( db, dbCursor, sql, warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
     """Executes a given query, expecting one resulting column. Returns results as a list"""
-    return map(lambda x:x[0], executeGetList( db, dbCursor, sql, warnQuery, charset=charset, use_unicode=use_unicode))
+    return [x[0] for x in executeGetList( db, dbCursor, sql, warnQuery, charset=charset, use_unicode=use_unicode)]
 
 def qExecuteGetList( db, sql, warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
     """performs the db connect and execute in the same call"""
@@ -177,7 +177,7 @@ def executeWrite( db, dbConn, sql, row, writeCursor=None , warnQuery=False, char
         try:
             writeCursor.execute(sql, row)
             break
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             attempts += 1
             warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
             time.sleep(MYSQL_ERROR_SLEEP)
@@ -203,7 +203,7 @@ def executeWriteMany( db, dbConn, sql, rows, writeCursor=None, warnQuery=False, 
         try:
             writeCursor.executemany(sql, rows)
             break
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             attempts += 1
             warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
             time.sleep(MYSQL_ERROR_SLEEP)
@@ -286,7 +286,7 @@ def randomSubsetTable( db, sourceTableName, destinationTableName, keyField, perc
     warn(str(uniqueKeyList[1:5]))
 
     newKeys = sample(uniqueKeyList, int(floor(len(uniqueKeyList)*percentToSubset)))
-    newKeys = map(str, newKeys)
+    newKeys = list(map(str, newKeys))
 
     warn("populating newly created table, TABLE %s"%(destinationTableName))
     populateQuery = "INSERT INTO %s SELECT * FROM %s WHERE %s IN (%s)"%(destinationTableName, sourceTableName, keyField, ','.join(newKeys))
@@ -302,7 +302,7 @@ def writeTableToCSV(db, tableName, outputfile, sql_extra=None, charset=DEF_ENCOD
         sql += ' ' + sql_extra
     dictRows = executeGetDict(db, dcur, sql, charset=charset, use_unicode=use_unicode)
     if dictRows:
-        csvOut = csv.DictWriter(open(outputfile, 'w'), fieldnames=dictRows[0].keys())
+        csvOut = csv.DictWriter(open(outputfile, 'w'), fieldnames=list(dictRows[0].keys()))
         csvOut.writeheader()
         for dictionary in dictRows:
             csvOut.writerow(dictionary)
@@ -375,20 +375,20 @@ def oConnect(db):
 
 def oTestQueryIteration(sql, cur):
     b = datetime.datetime.now()
-    print 'running execute statement...'
+    print('running execute statement...')
     cur.execute(sql)
     e = datetime.datetime.now()
-    print "...finished execution! Took %d seconds."%(e-b).total_seconds()
-    print "iterating  through rows..."
+    print("...finished execution! Took %d seconds."%(e-b).total_seconds())
+    print("iterating  through rows...")
     b = datetime.datetime.now()
     counter = 0
     while True:
         row = cur.fetchone()
         if not row: break
         if counter % 10000000 == 0:
-            print row
+            print(row)
         counter += 1
     e = datetime.datetime.now()
-    print "...finished iterating! Took %d seconds."%(e-b).total_seconds()
-    print counter
+    print("...finished iterating! Took %d seconds."%(e-b).total_seconds())
+    print(counter)
 

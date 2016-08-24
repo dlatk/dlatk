@@ -50,7 +50,7 @@ class LDAExtractor(FeatureExtractor):
             if topicsEncoded:
                 msgs+=1
                 if msgs % 5000 == 0: #progress update
-                    print("Messages Read: %dk" % int(msgs/1000))
+                    print(("Messages Read: %dk" % int(msgs/1000)))
 
                 #print "encoded: %s " % str(topicsEncoded)
                 wordTopics = loads(topicsEncoded)
@@ -77,7 +77,7 @@ class LDAExtractor(FeatureExtractor):
                         topic_word_freq[topic][word] += 1
 
         #COMPUTE DISTRIBUTIONS:
-        print "[Computing Distributions]"
+        print("[Computing Distributions]")
         pTopicGivenWords = dict()
         likelihoods = dict()
         log_likelihoods = dict()
@@ -109,9 +109,9 @@ class LDAExtractor(FeatureExtractor):
 
         #threshold:
         newLLs = dict()
-        for topic, wordDist in log_likelihoods.iteritems():
+        for topic, wordDist in log_likelihoods.items():
             newLLs[topic] = dict()
-            sortedWordValues = sorted(wordDist.items(), key = lambda (w, v): v if not isnan(v) else -1000, reverse = True)
+            sortedWordValues = sorted(list(wordDist.items()), key = lambda w_v: w_v[1] if not isnan(w_v[1]) else -1000, reverse = True)
             threshold = 0
             if len(sortedWordValues) > 1:
                 threshold = 0.50 * sortedWordValues[0][1]
@@ -126,13 +126,13 @@ class LDAExtractor(FeatureExtractor):
 
     @staticmethod
     def printDistToCSV(dist, fileName):
-        print "[Writing Distribution CSV to %s]" %fileName
+        print("[Writing Distribution CSV to %s]" %fileName)
         csvWriter = csv.writer(open(fileName, 'wb'))
         csvWriter.writerow(['topic_id', 'word1', 'word1_score', 'word2', 'word2_score', '...'])
-        for topic in sorted(dist.keys(), key = lambda k: int(k) if str(k).isdigit() else k):
+        for topic in sorted(list(dist.keys()), key = lambda k: int(k) if str(k).isdigit() else k):
             wordDist = dist[topic]
             row = [topic]
-            for wordValue in sorted(wordDist.items(), key = lambda (w, v): v if not isnan(v) else -1000, reverse = True):
+            for wordValue in sorted(list(wordDist.items()), key = lambda w_v1: w_v1[1] if not isnan(w_v1[1]) else -1000, reverse = True):
                 row.extend(wordValue)
             csvWriter.writerow(row)
 
@@ -185,7 +185,7 @@ class LDAExtractor(FeatureExtractor):
             #write topic to database (no need for "REPLACE" because we are creating the table)
             wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
             totalInsts = float(totalInsts) #to avoid casting each time below
-            rows = [(k, v, valueFunc((v / totalInsts))) for k, v in freqs.iteritems() ] #adds group_norm and applies freq filter
+            rows = [(k, v, valueFunc((v / totalInsts))) for k, v in freqs.items() ] #adds group_norm and applies freq filter
             self._executeWriteMany(wsql, rows)
         
         _warn("Done Reading / Inserting.")
@@ -282,7 +282,7 @@ class LDAExtractorParser(ArgumentParser):
             if isinstance(objTup, tuple):
                 (self.ol, self.lf) = objTup
             else:
-                print "Nothing to load"     
+                print("Nothing to load")     
 
         if args.liststates:
             self.printstates(args.savedir)
@@ -314,11 +314,11 @@ class LDAExtractorParser(ArgumentParser):
 
     def printObjs(self):
         if self.ol and not self.lf:
-            print "OntoNotes Data:"
-            print self.ol
+            print("OntoNotes Data:")
+            print(self.ol)
         if self.lf:
-            print "Language Features:"
-            print self.lf
+            print("Language Features:")
+            print(self.lf)
 
     def drop(self, objNames):
         for name in objNames:
@@ -330,20 +330,20 @@ class LDAExtractorParser(ArgumentParser):
     @staticmethod
     def save(savedir, savename, objectTup):
         saveFile = "%s/%s.%s" % (savedir, savename, OnFeaturesParser.saveExtension)
-        print "Saving state to: %s" % saveFile
+        print("Saving state to: %s" % saveFile)
         pickle.dump( objectTup, open( saveFile, "wb" ) )
 
     @staticmethod
     def load(savedir, savename):
         saveFile = "%s/%s.%s" % (savedir, savename, OnFeaturesParser.saveExtension)
-        print "Loading state from: %s" % saveFile
+        print("Loading state from: %s" % saveFile)
         objectTup = pickle.load( open( saveFile, "rb" ) )
         return objectTup
 
     @staticmethod
     def removeStateFile(savedir, savename):
         saveFile = "%s/%s.%s" % (savedir, savename, OnFeaturesParser.saveExtension)
-        print "Removing state file: %s" % saveFile
+        print("Removing state file: %s" % saveFile)
         os.remove(saveFile)
 
     matchExtension = re.compile(r'^(.*)\.'+saveExtension+'$')
@@ -357,13 +357,13 @@ class LDAExtractorParser(ArgumentParser):
                 if os.stat("%s/%s"%(savedir,fname)).st_size > 0:
                     names.append((mObj.group(1), int(os.stat("%s/%s"%(savedir,fname)).st_size /1048576) ))
         if names:
-            print "\nThe following saved states are available for loading:\n"
-            print "  %-36s %12s" % ('NAME', 'SIZE')
-            print "  %-36s %12s" % ('----', '----')
+            print("\nThe following saved states are available for loading:\n")
+            print("  %-36s %12s" % ('NAME', 'SIZE'))
+            print("  %-36s %12s" % ('----', '----'))
             for tup in sorted(names, key=lambda t: t[0]):
-                print "  %-36s %10dMB" % tup
+                print("  %-36s %10dMB" % tup)
         else:
-            print "\nNo saved states available in directory: %s" % savedir
+            print("\nNo saved states available in directory: %s" % savedir)
 
 
 ###########################################################################

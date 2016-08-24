@@ -65,7 +65,7 @@ class DDLA:
 
     def write2CSV(self, dataDict, features):
         toWrite = dataDict['data'].tolist()
-        for i in xrange(len(features)): toWrite[i].insert(0,features[i])
+        for i in range(len(features)): toWrite[i].insert(0,features[i])
         toWrite.sort(key=lambda x: x[0])
         self.outputData = toWrite
         with open(self.outputFile,'w+') as csv_file:
@@ -84,27 +84,27 @@ class DDLA:
         csvOutput['header'].extend([outcome_name, 'p'] + ['r_0', 'p_0', 'freq_0', 'N_0'] + ['r_1', 'p_1', 'freq_1', 'N_1'])
         self.header = csvOutput['header']
 
-        if 'data' in csvOutput.keys():
+        if 'data' in list(csvOutput.keys()):
             csvOutput['data'] = concatenate((csvOutput['data'], nan_to_num(outcome_data)), axis = 1)
         else:
             csvOutput['data'] = nan_to_num(outcome_data)
         csvOutput['data'] = concatenate((csvOutput['data'], originalData),axis=1)
 
     def get_next(self,some_iterable, window=1):
-        from itertools import tee, islice, izip_longest
+        from itertools import tee, islice, zip_longest
         items, nexts = tee(some_iterable, 2)
         nexts = islice(nexts, window, None)
-        return izip_longest(items, nexts)
+        return zip_longest(items, nexts)
 
     def print_sorted(self, dataDict, features):
         data = dataDict['data'].tolist()
-        for i in xrange(len(features)): data[i].insert(0,features[i])
+        for i in range(len(features)): data[i].insert(0,features[i])
         data.sort(key=lambda x: -x[1])
 
     def load_data(self):
         data = self.data
         fins = [self.file1, self.file2]
-        for split in xrange(len(fins)):
+        for split in range(len(fins)):
             fin = open(fins[split], 'r')
             reader = csv.reader(fin)
             data.append(dict())
@@ -112,7 +112,7 @@ class DDLA:
             #get headers:
             headers = None
             while True:
-                headers = reader.next()
+                headers = next(reader)
                 if len(headers) > 1 and headers[0][:6] != 'Namesp':
                     #remove blanks and namespace lines
                     break
@@ -126,12 +126,12 @@ class DDLA:
             #read all rows:
             for row in reader:
                 if row and row[0] == 'SORTED:':
-                    print "found SORTED:", row
+                    print("found SORTED:", row)
                     break
                 if len(row) > 1:
                     feat = row[0].strip()
                     column_used = None
-                    for i in xrange(1, len(row)):
+                    for i in range(1, len(row)):
                         # Going through the entire row, entry by entry
                         if i < len(headers):
                             column_name = None
@@ -177,13 +177,13 @@ class DDLA:
         commonFeats = None
 
         for outcome in sorted(commonOutcomes):
-            print "\n%s\n%s" % (outcome, '='*len(outcome))
+            print("\n%s\n%s" % (outcome, '='*len(outcome)))
             feats0 = set(data[0][outcome].keys())
             feats1 = set(data[1][outcome].keys())
             commonFeats = feats0 & feats1
-            print "Number of feats in first results:  %d" % len(feats0)
-            print "Number of feats in second results: %d" % len(feats1)
-            print "Number of feats in common:         %d" % len(commonFeats)
+            print("Number of feats in first results:  %d" % len(feats0))
+            print("Number of feats in second results: %d" % len(feats1))
+            print("Number of feats in common:         %d" % len(commonFeats))
 
             # Getting data in the right format
             commonFeats = list(commonFeats)
@@ -194,13 +194,13 @@ class DDLA:
 
             # Comparing individual correlations
             diffs = list0 - list1
-            output = array([[diffs[i], self.compare_correl(list0[i], list0_n[i], list1[i], list1_n[i])] for i in xrange(len(list0))])
+            output = array([[diffs[i], self.compare_correl(list0[i], list0_n[i], list1[i], list1_n[i])] for i in range(len(list0))])
             self.add2Output(csvOutput, output, outcome, commonFeats)
 
-            sorted_pairs = sorted(zip(diffs, commonFeats), key= lambda (x,y): -x)
-            sorted_words = map(lambda (x,y): y, sorted_pairs)
-            print 'Decreasing differences: <top 10 most correlated with %s> ... <top 10 most correlated with %s>' % (self.file1[:-4], self.file2[:-4] )
-            print ', '.join(sorted_words[:10])+' ... '+', '.join(sorted_words[-10:])
+            sorted_pairs = sorted(zip(diffs, commonFeats), key= lambda x_y: -x_y[0])
+            sorted_words = [x_y1[1] for x_y1 in sorted_pairs]
+            print('Decreasing differences: <top 10 most correlated with %s> ... <top 10 most correlated with %s>' % (self.file1[:-4], self.file2[:-4] ))
+            print(', '.join(sorted_words[:10])+' ... '+', '.join(sorted_words[-10:]))
 
 
             # From previous script, comparing all the r's
@@ -208,14 +208,14 @@ class DDLA:
             list1r2 = array([self.signed_r_log(r) for r in list1])
             (r, p) = pearsonr(list0, list1)
             (r2, p2) = pearsonr(list0r2, list1r2)
-            print "pearson r of rs:               %10.4f (%.6f)" % (r, p)
-            print "pearson r of signed log(r)s:   %10.4f (%.6f)" % (r2, p2)
+            print("pearson r of rs:               %10.4f (%.6f)" % (r, p))
+            print("pearson r of signed log(r)s:   %10.4f (%.6f)" % (r2, p2))
             sumRs += r
             sumR2s += r2
             (rho, p) = spearmanr(list0, list1)
             (rho2, p2) = spearmanr(list0r2, list1r2)
-            print "spearman rho of rs:            %10.4f (%.6f)" % (rho, p)
-            print "spearman rho of signed log(r)s:%10.4f (%.6f)" % (rho2, p2)
+            print("spearman rho of rs:            %10.4f (%.6f)" % (rho, p))
+            print("spearman rho of signed log(r)s:%10.4f (%.6f)" % (rho2, p2))
             sumRhos += rho
             sumRho2s += rho2
 
@@ -224,16 +224,16 @@ class DDLA:
         # print_sorted(csvOutput, commonFeats)
 
 
-        print "\nAVERAGE RESULTS\n==============="
-        print "pearson r of rs:               %10.4f " % (sumRs / float(len(commonOutcomes)))
-        print "pearson r of log(r)s:          %10.4f " % (sumR2s / float(len(commonOutcomes)))
-        print "spearman rho of rs:            %10.4f " % (sumRhos / float(len(commonOutcomes)))
-        print "spearman rho of log(r)s:       %10.4f " % (sumRho2s / float(len(commonOutcomes)))
+        print("\nAVERAGE RESULTS\n===============")
+        print("pearson r of rs:               %10.4f " % (sumRs / float(len(commonOutcomes))))
+        print("pearson r of log(r)s:          %10.4f " % (sumR2s / float(len(commonOutcomes))))
+        print("spearman rho of rs:            %10.4f " % (sumRhos / float(len(commonOutcomes))))
+        print("spearman rho of log(r)s:       %10.4f " % (sumRho2s / float(len(commonOutcomes))))
 
 #### TODO: calculate number in common in top 100 (i.e. as if comparing word clouds)
 
 if __name__ == '__main__':
     fins = sys.argv[1:3]
     ddla = DDLA(fins[0], fins[1])
-    print dir(ddla)
+    print(dir(ddla))
     ddla.differential()

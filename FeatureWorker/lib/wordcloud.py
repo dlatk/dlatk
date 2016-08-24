@@ -21,7 +21,7 @@ try:
     ro.r.library('Cairo')       #Optional, only used for old wordcloud module
     ro.r.library('wordcloud')   #Optional, only used for old wordcloud module
 except:
-    print 'R wordcloud library not imported'
+    print('R wordcloud library not imported')
 
 #ro.r.library('extrafont')
 #ro.r.loadfonts()
@@ -75,26 +75,26 @@ def wordcloudByFile(input_filename, output_filename='wordle_test'):
     f = open(input_filename, 'rb')
     for line in f.readlines():
         word_freq_pairs.append(line.rstrip().split(':'))
-    word_list = map(lambda x: x[0], word_freq_pairs)
-    freq_list = map(lambda x: x[1], word_freq_pairs)
+    word_list = [x[0] for x in word_freq_pairs]
+    freq_list = [x[1] for x in word_freq_pairs]
     wordcloud(word_list, freq_list)
 
 def _makeRandomColorTuples(num_rgb_tuples, rgb_bounds=[0, 0.39]):
     #Create a list of length num_rgb_tuples, where every element is a random hex color
     assert(num_rgb_tuples > 0)
-    r = map(runif, [rgb_bounds[0]]*num_rgb_tuples, [rgb_bounds[1]]*num_rgb_tuples)
-    g = map(runif, [rgb_bounds[0]]*num_rgb_tuples, [rgb_bounds[1]]*num_rgb_tuples)
-    b = map(runif, [rgb_bounds[0]]*num_rgb_tuples, [rgb_bounds[1]]*num_rgb_tuples)
-    ro_colors = map(ro.r.rgb, r, g, b)
-    ro_color_list = ro.StrVector(map(lambda x: x[0], ro_colors))
+    r = list(map(runif, [rgb_bounds[0]]*num_rgb_tuples, [rgb_bounds[1]]*num_rgb_tuples))
+    g = list(map(runif, [rgb_bounds[0]]*num_rgb_tuples, [rgb_bounds[1]]*num_rgb_tuples))
+    b = list(map(runif, [rgb_bounds[0]]*num_rgb_tuples, [rgb_bounds[1]]*num_rgb_tuples))
+    ro_colors = list(map(ro.r.rgb, r, g, b))
+    ro_color_list = ro.StrVector([x[0] for x in ro_colors])
     return ro_color_list
 
 def _makeColorTuplesFromRgbTuples(rgbTuples):
-    r, g, b = zip(*rgbTuples)
+    r, g, b = list(zip(*rgbTuples))
     N = len(r)
     blank_lists = [ [] for l in range(N) ]
-    ro_colors = map(ro.r.rgb, r, g, b, [255]*N, blank_lists, [255]*N)
-    ro_color_list = ro.StrVector(map(lambda x: x[0], ro_colors))
+    ro_colors = list(map(ro.r.rgb, r, g, b, [255]*N, blank_lists, [255]*N))
+    ro_color_list = ro.StrVector([x[0] for x in ro_colors])
     return ro_color_list
     
 
@@ -177,7 +177,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
             try:
                 check_call(["convert", "-quality", "100", pdfFile + "[%d]"%(nPages-1), pngFile])
             except (OSError, CalledProcessError) as e:
-                print 'ERROR:', e
+                print('ERROR:', e)
             if not keepPdfs:
                 check_call(["rm", pdfFile])
 
@@ -199,7 +199,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
 
         print('Generating wordclouds using amueller\'s python package...')
 
-        word_freq_tup = zip(word_list, freq_list)
+        word_freq_tup = list(zip(word_list, freq_list))
         #list of tups of (word, freq)
 
         word_freq_tup = sorted(word_freq_tup, key=lambda tup: -tup[1]) #sort by frequency
@@ -209,7 +209,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
             #color list is list of colors to be applied to words with least to most freq
             assert(len(color_list) == len(word_list))
             if rgb:
-                color_string_list = map(lambda x: "rgb(%d,%d,%d)" % (x[0], x[1], x[2]), color_list)
+                color_string_list = ["rgb(%d,%d,%d)" % (x[0], x[1], x[2]) for x in color_list]
                 #print color_string_list
             else:
                 color_string_list = color_list #assume that the color list already has usable color strings
@@ -219,7 +219,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
             color_string_list = _makeRandomColorTuples(len(word_list))
             #create list of random color tuples, one for each word
 
-        sorted_word_list, sorted_freq_list = zip(*word_freq_tup)
+        sorted_word_list, sorted_freq_list = list(zip(*word_freq_tup))
 
 
         
@@ -256,7 +256,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
             #TODO: pdf output?
             pngFile = output_prefix + "_wc.png"
             cloud.to_file(pngFile)
-            print('Wordcloud created at: %s' % pngFile)
+            print(('Wordcloud created at: %s' % pngFile))
         else:
             warn('No filename specified. Wordcloud not created.')
             #Hey buddy. You didn't specify the filename.
@@ -304,14 +304,14 @@ def wordcloud(word_list, freq_list, output_prefix='test',
 
 
         with open(words_loc, 'w') as f:
-            word_freq_tup = zip(word_list, freq_list)
+            word_freq_tup = list(zip(word_list, freq_list))
             word_freq_tup = sorted(word_freq_tup, key=lambda tup: -tup[1]) #sort by frequency
 
             if color_list:
                 #color list is list of colors to be applied to words with least to most freq
                 assert(len(color_list) == len(word_list))
                 if rgb:
-                    color_string_list = map(lambda x: "rgb(%d,%d,%d)" % (x[0], x[1], x[2]), color_list)
+                    color_string_list = ["rgb(%d,%d,%d)" % (x[0], x[1], x[2]) for x in color_list]
                     #print color_string_list
                 else:
                     color_string_list = color_list #assume that the color list already has usable color strings
@@ -321,8 +321,8 @@ def wordcloud(word_list, freq_list, output_prefix='test',
                 color_string_list = _makeRandomColorTuples(len(word_list))
                 #create list of random color tuples, one for each word
 
-            sorted_word_list, sorted_freq_list = zip(*word_freq_tup)
-            word_freq_color_tup = zip(sorted_word_list, sorted_freq_list, color_string_list)
+            sorted_word_list, sorted_freq_list = list(zip(*word_freq_tup))
+            word_freq_color_tup = list(zip(sorted_word_list, sorted_freq_list, color_string_list))
 
 
             pngFile = output_prefix + '.png'
@@ -331,24 +331,24 @@ def wordcloud(word_list, freq_list, output_prefix='test',
                 try:
                     word_row = tup[0].encode("utf-8") + '\t' + str(tup[1]) + '\t' + str(tup[2]) + '\n'
                     f.write(word_row)
-                except Exception,e:
-                    print e
-                    print "Line contains unprintable unicode, skipped: ",
-                    print tup
+                except Exception as e:
+                    print(e)
+                    print("Line contains unprintable unicode, skipped: ", end=' ')
+                    print(tup)
                 #str is necessary in case the words are numbers
 
         command = ['java','-jar', PERMA_path + '/ibm-word-cloud.jar', '-c', 
                     config_loc, '-w', str(width), '-h', str(height), '-i', 
                     words_loc, '-o', pngFile]
-        print 'Generating wordcloud at ' + pngFile
+        print('Generating wordcloud at ' + pngFile)
 
         #print ' '.join(command)
         with open(os.devnull, 'w') as fnull: #for suppressing outputs of the command
             subprocess.call(command, stdout=fnull, stderr=subprocess.STDOUT)
 
     else:
-        print "Wordcloud algorithm not recognized."
-        print "Change line 122 of PERMA/code/ml/wwbp/wordcloud.py to valid algorithm."
+        print("Wordcloud algorithm not recognized.")
+        print("Change line 122 of PERMA/code/ml/wwbp/wordcloud.py to valid algorithm.")
 
 def _tagcloudToWordcloud(filename='', directory=os.getcwd()):
     f = open(os.path.join(directory, filename), 'rb')
@@ -364,8 +364,8 @@ def _tagcloudToWordcloud(filename='', directory=os.getcwd()):
                 getwords = False
                 topicId = extract(lastline, 'Topic Id:',',').strip()
                 # tags = map(lambda x:(x[0].upper(), int(x[1]), rgb(x[2])), tagTriples)
-                tags = map(lambda x:(x[0].lower(), int(x[1]), rgb(x[2])), tagTriples)
-                ngrams, freqs, colors = zip(*tags)
+                tags = [(x[0].lower(), int(x[1]), rgb(x[2])) for x in tagTriples]
+                ngrams, freqs, colors = list(zip(*tags))
                 lastline = ''
                 tagTriples = []
 #                print topicId, ngrams, freqs, colors
@@ -436,7 +436,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
                     tagTriples.append(explode(line))
 
                 else:
-                    tags = map(lambda x:(x[0].lower(), int(x[1]), x[2]), tagTriples)
+                    tags = [(x[0].lower(), int(x[1]), x[2]) for x in tagTriples]
                     newFilename = None
                     fileEnding = ''
                     fileEnding += '.' + outcome
@@ -444,7 +444,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
                     if topicR: fileEnding += '.' + topicR
                     if topicId: fileEnding += '.' + topicId
                     if useTopicWords:
-                        ngrams, freqs, colors = zip(*tags)
+                        ngrams, freqs, colors = list(zip(*tags))
                         fileEnding += '.'.join(ngrams[0:6])
                     if topicFreq: fileEnding += '.' + topicFreq
                     if topicDup: fileEnding += '.' + topicDup
@@ -458,7 +458,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
                     topicFreq = '' if not topicFreq else topicFreq
 
                     if toFolders:
-                        ngrams, freqs, colors = zip(*tags)
+                        ngrams, freqs, colors = list(zip(*tags))
                         ngramString = '.'.join(ngrams[0:min(6, len(ngrams))])
                         ngramString = '' ## LAD delete this line to add ngrams / entries back into the file
                         fileFolders[newFilename[0:-4]] = (outcome, '.'.join([posneg, topicR, topicId, ngramString, topicDup, topicFreq]))
@@ -483,7 +483,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
             lastline = line
 
         if getwords:
-            tags = map(lambda x:(x[0], int(x[1]), x[2]), tagTriples)
+            tags = [(x[0], int(x[1]), x[2]) for x in tagTriples]
             if tags:
                 # ngrams, freqs, colors = zip(*tags)
                 newFilename = None
@@ -493,7 +493,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
                 if topicR: fileEnding += '.' + topicR
                 if topicId: fileEnding += '.' + topicId
                 if useTopicWords:
-                    ngrams, freqs, colors = zip(*tags)
+                    ngrams, freqs, colors = list(zip(*tags))
                     fileEnding += '.'.join(ngrams[0:6])
                 if topicFreq: fileEnding += '.' + topicFreq
                 if topicDup: fileEnding += '.' + topicDup
@@ -508,7 +508,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
 
                 newFilename = coerceToValidFileName(newFilename)
                 if toFolders:
-                    ngrams, freqs, colors = zip(*tags)
+                    ngrams, freqs, colors = list(zip(*tags))
                     ngramString = '.'.join(ngrams[0:min(6, len(ngrams))])
                     ngramString = '' ## LAD delete this line to add ngrams / entries back into the file
                     suffixList = [posneg, topicR, topicId, ngramString, topicDup, topicFreq]
@@ -526,9 +526,9 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
         except OSError:
             pass
 
-    for filename, tags in processedFiles.iteritems():
-        ngrams, freqs, colors = zip(*tags)
-        colors = map(lambda x:'#'+x, colors)
+    for filename, tags in processedFiles.items():
+        ngrams, freqs, colors = list(zip(*tags))
+        colors = ['#'+x for x in colors]
         filename = coerceToValidFileName(filename)
         title = filename if withTitle else None
         output_file = None
@@ -543,9 +543,9 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
             output_file = os.path.join(directory, filename)
         try:
             wordcloud(ngrams, freqs,output_file, colors, rgb=False, title=title, fontFamily=fontFamily, fontStyle=fontStyle)
-        except Exception, e:
-            print 'WARNING: ERROR happened for file: %s'%(output_file,)
-            print e
+        except Exception as e:
+            print('WARNING: ERROR happened for file: %s'%(output_file,))
+            print(e)
         
         # ii += 1
         # if ii > 2:
@@ -558,4 +558,4 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
 
 if __name__=='__main__':
 
-    print 'wordcloud sleeps peacefully in the shade, its work is happily done.'
+    print('wordcloud sleeps peacefully in the shade, its work is happily done.')

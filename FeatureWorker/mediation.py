@@ -28,7 +28,7 @@ import patsy
 from math import sqrt
 from scipy.stats import zscore
 from scipy.stats.stats import pearsonr, spearmanr
-from fwConstants import pCorrection, DEF_P
+from .fwConstants import pCorrection, DEF_P
 from operator import itemgetter
 import itertools
 import sys
@@ -587,7 +587,7 @@ class MediationAnalysis:
 
 		summary_results.sort(key=lambda x: (x[0].lower(), x[1].lower(), -abs(x[3])), reverse=False)
 		if len(summary_results) > 0:
-			print "Printing results to: %s" % csv_name
+			print("Printing results to: %s" % csv_name)
 			with open(csv_name, 'wb') as csvfile:
 				f = csv.writer(csvfile, quotechar='"', quoting=csv.QUOTE_NONNUMERIC, delimiter=',')
 				f.writerow(header)
@@ -595,7 +595,7 @@ class MediationAnalysis:
 					for item in list(group)[:MAX_SUMMARY_SIZE]:
 						f.writerow(item)
 		else:
-			print "Summary: nothing passes significance threshold of %s." % (self.sig_level)
+			print("Summary: nothing passes significance threshold of %s." % (self.sig_level))
 			
 
 	def print_csv(self, output_name=''):
@@ -623,7 +623,7 @@ class MediationAnalysis:
 				"Prop_mediated_control_Estimate", "Prop_mediated_control_P_value", "Prop_mediated_control_Lower_CI_bound", "Prop_mediated_control_Upper_CI_bound", 
 				"Prop_mediated_treated_Estimate", "Prop_mediated_treated_P_value", "Prop_mediated_treated_Lower_CI_bound", "Prop_mediated_treated_Upper_CI_bound"] 
 				
-		print "Printing results to: %s" % csv_name
+		print("Printing results to: %s" % csv_name)
 		with open(csv_name, 'wb') as csvfile:
 			f = csv.writer(csvfile, quotechar='"', quoting=csv.QUOTE_NONNUMERIC, delimiter=',')
 			f.writerow(header)
@@ -659,15 +659,15 @@ class MediationAnalysis:
 		Take dictionary data and return a Pandas DataFrame indexed by group_id.
 		Column names are 'path_start', 'mediator' and 'outcome'
 		"""
-		ps_df = pd.DataFrame(data=collections.OrderedDict(sorted(path_start.items())).items(), columns=['group_id', 'path_start']).set_index(['group_id']).fillna(0)
-		m_df = pd.DataFrame(data=mediator.items(), columns=['group_id', 'mediator']).set_index(['group_id'])
-		o_df = pd.DataFrame(data=outcome.items(), columns=['group_id', 'outcome']).set_index(['group_id'])
+		ps_df = pd.DataFrame(data=list(collections.OrderedDict(sorted(path_start.items())).items()), columns=['group_id', 'path_start']).set_index(['group_id']).fillna(0)
+		m_df = pd.DataFrame(data=list(mediator.items()), columns=['group_id', 'mediator']).set_index(['group_id'])
+		o_df = pd.DataFrame(data=list(outcome.items()), columns=['group_id', 'outcome']).set_index(['group_id'])
 
 		data = ps_df.join(m_df)
 		data = data.join(o_df)
 		if controlDict and controlNames: 
 			for control in controlNames:
-				data = data.join(pd.DataFrame(data=controlDict[control].items(), columns=['group_id', control]).set_index(['group_id']))
+				data = data.join(pd.DataFrame(data=list(controlDict[control].items()), columns=['group_id', control]).set_index(['group_id']))
 		data = data.dropna()
 		return data
 
@@ -726,17 +726,17 @@ class MediationAnalysis:
 
 		if switch == "feat_as_path_start":
 			if len(self.pathStartNames) == 0:
-				self.pathStartNames = allFeatures.keys()
+				self.pathStartNames = list(allFeatures.keys())
 			numMeds = len(self.pathStartNames)
 
 		elif switch == "feat_as_outcome":
 			if len(self.outcomeNames) == 0:
-				self.outcomeNames = allFeatures.keys()
+				self.outcomeNames = list(allFeatures.keys())
 			numMeds = len(self.outcomeNames)
 
 		elif switch == "feat_as_control":
 			if len(self.controlNames) == 0:
-				self.controlNames = allFeatures.keys()
+				self.controlNames = list(allFeatures.keys())
 			numMeds = len(self.pathStartNames)
 
 		elif switch == "no_features":
@@ -744,7 +744,7 @@ class MediationAnalysis:
 
 		elif switch == "default":
 			if len(self.mediatorNames) == 0:
-				self.mediatorNames = allFeatures.keys()
+				self.mediatorNames = list(allFeatures.keys())
 			numMeds = len(self.mediatorNames)
 			
 		mediation_count = 0
@@ -848,21 +848,21 @@ class MediationAnalysis:
 						self.output[path_start][outcome][mediator] = summary_array
 						self.output_p[path_start][outcome][mediator] = self.output_p[path_start][outcome][mediator] + summary["P-value"].tolist()
 
-					print "Mediation number " + str(mediation_count) + " out of " + total_mediations
+					print("Mediation number " + str(mediation_count) + " out of " + total_mediations)
 					
 					if len(self.controlNames) > 0:
-						print "Path Start: %s, Mediator: %s, Outcome: %s, Controls: %s" % (path_start, mediator, outcome, ", ".join(self.controlNames))
+						print("Path Start: %s, Mediator: %s, Outcome: %s, Controls: %s" % (path_start, mediator, outcome, ", ".join(self.controlNames)))
 					else:
-						print "Path Start: %s, Mediator: %s, Outcome: %s" % (path_start, mediator, outcome)
+						print("Path Start: %s, Mediator: %s, Outcome: %s" % (path_start, mediator, outcome))
 					if self.baron_and_kenny:
-						print "C: %s, C_p: %s, C': %s, C'_p: %s" % (str(c), str(c_p), str(c_prime), str(c_prime_p))
-						print "C-C': %s, alpha*beta: %s" % (str(c-c_prime), str(alpha*beta))
-						print "alpha: %s, alpha_error: %s, alpha_p: %s" % (str(alpha), str(alpha_error), str(alpha_p))
-						print "beta: %s, beta_error: %s, beta_p: %s" % (str(beta), str(beta_error), str(beta_p))
-						print "Sobel z-score: %s, Sobel SE: %s, Sobel p: %s" % (str(sobel), str(sobel_SE), str(sobel_p))
+						print("C: %s, C_p: %s, C': %s, C'_p: %s" % (str(c), str(c_p), str(c_prime), str(c_prime_p)))
+						print("C-C': %s, alpha*beta: %s" % (str(c-c_prime), str(alpha*beta)))
+						print("alpha: %s, alpha_error: %s, alpha_p: %s" % (str(alpha), str(alpha_error), str(alpha_p)))
+						print("beta: %s, beta_error: %s, beta_p: %s" % (str(beta), str(beta_error), str(beta_p)))
+						print("Sobel z-score: %s, Sobel SE: %s, Sobel p: %s" % (str(sobel), str(sobel_SE), str(sobel_p)))
 					if self.imai_and_keele:
-						print summary
-					print ""
+						print(summary)
+					print("")
 
 		if p_correction_method and not p_correction_method.startswith("bonf"):
 			p_list = []

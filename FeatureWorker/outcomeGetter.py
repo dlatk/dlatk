@@ -1,13 +1,13 @@
 import re
 import MySQLdb
 import pandas as pd
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 
 #infrastructure
-from featureWorker import FeatureWorker
-import fwConstants as fwc
-from mysqlMethods import mysqlMethods as mm
-from mysqlMethods.mysql_iter_funcs import get_db_engine
+from .featureWorker import FeatureWorker
+from . import fwConstants as fwc
+from .mysqlMethods import mysqlMethods as mm
+from .mysqlMethods.mysql_iter_funcs import get_db_engine
 
 class OutcomeGetter(FeatureWorker):
     """Deals with outcome tables"""
@@ -48,12 +48,12 @@ class OutcomeGetter(FeatureWorker):
         super(OutcomeGetter, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable = wordTable)
         self.outcome_table = outcome_table
 
-        if isinstance(outcome_value_fields, basestring):
+        if isinstance(outcome_value_fields, str):
             outcome_value_fields = [outcome_value_fields]
 
         if outcome_value_fields and len(outcome_value_fields) > 0 and outcome_value_fields[0] == '*':#handle wildcard fields
             newOutcomeFields = []
-            for name, typ in mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, outcome_table).iteritems():
+            for name, typ in mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, outcome_table).items():
                 typ = re.sub(r'\([0-9\,]*\)\s*$', '', typ)
                 if typ.split()[0].upper() in self._mysqlNumeric:
                     newOutcomeFields.append(name)
@@ -61,7 +61,7 @@ class OutcomeGetter(FeatureWorker):
 
         if outcome_controls and len(outcome_controls) > 0 and outcome_controls[0] == '*':#handle wildcard fields
             newOutcomeFields = []
-            for name, typ in mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, outcome_table).iteritems():
+            for name, typ in mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, outcome_table).items():
                 typ = re.sub(r'\([0-9\,]*\)\s*$', '', typ)
                 if typ.split()[0].upper() in self._mysqlNumeric:
                     newOutcomeFields.append(name)
@@ -82,7 +82,7 @@ class OutcomeGetter(FeatureWorker):
     def copy(self):
         self.__dict__
         newObj = OutcomeGetter(self.corpdb, self.corptable, self.correl_field, self.mysql_host, self.message_field, self.messageid_field)
-        for k, v in self.__dict__.iteritems():
+        for k, v in self.__dict__.items():
             newObj.__dict__[k] = v
         return newObj
 
@@ -95,7 +95,7 @@ class OutcomeGetter(FeatureWorker):
             assert( featureMappingTable != featureMappingLex )
 
         if bracketlabels:
-            for feat, label in feat_to_label.iteritems():
+            for feat, label in feat_to_label.items():
                 feat_to_label[feat] = '{' + label + '}'
             
         return feat_to_label
@@ -106,11 +106,11 @@ class OutcomeGetter(FeatureWorker):
         if isinstance(dataframe.index[0], str):
             import sqlalchemy
             dataframe.index = dataframe.index.astype(str)
-            print dataframe.index
+            print(dataframe.index)
             dtype = {self.correl_field : sqlalchemy.types.VARCHAR(max([len(i) for i in dataframe.index]))}
-            print dataframe
+            print(dataframe)
         dataframe.to_sql(tablename, eng, index_label = self.correl_field, if_exists = ifExists, chunksize=fwc.MYSQL_BATCH_INSERT_SIZE, dtype = dtype)
-        print "New table created: %s" % tablename
+        print("New table created: %s" % tablename)
 
     def getDistinctOutcomeValues(self, outcome = None, includeNull = True, where = ''):
         """returns a list of outcome values"""
@@ -123,7 +123,7 @@ class OutcomeGetter(FeatureWorker):
             if not includeNull:
                 wheres.append("%s IS NOT NULL" % outcome)
             sql += ' WHERE ' + ' AND '.join(wheres)
-        return map(lambda v: v[0], mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
+        return [v[0] for v in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)]
 
     def getDistinctOutcomeValueCounts(self, outcome = None, requireControls = False, includeNull = True, where = ''):
         """returns a dict of (outcome_value, count)"""
@@ -196,7 +196,7 @@ class OutcomeGetter(FeatureWorker):
                 return "( CASE feat WHEN '%s' THEN %s ELSE %s END ) AS '%s'"%(df, featureValueField, str(zero), df)
             return ''
 
-        case_statements = map(makeCaseStrings, distinctFeatureList)
+        case_statements = list(map(makeCaseStrings, distinctFeatureList))
         sql_cases_features = ", ".join(case_statements) + " "
         #debugN = 1000 #DEBUG
         #_warn( distinctFeatureList[0:debugN] ) #DEBUG
@@ -251,23 +251,23 @@ enabled, so the total word count for your groups might be off
             for outcomeField in outcomeFieldList:
                 outcomes[outcomeField] = dict(self.getGroupAndOutcomeValues(outcomeField))
                 if outcomeField in self.outcome_value_fields:
-                    groups.update(outcomes[outcomeField].keys())
+                    groups.update(list(outcomes[outcomeField].keys()))
             
 
             if self.group_freq_thresh:
                 where = """ group_id in ('%s')""" % ("','".join(str(g) for g in groups))
                 groupCnts = self.getGroupWordCounts(where, lexicon_count_table = lexicon_count_table)
                 groups = set()
-                for outcomeField, outcomeValues in outcomes.iteritems():
+                for outcomeField, outcomeValues in outcomes.items():
                     newOutcomes = dict()
-                    for gId in outcomeValues.iterkeys():
+                    for gId in outcomeValues.keys():
                         if (gId in groupCnts) and (groupCnts[gId] >= self.group_freq_thresh):
                             #keep
                             # newOutcomes[gId] = float(outcomeValues[gId])
                             newOutcomes[gId] = outcomeValues[gId]
                     outcomes[outcomeField] = newOutcomes
                     if outcomeField in self.outcome_value_fields:
-                        groups.update(newOutcomes.keys())
+                        groups.update(list(newOutcomes.keys()))
 
             #set groups:
             for k in self.outcome_controls + self.outcome_interaction:
@@ -289,16 +289,16 @@ enabled, so the total word count for your groups might be off
             controls = dict()
             for k in self.outcome_controls + self.outcome_interaction:
                 outcomeDict = outcomes[k]
-                outcomeDict = dict([(g, v) for g, v in outcomeDict.iteritems() if g in groups])
+                outcomeDict = dict([(g, v) for g, v in outcomeDict.items() if g in groups])
                 controls[k] = outcomeDict
             for k in self.outcome_value_fields:
                 outcomeDict = outcomes[k]
-                outcomeDict = dict([(g, v) for g, v in outcomeDict.iteritems() if g in groups])
+                outcomeDict = dict([(g, v) for g, v in outcomeDict.items() if g in groups])
                 ocs[k] = outcomeDict
         elif self.group_freq_thresh:
             groupCnts = self.getGroupWordCounts(where = None, lexicon_count_table = lexicon_count_table)
             groups = set()
-            for gId, cnt in groupCnts.iteritems():
+            for gId, cnt in groupCnts.items():
                 if cnt >= self.group_freq_thresh:
                     groups.add(gId)
             if groupsWhere:
@@ -354,7 +354,7 @@ enabled, so the total word count for your groups might be off
 
         #adjust keys for outcomes and controls:
         countGroups = dict()
-        for outcomeField, outcomes in allOutcomes.iteritems():
+        for outcomeField, outcomes in allOutcomes.items():
             countGroups[outcomeField] = len(outcomes)
 
         return countGroups

@@ -17,6 +17,7 @@ from datetime import timedelta
 #math / stats:
 from math import floor, log10
 from numpy import mean, std
+import imp
 
 #nltk
 try:
@@ -24,22 +25,22 @@ try:
     from nltk.corpus import wordnet as wn
     import nltk.data
 except ImportError:
-    print "warning: unable to import nltk.tree or nltk.corpus or nltk.data"
+    print("warning: unable to import nltk.tree or nltk.corpus or nltk.data")
 
 #infrastructure
-from featureWorker import FeatureWorker
-import fwConstants as fwc
-from mysqlMethods import mysqlMethods as mm
+from .featureWorker import FeatureWorker
+from . import fwConstants as fwc
+from .mysqlMethods import mysqlMethods as mm
 
 #local / nlp
-from lib.happierfuntokenizing import Tokenizer #Potts tokenizer
+from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 try:
-    from lib.StanfordParser import StanfordParser
+    from .lib.StanfordParser import StanfordParser
 except ImportError:
     fwc.warn("Cannot import StanfordParser (interface with the Stanford Parser)")
     pass
 try:
-    from lib.TweetNLP import TweetNLP
+    from .lib.TweetNLP import TweetNLP
 except ImportError:
     fwc.warn("Cannot import TweetNLP (interface with CMU Twitter tokenizer / pos tagger)")
     pass
@@ -69,13 +70,13 @@ class FeatureExtractor(FeatureWorker):
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
-        columnNames = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys()
+        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
         messageIndex = columnNames.index(self.message_field)
 
         #find all groups
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
         msgs = 0#keeps track of the number of messages read
-        cfRows = map(lambda r: r[0], mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))
+        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
         fwc.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
         
         #iterate through groups in chunks
@@ -86,15 +87,15 @@ class FeatureExtractor(FeatureWorker):
             #get msgs for groups:
             sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
             rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))#, False)
-            messages = map(lambda r: r[messageIndex], rows)
+            messages = [r[messageIndex] for r in rows]
 
             #tokenize msgs:
-            parses = map(lambda m: json.dumps(tokenizer.tokenize(m)), messages)
+            parses = [json.dumps(tokenizer.tokenize(m)) for m in messages]
 
             #add msgs into new tables
             sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
                     """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-            for i in xrange(len(rows)):
+            for i in range(len(rows)):
                 rows[i] = list(rows[i])
                 rows[i][messageIndex] = str(parses[i])
             mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
@@ -124,13 +125,13 @@ class FeatureExtractor(FeatureWorker):
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
-        columnNames = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys()
+        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
         messageIndex = columnNames.index(self.message_field)
 
         #find all groups
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
         msgs = 0#keeps track of the number of messages read
-        cfRows = map(lambda r: r[0], mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))
+        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
         fwc.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
         
         #iterate through groups in chunks
@@ -141,18 +142,18 @@ class FeatureExtractor(FeatureWorker):
             #get msgs for groups:
             sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
             rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))#, False)
-            messages = map(lambda r: r[messageIndex], rows)
+            messages = [r[messageIndex] for r in rows]
 
             #tokenize msgs:
             # parses = map(lambda m: json.dumps(sentDetector.tokenize(fwc.removeNonAscii(treatNewlines(m.strip())))), messages)
             if self.use_unicode: 
-                parses = map(lambda m: json.dumps(sentDetector.tokenize(fwc.treatNewlines(m.strip()))), messages)
+                parses = [json.dumps(sentDetector.tokenize(fwc.treatNewlines(m.strip()))) for m in messages]
             else:
-                parses = map(lambda m: json.dumps(sentDetector.tokenize(fwc.removeNonAscii(fwc.treatNewlines(m.strip())))), messages)
+                parses = [json.dumps(sentDetector.tokenize(fwc.removeNonAscii(fwc.treatNewlines(m.strip())))) for m in messages]
             #add msgs into new tables
             sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
                     """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-            for i in xrange(len(rows)):
+            for i in range(len(rows)):
                 rows[i] = list(rows[i])
                 rows[i][messageIndex] = str(parses[i])
             mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
@@ -168,12 +169,12 @@ class FeatureExtractor(FeatureWorker):
 
     def printTokenizedLines(self, filename, whiteListFeatTable = None):
         """prints tokenized messages in format mallet can use"""
-        reload(sys)
+        imp.reload(sys)
         if self.use_unicode: sys.setdefaultencoding('utf8')
         sql = """SELECT %s, %s  from %s""" % (self.messageid_field, self.message_field,self.corptable+'_tok')
         messagesEnc = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         try:
-            messagesTok = map(lambda m: (m[0], json.loads(m[1])), messagesEnc)
+            messagesTok = [(m[0], json.loads(m[1])) for m in messagesEnc]
         except ValueError as e:
             raise ValueError("One of the tokenized messages was badly JSON encoded, please check your data again. (Maybe MySQL truncated the data?)")
             
@@ -197,11 +198,11 @@ class FeatureExtractor(FeatureWorker):
 
     def printJoinedFeatureLines(self, filename, delimeter = ' '):
         """prints tokenized messages in format mallet can use"""
-        reload(sys)
+        imp.reload(sys)
         if self.use_unicode: sys.setdefaultencoding('utf8')
         f = open(filename, 'w')
         for (gid, featValues) in self.yieldValuesSparseByGroups():
-            message = delimeter.join([delimeter.join([feat.replace(' ', '_')]*val) for feat, value in featValues.iteritems()])
+            message = delimeter.join([delimeter.join([feat.replace(' ', '_')]*val) for feat, value in featValues.items()])
             if self.use_unicode:
                 f.write("""%s en %s\n""" %(gid, message.encode('utf-8')))     
             else:
@@ -224,16 +225,16 @@ class FeatureExtractor(FeatureWorker):
     def addParsedMessages(self):
         """Creates a parsed version of the message table"""
         parseTypes = ['pos', 'const', 'dep']
-        tableNames = dict( map(lambda t: (t, "%s_%s" %(self.corptable, t)), parseTypes) )
+        tableNames = dict( [(t, "%s_%s" %(self.corptable, t)) for t in parseTypes] )
 
         #Create Tables: (TODO make continue)
-        for t, name in tableNames.items():
+        for t, name in list(tableNames.items()):
             sql = "CREATE TABLE IF NOT EXISTS %s like %s" % (name, self.corptable)
             mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
             mm.enableTableKeys(self.corpdb, self.dbCursor, name, charset=self.encoding, use_unicode=self.use_unicode)#just incase interrupted, so we can find un-parsed groups
 
         #Find column names:
-        columnNames = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys()
+        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
         messageIndex = columnNames.index(self.message_field)
 
         #find if parsed table already has rows:
@@ -246,11 +247,11 @@ class FeatureExtractor(FeatureWorker):
             usql = """SELECT a.%s FROM %s AS a LEFT JOIN %s AS b ON a.%s = b.%s WHERE b.%s IS NULL group by a.%s""" % (
                 self.correl_field, self.corptable, tableNames[parseTypes[0]], self.messageid_field, self.messageid_field, self.messageid_field, self.correl_field)
         msgs = 0#keeps track of the number of messages read
-        cfRows = map(lambda r: r[0], mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))
+        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
         fwc.warn("parsing messages for %d '%s's"%(len(cfRows), self.correl_field))
 
         #disable keys (waited until after finding groups)
-        for t, name in tableNames.items():
+        for t, name in list(tableNames.items()):
             mm.disableTableKeys(self.corpdb, self.dbCursor, name, charset=self.encoding, use_unicode=self.use_unicode)
         
         #iterate through groups in chunks
@@ -273,8 +274,8 @@ class FeatureExtractor(FeatureWorker):
             sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
             rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
             rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
-            messages = map(lambda r: r[messageIndex], rows)
-            messages = map(lambda m: m if m else '_', messages)
+            messages = [r[messageIndex] for r in rows]
+            messages = [m if m else '_' for m in messages]
 
             #check for limit of active processes
             while (len(activePs) >= psAtTime):
@@ -309,7 +310,7 @@ class FeatureExtractor(FeatureWorker):
             proc.join()
 
         #re-enable keys:
-        for t, name in tableNames.items():
+        for t, name in list(tableNames.items()):
             mm.enableTableKeys(self.corpdb, self.dbCursor, name, charset=self.encoding, use_unicode=self.use_unicode)
 
         return tableNames
@@ -342,7 +343,7 @@ class FeatureExtractor(FeatureWorker):
             new_rows = []
             for row in raw:
                 r = csv.reader([row])
-                new_rows.append(r.next())
+                new_rows.append(next(r))
 
         new_rows = [[i[0].strip().replace(" ",""), # Message_ids shouldn't get split
                      i[1].strip().replace("[ ","[").replace(" ]", "]").replace(" http : //", " http://").replace(" https : //", " https://")]
@@ -372,8 +373,8 @@ class FeatureExtractor(FeatureWorker):
         sql += " VALUES (%s, %s)"
         N = 50000
         totalLength = len(new_rows)
-        for l in xrange(0, totalLength, N):
-            print "Inserting rows (%5.2f%% done)" % (float(min(l+N,totalLength))*100/totalLength)
+        for l in range(0, totalLength, N):
+            print("Inserting rows (%5.2f%% done)" % (float(min(l+N,totalLength))*100/totalLength))
             mm.executeWriteMany(self.corpdb, self.dbCursor, sql, new_rows[l:l+N], writeCursor=self.dbConn.cursor(), charset=self.encoding)
         
 
@@ -381,10 +382,10 @@ class FeatureExtractor(FeatureWorker):
         """Parses, then write messages, used for parallelizing parsing"""
         parses = sp.parse(messages)
         #add msgs into new tables
-        for pt, tableName in tableNames.items():
+        for pt, tableName in list(tableNames.items()):
             sql = """REPLACE INTO """+tableName+""" ("""+', '.join(columnNames)+\
                 """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-            for i in xrange(len(rows)):
+            for i in range(len(rows)):
                 rows[i] = list(rows[i])
                 rows[i][messageIndex] = str(parses[i][pt])
             
@@ -408,13 +409,13 @@ class FeatureExtractor(FeatureWorker):
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
-        columnNames = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys()
+        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
         messageIndex = columnNames.index(self.message_field)
 
         #find all groups
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
         msgs = 0 #keeps track of the number of messages read
-        cfRows = map(lambda r: r[0], mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))
+        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
         fwc.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
         
         #iterate through groups in chunks
@@ -425,15 +426,15 @@ class FeatureExtractor(FeatureWorker):
             #get msgs for groups:
             sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
             rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))#, False)
-            messages = map(lambda r: r[messageIndex], rows)
+            messages = [r[messageIndex] for r in rows]
 
             #tokenize msgs:
-            parses = map(lambda m: json.dumps(tagger.tag(m)), messages)
+            parses = [json.dumps(tagger.tag(m)) for m in messages]
 
             #add msgs into new tables
             sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
                     """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-            for i in xrange(len(rows)):
+            for i in range(len(rows)):
                 rows[i] = list(rows[i])
                 rows[i][messageIndex] = str(parses[i])
             mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
@@ -464,13 +465,13 @@ class FeatureExtractor(FeatureWorker):
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
-        columnNames = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys()
+        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
         messageIndex = columnNames.index(self.message_field)
 
         #find all groups
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
         msgs = 0#keeps track of the number of messages read
-        cfRows = map(lambda r: r[0], mm.executeGetList(self.corpdb, self.dbCursor, usql))
+        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql)]
         fwc.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
         
         #iterate through groups in chunks
@@ -481,15 +482,15 @@ class FeatureExtractor(FeatureWorker):
             #get msgs for groups:
             sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
             rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))#, False)
-            messages = map(lambda r: r[messageIndex], rows)
+            messages = [r[messageIndex] for r in rows]
 
             #tokenize msgs:
-            parses = map(lambda m: json.dumps(tokenizer.tokenize(m)), messages)
+            parses = [json.dumps(tokenizer.tokenize(m)) for m in messages]
 
             #add msgs into new tables
             sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
                     """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-            for i in xrange(len(rows)):
+            for i in range(len(rows)):
                 rows[i] = list(rows[i])
                 rows[i][messageIndex] = str(parses[i])
             mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
@@ -519,14 +520,14 @@ class FeatureExtractor(FeatureWorker):
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
-        columnNames = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys()
+        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
         messageIndex = columnNames.index(self.message_field)
         messageIdIndex = columnNames.index(self.messageid_field)
 
 
         commentLine = re.compile('^\#')
         ldaColumnLabels = ['doc', 'message_id', 'index', 'term_id', 'term', 'topic_id']
-        labelRange = range(len(ldaColumnLabels))
+        labelRange = list(range(len(ldaColumnLabels)))
         ldas = dict() #stored ldas currently being looked at
         msgsAtTime = 100
         msgsWritten = 0
@@ -558,12 +559,12 @@ class FeatureExtractor(FeatureWorker):
         return tableName
 
     def insertLDARows(self, ldas, tableName, columnNames, messageIndex, messageIdIndex):
-        message_ids = [str(msg_id) for msg_id in ldas.iterkeys() if str(msg_id).isdigit()]
+        message_ids = [str(msg_id) for msg_id in ldas.keys() if str(msg_id).isdigit()]
         if '3874641906' in message_ids:
-            print message_ids[2921]+' is this a digit? '+str(message_ids[2921].isdigit())
+            print(message_ids[2921]+' is this a digit? '+str(message_ids[2921].isdigit()))
             #message_ids.pop(2921)
         elif '5314812600' in  message_ids:
-            print message_ids[2940]+' is this a digit? '+str(message_ids[2940].isdigit())
+            print(message_ids[2940]+' is this a digit? '+str(message_ids[2940].isdigit()))
             #message_ids.pop(2940)
         sql = """SELECT %s from %s where %s IN ('%s')""" % (
             ','.join(columnNames), self.corptable, self.messageid_field, 
@@ -674,9 +675,9 @@ class FeatureExtractor(FeatureWorker):
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:
-                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
                 else:
-                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter                
+                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter                
                 
                 while insert_idx_start < len(rows):
                     insert_rows = rows[insert_idx_start:min(insert_idx_end, len(rows))]
@@ -690,9 +691,9 @@ class FeatureExtractor(FeatureWorker):
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:
-                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
                 else:
-                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
                 if metaFeatures:
                     mfRows = []
                     mfwsql = """INSERT INTO """+mfTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
@@ -802,9 +803,9 @@ class FeatureExtractor(FeatureWorker):
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:
-                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
                 else:
-                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter                
+                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter                
                 
                 while insert_idx_start < len(rows):
                     insert_rows = rows[insert_idx_start:min(insert_idx_end, len(rows))]
@@ -818,9 +819,9 @@ class FeatureExtractor(FeatureWorker):
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:
-                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
                 else:
-                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
                 if metaFeatures:
                     mfRows = []
                     mfwsql = """INSERT INTO """+mfTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
@@ -919,9 +920,9 @@ class FeatureExtractor(FeatureWorker):
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:
-                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
                 else:
-                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
                 if metaFeatures:
                     mfRows = []
                     mfwsql = """INSERT INTO """+mfTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
@@ -1085,9 +1086,9 @@ class FeatureExtractor(FeatureWorker):
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:
-                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
                 else:
-                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
                     
                 mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
         
@@ -1169,11 +1170,11 @@ class FeatureExtractor(FeatureWorker):
             #write n-grams to database (no need for "REPLACE" because we are creating the table)
             wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
             rows = []
-            for ii_correl, gramToFreq in freqs.iteritems():
+            for ii_correl, gramToFreq in freqs.items():
                 if self.use_unicode:
-                    ii_rows = [(ii_correl, k.encode('utf-8'), v, valueFunc((v / totalFreqs[ii_correl])) ) for k, v in gramToFreq.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                    ii_rows = [(ii_correl, k.encode('utf-8'), v, valueFunc((v / totalFreqs[ii_correl])) ) for k, v in gramToFreq.items() if v >= min_freq] #adds group_norm and applies freq filter
                 else:
-                    ii_rows = [(ii_correl, k, v, valueFunc((v / totalFreqs[ii_correl])) ) for k, v in gramToFreq.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                    ii_rows = [(ii_correl, k, v, valueFunc((v / totalFreqs[ii_correl])) ) for k, v in gramToFreq.items() if v >= min_freq] #adds group_norm and applies freq filter
                 rows.extend(ii_rows)
             fwc.warn( "Inserting %d rows..."%(len(rows),) )
 
@@ -1241,7 +1242,7 @@ class FeatureExtractor(FeatureWorker):
             #write topic to database (no need for "REPLACE" because we are creating the table)
             wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
             totalInsts = float(totalInsts) #to avoid casting each time below
-            rows = [(k, v, valueFunc((v / totalInsts))) for k, v in freqs.iteritems() ] #adds group_norm and applies freq filter
+            rows = [(k, v, valueFunc((v / totalInsts))) for k, v in freqs.items() ] #adds group_norm and applies freq filter
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
         
         fwc.warn("Done Reading / Inserting.")
@@ -1309,11 +1310,11 @@ class FeatureExtractor(FeatureWorker):
             totalPhrases = float(totalPhrases) #to avoid casting each time below
 
             wsql = """INSERT INTO """+phraseTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
-            phraseRows = [(k, v, valueFunc((v / totalPhrases))) for k, v in freqsPhrases.iteritems()] #adds group_norm and applies freq filter
+            phraseRows = [(k, v, valueFunc((v / totalPhrases))) for k, v in freqsPhrases.items()] #adds group_norm and applies freq filter
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, phraseRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
             wsql = """INSERT INTO """+taggedTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
-            taggedRows = [(k, v, valueFunc((v / totalPhrases))) for k, v in freqsTagged.iteritems()] #adds group_norm and applies freq filter
+            taggedRows = [(k, v, valueFunc((v / totalPhrases))) for k, v in freqsTagged.items()] #adds group_norm and applies freq filter
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, taggedRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
        
         fwc.warn("Done Reading / Inserting.")
@@ -1373,7 +1374,7 @@ class FeatureExtractor(FeatureWorker):
         #setup lexicons
         lastNames = frozenset([name.title() for name in nameLex[lastNameCat]])
         firstNames = frozenset([name.title() for c in firstNameCats for name in nameLex[c]])
-        langWords = frozenset([word for c in languageLex.iterkeys() for word in languageLex[c]])
+        langWords = frozenset([word for c in languageLex.keys() for word in languageLex[c]])
 
         #CREATE TABLE:
         featureName = 'PNames'
@@ -1412,7 +1413,7 @@ class FeatureExtractor(FeatureWorker):
                     #words = message.split()
                     words = tokenizer.tokenize(message)
 
-                    for n in xrange(2, 5):
+                    for n in range(2, 5):
                         for i in range(0,(len(words) - n)+1):
                             gram = None
                             if n == 2: totalGrams += 1 #only increment on 2grams
@@ -1461,9 +1462,9 @@ class FeatureExtractor(FeatureWorker):
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:
-                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems()] #adds group_norm and applies freq filter
+                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items()] #adds group_norm and applies freq filter
                 else:
-                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.iteritems()] #adds group_norm and applies freq filter
+                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items()] #adds group_norm and applies freq filter
                     
                 mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
         
@@ -1614,7 +1615,7 @@ class FeatureExtractor(FeatureWorker):
                 tableName += '$' + extension
 
         #first create the table:
-        enumCats = "'" + "', '".join(map(lambda k: k.upper().replace("'", "\\'"), lexKeys)) + "'"   
+        enumCats = "'" + "', '".join([k.upper().replace("'", "\\'") for k in lexKeys]) + "'"   
         drop = """DROP TABLE IF EXISTS """ + tableName
         sql = """CREATE TABLE IF NOT EXISTS %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, 
                 term VARCHAR(140), category ENUM(%s), weight DOUBLE, INDEX(term), INDEX(category)) ENGINE = MyISAM""" % (tableName, enumCats)
@@ -1645,7 +1646,7 @@ class FeatureExtractor(FeatureWorker):
                     try:
                         weight = row[3]
                     except IndexError:
-                        print '\nERROR: The lexicon you specified is probably not weighted, or there is a problem in the lexicon itself (Check DB)'
+                        print('\nERROR: The lexicon you specified is probably not weighted, or there is a problem in the lexicon itself (Check DB)')
                         sys.exit(2)
                 elif len(row) == 4 and not warnedAboutWeights:
                     fwc.warn("""###################################################################
@@ -1729,7 +1730,7 @@ class FeatureExtractor(FeatureWorker):
                     try:
                         weight = row[3]
                     except IndexError:
-                        print '\nERROR: The lexicon you specified is probably not weighted, or there is a problem in the lexicon itself (Check DB)'
+                        print('\nERROR: The lexicon you specified is probably not weighted, or there is a problem in the lexicon itself (Check DB)')
                         sys.exit(2)
                 elif len(row) == 4 and not warnedAboutWeights:
                     fwc.warn("""###################################################################
@@ -1786,7 +1787,7 @@ class FeatureExtractor(FeatureWorker):
             cat_to_function_summed_weight = dict()
             cat_to_function_summed_weight_gn = {}
             sql = ''
-            if isinstance(groupId, basestring):
+            if isinstance(groupId, str):
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id LIKE '%s'"%(wordTable, groupId)
             else:
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id = %d"%(wordTable, groupId)
@@ -1832,9 +1833,9 @@ class FeatureExtractor(FeatureWorker):
             
             # Applying the featValueFunction to the group_norm, 
             if self.use_unicode:
-                rows = [(gid, k.encode('utf-8'), cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+v)) for k, v in cat_to_function_summed_weight_gn.iteritems()]
+                rows = [(gid, k.encode('utf-8'), cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+v)) for k, v in cat_to_function_summed_weight_gn.items()]
             else:
-                rows = [(gid, k, cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+v)) for k, v in cat_to_function_summed_weight_gn.iteritems()]
+                rows = [(gid, k, cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+v)) for k, v in cat_to_function_summed_weight_gn.items()]
 
 
             # iii. Insert data into new feautre table
@@ -1897,7 +1898,7 @@ class FeatureExtractor(FeatureWorker):
             cncpt_to_summed_value = dict()
             cncpt_to_function_summed_value = dict()
             sql = ''
-            if isinstance(groupId, basestring):
+            if isinstance(groupId, str):
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id LIKE '%s'"%(wordTable, groupId)
             else:
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id = %d"%(wordTable, groupId)
@@ -1932,16 +1933,16 @@ class FeatureExtractor(FeatureWorker):
                             probs.extend([float(currentProb) / len(hypes)] * len(hypes))
                             funcProbs.extend([float(currentFuncProb) / len(hypes)] * len(hypes))
                         elif "entity.n.01" not in str(currentSynset):
-                            print currentSynset
+                            print(currentSynset)
 
             #5.b.. Insert data into new feautre table
             # Add new data to rows to be inserted into the database
             #pprint(cncpt_to_function_summed_value)
             #print totalFunctionSumForThisGroupId
             if self.use_unicode:
-                rows = [(gid, k.encode('utf-8'), cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.iteritems()]  
+                rows = [(gid, k.encode('utf-8'), cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.items()]  
             else:
-                rows = [(gid, k, cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.iteritems()]  
+                rows = [(gid, k, cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.items()]  
             rowsToInsert.extend(rows)
             if len(rowsToInsert) > fwc.MYSQL_BATCH_INSERT_SIZE:
                 mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
@@ -2002,7 +2003,7 @@ class FeatureExtractor(FeatureWorker):
             cncpt_to_summed_value = dict()
             cncpt_to_function_summed_value = dict()
             sql = ''
-            if isinstance(groupId, basestring):
+            if isinstance(groupId, str):
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id LIKE '%s'"%(pos_table, groupId)
             else:
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id = %d"%(pos_table, groupId)
@@ -2046,16 +2047,16 @@ class FeatureExtractor(FeatureWorker):
                             probs.extend([float(currentProb) / len(hypes)] * len(hypes))
                             funcProbs.extend([float(currentFuncProb) / len(hypes)] * len(hypes))
                         elif "entity.n.01" not in str(currentSynset):
-                            print currentSynset
+                            print(currentSynset)
 
             #5.b.. Insert data into new feautre table
             # Add new data to rows to be inserted into the database
             #pprint(cncpt_to_function_summed_value)
             #print totalFunctionSumForThisGroupId
             if self.use_unicode:
-                rows = [(gid, k.encode('utf-8'), cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.iteritems()]  
+                rows = [(gid, k.encode('utf-8'), cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.items()]  
             else:
-                rows = [(gid, k, cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.iteritems()]  
+                rows = [(gid, k, cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.items()]  
             rowsToInsert.extend(rows)
 
             if len(rowsToInsert) > fwc.MYSQL_BATCH_INSERT_SIZE:
@@ -2124,7 +2125,7 @@ class FeatureExtractor(FeatureWorker):
                                     for i in pos_list]
                     else:
                         # Just extract the POSes if not needed to keep the ngrams
-                        pos_list = map(lambda x: x.split('/')[-1], pos_message.split())
+                        pos_list = [x.split('/')[-1] for x in pos_message.split()]
 
                     # posDict = find pos frequencies in pos_message
                     for pos in pos_list:
@@ -2143,7 +2144,7 @@ class FeatureExtractor(FeatureWorker):
 
             wsql = """INSERT INTO """+posFeatTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
             totalTokens = float(totalTokens)
-            phraseRows = [(k, v, valueFunc((v / totalTokens))) for k, v in freqsPOS.iteritems()] #adds group_norm and applies freq filter
+            phraseRows = [(k, v, valueFunc((v / totalTokens))) for k, v in freqsPOS.items()] #adds group_norm and applies freq filter
             if alter_table: 
                 fwc.warn("WARNING: varchar length of feat column is too small, adjusting table.")
                 alter_sql = """ALTER TABLE %s CHANGE COLUMN `feat` `feat` VARCHAR(%s)""" %(posFeatTableName, min_varchar_length)
@@ -2169,16 +2170,16 @@ class FeatureExtractor(FeatureWorker):
             allOutcomes = allOutcomes.intersection(controls)
 
         #CREATE TABLEs:
-        name = '_'.join([k[:1].lower()+k[k.find('_')+1].upper() if '_' in k[:-1] else k[:3] for k in allOutcomes.iterkeys()])
+        name = '_'.join([k[:1].lower()+k[k.find('_')+1].upper() if '_' in k[:-1] else k[:3] for k in allOutcomes.keys()])
         name = 'out_'+outcomeGetter.outcome_table[:8]+'_'+name[:10]
         outcomeFeatTableName = self.createFeatureTable(name, "VARCHAR(24)", 'DOUBLE', tableName, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
         mm.disableTableKeys(self.corpdb, self.dbCursor, outcomeFeatTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
-        for outcome, values in allOutcomes.iteritems():
+        for outcome, values in allOutcomes.items():
             fwc.warn("  On %s"%outcome)
             wsql = """INSERT INTO """+outcomeFeatTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
-            phraseRows = [(k, outcome, v, valueFunc(v)) for k, v in values.iteritems()] #adds group_norm and applies freq filter
+            phraseRows = [(k, outcome, v, valueFunc(v)) for k, v in values.items()] #adds group_norm and applies freq filter
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, phraseRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
        
         fwc.warn("Done Inserting.")
@@ -2250,10 +2251,10 @@ class FeatureExtractor(FeatureWorker):
                     mids.add(message_id)
 
             if netags:
-                print netags, timexDiffs
+                print(netags, timexDiffs)
                 cf_idstr = str(cf_id)
                 fTotalMsgs = float(len(mids))
-                for tag, value in netags.iteritems():
+                for tag, value in netags.items():
                     toWrite.append( (cf_idstr, 'ttag:'+tag, value, value/fTotalMsgs) )
 
                 if timexDiffs:
@@ -2281,13 +2282,13 @@ class FeatureExtractor(FeatureWorker):
                 mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
                 written += len(toWrite)
                 toWrite = []
-                print "  added %d timex mean or std offsets" % written
+                print("  added %d timex mean or std offsets" % written)
 
         if len(toWrite) > 0:
             wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
             written += len(toWrite)
-            print "  added %d timex mean or std offsets" % written
+            print("  added %d timex mean or std offsets" % written)
         fwc.warn("Done Reading / Inserting.")
 
         if len(cfRows) < fwc.MAX_TO_DISABLE_KEYS:
@@ -2378,7 +2379,7 @@ class FeatureExtractor(FeatureWorker):
             if netags:
                 #print netags, timexDiffs#debug
                 fTotalMsgs = float(len(mids))
-                for tag, value in netags.iteritems():
+                for tag, value in netags.items():
                     toWrite.append( (cf_idstr, 'ttag:'+tag, value, value/fTotalMsgs) )
 
                 if timexDiffs:
@@ -2402,7 +2403,7 @@ class FeatureExtractor(FeatureWorker):
 
             if postags:
                 fTotalWords = float(totalWords)
-                for pos, value in postags.iteritems():
+                for pos, value in postags.items():
                     posToWrite.append( (cf_idstr, pos, value, valueFunc(value/fTotalWords)) )
             
             #write if enough
@@ -2411,14 +2412,14 @@ class FeatureExtractor(FeatureWorker):
                 mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
                 written += len(toWrite)
                 toWrite = []
-                print "  TIMEX: added %d records (%d %ss)" % (written, cfs, self.correl_field)
+                print("  TIMEX: added %d records (%d %ss)" % (written, cfs, self.correl_field))
 
             if len(posToWrite) > 2000:
                 wsql = """INSERT INTO """+posTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
                 mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, posToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
                 posWritten += len(posToWrite)
                 posToWrite = []
-                print "  TPOS: added %d records (%d %ss)" % (posWritten, cfs, self.correl_field)
+                print("  TPOS: added %d records (%d %ss)" % (posWritten, cfs, self.correl_field))
 
         #END CF LOOP
         #WRITE Remaining:
@@ -2426,7 +2427,7 @@ class FeatureExtractor(FeatureWorker):
             wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
             written += len(toWrite)
-            print "  TIMEX: added %d records (%d %ss)" % (written, cfs, self.correl_field)
+            print("  TIMEX: added %d records (%d %ss)" % (written, cfs, self.correl_field))
         fwc.warn("Done Reading / Inserting.")
 
         if len(posToWrite) > 0:
@@ -2434,7 +2435,7 @@ class FeatureExtractor(FeatureWorker):
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, posToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
             posWritten += len(posToWrite)
             posToWrite = []
-            print "  TPOS: added %d records (%d %ss)" % (posWritten, cfs, self.correl_field)
+            print("  TPOS: added %d records (%d %ss)" % (posWritten, cfs, self.correl_field))
 
         if len(cfRows) < fwc.MAX_TO_DISABLE_KEYS:
             fwc.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
@@ -2492,7 +2493,7 @@ class FeatureExtractor(FeatureWorker):
         except (KeyError, TypeError):
             fwc.warn("CoreNLP: TimexDiff: Key or Type Error, Missing sentences in %s" % str(parseInfo)[:64])
 
-        return timexes.values(), netags, numWords
+        return list(timexes.values()), netags, numWords
 
     @staticmethod
     def getTimexDiff(timexXML, messageDT):

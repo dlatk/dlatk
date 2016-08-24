@@ -62,8 +62,8 @@ class StatsPlotter(object):
         descStatdict = dict()
         for col in dataDict:
             colDescStats = dict()
-            data = filter(lambda x: x != None, dataDict[col])
-            data = map(float, data)
+            data = [x for x in dataDict[col] if x != None]
+            data = list(map(float, data))
             total_count = len(dataDict[col])
             if data:
                 colDescStats['avg'] = mean(data)
@@ -87,7 +87,7 @@ class StatsPlotter(object):
                     #ro.r.hist(ro_data, breaks=ro_breaks, col='royalblue4', main="%s n=%d, N=%d"%(col, len(data), total_count), xlab="value range (in [%2.2f, %2.2f])"%(min(data), max(data)))
                     ro.r.hist(ro_data, breaks=ro_breaks, col='royalblue4', main="%s N=%d/%d"%(col, len(data), total_count), xlab="value range (in [%2.2f, %2.2f])"%(min(data), max(data)), xaxt=xaxt)
                     if invValueFunc:
-                        ro.r.axis(1, at=ro.r.axTicks(1), labels=ro.FloatVector(map(invValueFunc, list(ro.r.axTicks(1)))))
+                        ro.r.axis(1, at=ro.r.axTicks(1), labels=ro.FloatVector(list(map(invValueFunc, list(ro.r.axTicks(1))))))
                     self.grdevices.dev_off()
             descStatdict[col] = colDescStats
         return descStatdict
@@ -96,8 +96,8 @@ class StatsPlotter(object):
         """Plot a pie chart for the specified dataDict.
            dataDict maps a string (column name) to a list of its values."""
         for col in dataDict:
-            data = filter(lambda x: x != None, dataDict[col])
-            data = map(float, data)
+            data = [x for x in dataDict[col] if x != None]
+            data = list(map(float, data))
             #total_count = len(dataDict[col])
             if data:
                 ro_data = ro.StrVector(data)
@@ -172,7 +172,7 @@ class StatsPlotter(object):
         n_cols = len(names_to_y)
 
         if filename:
-            self.grdevices.png(file="%s_%s_%s_2dhist.png"%(filename, '-'.join(names_to_x.keys()), '-'.join(names_to_y.keys()) ), width=200*n_rows, height=400*n_cols)
+            self.grdevices.png(file="%s_%s_%s_2dhist.png"%(filename, '-'.join(list(names_to_x.keys())), '-'.join(list(names_to_y.keys())) ), width=200*n_rows, height=400*n_cols)
             ro.r.par(mfrow=ro.IntVector([n_rows, n_cols]))
 
         for x_name in names_to_x:
@@ -272,8 +272,8 @@ class StatsPlotter(object):
             ii += 1
 
         #. Calculate descriptive statistics and create plots
-        labels = dataHolder.keys()
-        counts = dataHolder.values()
+        labels = list(dataHolder.keys())
+        counts = list(dataHolder.values())
         ro_labels = ro.StrVector(labels)
         ro_counts = ro.IntVector(counts)
         if filename:

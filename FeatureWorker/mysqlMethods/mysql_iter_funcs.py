@@ -48,7 +48,7 @@ def create_table(db_eng, table_name, columns, more_definitions=[], table_options
     if table_exists and if_exists.lower() == "replace":
         db_eng.execute("DROP TABLE IF EXISTS {}".format(table_name))
     if not (table_exists and (if_exists.lower() == "skip")):
-        assert type(columns.values()[0]) is str, "Values for column dict must be strings."
+        assert type(list(columns.values())[0]) is str, "Values for column dict must be strings."
         if type(more_definitions) is not list:
             more_definitions = [more_definitions]
         table_def_string = ', '.join(["{} {}".format(column_name, columns[column_name]) for column_name in columns] + more_definitions)
@@ -63,23 +63,23 @@ def extend_table(db_eng, table_name, new_columns, if_exists="skip"):
     if if_exists != "skip":
         raise NotImplementedError
     db_schema = db_eng.url.database
-    rows = db_eng.execute("SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s' AND COLUMN_NAME = '%s'" % (db_schema, table_name, new_columns.keys()[0]))
+    rows = db_eng.execute("SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s' AND COLUMN_NAME = '%s'" % (db_schema, table_name, list(new_columns.keys())[0]))
     if rows.rowcount == 0:
-        print "Adding new columns to table {}...".format(table_name)
+        print("Adding new columns to table {}...".format(table_name))
         add_column_phrase = ", ".join(["ADD COLUMN {} {}".format(column_name, new_columns[column_name]) for column_name in new_columns])
         db_eng.execute("ALTER TABLE {} {}".format(table_name, add_column_phrase))
-        print "Done."
+        print("Done.")
     else:
-        print "Some or all of the columns exist. Ignoring."
+        print("Some or all of the columns exist. Ignoring.")
         for row in rows:
-            print row
+            print(row)
 
 def list_iter_to_dict_iter(list_iter, dict_keys):
     '''Take list iter + keys, return dict iter'''
     for mylist in list_iter:
         if type(mylist) is not list:
             warnings.warn("list_iter_to_dict is not getting lists, it is getting {}".format(str(type(mylist))))
-        yield dict(zip(dict_keys, mylist))
+        yield dict(list(zip(dict_keys, mylist)))
 
 def resultset_to_dict_iter(result_set):
     '''
@@ -87,7 +87,7 @@ def resultset_to_dict_iter(result_set):
     :return: iterator of dicts!
     '''
     for rp in result_set:
-        yield dict(rp.items())
+        yield dict(list(rp.items()))
 
 def select_columns(dict_iter, keys_to_keep):
     '''Take a dict iter, return a dict iter with fewer columns'''
@@ -109,9 +109,9 @@ def mysql_insert(db_eng, db_table, dict_iterator):
     :param db_table: expects this to already exist
     steps through iterator, and inserts each yielded item into a mysql database
     '''
-    first_row = dict_iterator.next()
+    first_row = next(dict_iterator)
 
-    list_of_columns = first_row.keys()
+    list_of_columns = list(first_row.keys())
     columns = ', '.join(list_of_columns)
     num_columns = len(list_of_columns)
     wildcards = ','.join(['%s']*num_columns)
@@ -135,8 +135,8 @@ def mysql_update(db_eng, db_table, dict_iterator, unique_column="id", log_every=
     Other fields are assumed to have the same name as their dict key
     :param unique_column: the column name for unique column, probably the id field
     '''
-    first_row = dict_iterator.next()
-    update_columns = first_row.keys()
+    first_row = next(dict_iterator)
+    update_columns = list(first_row.keys())
     del update_columns[update_columns.index(unique_column)]
     update_statements = ", ".join(["{} = %s".format(col) for col in update_columns])
     update_sql = "UPDATE {} SET {} WHERE {} = %s".format(db_table,update_statements,unique_column)
@@ -148,7 +148,7 @@ def mysql_update(db_eng, db_table, dict_iterator, unique_column="id", log_every=
         count += 1
         if count % log_every == 0:
             time_elapsed = time.time() - starttime
-            print "{} rows updated in {}s...".format(count, time_elapsed)
+            print("{} rows updated in {}s...".format(count, time_elapsed))
         _mysql_update_row(db_eng, update_sql, row, unique_column, update_columns)
 
 def _mysql_update_row(db_eng, update_sql, row, unique_column, update_columns):
@@ -187,13 +187,13 @@ def mysql_multitable(db_eng, dict_iter, table_prefix, table_column, table_column
             df_batch.to_sql(table_name, db_eng, if_exists="append", index=False)
         except Exception as e:
             exc_info = sys.exc_info()
-            print "Unexpected error:", exc_info[0], exc_info[1], exc_info[2]
+            print("Unexpected error:", exc_info[0], exc_info[1], exc_info[2])
         else:
-            print "Successful insert of {} rows!".format(len(df_batch))
+            print("Successful insert of {} rows!".format(len(df_batch)))
         batch = list(itertools.islice(dict_iter, 0, batch_size))
         batch_num += 1
 
 
 def dictify(my_iter, columns):
     for item in my_iter:
-        yield dict(zip(columns, item))
+        yield dict(list(zip(columns, item)))

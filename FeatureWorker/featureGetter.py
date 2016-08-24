@@ -1,4 +1,4 @@
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 import MySQLdb
 import pandas as pd
 
@@ -8,10 +8,10 @@ from scipy.stats import t as spt
 import numpy as np
 
 #infrastructure
-import fwConstants as fwc
-from featureWorker import FeatureWorker
-from mysqlMethods import mysqlMethods as mm
-from mysqlMethods import mysql_iter_funcs as mif
+from . import fwConstants as fwc
+from .featureWorker import FeatureWorker
+from .mysqlMethods import mysqlMethods as mm
+from .mysqlMethods import mysql_iter_funcs as mif
 
 class FeatureGetter(FeatureWorker):
     """ General class for feature selection
@@ -113,7 +113,7 @@ class FeatureGetter(FeatureWorker):
 
         if groupFreqThresh:
             groupCnts = self.getGroupWordCounts(where)
-            for group, wordCount in groupCnts.iteritems():
+            for group, wordCount in groupCnts.items():
                 if (wordCount >= groupFreqThresh):
                     groups.add(group)
                     
@@ -151,7 +151,7 @@ class FeatureGetter(FeatureWorker):
         """returns a distinct list of (feature) tuples given the name of the feature value field (either value, group_norm, or feat_norm)"""
         sql = "select distinct feat from %s"%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return map(lambda l: l[0], mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
+        return [l[0] for l in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)]
 
     def getFeatureZeros(self, where=''):
         """returns a distinct list of (feature) tuples given the name of the feature value field (either value, group_norm, or feat_norm)"""
@@ -206,7 +206,7 @@ class FeatureGetter(FeatureWorker):
     def getGroupNormsForFeats(self, feats, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
         if self.use_unicode:
-            fCond = " feat in ('%s')" % "','".join(MySQLdb.escape_string(unicode(f)) for f in feats)
+            fCond = " feat in ('%s')" % "','".join(MySQLdb.escape_string(str(f)) for f in feats)
         else:
             fCond = " feat in ('%s')" % "','".join(MySQLdb.escape_string(f) for f in feats)
         sql = """SELECT group_id, group_norm FROM %s WHERE %s"""%(self.featureTable, fCond)
@@ -216,7 +216,7 @@ class FeatureGetter(FeatureWorker):
     def getValuesAndGroupNormsForFeats(self, feats, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
         if self.use_unicode:
-            fCond = " feat in ('%s')" % "','".join(MySQLdb.escape_string(unicode(f)) for f in feats)
+            fCond = " feat in ('%s')" % "','".join(MySQLdb.escape_string(str(f)) for f in feats)
         else:
             fCond = " feat in ('%s')" % "','".join(MySQLdb.escape_string(f) for f in feats)
         sql = """SELECT group_id, value, group_norm FROM %s WHERE %s"""%(self.featureTable, fCond)
@@ -226,7 +226,7 @@ class FeatureGetter(FeatureWorker):
     def getValuesAndGroupNormsForFeat(self, feat, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
         if self.use_unicode:
-            sql = """SELECT group_id, value, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, MySQLdb.escape_string(unicode(feat, 'utf8')))
+            sql = """SELECT group_id, value, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, MySQLdb.escape_string(str(feat, 'utf8')))
         else:
             sql = """SELECT group_id, value, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, MySQLdb.escape_string(feat))
         if (where): sql += ' AND ' + where
@@ -248,7 +248,7 @@ class FeatureGetter(FeatureWorker):
 
         for featName in featNames:
             features[featName] = dict(self.getGroupAndFeatureValues(featName, where))
-            groups.update(features[featName].keys())
+            groups.update(list(features[featName].keys()))
 
         return (groups, features)
 
@@ -288,7 +288,7 @@ class FeatureGetter(FeatureWorker):
         else: 
             gnlist = self.getGroupNorms()
         gns = dict()
-        print "USING BLACKLIST (from getgroupnorms): %s" %str(blacklist)
+        print("USING BLACKLIST (from getgroupnorms): %s" %str(blacklist))
         for tup in gnlist:
             (gid, feat, gn) = tup
             if blacklist:
@@ -509,7 +509,7 @@ class FeatureGetter(FeatureWorker):
 
         f = open(filename, 'w')
         for (gid, featValues) in self.yieldValuesSparseByGroup():
-            message = delimeter.join([delimeter.join([feat.replace(' ', '_')]*value) for feat, value in featValues.iteritems()])
+            message = delimeter.join([delimeter.join([feat.replace(' ', '_')]*value) for feat, value in featValues.items()])
             f.write("""%s en %s\n""" %(gid, message.encode('utf-8')))            
        
         f.close()
@@ -544,13 +544,13 @@ class FeatureGetter(FeatureWorker):
         if not groups: groups = self.getDistinctGroups(where)
 
         #fill in zeros (this can get quite big!)
-        fwc.warn("Adding zeros to feat norms (%d groups * %d feats)." %(len(groups), len(meanData.keys())))
+        fwc.warn("Adding zeros to feat norms (%d groups * %d feats)." %(len(groups), len(list(meanData.keys()))))
         meanData = self.getFeatMeanData() # feat : (mean, std, zero_mean)
         for gid in groups:
             if not gid in fns: fns[gid] = dict()
-            for feat in meanData.iterkeys():
+            for feat in meanData.keys():
                 if not feat in fns[gid]: fns[gid][feat] = meanData[feat][2] 
-        return fns, meanData.keys()
+        return fns, list(meanData.keys())
 
     def getFeatMeanData(self, where = ''):
         """returns a dict of (feature => (mean, std, zero_feat_norm)) """
@@ -625,7 +625,7 @@ class FeatureGetter(FeatureWorker):
         if groupThresh:
             groupCnts = self.getGroupWordCounts(where)
             count = 0
-            for wordCount in groupCnts.itervalues():
+            for wordCount in groupCnts.values():
                 if (wordCount >= groupThresh):
                     count += 1
             return count
@@ -638,14 +638,14 @@ class FeatureGetter(FeatureWorker):
         """Returns the distinct group ids that are in the feature table"""
         sql = "select distinct group_id from %s" % self.featureTable
         if (where): sql += ' WHERE ' + where
-        return map(lambda l:l[0], mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
+        return [l[0] for l in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)]
 
 
     def getDistinctGroups(self, where=''):
         """returns the distinct distinct groups (note that this runs on the corptable to be accurate)"""
         sql = """select DISTINCT %s from %s""" %(self.correl_field, self.corptable)
         if (where): sql += ' WHERE ' + where
-        return map(lambda l: l[0], mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
+        return [l[0] for l in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)]
     
     def ttestWithOtherFG(self, other, maskTable= None, groupFreqThresh = 0):
         """Performs PAIRED ttest on differences between group norms for 2 tables, within features"""
@@ -655,9 +655,9 @@ class FeatureGetter(FeatureWorker):
         masks = {'no mask': set()}
         if maskTable:
             maskList = mm.getTableColumnNameList(self.corpdb, self.dbCursor, maskTable, charset=self.encoding, use_unicode=self.use_unicode)
-            print maskList
+            print(maskList)
             assert self.correl_field in maskList, "group field, %s, not in mask table" % self.correl_field
-            maskToIndex = dict([(maskList[i], i) for i in xrange(len(maskList))])
+            maskToIndex = dict([(maskList[i], i) for i in range(len(maskList))])
             groupIndex = maskToIndex[self.correl_field]
 
             #get data:
@@ -668,38 +668,38 @@ class FeatureGetter(FeatureWorker):
                     masks[maskId] = set()
             for row in maskData: 
                 groupId = row[groupIndex]
-                for i in xrange(len(row)):
+                for i in range(len(row)):
                     if i != groupIndex and row[i] == 1:
                         masks[maskList[i]].add(groupId)
 
         #apply masks
         results = dict() #mask => results
-        for mid, mask in masks.iteritems():
+        for mid, mask in masks.items():
 
             threshGroups1 = set()
             threshGroups2 = set()
 
             # get groups passing GFT for BOTH 
             if groupFreqThresh:
-                print 'groupFreqThresh set to '+str(groupFreqThresh)
+                print('groupFreqThresh set to '+str(groupFreqThresh))
                 groupCnts1 = self.getGroupWordCounts(lexicon_count_table=self.getWordTable(self.featureTable.split('$')[2]))
                 #print groupCnts1
-                for group, wordCount in groupCnts1.iteritems():
+                for group, wordCount in groupCnts1.items():
                     if (wordCount >= groupFreqThresh):
                         threshGroups1.add(group)
                 groupCnts2 = other.getGroupWordCounts(lexicon_count_table=other.getWordTable(other.featureTable.split('$')[2]))
                 #print groupCnts2
-                for group, wordCount in groupCnts2.iteritems():
+                for group, wordCount in groupCnts2.items():
                     if (wordCount >= groupFreqThresh):
                         threshGroups2.add(group)
 
-            print str(len(threshGroups1))+' groups pass groupFreqThresh for feat table 1'
-            print str(len(threshGroups2))+' groups pass groupFreqThresh for feat table 2'
+            print(str(len(threshGroups1))+' groups pass groupFreqThresh for feat table 1')
+            print(str(len(threshGroups2))+' groups pass groupFreqThresh for feat table 2')
             threshGroups = threshGroups1 & threshGroups2
             if mask: 
                 threshGroups = threshGroups & mask
             threshGroups = list(threshGroups)
-            print str(len(threshGroups))+' groups pass groupFreqThresh for BOTH'
+            print(str(len(threshGroups))+' groups pass groupFreqThresh for BOTH')
             assert len(threshGroups) > 0, "No groups passing frequency threshold"
 
             #find features:
@@ -713,7 +713,7 @@ class FeatureGetter(FeatureWorker):
             featYielder2 = other.yieldGroupNormsWithZerosByFeat(groups = threshGroups, feats = featsInCommon)
 
             for (feat1, dataDict1, Nfeats1) in featYielder1:
-                (feat2, dataDict2, Nfeats2) = featYielder2.next()
+                (feat2, dataDict2, Nfeats2) = next(featYielder2)
 
                 assert feat1==feat2, 'feats do not match'
                 assert sorted(dataDict1)==sorted(dataDict2), 'groups do not match'

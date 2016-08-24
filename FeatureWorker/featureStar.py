@@ -1,16 +1,16 @@
 import pandas as pd
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 
 #infrastructure
-import fwConstants as fwc
-from featureWorker import FeatureWorker
-from featureGetter import FeatureGetter
-from featureExtractor import FeatureExtractor
-from featureRefiner import FeatureRefiner
-from outcomeGetter import OutcomeGetter
-from outcomeAnalyzer import OutcomeAnalyzer
-from regressionPredictor import RegressionPredictor
-from classifyPredictor import ClassifyPredictor
+from . import fwConstants as fwc
+from .featureWorker import FeatureWorker
+from .featureGetter import FeatureGetter
+from .featureExtractor import FeatureExtractor
+from .featureRefiner import FeatureRefiner
+from .outcomeGetter import OutcomeGetter
+from .outcomeAnalyzer import OutcomeAnalyzer
+from .regressionPredictor import RegressionPredictor
+from .classifyPredictor import ClassifyPredictor
 
 class FeatureStar(object):
 	"""

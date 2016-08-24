@@ -12,9 +12,9 @@ import xml.etree.cElementTree as ET
 
 from pprint import pprint
 
-from featureExtractor import FeatureExtractor
-from outcomeGetter import OutcomeGetter
-import featureWorker
+from .featureExtractor import FeatureExtractor
+from .outcomeGetter import OutcomeGetter
+from . import featureWorker
 
 #############################################################
 ## Static Variables and Methods
@@ -22,7 +22,7 @@ import featureWorker
 COLLOC_LENGTH = 96
 
 def _warn(string):
-    print >>sys.stderr, string
+    print(string, file=sys.stderr)
 
 class SemanticsExtractor(FeatureExtractor):
 
@@ -46,7 +46,7 @@ class SemanticsExtractor(FeatureExtractor):
         corpdir = self.corpdir
         subdirs = os.listdir(corpdir)
         groupsInserted = 0
-        if len(subdirs) > 50: [self._disableTableKeys(name) for name in tableNames.values()]#for faster, when enough space for repair by sorting
+        if len(subdirs) > 50: [self._disableTableKeys(name) for name in list(tableNames.values())]#for faster, when enough space for repair by sorting
         for subdir in subdirs:
             #print "on %s" % subdir #debug
 
@@ -112,9 +112,9 @@ class SemanticsExtractor(FeatureExtractor):
                 total = float(totalTermsInGroup)
                 if normalizeByCollocsInGroup:
                     total = float(totalCollocsInGroup)
-                for dataType, featFreqs in freqs.iteritems():
+                for dataType, featFreqs in freqs.items():
                     wsql = """INSERT INTO """+tableNames[dataType]+""" (group_id, feat, value, group_norm) values ('"""+str(group_id)+"""', %s, %s, %s)"""
-                    rows = [(k.encode('utf-8'), v, valueFunc((v / total))) for k, v in featFreqs.iteritems() if v >= min_freq] #adds group_norm and applies freq filter
+                    rows = [(k.encode('utf-8'), v, valueFunc((v / total))) for k, v in featFreqs.items() if v >= min_freq] #adds group_norm and applies freq filter
                     self._executeWriteMany(wsql, rows)
 
                 groupsInserted+=1
@@ -125,6 +125,6 @@ class SemanticsExtractor(FeatureExtractor):
 
         if len(subdirs) > 50: 
             _warn("Adding Keys (if goes to keycache, then consider running myisamchk -n).")
-            [self._enableTableKeys(name) for name in tableNames.values()]#for faster, when enough space for repair by sorting
+            [self._enableTableKeys(name) for name in list(tableNames.values())]#for faster, when enough space for repair by sorting
 
         return tableNames['ner'] #feature creation methods are expected to return 1 table name so I just chose NER

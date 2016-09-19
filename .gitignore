@@ -1,0 +1,39 @@
+#########################################
+# Editor temporary/working/backup files #
+.#*
+*\#*\#
+[#]*#
+*~
+*$
+
+# Compiled source #
+###################
+*.a
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.py[ocd]
+*.so
+.build_cache_dir
+
+# Python files #
+################
+build
+doc/_build
+dist
+# Egg metadata
+*.egg-info
+.eggs
+.pypirc
+
+# OS generated files #
+######################
+.directory
+.gdb_history
+.DS_Store
+ehthumbs.db
+Icon?
+Thumbs.db
+

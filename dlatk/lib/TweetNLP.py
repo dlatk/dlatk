@@ -62,9 +62,10 @@ class TweetNLP:
                 if s:
                     s = s.strip().replace("\n", '  ') + "\n"
                     taggerP.stdin.write(s.encode('utf-8'))
+                    taggerP.stdin.flush()
                     tagLine = taggerP.stdout.readline().strip()
                     if tagLine:
-                        info = tagLine.split('\t')
+                        info = tagLine.decode().split('\t')
                         (tokens, tags, probs) =  [l.split() for l in info[:3]]
                         taglists.append({'tokens':tokens, 'tags':tags, 'probs':probs, 'original':info[3]})
                 else:
@@ -94,7 +95,7 @@ class TweetNLP:
         """List is in the same order as the sents"""
         givenList = isinstance(sents, list)
         if not givenList: sents = [sents]
-
+        
         tokenizerP = self.getTokenizerProcess()
         tokenizedLists = []
 
@@ -102,9 +103,10 @@ class TweetNLP:
         for s in sents:
             s = s.strip().replace("\n", '  ') + "\n"
             tokenizerP.stdin.write(s.encode('utf8'))
+            tokenizerP.stdin.flush()
             tagLine = tokenizerP.stdout.readline().strip()
             if tagLine:
-                info = tagLine.split('\t')
+                info = tagLine.decode().split('\t')
                 tokens =  info[0].split()
                 tokenizedLists.append(tokens)
 

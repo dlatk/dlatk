@@ -626,7 +626,7 @@ class FeatureRefiner(FeatureGetter):
                     std_dev = std(list(gns.values()))
                     N = len(gns)
                     rows.append([outcomeValue, feat, sum_value, group_norm, std_dev, N])
-                    if len(rows) >= 10000:
+                    if len(rows) >= fwc.MYSQL_BATCH_INSERT_SIZE:
                         sql = "INSERT INTO %s (group_id, feat, value, group_norm, std_dev, N) " % newTable
                         sql += "VALUES (%s)" % ', '.join('%s' for r in rows[0]) 
                         mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
@@ -762,6 +762,7 @@ class FeatureRefiner(FeatureGetter):
 
         fwc.warn('Inserting idf values into new table')
         counter = 0
+        rows = []
         for (feat, dt) in feat_counts:
             idf = log(N/float(dt))
 
@@ -775,18 +776,22 @@ class FeatureRefiner(FeatureGetter):
             for (group_id, value, tf) in group_id_freq:
                 tf_idf = tf * idf
 
-                insert_sql = "INSERT INTO {} (group_id, feat, value, group_norm) VALUES (\'{}\', \'{}\', {}, {});".format(
-                                                idf_table, 
-                                                group_id, 
-                                                mm.MySQLdb.escape_string(feat.encode('utf-8')).decode('utf-8'), 
-                                                value, 
-                                                tf_idf)
-                mm.execute(self.corpdb, self.dbCursor, insert_sql)
+                rows.append([group_id, mm.MySQLdb.escape_string(feat.encode('utf-8')).decode('utf-8'), value, tf_idf])
+                if len(rows) >= fwc.MYSQL_BATCH_INSERT_SIZE:
+                    sql = "INSERT INTO %s (group_id, feat, value, group_norm) " % idf_table
+                    sql += "VALUES (%s)" % ', '.join('%s' for r in rows[0]) 
+                    mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                    rows = []
 
                 if (counter % 50000 == 0):
                     print('%d tf_idf values inserted!' % (counter))
                 counter += 1
 
-        fwc.warn('Finished inserting.')
 
+        if rows:
+            sql = "INSERT INTO %s (group_id, feat, value, group_norm) " % idf_table
+            sql += "VALUES (%s)" % ', '.join('%s' for r in rows[0]) 
+            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+
+        fwc.warn('Finished inserting.')
         return idf_table

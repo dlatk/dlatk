@@ -39,7 +39,7 @@ mediation and prediction / classification. For more information please visit:
 
   * http://wwbp.org
   * http://dlatk.wwbp.org
-  * https://www.github.com/wwbp/dlatk
+  * https://www.github.com/dlatk/dlatk
 
 CONTACT
 -------

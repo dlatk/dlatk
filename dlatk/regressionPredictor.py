@@ -32,7 +32,6 @@ from sklearn.linear_model import Ridge, RidgeCV, LinearRegression, Lasso, LassoC
 from sklearn.svm import SVR
 from sklearn.cross_validation import StratifiedKFold, KFold, ShuffleSplit, train_test_split
 from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF
-from sklearn.lda import LDA #linear descriminant analysis
 from sklearn.grid_search import GridSearchCV 
 from sklearn import metrics
 from sklearn.feature_selection import f_regression, SelectPercentile, SelectKBest, \

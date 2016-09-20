@@ -1,4 +1,5 @@
 #!/usr/bin/python
+
 import re
 import os
 import pdb
@@ -14,25 +15,7 @@ from subprocess import check_call, CalledProcessError
 from PIL import Image
 from numpy import array
 
-try:
-    import rpy2.robjects as ro
-    from rpy2.robjects.packages import importr
-    ro.r.library('Cairo')       #Optional, only used for old wordcloud module
-    ro.r.library('wordcloud')   #Optional, only used for old wordcloud module
-except:
-    print('R wordcloud library not imported')
-
-#ro.r.library('extrafont')
-#ro.r.loadfonts()
-#ro.r.font_import()
 font_ii = 1
-## comment
-
-# requires rpy2, Cairo(rpackage), Wordcloud(rpackage), extrafont(Rpackage), ImageMagick (installed on the system)
-# also: sudo apt-get install libcairo2-dev libxt-dev
-
-#GRDEVICES = importr('grDevices')
-#brewer = importr('RColorBrewer')
 
 def rgb(hex_str):
     """converts a hex string to an rgb tuple"""
@@ -66,8 +49,6 @@ def explode(string):
 def extract(text, sub1, sub2):
     return text.split(sub1)[-1].split(sub2)[0]
 
-
-# handle <:) : 10 in this.
 def wordcloudByFile(input_filename, output_filename='wordle_test'):
     """Reads a file in format (per line) word:number \n and builds a wordle"""
     word_freq_pairs = []
@@ -88,15 +69,6 @@ def _makeRandomColorTuples(num_rgb_tuples, rgb_bounds=[0, 0.39]):
     ro_color_list = ro.StrVector([x[0] for x in ro_colors])
     return ro_color_list
 
-def _makeColorTuplesFromRgbTuples(rgbTuples):
-    r, g, b = list(zip(*rgbTuples))
-    N = len(r)
-    blank_lists = [ [] for l in range(N) ]
-    ro_colors = list(map(ro.r.rgb, r, g, b, [255]*N, blank_lists, [255]*N))
-    ro_color_list = ro.StrVector([x[0] for x in ro_colors])
-    return ro_color_list
-    
-
 def wordcloud(word_list, freq_list, output_prefix='test', 
     color_list=None, random_colors=True, random_order=False, 
     width=None, height=None, rgb=False, title=None, 
@@ -114,10 +86,26 @@ def wordcloud(word_list, freq_list, output_prefix='test',
         font_path = PERMA_path + "/meloche_bd.ttf"
     
     if wordcloud_algorithm == 'old': #old wordcloud function
-        ro.r.library('Cairo')       #Optional, only used for old wordcloud module                                                                                                                              
-        ro.r.library('wordcloud')   #Optional, only used for old wordcloud module 
-        GRDEVICES = importr('grDevices')
-        brewer = importr('RColorBrewer')
+        # requires rpy2, Cairo(rpackage), Wordcloud(rpackage), extrafont(Rpackage), ImageMagick (installed on the system)
+        # also: sudo apt-get install libcairo2-dev libxt-dev
+        try:
+            import rpy2.robjects as ro
+            from rpy2.robjects.packages import importr
+            ro.r.library('Cairo')       #Optional, only used for old wordcloud module                                                                                                                              
+            ro.r.library('wordcloud')   #Optional, only used for old wordcloud module 
+            GRDEVICES = importr('grDevices')
+            brewer = importr('RColorBrewer')
+        except:
+            sys.exit('R wordcloud library not imported')
+        
+
+        def _makeColorTuplesFromRgbTuples(rgbTuples):
+            r, g, b = list(zip(*rgbTuples))
+            N = len(r)
+            blank_lists = [ [] for l in range(N) ]
+            ro_colors = list(map(ro.r.rgb, r, g, b, [255]*N, blank_lists, [255]*N))
+            ro_color_list = ro.StrVector([x[0] for x in ro_colors])
+            return ro_color_list
         
         assert(len(word_list) == len(freq_list))
 

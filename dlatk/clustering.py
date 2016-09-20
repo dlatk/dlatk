@@ -20,11 +20,6 @@ except ImportError:
     pass
 
 import pandas as pd
-try:
-    import pandas.rpy.common as com
-except ImportError:
-    warn("pandas.rpy.common cannot be imported")
-    pass
 
 from inspect import ismethod
 import sys
@@ -472,6 +467,11 @@ class CCA:
     """Handles CCA analyses of language and outcomes"""
     
     def __init__(self, fg, og, numComponents=15):
+        try:
+            import pandas.rpy.common as com
+        except ImportError:
+            warn("pandas.rpy.common cannot be imported")
+            pass
         # initialize CCA object
         self.outcomeGetter = og
         self.featureGetter = fg

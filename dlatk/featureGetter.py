@@ -511,12 +511,10 @@ class FeatureGetter(FeatureWorker):
 
     def printJoinedFeatureLines(self, filename, delimeter = ' '):
         """prints feature table like a message table in format mallet can use"""
-
         f = open(filename, 'w')
         for (gid, featValues) in self.yieldValuesSparseByGroup():
             message = delimeter.join([delimeter.join([feat.replace(' ', '_')]*value) for feat, value in featValues.items()])
-            f.write("""%s en %s\n""" %(gid, message.encode('utf-8')))            
-       
+            f.write("""%s en %s\n""" %(gid, message))
         f.close()
         fwc.warn("Wrote joined features file to: %s"%filename)
     

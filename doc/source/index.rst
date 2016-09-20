@@ -38,7 +38,7 @@ Getting Started
 More Information
 ----------------
 
-* `DLATK GitHub page <http://www.github.com/wwbp/dlatk>`_
+* `DLATK GitHub page <http://www.github.com/dlatk/dlatk>`_
 * `World Well-Being Project <http://www.wwbp.org>`_
 * :doc:`changelog`
 

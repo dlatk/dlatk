@@ -31,7 +31,7 @@ from sklearn.multiclass import OneVsRestClassifier
 
 from sklearn.cross_validation import StratifiedKFold, KFold, ShuffleSplit, train_test_split
 from sklearn.decomposition import RandomizedPCA, MiniBatchSparsePCA, PCA, KernelPCA, NMF
-from sklearn.lda import LDA #linear descriminant analysis
+#from sklearn.lda import LDA #linear descriminant analysis
 from sklearn.grid_search import GridSearchCV 
 from sklearn import metrics
 
@@ -279,9 +279,9 @@ class ClassifyPredictor:
         'pac': [
             {'n_jobs': [10], 'C': [1, .1, 10]}, 
             ],
-        'lda': [
-            {}, 
-            ],
+        # 'lda': [
+        #     {}, 
+        #     ],
         'gbc': [
             {'n_estimators': [500], 'random_state': [42], 
              'subsample':[0.4], 'max_depth': [5]  },
@@ -297,7 +297,7 @@ class ClassifyPredictor:
         'etc' : 'ExtraTreesClassifier',
         'rfc' : 'RandomForestClassifier',
         'pac' : 'PassiveAggressiveClassifier',
-        'lda' : 'LDA', #linear discriminant analysis
+        #'lda' : 'LDA', #linear discriminant analysis
         'gbc' : 'GradientBoostingClassifier',
         }
     

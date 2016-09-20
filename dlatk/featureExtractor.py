@@ -198,8 +198,8 @@ class FeatureExtractor(FeatureWorker):
         whiteListFeatTable : :obj:`str`, optional
             name of white list feature table.
         """
-        imp.reload(sys)
-        if self.use_unicode: sys.setdefaultencoding('utf8')
+        # imp.reload(sys)
+        # if self.use_unicode: sys.setdefaultencoding('utf8')
         sql = """SELECT %s, %s  from %s""" % (self.messageid_field, self.message_field,self.corptable+'_tok')
         messagesEnc = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         try:
@@ -217,10 +217,7 @@ class FeatureExtractor(FeatureWorker):
             toks = m[1]
             if whiteSet:
                 toks = [w for w in toks if w in whiteSet]
-            if self.use_unicode:
-                f.write("""%s en %s\n""" %(m[0], ' '.join([s.encode('utf-8') for s in toks])))
-            else:
-                f.write("""%s en %s\n""" %(m[0], ' '.join([s for s in toks])))
+            f.write("""%s en %s\n""" %(m[0], ' '.join([s for s in toks])))
         f.close()
         fwc.warn("Wrote tokenized file to: %s"%filename)
 
@@ -552,7 +549,7 @@ class FeatureExtractor(FeatureWorker):
         """
         tableName = "%s_tweettok" %(self.corptable)
         try:
-            tagger = TweetNLP()
+            tokenizer = TweetNLP()
         except NameError:
             fwc.warn("Method not available without TweetNLP interface")
             raise
@@ -779,12 +776,6 @@ class FeatureExtractor(FeatureWorker):
                     if msgs % fwc.PROGRESS_AFTER_ROWS == 0: #progress update
                         fwc.warn("Messages Read: %dk" % int(msgs/1000))
                     message = fwc.treatNewlines(message)
-                    
-                    if self.use_unicode and not warnedMaybeForeignLanguage and (len(message)-len(fwc.removeNonAscii(message))) > 2:
-                        fwc.warn("\n#############################")
-                        fwc.warn("Unicode characters are not being removed.\n")
-                        warnedMaybeForeignLanguage = True
-                        
                     message = fwc.shrinkSpace(message)
 
                     #words = message.split()
@@ -924,13 +915,7 @@ class FeatureExtractor(FeatureWorker):
                     msgs+=1
                     if msgs % fwc.PROGRESS_AFTER_ROWS == 0: #progress update
                         fwc.warn("Messages Read: %dk" % int(msgs/1000))
-                    message = fwc.treatNewlines(message)
-                    
-                    if self.use_unicode and not warnedMaybeForeignLanguage and (len(message)-len(fwc.removeNonAscii(message))) > 2:
-                        fwc.warn("\n#############################")
-                        fwc.warn("Unicode characters are not being removed.\n")
-                        warnedMaybeForeignLanguage = True
-                        
+                    message = fwc.treatNewlines(message)                       
                     message = fwc.shrinkSpace(message)
 
                     #words = message.split()

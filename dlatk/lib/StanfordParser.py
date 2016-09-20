@@ -26,6 +26,7 @@ import glob
 ##DEFAULTS:
 _InstallPath = '/home/hansens/Tools/StanfordParser/' # folder
 _InstallDir = 'stanford-parser-2012-02-03'
+
 _DefaultParams ={
     'save_file' : 'parsed.data',
     'save_dir' : 'backupParses',
@@ -53,7 +54,7 @@ class StanfordParser:
         f = open(tempFileName,'w')
         for s in sents:
             s = shortenToNWords(s.strip().replace("\n", ' '), int(self.max_sent_words))
-            f.write(s.encode('utf-8'))
+            f.write(s)
             f.write("\n")
         f.close()
 
@@ -82,7 +83,7 @@ class StanfordParser:
     depParseRe = re.compile(r'^[a-z0-9\_]+\([a-z0-9]', re.I)
     def getParseDicts(self, output):
         parseDicts = []
-        lines = output.split("\n")
+        lines = output.decode().split("\n")
         i = 0
         while i < len(lines):
             parse = dict()

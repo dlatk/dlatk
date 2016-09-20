@@ -36,8 +36,6 @@ class FeatureStar(object):
 	allFW : dict
 		Dictionary containing all of the above attributes keyed on object name
 
-    Returns a ``FeatureStar`` object.
-
     Examples
     --------
     Initialize a FeatureStar
@@ -69,6 +67,7 @@ class FeatureStar(object):
 		corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else fwc.DEF_CORPDB
 		corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else fwc.DEF_CORPTABLE
 		correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else fwc.DEF_CORREL_FIELD
+		print(correl_field)
 		mysql_host = parser.get('constants','mysql_host') if parser.has_option('constants','mysql_host') else "localhost"
 		message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else fwc.DEF_MESSAGE_FIELD
 		messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else fwc.DEF_MESSAGEID_FIELD
@@ -84,14 +83,18 @@ class FeatureStar(object):
 			else:
 				featureTable = parser.get('constants','feattable')
 		else:
-			fwc.DEF_FEAT_TABLE
+			featureTable = fwc.DEF_FEAT_TABLE
+		print(featureTable)
+		print(fwc.DEF_FEAT_TABLE)
 		featNames = parser.get('constants','featnames') if parser.has_option('constants','featnames') else fwc.DEF_FEAT_NAMES
 		date_field = parser.get('constants','date_field') if parser.has_option('constants','date_field') else fwc.DEF_DATE_FIELD
 		outcome_table = parser.get('constants','outcometable') if parser.has_option('constants','outcometable') else fwc.DEF_OUTCOME_TABLE
+		print(outcome_table)
 		outcome_value_fields = [o.strip() for o in parser.get('constants','outcomefields').split(",")] if parser.has_option('constants','outcomefields') else [fwc.DEF_OUTCOME_FIELD] # possible list
 		outcome_controls = [o.strip() for o in parser.get('constants','outcomecontrols').split(",")] if parser.has_option('constants','outcomecontrols') else fwc.DEF_OUTCOME_CONTROLS # possible list
+		print(outcome_controls)
 		outcome_interaction = [o.strip() for o in parser.get('constants','outcomeinteraction').split(",")] if parser.has_option('constants','outcomeinteraction') else fwc.DEF_OUTCOME_CONTROLS # possible list
-		group_freq_thresh = parser.get('constants','groupfreqthresh') if parser.has_option('constants','groupfreqthresh') else fwc.getGroupFreqThresh(correl_field)
+		group_freq_thresh = int(parser.get('constants','groupfreqthresh')) if parser.has_option('constants','groupfreqthresh') else fwc.getGroupFreqThresh(correl_field)
 		featureMappingTable = parser.get('constants','featlabelmaptable') if parser.has_option('constants','featlabelmaptable') else ''
 		featureMappingLex = parser.get('constants','featlabelmaplex') if parser.has_option('constants','featlabelmaplex') else ''
 		output_name = parser.get('constants','outputname') if parser.has_option('constants','outputname') else ''
@@ -113,10 +116,10 @@ class FeatureStar(object):
 		if init:
 			self.fw = FeatureWorker(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, date_field, wordTable) if 'fw' in init else None
 			if 'fg' in init:
-				if len(featureTable) > 0:
-					self.fg = [FeatureGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, ft, featNames, wordTable) for ft in featureTable]
-				else: 
+				if isinstance(featureTable, str):
 					self.fg = FeatureGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable)
+				else:
+					self.fg = [FeatureGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, ft, featNames, wordTable) for ft in featureTable]
 			else:
 				None
 			self.fe = FeatureExtractor(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable=wordTable) if 'fe' in init else None
@@ -128,10 +131,10 @@ class FeatureStar(object):
 
 		else: 
 			self.fw = FeatureWorker(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, date_field, wordTable)
-			if len(featureTable) > 0:
-				self.fg = [FeatureGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, ft, featNames, wordTable) for ft in featureTable]
-			else: 
+			if isinstance(featureTable, str):
 				self.fg = FeatureGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable)
+			else:
+				self.fg = [FeatureGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, ft, featNames, wordTable) for ft in featureTable]
 			self.fe = FeatureExtractor(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable=wordTable)
 			self.fr = FeatureRefiner(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable)
 			self.og = OutcomeGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, group_freq_thresh, featureMappingTable, featureMappingLex, wordTable)

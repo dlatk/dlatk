@@ -1596,7 +1596,11 @@ def main(fn_args = None):
         if (args.messageid_field and args.messageid_field != fwc.DEF_MESSAGEID_FIELD): init_file.write("messageid_field = " + str(args.messageid_field)+"\n") 
         if (args.encoding and args.encoding != fwc.DEF_ENCODING): init_file.write("encoding = " + str(args.encoding)+"\n") 
         if (args.lexicondb and args.lexicondb != fwc.DEF_LEXICON_DB): init_file.write("lexicondb = " + str(args.lexicondb)+"\n") 
-        if (args.feattable and args.feattable != fwc.DEF_FEAT_TABLE): init_file.write("feattable = " + ", ".join([str(out) for out in args.feattable])+"\n")
+        if (args.feattable and args.feattable != fwc.DEF_FEAT_TABLE): 
+            if len(args.feattable) > 1:
+                init_file.write("feattable = " + ", ".join([str(ftable) for ftable in args.feattable])+"\n")
+            else:
+                init_file.write("feattable = " + args.feattable+"\n")
         if (args.featnames and args.featnames != fwc.DEF_FEAT_NAMES): init_file.write("featnames = " + ", ".join([str(feat) for feat in args.featnames])+"\n") 
         if (args.date_field and args.date_field != fwc.DEF_DATE_FIELD): init_file.write("date_field = " + str(args.date_field)+"\n")
         if (args.outcometable and args.outcometable != fwc.DEF_OUTCOME_TABLE): init_file.write("outcometable = " + str(args.outcometable)+"\n") 

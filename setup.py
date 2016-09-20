@@ -1,7 +1,33 @@
+import sys
+import subprocess
+
+_version = sys.version_info[0]
+
 try:
   from setuptools import setup
 except ImportError:
-  sys.exit("Need setuptools to install DLATK for Python 3.x")
+  if _version >= 3:
+    sys.exit("Need setuptools to install dlatk for Python 3.x")
+  from distutils.core import setup
+
+def _get_input(question):
+  return input(question) if _version >= 3 else raw_input(question)
+
+# check to see if mysql is running
+def check_mysql():
+  msqlr = subprocess.Popen("ps aux".split(), stdout=subprocess.PIPE).stdout
+  grep = subprocess.Popen(["grep", "mysql"], stdin=msqlr, stdout=subprocess.PIPE, universal_newlines=True).stdout
+  msqlrLines = grep.read().split("\n")
+  if len(msqlrLines) == 1 and "grep" in msqlrLines[0]:
+    sys.exit("MySQL is not running. Please restart or install MySQL to continue.")
+  return True
+
+def install_lang_data():
+  print("installing lang")
+
+def install_lex_data():
+  print("installing lex")
+
 
 DESCRIPTION = "DLATK is an end to end text analysis package developed by the World Well-Being Project at the University of Pennsylvania."
 LONG_DESCRIPTION = """
@@ -13,6 +39,7 @@ mediation and prediction / classification. For more information please visit:
 
   * http://wwbp.org
   * http://dlatk.wwbp.org
+  * https://www.github.com/wwbp/dlatk
 
 CONTACT
 -------
@@ -69,19 +96,41 @@ INSTALL_REQUIRES = [
   'wordcloud>1.1.3', 
 ]
 
-setup(name=DISTNAME,
-      author=AUTHOR,
-      author_email=EMAIL, 
-      maintainer=MAINTAINER,
-      maintainer_email=MAINTAINER_EMAIL,
-      version=VERSION,
-      packages=PACKAGES,
-      package_data=PACKAGE_DATA,
-      description=DESCRIPTION,
-      long_description=LONG_DESCRIPTION,
-      license=LICENSE,
-      url=URL,
-      download_url=DOWNLOAD_URL,
-      classifiers=CLASSIFIERS,
-      install_requires=INSTALL_REQUIRES,
-)
+if __name__ == "__main__":
+
+  check_mysql()
+
+  # setup(name=DISTNAME,
+  #     author=AUTHOR,
+  #     author_email=EMAIL, 
+  #     maintainer=MAINTAINER,
+  #     maintainer_email=MAINTAINER_EMAIL,
+  #     version=VERSION,
+  #     packages=PACKAGES,
+  #     package_data=PACKAGE_DATA,
+  #     description=DESCRIPTION,
+  #     long_description=LONG_DESCRIPTION,
+  #     license=LICENSE,
+  #     url=URL,
+  #     download_url=DOWNLOAD_URL,
+  #     classifiers=CLASSIFIERS,
+  #     install_requires=INSTALL_REQUIRES,
+  # )
+
+  print("DLATK comes with a small blog corpus for tutorial purposes.")
+  sample_input = _get_input("Would you like to import this directly into MySQL? (y/n) ")
+  if "y" in sample_input.lower():
+    install_lang_data()
+  else:
+    print("Skipping tutorial data.")
+
+  print("DLATK comes with a small blog corpus for tutorial purposes.")
+  lex_input = _get_input("Would you like to install this now? (y/n) ")
+  if "y" in lex_input.lower():
+    install_lex_data()
+  else:
+    print("Skipping lexica data.")
+
+
+
+

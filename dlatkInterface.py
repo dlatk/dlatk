@@ -280,9 +280,9 @@ def main(fn_args = None):
 
     group = parser.add_argument_group('Prediction Variables', '')
     group.add_argument('--adapt_tables', metavar='TABLE_NUM', dest='adapttable', type=int, nargs='+', default=getInitVar('adapttable', conf_parser, None, varList=True),
-                       help='Table(s) containing feature information to be adapted') # added by Youngseo
+                       help='Table(s) containing feature information to be adapted') 
     group.add_argument('--adapt_control_names', metavar='COLUMN', dest='adaptcolumns', type=str, nargs='+', default=None,
-                        help='Controls to be used for adaptation.') # added by Youngseo
+                        help='Controls to be used for adaptation.') 
     group.add_argument('--model', type=str, metavar='name', dest='model', default=getInitVar('model', conf_parser, fwc.DEF_MODEL),
                        help='Model to use when predicting: svc, linear-svc, ridge, linear.')
     group.add_argument('--combined_models', type=str, nargs='+', metavar='name', dest='combmodels', default=fwc.DEF_COMB_MODELS,
@@ -491,6 +491,8 @@ def main(fn_args = None):
                        help='predict outcomes into an outcome table (provide a name)')
     group.add_argument('--predict_cv_to_feats', '--predict_combo_to_feats', '--predict_regression_all_to_feats', type=str, dest='predictalltofeats', default=None,
                        help='predict outcomes into a feature file (provide a name)')
+    group.add_argument('--stratify_folds', action='store_true', dest='stratifyfolds', default=False,
+                       help='stratify folds during combo_test_classifiers')
 
     group.add_argument('--train_classifiers', '--train_class', action='store_true', dest='trainclassifiers', default=False,
                        help='train classification models for each outcome field based on feature table')
@@ -1418,7 +1420,8 @@ def main(fn_args = None):
     if args.combotestclassifiers:
         comboScores = cp.testControlCombos(standardize = args.standardize, sparse = args.sparse, blacklist = blacklist, 
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes, 
-                                           nFolds = args.folds, savePredictions = args.pred_csv, weightedEvalOutcome = args.weightedeval, adaptTables = args.adapttable, adaptColumns = args.adaptcolumns, groupsWhere = args.groupswhere) #edited by Youngseo
+                                           nFolds = args.folds, savePredictions = args.pred_csv, weightedEvalOutcome = args.weightedeval, stratifyFolds=args.stratifyfolds, 
+                                           adaptTables = args.adapttable, adaptColumns = args.adaptcolumns, groupsWhere = args.groupswhere)
         if args.csv:
             outputStream = sys.stdout
             if args.outputname:

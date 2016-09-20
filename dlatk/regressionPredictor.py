@@ -47,15 +47,7 @@ from sklearn.base import RegressorMixin
 from .occurrenceSelection import OccurrenceThreshold
 from .pca_mod import RandomizedPCA #allows percentage input
 
-#statsmodels (for weighted least squares)
-#import scikits.statsmodels.api as sm
-
-###spams
-#sys.path.append('./spams')
-#import spams
-
 #scipy
-import pylab as pl
 from scipy.stats import zscore, ttest_rel, ttest_1samp
 from scipy.stats.stats import pearsonr, spearmanr
 from scipy.stats import t

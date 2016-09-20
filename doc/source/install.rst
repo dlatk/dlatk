@@ -2,6 +2,11 @@
 Installation
 ************
 
+Python 2 vs 3
+=============
+DLATK is available for python 2.7 and 3.5, with the 3.5 version being the official release. The 2.7 version is fully functional (as of v1.0) but will not be maintained. 
+
+
 Setup (Linux)
 =============
 DLATK has been tested on Ubuntu 14.04. **WARNING**: Step 1 will install MySQL on your computer. 

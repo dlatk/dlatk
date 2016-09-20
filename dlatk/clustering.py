@@ -44,8 +44,6 @@ from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model.base import LinearModel
 
-import pylab as pl
-
 from scipy.stats import zscore
 from scipy.stats.stats import pearsonr, spearmanr
 from scipy.sparse import csr_matrix

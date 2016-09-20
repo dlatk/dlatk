@@ -42,12 +42,12 @@ from sklearn.linear_model.base import LinearModel
 from sklearn.base import ClassifierMixin
 
 #scipy
-import scipy.stats as ss
 from scipy.stats import zscore
 from scipy.stats.stats import pearsonr, spearmanr
 from scipy.sparse import csr_matrix, vstack, hstack, spmatrix
 import numpy as np
-from numpy import sqrt, array, std, mean, bincount, int64
+from numpy import sqrt, array, std, mean, bincount, int64, ceil, absolute, append, log
+
 import math
 
 #For ROC curves
@@ -147,6 +147,14 @@ def pos_neg_auc(y1, y2):
     return auc
 
 
+# def alignDictsAsy(y, yhat, keys = None):
+#     if not keys: 
+#         keys = frozenset(y.keys())
+#         keys = keys.intersection(yhat.keys())
+#     listy = map(lambda k: y[k], keys)
+#     listyhat = map(lambda k: yhat[k], keys)
+#     return (listy, listyhat)
+
 class ClassifyPredictor:
     """Interfaces with scikit-learn to perform prediction of outcomes for lanaguage features.
 
@@ -211,7 +219,7 @@ class ClassifyPredictor:
         'linear-svc':[
             #{'C':[10, 1, 0.1, 0.01, 0.001, 0.0001, 0.0025, 0.00025, 0.00001, 0.000001, 0.000025, 0.0000001, 0.0000025, 0.00000001, 0.00000025], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]}, #swl
             #{'C':[100, 10, 1, 500, 1000, 5000, 10000, 25000, 0.1, 0.01, 0.001, 0.0001], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]}
-            #{'C':[0.0001, 0.00001, 0.000001, 0.0000001], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]}
+            {'C':[0.0001, 0.001, 0.00001, 0.01], 'penalty':['l2'], 'dual':[True]}
             #{'C':[0.01, 0.1, 0.001, 1, 0.0001, 10, 0.00001, 0.000001, 0.0000001], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]} #swl user
             #{'C':[0.01, 0.1, 0.001, 1, 0.0001, 10], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]} #depression user
             #{'C':[0.01, 0.1, 0.001, 0.0001, 0.00001, 0.000001], 'loss':['l2'], 'penalty':['l2'], 'dual':[False]} #depression user lots o feats
@@ -233,7 +241,7 @@ class ClassifyPredictor:
             ###with l1 feature selection:
             #{'C':[0.01, 0.1, 0.001], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']}, #FIRST PASS l1 OPTION; swl message-level
             #{'C':[10, 1, 0.1, 0.01, 0.001, 0.0001, 0.0025, 0.00025, 0.00001, 0.000001, 0.000025, 0.0000001, 0.0000025, 0.00000001, 0.00000025], 'penalty':['l1'], 'dual':[False]} #swl
-            {'C':[0.01], 'penalty':['l1'], 'dual':[False]} #age, general sparse setting #words n phrases, gender (best 0.01=> 91.4 )
+            #{'C':[0.01], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']} #age, general sparse setting #words n phrases, gender (best 0.01=> 91.4 )
             #{'C':[0.1], 'penalty':['l1'], 'dual':[False], 'multi_class':['crammer_singer']} #
             #{'C':[0.01, 0.1, 1, 10, 0.001], 'penalty':['l1'], 'dual':[False]} #timex message-level
             #{'C':[0.000001], 'penalty':['l2']}, # UnivVsMultiv choice Maarten 
@@ -243,15 +251,15 @@ class ClassifyPredictor:
             ],
         'lr': [
             #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l2'], 'dual':[False]}, 
-            #{'C':[0.01, 0.1, 0.001, 1], 'penalty':['l2'], 'dual':[False]}, 
-            #{'C':[.001], 'penalty':['l2'], 'dual':[False]},
+            {'C':[0.01, 0.1, 0.001, 1, .0001], 'penalty':['l2'], 'dual':[False]}, 
+            #{'C':[.01], 'penalty':['l2'], 'dual':[False]},#svd-d features small
             #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l1'], 'dual':[False]},
             #{'C':[0.1, 1, 0.01], 'penalty':['l1'], 'dual':[False]} #timex message-level
             #{'C':[10, 1, 100, 1000], 'penalty':['l1'], 'dual':[False]} 
             #{'C':[0.01, 0.1, 0.001, 0.0001, 0.00001], 'penalty':['l1'], 'dual':[False]} #timex l2 rpca....
             #{'C':[0.1, 1, 10], 'penalty':['l1'], 'dual':[False]} #timex l2 rpca....
             #{'C':[0.00001], 'penalty':['l2']} # UnivVsMultiv choice Maarten 
-            {'C':[0.01], 'penalty':['l1']} # UnivVsMultiv choice Maarten
+            #{'C':[0.01], 'penalty':['l1']} # UnivVsMultiv choice Maarten
             #{'C':[1000000], 'penalty':['l2'], 'dual':[False]} # for a l0 penalty approximation
             #{'C':[1000000000000], 'penalty':['l2'], 'dual':[False]} # for a l0 penalty approximation
             #{'C':[100], 'penalty':['l1'], 'dual':[False]} # gender prediction
@@ -264,20 +272,9 @@ class ClassifyPredictor:
             #{'n_jobs': [12], 'n_estimators': [50], 'max_features': ["sqrt", "log2", None], 'criterion':['gini'], 'min_samples_split': [1]}, 
             #{'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2]}, 
             {'n_jobs': [12], 'n_estimators': [200], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2]}, 
-            {'n_jobs': [9], 'n_estimators': [1500], 'max_features': ["sqrt"], 'criterion':['gini'], 
-             'min_samples_split': [2], 'class_weight': ['auto'], 'random_state': [42]}, 
-            ],
-        'etcsmall': [ 
-            {'n_jobs': [8], 'n_estimators': [1500], 'max_features': [1.00], 'criterion':['gini'], 
-             'min_samples_split': [2], 'class_weight': ['auto'], 'bootstrap': [True], 
-             'random_state': [42], 'oob_score':[True]}, 
             ],
         'rfc': [
-
-            #{'n_jobs': [10], 'n_estimators': [1000]}, 
-            {'n_jobs': [8], 'n_estimators': [1500], 'max_features': ["sqrt"], 'criterion':['gini'], 
-             'min_samples_split': [2], 'class_weight': ['auto'], 'bootstrap': [True], 
-             'random_state': [42], 'oob_score':[True]}, 
+            {'n_jobs': [10], 'n_estimators': [1000]}, 
             ],
         'pac': [
             {'n_jobs': [10], 'C': [1, .1, 10]}, 
@@ -290,6 +287,7 @@ class ClassifyPredictor:
              'subsample':[0.4], 'max_depth': [5]  },
             ],
 
+
         }
 
     modelToClassName = {
@@ -297,7 +295,6 @@ class ClassifyPredictor:
         'linear-svc' : 'LinearSVC',
         'svc' : 'SVC',
         'etc' : 'ExtraTreesClassifier',
-        'etcsmall' : 'ExtraTreesClassifier',
         'rfc' : 'RandomForestClassifier',
         'pac' : 'PassiveAggressiveClassifier',
         'lda' : 'LDA', #linear discriminant analysis
@@ -317,10 +314,9 @@ class ClassifyPredictor:
 
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
-    maxPredictAtTime = 150000
+    maxPredictAtTime = 30000
     backOffPerc = .00 #when the num_featrue / training_insts is less than this backoff to backoffmodel
     backOffModel = 'linear-svc'
-    #backOffModel = 'lr'
     #backOffModel = 'linear'
 
     # feature selection:
@@ -341,7 +337,7 @@ class ClassifyPredictor:
     #featureSelectionString = 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)' ### TRY THIS ###
     #featureSelectionString = 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)'#smaller among 10% or number of rows / number of feature tables
     #featureSelectionString = 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/2)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)'#smaller among 10% or number of rows / 2
-    #featureSelectionString = 'RandomizedPCA(n_components=min(X.shape[1], int(X.shape[0]/4)), random_state=42, whiten=False, iterated_power=3)'
+    # featureSelectionString = 'RandomizedPCA(n_components=min(X.shape[1], int(X.shape[0]/4)), random_state=42, whiten=False, iterated_power=3)'
     #featureSelectionString = 'RandomizedPCA(n_components=min(X.shape[1], 2000), random_state=42, whiten=False, iterated_power=3)'
     #featureSelectionString = 'RandomizedPCA(n_components=int(X.shape[1]*.10), random_state=42, whiten=False, iterated_power=3)'
     #featureSelectionString = 'RandomizedPCA(n_components=min(int(X.shape[0]*1.5), X.shape[1]), random_state=42, whiten=False, iterated_power=3)'
@@ -378,26 +374,25 @@ class ClassifyPredictor:
 
         self.classificationModels = dict()
         """dict: Docstring *after* attribute, with type specified."""
-        
+
         self.scalers = dict()
         """dict: Docstring *after* attribute, with type specified."""
-       
+
         self.fSelectors = dict()
         """dict: Docstring *after* attribute, with type specified."""
-        
+
         self.featureNames = [] 
         """list: Holds the order the features are expected in."""
         
         self.multiFSelectors = None
         """str: Docstring *after* attribute, with type specified."""
-
+        
         self.multiScalers = None
         """str: Docstring *after* attribute, with type specified."""
-        
-        self.multiXOn = False 
+
+        self.multiXOn = False
         """boolean: whether multiX was used for training."""
 
-        
 
     def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
         """Tests classifier, by pulling out random testPerc percentage as a test set"""
@@ -528,20 +523,17 @@ class ClassifyPredictor:
 
     #####################################################
     ######## Main Testing Method ########################
-    def testControlCombos(self, standardize = True, sparse = False, saveModels = False, 
-                          blacklist = None, noLang = False, allControlsOnly = False, comboSizes = None, 
-                          nFolds = 2, savePredictions = False, weightedEvalOutcome = None, 
-                          stratifyFolds = True, warmStartControls = False, controlCombineProbs = True, groupsWhere = ''):
-        """Tests classifier, by pulling out random testPerc percentage as a test set"""
-
-        ##TODO ADD RESIDUALIZED CONTROLS: use "warm_start" with ETC or gradient boosting
+    def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
+                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None,  
+                          stratifyFolds = True, adaptTables=None, adaptColumns=None, groupsWhere = ''):
+        """Tests classifier, by pulling out random testPerc percentage as a test set""" # edited by Youngseo
         
         ###################################
         #1. setup groups for random folds
         if blacklist: print("USING BLACKLIST: %s" %str(blacklist))
         (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
         groupFolds = []
-        if not stratifyFolds: 
+        if not stratifyFolds:
             print("[number of groups: %d (%d Folds)] non-stratified / using same folds for all outcomes" % (len(groups), nFolds))
             random.seed(self.randomState)
             groupList = list(groups)
@@ -549,6 +541,12 @@ class ClassifyPredictor:
             groupFolds = foldN(groupList, nFolds)
         else:
             print("    using stratified folds; different folds per outcome")
+
+        print("[number of groups: %d (%d Folds)]" % (len(groups), nFolds))
+        random.seed(self.randomState)
+        groupList = list(groups)
+        random.shuffle(groupList)
+        groupFolds =  [x for x in foldN(groupList, nFolds)]
 
         ####
         #1a: setup weightedEval
@@ -616,18 +614,22 @@ class ClassifyPredictor:
                     thisOutcomeGroups = set(outcomes.keys()) & UGroups #this intersects with UGroups
                     if not outcomeName in scores:
                         scores[outcomeName] = dict()
-                        
-                    if stratifyFolds: 
+
+                    if stratifyFolds:
                         #even classes across the outcomes
                         print("Warning: Stratifying outcome classes across folds (thus, folds will differ across outcomes).")
-                        groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = 42)
+                        #groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = 42)
+                        ##DEBUG: below is using random folds to do bootstrapping; should change back to above.
+                        print("Warning: using random folds for bootstrapping; classifyPredictor.py to fix")
+                        groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = np.random.randint(0, 10000))
+                        del groupFolds[np.random.randint(0, len(groupFolds))]
+
 
                     #for warmStartControls or controlCombinedProbs
                     lastClassifiers= [None]*nFolds
                     savedControlYpp = None
 
                     for withLanguage in range(2):
-                        classifier = None
                         if withLanguage: 
                             if noLang or (allControlsOnly and (r > 1) and (r < len(controlKeys))):#skip to next
                                 continue
@@ -642,8 +644,7 @@ class ClassifyPredictor:
                             testStats.update({'r-wghtd' : [], 'r-wghtd-p' : []})
                         predictions = {}
                         predictionProbs = {}
-
-
+                        
                         ###############################
                         #3a) iterate over nfold groups:
                         for testChunk in range(0, len(groupFolds)):
@@ -683,17 +684,18 @@ class ClassifyPredictor:
 
                             ################################
                             #4) fit model and test accuracy:
+                            
                             mfclass = Counter(ytrain).most_common(1)[0][0]
-                            (classifier, multiScalers, multiFSelectors) = (None, None, None)
-                            if warmStartControls:
-                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, warmStartClassifier = lastClassifiers[testChunk])
-                                lastClassifiers[testChunk] = classifier
+                            # Check if the classifier is using controls - Youngseo
+                            if len(controls) > 0:
+                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize = standardize, sparse = sparse, adaptTables=adaptTables, adaptColumns=adaptColumns)
+                                ypredProbs, ypredClasses = self._multiXpredict(classifier, multiXtest, \
+                                                                               multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse, probs=True, adaptTables=adaptTables, adaptColumns=adaptColumns)
                             else:
-                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse)
-                                
+                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize = standardize, sparse = sparse, adaptTables=None, adaptColumns=None)
+                                ypredProbs, ypredClasses = self._multiXpredict(classifier, multiXtest, \
+                                                                               multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse, probs=True, adaptTables=None, adaptColumns=None)
 
-                            ypredProbs, ypredClasses = self._multiXpredict(classifier, multiXtest, \
-                                                                           multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse, probs=True)
                             ypred = ypredClasses[ypredProbs.argmax(axis=1)]
                             predictions.update(dict(zip(testGroupsOrder,ypred)))
                             predictionProbs.update(dict(zip(testGroupsOrder,ypredProbs)))
@@ -750,29 +752,12 @@ class ClassifyPredictor:
                         ypredProbs = array(ypredProbs)
                         reportStats['acc'] = accuracy_score(ytrue, ypred)
                         reportStats['f1'] = f1_score(ytrue, ypred)
-                        reportStats['a'] = pos_neg_auc(ytrue, ypredProbs[:,-1])
-
-                        reportStats['auc_cntl_comb'] = 0.0
-                        reportStats['auc_cntl_comb2'] = 0.0
-                        reportStats['auc_cntl_comb_p'] = 1.0
-                        reportStats['auc_cntl_comb_t'] = 0.0
-                        if controlCombineProbs:
-                            if withLanguage and savedControlYpp is not None:
-                                newprobs = np.array(easyNFoldLR( np.array([ypredProbs[:,-1], savedControlYpp]).T, ytrue, len(groupFolds)))[:,-1]
-                                newprobs2 = np.array(easyNFoldAUCWeight( np.array([ypredProbs[:,-1], savedControlYpp]).T, ytrue, len(groupFolds)))[:,-1]
-                                #newprobs2 = (ypredProbs[:,-1] + savedControlYpp)/2.0
-                                #newprobs = ensembleDecisionFuncs(outcomes, groupFolds, ypredProbs[:,-1], savedControlYpp)
-                                reportStats['auc_cntl_comb'] = pos_neg_auc(ytrue, newprobs)
-                                reportStats['auc_cntl_comb_t'], reportStats['auc_cntl_comb_p'] = paired_t_1tail_on_errors(newprobs, savedControlYpp, ytrue)
-                                reportStats['auc_cntl_comb2'] = pos_neg_auc(ytrue, newprobs2)
-                            else: #save probs for next round
-                                savedControlYpp = ypredProbs[:,-1]
-
+                        reportStats['auc'] = pos_neg_auc(ytrue, ypredProbs[:,-1])
                         testCounter = Counter(ytrue)
                         reportStats['mfclass_acc'] = testCounter[mfclass] / float(len(ytrue))
+
                         if savePredictions: 
                             reportStats['predictions'] = predictions
-                            reportStats['predictionProbs'] = {k:v[-1] for k,v in predictionProbs.items()}
                         #pprint(reportStats) #debug
                         mfclass = Counter(ytest).most_common(1)[0][0]
                         print("* Overall Fold Acc: %.4f (+- %.4f) vs. MFC Accuracy: %.4f (based on test rather than train)"% (reportStats['folds_acc'], reportStats['folds_se_acc'], reportStats['folds_mfclass_acc']))
@@ -894,6 +879,7 @@ class ClassifyPredictor:
 
         print("[Prediction Complete]")
 
+        # print "Maarten \n", pd.DataFrame(predictions)
         return predictions
 
     def predictNoOutcomeGetter(self, groups, standardize = True, sparse = False, restrictToGroups = None):
@@ -951,7 +937,7 @@ class ClassifyPredictor:
                 groupNormValues = groupNormsList[i] # basically a feature table in list(dict) form
                 # We want the dictionaries to turn into a list that is aligned
                 gns = dict(list(zip(self.featureNamesList[i], groupNormValues)))
-
+                # print "Maarten", str(gns)[:150]
                 df = pd.DataFrame(data=gns)
                 df = df.fillna(0.0)
                 df = df[self.featureNamesList[i]]
@@ -959,7 +945,8 @@ class ClassifyPredictor:
                 print("  (feature group: %d)" % (i))
 
                 multiXtest.append(csr_matrix(df.values))
-                
+                # print "Maarten", csr_matrix(df.values).shape, csr_matrix(df.values).todense()
+
             #############
             #4) predict
             ypred = self._multiXpredict(self.classificationModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
@@ -979,48 +966,84 @@ class ClassifyPredictor:
             print("Must provide a feature extractor object")
             sys.exit(0)
 
-        #1. get all groups
-        
+        # handle large amount of predictions:
         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
-        #split groups into 10 chunks
+
+        if len(allOutcomes) == 0:
+            print("""
+      ERROR: predictToFeatureTable doesn't work when --outcome_table
+             and --outcomes are not specified, please make a dummy
+             table containing zero-ed outcome columns
+             """)
+            sys.exit(0)
+
         groups = list(groups)
-        random.seed(self.randomState)
-        random.shuffle(groups)        
-        chunks = foldN(groups, nFolds)
-        predictions = dict() #outcomes->groups->prediction               
-        #for loop over testChunks, changing which one is teh test (not test = training)
-        for testChunk in range(0, len(chunks)):
-            trainGroups = set()
-            for chunk in (chunks[:testChunk]+chunks[(testChunk+1):]):
-                for c in chunk:
-                    trainGroups.add(c)
-            testGroups = set(chunks[testChunk])
-            self.train(standardize, sparse, restrictToGroups = trainGroups)
-            chunkPredictions = self.predict(standardize, sparse, testGroups )
-            #predictions is now outcomeName => group_id => value (outcomeName can become feat)
-            #merge chunk predictions into predictions:
-            for outcomeName in list(allOutcomes.keys()):
-                if outcomeName in predictions:
-                    predictions[outcomeName].update(chunkPredictions[outcomeName]) ##check if & works
-                else:
+        # groups contains all groups that are in the outcome table and that have outcome values not null
+        
+        chunks = [groups]
+        #split groups into chunks
+        if len(groups) > self.maxPredictAtTime:
+            random.seed(self.randomState)
+            random.shuffle(groups)        
+            chunks =  [x for x in foldN(groups, int(ceil(len(groups) / self.maxPredictAtTime)))]
+        predictions = dict()
+        totalPred = 0
+
+        featNames = None
+        featLength = None
+        featureTableName = ""
+
+        for chunk in chunks:
+            if len(chunk) == len(groups):
+                print("len(chunk) == len(groups): True")
+                # chunk = None
+
+            chunkPredictions = self.predict(standardize, sparse, chunk)
+
+            # predictions is now outcomeName => group_id => value (outcomeName can become feat)
+            # merge chunk predictions into predictions:
+            for outcomeName in chunkPredictions.keys():
+                try:
+                    predictions[outcomeName].update(chunkPredictions[outcomeName])
+                except KeyError:
                     predictions[outcomeName] = chunkPredictions[outcomeName]
+            totalPred += len(chunk)
+            print(" Total Predicted: %d" % totalPred)
+            
+            # INSERTING the chunk into MySQL
+            #Creating table if not done yet
+            if not featNames:
+                featNames = list(chunkPredictions.keys())
+                featLength = max([len(s) for s in featNames])
+                # CREATE TABLE, and insert into it progressively:
+                featureName = "p_%s" % self.modelName[:4]
+                if name: featureName += '_' + name
+                featureTableName = fe.createFeatureTable(featureName, "VARCHAR(%d)"%featLength, 'DOUBLE')
 
-        #output to table:
-        featNames = list(predictions.keys())
-        featLength = max([len(s) for s in featNames])
-
-        #CREATE TABLE:
-        featureName = "p_%s" % self.modelName[:4]
-        if name: featureName += '_' + name
-        featureTableName = fe.createFeatureTable(featureName, "VARCHAR(%d)"%featLength, 'INTEGER')
-
-        for feat in featNames:
-            preds = predictions[feat]
-
-            print("[Inserting Predictions as Feature values for %s]" % feat)
-            wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
-            rows = [(k, v, v) for k, v in preds.items()] #adds group_norm and applies freq filter
-            mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
+            written = 0
+            rows = []
+            for feat in featNames:
+                preds = chunkPredictions[feat]
+                #pprint(preds)#DEBUG
+                print("[Inserting Predictions as Feature values for feature: %s]" % feat)
+                wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
+                wCursor = mm.dbConnect(self.corpdb, host=self.mysql_host, charset=self.encoding, use_unicode=self.use_unicode)[1]
+                
+                for k, v in preds.items():
+                    rows.append((k, v, v))
+                    if len(rows) >  self.maxPredictAtTime or len(rows) >= len(preds):
+                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=wCursor, charset=fe.encoding, use_unicode=fe.use_unicode)
+                        written += len(rows)
+                        print("   %d feature rows written" % written)
+                        rows = []
+            # if there's rows left
+            if rows:
+                wCursor = mm.dbConnect(self.corpdb, host=self.mysql_host, charset=self.encoding, use_unicode=self.use_unicode)[1]
+                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=wCursor, charset=fe.encoding, use_unicode=fe.use_unicode)
+                written += len(rows)
+                print("   %d feature rows written" % written)
+        return
+                             
 
     def predictToOutcomeTable(self, standardize = True, sparse = False, fe = None, name = None, nFolds = 10):
 
@@ -1035,7 +1058,7 @@ class ClassifyPredictor:
             print("TOTAL GROUPS (%d) TOO LARGE. Breaking up to run in %d chunks." % (len(groups), numChunks))
             random.seed(self.randomState)
             random.shuffle(groups)        
-            chunks =  foldN(groups, numChunks)
+            chunks =  [x for x in foldN(groups, numChunks)]
 
         predictions = dict() #outcomes->groups->prediction               
 
@@ -1071,59 +1094,81 @@ class ClassifyPredictor:
             print("Must provide a feature extractor object")
             sys.exit(0)
 
-        #handle large amount of predictions:
+        # handle large amount of predictions:
         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
+
+        if len(allOutcomes) == 0:
+            print("""
+      ERROR: predictToFeatureTable doesn't work when --outcome_table
+             and --outcomes are not specified, please make a dummy
+             table containing zero-ed outcome columns
+             """)
+            sys.exit(0)
+
         groups = list(groups)
+        # groups contains all groups that are in the outcome table and that have outcome values not null
+        
         chunks = [groups]
         #split groups into chunks
         if len(groups) > self.maxPredictAtTime:
-            numChunks = int(len(groups) / float(self.maxPredictAtTime)) + 1
-            print("TOTAL GROUPS (%d) TOO LARGE. Breaking up to run in %d chunks." % (len(groups), numChunks))
             random.seed(self.randomState)
             random.shuffle(groups)        
-            chunks =  foldN(groups, numChunks)
+            chunks =  [x for x in foldN(groups, int(ceil(len(groups) / self.maxPredictAtTime)))]
         predictions = dict()
         totalPred = 0
-        c = 0
+
+        featNames = None
+        featLength = None
+        featureTableName = ""
+
         for chunk in chunks:
-            print("\n\n**CHUNK %d\n" % c)
             if len(chunk) == len(groups):
-                chunk = None
+                print("len(chunk) == len(groups): True")
+                # chunk = None
+
             chunkPredictions = self.predict(standardize, sparse, chunk)
-            #predictions is now outcomeName => group_id => value (outcomeName can become feat)
-            #merge chunk predictions into predictions:
+
+            # predictions is now outcomeName => group_id => value (outcomeName can become feat)
+            # merge chunk predictions into predictions:
             for outcomeName in chunkPredictions.keys():
                 try:
                     predictions[outcomeName].update(chunkPredictions[outcomeName])
                 except KeyError:
                     predictions[outcomeName] = chunkPredictions[outcomeName]
-            if chunk:
-                totalPred += len(chunk)
-            else: totalPred = len(groups)
+            totalPred += len(chunk)
             print(" Total Predicted: %d" % totalPred)
-            c+=1
+            
+            # INSERTING the chunk into MySQL
+            #Creating table if not done yet
+            if not featNames:
+                featNames = list(chunkPredictions.keys())
+                featLength = max([len(s) for s in featNames])
+                # CREATE TABLE, and insert into it progressively:
+                featureName = "p_%s" % self.modelName[:4]
+                if name: featureName += '_' + name
+                featureTableName = fe.createFeatureTable(featureName, "VARCHAR(%d)"%featLength, 'DOUBLE')
 
-        featNames = list(predictions.keys())
-        featLength = max([len(s) for s in featNames])
-
-        #CREATE TABLE:
-        featureName = "p_%s" % self.modelName[:4]
-        if name: featureName += '_' + name
-        featureTableName = fe.createFeatureTable(featureName, "VARCHAR(%d)"%featLength, 'INTEGER')
-
-        for feat in featNames:
-            preds = predictions[feat]
-
-            print("[Inserting %d Predictions as Feature values for %s]" % (len(preds), feat))
-            wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
-            rows = []
             written = 0
-            for k, v in preds.items():
-                rows.append((k, v, v))
-
-            mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding)
-            written += len(rows)
-            print("   %d feature rows written" % written)
+            rows = []
+            for feat in featNames:
+                preds = chunkPredictions[feat]
+                pprint(preds)#DEBUG
+                print("[Inserting Predictions as Feature values for feature: %s]" % feat)
+                wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
+                
+                for k, v in preds.items():
+                    rows.append((k, v, v))
+                    if len(rows) >  self.maxPredictAtTime or len(rows) >= len(preds):
+                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                        written += len(rows)
+                        print("   %d feature rows written" % written)
+                        rows = []
+            # if there's rows left
+            if rows:
+                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                written += len(rows)
+                print("   %d feature rows written" % written)
+        return
 
 
     def getWeightsForFeaturesAsADict(self): 
@@ -1134,7 +1179,9 @@ class ClassifyPredictor:
         weights_dict = dict()
 
         featTables = [fg.featureTable for fg in self.featureGetters]
-        
+        # MAARTEN
+        # pprint(self.classificationModels)
+        # pprint([feat[:20] for feat in self.featureNamesList])
         startIndex = 0 # for multiX classification
         for i, featTableFeats in enumerate(self.featureNamesList):
             weights_dict[featTables[i]] = dict()
@@ -1275,10 +1322,12 @@ class ClassifyPredictor:
             return classifier, scaler, fSelector
 
 
-    def _multiXtrain(self, X, y, standardize = True, sparse = False, warmStartClassifier = None):
+    def _multiXtrain(self, X, y, standardize = True, sparse = False, adaptTables=None, adaptColumns=None):
         """does the actual classification training, first feature selection: can be used by both train and test
            create multiple scalers and feature selectors
            and just one classification model (of combining the Xes into 1)
+           adapt tables: specifies which table (i.e. index of X) to adapt
+           adapt cols: specifies which columns of the last table (X) to use for adapting the adaptTables 
         """
 
         if not isinstance(X, (list, tuple)):
@@ -1288,27 +1337,45 @@ class ClassifyPredictor:
         multiScalers = []
         multiFSelectors = []
 
-        for i in range(len(multiX)):
-            X = multiX[i]
-            if not sparse:
-                X = X.todense()
+        adaptMatrix = np.array([])
+        if adaptTables is not None:
+            #Youngseo
+            print(('MultiX before duplication:', len(multiX)))
+            # if adaptCol is empty, it means all columns of the controls table will be used for adaptation.
+            controls_mat=multiX[-1].todense()
+            if adaptColumns is None:
+                adaptMatrix = controls_mat
+            else:
+                for adaptCol in adaptColumns:
+                    #c =np.insert(c,c.shape[1],thelist[0][:,0],axis=1)
+                    adaptMatrix=np.insert(adaptMatrix,adaptMatrix.shape[1],controls_mat[:,adaptCol],axis=1)
 
+
+
+        #for i in xrange(len(multiX)):
+        i=0
+        while i < len(multiX): # changed to while loop by Youngseo
+            X = multiX[i]
+
+            if not sparse and isinstance(X,csr_matrix): #edited by Youngseo
+                X = X.todense()
+            
             #Standardization:
             scaler = None
             #print " Standardize: ", standardize
             if standardize == True:
                 scaler = StandardScaler(with_mean = not sparse)
-                print("[Applying StandardScaler to X[%d]: %s]" % (i, str(scaler)))
+                print(("[Applying StandardScaler to X[%d]: %s]" % (i, str(scaler))))
                 X = scaler.fit_transform(X)
                 y = np.array(y)
-            print(" X[%d]: (N, features): %s" % (i, str(X.shape)))
+            print((" X[%d]: (N, features): %s" % (i, str(X.shape))))
 
             #Feature Selection
             fSelector = None
             if self.featureSelectionString and X.shape[1] >= self.featureSelectMin:
                 fSelector = eval(self.featureSelectionString)
                 if self.featureSelectPerc < 1.0:
-                    print("[Applying Feature Selection to %d perc of X: %s]" % (int(self.featureSelectPerc*100), str(fSelector)))
+                    print(("[Applying Feature Selection to %d perc of X: %s]" % (int(self.featureSelectPerc*100), str(fSelector))))
                     _, Xsub, _, ysub = train_test_split(X, y, test_size=self.featureSelectPerc, train_size=1, random_state=0)
                     fSelector.fit(Xsub, ysub)
                     newX = fSelector.transform(X)
@@ -1317,17 +1384,53 @@ class ClassifyPredictor:
                     else:
                         print("No features selected, so using original full X")
                 else:
-                    print("[Applying Feature Selection to X: %s]" % str(fSelector))
+                    print(("[Applying Feature Selection to X: %s]" % str(fSelector)))
                     newX = fSelector.fit_transform(X, y)
                     if newX.shape[1]:
                         X = newX
                     else:
                         print("No features selected, so using original full X")
-                print(" after feature selection: (N, features): %s" % str(X.shape))
+                print((" after feature selection: (N, features): %s" % str(X.shape)))
+
+            # Youngseo
+            #adaptation:
+            if adaptTables is not None and i in adaptTables:
+                #print 'adaptaion matrix:', adaptMatrix
+                for j in range(adaptMatrix.shape[1]):
+                    adaptColMult=adaptMatrix[:,j]
+                    #print adaptColMult
+                    adaptX=list()
+                    for k in range(X.shape[0]):
+                        #print np.array(adaptColMult[k] * X[k,:])[0]
+                        #np.vstack([adaptX, np.array(adaptColMult[k] * X[k,:])[0]])
+                        adaptX.append(np.array(adaptColMult[k] * X[k,:])[0])
+                    #print adaptX
+                    # to keep the index of controls table as the last table of multiX
+                    multiX.insert(len(multiX)-1,np.array(adaptX))
+                #Youngseo
+                print(('MultiX length after duplication:', len(multiX)))
+                
+            '''
+            if adaptTables is not None and i in adaptTables:
+                    controlsTable=multiX[len(multiX)-1]
+                    # if adaptCol is empty, it means all columns of the controls table will be used for adaptation.
+                    if adaptColumns is None:
+                        for j in range(adaptMatrix.shape[1]):
+                            adaptColMult=adaptMatrix[:,j]
+                            
+                            print adaptColMult
+                            adaptX = X*adaptColMult.reshape((adaptColMult.shape[0],1))
+                            # to keep the index of controls table as the last table of multiX
+                            multiX.insert(len(multiX)-1,adaptX)
+            '''
+                        
+            #if adaptation is set,....
+            
 
             multiX[i] = X
             multiScalers.append(scaler)
-            multiFSelectors.append(fSelector)      
+            multiFSelectors.append(fSelector)
+            i+=1 # added to work with while loop by Youngseo Son
 
         #combine all multiX into one X:
         X = multiX[0]
@@ -1335,37 +1438,30 @@ class ClassifyPredictor:
             try:
                 X = matrixAppendHoriz(X, nextX)
             except ValueError as e:
-                print("ValueError: %s" % str(e))
+                print(("ValueError: %s" % str(e)))
                 print("couldn't append arrays: perhaps one is sparse and one dense")
                 sys.exit(0)
         modelName = self.modelName.lower()
         if (X.shape[1] / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
-            print("number of features is small enough, backing off to %s" % self.backOffModel)
+            print(("number of features is small enough, backing off to %s" % self.backOffModel))
             modelName = self.backOffModel.lower()
 
         if hasMultValuesPerItem(self.cvParams[modelName]) and modelName[-2:] != 'cv':
             #grid search for classifier params:
-            if warmStartClassifier:
-                raise Exception('Warm start classifier not implemented with grid search')
             gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
                               self.cvParams[modelName], n_jobs = self.cvJobs,
                               cv=ShuffleSplit(len(y), n_iter=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
             print("[Performing grid search for parameters over training]")
             gs.fit(X, y)
 
-            print("best estimator: %s (score: %.4f)\n" % (gs.best_estimator_, gs.best_score_))
+            print(("best estimator: %s (score: %.4f)\n" % (gs.best_estimator_, gs.best_score_)))
             return gs.best_estimator_,  multiScalers, multiFSelectors
         else:
             # no grid search
-            print("[Training classification model: %s]" % modelName)
-            classifier = None
-            if warmStartClassifier:
-                classifier = warmStartClassifier
-                classifier.set_params(warm_start=True)
-            if not classifier:
-                classifier = eval(self.modelToClassName[modelName]+'()')
+            print(("[Training classification model: %s]" % modelName))
+            classifier = eval(self.modelToClassName[modelName]+'()')
             try: 
-                classifier.set_params(**dict((k, v[0] if isinstance(v, list) else v) for k,v in self.cvParams[modelName][0].items()))
+                classifier.set_params(**dict((k, v[0] if isinstance(v, list) else v) for k,v in list(self.cvParams[modelName][0].items())))
             except IndexError: 
                 print("No CV parameters available")
                 raise IndexError
@@ -1374,11 +1470,12 @@ class ClassifyPredictor:
             classifier.fit(X, y)
             #print "coefs"
             #print classifier.coef_
-            print("model: %s " % str(classifier))
+            print(("model: %s " % str(classifier)))
             if modelName[-2:] == 'cv' and 'alphas' in classifier.get_params():
-                print("  selected alpha: %f" % classifier.alpha_)
+                print(("  selected alpha: %f" % classifier.alpha_))
             return classifier, multiScalers, multiFSelectors
 
+    
     def _predict(self, classifier, X, scaler = None, fSelector = None, y = None):
         if scaler:
             X = scaler.transform(X)
@@ -1626,18 +1723,34 @@ class ClassifyPredictor:
         
         pp.close()
 
-    def _multiXpredict(self, classifier, X, multiScalers = None, multiFSelectors = None, y = None, sparse = False, probs = False):
+    def _multiXpredict(self, classifier, X, multiScalers = None, multiFSelectors = None, y = None, sparse = False, probs = False, adaptTables = None, adaptColumns = None):
         if not isinstance(X, (list, tuple)):
             X = [X]
 
         multiX = X
         X = None #to avoid errors
 
-        for i in range(len(multiX)):
+        adaptMatrix = np.array([])
+        if adaptTables is not None:
+            #Youngseo
+            print(('MultiX length after duplication:', len(multiX)))
+                
+            # if adaptCol is empty, it means all columns of the controls table will be used for adaptation.
+            controls_mat=multiX[-1].todense()
+            if adaptColumns is None:
+                adaptMatrix = controls_mat
+            else:
+                for adaptCol in adaptColumns:
+                    #c =np.insert(c,c.shape[1],thelist[0][:,0],axis=1)
+                    adaptMatrix=np.insert(adaptMatrix,adaptMatrix.shape[1],controls_mat[:,adaptCol],axis=1)
+                    
+        #for i in xrange(len(multiX)):
+        i=0
+        while i < len(multiX): # changed to while loop by Youngseo
 
             #setup X and transformers:
             X = multiX[i]
-            if not sparse:
+            if not sparse and isinstance(X,csr_matrix): #edited by Youngseo
                 X = X.todense()
             (scaler, fSelector) = (None, None)
             if multiScalers: 
@@ -1647,25 +1760,69 @@ class ClassifyPredictor:
 
             #run transformations:
             if scaler:
-                print("  predict: applying standard scaler to X[%d]: %s" % (i, str(scaler))) #debug
+                print(("  predict: applying standard scaler to X[%d]: %s" % (i, str(scaler)))) #debug
                 X = scaler.transform(X)
             if fSelector:
-                print("  predict: applying feature selection to X[%d]: %s" % (i, str(fSelector))) #debug
+                print(("  predict: applying feature selection to X[%d]: %s" % (i, str(fSelector)))) #debug
                 newX = fSelector.transform(X)
                 if newX.shape[1]:
                     X = newX
                 else:
                     print("No features selected, so using original full X")
+            # Youngseo
+            #adaptation:
+            
+            if adaptTables is not None and i in adaptTables:
+                for j in range(adaptMatrix.shape[1]):
+                    adaptColMult=adaptMatrix[:,j]
+                    #print adaptColMult
+                    adaptX=list()
+                    for k in range(X.shape[0]):
+                        #print np.array(adaptColMult[k] * X[k,:])[0]
+                        #np.vstack([adaptX, np.array(adaptColMult[k] * X[k,:])[0]])
+                        adaptX.append(np.array(adaptColMult[k] * X[k,:])[0])
+                    #print adaptX
+                    # to keep the index of controls table as the last table of multiX
+                    multiX.insert(len(multiX)-1,np.array(adaptX))
+                #Youngseo
+                print(('MultiX length after duplication:', len(multiX)))
+                '''
+                #print adaptMatrix
+                for j in range(adaptMatrix.shape[1]):
+                    adaptColMult=adaptMatrix[:,j]
+                    adaptX = X*adaptColMult.reshape((adaptColMult.shape[0],1))
+                    # to keep the index of controls table as the last table of multiX
+                    multiX.insert(len(multiX)-1,adaptX)
+                '''
+            '''
+            if adaptTables is not None:
+                if i in adaptTables:
+                    controlsTable=multiX[len(multiX)-1]
+                    # if adaptCol is empty, it means all columns of the controls table will be used for adaptation.
+                    if adaptColumns is None:
+                        for j in range(controlsTable.shape[1]):
+                            adaptColMult=controlsTable[:,j]
+                            adaptX = X*adaptColMult.reshape((adaptColMult.shape[0],1))
+                            # to keep the index of controls table as the last table of multiX
+                            multiX.insert(len(multiX)-1,adaptX)
+                    else:
+                        for adaptCol in adaptColumns:
+                            adaptColMult=controlsTable[:,adaptCol]
+                            adaptX = X*adaptColMult.reshape((adaptColMult.shape[0],1))
+                            # to keep the index of controls table as the last table of multiX
+                            multiX.insert(len(multiX)-1,adaptX)
+            '''
             multiX[i] = X
+            i+=1 # added to work with while loop by Youngseo Son
 
         #combine all multiX into one X:
         X = multiX[0]
         for nextX in multiX[1:]:
             X = matrixAppendHoriz(X, nextX)
 
-        print("  predict: combined X shape: %s" % str(X.shape)) #debug
+        print(("  predict: combined X shape: %s" % str(X.shape))) #debug
         if hasattr(classifier, 'intercept_'):
-            print("  predict: classifier intercept: %s" % str(classifier.intercept_))
+            print(("  predict: classifier intercept: %s" % str(classifier.intercept_)))
 
         if probs:
             try:  
@@ -1679,11 +1836,6 @@ class ClassifyPredictor:
                 
         else:
             return classifier.predict(X)
-    
-        # print "Predicting", time.strftime('%c')
-        # ret = classifier.predict(X)
-        # print "Done", time.strftime('%c')
-        # return ret
 
 
 
@@ -1743,9 +1895,8 @@ class ClassifyPredictor:
                     for cn in controlNames:
                         rowDict[cn] = 1 if cn in rk else 0
                     rowDict['w/ lang.'] = withLang
-                    rowDict.update({(k,v) for (k,v) in list(sc.items()) if ((k is not 'predictions') and k is not 'predictionProbs')})
+                    rowDict.update({(k,v) for (k,v) in list(sc.items()) if k is not 'predictions'})
                     csvOut.writerow(rowDict)
-    
     @staticmethod
     def printComboControlPredictionsToCSV(scores, outputstream, paramString = None, delimiter='|'):
         """prints predictions with all combinations of controls to csv)"""
@@ -1777,38 +1928,6 @@ class ClassifyPredictor:
         for k,v in data.items():
            v.insert(0,k)  
            writer.writerow(v)
-
-    @staticmethod
-    def printComboControlPredictionProbsToCSV(scores, outputstream, paramString = None, delimiter='|'):
-         """prints predictions with all combinations of controls to csv)"""
-         predictionData = {}
-         data = defaultdict(list)
-         columns = ["Id"]
-         if paramString:
-             print(paramString+"\n", file=outputstream)
-         i = 0
-         outcomeKeys = sorted(scores.keys())
-         previousColumnNames = []
-         for outcomeName in outcomeKeys:
-             outcomeScores = scores[outcomeName]
-             controlNames = sorted(list(set([controlName for controlTuple in list(outcomeScores.keys()) for controlName in controlTuple])))
-             rowKeys = sorted(list(outcomeScores.keys()), key = lambda k: len(k))
-             for rk in rowKeys:
-                 for withLang, s in outcomeScores[rk].items():
-                     i+=1
-                     mc = "_".join(rk)
-                     if(withLang):
-                         mc += "_withLanguage"
-                     columns.append(outcomeName+'_'+mc)
-                     predictionData[str(i)+'_'+outcomeName+'_'+mc] = s['predictionProbs']
-                     for k,v in s['predictionProbs'].items():
-                         data[k].append(v)
-
-         writer = csv.writer(outputstream)
-         writer.writerow(columns)
-         for k,v in data.items():
-            v.insert(0,k)
-            writer.writerow(v)
         
     #################
     ## Deprecated:
@@ -2039,9 +2158,10 @@ def grouper(folds, iterable, padvalue=None):
     n = len(l) / folds
     return zip_longest(*[iter(iterable)]*n, fillvalue=padvalue)
 
+
 def xFoldN(l, folds):
     """ Yield successive n-sized chunks from l."""
-    n = len(l) / folds
+    n = len(l) // folds
     last = len(l) % folds
     i = 0
     for f in range(folds):
@@ -2049,7 +2169,7 @@ def xFoldN(l, folds):
             yield l[i:i+n+1]
             last -= 1
             i+= n+1
-        else: 
+        else:
             yield l[i:i+n]
             i+= n
 
@@ -2062,7 +2182,7 @@ def stratifyGroups(groups, outcomes, folds, randomState = 42):
     xGroups = sorted(list(set(groups) & set(outcomes.keys())))
     outcomesByClass = {}
     for g in xGroups:
-        try: 
+        try:
             outcomesByClass[outcomes[g]].append(g)
         except:
             outcomesByClass[outcomes[g]] = [g]
@@ -2081,10 +2201,11 @@ def stratifyGroups(groups, outcomes, folds, randomState = 42):
             i+=1
 
     #make sure all outcomes aren't together in the groups:
-    for gs in list(groupsPerFold.values()):                
+    for gs in list(groupsPerFold.values()):
         random.shuffle(gs)
 
     return list(groupsPerFold.values())
+
 
 def hasMultValuesPerItem(listOfD):
     """returns true if the dictionary has a list with more than one element"""
@@ -2097,6 +2218,8 @@ def hasMultValuesPerItem(listOfD):
 
 def getGroupsFromGroupNormValues(gnvs):
     return set([k for gns in gnvs for k in gns.keys()])
+
+
 
 def matrixAppendHoriz(A, B):
     if isinstance(A, spmatrix) and isinstance(B, spmatrix):
@@ -2120,86 +2243,3 @@ def r2simple(ytrue, ypred):
     ss_err = sum((yi-fi)**2 for yi,fi in zip(ytrue,ypred))
     r2 = 1 - (ss_err/ss_tot)
     return r2
-
-def easyNFoldLR(X, y, folds):
-    """build logistic regressor given two sets of decision function outputs, return new probs """
-    yscores = []
-    X = zscore(X)
-    y = np.array(y)
-    print("[NFOLD TRAIN TESTING Easy LR]")
-    groups = list(range(len(y)))
-    outcomes = dict(list(zip(groups, y)))
-    groupFolds = stratifyGroups(groups, outcomes, folds, randomState = 42)
-    ymap = []
-    for testgs in groupFolds:
-        testgs = np.array(testgs)
-        setgs = set(testgs)
-        traings = [i for i in groups if i not in setgs]
-        ytest = y[testgs]
-        Xtest = X[testgs]
-        ytrain = y[traings]
-        Xtrain = X[traings]
-
-        #lr = LogisticRegression(C = 100000, penalty = 'l2',  class_weight='auto')
-        lr = LogisticRegression(C = 100000, penalty = 'l2',  class_weight='auto', fit_intercept=False)
-        fitted_model = lr.fit(Xtrain, ytrain)
-        #print fitted_model.coef_
-        ypred_probs = fitted_model.predict_proba(Xtest)
-        print("   EASY LR AUC: %.4f" %  pos_neg_auc(ytest, ypred_probs[:,-1]))
-        yscores.extend(ypred_probs)
-        ymap.extend(testgs)
-    newyscores = [0]*len(y)
-    for i in groups:
-        newyscores[ymap[i]] = yscores[i]
-    print("[Done]")
-    print(" FINAL EASY LR AUC: %.4f" %  pos_neg_auc(y, np.array(newyscores)[:,-1]))
-    return newyscores
-
-def easyNFoldAUCWeight(X, y, folds):
-    """build logistic regressor given two sets of decision function outputs, return new probs """
-    yscores = []
-    X = zscore(X)
-    y = np.array(y)
-    print("[NFOLD TRAIN TESTING Easy LR]")
-    groups = list(range(len(y)))
-    outcomes = dict(list(zip(groups, y)))
-    groupFolds = stratifyGroups(groups, outcomes, folds, randomState = 42)
-    ymap = []
-    for testgs in groupFolds:
-        testgs = np.array(testgs)
-        setgs = set(testgs)
-        traings = [i for i in groups if i not in setgs]
-        ytest = y[testgs]
-        Xtest = X[testgs]
-        ytrain = y[traings]
-        Xtrain = X[traings]
-
-        weights = np.array([0.0]*Xtest.shape[1])
-        sumWeights = 0.0
-        for c in range(Xtrain.shape[1]):
-            weights[c] = ((np.absolute(pos_neg_auc(ytrain, Xtrain[:,c])) - 0.5) / 0.5)**2
-            sumWeights += weights[c]
-        weights = np.array([weights / sumWeights])
-        print(weights)
-        ypred_probs = np.dot(Xtest, weights.T)
-        print("   EASY LR AUC: %.4f" %  pos_neg_auc(ytest, ypred_probs[:,-1]))
-        yscores.extend(ypred_probs)
-        ymap.extend(testgs)
-    newyscores = [0]*len(y)
-    for i in groups:
-        newyscores[ymap[i]] = yscores[i]
-    print("[Done]")
-    print(" FINAL EASY LR AUC: %.4f" %  pos_neg_auc(y, np.array(newyscores)[:,-1]))
-    return newyscores
-
-
-def paired_t_1tail_on_errors(newprobs, oldprobs, ytrue):
-    #checks if 
-    n = len(ytrue)
-    newprobs_res_abs = np.absolute(array(ytrue) - array(newprobs))
-    oldprobs_res_abs = np.absolute(array(ytrue) - array(oldprobs))
-    ypp_diff = newprobs_res_abs - oldprobs_res_abs #old should be smaller
-    ypp_diff_mean, ypp_sd = np.mean(ypp_diff), np.std(ypp_diff)
-    ypp_diff_t = ypp_diff_mean / (ypp_sd / sqrt(n))
-    ypp_diff_p = ss.t.sf(np.absolute(ypp_diff_t), n-1)
-    return ypp_diff_t, ypp_diff_p

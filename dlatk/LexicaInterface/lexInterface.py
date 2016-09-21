@@ -1,15 +1,12 @@
 #!/usr/bin/env python
-#####################################################
-##PYTHON SCRIPT TO INTERACT WITH PERMA LEXICON DBs
-##
-##
-## andy.schwartz@gmail.com - Summer 2011
-##
-##TODO:
-##-make sure printCSV covers all bases.
-##-Add fucntionaltiy for adding terms to db
-##-make sure add terms works with hashtags
+"""
+PYTHON SCRIPT TO INTERACT WITH PERMA LEXICON DBs
 
+TODO:
+-make sure printCSV covers all bases.
+-Add fucntionaltiy for adding terms to db
+-make sure add terms works with hashtags
+"""
 import math
 import sys,os, getpass
 import re, csv
@@ -24,9 +21,9 @@ try:
 except ImportError:
     print('LexInterface:warning: nltk.corpus module not imported.')
 
-
-#MySQLdb.paramstyle 
-  	
+sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/dlatk/LexicaInterface",""))
+from dlatk.fwConstants import USER, DEF_MESSAGE_FIELD, DEF_MESSAGEID_FIELD, DEF_TERM_FIELD, DEF_CORPDB, DEF_CORPTABLE, DEF_LEXICON_DB, DEF_MIN_WORD_FREQ, DEF_NUM_RAND_MESSAGES, MAX_WRITE_RECORDS, warn
+from dlatk.mysqlMethods.mysqlMethods import abstractDBConnect, dbConnect
 
 ##CONSTANTS (STATIC VARIABLES)##
 PERMA_CODES = {'P+': 'positive emotion',
@@ -66,23 +63,9 @@ PERMA_LONG_DEF = {'P+': 'If we placed all emotions on a spectrum ranging from pl
 
 
 HOST = 'localhost'
-USER = getpass.getuser()
-DB = 'permaLexicon'
-
-DEF_CORPDB = 'fb14'
-DEF_CORPTABLE = 'messages'
-DEF_TERMFIELD = 'term'
-DEF_MESSAGEFIELD = 'message'
-DEF_MESSAGEIDFIELD = 'message_id'
-DEF_MINWORDFREQ = 1000;
-DEF_NUMRANDMESSAGES = 100
-MAX_WRITE_RECORDS = 1000 #maximum number of records to write at a time (for add_terms...)
 
 ############################################################
 ## Class / Static Methods
-
-def warn(string):
-    print(string, file=sys.stderr)
 
 def loadLexiconFromFile(filename):
     """Loads the perma lexicon, using standard formatting
@@ -337,22 +320,6 @@ def loadWeightedLexiconFromTopicCSV(filename, threshold=None):
     return lexicon
 
      
-def dbConnect(mysql_host=HOST):
-    dbConn = MySQLdb.connect (host = mysql_host,
-                              read_default_file='~/.my.cnf',
-                              db = DB, charset= 'utf8mb4', use_unicode = True)
-    dbCursor = dbConn.cursor()
-    return (dbConn, dbCursor)
-
-def abstractDBConnect(host, user, db):
-    dbConn = MySQLdb.connect (host = host,
-                          user = user,
-                          db = db)
-    dbCursor = dbConn.cursor()
-    return (dbConn, dbCursor)
-
-
-
 def interactiveGetSenses(cat, word):
     os.system('clear')
     print("\n[%s] \033[92m%s\033[0m\n%s" %(PERMA_CODES[cat].title(), word, '='*(len(word)+20)))
@@ -414,10 +381,10 @@ class Lexicon(object):
     dbConn = None
     dbCursor = None
     currentLexicon = None
-    lexiconDB = DB
+    lexiconDB = DEF_LEXICON_DB
 
     def __init__(self, lex = None, mysql_host = HOST):
-        (self.dbConn, self.dbCursor) = dbConnect(mysql_host)
+        (self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(db=lexiconDB, host=mysql_host)
         self.mysql_host = mysql_host
         self.currentLexicon = lex
 
@@ -591,9 +558,8 @@ class Lexicon(object):
         termREs = dict((term, re.compile(r'\b(%s)\b' % re.escape(term).replace('\\*', '\w*'), re.I)) for term in termList)
         termLCs = dict((term, term.rstrip('*').lower()) for term in termList)
 
-        (corpDb, corpCursor) = abstractDBConnect(HOST, USER, corpdb)
+        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=HOST, user=USER)
         writeCursor = corpDb.cursor()
-        #(corpDb, writeCursor) = abstractDBConnect(HOST, USER, corpdb)
         #get field list:
         sql = """SELECT column_name FROM information_schema.columns WHERE table_name='%s' and table_schema='%s'""" % (corptable, corpdb)
         print(sql)
@@ -675,7 +641,7 @@ class Lexicon(object):
         """Creates a lexicon (all in one category) from a examining word frequencies in a corpus"""
         wordList = dict()
         
-        (corpDb, corpCursor) = abstractDBConnect(HOST, USER, corpdb)
+        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=HOST, user=USER)
 
         #Go through each message      
         try:
@@ -827,7 +793,7 @@ class Lexicon(object):
         return words
 
     def likeExamples(self, corpdb, corptable, messagefield, numForEach = 60, onlyPrintIfMin = True, onlyPrintStartingAlpha = True):
-        (corpDb, corpCursor) = abstractDBConnect(HOST, USER, corpdb)
+        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=HOST, user=USER)
 
         print("<html><head>")
         print("<style>")
@@ -873,7 +839,7 @@ class Lexicon(object):
         print("</table></body></html>")
 
     def likeSamples(self, corpdb, corptable, messagefield, category, lexicon_name, number_of_messages):
-        (corpDb, corpCursor) = abstractDBConnect(HOST, USER, corpdb)
+        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=HOST, user=USER)
 
         #csvFile = open('/tmp/examples.csv', 'w')
         csvFile = open(lexicon_name+"_"+category+'.csv','wb')
@@ -1279,17 +1245,17 @@ if __name__ == "__main__":
                          help="Corpus database to use [default: %default]")
     group.add_option("-t", "--corpus_table", dest="corptable", metavar='TABLE', default = DEF_CORPTABLE,
                          help="Corpus table to use [default: %default]")
-    group.add_option("--corpus_term_field", dest="termfield", metavar='FIELD', default = DEF_TERMFIELD    ,
+    group.add_option("--corpus_term_field", dest="termfield", metavar='FIELD', default = DEF_TERM_FIELD    ,
                          help="field of the corpus table that contains terms (lexicon table always uses 'term') [default: %default]")
-    group.add_option("--corpus_message_field", dest="messagefield", metavar='FIELD', default = DEF_MESSAGEFIELD    ,
+    group.add_option("--corpus_message_field", dest="messagefield", metavar='FIELD', default = DEF_MESSAGE_FIELD    ,
                          help="field of the corpus table that contains the actual message [default: %default]")
-    group.add_option("--corpus_messageid_field", dest="messageidfield", metavar='FIELD', default = DEF_MESSAGEIDFIELD    ,
+    group.add_option("--corpus_messageid_field", dest="messageidfield", metavar='FIELD', default = DEF_MESSAGEID_FIELD    ,
                          help="field of the table that contains message ids (set to '' to not use group by [default: %default]")
-    group.add_option("--min_word_freq", dest="minwordfreq", metavar='NUM', type='int', default = DEF_MINWORDFREQ    ,
+    group.add_option("--min_word_freq", dest="minwordfreq", metavar='NUM', type='int', default = DEF_MIN_WORD_FREQ    ,
                          help="minimum number of instances to include in lexicon (-l option) [default: %default]")
     group.add_option("--lexicon_category", dest="lexicon_cat", metavar="CATEGORY", 
                          help="category in lexicon to get random samples from")
-    group.add_option("--num_rand_messages", dest="num_messages", metavar="NUM", type='int', default = DEF_NUMRANDMESSAGES,
+    group.add_option("--num_rand_messages", dest="num_messages", metavar="NUM", type='int', default = DEF_NUM_RAND_MESSAGES,
                          help="number of random messages to select when getting samples from lexicon category")
 #    group.add_option("--fulltext", action="store_true", dest="fulltext", default = False,
 #                          help="utilizes fulltext searches to improve performance (TODO)")

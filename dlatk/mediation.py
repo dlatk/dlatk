@@ -1,12 +1,12 @@
 """
 Mediation Analysis
 
-Interfaces with FeatureWorker and Statsmodels
+Interfaces with DLATK and Statsmodels
 
 Examples
 -------- 
 
->>> ./fwInterface.py -d DATABASE -t TABLE -c GROUP_BY --mediation \
+>>> ./dlatkInterface.py -d DATABASE -t TABLE -c GROUP_BY --mediation \
 ...    	--outcome_table OUTCOME_TABLE_NAME
 ...     --path_starts PATH_START_1 ... PATH_START_J \
 ...     --mediators

@@ -1,12 +1,9 @@
-#########################################
-# Regression Predictor
-#
-# Interfaces with FeatureWorker and scikit-learn
-# to perform prediction of outcomes for lanaguage features.
-#
-# example: predicting satisfaction with life score given language use
-#
-# example usage: ./featureWorker.py --outcome_fields SWL --train_regression
+"""
+Regression Predictor
+
+Interfaces with DLATK and scikit-learn
+to perform prediction of outcomes for lanaguage features.
+"""
 
 import pickle as pickle
 

@@ -1,10 +1,9 @@
-#########################################
-# Semantic Extractor
-#
-# Bridges FeatureWorker's Feature Extractor with reading xml semantic annotations
-#
-# assumes that corptable is a directory with files rather than a database table. 
+"""
+Semantic Extractor
 
+Bridges DLATK's Feature Extractor with reading xml semantic annotations
+assumes that corptable is a directory with files rather than a database table. 
+"""
 import os
 import gzip
 import sys

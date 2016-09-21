@@ -51,6 +51,12 @@ DEF_COLLATIONS = {
         'ascii': 'ascii_general_ci',
     }
 
+##lexInterface settings
+DEF_TERM_FIELD = 'term'
+DEF_MIN_WORD_FREQ = 1000;
+DEF_NUM_RAND_MESSAGES = 100
+MAX_WRITE_RECORDS = 1000 #maximum number of records to write at a time (for add_terms...)
+
 ##Outcome settings
 DEF_OUTCOME_TABLE = 'masterstats_andy'
 DEF_OUTCOME_FIELD = 'SWL'

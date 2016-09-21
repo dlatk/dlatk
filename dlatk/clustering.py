@@ -1,12 +1,9 @@
-#########################################
-# Clustering
-#
-# Interfaces with FeatureWorker and scikit-learn
-# to perform prediction of outcomes for language features.
-#
-# example: predicting satisfaction with life score given language use
-#
-# example usage: ./featureWorker.py --outcome_fields SWL --train_regression
+"""
+Clustering
+
+Interfaces with dlatk and scikit-learn
+to perform prediction of outcomes for language features.
+"""
 
 from .fwConstants import warn
 import pickle as pickle

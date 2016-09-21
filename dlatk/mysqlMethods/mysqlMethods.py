@@ -62,6 +62,13 @@ def dbConnect(db, host=MYSQL_HOST, charset=DEF_ENCODING, use_unicode=DEF_UNICODE
     dictCursor = dbConn.cursor(MySQLdb.cursors.DictCursor)
     return dbConn, dbCursor, dictCursor
 
+def abstractDBConnect(db, host=MYSQL_HOST, user=USER):
+    dbConn = MySQLdb.connect (host = host,
+                          user = user,
+                          db = db)
+    dbCursor = dbConn.cursor()
+    return (dbConn, dbCursor)
+
 def getTableColumnNames(db, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
     """Returns a list of column names from a db table"""
     (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)

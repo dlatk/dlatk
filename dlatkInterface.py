@@ -11,6 +11,7 @@ import time
 from pprint import pprint
 from numpy import isnan, sqrt, log2
 from configparser import SafeConfigParser
+import gzip
 
 try:
     from dlatk.lib import wordcloud
@@ -383,6 +384,11 @@ def main(fn_args = None):
                        help='add flesch-kincaid scores, averaged per group.')
     group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
+
+    group = parser.add_argument_group('LDA Helper Actions', '')
+    group.add_argument('--add_message_id', type=str, nargs=2, dest='addmessageid',
+                       help='Adds the message ID’s to the topic distributions and stores the result in --output_name. Previously addMessageID.py (two agrs: MESSAGE_FILE, STATE_FILE)')
+
 
     group = parser.add_argument_group('Semantic Extraction Actions', '')
     group.add_argument('--add_ner', action='store_true', dest='addner',
@@ -821,6 +827,38 @@ def main(fn_args = None):
     if args.addldamsgs:
         if not fe: fe = FE()
         fe.addLDAMessages(args.addldamsgs)
+
+    if args.addmessageid:
+        messageFile=open(args.addmessageid[0], 'rb')
+        stateFile=gzip.open(args.addmessageid[1], 'rb')
+        writeFile=open(args.outputname, 'w')
+        writeFile.write(stateFile.readline().decode())
+        writeFile.write(stateFile.readline().decode())
+        writeFile.write(stateFile.readline().decode())
+        error = open('error.log.txt','w+')
+
+        currentindex=-1
+        messageid=-1
+        while(True):
+            line=stateFile.readline().decode()
+            if len(line)==0:
+                break
+            tokens=line.split()
+            if tokens[0]!=currentindex:
+                currentindex=tokens[0]
+                line_read = messageFile.readline()
+                if len(line_read.split()) >  0:
+                    messageid=line_read.split()[0]
+                    if str(messageid) == '$':
+                        error.write("Error line: "+line_read)
+
+            tokens[1]=messageid.decode()
+            line=' '.join(tokens)
+            line+='\n'
+            writeFile.write(line)
+        messageFile.close()
+        stateFile.close()
+        writeFile.close()
 
     if args.addtopiclexfromtopicfile:
         if not fe: fe = FE()
@@ -1597,10 +1635,10 @@ def main(fn_args = None):
         if (args.encoding and args.encoding != fwc.DEF_ENCODING): init_file.write("encoding = " + str(args.encoding)+"\n") 
         if (args.lexicondb and args.lexicondb != fwc.DEF_LEXICON_DB): init_file.write("lexicondb = " + str(args.lexicondb)+"\n") 
         if (args.feattable and args.feattable != fwc.DEF_FEAT_TABLE): 
-            if len(args.feattable) > 1:
-                init_file.write("feattable = " + ", ".join([str(ftable) for ftable in args.feattable])+"\n")
-            else:
+            if isinstance(args.feattable, str):
                 init_file.write("feattable = " + args.feattable+"\n")
+            else:
+                init_file.write("feattable = " + ", ".join([str(ftable) for ftable in args.feattable])+"\n")
         if (args.featnames and args.featnames != fwc.DEF_FEAT_NAMES): init_file.write("featnames = " + ", ".join([str(feat) for feat in args.featnames])+"\n") 
         if (args.date_field and args.date_field != fwc.DEF_DATE_FIELD): init_file.write("date_field = " + str(args.date_field)+"\n")
         if (args.outcometable and args.outcometable != fwc.DEF_OUTCOME_TABLE): init_file.write("outcometable = " + str(args.outcometable)+"\n") 

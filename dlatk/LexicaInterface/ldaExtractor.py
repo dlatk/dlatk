@@ -5,11 +5,11 @@ import re
 from numpy import log2, isnan
 import csv
 import os.path, sys
-sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/FeatureWorker/LexicaInterface",""))
+sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/dlatk/LexicaInterface",""))
 
-from FeatureWorker.featureExtractor import FeatureExtractor
-from FeatureWorker import featureWorker
-from FeatureWorker import fwConstants as fwc
+from dlatk.featureExtractor import FeatureExtractor
+from dlatk import featureWorker
+from dlatk import fwConstants as fwc
 
 from json import loads
 

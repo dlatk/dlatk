@@ -314,6 +314,6 @@ class FeatureWorker(object):
 #
 if __name__ == "__main__":
     ##Argument Parser:
-    print("featureWorker.py Command-line Interface is Deprecated.\nUse fwInterface.py")
+    print("featureWorker.py Command-line Interface is Deprecated.\nUse dlatkInterface.py")
     sys.exit(0)
 

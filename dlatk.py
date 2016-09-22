@@ -239,6 +239,8 @@ def main(fn_args = None):
                        help='Turn off BH correction of p-values.')
     group.add_argument('--nvalue', type=bool, dest='nvalue', default=True,
                        help='Report n values.')
+    group.add_argument('--conf_int', type=bool, dest='confint', default=True,
+                       help='Report confidence intervals.')
     group.add_argument('--freq', type=bool, dest='freq', default=True,
                        help='Report freqs.')
     group.add_argument('--tagcloud_colorscheme', type=str, dest='tagcloudcolorscheme', default=getInitVar('tagcloudcolorscheme', conf_parser, 'multi'), 
@@ -575,6 +577,10 @@ def main(fn_args = None):
                        help='produce histograms and boxplots for specified outcomes. Requires oa. Uses outputdir')
     group.add_argument('--loessplot', type=str, metavar='FEAT(S)', dest='loessplot', nargs='+', default='',
                        help='Output loess plots of the given features.')
+
+    if len(sys.argv)==1:
+        parser.print_help()
+        sys.exit(1)
 
     if fn_args:
         args = parser.parse_args(fn_args.split())
@@ -1143,14 +1149,14 @@ def main(fn_args = None):
                 outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
                 if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
                 if args.spearman: outputFile += '.spearman'
-            oa.correlMatrix(featComp, outputFile+".feat", outputFormat='html', sort=args.sort, paramString=paramString.replace("\n","<br>"), nValue=args.nvalue, freq=args.freq)
-            oa.correlMatrix(outcomeComp, outputFile+".outcome", outputFormat='html', sort=args.sort, paramString=paramString.replace("\n","<br>"), nValue=args.nvalue, freq=args.freq)
+            oa.correlMatrix(featComp, outputFile+".feat", outputFormat='html', sort=args.sort, paramString=paramString.replace("\n","<br>"), nValue=args.nvalue, cInt=args.confint, freq=args.freq)
+            oa.correlMatrix(outcomeComp, outputFile+".outcome", outputFormat='html', sort=args.sort, paramString=paramString.replace("\n","<br>"), nValue=args.nvalue, cInt=args.confint, freq=args.freq)
             if args.csv:
-                oa.correlMatrix(featComp, outputFile+".feat", outputFormat='csv', sort=args.sort, paramString=paramString, nValue=args.nvalue, freq=args.freq)
-                oa.correlMatrix(outcomeComp, outputFile+".outcome", outputFormat='csv', sort=args.sort, paramString=paramString, nValue=args.nvalue, freq=args.freq)
+                oa.correlMatrix(featComp, outputFile+".feat", outputFormat='csv', sort=args.sort, paramString=paramString, nValue=args.nvalue, cInt=args.confint, freq=args.freq)
+                oa.correlMatrix(outcomeComp, outputFile+".outcome", outputFormat='csv', sort=args.sort, paramString=paramString, nValue=args.nvalue, cInt=args.confint, freq=args.freq)
             if args.pickle:
-                oa.correlMatrix(featComp, outputFile+".feat", outputFormat='pickle', sort=args.sort, paramString=paramString, nValue=args.nvalue, freq=args.freq)
-                oa.correlMatrix(outcomeComp, outputFile+".outcome", outputFormat='pickle', sort=args.sort, paramString=paramString, nValue=args.nvalue, freq=args.freq)
+                oa.correlMatrix(featComp, outputFile+".feat", outputFormat='pickle', sort=args.sort, paramString=paramString, nValue=args.nvalue, cInt=args.confint, freq=args.freq)
+                oa.correlMatrix(outcomeComp, outputFile+".outcome", outputFormat='pickle', sort=args.sort, paramString=paramString, nValue=args.nvalue, cInt=args.confint, freq=args.freq)
             outputFile += ".feat"
         if args.savemodels:
             cca.saveModel(args.picklefile)
@@ -1172,7 +1178,7 @@ def main(fn_args = None):
             outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
             if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
             if args.spearman: outputFile += '.spearman'
-        oa.correlMatrix(correls, outputFile, outputFormat='html', sort=args.sort, paramString=str(args), nValue=args.nvalue, freq=args.freq)
+        oa.correlMatrix(correls, outputFile, outputFormat='html', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq)
 
     if args.csv and not args.cca and correls:
         if args.outputname:
@@ -1181,7 +1187,7 @@ def main(fn_args = None):
             outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
             if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
             if args.spearman: outputFile += '.spearman'
-        oa.correlMatrix(correls, outputFile, outputFormat='csv', sort=args.sort, paramString=str(args), nValue=args.nvalue, freq=args.freq)
+        oa.correlMatrix(correls, outputFile, outputFormat='csv', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq)
 
     if args.tagcloud:
         outputFile = makeOutputFilename(args, fg, oa, suffix="_tagcloud")
@@ -1659,7 +1665,7 @@ def main(fn_args = None):
         init_file.close()                
 
     fwc.warn("--\nInterface Runtime: %.2f seconds"% float(time.time() - start_time))
-    fwc.warn("DLATK exits with success! A good day indeed :).")
+    fwc.warn("DLATK exits with success! A good day indeed  ¯\_(ツ)_/¯.")
 
 if __name__ == "__main__":
     main()

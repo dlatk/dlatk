@@ -13,7 +13,7 @@ from math import floor
 from numpy import array, tile, sqrt, fabs, multiply, mean, isnan
 from numpy import log as nplog, sort as npsort, append as npappend
 import numpy as np
-from scipy.stats import zscore, rankdata
+from scipy.stats import zscore, rankdata, norm
 from scipy.stats.stats import pearsonr, spearmanr
 import statsmodels.api as sm
 from sklearn.metrics import roc_auc_score
@@ -434,13 +434,14 @@ class OutcomeAnalyzer(OutcomeGetter):
                                 results = sm.Logit(y, X).fit(disp=False) #runs regression
                             else:
                                 results = sm.OLS(y, X).fit() #runs regression
-                            tup = (results.params[-1], results.pvalues[-1], len(y))
+                            conf = fwc.conf_interval(results.params[-1], len(y))
+                            tup = (results.params[-1], results.pvalues[-1], len(y)) + tuple(conf)
+
                             print(results.summary(outcomeField, sorted(controls.keys())))#debug
                         except (ValueError, Exception) as err:
                             mode = 'Logistic regression' if logisticReg else 'OLS'
                             fwc.warn("%s threw ValueError: %s" % (mode,str(err)))
                             fwc.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
-
                     #t0 = time.time()#debug
 
                     # Interaction: append to X the multiplication of outcome column & the interaction
@@ -476,10 +477,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                             results = sm.Logit(y, X, missing='drop').fit(disp=False)
                         else:
                             results = sm.OLS(y, X).fit() #runs regression
-                            
-                        tup = (results.params[-1], results.pvalues[-1], len(y))
-                        print("#######CONF########")
-                        print(results.conf_int([alpha, cols]))
+                        conf = fwc.conf_interval(results.params[-1], len(y))
+                        tup = (results.params[-1], results.pvalues[-1], len(y)) + tuple(conf)
 
                         if outputInteraction:
                             interaction_tuples = {}
@@ -500,20 +499,18 @@ class OutcomeAnalyzer(OutcomeGetter):
                              
                     if spearman: tup = spearmanr(dataList, outcomeList) + (len(dataList),)
                     else: tup = pearsonr(dataList, outcomeList) + (len(dataList),)
-
+                    conf = fwc.conf_interval(tup[0], tup[2])
+                    tup = tup + tuple(conf)
                 if not tup or not tup[0]:
                     fwc.warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
-                    if includeFreqs: tup = (float('nan'), float('nan'), len(y), 0)
-                    else: tup = (float('nan'), float('nan'), len(y))
+                    if includeFreqs: tup = (float('nan'), float('nan'), len(y), float('nan'), float('nan'), 0)
+                    else: tup = (float('nan'), float('nan'), len(y), float('nan'), float('nan'))
                 else: 
                     if p_correction_method.startswith("bonf"):
                         tup = fwc.bonfPCorrection(tup, numFeats)
                         if outputInteraction: interaction_tuples = {k: (v[0], v[1]*numFeats) + v[2:] for k, v in interaction_tuples.items()} 
                     if includeFreqs:
                         try:
-                            #if self.use_unicode:
-                            #    tup = tup + (int(featFreqs[str(feat)]), )
-                            #else:
                             tup = tup + (int(featFreqs[feat]), )
                             if outputInteraction: 
                                 if self.use_unicode:
@@ -1712,7 +1709,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 newCorrels[feat][outcomeField] = featRs[feat]
         FeaturePlotter().barPlot(outputFile, newCorrels) 
                                
-    def correlMatrix(self, correlMatrix, outputFile = None, outputFormat='html', sort = False, pValue = True, nValue = True, freq = False, paramString = None):
+    def correlMatrix(self, correlMatrix, outputFile = None, outputFormat='html', sort = False, pValue = True, nValue = True, cInt = True, freq = False, paramString = None):
         fwc.warn("Generating Correlation Matrix.")
                     
         if outputFile: 
@@ -1730,21 +1727,21 @@ class OutcomeAnalyzer(OutcomeGetter):
             pickle.dump(correlMatrix, open(outputFile, "wb" ))
         elif outputFormat == 'csv':
             if (len(correlMatrix)>0): 
-                self.outputCorrelMatrixCSV(fwc.reverseDictDict(correlMatrix), pValue, nValue, freq, outputFilePtr=outputFilePtr)
-                if sort: self.outputSortedCorrelCSV(correlMatrix, pValue, nValue, freq, outputFilePtr=outputFilePtr)
+                self.outputCorrelMatrixCSV(fwc.reverseDictDict(correlMatrix), pValue, nValue, cInt, freq, outputFilePtr=outputFilePtr)
+                if sort: self.outputSortedCorrelCSV(correlMatrix, pValue, nValue, cInt, freq, outputFilePtr=outputFilePtr)
         elif outputFormat == 'html':
             if (len(correlMatrix)>0):
                 header = '<head><meta charset="UTF-8"></head><br><br><div id="top"><a href="#feats">Features by alphabetical order</a>'
                 if sort: header += ' or see them <a href="#sorted">sorted by r-values</a>'
                 header += '<br><br></div>'
                 print(header, file=outputFilePtr)
-                self.outputCorrelMatrixHTML(fwc.reverseDictDict(correlMatrix), pValue, nValue, freq, outputFilePtr=outputFilePtr)
-                if sort: self.outputSortedCorrelHTML(correlMatrix, pValue, nValue, freq, outputFilePtr=outputFilePtr)
+                self.outputCorrelMatrixHTML(fwc.reverseDictDict(correlMatrix), pValue, nValue, cInt, freq, outputFilePtr=outputFilePtr)
+                if sort: self.outputSortedCorrelHTML(correlMatrix, pValue, nValue, cInt, freq, outputFilePtr=outputFilePtr)
         else:
             fwc.warn("unknown output format: %s"% outputFormat)
       
     @staticmethod    
-    def outputCorrelMatrixCSV(correlMatrix, pValue = True, nValue = True, freq=True, outputFilePtr = sys.stdout):
+    def outputCorrelMatrixCSV(correlMatrix, pValue = True, nValue = True, cInt=True, freq=True, outputFilePtr = sys.stdout):
         keys1 = sorted(list(correlMatrix.keys()), key = fwc.permaSortedKey)
         # keys2 = sorted(correlMatrix[keys1[0]].keys(), key = permaSortedKey)
         keys2 = set([j for i in list(correlMatrix.values()) for j in list(i.keys())])
@@ -1755,15 +1752,21 @@ class OutcomeAnalyzer(OutcomeGetter):
             titlerow.append(fwc.tupleToStr(key2))
             if pValue: titlerow.append('p')
             if nValue: titlerow.append('N')
+            if cInt:
+                titlerow.append('CI_l')
+                titlerow.append('CI_u')
             if freq: titlerow.append('freq')
         writer.writerow(titlerow)
         for key1 in keys1:
             row = [fwc.tupleToStr(key1)]
             for key2 in keys2:
-                (r, p, n, f) = correlMatrix[key1].get(key2, [0, 1, 0, 0])[:4]
+                (r, p, n, ci_l, ci_u, f) = correlMatrix[key1].get(key2, [0, 1, 0, 0])[:6]
                 row.append(r)
                 if pValue: row.append(p)
                 if nValue: row.append(n)
+                if cInt:
+                    row.append(ci_l)
+                    row.append(ci_u)
                 if freq: row.append(f)
             try:
                 writer.writerow(row)
@@ -1771,7 +1774,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 fwc.warn("Line contains unprintable unicode, skipped: %s" % row)
 
     @staticmethod
-    def outputSortedCorrelCSV(correlMatrix, pValue = True, nValue = True, freq=False, outputFilePtr = sys.stdout, topN=50):
+    def outputSortedCorrelCSV(correlMatrix, pValue = True, nValue = True, cInt = True, freq=False, outputFilePtr = sys.stdout, topN=50):
         """Ouputs a sorted correlation matrix (note correlmatrix is reversed from non-sorted) """
         #TODO: topN
         print("\nSORTED:", file=outputFilePtr)
@@ -1786,6 +1789,9 @@ class OutcomeAnalyzer(OutcomeGetter):
             titlerow.append('r')
             if pValue: titlerow.append('p')
             if nValue: titlerow.append('N')
+            if cInt: 
+                titlerow.append('CI_l')
+                titlerow.append('CI_u')
             if freq: titlerow.append('freq')
         writer = csv.writer(outputFilePtr)
         writer.writerow(titlerow)
@@ -1797,10 +1803,13 @@ class OutcomeAnalyzer(OutcomeGetter):
                 if rank < len(data):#print this keys rank item
                     data = data[rank]
                     row.append(fwc.tupleToStr(data[0])) #name of feature
-                    (r, p, n, f) = data[1][:4]
+                    (r, p, n, ci_l, ci_u, f) = data[1][:6]
                     row.append(r)
                     if pValue: row.append(p)
                     if nValue: row.append(n)
+                    if cInt:
+                        row.append(ci_l)
+                        row.append(ci_u)
                     if freq: row.append(f)
             try:
                 writer.writerow(row)
@@ -1813,6 +1822,9 @@ class OutcomeAnalyzer(OutcomeGetter):
             titlerow.append('r')
             if pValue: titlerow.append('p')
             if nValue: titlerow.append('N')
+            if cInt:
+                titlerow.append('CI_l')
+                titlerow.append('CI_u')
             if freq: titlerow.append('freq')
         writer = csv.writer(outputFilePtr)
         writer.writerow(titlerow)
@@ -1850,7 +1862,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     #HTML OUTPUTS:
     @staticmethod
-    def outputCorrelMatrixHTML(correlMatrix, pValue = True, nValue = True, freq=False, outputFilePtr = sys.stdout):
+    def outputCorrelMatrixHTML(correlMatrix, pValue = True, nValue = True, cInt = True, freq=False, outputFilePtr = sys.stdout):
         output="""<style media="screen" type="text/css">
                      table, th, td {border: 1px solid black;padding:2px;}
                      table {border-collapse:collapse;font:10pt verdana,arial,sans-serif;}
@@ -1875,6 +1887,9 @@ class OutcomeAnalyzer(OutcomeGetter):
             output += "<td><b>%s</b></td>" % fwc.tupleToStr(key2)
             if pValue: output += '<td class="sml"><em>(p)</em></td>'
             if nValue: output += '<td class="sml"><em>N</em></td>'
+            if cInt: 
+                output += '<td class="sml"><em>CI_l</em></td>'
+                output += '<td class="sml"><em>CI_u</em></td>'
             if freq and (key2 == lastKey2): output += '<td class="tny">freq</td>'
         output += "</tr>\n"
 
@@ -1882,7 +1897,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             output += "<tr><td><b>%s</b></td>" % fwc.tupleToStr(key1)
             ffreq = 0
             for key2 in keys2:
-                (r, p, n, f) = correlMatrix[key1].get(key2, [0, 1, 0, ffreq])[:4]
+                (r, p, n, ci_l, ci_u, f) = correlMatrix[key1].get(key2, [0, 1, 0, ffreq])[:6]
                 if not f: f = 0
                 if f: ffreq = f
                 
@@ -1910,6 +1925,9 @@ class OutcomeAnalyzer(OutcomeGetter):
                     output += "<td class='%s' style='background-color:%s;font-size:xx-small;border-left:0px;'><em>(%6.4f)</em></td>" % (fgclass, bgcolor, float(p))
                 if nValue:
                     output += "<td class='%s' style='background-color:%s;font-size:xx-small;border-left:0px;'><em>%s</em></td>" % (fgclass, bgcolor, str(n))
+                if cInt:
+                    output += "<td class='%s' style='background-color:%s;font-size:xx-small;border-left:0px;'><em>%6.4f</em></td>" % (fgclass, bgcolor, float(ci_l))
+                    output += "<td class='%s' style='background-color:%s;font-size:xx-small;border-left:0px;'><em>%6.4f</em></td>" % (fgclass, bgcolor, float(ci_u))
                 if freq and (key2 == lastKey2):
                     output += "<td class='tny'>%s</td>" % f
 
@@ -1920,7 +1938,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         print(output, file=outputFilePtr)
 
     @staticmethod
-    def outputSortedCorrelHTML(correlMatrix, pValue = True, nValue = True, freq=False, outputFilePtr = sys.stdout):
+    def outputSortedCorrelHTML(correlMatrix, pValue = True, nValue = True, cInt = True, freq=False, outputFilePtr = sys.stdout):
         output="""<style media="screen" type="text/css">
                      table, th, td {border: 1px solid black;padding:2px;}
                      table {border-collapse:collapse;font:10pt verdana,arial,sans-serif;}
@@ -1947,6 +1965,9 @@ class OutcomeAnalyzer(OutcomeGetter):
             pnf = []
             if pValue: pnf.append("<em>(p)</em>")
             if nValue: pnf.append("<em>N</em>")
+            if cInt:
+                pnf.append("<em>CI_l</em>")
+                pnf.append("<em>CI_u</em>")
             if freq: pnf.append("freq")
             if pnf:
                 if len(pnf) > 1:
@@ -1964,7 +1985,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 data = sortedData[key1]
                 if rank < len(data):#print this keys rank item
                     data = data[rank]
-                    (r, p, n, f) = data[1][:4]
+                    (r, p, n, ci_l, ci_u, f) = data[1][:6]
 
                     #Add colors based on values
                     fgclass = "fgsuperunsig"
@@ -1989,6 +2010,9 @@ class OutcomeAnalyzer(OutcomeGetter):
                     pnf = []
                     if pValue: pnf.append("<em>(%6.4f)</em>"%float(p))
                     if nValue: pnf.append("<em>%d</em>" % int(n))
+                    if cInt:
+                        pnf.append("<em>%6.4f</em>" % float(ci_l))
+                        pnf.append("<em>%6.4f</em>" % float(ci_u))
                     if freq: pnf.append(str(f))
                     if pnf:
                         output += "<td class='%s' style='background-color:%s;font-size:xx-small;border-left:0px;'>" %(fgclass, bgcolor)
@@ -2002,6 +2026,9 @@ class OutcomeAnalyzer(OutcomeGetter):
             pnf = []
             if pValue: pnf.append("<em>(p)</em>")
             if nValue: pnf.append("<em>N</em>")
+            if cInt:
+                pnf.append("<em>CI_l</em>")
+                pnf.append("<em>CI_u</em>")
             if freq: pnf.append("freq")
             if pnf:
                 if len(pnf) > 1:

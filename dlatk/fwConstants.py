@@ -13,7 +13,7 @@ from math import floor, log
 from numpy import sqrt, log2, array, mean, std, isnan, fabs, round
 from numpy.random import permutation
 import numpy as np
-from scipy.stats import zscore
+from scipy.stats import zscore, norm, t
 from sklearn.metrics import roc_auc_score
 from sklearn.linear_model import LogisticRegression
 import statsmodels.stats.multitest as mt
@@ -100,6 +100,7 @@ DEF_P_MAPPING = { # maps old R method names to statsmodel names
         "fdr_tsbh": "fdr_tsbh", 
         "fdr_tsbky": "fdr_tsbky", 
     }
+DEF_CONF_INT = 0.95
 
 ##Prediction Settings:
 DEF_MODEL = 'ridgecv'
@@ -321,6 +322,12 @@ def pCorrection(pDict, method=DEF_P_CORR, pLevelsSimes=[0.05, 0.01, 0.001], rDic
             new_pDict[key] = pvals_corrected[i]
             i+=1
     return new_pDict
+
+def conf_interval(pearson_r, samp_size, percent=DEF_CONF_INT):
+    z = np.arctanh(pearson_r)
+    sigma = (1/((samp_size-3)**0.5))
+    cint = z + np.array([-1, 1]) * sigma * norm.ppf((1+percent)/2)
+    return np.tanh(cint)
 
 newlines = re.compile(r'\s*\n\s*')
 

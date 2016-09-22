@@ -85,6 +85,7 @@ This is the actual LDA step, which might take a while (4 days and a half on 20 m
 Here **alpha** is a prior on he number of topics per document. The other hyper-parameter **beta** (which we usually do not change) is a prior on the number of words per topic.
 
 This creates the following files:
+
 * 
 
 *Note*: When dealing with giant sets of data, for example creating Facebook topics, one might encounter the error **Exception in thread "main" java.lang.OutOfMemoryError: Java heap space**. You must edit the following line in **~/Mallet/bin/mallet**: *MEMORY=1g*. You can then change the 1g value upwards – to 2g, 4g, or even higher depending on your system’s RAM, which you can find out by looking up the machine’s system information.
@@ -95,7 +96,7 @@ Adds the message ID’s to the topic distributions and stores the result in lda_
 
 .. code-block:: bash
 
-	python dlatk/LexicaInterface/addMessageID.py ~/lda_tutorial/msgs_lda.txt ~/lda_tutorial/msgs_lda_state.gz > ~/lda_tutorial/lda_topics
+	./dlatkInterface.py --add_message_id ~/lda_tutorial/msgs_lda.txt ~/lda_tutorial/msgs_lda_state.gz --output_name ~/lda_tutorial/lda_topics
 
 Step 7: Import state file into database
 ---------------------------------------

@@ -323,11 +323,12 @@ def pCorrection(pDict, method=DEF_P_CORR, pLevelsSimes=[0.05, 0.01, 0.001], rDic
             i+=1
     return new_pDict
 
-def conf_interval(pearson_r, samp_size, percent=DEF_CONF_INT):
-    z = np.arctanh(pearson_r)
+def conf_interval(r, samp_size, percent=DEF_CONF_INT):
+    """calculates two sided confidence interval for pearson correlation coefficient (r)"""
+    z = np.arctanh(r)
     sigma = (1/((samp_size-3)**0.5))
     cint = z + np.array([-1, 1]) * sigma * norm.ppf((1+percent)/2)
-    return np.tanh(cint)
+    return tuple(np.tanh(cint))
 
 newlines = re.compile(r'\s*\n\s*')
 

@@ -1098,11 +1098,11 @@ def main(fn_args = None):
                 correls.update({"["+k+"]_0": v for k, v in correls_0.items()})
 
         elif args.IDP:        
-            correls = oa.IDP_correlate(fg, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs,blacklist=blacklist, whitelist=whitelist ) 
+            correls = oa.IDP_correlate(fg, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs, blacklist=blacklist, whitelist=whitelist ) 
         elif args.zScoreGroup:
             correls = oa.zScoreGroup(fg, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs, blacklist=blacklist, whitelist=whitelist)
         elif args.auc:     
-            correls = oa.aucWithFeatures(fg, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs,blacklist=blacklist, whitelist=whitelist, bootstrapP = args.bootstrapp, groupsWhere=args.groupswhere) 
+            correls = oa.aucWithFeatures(fg, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs, blacklist=blacklist, whitelist=whitelist, bootstrapP = args.bootstrapp, groupsWhere=args.groupswhere) 
         else:
             correls = oa.correlateWithFeatures(fg, args.spearman, args.p_correction_method, args.outcomeinteraction, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly, logisticReg=args.logisticReg, outputInteraction=args.outputInteractionTerms, groupsWhere=args.groupswhere)
         if args.topicdupefilter:#remove duplicate topics (keeps those correlated more strongly)
@@ -1168,7 +1168,7 @@ def main(fn_args = None):
             cnt = 0
             for featR in featRs.items():
                 if featR[1][1] < args.maxP: cnt +=1 
-            pprint(sorted(list(featRs.items()), key= lambda f: f[1] if not isnan(f[1][0]) else 0))
+            pprint(sorted(list(featRs.items()), key= lambda f: f[1] if not isnan(f[1][0]) else 0),depth=3, compact=True)
             print("\n%d features significant at p < %s" % (cnt, args.maxP))
 
     if args.rmatrix and not args.cca: 

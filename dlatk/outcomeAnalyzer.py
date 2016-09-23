@@ -393,7 +393,8 @@ class OutcomeAnalyzer(OutcomeGetter):
         return correls
 
     def correlateWithFeatures(self, featGetter, spearman = False, p_correction_method = 'BH', interaction = None, 
-                              blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False, outcomeWithOutcomeOnly = False, zscoreRegression = True, logisticReg = False, outputInteraction = False, groupsWhere = ''):
+                              blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False, outcomeWithOutcomeOnly = False, 
+                              zscoreRegression = True, logisticReg = False, outputInteraction = False, groupsWhere = ''):
         """Finds the correlations between features and outcomes"""
         
         correls = dict() #dict of outcome=>feature=>(R, p, numGroups, featFreqs)
@@ -435,7 +436,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                             else:
                                 results = sm.OLS(y, X).fit() #runs regression
                             conf = fwc.conf_interval(results.params[-1], len(y))
-                            tup = (results.params[-1], results.pvalues[-1], len(y)) + tuple(conf)
+                            tup = (results.params[-1], results.pvalues[-1], len(y), conf)
 
                             print(results.summary(outcomeField, sorted(controls.keys())))#debug
                         except (ValueError, Exception) as err:
@@ -478,7 +479,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                         else:
                             results = sm.OLS(y, X).fit() #runs regression
                         conf = fwc.conf_interval(results.params[-1], len(y))
-                        tup = (results.params[-1], results.pvalues[-1], len(y)) + tuple(conf)
+                        tup = (results.params[-1], results.pvalues[-1], len(y), conf)
 
                         if outputInteraction:
                             interaction_tuples = {}
@@ -500,15 +501,15 @@ class OutcomeAnalyzer(OutcomeGetter):
                     if spearman: tup = spearmanr(dataList, outcomeList) + (len(dataList),)
                     else: tup = pearsonr(dataList, outcomeList) + (len(dataList),)
                     conf = fwc.conf_interval(tup[0], tup[2])
-                    tup = tup + tuple(conf)
+                    tup = tup + conf
                 if not tup or not tup[0]:
                     fwc.warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
                     if includeFreqs: tup = (float('nan'), float('nan'), len(y), float('nan'), float('nan'), 0)
-                    else: tup = (float('nan'), float('nan'), len(y), float('nan'), float('nan'))
+                    else: tup = (float('nan'), float('nan'), len(y), (float('nan'), float('nan')))
                 else: 
                     if p_correction_method.startswith("bonf"):
                         tup = fwc.bonfPCorrection(tup, numFeats)
-                        if outputInteraction: interaction_tuples = {k: (v[0], v[1]*numFeats) + v[2:] for k, v in interaction_tuples.items()} 
+                        if outputInteraction: interaction_tuples = {k: fwc.bonfPCorrection(v, numFeats) + v[2:] for k, v in interaction_tuples.items()} 
                     if includeFreqs:
                         try:
                             tup = tup + (int(featFreqs[feat]), )
@@ -1760,13 +1761,13 @@ class OutcomeAnalyzer(OutcomeGetter):
         for key1 in keys1:
             row = [fwc.tupleToStr(key1)]
             for key2 in keys2:
-                (r, p, n, ci_l, ci_u, f) = correlMatrix[key1].get(key2, [0, 1, 0, 0])[:6]
+                (r, p, n, ci, f) = correlMatrix[key1].get(key2, [0, 1, 0, 0])[:5]
                 row.append(r)
                 if pValue: row.append(p)
                 if nValue: row.append(n)
                 if cInt:
-                    row.append(ci_l)
-                    row.append(ci_u)
+                    row.append(ci[0])
+                    row.append(ci[1])
                 if freq: row.append(f)
             try:
                 writer.writerow(row)
@@ -1803,13 +1804,13 @@ class OutcomeAnalyzer(OutcomeGetter):
                 if rank < len(data):#print this keys rank item
                     data = data[rank]
                     row.append(fwc.tupleToStr(data[0])) #name of feature
-                    (r, p, n, ci_l, ci_u, f) = data[1][:6]
+                    (r, p, n, ci, f) = data[1][:5]
                     row.append(r)
                     if pValue: row.append(p)
                     if nValue: row.append(n)
                     if cInt:
-                        row.append(ci_l)
-                        row.append(ci_u)
+                        row.append(ci[0])
+                        row.append(ci[1])
                     if freq: row.append(f)
             try:
                 writer.writerow(row)
@@ -1897,7 +1898,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             output += "<tr><td><b>%s</b></td>" % fwc.tupleToStr(key1)
             ffreq = 0
             for key2 in keys2:
-                (r, p, n, ci_l, ci_u, f) = correlMatrix[key1].get(key2, [0, 1, 0, ffreq])[:6]
+                (r, p, n, ci, f) = correlMatrix[key1].get(key2, [0, 1, 0, ffreq])[:5]
                 if not f: f = 0
                 if f: ffreq = f
                 
@@ -1926,8 +1927,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                 if nValue:
                     output += "<td class='%s' style='background-color:%s;font-size:xx-small;border-left:0px;'><em>%s</em></td>" % (fgclass, bgcolor, str(n))
                 if cInt:
-                    output += "<td class='%s' style='background-color:%s;font-size:xx-small;border-left:0px;'><em>%6.4f</em></td>" % (fgclass, bgcolor, float(ci_l))
-                    output += "<td class='%s' style='background-color:%s;font-size:xx-small;border-left:0px;'><em>%6.4f</em></td>" % (fgclass, bgcolor, float(ci_u))
+                    output += "<td class='%s' style='background-color:%s;font-size:xx-small;border-left:0px;'><em>%6.4f</em></td>" % (fgclass, bgcolor, float(ci[0]))
+                    output += "<td class='%s' style='background-color:%s;font-size:xx-small;border-left:0px;'><em>%6.4f</em></td>" % (fgclass, bgcolor, float(ci[1]))
                 if freq and (key2 == lastKey2):
                     output += "<td class='tny'>%s</td>" % f
 
@@ -1985,7 +1986,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 data = sortedData[key1]
                 if rank < len(data):#print this keys rank item
                     data = data[rank]
-                    (r, p, n, ci_l, ci_u, f) = data[1][:6]
+                    (r, p, n, ci, f) = data[1][:5]
 
                     #Add colors based on values
                     fgclass = "fgsuperunsig"
@@ -2011,8 +2012,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                     if pValue: pnf.append("<em>(%6.4f)</em>"%float(p))
                     if nValue: pnf.append("<em>%d</em>" % int(n))
                     if cInt:
-                        pnf.append("<em>%6.4f</em>" % float(ci_l))
-                        pnf.append("<em>%6.4f</em>" % float(ci_u))
+                        pnf.append("<em>%6.4f</em>" % float(ci[0]))
+                        pnf.append("<em>%6.4f</em>" % float(ci[1]))
                     if freq: pnf.append(str(f))
                     if pnf:
                         output += "<td class='%s' style='background-color:%s;font-size:xx-small;border-left:0px;'>" %(fgclass, bgcolor)

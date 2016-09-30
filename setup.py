@@ -55,7 +55,7 @@ This package offers end to end text analysis: feature extraction, correlation,
 mediation and prediction / classification. For more information please visit:
 
   * http://dlatk.wwbp.org
-  * https://www.github.com/wwbp/dlatk
+  * https://www.github.com/dlatk/dlatk
   * http://wwbp.org
 
 CONTACT
@@ -124,8 +124,8 @@ if __name__ == "__main__":
   # setup(name=DISTNAME,
   #     author=AUTHOR,
   #     author_email=EMAIL, 
-  #     maintainer=MAINTAINER,
-  #     maintainer_email=MAINTAINER_EMAIL,
+  #     #maintainer=MAINTAINER,
+  #     #maintainer_email=MAINTAINER_EMAIL,
   #     version=VERSION,
   #     packages=PACKAGES,
   #     package_data=PACKAGE_DATA,

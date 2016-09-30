@@ -28,6 +28,15 @@ from .mysqlMethods import mysqlMethods as mm
 class OutcomeAnalyzer(OutcomeGetter):
     """Deals with outcome tables"""
 
+    # correl indices
+    r_idx = 0
+    p_idx = 1 
+    n_idx = 2
+    ci_idx = 3
+    freq_idx = 4
+    correls_length = 5
+
+
     @classmethod
     def fromFile(cls, initFile):
         """load variables from file"""
@@ -397,7 +406,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                               zscoreRegression = True, logisticReg = False, outputInteraction = False, groupsWhere = ''):
         """Finds the correlations between features and outcomes"""
         
-        correls = dict() #dict of outcome=>feature=>(R, p, numGroups, featFreqs)
+        correls = dict() #dict of outcome=>feature=>(R, p, numGroups, (conf_int), featFreqs)
         numRed = 0
         
         firstLoop = True
@@ -500,11 +509,11 @@ class OutcomeAnalyzer(OutcomeGetter):
                              
                     if spearman: tup = spearmanr(dataList, outcomeList) + (len(dataList),)
                     else: tup = pearsonr(dataList, outcomeList) + (len(dataList),)
-                    conf = fwc.conf_interval(tup[0], tup[2])
+                    conf = fwc.conf_interval(tup[self.r_idx], tup[self.n_idx])
                     tup = tup + conf
-                if not tup or not tup[0]:
+                if not tup or not tup[self.r_idx]:
                     fwc.warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
-                    if includeFreqs: tup = (float('nan'), float('nan'), len(y), float('nan'), float('nan'), 0)
+                    if includeFreqs: tup = (float('nan'), float('nan'), len(y), (float('nan'), float('nan')), 0)
                     else: tup = (float('nan'), float('nan'), len(y), (float('nan'), float('nan')))
                 else: 
                     if p_correction_method.startswith("bonf"):
@@ -544,11 +553,11 @@ class OutcomeAnalyzer(OutcomeGetter):
         if p_correction_method and not p_correction_method.startswith("bonf"): 
             ##change correls here. 
             for outcomeField, featCorrels in correls.items():
-                pDict = dict( [(k, tup[1]) for k, tup in featCorrels.items()] ) 
-                rDict = dict( [(k, tup[0]) for k, tup in featCorrels.items()] ) 
+                pDict = dict( [(k, tup[self.p_idx]) for k, tup in featCorrels.items()] ) 
+                rDict = dict( [(k, tup[self.r_idx]) for k, tup in featCorrels.items()] ) 
                 pDict = fwc.pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
                 for k, tup in featCorrels.items():
-                    featCorrels[k] = (tup[0], pDict[k]) + tup[2:]
+                    featCorrels[k] = (tup[self.r_idx], pDict[k]) + tup[self.n_idx:]
 
         if self.featureMapping:
             newCorrels = dict()
@@ -1207,8 +1216,8 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         for outcomeField, rs in sorted(correls.items()):
             sigRs = dict()
-            posRs = [(k, v) for k, v in rs.items() if v[0] > 0]
-            negRs = [(k, (float(-1*v[0]),) + v[1:]) for k, v in rs.items() if v[0] < 0]
+            posRs = [(k, v) for k, v in rs.items() if v[self.r_idx] > 0]
+            negRs = [(k, (float(-1*v[self.r_idx]),) + v[1:]) for k, v in rs.items() if v[self.r_idx] < 0]
 
             keepList = self.getTopicKeepList(posRs, topicWords, filterThresh)
             keepList = keepList | self.getTopicKeepList(negRs, topicWords, filterThresh)
@@ -1224,7 +1233,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         usedWordSets = list() # a list of sets of topic words
         keptTopics = set()
         for (topic, rf) in rList:
-            (r, p, n, freq) = rf
+            (r, p, n, ci, freq) = rf
             tw = topicWords.get(topic)
             if not tw: 
                 fwc.warn("**The following topic had no words from the topic lexicion**")
@@ -1241,7 +1250,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 keptTopics.add(topic)
             if freq < 1000:
                 fwc.warn("**The frequency for this topic was very small**")
-                fwc.warn("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, Freq: %d]\n" % (topic, r, p, n, freq))
+                fwc.warn("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, CI: (%.4f,%.4f), Freq: %d]\n" % (topic, r, p, n, ci[0], ci[1], freq))
 
         return keptTopics
 
@@ -1264,22 +1273,22 @@ class OutcomeAnalyzer(OutcomeGetter):
             sigRs = dict()
             # for k, v in sorted(rs.items(), key = lambda r: abs(r[1][0]) if not isnan(r[1][0]) else 0, reverse=True):
             for k, v in rs.items():
-                if v[1] < maxP:
+                if v[self.p_idx] < maxP:
                     sigRs[k] = v
                 # else:
                 #     break            
-            posRs = [(k, v) for k, v in sigRs.items() if v[0] > 0]
-            negRs = [(k, (float(-1*v[0]),) + v[1:]) for k, v in sigRs.items() if v[0] < 0]
+            posRs = [(k, v) for k, v in sigRs.items() if v[self.r_idx] > 0]
+            negRs = [(k, (float(-1*v[self.r_idx]),) + v[1:]) for k, v in sigRs.items() if v[self.r_idx] < 0]
             if duplicateFilter:
                 if not wordFreqs: 
-                    wordFreqs = dict( [(w, v[3]) for (w, v) in list(rs.items()) if not ' ' in w] ) #word->freq dict
+                    wordFreqs = dict( [(w, v[self.freq_idx]) for (w, v) in list(rs.items()) if not ' ' in w] ) #word->freq dict
                 if posRs: 
-                    if len(posRs[0][1]) < 3:
+                    if len(posRs[0][1]) < self.correls_length - 1:
                         fwc.warn("printTagCloudData: not enough data or duplicateFilter option, skipping filter for %s posRs\n"%outcomeField)
                     else:
                         posRs = OutcomeAnalyzer.duplicateFilter(posRs, wordFreqs, maxWords * 3)
                 if negRs: 
-                    if len(negRs[0][1]) < 3:
+                    if len(negRs[0][1]) < self.correls_length - 1:
                         fwc.warn("printTagCloudData: not enough data or duplicateFilter option, skipping filter for %s negRs\n"%outcomeField)
                     else:
                         negRs = OutcomeAnalyzer.duplicateFilter(negRs, wordFreqs, maxWords * 3)
@@ -1337,13 +1346,13 @@ class OutcomeAnalyzer(OutcomeGetter):
         for outcomeField, rs in sorted(correls.items()):
             print("\n==============================\nTopic Tag Cloud Data for %s\n--------------------------------" % outcomeField)
             sigRs = dict()
-            for k, v in sorted(list(rs.items()), key = lambda r: abs(r[1][0]) if not isnan(r[1][0]) else 0, reverse=True):
-                if v[1] < maxP:
+            for k, v in sorted(list(rs.items()), key = lambda r: abs(r[1][self.r_idx]) if not isnan(r[1][self.r_idx]) else 0, reverse=True):
+                if v[self.p_idx] < maxP:
                     sigRs[k] = v
                 else:
                     break            
-            posRs = [(k, v) for k, v in sigRs.items() if v[0] > 0]
-            negRs = [(k, (float(-1*v[0]),) + v[1:]) for k, v in sigRs.items() if v[0] < 0]
+            posRs = [(k, v) for k, v in sigRs.items() if v[self.r_idx] > 0]
+            negRs = [(k, (float(-1*v[self.r_idx]),) + v[1:]) for k, v in sigRs.items() if v[self.r_idx] < 0]
 
             print("PositiveRs:\n------------")
             if colorScheme == 'bluered':
@@ -1387,17 +1396,17 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     @staticmethod
     def printTopicListTagCloudFromTuples(rs, topicWords, maxWords = 25, maxTopics = 40, duplicateFilter = False, wordFreqs = None, filterThresh = 0.25, colorScheme='multi', use_unicode=True):
-        rList = sorted(rs, key= lambda f: abs(f[1][0]) if not isnan(f[1][0]) else 0, reverse=True)[:maxTopics]
+        rList = sorted(rs, key= lambda f: abs(f[1][OutcomeAnalyzer.r_idx]) if not isnan(f[1][OutcomeAnalyzer.r_idx]) else 0, reverse=True)[:maxTopics]
         usedWordSets = list() # a list of sets of topic words
         for (topic, rf) in rList:
             print("\n")
-            (r, p, n, freq) = rf
+            (r, p, n, ci, freq) = rf
             #print >> sys.stderr, topic
             # list of words per topic
             tw = topicWords.get(topic)
             if not tw: 
                 print("**The following topic had no words from the topic lexicion**")
-                print(("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, Freq: %d]" % (topic, r, p, n, freq)).decode("utf-8"))
+                print(("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, CI: (%.4f, %.4f), Freq: %d]" % (topic, r, p, n, ci[0], ci[1], freq)).decode("utf-8"))
                 continue
             if duplicateFilter:
                 currentWords = set([t[0] for t in tw])
@@ -1414,10 +1423,10 @@ class OutcomeAnalyzer(OutcomeGetter):
             if freq < 2000:
                 print("**The frequency for this topic is too small**")
 
-            print("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, Freq: %d]" % (topic, r, p, n, freq))
+            print("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, CI: (%.3f, %.3f), Freq: %d]" % (topic, r, p, n, ci[0], ci[1], freq))
             # if using 1gram words and frequencies
             # (r, p, n, freq) belong to the category only
-            tw = [(w_f[0], (w_f[1], p, n, w_f[1])) for w_f in tw] if not wordFreqs else [(w_f1[0], (w_f1[1]*float(wordFreqs[w_f1[0]]), p, n, wordFreqs[w_f1[0]])) for w_f1 in tw]
+            tw = [(w_f[0], (w_f[1], p, n, ci, w_f[1])) for w_f in tw] if not wordFreqs else [(w_f1[0], (w_f1[1]*float(wordFreqs[w_f1[0]]), p, n, ci, wordFreqs[w_f1[0]])) for w_f1 in tw]
             OutcomeAnalyzer.printTagCloudFromTuples(tw, maxWords, rankOrderR = True, colorScheme=colorScheme, use_unicode=use_unicode)
 
         # pprint(topicWords)
@@ -1444,14 +1453,14 @@ class OutcomeAnalyzer(OutcomeGetter):
         if len(rList) < 3:
             print("rList has less than 3 items\n")
             return False
-        rList = sorted(rList, key= lambda f: abs(f[1][0]) if not isnan(f[1][0]) else 0, reverse=True)[:maxWords]
+        rList = sorted(rList, key= lambda f: abs(f[1][OutcomeAnalyzer.r_idx]) if not isnan(f[1][OutcomeAnalyzer.r_idx]) else 0, reverse=True)[:maxWords]
 
-        maxR = rList[0][1][0]
-        minR = rList[-1][1][0]
+        maxR = rList[0][1][OutcomeAnalyzer.r_idx]
+        minR = rList[-1][1][OutcomeAnalyzer.r_idx]
         diff = float(maxR - minR)
         smallDataBump = max((maxWords - len(rList)), 15)
         #TODO: use freqs
-        rList = [(w, int(((v[0]-minR)/diff)*maxWords) + smallDataBump) for w, v in rList]
+        rList = [(w, int(((v[OutcomeAnalyzer.r_idx]-minR)/diff)*maxWords) + smallDataBump) for w, v in rList]
 
         (w, occ) = list(zip(*rList))
         #pickle.dump((rList, w, occ), open("DBG3", "wb"))
@@ -1530,23 +1539,23 @@ class OutcomeAnalyzer(OutcomeGetter):
         if len(rList) < 1:
             print("rList has less than no items\n")
             return False
-        rList = sorted(rList, key= lambda f: abs(f[1][0]) if not isnan(f[1][0]) else 0, reverse=True)[:maxWords]
+        rList = sorted(rList, key= lambda f: abs(f[1][OutcomeAnalyzer.r_idx]) if not isnan(f[1][OutcomeAnalyzer.r_idx]) else 0, reverse=True)[:maxWords]
         if rankOrderR:
             for i in range(len(rList)):
                 newValues = rList[i]
                 newValues = (newValues[0], ((maxWords - i),) + newValues[1][1:])
                 rList[i] = newValues
 
-        maxR = rList[0][1][0]
-        minR = rList[-1][1][0]
+        maxR = rList[0][1][OutcomeAnalyzer.r_idx]
+        minR = rList[-1][1][OutcomeAnalyzer.r_idx]
         diff = float(maxR - minR)
         if diff == 0: diff = 0.000001
         smallDataBump = max((maxWords - len(rList)), 10)
-        if rankOrderFreq and len(rList[0][1]) > 3:
-            sortedFreqs = sorted([v[3] for (w, v) in rList])
-            rList = [(w, int(((v[0]-minR)/diff)*maxWords) + smallDataBump, (1+sortedFreqs.index(v[3]))) for (w, v) in rList]
+        if rankOrderFreq and len(rList[0][1]) > OutcomeAnalyzer.correls_length - 1:
+            sortedFreqs = sorted([v[OutcomeAnalyzer.freq_idx] for (w, v) in rList])
+            rList = [(w, int(((v[OutcomeAnalyzer.r_idx]-minR)/diff)*maxWords) + smallDataBump, (1+sortedFreqs.index(v[OutcomeAnalyzer.freq_idx]))) for (w, v) in rList]
         else:
-            rList = [(w, int(((v[0]-minR)/diff)*maxWords) + smallDataBump, v[3] if len(v) > 3 else None) for (w, v) in rList]
+            rList = [(w, int(((v[OutcomeAnalyzer.r_idx]-minR)/diff)*maxWords) + smallDataBump, v[OutcomeAnalyzer.freq_idx] if len(v) > correls_length - 1 else None) for (w, v) in rList]
 
         maxFreq = 0
         if rList[0][2]:
@@ -1577,12 +1586,12 @@ class OutcomeAnalyzer(OutcomeGetter):
     def duplicateFilter(rList, wordFreqs, maxToCheck = 100):
         #maxToCheck, will stop checking after this many in order to speed up operation
 
-        sortedList = sorted(rList, key= lambda f: abs(f[1][0]) if not isnan(f[1][0]) else 0, reverse=True)[:maxToCheck]
+        sortedList = sorted(rList, key= lambda f: abs(f[1][OutcomeAnalyzer.r_idx]) if not isnan(f[1][OutcomeAnalyzer.r_idx]) else 0, reverse=True)[:maxToCheck]
         usedWords = set()
         newList = []
         # pprint(('before filter', sortedList))#debug
         for (phrase, v) in sortedList:
-            (r, sig, groups, phraseFreq) = v
+            (r, sig, groups, ci, phraseFreq) = v
             words = phrase.split(' ')
 
             # check for keeping:
@@ -1658,9 +1667,9 @@ class OutcomeAnalyzer(OutcomeGetter):
         maxWords = 150
         for outcomeField, rs in correls.items():
             sigRs = dict()
-            for k, v in sorted(list(rs.items()), key = lambda r: abs(r[0]) if not isnan(r[0]) else 0, reverse=True):
-                if v[1] < maxP:
-                    sigRs[k] = v[0]
+            for k, v in sorted(list(rs.items()), key = lambda r: abs(r[self.r_idx]) if not isnan(r[self.r_idx]) else 0, reverse=True):
+                if v[self.p_idx] < maxP:
+                    sigRs[k] = v[self.r_idx]
                 else:
                     break            
             posRs = [(k, v) for k, v in sigRs.items() if v > 0]
@@ -1677,7 +1686,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         if len(rList) < 3:
             print("rList has less than 3 items\n")
             return False
-        rList = sorted(rList, key= lambda f: abs(f[0]) if not isnan(f[0]) else 0, reverse=True)[:maxWords]
+        rList = sorted(rList, key= lambda f: abs(f[self.r_idx]) if not isnan(f[self.r_idx]) else 0, reverse=True)[:maxWords]
 
         maxR = rList[0][1]
         minR = rList[-1][1]
@@ -1761,7 +1770,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         for key1 in keys1:
             row = [fwc.tupleToStr(key1)]
             for key2 in keys2:
-                (r, p, n, ci, f) = correlMatrix[key1].get(key2, [0, 1, 0, 0])[:5]
+                (r, p, n, ci, f) = correlMatrix[key1].get(key2, [0, 1, 0, (0,0), 0])[:OutcomeAnalyzer.correls_length]
                 row.append(r)
                 if pValue: row.append(p)
                 if nValue: row.append(n)
@@ -1784,7 +1793,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         titlerow = ['rank']
         maxLen = 0
         for key1 in keys1:
-            sortedData[key1] = sorted(list(correlMatrix[key1].items()), key=lambda k_v: (-1*float(k_v[1][0]) if not isnan(float(k_v[1][0])) else 0, k_v[0]))
+            sortedData[key1] = sorted(list(correlMatrix[key1].items()), key=lambda k_v: (-1*float(k_v[1][OutcomeAnalyzer.r_idx]) if not isnan(float(k_v[1][OutcomeAnalyzer.r_idx])) else 0, k_v[0]))
             if len(sortedData[key1]) > maxLen: maxLen = len(sortedData[key1])
             titlerow.append(key1)
             titlerow.append('r')
@@ -1804,7 +1813,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 if rank < len(data):#print this keys rank item
                     data = data[rank]
                     row.append(fwc.tupleToStr(data[0])) #name of feature
-                    (r, p, n, ci, f) = data[1][:5]
+                    (r, p, n, ci, f) = data[1][:OutcomeAnalyzer.correls_length]
                     row.append(r)
                     if pValue: row.append(p)
                     if nValue: row.append(n)
@@ -1898,7 +1907,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             output += "<tr><td><b>%s</b></td>" % fwc.tupleToStr(key1)
             ffreq = 0
             for key2 in keys2:
-                (r, p, n, ci, f) = correlMatrix[key1].get(key2, [0, 1, 0, ffreq])[:5]
+                (r, p, n, ci, f) = correlMatrix[key1].get(key2, [0, 1, 0, (0,0), ffreq])[:OutcomeAnalyzer.correls_length]
                 if not f: f = 0
                 if f: ffreq = f
                 
@@ -1959,7 +1968,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         maxLen = 0
         output += "<tr><td><b>rank</b></td>"
         for key1 in keys1:
-            sortedData[key1] = sorted(iter(correlMatrix[key1].items()), key=lambda k_v2: (-1*float(k_v2[1][0]) if not isnan(float(k_v2[1][0])) else 0, k_v2[0]))
+            sortedData[key1] = sorted(iter(correlMatrix[key1].items()), key=lambda k_v2: (-1*float(k_v2[1][OutcomeAnalyzer.r_idx]) if not isnan(float(k_v2[1][OutcomeAnalyzer.r_idx])) else 0, k_v2[0]))
             if len(sortedData[key1]) > maxLen: maxLen = len(sortedData[key1])
             output += "<td><b>%s<br/>r</b></td>"%fwc.tupleToStr(key1)
 
@@ -1986,7 +1995,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 data = sortedData[key1]
                 if rank < len(data):#print this keys rank item
                     data = data[rank]
-                    (r, p, n, ci, f) = data[1][:5]
+                    (r, p, n, ci, f) = data[1][:OutcomeAnalyzer.correls_length]
 
                     #Add colors based on values
                     fgclass = "fgsuperunsig"
@@ -2061,7 +2070,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         for feat, outcomeCoeffs in coeffs.items():
             keep = False
             for outcomeName, values in outcomeCoeffs.items():
-                if values[1] <= maxP:
+                if values[self.p_idx] <= maxP:
                     keep = True
                     break
             if keep:
@@ -2091,7 +2100,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         for feat, outcomeCoeffs in coeffs.items():
             keep = False
             for outcomeName, values in outcomeCoeffs.items():
-                if values[1] <= maxP:
+                if values[self.p_idx] <= maxP:
                     keep = True
                     break
             if keep:
@@ -2111,7 +2120,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                         fwc.warn('ngram [%s] skipped because it had a tab in it' % (ngram, ))
                         continue
                     # linedata has: ngram, outcome_1_r, outcome_2_r, ... outcome_n_r, outcome_1_pValue, outcome_2_pValue, ... outcome_n_pValue, num_users, ngram_frequency
-                    linedata = [ngram] + list([outcomeDict[x][0] for x in outcomes]) + list([outcomeDict[x][1] for x in outcomes]) + list(outcomeDict[outcomes[0]][2:4])
+                    linedata = [ngram] + list([outcomeDict[x][self.r_idx] for x in outcomes]) + list([outcomeDict[x][self.p_idx] for x in outcomes]) + list(outcomeDict[outcomes[0]][self.n_idx:4])
                     line = '\t'.join(map(str, linedata)) + '\n'
                     gf.write(line)
                     print(line)

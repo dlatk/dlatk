@@ -29,7 +29,7 @@ MYSQL_ERROR_SLEEP = 4 #number of seconds to wait before trying a query again (in
 MYSQL_BATCH_INSERT_SIZE = 10000 # how many rows are inserted into mysql at a time
 MYSQL_HOST = '127.0.0.1'
 VARCHAR_WORD_LENGTH = 36 #length to allocate var chars per words
-LOWERCASE_ONLY = 1#if the db is case insensitive, set to 1
+LOWERCASE_ONLY = True #if the db is case insensitive, set to True
 MAX_TO_DISABLE_KEYS = 50000 #number of groups * n must be less than this to disable keys
 MAX_SQL_PRINT_CHARS = 256
 

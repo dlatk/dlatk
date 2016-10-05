@@ -337,6 +337,8 @@ def main(fn_args = None):
     group.add_argument('--add_char_ngrams', action='store_true', dest='addcharngrams',
                        help='add a character n-gram feature table. (uses: n, can flag: sqrt), gzip_csv'
                        'can be used with or without --use_collocs')
+    group.add_argument('--no_lower', action='store_false', dest='lowercaseonly', default=fwc.LOWERCASE_ONLY,
+                       help='')
     
     group.add_argument('--add_lex_table', action='store_true', dest='addlextable',
                        help='add a lexicon-based feature table. (uses: l, weighted_lexicon, can flag: anscombe).')
@@ -743,7 +745,7 @@ def main(fn_args = None):
 
         ftables = list()
         for n in args.n:
-            ftables.append(fe.addCharNGramTable(n, valueFunc = args.valuefunc, metaFeatures = args.metafeats))
+            ftables.append(fe.addCharNGramTable(n, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc, metaFeatures = args.metafeats))
         if len(ftables) > 1:
             args.feattable = ftables;
         else:

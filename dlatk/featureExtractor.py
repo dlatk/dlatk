@@ -851,13 +851,15 @@ class FeatureExtractor(FeatureWorker):
         return featureTableName
     
     
-    def addCharNGramTable(self, n, min_freq=1, tableName = None, valueFunc = lambda d: d, metaFeatures = True):
+    def addCharNGramTable(self, n, lowercase_only=fwc.LOWERCASE_ONLY, min_freq=1, tableName = None, valueFunc = lambda d: d, metaFeatures = True):
         """???
 
         Parameters
         ----------
         n : int
             ?????
+        lowercase_only : boolean
+            use only lowercase charngrams if True
         min_freq : :obj:`int`, optional
             ?????
         tableName : :obj:`str`, optional
@@ -930,7 +932,7 @@ class FeatureExtractor(FeatureWorker):
                         gram = ' '.join(words[i:i+n])
                         #truncate:
                         gram = gram[:varcharLength]
-                        if fwc.LOWERCASE_ONLY: gram = gram.lower()
+                        if lowercase_only: gram = gram.lower()
 
                         try:
                             freqs[gram] += 1

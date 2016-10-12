@@ -388,6 +388,9 @@ def main(fn_args = None):
                        help='add flesch-kincaid scores, averaged per group.')
     group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
+    group.add_argument('--language_filter', '--lang_filter',  type=str, metavar='FIELD(S)', dest='langfilter', nargs='+', default=[],
+                       help='Filter message table for list of languages.')
+    group.add_argument('--clean_messages', dest='cleanmessages', action = 'store_true', help="Remove URLs, hashtags and @ mentions from messages")
 
     group = parser.add_argument_group('LDA Helper Actions', '')
     group.add_argument('--add_message_id', type=str, nargs=2, dest='addmessageid',
@@ -837,6 +840,10 @@ def main(fn_args = None):
     if args.addldamsgs:
         if not fe: fe = FE()
         fe.addLDAMessages(args.addldamsgs)
+
+    if args.langfilter:
+        if not fe: fe = FE()
+        fe.addLanguageFilterTable(args.langfilter, args.cleanmessages, args.lowercaseonly)
 
     if args.addmessageid:
         messageFile=open(args.addmessageid[0], 'rb')

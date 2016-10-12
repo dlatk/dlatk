@@ -13,6 +13,7 @@ from collections import Counter
 import traceback
 from xml.dom.minidom import parseString as xmlParseString
 from datetime import timedelta
+from html.parser import HTMLParser
 
 #math / stats:
 from math import floor, log10
@@ -43,6 +44,12 @@ try:
     from .lib.TweetNLP import TweetNLP
 except ImportError:
     fwc.warn("Cannot import TweetNLP (interface with CMU Twitter tokenizer / pos tagger)")
+    pass
+try:
+    import langid
+    from langid.langid import LanguageIdentifier, model
+except ImportError:
+    fwc.warn("Cannot import langid (cannot use addLanguageFilterTable)")
     pass
 
 #feature extractor constants:
@@ -707,6 +714,130 @@ class FeatureExtractor(FeatureWorker):
         sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
             """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
         mm.executeWriteMany(self.corpdb, self.dbCursor, sql, newRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+
+    # TODO: add nicer implementation
+    def yieldMessages(self, messageTable, totalcount):
+        if totalcount > 10*fwc.MAX_SQL_SELECT:
+            for i in xrange(0,totalcount, MAX_SQL_SELECT):
+                sql = "SELECT * FROM %s limit %d, %d" % (messageTable, i, fwc.MAX_SQL_SELECT)
+                for m in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode):
+                    yield [i for i in m]
+        else:
+            sql = "SELECT * FROM %s" % messageTable
+            for m in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode):
+                yield m
+
+    def addLanguageFilterTable(self, langs, cleanMessages, lowercase):
+        """Filters all messages in corptable for a given language. Keeps messages if
+        confidence is greater than 80%. Uses the langid library. 
+
+        Parameters
+        ----------
+        langs : list
+            list of languages to filter for
+        cleanMessages : boolean
+            remove URLs, hashtags and @ mentions from messages before running langid
+        lowercase : boolean
+            convert message to all lowercase before running langid
+        """
+        identifier = LanguageIdentifier.from_modelstring(model, norm_probs=True)
+
+        new_table = self.corptable + "_%s"
+
+        columnNames = mm.getTableColumnNames(self.corpdb, self.corptable, charset=self.encoding, use_unicode=self.use_unicode)
+        messageIndex = [i for i, col in enumerate(columnNames) if col.lower() == fwc.DEF_MESSAGE_FIELD.lower()][0]
+        messageIDindex = [i for i, col in enumerate(columnNames) if col.lower() == fwc.DEF_MESSAGEID_FIELD.lower()][0]
+    
+        # CREATE NEW TABLES IF NEEDED
+        messageTables = {l: new_table % l for l in langs}
+        for l, table in messageTables.items():
+            drop = """DROP TABLE IF EXISTS %s""" % (table)
+            create = """CREATE TABLE %s like %s""" % (table, self.corptable)
+            char = """ALTER TABLE %s CHARACTER set %s""" % (table, self.encoding)
+            collate = """ALTER TABLE %s COLLATE %s""" % (table, fwc.DEF_COLLATIONS[self.encoding.lower()])
+            mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
+            mm.execute(self.corpdb, self.dbCursor, create, charset=self.encoding, use_unicode=self.use_unicode)
+            mm.execute(self.corpdb, self.dbCursor, char, charset=self.encoding, use_unicode=self.use_unicode)
+            mm.execute(self.corpdb, self.dbCursor, collate, charset=self.encoding, use_unicode=self.use_unicode)
+
+        #ITERATE THROUGH EACH MESSAGE WRITING THOSE THAT ARE ENGLISH
+        messageDataToAdd = {l: list() for l in langs}
+        messageDataCounts = {l: 0 for l in langs}
+        totalMessages = 0
+        totalMessagesKept = 0
+        sql = """SELECT COUNT(*) FROM %s""" % self.corptable
+        totalMessagesInTable = mm.executeGetList(self.corpdb, self.dbCursor, sql)[0][0]
+
+        print("Reading %s messages" % ",".join([str(totalMessagesInTable)[::-1][i:i+3] for i in range(0,len(str(totalMessagesInTable)),3)])[::-1])
+        memory_limit = fwc.MYSQL_BATCH_INSERT_SIZE if fwc.MYSQL_BATCH_INSERT_SIZE < totalMessagesInTable else totalMessagesInTable/20
+        
+        html = HTMLParser()
+        for messageRow in self.yieldMessages(self.corptable, totalMessagesInTable): 
+            messageRow = list(messageRow)
+            totalMessages+=1
+            message = messageRow[messageIndex]
+
+            try:
+                message = message.encode('utf-8', 'ignore').decode('windows-1252', 'ignore') 
+            except UnicodeEncodeError as e:
+                raise ValueError("UnicodeEncodeError"+ str(e) + str([message]))
+            except UnicodeDecodeError as e:
+                print(type(message))
+                print([message.decode('utf-8')])
+                raise ValueError("UnicodeDecodeError"+ str(e) + str([message]))
+            try:
+                message = html.unescape(message)
+                messageRow[messageIndex] = message
+
+                if cleanMessages:
+                    message = re.sub(r"(?:\#|\@|https?\://)\S+", "", message)
+            except Exception as e:
+                print(e)
+                print([message])
+
+            try:
+                if lowercase:
+                    message = message.lower()
+            except Exception as e:
+                print(e)
+                print([message])
+
+
+            lang, conf = None, None
+            try:
+                lang, conf = identifier.classify(message)
+            except TypeError as e:
+                print(("         Error, ignoring row %s" % str(messageRow)))
+
+            if lang in langs and conf > .80 :
+                messageDataToAdd[lang].append(messageRow)
+                messageDataCounts[lang] += 1
+                
+                totalMessagesKept+=1
+            else:
+                continue
+                
+            if totalMessagesKept % memory_limit == 0:
+                #write messages every so often to clear memory
+                for l, messageData in messageDataToAdd.items():
+                    sql = """INSERT INTO """+messageTables[l]+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
+                    mm.executeWriteMany(self.corpdb, self.dbCursor, sql, messageData, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                    messageDataToAdd[l] = list()
+                
+                for l, nb in [(x[0], len(x[1])) for x in iter(messageDataToAdd.items())]:
+                    messageDataCounts[l] += nb
+
+                print("  %6d rows written (%6.3f %% done)" % (totalMessagesKept,
+                                                              100*float(totalMessages)/totalMessagesInTable))
+
+        if messageDataToAdd:
+            print("Adding final rows")
+            for l, messageData in messageDataToAdd.items():
+                sql = """INSERT INTO """+messageTables[l]+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
+                mm.executeWriteMany(self.corpdb, self.dbCursor, sql, messageData, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode) 
+
+        print("Kept %d out of %d messages" % (totalMessagesKept, totalMessages))
+        pprint({messageTables[l]: v for l, v in messageDataCounts.items()})
 
 
     ##Feature Tables ##

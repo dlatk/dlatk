@@ -27,6 +27,7 @@ PROGRESS_AFTER_ROWS = 5000 #the number of rows to process between each progress 
 FEATURE_TABLE_PREFIX = 'feats_'
 MYSQL_ERROR_SLEEP = 4 #number of seconds to wait before trying a query again (incase there was a server restart
 MYSQL_BATCH_INSERT_SIZE = 10000 # how many rows are inserted into mysql at a time
+MAX_SQL_SELECT = 1000000 # how many rows are selected at a time
 MYSQL_HOST = '127.0.0.1'
 VARCHAR_WORD_LENGTH = 36 #length to allocate var chars per words
 LOWERCASE_ONLY = True #if the db is case insensitive, set to True
@@ -122,6 +123,18 @@ DEF_OUTCOME_PATH_STARTS = []
 DEF_OUTCOME_MEDIATORS = []
 DEF_MAX_MED_SUMMARY_SIZE = 10 # maximum number of results to print in summary for each path start / outcome pair
 
+##Language filtering settings
+AVAILABLE_LANGUAGES = """
+Available:  af, am, an, ar, as, az, be, bg, bn, br,
+bs, ca, cs, cy, da, de, dz, el, en, eo, es, et, eu,
+fa, fi, fo, fr, ga, gl, gu, he, hi, hr, ht, hu, hy,
+id, is, it, ja, jv, ka, kk, km, kn, ko, ku, ky, la,
+lb, lo, lt, lv, mg, mk, ml, mn, mr, ms, mt, nb, ne,
+nl, nn, no, oc, or, pa, pl, ps, pt, qu, ro, ru, rw,
+se, si, sk, sl, sq, sr, sv, sw, ta, te, th, tl, tr,
+ug, uk, ur, vi, vo, wa, xh, zh, zu"""
+
+##CoreNLP settings
 DEF_CORENLP_DIR = '../Tools/corenlp-python'
 DEF_CORENLP_SERVER_COMMAND = './corenlp/corenlp.py'
 DEF_CORENLP_PORT = 20202   #default: 20202

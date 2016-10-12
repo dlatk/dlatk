@@ -113,6 +113,7 @@ DEF_FEATURE_SELECTION_MAPPING = {
     'pca':'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
     'none': None,
 }
+DEFAULT_MAX_PREDICT_AT_A_TIME = 100000
 
 ##Mediation Settings:
 DEF_MEDIATION_BOOTSTRAP = 1000
@@ -176,6 +177,38 @@ def alignDictsAsLists(dict1, dict2):
     list2 = [dict2[c] for c in coFields]
     return (list1, list2)
 
+def alignDictsAsX(X, sparse=False, returnKeyList=False):
+    """turns a list of dicts for into a matrix X"""
+    keys = frozenset()
+    if sparse:
+        keys = frozenset([item for sublist in X for item in sublist])  # union X keys
+    else:
+        keys = frozenset(list(X[0].keys())). intersection(*[list(x.keys()) for x in X[1:]])  # intersect X keys
+    keys = list(keys)  # to make sure it stays in order
+    if sparse:
+        keyToIndex = dict([(keys[i], i) for i in range(len(keys))])
+        row = []
+        col = []
+        data = []
+        for c in range(len(X)):
+            column = X[c]
+            for keyid, value in column.items():
+                if keyid in keyToIndex:
+                    row.append(keyToIndex[keyid])
+                    col.append(c)
+                    data.append(value)
+        sparseX = csr_matrix((data, (row, col)))
+        if returnKeyList:
+            return (sparseX, keys)
+        else:
+            return (sparseX)
+    else: 
+        listX = [[x[k] for x in X] for k in keys]
+        if returnKeyList:
+            return (listX, keys)
+        else:
+            return (listX)
+
 def alignDictsAsXy(X, y):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
     keys = frozenset(list(y.keys()))
@@ -189,6 +222,27 @@ def alignDictsAsXy(X, y):
     listy = [float(v) for v in listy] if isinstance(listy,list) and isinstance(listy[0],decimal.Decimal) else listy
     # print type(listy), type(listy[0])
     return (listX, listy)
+
+def bonfPCorrection(tup, numFeats):
+    """given tuple with second entry a p value, multiply by num of feats and return"""
+    return (tup[0], tup[1]*numFeats) + tup[2:]
+
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i+n]
+
+def conf_interval(r, samp_size, percent=DEF_CONF_INT):
+    """calculates two sided confidence interval for pearson correlation coefficient (r)"""
+    tup = ()
+    if not np.isnan(r):
+        z = np.arctanh(r)
+        sigma = (1/((samp_size-3)**0.5))
+        cint = z + np.array([-1, 1]) * sigma * norm.ppf((1+percent)/2)
+        tup = tuple(np.tanh(cint))
+    else:
+        tup = (np.nan, np.nan)
+    return tup
 
 def fiftyChecks(args):
     Xc, Xend, y, check = args
@@ -206,63 +260,6 @@ def fiftyChecks(args):
     #if r: print r
     return r
 
-def rowsToColumns(X):
-    """Changes each X from being represented in columns to rows """
-    return [X[0:, c] for c in range(len(X[0]))]
-
-def stratifiedZScoreybyX0(X, y):
-    """zscores based on the means of all unique ys"""
-    #TODO: probably faster in vector operations
-    #first separate all rows for each y
-    X0sToYs = dict()
-    for i in range(len(y)):
-        try: 
-            X0sToYs[X[i][0]].append(y[i])
-        except KeyError:
-            X0sToYs[X[i][0]] = [y[i]]
-
-    #next figure out the mean for x, for each unique y
-    meanYforX0s = []
-    for ys in X0sToYs.values():
-        meanYforX0s.append(mean(ys)) #should turn into a row
-        
-    #figure out mean and std-dev for meanXs:
-    meanOfMeans = mean(meanYforX0s) #should be a row
-    stdDevOfMeans = std(meanYforX0s) #shoudl be a row
-
-    #apply to y:
-    newY = []
-    for yi in y:
-        newY.append((yi - meanOfMeans)/float(stdDevOfMeans))
-
-    return (zscore(X), newY)
-
-def switchColumnsAndRows(X):
-    """Toggles X between rows of columns and columns of rows """
-    if not isinstance(X, np.ndarray): X = array(X)
-    return array([X[0:, c] for c in range(len(X[0]))])
-    
-def warn(string, attention=False):
-    if attention: string = WARNING_STRING % string
-    print(string, file=sys.stderr)
-
-
-multSpace = re.compile(r'\s\s+')
-startSpace = re.compile(r'^\s+')
-endSpace = re.compile(r'\s+$')
-multDots = re.compile(r'\.\.\.\.\.+') #more than four periods
-newlines = re.compile(r'\s*\n\s*')
-#multDots = re.compile(r'\[a-z]\[a-z]\.\.\.+') #more than four periods
-
-def shrinkSpace(s):
-    """turns multipel spaces into 1"""
-    s = multSpace.sub(' ',s)
-    s = multDots.sub('....',s)
-    s = endSpace.sub('',s)
-    s = startSpace.sub('',s)
-    s = newlines.sub(' <NEWLINE> ',s)
-    return s
-
 def getGroupFreqThresh(correl_field=None):
     """set group_freq_thresh based on level of analysis"""
     group_freq_thresh = DEF_GROUP_FREQ_THRESHOLD
@@ -275,9 +272,14 @@ def getGroupFreqThresh(correl_field=None):
             group_freq_thresh = 40000
     return group_freq_thresh
 
-def bonfPCorrection(tup, numFeats):
-    """given tuple with second entry a p value, multiply by num of feats and return"""
-    return (tup[0], tup[1]*numFeats) + tup[2:]
+def permaSortedKey(s):
+    if isinstance(s, (list, tuple)):
+        s = str(s[0])
+    if isinstance (s, (float, int)):
+        return s
+    if s.upper() in PERMA_SORTED:
+        return PERMA_SORTED.index(s.upper())
+    return s
 
 def pCorrection(pDict, method=DEF_P_CORR, pLevelsSimes=[0.05, 0.01, 0.001], rDict = None):
     """returns corrected p-values given a dict of [key]=> p-value"""
@@ -323,25 +325,8 @@ def pCorrection(pDict, method=DEF_P_CORR, pLevelsSimes=[0.05, 0.01, 0.001], rDic
             i+=1
     return new_pDict
 
-def conf_interval(r, samp_size, percent=DEF_CONF_INT):
-    """calculates two sided confidence interval for pearson correlation coefficient (r)"""
-    tup = ()
-    if not np.isnan(r):
-        z = np.arctanh(r)
-        sigma = (1/((samp_size-3)**0.5))
-        cint = z + np.array([-1, 1]) * sigma * norm.ppf((1+percent)/2)
-        tup = tuple(np.tanh(cint))
-    else:
-        tup = (np.nan, np.nan)
-    return tup
-
-newlines = re.compile(r'\s*\n\s*')
-
-def treatNewlines(s):
-    s = newlines.sub(' <NEWLINE> ',s)
-    return s
-
 def removeNonAscii(s): 
+    """remove non-ascii values from string s and replace with <UNICODE>"""
     if s:
         new_words = []
         for w in s.split():
@@ -351,7 +336,6 @@ def removeNonAscii(s):
                 new_words.append(w)
         return " ".join(new_words)
     return ''
-
 
 def reverseDictDict(d):
     """reverses the order of keys in a dict of dicts"""
@@ -363,34 +347,6 @@ def reverseDictDict(d):
                 revDict[key2] = dict()
             revDict[key2][key1] = value
     return revDict
-
-def chunks(l, n):
-    """ Yield successive n-sized chunks from l."""
-    for i in range(0, len(l), n):
-        yield l[i:i+n]
-
-def permaSortedKey(s):
-    if isinstance(s, (list, tuple)):
-        s = str(s[0])
-    if isinstance (s, (float, int)):
-        return s
-    if s.upper() in PERMA_SORTED:
-        return PERMA_SORTED.index(s.upper())
-    return s
-
-def tupleToStr(tp):
-    """Takes in a tuple and returns a string with spaces instead of commas"""
-    if isinstance(tp, tuple):
-        return ';'.join([tupleToStr(t) for t in tp])
-    return tp
-
-def unionDictsMaxOnCollision(d1, d2):
-    """unions d1 and 2 always choosing the max between the two on a collision"""
-    newD = d1.copy()
-    for k2, v2 in d2.items():
-        if (not k2 in newD) or v2 > newD[k2]:
-            newD[k2] = v2
-    return newD
 
 def rgbColorMix(fromColor, toColor, resolution, randomness = False):
     #fromColor, toColor rgb (255 max) tuple
@@ -412,9 +368,83 @@ def rgbColorMix(fromColor, toColor, resolution, randomness = False):
                 newcolor.append(value)
             gradientColors[i] = tuple(newcolor)
 
-    #print gradientColors[0:4], gradientColors[-4:] #debug
     return gradientColors
 
+def rowsToColumns(X):
+    """Changes each X from being represented in columns to rows """
+    return [X[0:, c] for c in range(len(X[0]))]
+
+multSpace = re.compile(r'\s\s+')
+startSpace = re.compile(r'^\s+')
+endSpace = re.compile(r'\s+$')
+multDots = re.compile(r'\.\.\.\.\.+') #more than four periods
+newlines = re.compile(r'\s*\n\s*')
+#multDots = re.compile(r'\[a-z]\[a-z]\.\.\.+') #more than four periods
+
+def shrinkSpace(s):
+    """turns multipel spaces into 1"""
+    s = multSpace.sub(' ',s)
+    s = multDots.sub('....',s)
+    s = endSpace.sub('',s)
+    s = startSpace.sub('',s)
+    s = newlines.sub(' <NEWLINE> ',s)
+    return s
+
+def stratifiedZScoreybyX0(X, y):
+    """zscores based on the means of all unique ys"""
+    #TODO: probably faster in vector operations
+    #first separate all rows for each y
+    X0sToYs = dict()
+    for i in range(len(y)):
+        try: 
+            X0sToYs[X[i][0]].append(y[i])
+        except KeyError:
+            X0sToYs[X[i][0]] = [y[i]]
+
+    #next figure out the mean for x, for each unique y
+    meanYforX0s = []
+    for ys in X0sToYs.values():
+        meanYforX0s.append(mean(ys)) #should turn into a row
+        
+    #figure out mean and std-dev for meanXs:
+    meanOfMeans = mean(meanYforX0s) #should be a row
+    stdDevOfMeans = std(meanYforX0s) #shoudl be a row
+
+    #apply to y:
+    newY = []
+    for yi in y:
+        newY.append((yi - meanOfMeans)/float(stdDevOfMeans))
+
+    return (zscore(X), newY)
+
+def switchColumnsAndRows(X):
+    """Toggles X between rows of columns and columns of rows """
+    if not isinstance(X, np.ndarray): X = array(X)
+    return array([X[0:, c] for c in range(len(X[0]))])
+
+newlines = re.compile(r'\s*\n\s*')
+
+def treatNewlines(s):
+    s = newlines.sub(' <NEWLINE> ',s)
+    return s
+
+def tupleToStr(tp):
+    """Takes in a tuple and returns a string with spaces instead of commas"""
+    if isinstance(tp, tuple):
+        return ';'.join([tupleToStr(t) for t in tp])
+    return tp
+
+def unionDictsMaxOnCollision(d1, d2):
+    """unions d1 and 2 always choosing the max between the two on a collision"""
+    newD = d1.copy()
+    for k2, v2 in d2.items():
+        if (not k2 in newD) or v2 > newD[k2]:
+            newD[k2] = v2
+    return newD
+
+def warn(string, attention=False):
+    if attention: string = WARNING_STRING % string
+    print(string, file=sys.stderr)
 
 #Local maintenance:
 def getReportingInt(reporting_percent, iterable_length):

@@ -1,5 +1,10 @@
 #!/usr/bin/python
+"""
+Classify Predictor
 
+Interfaces with DLATK and scikit-learn
+to perform classification of binary outcomes for lanaguage features.
+"""
 import pickle as pickle
 
 from inspect import ismethod
@@ -77,15 +82,12 @@ def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
         listy = [float(y[k]) for k in keys]
 
     # Keys: list of group_ids in order.
-
     if sparse:
         keyToIndex = dict([(keys[i], i) for i in range(len(keys))])
         row = []
         col = []
         data = []
-        
-        # Columns: features.
-
+        # columns: features.
         for c in range(len(X)):
             column = X[c]
             for keyid, value in column.items():
@@ -93,33 +95,19 @@ def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
                     row.append(keyToIndex[keyid])
                     col.append(c)
                     data.append(value)
+        
         sparseX = csr_matrix((data,(row,col)), shape = (len(keys), len(X)))
         if returnKeyList:
             return (sparseX, array(listy).astype(int64), keys)
-            #return (sparseX, array(listy), keys)
         else:
             return (sparseX, array(listy).astype(int64))
-            #return (sparseX, array(listy))
         
     else: 
         listX = [[x[k] for x in X] for k in keys]
         if returnKeyList:
             return (array(listX), array(listy).astype(int64), keys)
-            #return (array(listX), array(listy), keys)
         else:
             return (array(listX), array(listy).astype(int64))
-            #return (array(listX), array(listy))
-
-def alignDictsAsXyWithFeats(X, y,feats):
-    """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
-    keys = frozenset(list(y.keys()))
-    # keys = keys.intersection(*[x.keys() for x in X])
-    keys = keys.intersection(list(X.keys()))  
-    keys = list(keys) #to make sure it stays in order
-    feats = list(feats)
-    listy = [y[k] for k in keys]
-    listX = [[X[k][l] for l in feats] for k in keys]
-    return (listX, listy)
 
 def alignDictsAsy(y, *yhats, **kwargs):
     keys = None
@@ -146,15 +134,6 @@ def pos_neg_auc(y1, y2):
         auc = auc - 1
     return auc
 
-
-# def alignDictsAsy(y, yhat, keys = None):
-#     if not keys: 
-#         keys = frozenset(y.keys())
-#         keys = keys.intersection(yhat.keys())
-#     listy = map(lambda k: y[k], keys)
-#     listyhat = map(lambda k: yhat[k], keys)
-#     return (listy, listyhat)
-
 class ClassifyPredictor:
     """Interfaces with scikit-learn to perform prediction of outcomes for lanaguage features.
 
@@ -162,7 +141,7 @@ class ClassifyPredictor:
     ----------
     cvParams : dict
 
-    modelToClassName
+    modelToClassName : dict
 
     modelToCoeffsName : dict
 
@@ -1843,7 +1822,7 @@ class ClassifyPredictor:
     def load(self, filename):
         print("[Loading %s]" % filename)
         f = open(filename,'rb')
-        tmp_dict = pickle.load(f)
+        tmp_dict = pickle.load(f, encoding='latin1')
         f.close()          
 
         self.__dict__.update(tmp_dict) 
@@ -2028,6 +2007,8 @@ class ClassifyPredictor:
             (X, ytest, keylist) = alignDictsAsXy(groupNormValues+controlValues, outcomes, sparse, returnKeyList = True)
             leny = len(ytest)
             print("[Groups to predict: %d]" % leny)
+            print(self.scalers.keys())
+            print(self.fSelectors.keys())
             (classifier, scaler, fSelector) = (self.classificationModels[outcomeName], self.scalers[outcomeName], self.fSelectors[outcomeName])
             ypred = None
             if self.chunkPredictions:

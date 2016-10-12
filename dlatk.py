@@ -714,15 +714,15 @@ def main(fn_args = None):
             else:
 #                feature_type_name = "clc" + str(pmi_filter_thresh).replace('.', '_')
                 feature_type_name = "colloc"
-            args.feattable = fe.addCollocFeatTable(collocs_list, valueFunc = args.valuefunc, includeSubCollocs=args.include_sub_collocs, featureTypeName = feature_type_name)
+            args.feattable = fe.addCollocFeatTable(collocs_list, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc, includeSubCollocs=args.include_sub_collocs, featureTypeName = feature_type_name)
 
         elif args.gzipcsv:
-            args.feattable = fe.addNGramTableGzipCsv(args.n, args.gzipcsv, 3, 0, 19, valueFunc = args.valuefunc)
+            args.feattable = fe.addNGramTableGzipCsv(args.n, args.gzipcsv, 3, 0, 19, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc)
 
         else:
             ftables = list()
             for n in args.n:
-                ftables.append(fe.addNGramTable(n, valueFunc = args.valuefunc, metaFeatures = args.metafeats))
+                ftables.append(fe.addNGramTable(n, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc, metaFeatures = args.metafeats))
             if len(ftables) > 1:
                 args.feattable = ftables;
             else:
@@ -731,7 +731,7 @@ def main(fn_args = None):
         if not fe: fe = FE()
         ftables = list()
         for n in args.n:
-            ftables.append(fe.addNGramTableFromTok(n, valueFunc = args.valuefunc, metaFeatures = args.metafeats))
+            ftables.append(fe.addNGramTableFromTok(n, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc, metaFeatures = args.metafeats))
             if len(ftables) > 1:
                 args.feattable = ftables;
             else:
@@ -741,7 +741,7 @@ def main(fn_args = None):
         if not fe: fe = FE()
         
         #elif args.gzipcsv:
-        #    args.feattable = fe.addNGramTableGzipCsv(args.n, args.gzipcsv, 3, 0, 19, valueFunc = args.valuefunc)
+        #    args.feattable = fe.addNGramTableGzipCsv(args.n, args.gzipcsv, 3, 0, 19, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc)
 
         ftables = list()
         for n in args.n:
@@ -753,14 +753,14 @@ def main(fn_args = None):
     
     if args.addlextable:
         if not fe: fe = FE()
-        args.feattable = fe.addLexiconFeat(args.lextable, valueFunc = args.valuefunc, isWeighted=args.weightedlexicon, featValueFunc=args.lexvaluefunc)
+        args.feattable = fe.addLexiconFeat(args.lextable, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc, isWeighted=args.weightedlexicon, featValueFunc=args.lexvaluefunc)
 
     if args.addcorplextable:
         if not args.lextable:
             print("Need to specify lex table with -l", file=sys.stderr)
             sys.exit()
         if not fe: fe = FE()
-        args.feattable = fe.addCorpLexTable(args.lextable, valueFunc = args.valuefunc, isWeighted=args.weightedlexicon, featValueFunc=args.lexvaluefunc)
+        args.feattable = fe.addCorpLexTable(args.lextable, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc, isWeighted=args.weightedlexicon, featValueFunc=args.lexvaluefunc)
 
     if args.addphrasetable:
         if not fe: fe = FE()

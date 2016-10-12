@@ -1,3 +1,4 @@
+#!/usr/bin/python
 """
 Regression Predictor
 
@@ -52,19 +53,16 @@ import numpy as np
 from numpy import sqrt, array, std, mean, ceil, absolute, append, log
 from numpy.linalg.linalg import LinAlgError
 
-
 import math
-
-DEFAULT_MAX_PREDICT_AT_A_TIME = 100000
 
 #infrastructure
 from .classifyPredictor import ClassifyPredictor
 from .mysqlMethods import mysqlMethods as mm
+from .fwConstants import DEFAULT_MAX_PREDICT_AT_A_TIME
 
-#alignDictsAsXy(Xdicts, ydict, sparse=True, keys = trainGroupsOrder)
+
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
-    
     if not keys: 
         keys = frozenset(list(y.keys()))
         if sparse:
@@ -80,12 +78,14 @@ def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
         ykeys = list(y.keys())
         keys = [k for k in keys if k in ykeys]
         listy = [float(y[k]) for k in keys]
-        
+
+
     if sparse:
         keyToIndex = dict([(keys[i], i) for i in range(len(keys))])
         row = []
         col = []
         data = []
+        # columns: features.
         for c in range(len(X)):
             column = X[c]
             for keyid, value in column.items():
@@ -108,66 +108,6 @@ def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
         else:
             return (array(listX), array(listy))
 
-def alignDictsAsXywithFeats2(X, y, sparse = False, returnKeyList = False, keys = None, feats = None):
-    """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
-    
-    if not keys: 
-        keys = frozenset(list(y.keys()))
-        if sparse:
-            keys = keys.intersection([item for sublist in X for item in sublist]) #union X keys
-        else:
-            keys = keys.intersection(*[list(x.keys()) for x in X]) #intersect X keys
-        keys = list(keys) #to make sure it stays in order
-    listy = None
-    try:
-        listy = [float(y[k]) for k in keys]
-    except KeyError:
-        print("!!!WARNING: alignDictsAsXy: gid not found in y; groups are being dropped (bug elsewhere likely)!!!!")
-        ykeys = list(y.keys())
-        keys = [k for k in keys if k in ykeys]
-        listy = [float(y[k]) for k in keys]
-        
-    # keys = list of group_ids
-    if sparse:
-        keyToIndex = dict([(keys[i], i) for i in range(len(keys))])
-        row = []
-        col = []
-        data = []
-        # X is [{group_id: group_norm for feat1, group_id : gns feat1 ...} ,... ]
-        featsToColIndices = dict()
-        # X has nbFeats as len, but not each dict in X has same length
-        for c in range(len(X)):
-            feat = feats[c]
-            column = X[c]
-            for keyid, value in column.items():
-                if keyid in keyToIndex:
-                    row.append(keyToIndex[keyid]) # appending the number of the row that group_id was for this gn
-                    col.append(c)
-                    data.append(value)
-        sparseX = csr_matrix((data,(row,col)), shape = (len(keys), len(X)))
-        if returnKeyList:
-            return (sparseX, array(listy), keys)
-        else:
-            return (sparseX, array(listy))
-        
-    else: 
-        listX = [[x[k] for x in X] for k in keys]
-        if returnKeyList:
-            return (array(listX), array(listy), keys)
-        else:
-            return (array(listX), array(listy))
-
-def alignDictsAsXyWithFeats(X, y, feats):
-    """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
-    keys = frozenset(list(y.keys()))
-    # keys = keys.intersection(*[x.keys() for x in X])
-    keys = keys.intersection(list(X.keys()))  
-    keys = list(keys) #to make sure it stays in order
-    feats = list(feats)
-    listy = [y[k] for k in keys]
-    listX = [[X[k][l] for l in feats] for k in keys]
-    return (listX, listy)
-
 def alignDictsAsy(y, *yhats, **kwargs):
     keys = None
     if not keys in kwargs: 
@@ -183,7 +123,55 @@ def alignDictsAsy(y, *yhats, **kwargs):
     return tuple([listy]) + tuple(listyhats)
 
 class RegressionPredictor:
-    """Handles prediction of continuous outcomes"""
+    """Handles prediction of continuous outcomes
+    
+    Attributes
+    ----------
+    cvParams : dict
+
+    modelToClassName : dict
+
+    modelToCoeffsName : dict
+
+    cvJobs : int
+    
+    cvFolds : int
+    
+    chunkPredictions : boolean
+        whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
+    maxPredictAtTime : int 
+
+    backOffPerc : float
+        when the num_featrue / training_insts is less than this backoff to backoffmodel
+    
+    backOffModel : str
+
+    featureSelectionString : str or None
+
+    featureSelectMin : int
+        must have at least this many features to perform feature selection
+    featureSelectPerc : float
+        only perform feature selection on a sample of training (set to 1 to perform on all)
+    testPerc :float
+        percentage of sample to use as test set (the rest is training)
+    randomState : int
+        percentage of sample to use as test set (the rest is training)
+    trainingSize : int
+
+
+    Parameters
+    ----------
+    outcomeGetter : OutcomeGetter object
+
+    featureGetters : list
+        list of FeatureGetter objects
+
+    modelName : :obj:`str`, optional
+
+    Returns
+    -------
+    RegressionPredictor object
+    """
 
     #cross validation parameters:
     # Model Parameters 
@@ -429,13 +417,28 @@ class RegressionPredictor:
 
         #setup other params / instance vars
         self.modelName = modelName
+        """str: Docstring *after* attribute, with type specified."""
+
         self.regressionModels = dict()
+        """dict: Docstring *after* attribute, with type specified."""
+
         self.scalers = dict()
+        """dict: Docstring *after* attribute, with type specified."""
+
         self.fSelectors = dict()
-        self.featureNames = [] #holds the order the features are expected in
+        """dict: Docstring *after* attribute, with type specified."""
+
+        self.featureNames = [] 
+        """list: Holds the order the features are expected in."""
+
         self.multiFSelectors = None
+        """str: Docstring *after* attribute, with type specified."""
+
         self.multiScalers = None
-        self.multiXOn = False #whether multiX was used for training
+        """str: Docstring *after* attribute, with type specified."""
+
+        self.multiXOn = False
+        """boolean: whether multiX was used for training."""
 
     def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
         """Train Regressors"""
@@ -495,8 +498,6 @@ class RegressionPredictor:
                 print("  (feature group: %d)" % (i))
                 # trainGroupsOrder is the order of the group_norms
                 (Xtrain, ytrain) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = trainGroupsOrder)
-                # (Xtrain, ytrain) = alignDictsAsXywithFeats2(Xdicts, ydict, sparse=True, keys = trainGroupsOrder, feats = featureNamesList[i])
-                # MAARTEN
                 if len(ytrain) > self.trainingSize:
                     Xtrain, Xthrowaway, ytrain, ythrowaway = train_test_split(Xtrain, ytrain, test_size=len(ytrain) - self.trainingSize, random_state=self.randomState)
                 multiXtrain.append(Xtrain)
@@ -1701,11 +1702,17 @@ class RegressionPredictor:
 
 
     ######################
-    def load(self, filename):
+    def load(self, filename, pickle2_7=True):
         print("[Loading %s]" % filename)
-        f = open(filename,'rb')
-        tmp_dict = pickle.load(f)
-        f.close()          
+        with open(filename, 'rb') as f:
+            if pickle2_7:
+                from .featureWorker  import FeatureWorker
+                from . import occurrenceSelection, pca_mod
+                sys.modules['FeatureWorker'] = FeatureWorker
+                sys.modules['FeatureWorker.occurrenceSelection'] = occurrenceSelection
+                sys.modules['FeatureWorker.pca_mod'] = pca_mod
+            tmp_dict = pickle.load(f, encoding='latin1')
+            f.close()          
         print("Outcomes in loaded model:", list(tmp_dict['regressionModels'].keys()))
         tmp_dict['outcomes'] = list(tmp_dict['regressionModels'].keys()) 
         self.__dict__.update(tmp_dict)

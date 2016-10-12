@@ -44,24 +44,7 @@ from numpy import sqrt, outer
 from numpy.linalg import norm
 import math
 
-
-def alignDictsAsXZ(X,Z):
-
-    # X is {feat: {group_id: gn}}, Z is {outcome: {group_id: value}}
-    xKeys = set([gid for feat, gnsDict in X.items() for gid in list(gnsDict.keys())])
-    xCols = list(X.keys())
-    zKeys = set([gid for feat, gnsDict in Z.items() for gid in list(gnsDict.keys())])
-    zCols = list(Z.keys())
-    group_ids = list(xKeys & zKeys)
-
-    listX = [[X[feat][gid] for feat in xCols] for gid in group_ids]
-    print(len(listX), len(listX[0]), str(listX)[:150])
-    print(any([len(row) != 2000 for row in listX]))
-
-    listZ = [[Z[outcome].get(gid,float("nan")) for outcome in zCols] for gid in group_ids]
-    print(len(listZ), len(listZ[0]), str(listZ)[:150])
-    print(any([len(row)!= 15 for row in listZ]))
-
+from .fwConstants import alignDictsAsX
 
 def alignDictsAsXy(X, y, sparse=False, returnKeyList=False):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
@@ -98,49 +81,7 @@ def alignDictsAsXy(X, y, sparse=False, returnKeyList=False):
         else:
             return (listX, listy)
 
-def alignDictsAsX(X, sparse=False, returnKeyList=False):
-    """turns a list of dicts for into a matrix X"""
-    keys = frozenset()
-    if sparse:
-        keys = frozenset([item for sublist in X for item in sublist])  # union X keys
-    else:
-        keys = frozenset(list(X[0].keys())). intersection(*[list(x.keys()) for x in X[1:]])  # intersect X keys
-    keys = list(keys)  # to make sure it stays in order
-    if sparse:
-        keyToIndex = dict([(keys[i], i) for i in range(len(keys))])
-        row = []
-        col = []
-        data = []
-        for c in range(len(X)):
-            column = X[c]
-            for keyid, value in column.items():
-                if keyid in keyToIndex:
-                    row.append(keyToIndex[keyid])
-                    col.append(c)
-                    data.append(value)
-        sparseX = csr_matrix((data, (row, col)))
-        if returnKeyList:
-            return (sparseX, keys)
-        else:
-            return (sparseX)
-    else: 
-        listX = [[x[k] for x in X] for k in keys]
-        if returnKeyList:
-            return (listX, keys)
-        else:
-            return (listX)
-     
-    
-def alignDictsAsXyWithFeats(X, y, feats):
-    """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
-    keys = frozenset(list(y.keys()))
-    # keys = keys.intersection(*[x.keys() for x in X])
-    keys = keys.intersection(list(X.keys()))    
-    keys = list(keys)  # to make sure it stays in order
-    feats = list(feats)
-    listy = [y[k] for k in keys]
-    listX = [[X[k][l] for l in feats] for k in keys]
-    return (listX, listy)
+
 
 class DimensionReducer:
     """Handles clustering of continuous outcomes"""

@@ -198,8 +198,8 @@ class FeatureExtractor(FeatureWorker):
         whiteListFeatTable : :obj:`str`, optional
             name of white list feature table.
         """
-        # imp.reload(sys)
-        # if self.use_unicode: sys.setdefaultencoding('utf8')
+        imp.reload(sys)
+        if not self.use_unicode: sys.setdefaultencoding('utf8')
         sql = """SELECT %s, %s  from %s""" % (self.messageid_field, self.message_field,self.corptable+'_tok')
         messagesEnc = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         try:
@@ -232,14 +232,14 @@ class FeatureExtractor(FeatureWorker):
             String used to join features.
         """
         imp.reload(sys)
-        if self.use_unicode: sys.setdefaultencoding('utf8')
+        if not self.use_unicode: sys.setdefaultencoding('utf8')
         f = open(filename, 'w')
         for (gid, featValues) in self.yieldValuesSparseByGroups():
             message = delimeter.join([delimeter.join([feat.replace(' ', '_')]*val) for feat, value in featValues.items()])
             if self.use_unicode:
-                f.write("""%s en %s\n""" %(gid, message.encode('utf-8')))     
+                f.write("""%s en %s\n""" %(gid, message))      
             else:
-                f.write("""%s en %s\n""" %(gid, message))          
+                f.write("""%s en %s\n""" %(gid, message.encode('utf-8')))    
        
         f.close()
         fwc.warn("Wrote joined features file to: %s"%filename)
@@ -378,9 +378,9 @@ class FeatureExtractor(FeatureWorker):
         Parameters
         -------
         model : :obj:`str`, optional
-            ?????
+            model used for segmentation: ctb (Penn Chinese Treebank) or pku (Beijing Univ.)
         tmpdir : :obj:`dict`, optional
-            ?????
+            temp directory for storing intermediate results
         """
         
         assert model.lower() in ["ctb", "pku"], "Available models for segmentation are CTB or PKU"
@@ -448,18 +448,18 @@ class FeatureExtractor(FeatureWorker):
 
         Parameters
         -------
-        sp : str
+        sp : StanfordParser object
             ?????
-        tableNames : str
-            ?????
-        messages : str
-            ?????
-        messageIndex : str
-            ?????
-        columnNames : str
-            ?????
-        rows : str
-            ?????
+        tableNames : dict
+            {parse type: tablename}
+        messages : list
+            messages to be parsed
+        messageIndex : int
+            index of message field
+        columnNames : list
+            column names in table
+        rows : list
+            complete row from mysql table
 
         Returns
         -------
@@ -711,13 +711,15 @@ class FeatureExtractor(FeatureWorker):
 
     ##Feature Tables ##
 
-    def addNGramTable(self, n, min_freq=1, tableName = None, valueFunc = lambda d: d, metaFeatures = True):
+    def addNGramTable(self, n, lowercase_only=fwc.LOWERCASE_ONLY, min_freq=1, tableName = None, valueFunc = lambda d: d, metaFeatures = True):
         """Creates feature tuples (correl_field, feature, values) table where features are ngrams
 
         Parameters
         ----------
         n : int
             ?????
+        lowercase_only : boolean
+            use only lowercase charngrams if True
         min_freq : :obj:`int`, optional
             ?????
         tableName : :obj:`str`, optional
@@ -790,8 +792,9 @@ class FeatureExtractor(FeatureWorker):
                         gram = ' '.join(words[i:i+n])
                         #truncate:
                         gram = gram[:varcharLength]
-                        if fwc.LOWERCASE_ONLY: gram = gram.lower()
 
+                        if lowercase_only: gram = gram.lower()
+                        
                         try:
                             freqs[gram] += 1
                         except KeyError:
@@ -810,14 +813,20 @@ class FeatureExtractor(FeatureWorker):
                 insert_idx_end = fwc.MYSQL_BATCH_INSERT_SIZE
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 totalGrams = float(totalGrams) # to avoid casting each time below
-                if self.use_unicode:
-                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
-                else:
-                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter                
-                
+                try:
+                    if self.use_unicode:
+                        rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter                
+                    else:
+                        rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
+                except:
+                    print([k for k, v in freqs.items()])
+                    exit()
                 while insert_idx_start < len(rows):
                     insert_rows = rows[insert_idx_start:min(insert_idx_end, len(rows))]
                     #_warn("Inserting rows %d to %d... " % (insert_idx_start, insert_idx_end))
+                    print(wsql)
+                    print(cf_id)
+                    print(rows)
                     mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, insert_rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode);
                     insert_idx_start += fwc.MYSQL_BATCH_INSERT_SIZE
                     insert_idx_end += fwc.MYSQL_BATCH_INSERT_SIZE
@@ -827,9 +836,10 @@ class FeatureExtractor(FeatureWorker):
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:
-                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
-                else:
                     rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
+                else:
+                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
+
                 if metaFeatures:
                     mfRows = []
                     mfwsql = """INSERT INTO """+mfTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
@@ -852,7 +862,7 @@ class FeatureExtractor(FeatureWorker):
     
     
     def addCharNGramTable(self, n, lowercase_only=fwc.LOWERCASE_ONLY, min_freq=1, tableName = None, valueFunc = lambda d: d, metaFeatures = True):
-        """???
+        """Extract character ngrams from a message table
 
         Parameters
         ----------
@@ -921,10 +931,10 @@ class FeatureExtractor(FeatureWorker):
                     message = fwc.shrinkSpace(message)
 
                     #words = message.split()
-                    if not self.use_unicode: 
-                        words = [fwc.removeNonAscii(w) for w in list(message)]
-                    else:
+                    if self.use_unicode: 
                         words = list(message)
+                    else:
+                        words = [fwc.removeNonAscii(w) for w in list(message)]
 
                     gram = '' ## MAARTEN
                     for i in range(0,(len(words) - n)+1):
@@ -953,9 +963,9 @@ class FeatureExtractor(FeatureWorker):
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:
-                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
+                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter   
                 else:
-                    rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter                
+                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter             
                 
                 while insert_idx_start < len(rows):
                     insert_rows = rows[insert_idx_start:min(insert_idx_end, len(rows))]
@@ -969,9 +979,9 @@ class FeatureExtractor(FeatureWorker):
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:
-                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
-                else:
                     rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
+                else:
+                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
                 if metaFeatures:
                     mfRows = []
                     mfwsql = """INSERT INTO """+mfTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
@@ -993,13 +1003,15 @@ class FeatureExtractor(FeatureWorker):
         return featureTableName
     
 
-    def addNGramTableFromTok(self, n, min_freq=1, tableName = None, valueFunc = lambda d: d, metaFeatures = True):
+    def addNGramTableFromTok(self, n, lowercase_only=fwc.LOWERCASE_ONLY, min_freq=1, tableName = None, valueFunc = lambda d: d, metaFeatures = True):
         """???
 
         Parameters
         ----------
         n : int
             ?????
+        lowercase_only : boolean
+            use only lowercase charngrams if True
         min_freq : :obj:`int`, optional
             ?????
         tableName : :obj:`str`, optional
@@ -1068,7 +1080,7 @@ class FeatureExtractor(FeatureWorker):
                         gram = ' '.join(words[i:i+n])
                         #truncate:
                         gram = gram[:varcharLength]
-                        if fwc.LOWERCASE_ONLY: gram = gram.lower()
+                        if lowercase_only: gram = gram.lower()
 
                         try:
                             freqs[gram] += 1
@@ -1088,9 +1100,9 @@ class FeatureExtractor(FeatureWorker):
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:
-                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
-                else:
                     rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
+                else:
+                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
                 if metaFeatures:
                     mfRows = []
                     mfwsql = """INSERT INTO """+mfTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
@@ -1132,7 +1144,7 @@ class FeatureExtractor(FeatureWorker):
             res = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT {} FROM {}.{}".format(colloc_column, colloc_schema, colloc_table), charset=self.encoding, use_unicode=self.use_unicode)
         return [row[0] for row in res]
 
-    def _countFeatures(self, collocSet, maxCollocSizeByFirstWord, message, tokenizer, freqs, includeSubCollocs=False):
+    def _countFeatures(self, collocSet, maxCollocSizeByFirstWord, message, tokenizer, freqs, lowercase_only=fwc.LOWERCASE_ONLY, includeSubCollocs=False):
         '''?????
 
         Parameters
@@ -1146,6 +1158,9 @@ class FeatureExtractor(FeatureWorker):
         tokenizer : object
             an object with method tokenize() that returns words from a piece of text
         freqs : dict
+            ?????
+        lowercase_only : boolean
+            use only lowercase charngrams if True
             running count of how many times each word is used
         includeSubCollocs : :obj:`boolean`, optional
             ?????
@@ -1178,7 +1193,7 @@ class FeatureExtractor(FeatureWorker):
                 if is1gram or (potentialColloc in collocSet):
                     gram = potentialColloc
                     gram = gram[:varcharLength]
-                    if fwc.LOWERCASE_ONLY: gram = gram.lower()
+                    if lowercase_only: gram = gram.lower()
                     if gram in freqs:
                         freqs[gram] += 1
                     else:
@@ -1191,7 +1206,7 @@ class FeatureExtractor(FeatureWorker):
                     window_end -= 1
 
 
-    def addCollocFeatTable(self, collocList, min_freq=1, tableName = None, valueFunc = lambda d: d, includeSubCollocs=False, featureTypeName=None):
+    def addCollocFeatTable(self, collocList, lowercase_only=fwc.LOWERCASE_ONLY, min_freq=1, tableName = None, valueFunc = lambda d: d, includeSubCollocs=False, featureTypeName=None):
         """???
 
         Parameters
@@ -1269,7 +1284,7 @@ class FeatureExtractor(FeatureWorker):
                     if not self.use_unicode: message = fwc.removeNonAscii(message) #TODO: don't use for foreign languages
                     message = fwc.shrinkSpace(message)
 
-                    self._countFeatures(collocSet, maxCollocSizeByFirstWord, message, tokenizer, freqs, includeSubCollocs)
+                    self._countFeatures(collocSet, maxCollocSizeByFirstWord, message, tokenizer, freqs, lowercase_only, includeSubCollocs)
                     #TODO - save this somewhere?  Accumulate for all  messages... way to sum hash tables?  Or just pass it in?
 
                     mids.add(message_id)
@@ -1281,9 +1296,9 @@ class FeatureExtractor(FeatureWorker):
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:
-                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
-                else:
                     rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
+                else:
+                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
                     
                 mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
         
@@ -1295,7 +1310,7 @@ class FeatureExtractor(FeatureWorker):
         fwc.warn("Done\n")
         return featureTableName
 
-    def addNGramTableGzipCsv(self, n, gzCsv, idxMsgField, idxIdField, idxCorrelField, min_freq=1, tableName = None, valueFunc = lambda d: d):
+    def addNGramTableGzipCsv(self, n, gzCsv, idxMsgField, idxIdField, idxCorrelField, lowercase_only=fwc.LOWERCASE_ONLY, min_freq=1, tableName = None, valueFunc = lambda d: d):
         """???
         This assumes each row is a unique message, originally meant for twitter
 
@@ -1311,6 +1326,8 @@ class FeatureExtractor(FeatureWorker):
             ?????
         idxCorrelField : ?????
             ?????
+        lowercase_only : boolean
+            use only lowercase charngrams if True
         min_freq : :obj:`int`, optional
             ?????
         tableName : :obj:`str`, optional
@@ -1369,7 +1386,7 @@ class FeatureExtractor(FeatureWorker):
                         gram = ' '.join(words[ii:ii+n])
                         #truncate:
                         gram = gram[:varcharLength]
-                        if fwc.LOWERCASE_ONLY: gram = gram.lower()
+                        if lowercase_only: gram = gram.lower()
 
                         try:
                             freqs[correl_id][gram] += 1
@@ -1391,9 +1408,9 @@ class FeatureExtractor(FeatureWorker):
             rows = []
             for ii_correl, gramToFreq in freqs.items():
                 if self.use_unicode:
-                    ii_rows = [(ii_correl, k.encode('utf-8'), v, valueFunc((v / totalFreqs[ii_correl])) ) for k, v in gramToFreq.items() if v >= min_freq] #adds group_norm and applies freq filter
-                else:
                     ii_rows = [(ii_correl, k, v, valueFunc((v / totalFreqs[ii_correl])) ) for k, v in gramToFreq.items() if v >= min_freq] #adds group_norm and applies freq filter
+                else:
+                    ii_rows = [(ii_correl, k.encode('utf-8'), v, valueFunc((v / totalFreqs[ii_correl])) ) for k, v in gramToFreq.items() if v >= min_freq] #adds group_norm and applies freq filter
                 rows.extend(ii_rows)
             fwc.warn( "Inserting %d rows..."%(len(rows),) )
 
@@ -1729,7 +1746,6 @@ class FeatureExtractor(FeatureWorker):
                             if gram:
                             #truncate:
                                 gram = gram[:varcharLength]
-                                #if LOWERCASE_ONLY: gram = gram.lower()
                                 
                                 try:
                                     freqs[gram] += 1
@@ -1743,9 +1759,9 @@ class FeatureExtractor(FeatureWorker):
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:
-                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items()] #adds group_norm and applies freq filter
-                else:
                     rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items()] #adds group_norm and applies freq filter
+                else:
+                    rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items()] #adds group_norm and applies freq filter
                     
                 mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
         
@@ -1958,13 +1974,15 @@ class FeatureExtractor(FeatureWorker):
 
         return tableName
 
-    def addCorpLexTable(self, lexiconTableName, tableName=None, valueFunc = lambda x: float(x), isWeighted=False, featValueFunc=lambda d: float(d)):
+    def addCorpLexTable(self, lexiconTableName, lowercase_only=fwc.LOWERCASE_ONLY, tableName=None, valueFunc = lambda x: float(x), isWeighted=False, featValueFunc=lambda d: float(d)):
         """?????
 
         Parameters
         ----------
         lexiconTableName : str 
             ?????  
+        lowercase_only : boolean
+            use only lowercase charngrams if True
         tableName : :obj:`str`, optional
             ?????
         valueFunc : :obj:`lambda`, optional
@@ -2007,7 +2025,7 @@ class FeatureExtractor(FeatureWorker):
 ###################################################################""")
                     sys.exit(2)
                     warnedAboutWeights = True
-                if fwc.LOWERCASE_ONLY: term = term.lower()
+                if lowercase_only: term = term.lower()
                 if term == '_intercept':
                     fwc.warn("Intercept detected %f [category: %s]" % (weight,category))
                     _intercepts[category] = weight
@@ -2054,13 +2072,15 @@ class FeatureExtractor(FeatureWorker):
 
         return tableName
 
-    def addLexiconFeat(self, lexiconTableName, tableName=None, valueFunc = lambda x: float(x), isWeighted=False, featValueFunc=lambda d: float(d)):
+    def addLexiconFeat(self, lexiconTableName, lowercase_only=fwc.LOWERCASE_ONLY, tableName=None, valueFunc = lambda x: float(x), isWeighted=False, featValueFunc=lambda d: float(d)):
         """Creates a feature table given a 1gram feature table name, a lexicon table / database name
 
         Parameters
         ----------
         lexiconTableName : str 
-            ?????   
+            ????? 
+        lowercase_only : boolean
+            use only lowercase charngrams if True  
         tableName : :obj:`str`, optional
             ?????
         valueFunc : :obj:`lambda`, optional
@@ -2107,7 +2127,7 @@ class FeatureExtractor(FeatureWorker):
   specify --weighted_lexicon so the weights won't be used
 ###################################################################""")
                     warnedAboutWeights = True
-                if fwc.LOWERCASE_ONLY: term = term.lower()
+                if lowercase_only: term = term.lower()
                 if term == '_intercept':
                     fwc.warn("Intercept detected %f [category: %s]" % (weight,category))
                     _intercepts[category] = weight
@@ -2160,7 +2180,13 @@ class FeatureExtractor(FeatureWorker):
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id LIKE '%s'"%(wordTable, groupId)
             else:
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id = %d"%(wordTable, groupId)
-            attributeRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
+            
+            try:
+                attributeRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
+            except:
+                print(groupId)
+                exit()
+
             totalFeatCountForThisGroupId = 0
             
             totalFunctionSumForThisGroupId = float(0.0)
@@ -2169,7 +2195,7 @@ class FeatureExtractor(FeatureWorker):
                 #e.g. (69L, 8476L, 'spent', 1L, 0.00943396226415094, None),
                 cat_to_weight = dict()#dictionary holding all categories, weights that feat is a part of
                 if not feat: continue
-                if fwc.LOWERCASE_ONLY: feat = feat.lower()
+                if lowercase_only: feat = feat.lower()
                 totalFeatCountForThisGroupId += value
                 totalFunctionSumForThisGroupId += featValueFunc(value)
 
@@ -2202,9 +2228,9 @@ class FeatureExtractor(FeatureWorker):
             
             # Applying the featValueFunction to the group_norm, 
             if self.use_unicode:
-                rows = [(gid, k.encode('utf-8'), cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+v)) for k, v in cat_to_function_summed_weight_gn.items()]
-            else:
                 rows = [(gid, k, cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+v)) for k, v in cat_to_function_summed_weight_gn.items()]
+            else:
+                rows = [(gid, k.encode('utf-8'), cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+v)) for k, v in cat_to_function_summed_weight_gn.items()]
 
 
             # iii. Insert data into new feautre table
@@ -2324,10 +2350,10 @@ class FeatureExtractor(FeatureWorker):
             # Add new data to rows to be inserted into the database
             #pprint(cncpt_to_function_summed_value)
             #print totalFunctionSumForThisGroupId
-            if self.use_unicode:
-                rows = [(gid, k.encode('utf-8'), cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.items()]  
-            else:
+            if self.use_unicode: 
                 rows = [(gid, k, cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.items()]  
+            else:
+                rows = [(gid, k.encode('utf-8'), cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.items()] 
             rowsToInsert.extend(rows)
             if len(rowsToInsert) > fwc.MYSQL_BATCH_INSERT_SIZE:
                 mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
@@ -2456,10 +2482,10 @@ class FeatureExtractor(FeatureWorker):
             # Add new data to rows to be inserted into the database
             #pprint(cncpt_to_function_summed_value)
             #print totalFunctionSumForThisGroupId
-            if self.use_unicode:
-                rows = [(gid, k.encode('utf-8'), cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.items()]  
-            else:
+            if self.use_unicode: 
                 rows = [(gid, k, cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.items()]  
+            else:
+                rows = [(gid, k.encode('utf-8'), cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.items()] 
             rowsToInsert.extend(rows)
 
             if len(rowsToInsert) > fwc.MYSQL_BATCH_INSERT_SIZE:

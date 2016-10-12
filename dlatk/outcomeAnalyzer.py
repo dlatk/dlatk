@@ -510,7 +510,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     if spearman: tup = spearmanr(dataList, outcomeList) + (len(dataList),)
                     else: tup = pearsonr(dataList, outcomeList) + (len(dataList),)
                     conf = fwc.conf_interval(tup[self.r_idx], tup[self.n_idx])
-                    tup = tup + conf
+                    tup = tup + (conf,)
                 if not tup or not tup[self.r_idx]:
                     fwc.warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
                     if includeFreqs: tup = (float('nan'), float('nan'), len(y), (float('nan'), float('nan')), 0)
@@ -1908,6 +1908,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             ffreq = 0
             for key2 in keys2:
                 (r, p, n, ci, f) = correlMatrix[key1].get(key2, [0, 1, 0, (0,0), ffreq])[:OutcomeAnalyzer.correls_length]
+                print(r, p, n, ci, f)
                 if not f: f = 0
                 if f: ffreq = f
                 

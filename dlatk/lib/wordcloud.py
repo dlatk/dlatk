@@ -20,7 +20,7 @@ from random import random
 from scipy.stats import rankdata
 
 from .. import fwConstants as fwc
-from .. import mysqlMethods as mm
+from ..mysqlMethods import mysqlMethods as mm
 
 font_ii = 1
 
@@ -67,7 +67,7 @@ def wordcloudByFile(input_filename, output_filename='wordle_test'):
     wordcloud(word_list, freq_list)
 
 def _makeRandomColorTuples(num_rgb_tuples, rgb_bounds=[0, 0.39]):
-    #Create a list of length num_rgb_tuples, where every element is a random hex color
+    """Create a list of length num_rgb_tuples, where every element is a random hex color"""
     assert(num_rgb_tuples > 0)
     r = list(map(runif, [rgb_bounds[0]]*num_rgb_tuples, [rgb_bounds[1]]*num_rgb_tuples))
     g = list(map(runif, [rgb_bounds[0]]*num_rgb_tuples, [rgb_bounds[1]]*num_rgb_tuples))
@@ -883,7 +883,9 @@ def getFeatWithLimit(schema, table, group = '', amount = 50, orderBy = 'group_no
     return mm.executeGetList(schema, dbCursor, query)
 
 # wordcloud print methods    
-def makeLexiconTopicWordclouds(lexdb, lextable, output, max_words, color):
+def makeLexiconTopicWordclouds(lexdb, lextable, output, color, max_words=15):
+    if not os.path.exists(output):
+        os.makedirs(output)
     (dbConn, dbCursor, dictCursor) = mm.dbConnect(lexdb)
 
     query = """SELECT distinct(category) FROM %s.%s""" % (lexdb, lextable)
@@ -895,9 +897,9 @@ def makeLexiconTopicWordclouds(lexdb, lextable, output, max_words, color):
         (word_list, freq_list) = zip(*result)
 
         ranked_freq_list = normalizeFreqList(freq_list, word_count = max_words)
-        color_list = getColorList(word_list, freq_list = ranked_freq_list, colorScheme = args.color_scheme)
+        color_list = getColorList(word_list, freq_list = ranked_freq_list, colorScheme = color)
 
-        output_name = os.path.join(args.output_prefix, 'topic_' + str(category))
+        output_name = os.path.join(output, 'topic_' + str(category))
         wordcloud(word_list, ranked_freq_list, color_list = color_list, output_prefix = output_name)
 
 

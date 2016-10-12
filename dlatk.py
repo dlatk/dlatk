@@ -148,7 +148,7 @@ def main(fn_args = None):
                        help='The minimum a feature must occur across all groups, to be kept.')
     group.add_argument('--topic_file', type=str, dest='topicfile', default='',
                        help='Name of topic file to use to build the topic lexicon.')
-    group.add_argument('--num_topic_words', type=int, dest='numtopicwords', default=15,
+    group.add_argument('--num_topic_words', type=int, dest='numtopicwords', default=fwc.DEF_MAX_TOP_TC_WORDS,
                        help='Number of topic words to use as labels.')
     group.add_argument('--topic_lexicon', type=str, dest='topiclexicon', default='',
                        help='this is the (topic) lexicon name specified as part of --make_feat_labelmap_lex and --add_topiclex_from_topicfile')
@@ -459,6 +459,8 @@ def main(fn_args = None):
                        help="make wordclouds from the output tagcloud file.")
     group.add_argument('--make_topic_wordclouds', action='store_true', dest='maketopicwordclouds',
                        help="make topic wordclouds, needs an output topic tagcloud file.")
+    group.add_argument('--make_all_topic_wordclouds', action='store_true', dest='makealltopicwordclouds',
+                       help="make all topic wordclouds for a given topic lexicon.")
     group.add_argument('--use_featuretable_feats', action='store_true', dest='useFeatTableFeats',
                        help='use 1gram table to be used as a whitelist when plotting')
     group.add_argument('--outcome_with_outcome', action='store_true', dest='outcomeWithOutcome',
@@ -1558,6 +1560,9 @@ def main(fn_args = None):
         dr.save(args.picklefile)
 
     ##Plot Actions:
+    if args.makealltopicwordclouds:
+        outputFile = makeOutputFilename(args, None, None, suffix="_alltopics/")
+        wordcloud.makeLexiconTopicWordclouds(lexdb=args.lexicondb, lextable=args.topiclexicon, output=outputFile, color=args.tagcloudcolorscheme, max_words=args.numtopicwords)
     if args.barplot:
         outputFile = makeOutputFilename(args, fg, oa, "barplot")
         oa.barPlot(correls, outputFile)

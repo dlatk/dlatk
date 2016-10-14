@@ -434,14 +434,8 @@ def main(fn_args = None):
                        help='prints frequencies instead of group normalized values')
     group.add_argument('--print_numgroups', action='store_true', dest='printnumgroups', default = False,
                        help='prints number of groups per outcome field')
-    group.add_argument('--notify', type=str, dest='notify', default='',
-                       help='sends a completion email to the designated email address')
-    group.add_argument('--notify_luke', type=str, dest='notifyluke', default='',
-                       help='sends a completion email to luke with the specified message. If no message is specified, no email is sent')
-    group.add_argument('--notify_andy', type=str, dest='notifyandy', default='',
-                       help='sends a completion email to andy with the specified message. If no message is specified, no email is sent')
-    group.add_argument('--notify_johannes', type=str, dest='notifyjohannes', default='',
-                       help='sends a completion email to johannes with the specified message. If no message is specified, no email is sent')
+    group.add_argument('--densify_table', dest='densifytable', nargs=3, default = None,
+                       help='Create a dense csv given a db, table, and three columns. Three variables needed: ROW COL VALUE')
 
     group = parser.add_argument_group('Correlation Actions', 'Finds one relationship at a time (but can still adjust for others)')
     group.add_argument('--correlate', action='store_true', dest='correlate',
@@ -1041,6 +1035,12 @@ def main(fn_args = None):
         # whitelist = whitelist
         oa.loessPlotFeaturesByOutcome(fg, args.spearman, args.p_correction_method, blacklist, whitelist.union(args.loessplot), args.showfeatfreqs, outputdir=args.outputdir, outputname=args.outputname, topicLexicon=args.topiclexicon)        
 
+    if args.densifytable:
+        if not oa: oa = OA()
+        row_column, col_column, value_column = args.densifytable
+        outputFile = makeOutputFilename(args, None, None, suffix="_dense.csv") if args.outputname else None
+        oa.tableToDenseCsv(row_column, col_column, value_column, output_csv_filename=outputFile, compress_csv=True)
+    
     #Correlation Analysis Options:
     correls = None
     if args.compTagcloud and args.compTCsample1 and args.compTCsample2:
@@ -1630,17 +1630,6 @@ def main(fn_args = None):
             #can use something similar to OG correlMatrix
             pass
         pprint(results)
-
-    if args.notify or args.notifyluke or args.notifyandy or args.notifyjohannes:
-        from FeatureWorker.lib import notify
-        if args.notify:
-            notify.sendEmail("featureWorker run Finished", "this was sent from featureWorker.py", args.notify)
-        if args.notifyluke: 
-            notify.sendEmail("featureWorker run Finished", args.notifyluke + '\n\n\n' + str(args), 'lukaszad@gmail.com')
-        if args.notifyandy: 
-            notify.sendEmail("featureWorker run Finished", args.notifyandy + '\n\n\n' + str(args), 'andy.schwartz@gmail.com')
-        if args.notifyjohannes: 
-            notify.sendEmail("featureWorker run Finished", args.notifyjohannes + '\n\n\n' + str(args), 'johannes.chicago@gmail.com')  
 
     if init_args.toinitfile:
       with open(init_args.toinitfile, 'w') as init_file:  

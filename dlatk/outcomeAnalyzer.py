@@ -1517,21 +1517,6 @@ class OutcomeAnalyzer(OutcomeGetter):
         if not preserveBinTable:
             sql = 'DROP TABLE %s'%flexiTable
             mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        
-
-    @staticmethod
-    def writeFlexiAgeCSV(corpdb, flexiTable, age_csv):
-        (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding, use_unicode=self.use_unicode)
-        ageTable = flexiTable.replace('feat', 'age', 1)
-        sql = 'CREATE TABLE %s LIKE %s'%(ageTable, flexiTable)
-        mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        sql = 'ALTER TABLE %s MODIFY group_id float'%(ageTable)
-        mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        sql = 'INSERT INTO %s (group_id, feat, value, group_norm, feat_norm, N, bin_center, bin_width) SELECT bin_center, feat, value, group_norm, feat_norm, N, bin_center, bin_width FROM %s'%(ageTable, flexiTable)
-        mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        os.system('/home/lukaszdz/PERMA/ml/featureWorker.py -f \'%s\' -t \'%s\' -c group_id --print_csv /data/ml/fb20/csvs/%s'%(ageTable, ageTable, ageTable.replace('$', '.') + '.csv'))
-        sql = 'DROP TABLE %s'%(ageTable)
-        mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
     @staticmethod
     def printTagCloudFromTuples(rList, maxWords, rankOrderFreq = True, rankOrderR = False, colorScheme='multi', use_unicode=True):
@@ -2129,4 +2114,64 @@ class OutcomeAnalyzer(OutcomeGetter):
             fwc.warn("unknown output format: %s"% outputFormat)
         pprint(sigCoeffs)
 
+    def tableToDenseCsv(self, row_column, col_column, value_column, output_csv_filename=None, compress_csv=True):
+        """Take a mysql table to convert a long table (e.g. feature table) to a dense 2x2 contingency matrix (size N by 
+        M where N is the number of distinct rows and M is the number of distinct columns). Efficient (uses lookups instead 
+        of a single iteration through all entries of the contingency matrix -- could be more slightly more efficient if it 
+        used the dbCursor pointer).
+        
+        Parameters
+        ----------
+        row_column : str
+            table column that will populate the rows of the contingency csv
+        col_column : str
+            table column that will populate the columns of the contingency csv
+        value_column : str
+            table column that will populate the values at the intersection of the rows and columns of the contingency csv
+        output_csv_filename : str
+            the name of the output file -- if empty is created based on the values provided
+        compress_csv : boolean
+            whether to gzip the csv
+        """
 
+        if not output_csv_filename:
+            output_csv_filename = 'dense.{db}.{table}.{row}-by-{col}.{value}.csv'.format(db=self.corpdb, table=self.corptable, row=row_column, col=col_column, value=value_column)
+
+        row_sql = 'SELECT DISTINCT {row} FROM {table} ORDER BY {row}'.format(row=row_column, table=self.corptable)
+        sorted_row_values = list(mm.executeGetList1(self.corpdb, self.dbCursor, row_sql, charset=self.encoding, use_unicode=self.use_unicode))
+        col_sql = 'SELECT DISTINCT {col} FROM {table} ORDER BY {col}'.format(col=col_column, table=self.corptable)
+        sorted_col_values = list(mm.executeGetList1(self.corpdb, self.dbCursor, col_sql, charset=self.encoding, use_unicode=self.use_unicode))
+        value_sql = 'SELECT {row}, {col}, {value} FROM {table} ORDER BY {row}, {col}'.format(row=row_column, col=col_column, value=value_column, table=self.corptable)
+        sorted_values = mm.executeGetList(self.corpdb, self.dbCursor, value_sql, charset=self.encoding, use_unicode=self.use_unicode)
+
+        N = len(sorted_row_values)
+        M = len(sorted_col_values)
+
+        with open(output_csv_filename, 'w') as output_csv:
+            csv_writer = csv.writer(output_csv)
+            csv_writer.writerow([row_column] + sorted_col_values)
+
+            current_row = sorted_values[0][0]
+            current_column_data = ['NULL'] * M
+            num_row_writes = 0
+
+            for tablerow, tablecol, tablevalue in sorted_values:
+                # if a new row, write our current column data
+                # and reset local variables
+                if current_row != tablerow:
+                    csv_writer.writerow([current_row] + current_column_data)
+                    current_column_data = ['NULL'] * M
+                    num_row_writes += 1
+                    current_row = tablerow
+                    if num_row_writes % 1000 == 0:
+                        print('{n} out of {N} rows complete'.format(n=num_row_writes, N=N))
+                column_index = sorted_col_values.index(tablecol)
+                current_column_data[column_index] = tablevalue
+
+            csv_writer.writerow([current_row] + current_column_data)
+            print("wrote %d features over %d rows" % (N, num_row_writes))
+
+
+        if compress_csv:
+            # os.system("gzip {output_filename}".format(output_filename=output_csv_filename)
+            pass

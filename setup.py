@@ -1,7 +1,9 @@
 import sys
+import os
 import subprocess
 
 _version = sys.version_info[0]
+_attempts = 3
 
 try:
   from setuptools import setup
@@ -23,8 +25,19 @@ def check_mysql():
   return True
 
 def get_user_config():
-  import MySQLdb
-  db = MySQLdb.connect(host="localhost",user="root",passwd="****")
+  import MySQLdb, getpass
+  tries = 0
+  while(True):
+    if tries >= _attempts:
+      print("Cannot connect to MySQL.")
+      return None
+    try:
+      db = MySQLdb.connect(host="localhost",user=getpass.getuser(),passwd=getpass.getpass())
+      break
+    except:
+      tries += 1
+      print("Incorrect password, please try again.")
+      pass
   return db.cursor()
 
 def install_table(db_name, table_name, cursor):
@@ -44,6 +57,18 @@ def install_data(data, cursor):
   for table in tables:
     print("Installing %s.%s" % (database, table))
     install_table(database, table, cursor)
+
+def link_interface():
+  import dlatk
+  file_path = os.path.realpath(dlatk.__file__)
+  src = os.path.dirname(os.path.dirname(file_path)) + "/dlatk.py"
+  dst = "/usr/bin/local"
+  try:
+    os.symlink(src, dst)
+  except:
+    os.system("sudo ln -s %s %s" % (src, dst))
+
+
 
 
 DESCRIPTION = "DLATK is an end to end text analysis package developed by the World Well-Being Project at the University of Pennsylvania."
@@ -78,7 +103,7 @@ EMAIL = "hansens@sas.upenn.edu, sgiorgi@sas.upenn.edu"
 MAINTAINER = "Salvatore Giorgi, H. Andrew Schwartz, Patrick Crutchley"
 MAINTAINER_EMAIL = "sgiorgi@sas.upenn.edu, hansens@sas.upenn.edu, pcrutchl@psych.upenn.edu"
 URL = "http://dlatk.wwbp.org"
-DOWNLOAD_URL = 'https://github.com/wwbp/dlatk'
+DOWNLOAD_URL = 'https://github.com/dlatk/dlatk'
 CLASSIFIERS = [
   'Environment :: Console',
   'Natural Language :: English',
@@ -111,6 +136,7 @@ INSTALL_REQUIRES = [
   'SQLAlchemy>=0.9.9', 
   'statsmodels>=0.5.0', 
   'wordcloud>1.1.3', 
+  'langid>=1.1.4',
 ]
 INSTALL_DATA = {
   "tutorial": {"dla_tutorial": []},
@@ -146,7 +172,8 @@ if __name__ == "__main__":
   
   if sample_input.lower().startswith("y"):
     mysql_user_info = get_user_config()
-    install_data(INSTALL_DATA["tutorial"], mysql_user_info)
+    if mysql_user_info:
+      install_data(INSTALL_DATA["tutorial"], mysql_user_info)
   else:
     print("Skipping tutorial data.")
 
@@ -157,10 +184,17 @@ if __name__ == "__main__":
   if lex_input.lower().startswith("y"):
     if not mysql_user_info:
       mysql_user_info = get_user_config()
-    install_data(INSTALL_DATA["lexica"], mysql_user_info)
+    if not mysql_user_info:
+      install_data(INSTALL_DATA["lexica"], mysql_user_info)
   else:
     print("Skipping lexica data.")
 
+  print("The preferred method for using DLATK is through the interface dlatk.py.")
+  sample_input = _get_input("Would you like to link this in /usr/local/bin? (y/n) ")
 
+  if sample_input.lower().startswith("y"):
+    link_interface()
+  else:
+    print("dlatk.py not linked.")
 
 

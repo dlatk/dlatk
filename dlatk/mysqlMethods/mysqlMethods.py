@@ -76,7 +76,7 @@ def getTableColumnNames(db, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE
     columnNamesOfTable = executeGetList(db, dbCursor, sql)
     return [x[0] for x in columnNamesOfTable]
 
-def getTableColumnNamesTypes(db, table, charset=DEF_ENCODING):
+def getTableColumnNamesTypes(db, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
     """Returns a list of column names and types from a db table"""
     (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)
     sql = "SELECT column_name, column_type FROM information_schema.columns WHERE table_schema='%s' AND table_name='%s'"%(db, table)

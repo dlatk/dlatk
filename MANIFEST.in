@@ -1,5 +1,6 @@
 include dlatkInterface.py
 include LICENSE
+include README
 include data/*
 
 global-exclude *.pyd

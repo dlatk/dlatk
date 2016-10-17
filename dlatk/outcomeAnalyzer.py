@@ -26,7 +26,19 @@ from .mysqlMethods import mysqlMethods as mm
 
 
 class OutcomeAnalyzer(OutcomeGetter):
-    """Deals with outcome tables"""
+    """
+    Deals with Outcome Tables and provides various
+    functionalities for how outcomes are processed/analyzed.
+
+    Attributes
+    ----------
+    output_name: str
+
+
+    Returns
+    -------
+    OutcomeAnalyzer object.
+    """
 
     # correl indices
     r_idx = 0
@@ -39,7 +51,24 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     @classmethod
     def fromFile(cls, initFile):
-        """load variables from file"""
+        """
+        Load specified features from INI file
+
+
+        Parameters
+        ----------
+        initFile: str
+            path to file
+
+
+        Example
+        -------
+        creates outcomeAnalyzer Object with features
+        specified in the initFile
+
+        >>> outcomeAnalyzer.fromFile('~/myInit.ini')
+
+        """
         parser = SafeConfigParser()
         parser.read(initFile)
         corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else fwc.DEF_CORPDB
@@ -67,7 +96,32 @@ class OutcomeAnalyzer(OutcomeGetter):
         self.output_name = output_name
 
     def printGroupsAndOutcomesToCSV(self, featGetter, outputfile, where = '', freqs = False):
-        """prints sas-style csv file output"""
+        """
+        Prints sas-style csv file output
+
+        Parameters
+        ----------
+            featGetter (object): featureGetter object
+            outputfile (str): File name for the outcome to be printed to
+            where (str): Additional options based on a `where` statement, similar
+                         to mysql select * from table where ....
+            freqs (boolean): if true feature values are returned, if false group norms
+
+
+        Returns
+        ------
+        No return value - Writes to a CSV file containing groups and outcomes
+
+
+        Example
+        --------
+        Print groups and outcomes to csv
+        where fg is a feature getter object and args.printcsv
+        is a user defined filename supplied to fwInterface.
+
+        >>> oa.printGroupsAndOutcomesToCSV(fg, args.printcsv)
+
+        """
         assert mm.tableExists(self.corpdb, self.dbCursor, featGetter.featureTable, charset=self.encoding, use_unicode=self.use_unicode), 'feature table does not exist (make sure to quote it)'
 
         #get outcome data to work with
@@ -112,11 +166,56 @@ class OutcomeAnalyzer(OutcomeGetter):
             if numPed % 1000 == 0: fwc.warn("  %d groups printed"%(numPed))
 
     def printBinnedGroupsAndOutcomesToCSV(self, featGetter, outputfile, where = '', freqs = False):
+        """
+        Print csv file  with binned groups and output
+
+        Parameters
+        ----------
+            featGetter (object): featureGetter object
+            outputfile (str): File name for the outcome to be printed to
+            where (str): Additional options based on a `where` statement, similar
+                         to mysql select * from table where ....
+            freqs (boolean): if true feature values are returned, if false group norms
+
+
+        Returns
+        ------
+        No return value - Raises an Error
+
+
+        """
         raise NotImplementedError()
 
 
     def yieldDataForOneFeatAtATime(self, featGetter, blacklist=None, whitelist=None, outcomeWithOutcome=False, includeFreqs = False, groupsWhere = '', outcomeWithOutcomeOnly = False, ):
-        """Finds the correlations between features and outcomes"""
+        """
+        Finds the correlations between features and outcomes
+
+        Parameters
+        ----------
+            featGetter (object): featureGetter object
+            blacklist (list): list of feature table fields (str) to ignore
+            whitelist (list): list of feature table fields (str) to include
+            outcomeWithOutcome(boolean): Adds the outcomes themselves to the
+                                         list of variables to correlate with
+                                         the outcomes if True
+            includeFreqs (boolean): Include the frequency of each feature if True
+            groupsWhere ('str') : string specified with the --where flag containing
+                                    a sql statement for filtering
+            outcomeWithOutcomeOnly (boolean): True - only correlate outcomes with outcomes
+                                               False - correlate features with outcomes
+
+
+        Yeilds
+        ------
+        groups: contains all groups looked at -> ie all users
+        allOutcomes: contains a dictionary of the outcomes and their values for each group in groups
+        dataDict: contains the group_norms (i.e what we're z-scoring) for every feature
+        controls: dict of controls and counts
+        numOutcomes:
+        featFreqs:
+
+        """
         if not outcomeWithOutcomeOnly:
             assert mm.tableExists(self.corpdb, self.dbCursor, featGetter.featureTable, charset=self.encoding, use_unicode=self.use_unicode), 'feature table does not exist (make sure to quote it)'
         lexicon_count_table = None
@@ -190,9 +289,23 @@ class OutcomeAnalyzer(OutcomeGetter):
     
     def IDPcomparison(self, featGetter, sample1, sample2, blacklist=None, whitelist = None):
         """
-        TODO:
-            apply gtf
-            get groups in each of the three categories
+        Finds the correlations between features and outcomes
+
+        Parameters
+        ----------
+            featGetter (object): featureGetter object
+            sample1:
+            sample2:
+            blacklist (list): list of feature table fields (str) to ignore
+            whitelist (list): list of feature table fields (str) to include
+
+
+
+        Returns
+        ------
+
+        out:
+
         """
         # Applying group frequency threshold
         groups = []
@@ -281,7 +394,31 @@ class OutcomeAnalyzer(OutcomeGetter):
         return out
 
     def IDP_correlate(self, featGetter, outcomeWithOutcome = False, includeFreqs = False, useValuesInsteadOfGroupNorm = False, blacklist=None, whitelist = None):
-        """Informative Dirichlet prior, based on http://pan.oxfordjournals.org/content/16/4/372.full"""
+        """
+        Informative Dirichlet prior, based on http://pan.oxfordjournals.org/content/16/4/372.full
+        Finds the correlations between features and outcomes
+
+        Parameters
+        ----------
+            featGetter (object): featureGetter object
+            blacklist (list): list of feature table fields (str) to ignore
+            whitelist (list): list of feature table fields (str) to include
+            outcomeWithOutcome(boolean): Adds the outcomes themselves to the
+                                         list of variables to correlate with
+                                         the outcomes if True
+            includeFreqs (boolean): Include the frequency of each feature if True
+            groupsWhere ('str') : string specified with the --where flag containing
+                                    a sql statement for filtering
+            useValuesInsteadOfGroupNorm:
+
+
+        Returns
+        ------
+
+        out:
+
+
+        """
         out = dict()
         if blacklist:
             blacklist_re = list()
@@ -368,6 +505,27 @@ class OutcomeAnalyzer(OutcomeGetter):
         return out
 
     def zScoreGroup(self, featGetter, outcomeWithOutcome = False, includeFreqs = False, blacklist=None, whitelist = None):
+        """
+        Calculates group zScore
+
+        Parameters
+        ----------
+            featGetter (object): featureGetter object
+            blacklist (list): list of feature table fields (str) to ignore
+            whitelist (list): list of feature table fields (str) to include
+            outcomeWithOutcome(boolean): Adds the outcomes themselves to the
+                                         list of variables to correlate with
+                                         the outcomes if True
+            includeFreqs (boolean): Include the frequency of each feature if True
+
+
+        Returns
+        ------
+
+        correls (dict): dict of outcome=>feature=>(R, p, numGroups, featFreqs)
+
+
+        """
         correls = dict() #dict of outcome=>feature=>(R, p, numGroups, featFreqs)
         numFeatsDone = 0
         for (groups, allOutcomes, controls, feat, dataDict, numFeats, featFreqs) in self.yieldDataForOneFeatAtATime(featGetter, blacklist, whitelist, outcomeWithOutcome, includeFreqs):
@@ -404,7 +562,35 @@ class OutcomeAnalyzer(OutcomeGetter):
     def correlateWithFeatures(self, featGetter, spearman = False, p_correction_method = 'BH', interaction = None, 
                               blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False, outcomeWithOutcomeOnly = False, 
                               zscoreRegression = True, logisticReg = False, outputInteraction = False, groupsWhere = ''):
-        """Finds the correlations between features and outcomes"""
+        """Finds the correlations between features and outcomes
+
+        Parameters
+        ----------
+        featGetter (object): featureGetter object
+        spearman (boolean):
+        p_correction_method (str): Specified method for p-value correction
+        iteraction (list): list of iteraction terms
+        blacklist (list): list of feature table fields (str) to ignore
+        whitelist (list): list of feature table fields (str) to include
+        includeFreqs (boolean): Include the frequency of each feature if True
+        outcomeWithOutcome(boolean): Adds the outcomes themselves to the
+                                     list of variables to correlate with
+                                     the outcomes if True
+        outcomeWithOutcomeOnly (boolean): True - only correlate outcomes with outcomes
+                                           False - correlate features with outcomes
+        zscoreRegression (boolean):
+        logisticReg (boolean): True - use logistic regression, False - use default linear
+        outputInteraction (boolean): True - append output interactions to results
+        groupsWhere ('str') : string specified with the --where flag containing
+                                a sql statement for filtering
+
+
+        Returns
+        --------
+
+        correls (dict): dict of outcome=>feature=>(R, p, numGroups, featFreqs)
+
+        """
         
         correls = dict() #dict of outcome=>feature=>(R, p, numGroups, (conf_int), featFreqs)
         numRed = 0
@@ -571,7 +757,33 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     def aucWithFeatures(self, featGetter, p_correction_method = 'BH', interaction = None, bootstrapP = None, blacklist=None, 
                         whitelist=None, includeFreqs = False, outcomeWithOutcome = False, zscoreRegression = True, outputInteraction = False, groupsWhere = ''):
-        """Finds the auc between features and dichotamous outcomes"""
+        """
+
+        Finds the auc between features and dichotamous outcomes
+
+        Parameters
+        ----------
+
+        featGetter (object): featureGetter object
+        p_correction_method (str): Specified method for p-value correction
+        iteraction (list): list of iteraction terms
+        bootstrapP (list):
+        blacklist (list): list of feature table fields (str) to ignore
+        whitelist (list): list of feature table fields (str) to include
+        includeFreqs (boolean): Include the frequency of each feature if True
+        outcomeWithOutcome(boolean): Adds the outcomes themselves to the
+                                     list of variables to correlate with
+                                     the outcomes if True
+        zscoreRegression (boolean):
+        outputInteraction (boolean): True - append output interactions to results
+        groupsWhere ('str') : string specified with the --where flag containing
+                                a sql statement for filtering
+
+        Returns
+        -------
+        aucs (dict): dict of outcome=>feature=>(auc, p, numGroups, featFreqs)
+
+        """
         
         aucs = dict() #dict of outcome=>feature=>(auc, p, numGroups, featFreqs)
         numRed = 0
@@ -721,7 +933,28 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     def correlateControlCombosWithFeatures(self, featGetter, spearman = False, p_correction_method = 'BH', 
                               blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False, zscoreRegression = True):
-        """Finds the correlations between features and all combinations of outcomes"""
+        """
+        Finds the correlations between features and all combinations of outcomes
+
+        Parameters
+        ----------
+
+        featGetter (object): featureGetter object
+        spearman (boolean):
+        p_correction_method (str): Specified method for p-value correction
+        blacklist (list): list of feature table fields (str) to ignore
+        whitelist (list): list of feature table fields (str) to include
+        includeFreqs (boolean): Include the frequency of each feature if True
+        outcomeWithOutcome(boolean): Adds the outcomes themselves to the
+                                     list of variables to correlate with
+                                     the outcomes if True
+        zscoreRegression (boolean):
+
+        Returns
+        -------
+        comboCorrels (dict): dict of outcome=>feature=>(R, p)
+
+        """
 
         comboCorrels = dict() #dict of outcome=>feature=>(R, p)
         numRed = 0
@@ -857,7 +1090,29 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     def multRegressionWithFeatures(self, featGetter, spearman = False, p_correction_method = 'BH', 
                               blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False, zscoreRegression = True, interactions = False):
-        """Finds the multiple regression coefficient between outcomes and features"""
+        """
+
+        Finds the multiple regression coefficient between outcomes and features
+
+        Parameters
+        ----------
+        featGetter (object): featureGetter object
+        spearman (boolean):
+        p_correction_method (str): Specified method for p-value correction
+        blacklist (list): list of feature table fields (str) to ignore
+        whitelist (list): list of feature table fields (str) to include
+        includeFreqs (boolean): Include the frequency of each feature if True
+        outcomeWithOutcome(boolean): Adds the outcomes themselves to the
+                                     list of variables to correlate with
+                                     the outcomes if True
+        zscoreRegression (boolean):
+        iteractions (boolean):
+
+        Returns
+        -------
+        coeffs (dict): dict of feature=>outcome=>(R, p)
+
+        """
         #outcomes => things to find coefficients for
         #controls => included as covariates but coefficients not stored
         #language feature => y in regression
@@ -945,7 +1200,31 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     def loessPlotFeaturesByOutcome(self, featGetter, spearman = False, p_correction_method = 'BH', blacklist=None, whitelist=None, 
                                    includeFreqs = False, zscoreRegression = True, outputdir='/data/ml/fb20', outputname='loess.jpg', topicLexicon=None, numTopicTerms=8, outputOrder = []):
-        """Finds the correlations between features and outcomes"""
+        """
+
+        Finds the correlations between features and outcomes
+
+        Parameters
+        ----------
+        featGetter (object): featureGetter object
+        spearman (boolean):
+        p_correction_method (str): Specified method for p-value correction
+        blacklist (list): list of feature table fields (str) to ignore
+        whitelist (list): list of feature table fields (str) to include
+        includeFreqs (boolean): Include the frequency of each feature if True
+        zscoreRegression (boolean):
+        outputdir (str): directory for results to be written
+        outputname (str): name of output file
+        topicLexicon (list):
+        numTopicTerms (int):
+        outputOrder (list):
+
+        Returns
+        -------
+        no return value, creates loess plot and saves it to a file
+
+
+        """
         
         plotData = dict()#outcomeField->feat->data
 
@@ -1078,8 +1357,23 @@ class OutcomeAnalyzer(OutcomeGetter):
                 os.system('rm %s'%(plotscript_filename))
 
     def getTopicFeatLabel(self, topicLexicon, feat, numTopicTerms=8):
-        # sql = 'SELECT DISTINCT category FROM \'%s\''%(topicLexicon,)
-        # rows = mm.qExecuteGetList('permaLexicon', sql)
+        """
+        Get the terms with the highest weight for a given topicLexicon
+
+        Parameters
+        ----------
+
+        topicLexicon (str): table name containing the topic lexicon
+        feat (str): the topic label
+        numTopicTerms (int): number of topic terms
+
+
+        Returns
+        -------
+        label (list): list of terms with highest weight from the topic lexicon
+                        for the given topic
+
+        """
         
         sql = 'SELECT term, weight from %s WHERE category = \'%s\''%(topicLexicon, feat)
         rows = mm.qExecuteGetList('permaLexicon', sql)
@@ -1089,6 +1383,22 @@ class OutcomeAnalyzer(OutcomeGetter):
         return label
 
     def getGGplotCommands(self, outcome, file_in, file_out, featLabels=None, research=False):
+        """
+        Parameters
+        -----------
+        outcome (str): name of the outcome to plot
+        file_in (str): input file name
+        file_out: output file name (plot is stored here)
+        featLabels (list): list of feature labels
+        research (boolean): False - Detailed color version of the plot
+                            True  - standard plot
+
+        Returns
+        -------
+
+        commands (str): Command string used to generate a plot
+
+        """
         output_settings = "dpi=400, units='in', width=8, height=7"
         if not research:
             #GREY SCALE:
@@ -1157,6 +1467,19 @@ class OutcomeAnalyzer(OutcomeGetter):
         return commands    
 
     def wildcardMatch(self, string, list1):
+        """
+        Parameters
+        ----------
+        string (str): string
+        list1 (list): list of strings
+
+        Returns
+        -------
+        (boolean): True  - if string is in list1
+                   False - no match
+
+
+        """
         for endI in range(3, len(string)+1):
             stringWild = string[0:endI]+'*'
             if stringWild in list1:
@@ -1165,6 +1488,20 @@ class OutcomeAnalyzer(OutcomeGetter):
 
 
     def mapFeatureName(self, feat, mapping):
+        """
+
+
+        Parameters
+        ----------
+        feat (int): feature id
+        mapping (dict): mapping dict for feature labels
+
+        Returns
+        -------
+        newFeat (str): new feature name
+
+
+        """
         newFeat = feat
         try:
             newFeat = mapping[str(feat)]
@@ -1173,8 +1510,18 @@ class OutcomeAnalyzer(OutcomeGetter):
         return newFeat
 
     def getLabelmapFromLexicon(self, lexicon_table): 
+        """
+        Returns a label map based on a lexicon. labelmap is {feat:concatenated_categories}
 
-        """Returns a label map based on a lexicon. labelmap is {feat:concatenated_categories}"""
+        Parameters
+        ----------
+        lexicon_table (str): Lexicon table name
+
+        Returns
+        -------
+        feat_to_label (dict): a label map based on a lexicon. labelmap is {feat:concatenated_categories}
+
+        """
         (conn, cur, curD) = mm.dbConnect(self.lexicondb, charset=self.encoding, use_unicode=self.use_unicode)
         sql = 'SELECT * FROM %s'%(lexicon_table)
         rows = mm.executeGetList(self.lexicondb, cur, sql, True, charset=self.encoding, use_unicode=self.use_unicode) #returns list of [id, feat, cat, ...] entries
@@ -1190,7 +1537,21 @@ class OutcomeAnalyzer(OutcomeGetter):
         return feat_to_label
 
     def getLabelmapFromLabelmapTable(self, labelmap_table='', lda_id=None):
-        """Parses a labelmap table and returns a python dictionary: {feat:feat_label}"""
+        """
+
+        Parses a labelmap table and returns a python dictionary: {feat:feat_label}
+
+        Parameters
+        ----------
+        labelmap_table (str): name of lable map table
+        lda_id (str): lda model id
+
+        Returns
+        -------
+        feat_to_label (dict): {feat:feat_label}
+
+
+        """
         if labelmap_table:
             pass
         elif lda_id:
@@ -1209,7 +1570,22 @@ class OutcomeAnalyzer(OutcomeGetter):
         return feat_to_label
 
     def topicDupeFilterCorrels(self, correls, topicLex, maxWords = 15, filterThresh=0.25):
-        """ Filters out topics that have many similar words to those with a stronger correlation"""
+        """
+
+        Filters out topics that have many similar words to those with a stronger correlation
+
+        Parameters
+        ----------
+        correls (dict): outcome:feature
+        topicLex (str): table name
+        maxWords (int): max number of words
+        filterThresh (float): filter threshold
+
+        Returns
+        -------
+        newCorrels (dict): filtered dict (same structure as correls)
+
+        """
         #get topic information
         topicWords = self.getTopicWords(topicLex, maxWords)
         newCorrels = dict()
@@ -1229,6 +1605,24 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     @staticmethod
     def getTopicKeepList(rs, topicWords, filterThresh=0.25):
+        """
+
+        Gets a list of topics to keep during duplication filtering
+
+        Parameters
+        ----------
+        rs ():
+        topicWords (list): list of words
+        filterThresh (float): Filter threshold
+
+
+        Returns
+        -------
+        keptTopics (list): list of topics to keep
+
+
+
+        """
         rList = sorted(rs, key= lambda f: abs(f[1][0]) if not isnan(f[1][0]) else 0, reverse=True)
         usedWordSets = list() # a list of sets of topic words
         keptTopics = set()
@@ -1256,7 +1650,21 @@ class OutcomeAnalyzer(OutcomeGetter):
 
 
     def printTagCloudData(self, correls, maxP = fwc.DEF_P, outputFile='', paramString = None, maxWords = 100, duplicateFilter = False, colorScheme='multi'):
-        """prints data that can be inputted into tag cloud software"""
+        """
+        prints data that can be inputted into tag cloud software
+
+        Parameters
+        ----------
+        correls (dict): outcome: feature dict
+        maxP (float): p-value max
+        outputFile (str): output file name
+        paramString (str): string to be printed to screen
+        maxwords (int): max number of words
+        duplicateFilter (boolean):
+        colorScheme (str): argument for color scheme
+
+
+        """
         if paramString: print(paramString + "\n")
 
         fsock = None
@@ -1316,6 +1724,26 @@ class OutcomeAnalyzer(OutcomeGetter):
             sys.stdout = sys.__stdout__
 
     def printTopicTagCloudData(self, correls, topicLex, maxP = fwc.DEF_P, paramString = None, maxWords = 15, maxTopics = 100, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False):
+        """
+        Prints Topic Tag Cloud data to text file
+
+        Parameters
+        ----------
+        correls (dict): outcome:feature
+        topicLex (str): table name
+        maxP (float): p-value max
+        paramString (str): string to be printed to screen
+        maxWords (int): max number of words
+        maxTopics (int): max number of topics
+        duplicateFilter (boolean): use duplicate filter if True
+        colorScheme (str): color scheme option for cloud
+        outputFile (str): output file name
+        useFeatTableFeats (boolean):
+
+
+
+
+        """
         if paramString: print(paramString + "\n")
 
         fsock = None
@@ -1377,6 +1805,19 @@ class OutcomeAnalyzer(OutcomeGetter):
 
 
     def getTopicWords(self, topicLex, maxWords=15):
+        """
+
+        Gets the most prevalent words in a topic
+
+        Parameters
+        ----------
+        topicLex (str): lexicon table
+        maxWords (int): max number of words to return
+
+        Returns
+        -------
+        topicWords (dict): {term : weight}
+        """
         if not topicLex:
             fwc.warn("No topic lexicon selected, please specify it with --topic_lexicon TOP_LEX")
             exit(2)
@@ -1396,6 +1837,26 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     @staticmethod
     def printTopicListTagCloudFromTuples(rs, topicWords, maxWords = 25, maxTopics = 40, duplicateFilter = False, wordFreqs = None, filterThresh = 0.25, colorScheme='multi', use_unicode=True):
+        """
+        print topic tag cloud
+
+
+        Parameters
+        ----------
+        rs ():
+        topicWords (list): list of words
+        maxwords (int): max number of words
+        maxTopics (int): max number of topics
+        duplicateFilter (boolean): use duplicate filter if True
+        wordFreqs (list) : list of word frequencies
+        filterThresh (float): Filter threshold
+        colorScheme (str): color scheme option for cloud
+        use_unicode (boolean): keep unicode characters is True
+
+        Returns
+        -------
+        topicWords (list): list of words
+        """
         rList = sorted(rs, key= lambda f: abs(f[1][OutcomeAnalyzer.r_idx]) if not isnan(f[1][OutcomeAnalyzer.r_idx]) else 0, reverse=True)[:maxTopics]
         usedWordSets = list() # a list of sets of topic words
         for (topic, rf) in rList:
@@ -1433,6 +1894,19 @@ class OutcomeAnalyzer(OutcomeGetter):
         return topicWords
 
     def buildTopicLabelDict(self, topic_lex, num_words=3):
+        """
+        Build a topic label dictionary
+
+        Parameters
+        ----------
+        topic_lex (str): name lex table
+        num_words (int): number of words
+
+        Returns
+        -------
+        topicLabels (list): list of labels
+
+        """
         topicLabels = {}
         topic_to_words = self.getTopicWords(topic_lex, num_words)
         invalid_char_replacements = {'\\':'_bsl_', '/':'_fsl_', ':':'_col_', '*':'_ast_', '?':'_ques_', '"':'_doubquo_', '<':'_lsthan_', '>':'_grthan_', '|':'_pipe_'}
@@ -1449,6 +1923,16 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     @staticmethod
     def plotWordcloudFromTuples(rList, maxWords, outputFile, wordcloud):
+        """
+
+        Parameters
+        ----------
+        rList (list): list of (word, correl) tuples
+        maxWords (int): max number of words
+        outputFile (str): file name
+        wordcloud ()
+
+        """
         #rlist is a list of (word, correl) tuples
         if len(rList) < 3:
             print("rList has less than 3 items\n")
@@ -1468,6 +1952,21 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     @staticmethod
     def buildBatchPlotFile(corpdb, featTable, topicList=''):
+        """
+        Builds a file to be used for batch plotting
+
+
+        Parameters
+        ----------
+        corpdb (str): database name
+        featTable (str): feature table name
+        topicList (list): list of strings containing topics
+
+        Returns
+        -------
+        outputfile (str): output file name
+
+        """
         (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding, use_unicode=self.use_unicode)
         outputfile = '/tmp/flexiplot.csv'
         if topicList:
@@ -1486,6 +1985,21 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     @staticmethod
     def plotFlexibinnedTable(corpdb, flexiTable, featureFile, feat_to_label=None, preserveBinTable=False):
+        """
+
+        plots a flexi binned table
+
+        Parameters
+        ----------
+        corpdb (str): database name
+        flexiTable (str): table name
+        featureFile (str): feature file name
+        feat_to_label (list): feature-label tuples
+        preserveBinTable (boolean): True- preserve bin table, else drop table
+
+
+
+        """
         (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding, use_unicode=self.use_unicode)
         (pconn, pcur, pcurD) = mm.dbConnect(self.lexicondb, charset=self.encoding, use_unicode=self.use_unicode)
         if not feat_to_label:
@@ -1520,6 +2034,20 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     @staticmethod
     def printTagCloudFromTuples(rList, maxWords, rankOrderFreq = True, rankOrderR = False, colorScheme='multi', use_unicode=True):
+        """
+        Prints a tag cloud from a set of tuples
+
+        Parameters
+        ----------
+        rlist (list): list of (word, correl) tuples
+        maxWords (int): maximum number of words for the cloud
+        rankOrderFreq (boolean):
+        rankOrderR (boolean):
+        colorScheme (str): color scheme of plot
+        use_unicode (boolean): When true include unicode in clouds
+
+
+        """
         #rlist is a list of (word, correl) tuples
         if len(rList) < 1:
             print("rList has less than no items\n")
@@ -1569,6 +2097,21 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     @staticmethod
     def duplicateFilter(rList, wordFreqs, maxToCheck = 100):
+        """
+
+        Filters out duplicate words
+
+        Parameters
+        ----------
+        rList (list): list of (word, correl) tuples
+        wordFreqs (dict): word - word frequency pairs
+        maxToCheck (int): will stop checking after this many in order to speed up operation
+
+        Returns
+        -------
+        newList (list): filtered version of rList
+
+        """
         #maxToCheck, will stop checking after this many in order to speed up operation
 
         sortedList = sorted(rList, key= lambda f: abs(f[1][OutcomeAnalyzer.r_idx]) if not isnan(f[1][OutcomeAnalyzer.r_idx]) else 0, reverse=True)[:maxToCheck]
@@ -1605,6 +2148,23 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     @staticmethod
     def freqToColor(freq, maxFreq = 1000, resolution=64, colorScheme='multi'):
+        """
+
+        Alter color scheme of plot based on the the word frequencies
+
+        Parameters
+        ----------
+        freq (int): word frequency
+        maxFreq (int): maximum frequency threshold
+        resolution (int): pixels of resolution
+        colorScheme (str): specifies color scheme of plot
+
+        Returns
+        -------
+        htmlcode (str): string of html code specifying color scheme
+
+
+        """
         perc = freq / float(maxFreq)
         (red, green, blue) = (0, 0, 0)
         if colorScheme=='multi':
@@ -1646,7 +2206,20 @@ class OutcomeAnalyzer(OutcomeGetter):
 
 
     def generateTagCloudImage(self, correls, maxP = fwc.DEF_P, paramString = None, colorScheme='multi' ):
-        """generates a tag cloud image from correls"""
+        """
+
+        generates a tag cloud image from correls
+
+        Parameters
+        ----------
+        correls (dict): outcome: feature dict
+        maxP (float): p-value max
+        paramString (str): string to be printed to screen
+        colorScheme (str): argument for color scheme
+
+
+
+        """
         if paramString: print(paramString + "\n")
         #TODO: make maxP a parameter
         maxWords = 150
@@ -1667,6 +2240,15 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     @staticmethod
     def generateTagCloudImageFromTuples(rList, maxWords):
+        """
+        Generates a tag cloud from a list of tuples
+
+
+        Parameters
+        ----------
+
+
+        """
         #rlist is a list of (word, correl) tuples
         if len(rList) < 3:
             print("rList has less than 3 items\n")

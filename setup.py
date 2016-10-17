@@ -3,7 +3,6 @@ import os
 import subprocess
 
 _version = sys.version_info[0]
-_attempts = 3
 
 try:
   from setuptools import setup
@@ -11,64 +10,6 @@ except ImportError:
   if _version >= 3:
     sys.exit("Need setuptools to install dlatk for Python 3.x")
   from distutils.core import setup
-
-def _get_input(question):
-  return input(question) if _version >= 3 else raw_input(question)
-
-# check to see if mysql is running
-def check_mysql():
-  msqlr = subprocess.Popen("ps aux".split(), stdout=subprocess.PIPE).stdout
-  grep = subprocess.Popen(["grep", "mysql"], stdin=msqlr, stdout=subprocess.PIPE, universal_newlines=True).stdout
-  msqlrLines = grep.read().split("\n")
-  if len(msqlrLines) == 1 and "grep" in msqlrLines[0]:
-    sys.exit("MySQL is not running. Please restart or install MySQL to continue.")
-  return True
-
-def get_user_config():
-  import MySQLdb, getpass
-  tries = 0
-  while(True):
-    if tries >= _attempts:
-      print("Cannot connect to MySQL.")
-      return None
-    try:
-      db = MySQLdb.connect(host="localhost",user=getpass.getuser(),passwd=getpass.getpass())
-      break
-    except:
-      tries += 1
-      print("Incorrect password, please try again.")
-      pass
-  return db.cursor()
-
-def install_table(db_name, table_name, cursor):
-  sql = 'CREATE table %s.%s' % (db_name, table_name)
-  cursor.execute(sql)
-  return
-
-def install_db(db_name, cursor):
-  sql = 'CREATE DATABASE %s' % (db_name)
-  cursor.execute(sql)
-
-  return
-
-def install_data(data, cursor):
-  tables, database = data.popitem()
-  install_db(database, cursor)
-  for table in tables:
-    print("Installing %s.%s" % (database, table))
-    install_table(database, table, cursor)
-
-def link_interface():
-  import dlatk
-  file_path = os.path.realpath(dlatk.__file__)
-  src = os.path.dirname(os.path.dirname(file_path)) + "/dlatk.py"
-  dst = "/usr/bin/local"
-  try:
-    os.symlink(src, dst)
-  except:
-    os.system("sudo ln -s %s %s" % (src, dst))
-
-
 
 
 DESCRIPTION = "DLATK is an end to end text analysis package developed by the World Well-Being Project at the University of Pennsylvania."
@@ -118,8 +59,7 @@ CLASSIFIERS = [
   'Topic :: Scientific/Engineering',
 ]
 VERSION = '1.0.dev4'
-PACKAGE_DATA = {'dlatk': ['data/*.sql',
-            'data/*.csv',],
+PACKAGE_DATA = {'dlatk': ['data/*.sql', ],
 }
 INSTALL_REQUIRES = [
   'image',
@@ -142,59 +82,28 @@ INSTALL_DATA = {
   "tutorial": {"dla_tutorial": []},
   "lexica": {"permaLexicon": []},
 }
+ENTRY_POINTS = ['dlatk.py']
 
 if __name__ == "__main__":
 
   check_mysql()
 
-  # setup(name=DISTNAME,
-  #     author=AUTHOR,
-  #     author_email=EMAIL, 
-  #     #maintainer=MAINTAINER,
-  #     #maintainer_email=MAINTAINER_EMAIL,
-  #     version=VERSION,
-  #     packages=PACKAGES,
-  #     package_data=PACKAGE_DATA,
-  #     description=DESCRIPTION,
-  #     long_description=LONG_DESCRIPTION,
-  #     license=LICENSE,
-  #     url=URL,
-  #     download_url=DOWNLOAD_URL,
-  #     classifiers=CLASSIFIERS,
-  #     install_requires=INSTALL_REQUIRES,
-  # )
-  
-  mysql_user_info = None
+  setup(name=DISTNAME,
+      author=AUTHOR,
+      author_email=EMAIL, 
+      #maintainer=MAINTAINER,
+      #maintainer_email=MAINTAINER_EMAIL,
+      version=VERSION,
+      packages=PACKAGES,
+      package_data=PACKAGE_DATA,
+      description=DESCRIPTION,
+      long_description=LONG_DESCRIPTION,
+      license=LICENSE,
+      url=URL,
+      download_url=DOWNLOAD_URL,
+      classifiers=CLASSIFIERS,
+      install_requires=INSTALL_REQUIRES,
+      scripts = SCRIPTS,
 
-  # install dla_tutorial
-  print("DLATK comes with a small blog corpus for tutorial purposes.")
-  sample_input = _get_input("Would you like to import this directly into MySQL? (y/n) ")
-  
-  if sample_input.lower().startswith("y"):
-    mysql_user_info = get_user_config()
-    if mysql_user_info:
-      install_data(INSTALL_DATA["tutorial"], mysql_user_info)
-  else:
-    print("Skipping tutorial data.")
-
-  # install permaLexicon
-  print("DLATK comes with a small blog corpus for tutorial purposes.")
-  lex_input = _get_input("Would you like to install this now? (y/n) ")
-  
-  if lex_input.lower().startswith("y"):
-    if not mysql_user_info:
-      mysql_user_info = get_user_config()
-    if not mysql_user_info:
-      install_data(INSTALL_DATA["lexica"], mysql_user_info)
-  else:
-    print("Skipping lexica data.")
-
-  print("The preferred method for using DLATK is through the interface dlatk.py.")
-  sample_input = _get_input("Would you like to link this in /usr/local/bin? (y/n) ")
-
-  if sample_input.lower().startswith("y"):
-    link_interface()
-  else:
-    print("dlatk.py not linked.")
-
+  )
 

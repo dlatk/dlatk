@@ -51,6 +51,7 @@ DEF_COLLATIONS = {
         'latin2': 'latin2_general_ci', 
         'ascii': 'ascii_general_ci',
     }
+DEF_MYSQL_ENGINE = 'MYISAM'
 
 ##lexInterface settings
 DEF_TERM_FIELD = 'term'

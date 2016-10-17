@@ -34,19 +34,19 @@ python setup.py install
 - [mysqlclient](https://github.com/PyMySQL/mysqlclient-python)
 - [NumPy](http://www.numpy.org)
 - [SciPy](http://www.scipy.org/)
-- [statsmodels](http://http://www.statsmodels.org/)
+- [statsmodels](http://www.statsmodels.org/)
 
 See the [full installation instructions](http://dlatk.wwbp.org/install.html#dependencies)
 for recommended and optional dependencies.
 
 ## Documentation
 
-The documentation for the latest release is at dlatk.wwbp.org
+The documentation for the latest release is at [dlatk.wwbp.org](dlatk.wwbp.org).
 
 ## License
 
-DLATK is licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 3.0 United States License](https://creativecommons.org/licenses/by-nc-sa/3.0/us/)
+Licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 3.0 United States License](https://creativecommons.org/licenses/by-nc-sa/3.0/us/)
 
 ## Background
 
-DLATK was developed by the [World Well-Being Project](http://www.wwbp.org) based out of the University of Pennsylvania [Positive Psychology Center](http://www.ppc.sas.upenn.edu/).
+Developed by the [World Well-Being Project](http://www.wwbp.org) based out of the University of Pennsylvania [Positive Psychology Center](http://www.ppc.sas.upenn.edu/).

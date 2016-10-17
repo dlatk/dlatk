@@ -5,7 +5,7 @@ DLATK Tutorial
 
 In Differential Language Analysis (DLA) we correlate patterns in language with other characteristics such as gender, or voting results.  We may look at text broken down by user, county or individual message among other things.  You can see more about the conceptual aspect of DLA in this `Youtube Video <https://www.google.com/url?q=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DZdTeDED9h-w>`_ and in this journal paper, `Toward Personality Insights from Language Exploration in Social Media <http://wwbp.org/papers/sam2013-dla.pdf>`_.
 
-In this tutorial we will walk you through the process of running DLA using the dlatkInterface.py tool. Before running DLA here are some questions to ask yourself:
+In this tutorial we will walk you through the process of running DLA using the dlatk.py interface tool. Before running DLA here are some questions to ask yourself:
 
 * What text am I using?
 	* twitter, facebook, blogs
@@ -22,7 +22,7 @@ Answers for this tutorial:
 * We will look at age, gender and personality and how they correlate with LIWC and Facebook topics.
 * We will group the data at the user level. 
 
-**Difference between mysql and dlatkInterface**: You will be using our infrastructure code (which is primarily written in Python) and mysql. If you are new to using a terminal this can be confusing. Step 0 shows you how to install the infrastructure code. You will start every command with **./dlatkInterface.py**. As the name suggests, this is an interface to a much larger set of code called Feature Worker. The *.py* tells you that this is a Python file. On the other hand, **mysql** is a database management system. You access the mysql command line interface by typing **mysql** in your terminal. Mysql commands only work in the mysql command line interface, just as fwInterface only works in the terminal. Anytime you are asked to run a mysql command you must first type *mysql*. To exit you simply type *exit*. You should also note that all mysql commands end with a semicolon. When running this tutorial it might be helpful to have two terminal windows open, one for mysql and another for dlatkInterface. 
+**Difference between mysql and dlatk**: You will be using our infrastructure code (which is primarily written in Python) and mysql. If you are new to using a terminal this can be confusing. Step 0 shows you how to install the infrastructure code. You will start every command with **./dlatk.py**. As the name suggests, this is an interface to a much larger set of code called Feature Worker. The *.py* tells you that this is a Python file. On the other hand, **mysql** is a database management system. You access the mysql command line interface by typing **mysql** in your terminal. Mysql commands only work in the mysql command line interface, just as fwInterface only works in the terminal. Anytime you are asked to run a mysql command you must first type *mysql*. To exit you simply type *exit*. You should also note that all mysql commands end with a semicolon. When running this tutorial it might be helpful to have two terminal windows open, one for mysql and another for dlatk. 
 
 STEP 0 - Prepare
 ================
@@ -53,7 +53,7 @@ This step generates a quantitative summary of a body of text.  It basically does
 	##EXPECTED OUTPUT TABLES 
 	#feat$1gram$msgs_xxx$user_id$16to16
 	#feat$1gram$msgs_xxx$user_id$16to16$0_001
-	./dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_ngrams -n 1 --feat_occ_filter --set_p_occ 0.001 --group_freq_thresh 500
+	./dlatk.py -d dla_tutorial -t msgs_xxx -c user_id --add_ngrams -n 1 --feat_occ_filter --set_p_occ 0.001 --group_freq_thresh 500
 
 Brief descriptions of the flags:
 
@@ -69,10 +69,10 @@ Brief descriptions of the flags:
 .. code-block:: bash
 
 	##OTHER COMMAND OPTIONS
-	./dlatkInterface.py -d <database> -t <message_table> -c <group_data_column> --add_ngrams -n 1 2 3 --combine_feat_tables 1to3gram
+	./dlatk.py -d <database> -t <message_table> -c <group_data_column> --add_ngrams -n 1 2 3 --combine_feat_tables 1to3gram
 	
 	##FOLLOWED BY
-	./dlatkInterface.py -d <database> -t <message_table> -c <group_data_column> -f <feature table> --feat_occ_filter --set_p_occ <pocc> --group_freq_thresh <gft>
+	./dlatk.py -d <database> -t <message_table> -c <group_data_column> -f <feature table> --feat_occ_filter --set_p_occ <pocc> --group_freq_thresh <gft>
 
 To view the columns in your feature table use the following **mysql** command:
 
@@ -176,7 +176,7 @@ Every lex table will have the columns id, term, category and weight. Since LIWC 
 
 	# EXPECTED OUTPUT TABLE
 	# feat$cat_LIWC2007$msgs_xxx$user_id$16to16
-	./dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_lex_table -l LIWC2007
+	./dlatk.py -d dla_tutorial -t msgs_xxx -c user_id --add_lex_table -l LIWC2007
 
 Or we could use a weighted, data driven lexicon like our 2000 Facebook topics. These topics were created from Facebook data using Latent Dirichlet allocation (LDA). `Go here <https://en.wikipedia.org/wiki/Latent_Dirichlet_allocation>`_ for more info on LDA. Also see our :doc:`tut_lda`. The Facebook topic table in permaLexicon looks like
 
@@ -204,7 +204,7 @@ The main differences to notice are the category names and the weights. Since thi
 
 	# EXPECTED OUTPUT TABLE
 	# feat$cat_met_a30_2000_cp$msgs_xxx$user_id$16to16
-	./dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_lex_table -l met_a30_2000_cp --weighted_lexicon
+	./dlatk.py -d dla_tutorial -t msgs_xxx -c user_id --add_lex_table -l met_a30_2000_cp --weighted_lexicon
 
 Brief descriptions of the flags:
 
@@ -213,7 +213,7 @@ Brief descriptions of the flags:
 * :doc:`../fwinterface/fwflag_weighted_lexicon`: 
 
 Note -  for *LIWC2007* we are NOT using weights, but we are for *met_a30_2000_cp*.
-Note - dlatkInterface pieces together the expected name of the 1gram table using the information you give it in the -d, -t, and -c options 
+Note - dlatk pieces together the expected name of the 1gram table using the information you give it in the -d, -t, and -c options 
 Note - in the table name *met_a30_2000_cp*, met stands for messages english tokenizen, a30 stands for alpha = 30 (a tuning parameter in the LDA process) and 2000 means there are 2000 topics.
 
 In general use the following syntax (*permaLexicon* is a database where all of our lexica are stored):
@@ -221,7 +221,7 @@ In general use the following syntax (*permaLexicon* is a database where all of o
 .. code-block:: bash
 
 	## GENERAL SYNTAX FOR CREATING LEXICON FEATURE TABLES
-	./dlatkInterface.py -d <db> -t <msg_tbl> -c <grp_col> --add_lex_table -l <topic_tbl_from_permalexicon> [--weighted_lexicon]
+	./dlatk.py -d <db> -t <msg_tbl> -c <grp_col> --add_lex_table -l <topic_tbl_from_permalexicon> [--weighted_lexicon]
 
 Again, you can view the tables with the following **mysql** commands:
 
@@ -244,7 +244,7 @@ This step takes the quantified/summarized text and examines/uses relationships w
 
 .. code-block:: bash
 
-	./dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
+	./dlatk.py -d dla_tutorial -t msgs_xxx -c user_id \ 
 	-f 'feat$cat_LIWC2007$msgs_xxx$user_id$16to16' \ 
 	 --outcome_table blog_outcomes \ 
 	 --group_freq_thresh 500 \ 
@@ -276,7 +276,7 @@ Or using the Facebook topics and creating topic tag clouds:
 
 .. code-block:: bash
 
-	./dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
+	./dlatk.py -d dla_tutorial -t msgs_xxx -c user_id \ 
 	-f 'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16' \ 
 	 --outcome_table blog_outcomes  --group_freq_thresh 500 \ 
 	 --outcomes demog_age demog_gender --output_name xxx_output \ 
@@ -326,7 +326,7 @@ Here is the general syntax for some other commands:
 .. code-block:: bash
 
 	####MAKE WORDCLOUDS
-	./dlatkInterface.py -d <db> -t <msg_tbl> -c <grp_col> -f <feat_tbl>  \ 
+	./dlatk.py -d <db> -t <msg_tbl> -c <grp_col> -f <feat_tbl>  \ 
 	 --outcome_table <table_with_group_info>  \ 
 	 --outcomes <list of outcomes separated by spaces>  \ 
 	 --output_name <desired_output_name> --tagcloud --make_wordclouds 
@@ -334,7 +334,7 @@ Here is the general syntax for some other commands:
 .. code-block:: bash
 
 	####MAKE TOPIC WORDCLOUDS 
-	./dlatkInterface.py -d <db> -t <msg_tbl> -c <grp_col> -f <feat_tbl>  \ 
+	./dlatk.py -d <db> -t <msg_tbl> -c <grp_col> -f <feat_tbl>  \ 
 	 --outcome_table <table_with_group_info>  \ 
 	 --outcomes <list of outcomes separated by spaces>  \ 
 	 --output_name <desired_output_name> --topic_tagcloud --make_topic_wordcloud 
@@ -343,7 +343,7 @@ Here is the general syntax for some other commands:
 
 Continuing on...
 ================
-More information about dlatkInterface can be found in the following places: 
+More information about dlatk's interface can be found in the following places: 
 
 * :doc:`dlatkinterface_ordered`
 * Next tutorial: :doc:`tut_pred`

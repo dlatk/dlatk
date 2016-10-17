@@ -91,6 +91,7 @@ class FeatureExtractor(FeatureWorker):
         sql = "CREATE TABLE %s like %s" % (tableName, self.corptable)
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
@@ -150,6 +151,7 @@ class FeatureExtractor(FeatureWorker):
         sql = "CREATE TABLE %s like %s" % (tableName, self.corptable)
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
@@ -295,6 +297,7 @@ class FeatureExtractor(FeatureWorker):
         for t, name in list(tableNames.items()):
             sql = "CREATE TABLE IF NOT EXISTS %s like %s" % (name, self.corptable)
             mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+            mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
             mm.enableTableKeys(self.corpdb, self.dbCursor, name, charset=self.encoding, use_unicode=self.use_unicode)#just incase interrupted, so we can find un-parsed groups
 
         #Find column names:
@@ -431,12 +434,13 @@ class FeatureExtractor(FeatureWorker):
             self.corptable, self.message_field, self.messageid_field, self.corpdb)
         types = {k:v for k,v in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)}
         sql2 = "CREATE TABLE %s (" % (self.corptable+"_seg")
-        sql2 += "%s %s primary key, %s %s character set %s collate %s " % (self.messageid_field,
+        sql2 += "%s %s primary key, %s %s character set %s collate %s ENGINE=%s" % (self.messageid_field,
                                                                                          types[self.messageid_field],
                                                                                          self.message_field, 
                                                                                          types[self.message_field],
                                                                                          self.encoding,
-                                                                                         fwc.DEF_COLLATIONS[self.encoding.lower()])
+                                                                                         fwc.DEF_COLLATIONS[self.encoding.lower()],
+                                                                                         fwc.DEF_MYSQL_ENGINE)
         sql2 += ")"
         mm.execute(self.corpdb, self.dbCursor, "drop table if exists "+self.corptable+"_seg", charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql2, charset=self.encoding, use_unicode=self.use_unicode)
@@ -504,6 +508,7 @@ class FeatureExtractor(FeatureWorker):
         sql = "CREATE TABLE %s like %s" % (tableName, self.corptable)
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
@@ -566,6 +571,7 @@ class FeatureExtractor(FeatureWorker):
         sql = "CREATE TABLE %s like %s" % (tableName, self.corptable)
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
@@ -632,6 +638,7 @@ class FeatureExtractor(FeatureWorker):
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, alter, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
@@ -753,12 +760,9 @@ class FeatureExtractor(FeatureWorker):
         for l, table in messageTables.items():
             drop = """DROP TABLE IF EXISTS %s""" % (table)
             create = """CREATE TABLE %s like %s""" % (table, self.corptable)
-            char = """ALTER TABLE %s CHARACTER set %s""" % (table, self.encoding)
-            collate = """ALTER TABLE %s COLLATE %s""" % (table, fwc.DEF_COLLATIONS[self.encoding.lower()])
             mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
             mm.execute(self.corpdb, self.dbCursor, create, charset=self.encoding, use_unicode=self.use_unicode)
-            mm.execute(self.corpdb, self.dbCursor, char, charset=self.encoding, use_unicode=self.use_unicode)
-            mm.execute(self.corpdb, self.dbCursor, collate, charset=self.encoding, use_unicode=self.use_unicode)
+            mm.standardizeTable(self.corpdb, self.dbCursor, table, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
 
         #ITERATE THROUGH EACH MESSAGE WRITING THOSE THAT ARE ENGLISH
         messageDataToAdd = {l: list() for l in langs}
@@ -955,9 +959,6 @@ class FeatureExtractor(FeatureWorker):
                 while insert_idx_start < len(rows):
                     insert_rows = rows[insert_idx_start:min(insert_idx_end, len(rows))]
                     #_warn("Inserting rows %d to %d... " % (insert_idx_start, insert_idx_end))
-                    print(wsql)
-                    print(cf_id)
-                    print(rows)
                     mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, insert_rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode);
                     insert_idx_start += fwc.MYSQL_BATCH_INSERT_SIZE
                     insert_idx_end += fwc.MYSQL_BATCH_INSERT_SIZE
@@ -2047,7 +2048,7 @@ class FeatureExtractor(FeatureWorker):
         sql = """CREATE TABLE %s (id BIGINT(16) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
                  group_id %s, feat %s CHARACTER SET %s COLLATE %s, value %s, group_norm DOUBLE,
                  KEY `correl_field` (`group_id`), KEY `feature` (`feat`))
-                 CHARACTER SET %s COLLATE %s ENGINE=MYISAM""" %(tableName, correl_fieldType, featureType, self.encoding, fwc.DEF_COLLATIONS[self.encoding.lower()], valueType, self.encoding, fwc.DEF_COLLATIONS[self.encoding.lower()])
+                 CHARACTER SET %s COLLATE %s ENGINE=%s""" %(tableName, correl_fieldType, featureType, self.encoding, fwc.DEF_COLLATIONS[self.encoding.lower()], valueType, self.encoding, fwc.DEF_COLLATIONS[self.encoding.lower()], fwc.DEF_MYSQL_ENGINE)
 
         #run sql
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
@@ -2098,7 +2099,7 @@ class FeatureExtractor(FeatureWorker):
         enumCats = "'" + "', '".join([k.upper().replace("'", "\\'") for k in lexKeys]) + "'"   
         drop = """DROP TABLE IF EXISTS """ + tableName
         sql = """CREATE TABLE IF NOT EXISTS %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, 
-                term VARCHAR(140), category ENUM(%s), weight DOUBLE, INDEX(term), INDEX(category)) ENGINE = MyISAM""" % (tableName, enumCats)
+                term VARCHAR(140), category ENUM(%s), weight DOUBLE, INDEX(term), INDEX(category)) CHARACTER SET %s COLLATE %s ENGINE=%s""" % (tableName, enumCats, self.encoding, fwc.DEF_COLLATIONS[self.encoding.lower()], fwc.DEF_MYSQL_ENGINE)
         #run sql
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)

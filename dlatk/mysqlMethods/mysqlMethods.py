@@ -8,7 +8,7 @@ import csv
 from random import sample
 from math import floor
 
-from dlatk.fwConstants import USER, MAX_ATTEMPTS, MYSQL_ERROR_SLEEP, MYSQL_HOST, DEF_ENCODING, MAX_SQL_PRINT_CHARS, DEF_UNICODE_SWITCH, warn
+from dlatk.fwConstants import USER, MAX_ATTEMPTS, MYSQL_ERROR_SLEEP, MYSQL_HOST, DEF_ENCODING, MAX_SQL_PRINT_CHARS, DEF_UNICODE_SWITCH, DEF_MYSQL_ENGINE, warn
 
 #DB INFO:
 PASSWD = ''
@@ -330,6 +330,12 @@ def disableTableKeys(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_
 def enableTableKeys(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
     """Enables the keys, for use after inserting (and with keys disabled)"""
     sql = """ALTER TABLE %s ENABLE KEYS"""%(table)
+    return execute(db, dbCursor, sql, charset=charset, use_unicode=use_unicode) 
+
+def standardizeTable(db, dbCursor, table, collate='', engine=DEF_MYSQL_ENGINE, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+    """Sets character set, collate and engine"""
+    if not collate: collate = DEF_COLLATIONS[charset.lower()]
+    sql = """ALTER TABLE %s CHARACTER SET %s COLLATE %s ENGINE=%s""" % (table, charset, collate, engine)
     return execute(db, dbCursor, sql, charset=charset, use_unicode=use_unicode) 
 
 ## Table Meta Info ##

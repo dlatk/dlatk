@@ -917,7 +917,8 @@ class FeatureExtractor(FeatureWorker):
 
                     #words = message.split()
                     if not self.use_unicode: 
-                        words = [fwc.removeNonAscii(w) for w in tokenizer.tokenize(message)]
+                        #words = [fwc.removeNonAscii(w) for w in tokenizer.tokenize(message)]
+                        words = [fwc.removeNonUTF8(w) for w in tokenizer.tokenize(message)]
                     else:
                         words = tokenizer.tokenize(message)
 

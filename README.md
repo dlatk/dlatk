@@ -23,7 +23,7 @@ conda install dlatk
 ```
 
 ```sh
-pip install dlatk
+pip3 install dlatk
 ```
 
 ```sh

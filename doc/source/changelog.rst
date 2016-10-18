@@ -15,8 +15,6 @@ Changelog
   - New feature: --ls
   - New feature: stratified classification
   - New feature: --where
-  - New feature: --outcome_with_outcome_only
-  - New feature: --outcome_with_outcome_only
   - New feature: --stratify_folds added to --combo_test_classifiers
   - Bug fix: using multiple feature tables with --to_file
   - Improving feature: batch insert in tfidf

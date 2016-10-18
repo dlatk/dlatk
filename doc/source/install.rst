@@ -21,7 +21,7 @@ Install python dependencies.
 
 .. code-block:: bash
 
-    	pip install dlatk
+    	pip3 install dlatk
 
 Setup (OSX with brew)
 =====================
@@ -37,11 +37,21 @@ Install python dependencies. Note that there is an issue when running this on OS
 
 .. code-block:: bash
 
-    	pip install dlatk
+    	pip3 install dlatk
 
 Setup (Anaconda)
 ================
 
+Install Sample Datasets
+=======================
+DLATK comes packaged with two sample databases: dla_tutorial and permaLexicon. See THIS for more information on the databases. To install them use the following:
+
+.. code-block:: mysql
+
+    	mysql -u username -p dla_tutorial < /path/to/dlatk/data/dla_tutorial.sql
+    	mysql -u username -p permaLexicon < /path/to/dlatk/data/permaLexicon.sql
+
+Note: if these databases already exist the above commands will add tables to the db. 
 
 Install NLTK, Stanford Parser, Tweet NLP and wordcloud
 ======================================================
@@ -76,40 +86,49 @@ The default wordcloud module is installed in Step 2 via pip. This can be changed
 
 2. Change the  ../dlatk/lib/wordcloud.py to ``wordcloud_algorithm='ibm'``
 
+Command Line Interface
+======================
+
+DLATK is run using dlatk.py which is added to /usr/bin/local during the installation process. 
+
 MySQL Configuration
 ===================
 
-1. DLATK is *highly* dependent on MySQL. You must have this installed (see Step 1 in SETUP (Linux) or Step 3 in SETUP (OSX)). 
+1. DLATK is *highly* dependent on MySQL. You must have this installed. 
 
-2. Any calls to fwInterface.py will open MySQL. With your database any text data must have two columns:
+2. Any calls to dlatk.py will open MySQL. With your database any text data must have two columns:
 
 * message: text data
 * message_id: unique numeric identifier for each message
 
-3. All lexicon tables are assumed to be in a database called permaLexicon. To change this you must edit fwInterface.py: ``DEF_LEXICON_DB = 'permaLexicon'``
+3. All lexicon tables are assumed to be in a database called permaLexicon (a sample database with this name is distributed with the release). To change this you must edit fwConstants.py: ``DEF_LEXICON_DB = 'permaLexicon'``
 
 Dependencies
 ============
 
 Python
 ------
-* image
-* matplotlib
+* image 
+* matplotlib (>=1.3.1)
 * mysqlclient
-* nltk
+* nltk (>=3.1)
 * numpy
-* pandas
-* python-dateutil
-* rpy2
-* scikit-learn
+* pandas (>=0.17.1)
+* python-dateutil (>=2.5.0)
+* rpy2 (2.6.0)
+* scikit-learn (>=0.17.1)
 * scipy
-* SQLAlchemy
-* statsmodels
-* wordcloud
+* SQLAlchemy (>=0.9.9)
+* statsmodels (>=0.6.1)
+
+Python (optional)
+-----------------
+* langid (>=1.1.4)
+* wordcloud (>=1.1.3)
 
 Other
---------
-* IBM Wordcloud
-* Mallet
+-----
+* IBM Wordcloud (optional)
+* Mallet (optional)
 * Stanford Parser
 * Tweet NLP

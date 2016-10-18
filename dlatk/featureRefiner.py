@@ -117,6 +117,7 @@ class FeatureRefiner(FeatureGetter):
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         sql = "CREATE TABLE %s like %s" % (newTable, featureTable)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, newTable, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
 
         groupNs = mm.executeGetList(self.corpdb, self.dbCursor, 'SELECT group_id, N FROM %s GROUP BY group_id'%self.featureTable, charset=self.encoding, use_unicode=self.use_unicode)
         groupIdToN = dict(groupNs)
@@ -256,6 +257,7 @@ class FeatureRefiner(FeatureGetter):
         fwc.warn(" %s <new table %s will have %d distinct features.>" %(featureTable, newTable, numToKeep))
         sql = """CREATE TABLE %s like %s""" % (newTable, featureTable)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, newTable, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
   
         num_at_time = 2000
@@ -584,7 +586,7 @@ class FeatureRefiner(FeatureGetter):
             mm.execute(self.corpdb, self.dbCursor, sql)
             sql = 'ALTER TABLE %s CHANGE feat_norm std_dev FLOAT' % newTable;
             mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-
+            mm.standardizeTable(self.corpdb, self.dbCursor, newTable, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
             
         outres = outcomeRestriction
         outres = outres + ' AND ' if outres else '' #only need and if it exists
@@ -660,7 +662,7 @@ class FeatureRefiner(FeatureGetter):
             sql = "create table %s like %s" % (avgTable, newTables[0])
             mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
             mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-
+            mm.standardizeTable(self.corpdb, self.dbCursor, avgTable, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
             #create insert fields:
             shortNames = [chr(ord('a')+i) for i in range(len(newTables))]
             tableNames = ', '.join(["%s as %s" % (newTables[i], shortNames[i]) for i in range(len(newTables))])
@@ -709,7 +711,7 @@ class FeatureRefiner(FeatureGetter):
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         sql = """ALTER TABLE %s MODIFY group_id VARCHAR(255)""" % (newTable)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        
+        mm.standardizeTable(self.corpdb, self.dbCursor, newTable, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
 
         mm.disableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
         

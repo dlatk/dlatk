@@ -352,6 +352,18 @@ def removeNonAscii(s):
         return " ".join(new_words)
     return ''
 
+def removeNonUTF8(s): 
+    """remove non-ascii values from string s and replace with <UNICODE>"""
+    if s:
+        new_words = []
+        for w in s.split():
+            if len("".join(i for i in w if (ord(i)<128 and ord(i)>20))) < len(w):
+                new_words.append("<UNICODE>")
+            else:
+                new_words.append(w)
+        return " ".join(new_words)
+    return ''
+
 def reverseDictDict(d):
     """reverses the order of keys in a dict of dicts"""
     assert isinstance(next(iter(d.values())), dict), 'reverseDictDict not given a dictionary of dictionaries'

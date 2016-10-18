@@ -58,8 +58,9 @@ CLASSIFIERS = [
   'Programming Language :: Python :: 3.5',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '1.0.dev4'
-PACKAGE_DATA = {'dlatk': ['data/*.sql', ],
+VERSION = '1.0.dev16'
+PACKAGE_DATA = {
+  'dlatk': ['data/*.sql'],
 }
 INSTALL_REQUIRES = [
   'image',
@@ -78,24 +79,19 @@ INSTALL_REQUIRES = [
   'wordcloud>1.1.3', 
   'langid>=1.1.4',
 ]
-INSTALL_DATA = {
-  "tutorial": {"dla_tutorial": []},
-  "lexica": {"permaLexicon": []},
-}
-ENTRY_POINTS = ['dlatk.py']
+SCRIPTS = ['dlatkInterface.py']
 
 if __name__ == "__main__":
-
-  check_mysql()
 
   setup(name=DISTNAME,
       author=AUTHOR,
       author_email=EMAIL, 
-      #maintainer=MAINTAINER,
+      #aintainer=MAINTAINER,
       #maintainer_email=MAINTAINER_EMAIL,
       version=VERSION,
       packages=PACKAGES,
       package_data=PACKAGE_DATA,
+      include_package_data=True,
       description=DESCRIPTION,
       long_description=LONG_DESCRIPTION,
       license=LICENSE,
@@ -104,6 +100,5 @@ if __name__ == "__main__":
       classifiers=CLASSIFIERS,
       install_requires=INSTALL_REQUIRES,
       scripts = SCRIPTS,
-
   )
 

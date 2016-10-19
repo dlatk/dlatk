@@ -37,7 +37,7 @@ The text we will use is the mysql database **dla_tutorial** and in the table **m
  CREATE TABLE msgs_xxx LIKE msgs; 
  INSERT INTO msgs_xxx SELECT * FROM msgs;
 
-The relationships we will look at are ngram usage versus age and gender.  We will also look at Facebook topics versus age and gender and personality scores.  This outcome data is stored in the table **dla_tutorial.blog_outcomes** in the columns **demog_age** and  **demog_gender**.  We may also look at users’ scores on the big 5 personality quiz.  These are stored in the columns **big5_ope**, **big5_ext**, **big5_neu**, **big5_agr**, **big5_con**. 
+The relationships we will look at are ngram usage versus age and gender.  We will also look at Facebook topics versus age and gender and personality scores.  This outcome data is stored in the table **dla_tutorial.blog_outcomes** in the columns **age** and  **gender**.  
 
 We will group our data by user. You can see both the message table and the outcome table have a column called **user_id**. 
 
@@ -248,7 +248,7 @@ This step takes the quantified/summarized text and examines/uses relationships w
 	-f 'feat$cat_LIWC2007$msgs_xxx$user_id$16to16' \ 
 	 --outcome_table blog_outcomes \ 
 	 --group_freq_thresh 500 \ 
-	 --outcomes demog_age demog_gender \ 
+	 --outcomes age gender \ 
 	 --output_name xxx_output --rmatrix --sort --csv
 
 Brief descriptions of the flags:
@@ -263,7 +263,7 @@ Output will be written to the file **xxx_output.csv** and **xxx_output.html**. T
 
 .. code-block:: bash
 
-	feature,demog_age,p,N,freq,demog_gender,p,N,freq
+	feature,age,p,N,freq,gender,p,N,freq
 	ACHIEV,0.10453337969466858,1.2486251420175023,499,24061,-0.1327959917320303,0.18924871053777773,499,24061
 	ADVERBS,-0.097823107908957693,1.8490497097147072,499,77661,0.091427449910103736,2.6369379754861826,499,77661
 	AFFECT,-0.060118741047985133,11.519149773307243,499,133155,0.094864627490032188,2.1840596807077146,499,133155
@@ -279,7 +279,7 @@ Or using the Facebook topics and creating topic tag clouds:
 	./dlatk.py -d dla_tutorial -t msgs_xxx -c user_id \ 
 	-f 'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16' \ 
 	 --outcome_table blog_outcomes  --group_freq_thresh 500 \ 
-	 --outcomes demog_age demog_gender --output_name xxx_output \ 
+	 --outcomes age gender --output_name xxx_output \ 
 	 --topic_tagcloud --make_topic_wordcloud --topic_lexicon met_a30_2000_freq_t50ll \ 
 	--tagcloud_colorscheme bluered
 

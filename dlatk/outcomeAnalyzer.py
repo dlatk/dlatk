@@ -101,11 +101,13 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-            featGetter (object): featureGetter object
-            outputfile (str): File name for the outcome to be printed to
-            where (str): Additional options based on a `where` statement, similar
-                         to mysql select * from table where ....
-            freqs (boolean): if true feature values are returned, if false group norms
+            featGetter : featureGetter object
+            outputfile : str
+                File name for the outcome to be printed to
+            where : :obj:`str`, optional
+                Additional options based on a `where` statement, similar to mysql select * from table where ....
+            freqs : :obj:`boolean`, optional
+                if true feature values are returned, if false group norms
 
 
         Returns
@@ -171,11 +173,13 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-            featGetter (object): featureGetter object
-            outputfile (str): File name for the outcome to be printed to
-            where (str): Additional options based on a `where` statement, similar
-                         to mysql select * from table where ....
-            freqs (boolean): if true feature values are returned, if false group norms
+            featGetter : featureGetter object
+            outputfile : str
+                File name for the outcome to be printed to
+            where : :obj:`str`, optional
+                Additional options based on a `where` statement, similar to mysql select * from table where ....
+            freqs : :obj:`boolean`, optional
+                if true feature values are returned, if false group norms
 
 
         Returns
@@ -193,27 +197,34 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-            featGetter (object): featureGetter object
-            blacklist (list): list of feature table fields (str) to ignore
-            whitelist (list): list of feature table fields (str) to include
-            outcomeWithOutcome(boolean): Adds the outcomes themselves to the
-                                         list of variables to correlate with
-                                         the outcomes if True
-            includeFreqs (boolean): Include the frequency of each feature if True
-            groupsWhere ('str') : string specified with the --where flag containing
-                                    a sql statement for filtering
-            outcomeWithOutcomeOnly (boolean): True - only correlate outcomes with outcomes
-                                               False - correlate features with outcomes
+            featGetter : featureGetter object
+            blacklist : :obj:`list`, optional
+                list of feature table fields (str) to ignore
+            whitelist : :obj:`list`, optional
+                list of feature table fields (str) to include
+            outcomeWithOutcome : :obj:`boolean`, optional
+                Adds the outcomes themselves to the list of variables to correlate with the outcomes if True
+            includeFreqs : :obj:`boolean`, optional
+                Include the frequency of each feature if True
+            groupsWhere : :obj:`str`, optional
+                string specified with the --where flag containing 
+            outcomeWithOutcomeOnly : :obj:`boolean`, optional
+                True - only correlate outcomes with outcomes
+                False - correlate features with outcomes
 
 
-        Yeilds
+        Yields
         ------
-        groups: contains all groups looked at -> ie all users
-        allOutcomes: contains a dictionary of the outcomes and their values for each group in groups
-        dataDict: contains the group_norms (i.e what we're z-scoring) for every feature
-        controls: dict of controls and counts
-        numOutcomes:
-        featFreqs:
+        groups : 
+            contains all groups looked at -> ie all users
+        allOutcomes : 
+            contains a dictionary of the outcomes and their values for each group in groups
+        dataDict : 
+            contains the group_norms (i.e what we're z-scoring) for every feature
+        controls : 
+            dict of controls and counts
+        numOutcomes :
+        featFreqs :
 
         """
         if not outcomeWithOutcomeOnly:
@@ -293,18 +304,17 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-            featGetter (object): featureGetter object
-            sample1:
-            sample2:
-            blacklist (list): list of feature table fields (str) to ignore
-            whitelist (list): list of feature table fields (str) to include
-
-
+        featGetter : featureGetter object
+        sample1 :
+        sample2 :
+        blacklist : :obj:`list`, optional
+            list of feature table fields (str) to ignore
+        whitelist : :obj:`list`, optional
+            list of feature table fields (str) to include
 
         Returns
         ------
-
-        out:
+        out : dict
 
         """
         # Applying group frequency threshold
@@ -400,23 +410,21 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-            featGetter (object): featureGetter object
-            blacklist (list): list of feature table fields (str) to ignore
-            whitelist (list): list of feature table fields (str) to include
-            outcomeWithOutcome(boolean): Adds the outcomes themselves to the
-                                         list of variables to correlate with
-                                         the outcomes if True
-            includeFreqs (boolean): Include the frequency of each feature if True
-            groupsWhere ('str') : string specified with the --where flag containing
-                                    a sql statement for filtering
-            useValuesInsteadOfGroupNorm:
-
-
+        featGetter : featureGetter object
+        outcomeWithOutcome : :obj:`boolean`, optional
+            Adds the outcomes themselves to the list of variables to correlate with the outcomes if True
+        includeFreqs : :obj:`boolean`, optional
+            Include the frequency of each feature if True
+        useValuesInsteadOfGroupNorm : :obj:`boolean`, optional
+            use value field instead of group_norm
+        blacklist : :obj:`list`, optional
+            list of feature table fields (str) to ignore
+        whitelist : :obj:`list`, optional
+            list of feature table fields (str) to include
+        
         Returns
         ------
-
-        out:
-
+        out : dict
 
         """
         out = dict()
@@ -510,19 +518,20 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-            featGetter (object): featureGetter object
-            blacklist (list): list of feature table fields (str) to ignore
-            whitelist (list): list of feature table fields (str) to include
-            outcomeWithOutcome(boolean): Adds the outcomes themselves to the
-                                         list of variables to correlate with
-                                         the outcomes if True
-            includeFreqs (boolean): Include the frequency of each feature if True
-
+        featGetter : featureGetter object
+        outcomeWithOutcome : :obj:`boolean`, optional
+            Adds the outcomes themselves to the list of variables to correlate with the outcomes if True
+        includeFreqs : :obj:`boolean`, optional
+            Include the frequency of each feature if True
+        blacklist : :obj:`list`, optional
+            list of feature table fields (str) to ignore
+        whitelist : :obj:`list`, optional
+            list of feature table fields (str) to include
 
         Returns
         ------
-
-        correls (dict): dict of outcome=>feature=>(R, p, numGroups, featFreqs)
+        correls : dict
+            dict of outcome=>feature=>(R, p, numGroups, CI, featFreqs)
 
 
         """
@@ -566,29 +575,36 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-        featGetter (object): featureGetter object
-        spearman (boolean):
-        p_correction_method (str): Specified method for p-value correction
-        iteraction (list): list of iteraction terms
-        blacklist (list): list of feature table fields (str) to ignore
-        whitelist (list): list of feature table fields (str) to include
-        includeFreqs (boolean): Include the frequency of each feature if True
-        outcomeWithOutcome(boolean): Adds the outcomes themselves to the
-                                     list of variables to correlate with
-                                     the outcomes if True
-        outcomeWithOutcomeOnly (boolean): True - only correlate outcomes with outcomes
-                                           False - correlate features with outcomes
-        zscoreRegression (boolean):
-        logisticReg (boolean): True - use logistic regression, False - use default linear
-        outputInteraction (boolean): True - append output interactions to results
-        groupsWhere ('str') : string specified with the --where flag containing
-                                a sql statement for filtering
-
+        featGetter : featureGetter object
+        spearman : :obj:`boolean`, optional
+        p_correction_method : :obj:`str`, optional
+            Specified method for p-value correction
+        iteraction : :obj:`list`, optional
+            list of iteraction terms
+        blacklist : :obj:`list`, optional
+            list of feature table fields (str) to ignore
+        whitelist : :obj:`list`, optional
+            list of feature table fields (str) to include
+        includeFreqs : :obj:`boolean`, optional
+            Include the frequency of each feature if True
+        outcomeWithOutcome : :obj:`boolean`, optional
+            Adds the outcomes themselves to the list of variables to correlate with the outcomes if True
+        outcomeWithOutcomeOnly : :obj:`boolean`, optional
+            True - only correlate outcomes with outcomes
+            False - correlate features with outcomes
+        zscoreRegression : :obj:`boolean`, optional
+            standard both variables if True
+        logisticReg : :obj:`boolean`, optional
+            True - use logistic regression, False - use default linear
+        outputInteraction : :obj:`boolean`, optional
+            True - append output interactions to results
+        groupsWhere : :obj:`str`, optional
+            string specified with the --where flag containing a sql statement for filtering
 
         Returns
         --------
-
-        correls (dict): dict of outcome=>feature=>(R, p, numGroups, featFreqs)
+        correls : dict
+            dict of outcome=>feature=>(R, p, numGroups, CI, featFreqs)
 
         """
         
@@ -764,24 +780,31 @@ class OutcomeAnalyzer(OutcomeGetter):
         Parameters
         ----------
 
-        featGetter (object): featureGetter object
-        p_correction_method (str): Specified method for p-value correction
-        iteraction (list): list of iteraction terms
-        bootstrapP (list):
-        blacklist (list): list of feature table fields (str) to ignore
-        whitelist (list): list of feature table fields (str) to include
-        includeFreqs (boolean): Include the frequency of each feature if True
-        outcomeWithOutcome(boolean): Adds the outcomes themselves to the
-                                     list of variables to correlate with
-                                     the outcomes if True
-        zscoreRegression (boolean):
-        outputInteraction (boolean): True - append output interactions to results
-        groupsWhere ('str') : string specified with the --where flag containing
-                                a sql statement for filtering
+        featGetter : featureGetter object
+        p_correction_method : :obj:`str`, optional
+            Specified method for p-value correction
+        iteraction : :obj:`list`, optional
+            list of iteraction terms
+        bootstrapP : :obj:`list`, optional
+        blacklist : :obj:`list`, optional
+            list of feature table fields (str) to ignore
+        whitelist : :obj:`list`, optional
+            list of feature table fields (str) to include
+        includeFreqs : :obj:`boolean`, optional
+            Include the frequency of each feature if True
+        outcomeWithOutcome ::obj:`boolean`, optional
+            Adds the outcomes themselves to the list of variables to correlate with the outcomes if True
+        zscoreRegression : :obj:`boolean`, optional
+            standard both variables if True
+        outputInteraction : :obj:`boolean`, optional
+            True - append output interactions to results
+        groupsWhere : :obj:`str`, optional
+            string specified with the --where flag containing a sql statement for filtering
 
         Returns
         -------
-        aucs (dict): dict of outcome=>feature=>(auc, p, numGroups, featFreqs)
+        aucs : dict
+            dict of outcome=>feature=>(auc, p, numGroups, featFreqs)
 
         """
         
@@ -938,21 +961,25 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-
-        featGetter (object): featureGetter object
-        spearman (boolean):
-        p_correction_method (str): Specified method for p-value correction
-        blacklist (list): list of feature table fields (str) to ignore
-        whitelist (list): list of feature table fields (str) to include
-        includeFreqs (boolean): Include the frequency of each feature if True
-        outcomeWithOutcome(boolean): Adds the outcomes themselves to the
-                                     list of variables to correlate with
-                                     the outcomes if True
-        zscoreRegression (boolean):
+        featGetter : featureGetter object
+        spearman : :obj:`boolean`, optional
+        p_correction_method : :obj:`str`, optional
+            Specified method for p-value correction
+        blacklist : :obj:`list`, optional
+            list of feature table fields (str) to ignore
+        whitelist : :obj:`list`, optional
+            list of feature table fields (str) to include
+        includeFreqs : :obj:`boolean`, optional
+            Include the frequency of each feature if True
+        outcomeWithOutcome : :obj:`boolean`, optional
+            Adds the outcomes themselves to the list of variables to correlate with the outcomes if True
+        zscoreRegression : :obj:`boolean`, optional
+            standard both variables if True
 
         Returns
         -------
-        comboCorrels (dict): dict of outcome=>feature=>(R, p)
+        comboCorrels : dict
+            dict of outcome=>feature=>(R, p)
 
         """
 
@@ -1096,21 +1123,26 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-        featGetter (object): featureGetter object
-        spearman (boolean):
-        p_correction_method (str): Specified method for p-value correction
-        blacklist (list): list of feature table fields (str) to ignore
-        whitelist (list): list of feature table fields (str) to include
-        includeFreqs (boolean): Include the frequency of each feature if True
-        outcomeWithOutcome(boolean): Adds the outcomes themselves to the
-                                     list of variables to correlate with
-                                     the outcomes if True
-        zscoreRegression (boolean):
-        iteractions (boolean):
+        featGetter : featureGetter object
+        spearman : :obj:`boolean`, optional
+        p_correction_method " str
+            Specified method for p-value correction
+        blacklist : :obj:`list`, optional
+            list of feature table fields (str) to ignore
+        whitelist : :obj:`list`, optional
+            list of feature table fields (str) to include
+        includeFreqs : :obj:`boolean`, optional
+            Include the frequency of each feature if True
+        outcomeWithOutcome : :obj:`boolean`, optional
+            Adds the outcomes themselves to the list of variables to correlate with the outcomes if True
+        zscoreRegression : :obj:`boolean`, optional
+            standard both variables if True
+        iteractions : :obj:`boolean`, optional
 
         Returns
         -------
-        coeffs (dict): dict of feature=>outcome=>(R, p)
+        coeffs : dict
+            dict of feature=>outcome=>(R, p)
 
         """
         #outcomes => things to find coefficients for
@@ -1201,28 +1233,33 @@ class OutcomeAnalyzer(OutcomeGetter):
     def loessPlotFeaturesByOutcome(self, featGetter, spearman = False, p_correction_method = 'BH', blacklist=None, whitelist=None, 
                                    includeFreqs = False, zscoreRegression = True, outputdir='/data/ml/fb20', outputname='loess.jpg', topicLexicon=None, numTopicTerms=8, outputOrder = []):
         """
-
         Finds the correlations between features and outcomes
 
         Parameters
         ----------
-        featGetter (object): featureGetter object
-        spearman (boolean):
-        p_correction_method (str): Specified method for p-value correction
-        blacklist (list): list of feature table fields (str) to ignore
-        whitelist (list): list of feature table fields (str) to include
-        includeFreqs (boolean): Include the frequency of each feature if True
-        zscoreRegression (boolean):
-        outputdir (str): directory for results to be written
-        outputname (str): name of output file
-        topicLexicon (list):
-        numTopicTerms (int):
-        outputOrder (list):
+        featGetter : featureGetter object
+        spearman : :obj:`boolean`, optional
+        p_correction_method : :obj:`str`, optional
+            Specified method for p-value correction
+        blacklist : :obj:`list`, optional
+            list of feature table fields (str) to ignore
+        whitelist : :obj:`list`, optional
+            list of feature table fields (str) to include
+        includeFreqs : :obj:`boolean`, optional
+            Include the frequency of each feature if True
+        zscoreRegression : :obj:`boolean`, optional
+            standard both variables if True
+        outputdir : :obj:`str`, optional
+            directory for results to be written
+        outputname : :obj:`str`, optional
+            name of output file
+        topicLexicon : :obj:`list`, optional
+        numTopicTerms : :obj:`int`, optional
+        outputOrder : :obj:`list`, optional
 
         Returns
         -------
         no return value, creates loess plot and saves it to a file
-
 
         """
         
@@ -1362,16 +1399,18 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-
-        topicLexicon (str): table name containing the topic lexicon
-        feat (str): the topic label
-        numTopicTerms (int): number of topic terms
+        topicLexicon : str
+            table name containing the topic lexicon
+        feat : str
+            the topic label
+        numTopicTerms : :obj:`int`, optional
+            number of topic terms
 
 
         Returns
         -------
-        label (list): list of terms with highest weight from the topic lexicon
-                        for the given topic
+        label : list
+            list of terms with highest weight from the topic lexicon for the given topic
 
         """
         
@@ -1386,17 +1425,22 @@ class OutcomeAnalyzer(OutcomeGetter):
         """
         Parameters
         -----------
-        outcome (str): name of the outcome to plot
-        file_in (str): input file name
-        file_out: output file name (plot is stored here)
-        featLabels (list): list of feature labels
-        research (boolean): False - Detailed color version of the plot
-                            True  - standard plot
+        outcome : str
+            name of the outcome to plot
+        file_in : str
+            input file name
+        file_out : str
+            output file name (plot is stored here)
+        featLabels : :obj:`list`, optional
+            list of feature labels
+        research : :obj:`boolean`, optional
+            False - Detailed color version of the plot
+            True  - standard plot
 
         Returns
         -------
-
-        commands (str): Command string used to generate a plot
+        commands : str
+            Command string used to generate a plot
 
         """
         output_settings = "dpi=400, units='in', width=8, height=7"
@@ -1470,13 +1514,15 @@ class OutcomeAnalyzer(OutcomeGetter):
         """
         Parameters
         ----------
-        string (str): string
-        list1 (list): list of strings
+        string : strstring
+        list1 : list
+            list of strings
 
         Returns
         -------
-        (boolean): True  - if string is in list1
-                   False - no match
+         : boolean
+            True  - if string is in list1
+            False - no match
 
 
         """
@@ -1490,15 +1536,17 @@ class OutcomeAnalyzer(OutcomeGetter):
     def mapFeatureName(self, feat, mapping):
         """
 
-
         Parameters
         ----------
-        feat (int): feature id
-        mapping (dict): mapping dict for feature labels
+        feat : int
+            feature id
+        mapping : dict
+            mapping dict for feature labels
 
         Returns
         -------
-        newFeat (str): new feature name
+        newFeat : str
+            new feature name
 
 
         """
@@ -1515,11 +1563,13 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-        lexicon_table (str): Lexicon table name
+        lexicon_table : str
+            Lexicon table name
 
         Returns
         -------
-        feat_to_label (dict): a label map based on a lexicon. labelmap is {feat:concatenated_categories}
+        feat_to_label : dict
+            a label map based on a lexicon. labelmap is {feat:concatenated_categories}
 
         """
         (conn, cur, curD) = mm.dbConnect(self.lexicondb, charset=self.encoding, use_unicode=self.use_unicode)
@@ -1538,17 +1588,19 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     def getLabelmapFromLabelmapTable(self, labelmap_table='', lda_id=None):
         """
-
         Parses a labelmap table and returns a python dictionary: {feat:feat_label}
 
         Parameters
         ----------
-        labelmap_table (str): name of lable map table
-        lda_id (str): lda model id
+        labelmap_table : :obj:`str`, optional
+            name of lable map table
+        lda_id : :obj:`str`, optional
+            lda model id
 
         Returns
         -------
-        feat_to_label (dict): {feat:feat_label}
+        feat_to_label : dict
+            {feat:feat_label}
 
 
         """
@@ -1571,19 +1623,23 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     def topicDupeFilterCorrels(self, correls, topicLex, maxWords = 15, filterThresh=0.25):
         """
-
         Filters out topics that have many similar words to those with a stronger correlation
 
         Parameters
         ----------
-        correls (dict): outcome:feature
-        topicLex (str): table name
-        maxWords (int): max number of words
-        filterThresh (float): filter threshold
+        correls : dict
+            outcome:feature
+        topicLex : str
+            table name
+        maxWords : :obj:`int`, optional
+            max number of words
+        filterThresh : :obj:`float`, optional
+            filter threshold
 
         Returns
         -------
-        newCorrels (dict): filtered dict (same structure as correls)
+        newCorrels : dict
+            filtered dict (same structure as correls)
 
         """
         #get topic information
@@ -1606,21 +1662,21 @@ class OutcomeAnalyzer(OutcomeGetter):
     @staticmethod
     def getTopicKeepList(rs, topicWords, filterThresh=0.25):
         """
-
         Gets a list of topics to keep during duplication filtering
 
         Parameters
         ----------
-        rs ():
-        topicWords (list): list of words
-        filterThresh (float): Filter threshold
+        rs : list
+        topicWords : list
+            list of words
+        filterThresh : :obj:`float`, optional
+            Filter threshold
 
 
         Returns
         -------
-        keptTopics (list): list of topics to keep
-
-
+        keptTopics : list
+            list of topics to keep
 
         """
         rList = sorted(rs, key= lambda f: abs(f[1][0]) if not isnan(f[1][0]) else 0, reverse=True)
@@ -1651,17 +1707,23 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     def printTagCloudData(self, correls, maxP = fwc.DEF_P, outputFile='', paramString = None, maxWords = 100, duplicateFilter = False, colorScheme='multi'):
         """
-        prints data that can be inputted into tag cloud software
+        Prints data that can be inputted into tag cloud software
 
         Parameters
         ----------
-        correls (dict): outcome: feature dict
-        maxP (float): p-value max
-        outputFile (str): output file name
-        paramString (str): string to be printed to screen
-        maxwords (int): max number of words
-        duplicateFilter (boolean):
-        colorScheme (str): argument for color scheme
+        correls : dict
+            outcome: feature dict
+        maxP : :obj:`float`, optional
+            p-value max
+        outputFile : :obj:`str`, optional
+            output file name
+        paramString : :obj:`str`, optional
+            string to be printed to screen
+        maxwords : :obj:`int`, optional
+            max number of words
+        duplicateFilter : :obj:`boolean`, optional
+        colorScheme : :obj:`str`, optional
+            argument for color scheme
 
 
         """
@@ -1729,18 +1791,25 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-        correls (dict): outcome:feature
-        topicLex (str): table name
-        maxP (float): p-value max
-        paramString (str): string to be printed to screen
-        maxWords (int): max number of words
-        maxTopics (int): max number of topics
-        duplicateFilter (boolean): use duplicate filter if True
-        colorScheme (str): color scheme option for cloud
-        outputFile (str): output file name
-        useFeatTableFeats (boolean):
-
-
+        correls : dict
+            outcome:feature
+        topicLex : str
+            table name
+        maxP : :obj:`float`, optional
+            p-value max
+        paramString : :obj:`str`, optional
+            string to be printed to screen
+        maxWords : :obj:`int`, optional
+            max number of words
+        maxTopics : :obj:`int`, optional
+            max number of topics
+        duplicateFilter : :obj:`boolean`, optional
+            use duplicate filter if True
+        colorScheme : :obj:`str`, optional
+            color scheme option for cloud
+        outputFile : :obj:`str`, optional
+            output file name
+        useFeatTableFeats : :obj:`boolean`, optional
 
 
         """
@@ -1806,17 +1875,19 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     def getTopicWords(self, topicLex, maxWords=15):
         """
-
         Gets the most prevalent words in a topic
 
         Parameters
         ----------
-        topicLex (str): lexicon table
-        maxWords (int): max number of words to return
+        topicLex : str
+            lexicon table
+        maxWords : :obj:`int`, optional
+            max number of words to return
 
         Returns
         -------
-        topicWords (dict): {term : weight}
+        topicWords : dict
+            {term : weight}
         """
         if not topicLex:
             fwc.warn("No topic lexicon selected, please specify it with --topic_lexicon TOP_LEX")
@@ -1843,19 +1914,28 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-        rs ():
-        topicWords (list): list of words
-        maxwords (int): max number of words
-        maxTopics (int): max number of topics
-        duplicateFilter (boolean): use duplicate filter if True
-        wordFreqs (list) : list of word frequencies
-        filterThresh (float): Filter threshold
-        colorScheme (str): color scheme option for cloud
-        use_unicode (boolean): keep unicode characters is True
+        rs : list
+        topicWords : list
+            list of words
+        maxwords : :obj:`int`, optional
+            max number of words
+        maxTopics : :obj:`int`, optional
+            max number of topics
+        duplicateFilter : :obj:`boolean`, optional
+            use duplicate filter if True
+        wordFreqs : :obj:`list`, optional
+            list of word frequencies
+        filterThresh : :obj:`float`, optional
+            Filter threshold
+        colorScheme : :obj:`str`, optional
+            color scheme option for cloud
+        use_unicode : :obj:`boolean`, optional
+            keep unicode characters is True
 
         Returns
         -------
-        topicWords (list): list of words
+        topicWords : list
+            list of words
         """
         rList = sorted(rs, key= lambda f: abs(f[1][OutcomeAnalyzer.r_idx]) if not isnan(f[1][OutcomeAnalyzer.r_idx]) else 0, reverse=True)[:maxTopics]
         usedWordSets = list() # a list of sets of topic words
@@ -1899,12 +1979,15 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-        topic_lex (str): name lex table
-        num_words (int): number of words
+        topic_lex : str
+            name lex table
+        num_words : :obj:`int`, optional
+            number of words
 
         Returns
         -------
-        topicLabels (list): list of labels
+        topicLabels : list
+            list of labels
 
         """
         topicLabels = {}
@@ -1927,10 +2010,13 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-        rList (list): list of (word, correl) tuples
-        maxWords (int): max number of words
-        outputFile (str): file name
-        wordcloud ()
+        rList : list
+            list of (word, correl) tuples
+        maxWords : int
+            max number of words
+        outputFile : str
+            file name
+        wordcloud : 
 
         """
         #rlist is a list of (word, correl) tuples
@@ -1958,13 +2044,17 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-        corpdb (str): database name
-        featTable (str): feature table name
-        topicList (list): list of strings containing topics
+        corpdb : str
+            database name
+        featTable : str
+            feature table name
+        topicList : :obj:`list`, optional
+            list of strings containing topics
 
         Returns
         -------
-        outputfile (str): output file name
+        outputfile : str
+            output file name
 
         """
         (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding, use_unicode=self.use_unicode)
@@ -1986,17 +2076,20 @@ class OutcomeAnalyzer(OutcomeGetter):
     @staticmethod
     def plotFlexibinnedTable(corpdb, flexiTable, featureFile, feat_to_label=None, preserveBinTable=False):
         """
-
-        plots a flexi binned table
+        Plots a flexi binned table
 
         Parameters
         ----------
-        corpdb (str): database name
-        flexiTable (str): table name
-        featureFile (str): feature file name
-        feat_to_label (list): feature-label tuples
-        preserveBinTable (boolean): True- preserve bin table, else drop table
-
+        corpdb : str
+            database name
+        flexiTable : str
+            table name
+        featureFile : str
+            feature file name
+        feat_to_label : :obj:`list`, optional
+            feature-label tuples
+        preserveBinTable : :obj:`boolean`, optional
+            True- preserve bin table, else drop table
 
 
         """
@@ -2039,12 +2132,16 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-        rlist (list): list of (word, correl) tuples
-        maxWords (int): maximum number of words for the cloud
-        rankOrderFreq (boolean):
-        rankOrderR (boolean):
-        colorScheme (str): color scheme of plot
-        use_unicode (boolean): When true include unicode in clouds
+        rlist : list
+            list of (word, correl) tuples
+        maxWords : int
+            maximum number of words for the cloud
+        rankOrderFreq : :obj:`boolean`, optional
+        rankOrderR : :obj:`boolean`, optional
+        colorScheme : :obj:`str`, optional
+            color scheme of plot
+        use_unicode : :obj:`boolean`, optional
+            When true include unicode in clouds
 
 
         """
@@ -2098,18 +2195,21 @@ class OutcomeAnalyzer(OutcomeGetter):
     @staticmethod
     def duplicateFilter(rList, wordFreqs, maxToCheck = 100):
         """
-
         Filters out duplicate words
 
         Parameters
         ----------
-        rList (list): list of (word, correl) tuples
-        wordFreqs (dict): word - word frequency pairs
-        maxToCheck (int): will stop checking after this many in order to speed up operation
+        rList : list
+            list of (word, correl) tuples
+        wordFreqs : dict
+            word - word frequency pairs
+        maxToCheck : :obj:`int`, optional
+            will stop checking after this many in order to speed up operation
 
         Returns
         -------
-        newList (list): filtered version of rList
+        newList : list
+            filtered version of rList
 
         """
         #maxToCheck, will stop checking after this many in order to speed up operation
@@ -2149,19 +2249,23 @@ class OutcomeAnalyzer(OutcomeGetter):
     @staticmethod
     def freqToColor(freq, maxFreq = 1000, resolution=64, colorScheme='multi'):
         """
-
         Alter color scheme of plot based on the the word frequencies
 
         Parameters
         ----------
-        freq (int): word frequency
-        maxFreq (int): maximum frequency threshold
-        resolution (int): pixels of resolution
-        colorScheme (str): specifies color scheme of plot
+        freq : int
+            word frequency
+        maxFreq : :obj:`int`, optional
+            maximum frequency threshold
+        resolution : :obj:`int`, optional
+            pixels of resolution
+        colorScheme : :obj:`str`, optional
+            specifies color scheme of plot
 
         Returns
         -------
-        htmlcode (str): string of html code specifying color scheme
+        htmlcode : str
+            string of html code specifying color scheme
 
 
         """
@@ -2207,17 +2311,18 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     def generateTagCloudImage(self, correls, maxP = fwc.DEF_P, paramString = None, colorScheme='multi' ):
         """
-
-        generates a tag cloud image from correls
+        Generates a tag cloud image from correls
 
         Parameters
         ----------
-        correls (dict): outcome: feature dict
-        maxP (float): p-value max
-        paramString (str): string to be printed to screen
-        colorScheme (str): argument for color scheme
-
-
+        correls : dict
+            outcome: feature dict
+        maxP : :obj:`float`, optional
+            p-value max
+        paramString : :obj:`str`, optional
+            string to be printed to screen
+        colorScheme : :obj:`str`, optional
+            argument for color scheme
 
         """
         if paramString: print(paramString + "\n")
@@ -2246,7 +2351,8 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         Parameters
         ----------
-
+        rList : list
+        maxWords : int
 
         """
         #rlist is a list of (word, correl) tuples

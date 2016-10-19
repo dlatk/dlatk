@@ -29,6 +29,7 @@ Getting Started
    :maxdepth: 1
 
    install
+   install_faq
    tutorials/tut_dla
    datasets
    dlatkinterface_ordered

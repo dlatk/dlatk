@@ -17,7 +17,7 @@ Next, we will try predicting age and gender with the above features. Since age i
 	./dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
 	-f 'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16' 'feat$1gram$msgs_xxx$user_id$16to16' \ 
 	--outcome_table blog_outcomes  --group_freq_thresh 500 \ 
-	--outcomes demog_age --output_name xxx_age_output  \ 
+	--outcomes age --output_name xxx_age_output  \ 
 	--combo_test_reg --model ridgecv --folds 10 
 
 Brief descriptions of the flags:
@@ -65,7 +65,7 @@ Finally, once each outcome is finished, you will see the following output (only 
 
 .. code-block:: bash
 
-	{'demog_age': {(): {1: {'N': 499,
+	{'age': {(): {1: {'N': 499,
                         'R': 0.54865313166717689,
                         'R2': 0.3010202588882005,
                         'R2_folds': 0.3136392251334551,
@@ -98,7 +98,7 @@ The prediction_csv command will produce a csv file called xxx_age_output.predict
 
 .. code-block:: bash
 
-	Id,demog_age__withLanguage
+	Id,age__withLanguage
 	e73b38988d4a277a1ac12c258fb33a14,25.71484278807899
 	fb2eecbe942c268e0d47a377dde7831a,27.556797752649086
 	2a4ea8a5ac157246feedfcf72edad5ff,25.42848778125374
@@ -115,7 +115,7 @@ Next, we will predict gender. Since this is a binary outcome we switch to classi
 	./dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
 	-f 'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16' 'feat$1gram$msgs_xxx$user_id$16to16' \ 
 	--outcome_table blog_outcomes  --group_freq_thresh 500   \ 
-	--outcomes demog_gender --output_name xxx_gender_output \ 
+	--outcomes gender --output_name xxx_gender_output \ 
 	--combo_test_classifiers --model lr --folds 10  --prediction_csv
 
 Brief descriptions of the flags:
@@ -142,7 +142,7 @@ At the end of the K folds you will see the output:
 
 .. code-block:: bash 
 
- 	{'demog_gender': {(): {1: {'acc': 0.73199999999999998,
+ 	{'gender': {(): {1: {'acc': 0.73199999999999998,
                            'auc': 0.84652080652080652,
                            'f1': 0.75985663082437271,
                            'folds_acc': 0.73199999999999998,
@@ -183,7 +183,7 @@ Finally, the prediction_csv command will produce a csv file called xxx_age_outpu
 
 .. code-block:: bash
 
-	Id,demog_gender__withLanguage
+	Id,gender__withLanguage
 	e73b38988d4a277a1ac12c258fb33a14,0
 	fb2eecbe942c268e0d47a377dde7831a,0
 	2a4ea8a5ac157246feedfcf72edad5ff,1
@@ -221,7 +221,7 @@ We see an age and gender score for each use. The group_norm column contains the 
 
 .. code-block:: mysql
 
-	mysql> SELECT feat.group_id, feat.feat, feat.group_norm, outcomes.demog_age, outcomes.demog_gender 
+	mysql> SELECT feat.group_id, feat.feat, feat.group_norm, outcomes.age, outcomes.gender 
 	FROM dla_tutorial.blog_outcomes as outcomes
 	INNER JOIN dla_tutorial.feat$cat_dd_emnlp14_ageGender_w$msgs_xxx$user_id$16to16 as feat 
 	ON outcomes.user_id=feat.group_id limit 10;
@@ -231,7 +231,7 @@ which gives the output
 .. code-block:: mysql
 
 	+----------------------------------+--------+-------------------+-----------+--------------+
-	| group_id                         | feat   | group_norm        | demog_age | demog_gender |
+	| group_id                         | feat   | group_norm        | age | gender |
 	+----------------------------------+--------+-------------------+-----------+--------------+
 	| 33522bc535275457a87e20b3d0be71f2 | GENDER |  3.23204271891755 |        26 |            1 |
 	| 33522bc535275457a87e20b3d0be71f2 | AGE    |  26.8702764242703 |        26 |            1 |

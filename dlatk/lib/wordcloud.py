@@ -12,7 +12,6 @@ import imp, sys
 import subprocess
 from subprocess import check_call, CalledProcessError
 
-from PIL import Image
 from numpy import array
 
 from math import log, sqrt
@@ -21,6 +20,12 @@ from scipy.stats import rankdata
 
 from .. import fwConstants as fwc
 from ..mysqlMethods import mysqlMethods as mm
+
+try:
+    from PIL import Image
+except ImportError:
+    fwc.warn("Image module cannot be imported")
+    pass
 
 font_ii = 1
 

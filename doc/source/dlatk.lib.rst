@@ -44,14 +44,6 @@ dlatk.lib.notify module
     :undoc-members:
     :show-inheritance:
 
-dlatk.lib.wc_tools module
--------------------------
-
-.. automodule:: dlatk.lib.wc_tools
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 dlatk.lib.wordcloud module
 --------------------------
 

@@ -69,7 +69,3 @@ LDA Topics
 * All words: `[.csv] <http://wwbp.org/downloads/public_data/wwbpFBtopics_freq.csv>`_
 * Conditional probabilities `[.csv] <http://wwbp.org/downloads/public_data/wwbpFBtopics_condProb.csv>`_ (sparse matrix format)
 * `Link to publication <http://wwbp.org/publications.html#p7>`_
-
-500 Facebook Topics
--------------------
-

@@ -50,7 +50,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'DLATK'
-copyright = '2016, Andy'
+copyright = '2016, H. Andrew Schwartz and Salvatore Giorgi'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

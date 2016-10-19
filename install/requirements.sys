@@ -6,5 +6,6 @@ libxt-dev
 python-dev
 python-pip
 python-singledispatch
+python3-tk
 r-base
-ysql-server
+mysql-server

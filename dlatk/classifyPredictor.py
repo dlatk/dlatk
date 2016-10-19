@@ -55,13 +55,17 @@ from numpy import sqrt, array, std, mean, bincount, int64, ceil, absolute, appen
 
 import math
 
-#For ROC curves
-from matplotlib.backends.backend_pdf import PdfPages
-import matplotlib.pyplot as plt
-
 #infrastructure
 from .mysqlMethods import mysqlMethods as mm
+from .fwConstants import warn
 
+#For ROC curves
+try:
+    from matplotlib.backends.backend_pdf import PdfPages
+    import matplotlib.pyplot as plt
+except:
+    warn("matplotlib PdfPages or plt cannot be imported")
+    pass
 
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""

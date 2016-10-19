@@ -58,12 +58,15 @@ CLASSIFIERS = [
   'Programming Language :: Python :: 3.5',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '1.0.dev16'
+VERSION = '1.0.dev24'
 PACKAGE_DATA = {
   'dlatk': ['data/*.sql'],
 }
+INCLUDE_PACKAGE_DATA = True
+SETUP_REQUIRES = [
+  'numpy', 
+]
 INSTALL_REQUIRES = [
-  'image',
   'matplotlib>=1.3.1', 
   'mysqlclient', 
   'nltk>=3.1', 
@@ -71,14 +74,18 @@ INSTALL_REQUIRES = [
   'pandas>=0.17.1', 
   'patsy>=0.2.1', 
   'python-dateutil>=2.5.0', 
-  'rpy2',
   'scikit-learn>=0.17.1', 
   'scipy>=0.13.3', 
   'SQLAlchemy>=0.9.9', 
   'statsmodels>=0.5.0', 
-  'wordcloud>1.1.3', 
-  'langid>=1.1.4',
 ]
+EXTRAS_REQUIRE = {
+  'image': ['image'],
+  'langid': ['langid>=1.1.4'],
+  'rpy2': ['rpy2'],
+  'wordcloud':  ['wordcloud>1.1.3'],
+}
+
 SCRIPTS = ['dlatkInterface.py']
 
 if __name__ == "__main__":
@@ -86,18 +93,18 @@ if __name__ == "__main__":
   setup(name=DISTNAME,
       author=AUTHOR,
       author_email=EMAIL, 
-      #aintainer=MAINTAINER,
-      #maintainer_email=MAINTAINER_EMAIL,
       version=VERSION,
       packages=PACKAGES,
       package_data=PACKAGE_DATA,
-      include_package_data=True,
+      include_package_data=INCLUDE_PACKAGE_DATA,
       description=DESCRIPTION,
       long_description=LONG_DESCRIPTION,
       license=LICENSE,
       url=URL,
       download_url=DOWNLOAD_URL,
       classifiers=CLASSIFIERS,
+      setup_requires=SETUP_REQUIRES,
+      extras_require=EXTRAS_REQUIRE,
       install_requires=INSTALL_REQUIRES,
       scripts = SCRIPTS,
   )

@@ -223,7 +223,7 @@ class LDAExtractorParser(ArgumentParser):
         #                    help='Print any loaded objects')
 
         group = self.add_argument_group('Corpus Variables', 'Defining the data from which features are extracted.')
-        group.add_argument('-H', '--host', metavar='HOST', dest='host', default='localhost',
+        group.add_argument('-H', '--host', metavar='HOST', dest='host', default=fwc.MYSQL_HOST,
                            help='Host that contains the mysql dbs and tables')
         group.add_argument('-d', '--corpdb', metavar='DB', dest='corpdb', default=fwc.DEF_CORPDB,
                             help='Corpus Database Name.')

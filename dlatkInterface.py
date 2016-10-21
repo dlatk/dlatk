@@ -84,8 +84,8 @@ def main(fn_args = None):
                         help='Corpus Table.')
     group.add_argument('-c', '--correl_field', metavar='FIELD', dest='correl_field', default=getInitVar('correl_field', conf_parser, fwc.DEF_CORREL_FIELD),
                         help='Correlation Field (AKA Group Field): The field which features are aggregated over.')
-    group.add_argument('-H', '--host', metavar='HOST', dest='mysql_host', default=getInitVar('mysql_host', conf_parser, fwc.HOST),
-                       help='Host that the mysql server runs on (default: %s)' % fwc.HOST)
+    group.add_argument('-H', '--host', metavar='HOST', dest='mysql_host', default=getInitVar('mysql_host', conf_parser, fwc.MYSQL_HOST),
+                       help='Host that the mysql server runs on (default: %s)' % fwc.MYSQL_HOST)
     group.add_argument('--message_field', metavar='FIELD', dest='message_field', default=getInitVar('message_field', conf_parser, fwc.DEF_MESSAGE_FIELD),
                         help='The field where the text to be analyzed is located.')
     group.add_argument('--messageid_field', metavar='FIELD', dest='messageid_field', default=getInitVar('messageid_field', conf_parser, fwc.DEF_MESSAGEID_FIELD),
@@ -284,9 +284,9 @@ def main(fn_args = None):
 
     group = parser.add_argument_group('Prediction Variables', '')
     group.add_argument('--adapt_tables', metavar='TABLE_NUM', dest='adapttable', type=int, nargs='+', default=getInitVar('adapttable', conf_parser, None, varList=True),
-                       help='Table(s) containing feature information to be adapted') 
+                       help='NOT IMPLEMENTED: Table(s) containing feature information to be adapted') 
     group.add_argument('--adapt_control_names', metavar='COLUMN', dest='adaptcolumns', type=str, nargs='+', default=None,
-                        help='Controls to be used for adaptation.') 
+                        help='NOT IMPLEMENTED: Controls to be used for adaptation.') 
     group.add_argument('--model', type=str, metavar='name', dest='model', default=getInitVar('model', conf_parser, fwc.DEF_MODEL),
                        help='Model to use when predicting: svc, linear-svc, ridge, linear.')
     group.add_argument('--combined_models', type=str, nargs='+', metavar='name', dest='combmodels', default=fwc.DEF_COMB_MODELS,
@@ -1639,7 +1639,7 @@ def main(fn_args = None):
         if (args.corpdb and args.corpdb != fwc.DEF_CORPDB): init_file.write("corpdb = " + str(args.corpdb)+"\n") 
         if (args.corptable and args.corptable != fwc.DEF_CORPTABLE): init_file.write("corptable = " + str(args.corptable)+"\n") 
         if (args.correl_field): init_file.write("correl_field = " + str(args.correl_field)+"\n") 
-        if (args.mysql_host and args.mysql_host != "localhost"): init_file.write("mysql_host = " + str(args.mysql_host)+"\n") 
+        if (args.mysql_host and args.mysql_host != fwc.MYSQL_HOST): init_file.write("mysql_host = " + str(args.mysql_host)+"\n") 
         if (args.message_field and args.message_field != fwc.DEF_MESSAGE_FIELD): init_file.write("message_field = " + str(args.message_field)+"\n") 
         if (args.messageid_field and args.messageid_field != fwc.DEF_MESSAGEID_FIELD): init_file.write("messageid_field = " + str(args.messageid_field)+"\n") 
         if (args.encoding and args.encoding != fwc.DEF_ENCODING): init_file.write("encoding = " + str(args.encoding)+"\n") 

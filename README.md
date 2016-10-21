@@ -19,7 +19,7 @@ DLATK is an end to end text analysis package written in Python 3 and developed b
 DLATK is available via conda, pip or github.
 
 ```sh
-conda install dlatk
+conda install -c wwbp dlatk
 ```
 
 ```sh
@@ -33,6 +33,7 @@ python setup.py install
 ## Dependencies
 - [mysqlclient](https://github.com/PyMySQL/mysqlclient-python)
 - [NumPy](http://www.numpy.org)
+- [scikit-learn](http://www.scikit-learn.org/)
 - [SciPy](http://www.scipy.org/)
 - [statsmodels](http://www.statsmodels.org/)
 
@@ -45,7 +46,7 @@ The documentation for the latest release is at [dlatk.wwbp.org](dlatk.wwbp.org).
 
 ## License
 
-Licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 3.0 United States License](https://creativecommons.org/licenses/by-nc-sa/3.0/us/)
+Licensed under a [GNU Lesser General Public License v3 (LGPLv3)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
 
 ## Background
 

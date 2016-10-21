@@ -38,7 +38,7 @@ PACKAGES = ['dlatk',
   'dlatk.LexicaInterface',
   'dlatk.mysqlMethods',
 ]
-LICENSE = 'Creative Commons Attribution-NonCommercial-ShareAlike 3.0 United States License'
+LICENSE = 'GNU Lesser General Public License v3 (LGPLv3)'
 AUTHOR = "H. Andrew Schwartz, Salvatore Giorgi, Maarten Sap, Patrick Crutchley, Lukasz Dziurzynski and Megha Agrawal"
 EMAIL = "hansens@sas.upenn.edu, sgiorgi@sas.upenn.edu"
 MAINTAINER = "Salvatore Giorgi, H. Andrew Schwartz, Patrick Crutchley"

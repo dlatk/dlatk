@@ -19,7 +19,6 @@ from sklearn.linear_model import LogisticRegression
 import statsmodels.stats.multitest as mt
 
 #DB INFO:
-HOST = ''
 USER = getpass.getuser()
 
 MAX_ATTEMPTS = 5 #max number of times to try a query before exiting
@@ -353,12 +352,12 @@ def removeNonAscii(s):
     return ''
 
 def removeNonUTF8(s): 
-    """remove non-ascii values from string s and replace with <UNICODE>"""
+    """remove non-utf8 values from string s and replace with <NON-UTF8>"""
     if s:
         new_words = []
         for w in s.split():
-            if len("".join(i for i in w if (ord(i)<128 and ord(i)>20))) < len(w):
-                new_words.append("<UNICODE>")
+            if len(w.encode("utf-8",'ignore').decode('utf-8','ignore')) < len(w):
+                new_words.append("<NON-UTF8>")
             else:
                 new_words.append(w)
         return " ".join(new_words)

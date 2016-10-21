@@ -74,7 +74,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else fwc.DEF_CORPDB
         corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else fwc.DEF_CORPTABLE
         correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else fwc.DEF_CORREL_FIELD
-        mysql_host = parser.get('constants','mysql_host') if parser.has_option('constants','mysql_host') else "localhost"
+        mysql_host = parser.get('constants','mysql_host') if parser.has_option('constants','mysql_host') else fwc.MYSQL_HOST
         message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else fwc.DEF_MESSAGE_FIELD
         messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else fwc.DEF_MESSAGEID_FIELD
         encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else fwc.DEF_ENCODING
@@ -91,7 +91,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
         return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, group_freq_thresh = group_freq_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable)
     
-    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host="localhost", message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, use_unicode=fwc.DEF_UNICODE_SWITCH, lexicondb=fwc.DEF_LEXICON_DB, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls=fwc.DEF_OUTCOME_CONTROLS, outcome_interaction=fwc.DEF_OUTCOME_CONTROLS, group_freq_thresh = None, featureMappingTable='', featureMappingLex='',  output_name='', wordTable = None):
+    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host=fwc.MYSQL_HOST, message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, use_unicode=fwc.DEF_UNICODE_SWITCH, lexicondb=fwc.DEF_LEXICON_DB, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls=fwc.DEF_OUTCOME_CONTROLS, outcome_interaction=fwc.DEF_OUTCOME_CONTROLS, group_freq_thresh = None, featureMappingTable='', featureMappingLex='',  output_name='', wordTable = None):
         super(OutcomeAnalyzer, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, group_freq_thresh, featureMappingTable, featureMappingLex,  wordTable)
         self.output_name = output_name
 
@@ -2174,23 +2174,23 @@ class OutcomeAnalyzer(OutcomeGetter):
         for (w, occ, freq) in rList:
             if freq:
                 color = OutcomeAnalyzer.freqToColor(freq, maxFreq, colorScheme=colorScheme)
-                # if use_unicode:
-                #     print("%s:%d:%s" % (w.encode('utf-8').replace(' ', '_'), int(occ), color))
-                # else:
-                #     if len(w) > len(fwc.removeNonAscii(w)): 
-                #         fwc.warn("Unicode being ignored, %s is being skipped" % w)
-                #     else:
-                #         print("%s:%d:%s" % (w.replace(' ', '_'), int(occ), color))
-                print("%s:%d:%s" % (w.replace(' ', '_'), int(occ), color))
+                if use_unicode:
+                    print("%s:%d:%s" % (w.replace(' ', '_'), int(occ), color))
+                else:
+                    if len(w) > len(fwc.removeNonAscii(w)): 
+                        fwc.warn("Unicode being ignored, %s is being skipped" % w)
+                    else:
+                        print("%s:%d:%s" % (w.replace(' ', '_'), int(occ), color))
+                
             else:
-                # if use_unicode:
-                #     print("%s:%d" % (w.encode('utf-8').replace(' ', '_'), int(occ)))
-                # else:
-                #     if len(w) > len(fwc.removeNonAscii(w)): 
-                #         fwc.warn("Unicode being ignored, %s is being skipped" % w)
-                #     else:
-                #         print("%s:%d" % (w.replace(' ', '_'), int(occ)))
-                print("%s:%d" % (w.replace(' ', '_'), int(occ)))
+                if use_unicode:
+                    print("%s:%d" % (w.replace(' ', '_'), int(occ)))
+                else:
+                    if len(w) > len(fwc.removeNonAscii(w)): 
+                        fwc.warn("Unicode being ignored, %s is being skipped" % w)
+                    else:
+                        print("%s:%d" % (w.replace(' ', '_'), int(occ)))
+                
 
     @staticmethod
     def duplicateFilter(rList, wordFreqs, maxToCheck = 100):

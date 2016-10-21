@@ -11,16 +11,16 @@ Setup (Linux)
 **WARNING**: This will install MySQL on your computer. 
 
 Install the required Ubuntu libraries. The requirements.sys can be found on the `DLATK GitHub page <http://www.github.com/dlatk/dlatk>`_.   The ``r-base`` package might be difficult to install and can be removed from ``requirements.sys`` if needed though this will limit some functionality. 
- 	
+	
 .. code-block:: bash
 
- 		xargs apt-get install < install/requirements.sys
+		xargs apt-get install < install/requirements.sys
 
 Install via pip. Make sure pip is bound to 
 
 .. code-block:: bash
 
-    	pip install dlatk
+		pip install dlatk
 
 DLATK has been tested on Ubuntu 14.04. 
 
@@ -32,27 +32,33 @@ Install dependencies with brew.
 
 .. code-block:: bash
 
-    	brew install python mysql
+		brew install python mysql
 
 Install via pip:
 
 .. code-block:: bash
 
-    	pip install dlatk
+		pip install dlatk
 
 DLATK has been tested on OSX 10.11. 
 
 Setup (Anaconda)
 ================
 
+Run the following in a Python 3.5 conda env:
+
+.. code-block:: bash
+
+		conda install -c wwbp dlatk
+
 Install Sample Datasets
 =======================
 DLATK comes packaged with two sample databases: dla_tutorial and permaLexicon. See :doc:`datasets` for more information on the databases. To install them use the following:
 
-.. code-block:: mysql
+.. code-block:: bash
 
-    	mysql -u username -p  < /path/to/dlatk/data/dla_tutorial.sql
-    	mysql -u username -p  < /path/to/dlatk/data/permaLexicon.sql
+		mysql -u username -p  < /path/to/dlatk/data/dla_tutorial.sql
+		mysql -u username -p  < /path/to/dlatk/data/permaLexicon.sql
 
 **WARNING**: if these databases already exist the above commands will add tables to the db. 
 
@@ -66,7 +72,7 @@ You can install the optional python dependencies with
 
 .. code-block:: bash
 
-    	pip install image langid rpy2 wordcloud
+		pip install image langid rpy2 wordcloud
 
 Load NLTK corpus
 ----------------
@@ -74,7 +80,7 @@ Load NLTK data from the command line:
 
 .. code-block:: bash
 
-    	python -c "import nltk; nltk.download('wordnet')"
+		python -c "import nltk; nltk.download('wordnet')"
 
 Install Stanford Parser
 -----------------------
@@ -82,7 +88,7 @@ Install Stanford Parser
 #. Download the zip file from http://nlp.stanford.edu/software/lex-parser.shtml. 
 #. Extract into ``../dlatk/Tools/StanfordParser/``. 
 #. Move ``../dlatk/Tools/StanfordParser/oneline.sh`` into the folder you extracted: ``../dlatk/Tools/StanfordParser/stanford-parser-full*/``.
-    
+	
 Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)
 ------------------------------------------
 

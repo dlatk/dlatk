@@ -20,7 +20,7 @@ DLATK is an end to end text analysis package written in Python and developed by 
 * `CMU's TweetNLP <http://www.cs.cmu.edu/~ark/TweetNLP/>`_ interface
 * `pandas <http://pandas.pydata.org/>`_ dataframe output
 
-DLATK is licensed under a `Creative Commons Attribution-NonCommercial-ShareAlike 3.0 United States License <https://creativecommons.org/licenses/by-nc-sa/3.0/us/>`_.
+DLATK is licensed under a `GNU Lesser General Public License v3 (LGPLv3) <https://www.gnu.org/licenses/lgpl-3.0.en.html>`_.
 
 Getting Started
 ---------------

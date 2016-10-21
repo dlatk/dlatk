@@ -37,7 +37,7 @@ except ImportError:
     pass
 
 #DB INFO:
-HOST = 'localhost'
+HOST = '127.0.0.1'
 USER = os.getlogin()
 PASSWD = ''
 

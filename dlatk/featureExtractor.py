@@ -177,9 +177,10 @@ class FeatureExtractor(FeatureWorker):
             #tokenize msgs:
             # parses = map(lambda m: json.dumps(sentDetector.tokenize(fwc.removeNonAscii(treatNewlines(m.strip())))), messages)
             if self.use_unicode: 
-                parses = [json.dumps(sentDetector.tokenize(fwc.treatNewlines(m.strip()))) for m in messages]
+                parses = [json.dumps(sentDetector.tokenize(fwc.removeNonUTF8(fwc.treatNewlines(m.strip())))) for m in messages]
             else:
-                parses = [json.dumps(sentDetector.tokenize(fwc.removeNonAscii(fwc.treatNewlines(m.strip())))) for m in messages]
+                parses = [json.dumps(sentDetector.tokenize(fwc.removeNonUTF8(fwc.treatNewlines(m.strip())))) for m in messages]
+                #parses = [json.dumps(sentDetector.tokenize(fwc.removeNonAscii(fwc.treatNewlines(m.strip())))) for m in messages]
             #add msgs into new tables
             sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
                     """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
@@ -917,10 +918,9 @@ class FeatureExtractor(FeatureWorker):
 
                     #words = message.split()
                     if not self.use_unicode: 
-                        #words = [fwc.removeNonAscii(w) for w in tokenizer.tokenize(message)]
-                        words = [fwc.removeNonUTF8(w) for w in tokenizer.tokenize(message)]
+                        words = [fwc.removeNonAscii(w) for w in tokenizer.tokenize(message)]
                     else:
-                        words = tokenizer.tokenize(message)
+                        words = [fwc.removeNonUTF8(w) for w in tokenizer.tokenize(message)]
 
                     gram = '' ## MAARTEN
                     for i in range(0,(len(words) - n)+1):
@@ -1065,7 +1065,7 @@ class FeatureExtractor(FeatureWorker):
 
                     #words = message.split()
                     if self.use_unicode: 
-                        words = list(message)
+                        words = [fwc.removeNonUTF8(w) for w in list(message)]
                     else:
                         words = [fwc.removeNonAscii(w) for w in list(message)]
 
@@ -1301,7 +1301,10 @@ class FeatureExtractor(FeatureWorker):
         '''
         ###### BEGIN extract to new function
         message = fwc.treatNewlines(message)
-        if not self.use_unicode: message = fwc.removeNonAscii(message) #TODO: don't use for foreign languages
+        if self.use_unicode:
+            message = fwc.removeNonUTF8(message) 
+        else:
+            message = fwc.removeNonAscii(message) #TODO: don't use for foreign languages
         message = fwc.shrinkSpace(message)
 
         #TODO - update this to a word based dict, eg maxCollocSize[word[i]]
@@ -1414,7 +1417,10 @@ class FeatureExtractor(FeatureWorker):
 
                     #TODO: remove if keeping other characters
                     message = fwc.treatNewlines(message)
-                    if not self.use_unicode: message = fwc.removeNonAscii(message) #TODO: don't use for foreign languages
+                    if self.use_unicode:
+                        message = fwc.removeNonUTF8(message) #TODO: don't use for foreign languages
+                    else:
+                        message = fwc.removeNonAscii(message) #TODO: don't use for foreign languages
                     message = fwc.shrinkSpace(message)
 
                     self._countFeatures(collocSet, maxCollocSizeByFirstWord, message, tokenizer, freqs, lowercase_only, includeSubCollocs)
@@ -1510,7 +1516,10 @@ class FeatureExtractor(FeatureWorker):
                     if msgs > 1000*2915:
                         break
                     message = fwc.treatNewlines(message)
-                    if not self.use_unicode: message = fwc.removeNonAscii(message)
+                    if self.use_unicode: 
+                        message = fwc.removeNonUTF8(message)
+                    else:
+                        message = fwc.removeNonAscii(message)
                     message = fwc.shrinkSpace(message)
 
                     words = tokenizer.tokenize(message)
@@ -1837,7 +1846,10 @@ class FeatureExtractor(FeatureWorker):
                     if msgs % fwc.PROGRESS_AFTER_ROWS == 0: #progress update
                         fwc.warn("Messages Read: %dk" % int(msgs/1000))
                     message = fwc.treatNewlines(message)
-                    if not self.use_unicode: message = fwc.removeNonAscii(message)
+                    if self.use_unicode:
+                        message = fwc.removeNonUTF8(message)
+                    else:
+                        message = fwc.removeNonAscii(message)
                     message = fwc.shrinkSpace(message)
 
 
@@ -2845,7 +2857,10 @@ class FeatureExtractor(FeatureWorker):
                     if msgs % fwc.PROGRESS_AFTER_ROWS == 0: #progress update
                         fwc.warn("Messages Read: %dk" % int(msgs/1000))
                     message = fwc.treatNewlines(message)
-                    if not self.use_unicode: message = fwc.removeNonAscii(message)
+                    if self.use_unicode:
+                        message = fwc.removeNonUTF8(message)
+                    else:
+                        message = fwc.removeNonAscii(message)
                     message = fwc.shrinkSpace(message)
 
                     parseInfo = loads(corenlpServer.parse(message))
@@ -2983,7 +2998,10 @@ class FeatureExtractor(FeatureWorker):
                     if msgs % fwc.PROGRESS_AFTER_ROWS == 0: #progress update
                         fwc.warn("Messages Read: %dk" % int(msgs/1000))
                     message = fwc.treatNewlines(message)
-                    if not self.use_unicode: message = fwc.removeNonAscii(message)
+                    if self.use_unicode:
+                        message = fwc.removeNonUTF8(message)
+                    else:
+                        message = fwc.removeNonAscii(message)
                     message = fwc.shrinkSpace(message)
 
                     parseInfo = loads(corenlpServer.parse(message))

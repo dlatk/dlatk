@@ -1,0 +1,11 @@
+build-essential
+libcairo2-dev
+libmysqlclient-dev
+libxaw7-dev
+libxt-dev
+python-dev
+python-pip
+python-singledispatch
+python3-tk
+r-base
+mysql-server

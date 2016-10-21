@@ -15,12 +15,15 @@ DLATK is an end to end text analysis package written in Python and developed by 
 * mediation 
 * clustering
 * wordcloud visualization
-* `Mallet <http://mallet.cs.umass.edu/>`_ interface for creating LDA topics
-* `Stanford Parser <http://nlp.stanford.edu/software/lex-parser.shtml>`_ interface
-* `CMU's TweetNLP <http://www.cs.cmu.edu/~ark/TweetNLP/>`_ interface
-* `pandas <http://pandas.pydata.org/>`_ dataframe output
 
-DLATK is licensed under a `GNU Lesser General Public License v3 (LGPLv3) <https://www.gnu.org/licenses/lgpl-3.0.en.html>`_.
+DLATK can utilize:
+
+- `Mallet <http://mallet.cs.umass.edu/>`_ for creating LDA topics
+- `Stanford Parser <http://nlp.stanford.edu/software/lex-parser.shtml>`_
+- `CMU's TweetNLP <http://www.cs.cmu.edu/~ark/TweetNLP/>`_ 
+- `pandas <http://pandas.pydata.org/>`_ dataframe output
+
+DLATK is licensed under a `GNU General Public License v3 (GPLv3) <https://www.gnu.org/licenses/gpl-3.0.en.html>`_.
 
 Getting Started
 ---------------

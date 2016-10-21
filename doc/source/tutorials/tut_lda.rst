@@ -36,9 +36,9 @@ Using the infrastructure to tokenize the messages and print the tokenized messag
 
 .. code-block:: bash
 
-	./dlatkInterface.py -d dla_tutorial -t msgs_lda -c id --add_tokenized   #creates table *msgs_lda_tok* in *dla_tutorial*
+	dlatkInterface.py -d dla_tutorial -t msgs_lda -c id --add_tokenized   #creates table *msgs_lda_tok* in *dla_tutorial*
 
-	./dlatkInterface.py -d dla_tutorial -t msgs_lda --print_tokenized_lines ~/lda_tutorial/msgs_lda.txt
+	dlatkInterface.py -d dla_tutorial -t msgs_lda --print_tokenized_lines ~/lda_tutorial/msgs_lda.txt
 
 NOTE - if you have newlines in your message this step may cause issues down the line, it is recommended to replace all newlines with a representative character before proceeding
 
@@ -46,7 +46,7 @@ OPTIONAL: If you want to restrict your LDA words to a subset of words in the cor
 
 .. code-block:: bash
 
-	./dlatkInterface.py -d dla_tutorial -t msgs_lda --print_tokenized_lines ser1_filt.txt --feat_whitelist 'feat$1gram$msgs_lda$user_id$16to16$0_005'
+	dlatkInterface.py -d dla_tutorial -t msgs_lda --print_tokenized_lines ser1_filt.txt --feat_whitelist 'feat$1gram$msgs_lda$user_id$16to16$0_005'
 
 
 Step 2, option B: Generate a feature table and convert it to a mallet-appropriate formatted text file
@@ -55,9 +55,9 @@ You can use this step in place of step 2, option A.
 
 .. code-block:: bash
 
-	./dlatkInterface.py -d dla_tutorial -t msgs_lda -c message_id --add_ngrams -n 1
+	dlatkInterface.py -d dla_tutorial -t msgs_lda -c message_id --add_ngrams -n 1
 
-	./dlatkInterface.py -d dla_tutorial -t msgs_lda -c message_id -f 'feat$1gram$msgs_lda$message_id$16to16' --print_joined_feature_lines msgs_lda.txt
+	dlatkInterface.py -d dla_tutorial -t msgs_lda -c message_id -f 'feat$1gram$msgs_lda$message_id$16to16' --print_joined_feature_lines msgs_lda.txt
 
 
 Step 4: Format for Mallet
@@ -96,7 +96,7 @@ Adds the message ID’s to the topic distributions and stores the result in lda_
 
 .. code-block:: bash
 
-	./dlatkInterface.py --add_message_id ~/lda_tutorial/msgs_lda.txt ~/lda_tutorial/msgs_lda_state.gz --output_name ~/lda_tutorial/lda_topics
+	dlatkInterface.py --add_message_id ~/lda_tutorial/msgs_lda.txt ~/lda_tutorial/msgs_lda_state.gz --output_name ~/lda_tutorial/lda_topics
 
 Step 7: Import state file into database
 ---------------------------------------
@@ -104,7 +104,7 @@ Imports the topic-message probability distributions in a raw format (type of JSO
 
 .. code-block:: bash
 
-	./dlatkInterface.py -d dla_tutorial -t msgs_lda_tok --add_lda_messages  ~/lda_tutorial/lda_topics
+	dlatkInterface.py -d dla_tutorial -t msgs_lda_tok --add_lda_messages  ~/lda_tutorial/lda_topics
 
 This creates the table **msgs_lda_tok_lda$lda_topics** in the database dla_tutorial.
 
@@ -153,6 +153,6 @@ You’re now ready to start using the topic distribution lexicon
 
 .. code-block:: bash
 
-	./dlatkInterface.py -d DATABASE -t MESSAGE_TABLE --add_lex_table -l msgs_lda_cp --weighted_lexicon -c GROUP_ID
+	dlatkInterface.py -d DATABASE -t MESSAGE_TABLE --add_lex_table -l msgs_lda_cp --weighted_lexicon -c GROUP_ID
 
 (always extract features using the _cp lexicon. The “freq_t50ll” lexicon is only used when generating topic_tagclouds: :doc:`../fwinterface/fwflag_topic_tagcloud` :doc:`../fwinterface/fwflag_topic_lexicon` ...freq_t50ll”)

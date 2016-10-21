@@ -14,7 +14,7 @@ Next, we will try predicting age and gender with the above features. Since age i
 
 .. code-block:: bash
 
-	./dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
 	-f 'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16' 'feat$1gram$msgs_xxx$user_id$16to16' \ 
 	--outcome_table blog_outcomes  --group_freq_thresh 500 \ 
 	--outcomes age --output_name xxx_age_output  \ 
@@ -112,7 +112,7 @@ Next, we will predict gender. Since this is a binary outcome we switch to classi
 
 .. code-block:: bash
 
-	./dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
 	-f 'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16' 'feat$1gram$msgs_xxx$user_id$16to16' \ 
 	--outcome_table blog_outcomes  --group_freq_thresh 500   \ 
 	--outcomes gender --output_name xxx_gender_output \ 
@@ -196,7 +196,7 @@ In this step we will use one of our data driven lexica to make predictions from 
 
 .. code-block:: bash
 
-	./dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_lex_table -l dd_emnlp14_ageGender --weighted_lexicon
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_lex_table -l dd_emnlp14_ageGender --weighted_lexicon
 
 This will create the feature table feat$cat_dd_emnlp14_ageGender_w$msgs_xxx$user_id$16to16. Looking at the first 10 entries of this table:
 

@@ -11,9 +11,12 @@ It contains:
 - mediation 
 - dimensionality reduction and clustering
 - wordcloud visualization
-- [Mallet](http://mallet.cs.umass.edu/) interface for creating LDA topics
-- [Stanford Parser](http://nlp.stanford.edu/software/lex-parser.shtml) interface
-- [CMU's TweetNLP](http://www.cs.cmu.edu/~ark/TweetNLP/) interface
+
+DLATK can utilize:
+
+- [Mallet](http://mallet.cs.umass.edu/) for creating LDA topics
+- [Stanford Parser](http://nlp.stanford.edu/software/lex-parser.shtml) 
+- [CMU's TweetNLP](http://www.cs.cmu.edu/~ark/TweetNLP/) 
 - [pandas](http://pandas.pydata.org/) dataframe output
 
 ## Installation
@@ -48,7 +51,7 @@ The documentation for the latest release is at [dlatk.wwbp.org](dlatk.wwbp.org).
 
 ## License
 
-Licensed under a [GNU Lesser General Public License v3 (LGPLv3)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
+Licensed under a [GNU General Public License v3 (GPLv3)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
 ## Background
 

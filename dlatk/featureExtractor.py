@@ -804,7 +804,7 @@ class FeatureExtractor(FeatureWorker):
             
             # get msgs for groups:
             sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
-            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
+            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode))
             rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
 
             bf = []
@@ -836,7 +836,7 @@ class FeatureExtractor(FeatureWorker):
                 mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
                 rows_to_write = []
 
-            if (counter % 1000 == 0):
+            if (counter % 500 == 0):
                 print('%d deduplicated users inserted!' % (counter))
             counter += 1
 

@@ -392,6 +392,8 @@ def main(fn_args = None):
     group.add_argument('--language_filter', '--lang_filter',  type=str, metavar='FIELD(S)', dest='langfilter', nargs='+', default=[],
                        help='Filter message table for list of languages.')
     group.add_argument('--clean_messages', dest='cleanmessages', action = 'store_true', help="Remove URLs, hashtags and @ mentions from messages")
+    group.add_argument('--deduplicate', action='store_true', dest='deduplicate', 
+                       help='Removes duplicate tweets within correl_field grouping, write to new table corptable_dedup Not to be run at the message level.')
 
     group = parser.add_argument_group('LDA Helper Actions', '')
     group.add_argument('--add_message_id', type=str, nargs=2, dest='addmessageid',
@@ -839,6 +841,10 @@ def main(fn_args = None):
     if args.langfilter:
         if not fe: fe = FE()
         fe.addLanguageFilterTable(args.langfilter, args.cleanmessages, args.lowercaseonly)
+
+    if args.deduplicate:
+        if not fe: fe = FE()
+        fe.addDedupFilterTable()
 
     if args.addmessageid:
         messageFile=open(args.addmessageid[0], 'rb')

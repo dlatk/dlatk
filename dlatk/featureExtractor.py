@@ -723,6 +723,127 @@ class FeatureExtractor(FeatureWorker):
             """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
         mm.executeWriteMany(self.corpdb, self.dbCursor, sql, newRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
+    def rttext(self, message):
+        """
+        """
+        regnrt = re.compile(r"\(*RT[\s!.-:]*@\w+([\)\s:]|$)")
+        regrt = re.compile(r"^RT[\s!.-:]+")
+        reguser = re.compile(r"@\w+")
+        regbr = re.compile(r"\[.*\]")
+        regv1 = re.compile(r"\(via @\w+\)")
+        regv2 = re.compile(r" via @\w+")
+
+        rt = ''
+        com = ''
+        c = regnrt.search(message)
+        if c:
+            rt = message[c.span()[1]:].strip().strip(':').strip()
+            com = message[:c.span()[0]].strip().strip(':').strip()
+            if c.span()[1] == len(message):
+                aux = com
+                com = rt
+                rt = aux
+        else:
+            d = regrt.search(message)
+            e = reguser.search(message)
+            if d and e:
+                com = message[d.span()[1]:e.span()[0]]
+                rt = message[e.span()[1]:]
+        a = regv1.search(message)
+        if not a:
+            a = regv2.search(message)
+        if a:
+            if a.span()[0] == 0:
+                b = regbr.search(message)
+                rt = re.sub('^:','',message[a.span()[1]:b.span()[0]].strip()).strip()
+                com = b.group()[1:len(b.group())-1]
+            else:
+                rt = re.sub('[|,.//]$','',message[:a.span()[0]].strip()).strip()
+                com = re.sub('^:','',message[a.span()[1]:].strip()).strip()
+        return rt, com
+
+
+    def addDedupFilterTable(self):
+        """
+        Groups all messages in a given table and filters deplicate messages within the correl_field. Writes
+        a new message table called corptable_dedup.
+        """
+        tokenizer = Tokenizer(use_unicode=self.use_unicode)
+
+        new_table = self.corptable + "_dedup"
+        drop = """DROP TABLE IF EXISTS %s""" % (new_table)
+        create = """CREATE TABLE %s like %s""" % (new_table, self.corptable)
+        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, create, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, new_table, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+
+        #Find column names:
+        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
+        messageIndex = columnNames.index(self.message_field)
+        try:
+            retweetedStatusIdx = columnNames.index("retweeted_status_text")
+        except:
+            retweetedStatusIdx = None
+            pass
+
+        #find all groups that are not already inserted
+        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
+        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
+        fwc.warn("deduplicating messages for %d '%s's"%(len(cfRows), self.correl_field))
+
+        # if message level analysis
+        if any(field in self.correl_field.lower() for field in ["mess", "msg"]) or self.correl_field.lower().startswith("id"):
+            groupsAtTime = 1 
+            fwc.warn("""Deduplicating only works with a non-message level grouping such as users or counties.""", attention=True)
+            exit()
+        
+        groupsAtTime = 1 
+        rows_to_write = []
+        counter = 1
+        for groups in fwc.chunks(cfRows, groupsAtTime): 
+            
+            # get msgs for groups:
+            sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
+            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
+            rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
+
+            bf = []
+            for row in rows:
+                try:
+                    message = row[messageIndex]
+                    textrt = ''
+                    if retweetedStatusIdx:
+                        textrt = row[retweetedStatusIdx]
+                    if not textrt:
+                        textrt = self.rttext(message)[0]
+                    if not textrt == '':
+                        message = textrt
+                        #continue
+                    words = tokenizer.tokenize(message)
+                    message = ' '.join(words).lower()
+                    if len(words)>=6:
+                        if 'YouTube' in words:
+                            message = ' '.join(words[0:5])
+                        else:
+                            message = ' '.join(words[0:6])
+                    if message not in bf:
+                        rows_to_write.append(row)
+                        bf.append(message)
+                except:
+                    continue
+            if len(rows_to_write) >= fwc.MYSQL_BATCH_INSERT_SIZE:
+                sql = """INSERT INTO """+new_table+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
+                mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                rows_to_write = []
+
+            if (counter % 1000 == 0):
+                print('%d deduplicated users inserted!' % (counter))
+            counter += 1
+
+        if rows_to_write:
+            sql = """INSERT INTO """+new_table+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
+            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                
     # TODO: add nicer implementation
     def yieldMessages(self, messageTable, totalcount):
         if totalcount > 10*fwc.MAX_SQL_SELECT:

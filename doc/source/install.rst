@@ -6,6 +6,12 @@ Python 2 vs 3
 =============
 DLATK is available for python 2.7 and 3.5, with the 3.5 version being the official release. The 2.7 version is fully functional (as of v1.0) but will not be maintained. Please make sure you ``pip`` is bound to Python 3 for the commands below. 
 
+To install the Python 2.7 version run:
+
+.. code-block:: bash
+
+		pip install dlatk==0.6.1
+
 Setup (Linux)
 =============
 **WARNING**: This will install MySQL on your computer. 
@@ -65,8 +71,8 @@ DLATK comes packaged with two sample databases: dla_tutorial and permaLexicon. S
 Install Optional Dependencies
 =============================
 
-Python
-------
+Python Modules
+--------------
 
 You can install the optional python dependencies with
 
@@ -95,8 +101,8 @@ Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)
 #. Download the tgz file (for version 0.3) from http://www.cs.cmu.edu/~ark/TweetNLP/.
 #. Extract this file into ``../dlatk/Tools/TwitterTagger/``.
 
-(Optional) Install the IBM Wordcloud jar file. 
-----------------------------------------------
+Install the IBM Wordcloud jar file 
+----------------------------------
 
 The IBM wordcloud module is our default. To install this you must sign up for a IBM DeveloperWorks account and download ibm-word-cloud.jar. Place this file into ``../dlatk/lib/``. 
 
@@ -105,6 +111,13 @@ If you are unable to install this jar then you can use the python wordcloud modu
 1. pip install wordcloud
 
 2. Change ``wordcloud_algorithm='ibm'`` in ../dlatk/lib/wordcloud.py to ``wordcloud_algorithm='amueller'``.
+
+**Note**: You must install either the IBM Wordcloud jar or the Python wordcloud module to print wordclouds. 
+
+Mallet
+------
+
+`Mallet <http://mallet.cs.umass.edu/>`_ can be used with DLATK to create LDA topics (see the :doc:`tutorials/tut_lda` tutorial). Directions on downloading and installing can be found `here <http://mallet.cs.umass.edu/download.php>`_.
 
 Command Line Interface
 ======================

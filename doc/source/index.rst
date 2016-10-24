@@ -13,7 +13,7 @@ DLATK is an end to end text analysis package written in Python and developed by 
 * correlation
 * prediction and classification
 * mediation 
-* clustering
+* dimensionality reduction and clustering
 * wordcloud visualization
 
 DLATK can utilize:

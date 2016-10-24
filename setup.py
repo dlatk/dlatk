@@ -12,7 +12,7 @@ except ImportError:
   from distutils.core import setup
 
 
-DESCRIPTION = "DLATK is an end to end text analysis package developed by the World Well-Being Project at the University of Pennsylvania."
+DESCRIPTION = "DLATK is an end to end human text analysis package, specifically suited for social media and social scientific applications. It is written in Python 3 and developed by the World Well-Being Project at the University of Pennsylvania. "
 LONG_DESCRIPTION = """
 DLATK v1.0
 ----------
@@ -38,7 +38,7 @@ PACKAGES = ['dlatk',
   'dlatk.LexicaInterface',
   'dlatk.mysqlMethods',
 ]
-LICENSE = 'GNU Lesser General Public License v3 (LGPLv3)'
+LICENSE = 'GNU General Public License v3 (GPLv3)'
 AUTHOR = "H. Andrew Schwartz, Salvatore Giorgi, Maarten Sap, Patrick Crutchley, Lukasz Dziurzynski and Megha Agrawal"
 EMAIL = "hansens@sas.upenn.edu, sgiorgi@sas.upenn.edu"
 MAINTAINER = "Salvatore Giorgi, H. Andrew Schwartz, Patrick Crutchley"
@@ -52,13 +52,11 @@ CLASSIFIERS = [
   'Intended Audience :: Developers',
   'Intended Audience :: Science/Research',
   'Programming Language :: Python',
-  'Programming Language :: Python :: 2',
-  'Programming Language :: Python :: 2.7',
   'Programming Language :: Python :: 3',
   'Programming Language :: Python :: 3.5',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '1.0.dev24'
+VERSION = '1.0.0'
 PACKAGE_DATA = {
   'dlatk': ['data/*.sql'],
 }

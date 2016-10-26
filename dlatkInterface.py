@@ -393,7 +393,10 @@ def main(fn_args = None):
                        help='Filter message table for list of languages.')
     group.add_argument('--clean_messages', dest='cleanmessages', action = 'store_true', help="Remove URLs, hashtags and @ mentions from messages")
     group.add_argument('--deduplicate', action='store_true', dest='deduplicate', 
-                       help='Removes duplicate tweets within correl_field grouping, write to new table corptable_dedup Not to be run at the message level.')
+                       help='Removes duplicate messages within correl_field grouping, writes to new table corptable_dedup Not to be run at the message level.')
+    group.add_argument('--spam_filter', dest='spamfilter', metavar="SPAM_THRESHOLD", type=float, default=fwc.DEF_SPAM_FILTER,
+                       help='Removes users (by correl_field grouping) with percentage of spam messages > threshold, writes to new table corptable_nospam '
+                       'with new column is_spam. Defaul threshold = %s'%fwc.DEF_SPAM_FILTER)
 
     group = parser.add_argument_group('LDA Helper Actions', '')
     group.add_argument('--add_message_id', type=str, nargs=2, dest='addmessageid',
@@ -845,6 +848,11 @@ def main(fn_args = None):
     if args.deduplicate:
         if not fe: fe = FE()
         fe.addDedupFilterTable()
+
+    if args.spamfilter:
+        if not fe: fe = FE()
+        fe.addSpamFilterTable(threshold=args.spamfilter)
+
 
     if args.addmessageid:
         messageFile=open(args.addmessageid[0], 'rb')

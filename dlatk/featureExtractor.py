@@ -843,7 +843,88 @@ class FeatureExtractor(FeatureWorker):
         if rows_to_write:
             sql = """INSERT INTO """+new_table+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
             mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-                
+          
+    def addSpamFilterTable(self, threshold=fwc.DEF_SPAM_FILTER):
+        """
+        Groups all messages in a given table and filters spam messages within the correl_field. Writes
+        a new message table called corptable_nospam with additional integer column is_spam (0 = not spam, 1 = spam).
+        Spam words = 'share', 'win', 'check', 'enter', 'products', 'awesome', 'prize', 'sweeps', 'bonus', 'gift'
+
+        Parameters
+        ----------
+        threshold : float
+            percentage of spam messages to be considered a spam user
+        """
+        spam_words = ['share', 'win', 'check', 'enter', 'products', 'awesome', 'prize', 'sweeps', 'bonus', 'gift']
+
+        new_table = self.corptable + "_nospam"
+        drop = """DROP TABLE IF EXISTS %s""" % (new_table)
+        create = """CREATE TABLE %s like %s""" % (new_table, self.corptable)
+        add_colum = """ALTER TABLE %s ADD COLUMN is_spam INT(2) NULL""" % (new_table)
+        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, create, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, add_colum, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, new_table, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+
+        #Find column names:
+        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
+        insertColumnNames = columnNames + ['is_spam']
+        messageIndex = columnNames.index(self.message_field)
+
+        #find all groups that are not already inserted
+        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
+        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
+        fwc.warn("Removing spam messages for %d '%s's"%(len(cfRows), self.correl_field))
+
+        # if message level analysis
+        if any(field in self.correl_field.lower() for field in ["mess", "msg"]) or self.correl_field.lower().startswith("id"):
+            groupsAtTime = 1 
+            fwc.warn("""This will remove any messages that contain *any* spam words. Consider rerunning at the user level.""", attention=True)
+
+        
+        groupsAtTime = 1 
+        rows_to_write = []
+        counter = 1
+        users_removed = 0
+        for groups in fwc.chunks(cfRows, groupsAtTime): 
+            
+            # get msgs for groups:
+            sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
+            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode))
+            rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
+
+            total_messages = float(len(rows))
+            spam_messages = 0
+            insert_rows = []
+            for row in rows:
+                try:
+                    if any(word in row[messageIndex] for word in spam_words):
+                        spam_messages += 1
+                        insert_rows.append(row + (1,))
+                    else:
+                        insert_rows.append(row + (0,))
+                except:
+                    continue
+
+            if spam_messages/total_messages < threshold:
+                rows_to_write += insert_rows
+            else:
+                users_removed += 1
+
+            if len(rows_to_write) >= fwc.MYSQL_BATCH_INSERT_SIZE:
+                sql = """INSERT INTO """+new_table+""" ("""+', '.join(insertColumnNames)+""") VALUES ("""  +", ".join(['%s']*len(insertColumnNames)) + """)"""
+                mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                rows_to_write = []
+
+            if (counter % 500 == 0):
+                print('%d users filtered!' % (counter))
+            counter += 1
+
+        if rows_to_write:
+            sql = """INSERT INTO """+new_table+""" ("""+', '.join(insertColumnNames)+""") VALUES ("""  +", ".join(['%s']*len(insertColumnNames)) + """)"""
+            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+        print('%d users removed!' % (users_removed))
+
     # TODO: add nicer implementation
     def yieldMessages(self, messageTable, totalcount):
         if totalcount > 10*fwc.MAX_SQL_SELECT:

@@ -234,7 +234,7 @@ class RegressionPredictor:
             #{'alphas': np.array([100, 1000, 10000]), 'component_percs':np.array([.01, .02154, .0464, .1, .2154, .464, 1])}, #standard
             #{'alphas': np.array([10, 100, 1000]), 'component_percs':np.array([.01, .02154, .0464, .1, .2154, .464, 1])}, #standard
             #{'alphas': np.array([10, 100, 1000]), 'component_percs':np.array([0.1])}, #standard
-            {'alphas': np.array([.00001]), 'component_percs':np.array([.01, .02154, .0464, .1, .2154, .464, 1])}, #one penalization
+            {'alphas': np.array([.00001]), 'component_percs': np.array([.01, .02154, .0464, .1, .2154, .464, 1])}, #one penalization
             ],
         'lasso': [
             #{'alpha': [10000, 25000, 1000, 2500, 100, 250, 1, 25, .01, 2.5, .01, .25, .001, .025, .0001, .0025, .00001, .00025, 100000, 250000, 1000000]}, 
@@ -262,7 +262,7 @@ class RegressionPredictor:
             #{'alpha': [10000, 25000, 1000, 2500, 100, 250, 1, 25, .01, 2.5, .01, .25, .001, .025, .0001, .0025, .00001, .00025, 100000, 250000, 1000000]}, 
             #{'n_alphas': [10], 'max_iter':[1600], 'rho' : [.1, .5, .7, .9, .95, .99, 1]}, 
             #{'n_alphas': [11], 'max_iter':[1300], 'l1_ratio' : [.95], 'n_jobs': [10]}, 
-            {'n_alphas': [11], 'max_iter':[1300], 'l1_ratio' : [.01, .05, .1, .5, .9, .95, .99], 'n_jobs': [8]}, 
+            {'n_alphas': [11], 'max_iter':[1300], 'l1_ratio' : np.array([.01, .05, .1, .5, .9, .95, .99]), 'n_jobs': [8]}, 
             #{'n_alphas': [9], 'max_iter':[1100], 'l1_ratio' : [.95], 'n_jobs': [6]}, 
             #{'n_alphas': [7], 'max_iter':[1100], 'l1_ratio' : [.95], 'n_jobs': [6]}, 
             ],
@@ -2514,7 +2514,6 @@ def foldN(l, folds):
     """ Yield successive n-sized chunks from l."""
     n = len(l) // folds
     last = len(l) % folds
-    print(n, last, folds)
     for i in range(0, n*folds, n):
         if i+n+last >= len(l):
             yield l[i:i+n+last]

@@ -51,6 +51,17 @@ try:
 except ImportError:
     fwc.warn("Cannot import langid (cannot use addLanguageFilterTable)")
     pass
+try:
+    import jsonrpclib
+    from simplejson import loads
+except ImportError:
+    fwc.warn("Cannot import jsonrpclib or simplejson (cannot use addPOSAndTimexDiffFeatTable)")
+    pass
+try:
+    from textstat.textstat import textstat
+except ImportError:
+    fwc.warn("Cannot import textstat (cannot use addFleschKincaidTable)")
+    pass
 
 #feature extractor constants:
 offsetre = re.compile(r'p(\-?\d+)([a-z])')
@@ -298,7 +309,7 @@ class FeatureExtractor(FeatureWorker):
         for t, name in list(tableNames.items()):
             sql = "CREATE TABLE IF NOT EXISTS %s like %s" % (name, self.corptable)
             mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-            mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+            mm.standardizeTable(self.corpdb, self.dbCursor, name, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
             mm.enableTableKeys(self.corpdb, self.dbCursor, name, charset=self.encoding, use_unicode=self.use_unicode)#just incase interrupted, so we can find un-parsed groups
 
         #Find column names:
@@ -2141,8 +2152,6 @@ class FeatureExtractor(FeatureWorker):
             Name of Flesch Kincaid table: feat$flkin$corptable$correl_field%transform
         """
 
-        from textstat.textstat import textstat
-
         ##NOTE: correl_field should have an index for this to be quick
         fk_score = textstat.flesch_kincaid_grade
 
@@ -3020,8 +3029,7 @@ class FeatureExtractor(FeatureWorker):
 
         """
         ##NOTE: correl_field should have an index for this to be quick
-        import jsonrpclib
-        from simplejson import loads
+
         corenlpServer = jsonrpclib.Server("http://localhost:%d"% serverPort)
 
         tokenizer = Tokenizer(use_unicode=self.use_unicode)
@@ -3148,8 +3156,6 @@ class FeatureExtractor(FeatureWorker):
 
         """
         ##NOTE: correl_field should have an index for this to be quick
-        import jsonrpclib
-        from simplejson import loads
         corenlpServer = jsonrpclib.Server("http://localhost:%d"% serverPort)
 
         tokenizer = Tokenizer(use_unicode=self.use_unicode)

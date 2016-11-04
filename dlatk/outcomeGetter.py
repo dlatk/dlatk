@@ -34,6 +34,9 @@ class OutcomeGetter(FeatureWorker):
     oneGroupSetForAllOutcomes : str
         ?????
 
+    fold_column : str
+        ?????
+
     Returns
     -------
     OutcomeGetter object
@@ -90,7 +93,7 @@ class OutcomeGetter(FeatureWorker):
         return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, group_freq_thresh=group_freq_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex, wordTable=wordTable)
     
 
-    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host=fwc.MYSQL_HOST, message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, use_unicode=fwc.DEF_UNICODE_SWITCH, lexicondb = fwc.DEF_LEXICON_DB, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls = fwc.DEF_OUTCOME_CONTROLS, outcome_interaction = fwc.DEF_OUTCOME_CONTROLS, group_freq_thresh = None, featureMappingTable='', featureMappingLex='', wordTable = None):
+    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host=fwc.MYSQL_HOST, message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, use_unicode=fwc.DEF_UNICODE_SWITCH, lexicondb = fwc.DEF_LEXICON_DB, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls = fwc.DEF_OUTCOME_CONTROLS, outcome_interaction = fwc.DEF_OUTCOME_CONTROLS, group_freq_thresh = None, featureMappingTable='', featureMappingLex='', wordTable = None, fold_column = None):
         super(OutcomeGetter, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable = wordTable)
         self.outcome_table = outcome_table
 
@@ -122,6 +125,7 @@ class OutcomeGetter(FeatureWorker):
             self.group_freq_thresh = group_freq_thresh
         self.featureMapping = self.getFeatureMapping(featureMappingTable, featureMappingLex, False)
         self.oneGroupSetForAllOutcomes = False # whether to use groups in common for all outcomes
+        self.fold_column = fold_column
 
     def hasOutcomes(self):
         if len(self.outcome_value_fields) > 0:
@@ -282,7 +286,7 @@ class OutcomeGetter(FeatureWorker):
         """buckets is a list of tuples"""
         raise NotImplementedError
 
-    def getGroupsAndOutcomes(self, lexicon_count_table=None, groupsWhere = ''):
+    def getGroupsAndOutcomes(self, lexicon_count_table=None, groupsWhere = '', includeFoldLabels=False):
         if self.group_freq_thresh and self.wordTable != self.get1gramTable():
             fwc.warn("""You specified a --word_table and --group_freq_thresh is
 enabled, so the total word count for your groups might be off
@@ -353,7 +357,13 @@ enabled, so the total word count for your groups might be off
                 whereusers = set([i[0] for i in self.getGroupAndOutcomeValues(outcm) if str(i[1]) == val])
                 groups = groups & whereusers
 
-        return (groups, ocs, controls)
+        if self.fold_column:
+            folds = dict(self.getGroupAndOutcomeValues(self.fold_column))
+
+        if includeFoldLabels:
+            return (groups, ocs, controls, folds)
+        else:
+            return (groups, ocs, controls)
 
     def getGroupAndOutcomeValuesAsDF(self, outcomeField = None, where=''):
         """returns a dataframe of (group_id, outcome_value)"""

@@ -514,9 +514,16 @@ class ClassifyPredictor:
         ###################################
         #1. setup groups for random folds
         if blacklist: print("USING BLACKLIST: %s" %str(blacklist))
-        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
+        (groups, allOutcomes, allControls, foldLabels) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere, includeFoldLabels=True)
         groupFolds = []
-        if not stratifyFolds:
+        if foldLabels:
+            print("    ***explicit fold labels specified, not splitting or stratifying again***")
+            stratifyFolds = False
+            temp = {}
+            for k,v in sorted(foldLabels.iteritems()): temp.setdefault(v, []).append(k)
+            groupFolds = temp.values()
+            nFolds = len(groupFolds)
+        elif not stratifyFolds: 
             print("[number of groups: %d (%d Folds)] non-stratified / using same folds for all outcomes" % (len(groups), nFolds))
             random.seed(self.randomState)
             groupList = list(groups)

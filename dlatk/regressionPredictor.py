@@ -575,12 +575,20 @@ class RegressionPredictor:
         ###################################
         #1. setup groups for random folds
         if blacklist: print("USING BLACKLIST: %s" %str(blacklist))
-        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
+        (groups, allOutcomes, allControls, foldLabels) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere, includeFoldLabels=True)
+        if foldLabels:
+            print("    ***explicit fold labels specified, not splitting again***")
+            temp = {}
+            for k,v in sorted(foldLabels.iteritems()): temp.setdefault(v, []).append(k)
+            groupFolds = temp.values()
+            nFolds = len(groupFolds)
+        else:
+            random.seed(self.randomState)
+            groupList = sorted(list(groups), reverse=True)
+            random.shuffle(groupList)
+            groupFolds =  [x for x in foldN(groupList, nFolds)]
         print("[number of groups: %d (%d Folds)]" % (len(groups), nFolds))
-        random.seed(self.randomState)
-        groupList = sorted(list(groups), reverse=True)
-        random.shuffle(groupList)
-        groupFolds =  [x for x in foldN(groupList, nFolds)]
+        
 
         ####
         #1a: setup weightedEval

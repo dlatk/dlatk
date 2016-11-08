@@ -309,6 +309,8 @@ def main(fn_args = None):
                        help='Finds residuals for controls and tries to predict beyond them (only for combo test)')
     group.add_argument('--prediction_csv', '--pred_csv', action='store_true', dest='pred_csv',
                        help='write yhats in a separate csv')
+    group.add_argument('--probability_csv', '--prob_csv', action='store_true', dest='prob_csv',
+                       help='write probabilities for yhats in a separate csv')
     group.add_argument('--weighted_eval', type=str, dest='weightedeval', default=None,
                        help='Column to weight the evaluation.')
     group.add_argument('--no_standardize', action='store_false', dest='standardize', default=True,
@@ -601,6 +603,15 @@ def main(fn_args = None):
     if not args.bonferroni:
       print("--no_bonf has been depricated. Default p correction method is now Benjamini, Hochberg. Please use --no_correction instead of --no_bonf.")
       sys.exit(1)
+    if args.p_correction_method:
+      if args.p_correction_method.lower() == "none":
+        print("For no correction please use --no_correction instead of --p_correction none")
+        sys.exit(1)
+      if args.p_correction_method not in fwc.DEF_P_MAPPING.keys():
+        print("--p_correction_method takes %s as an argument" % ", ".join(fwc.DEF_P_MAPPING.keys()))
+        sys.exit(1)
+
+
 
     ##Argument adjustments: 
     if not args.valuefunc: args.valuefunc = lambda d: d
@@ -1508,6 +1519,12 @@ def main(fn_args = None):
             if args.outputname:
                 outputStream = open(args.outputname+'.predicted_data.csv', 'w')
             ClassifyPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
+            print("Wrote to: %s" % str(outputStream))
+            outputStream.close()
+        if args.prob_csv:
+            if args.outputname:
+                outputStream = open(args.outputname+'.prediction_probabilities.csv', 'w')
+            ClassifyPredictor.printComboControlPredictionProbsToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
             print("Wrote to: %s" % str(outputStream))
             outputStream.close()
 

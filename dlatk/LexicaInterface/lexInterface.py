@@ -169,7 +169,7 @@ def loadLexiconFromDic(filename):
     """Loads a lexicon from a .dic file such as LIWC2001_English.dic"""
     lexicon = {}
 
-    with open(filename, 'rb') as f:
+    with open(filename, 'r') as f:
         reading_categories = False
         cat_map = {}
 
@@ -242,7 +242,7 @@ def loadLexiconFeatMapFromCSV(filename):
 def loadLexiconFromTopicFile(filename):
     """Loads a lexicon from a topic file
     returns a dictionary of frozensets"""
-    lexFile = open(filename, 'rb')
+    lexFile = open(filename, 'r')
 
     lexicon = {}
     for line in lexFile.readlines():
@@ -264,7 +264,7 @@ def loadLexiconFromTopicFile(filename):
 def loadWeightedLexiconFromTopicFile(filename):
     """Loads a weighted lexicon 
     returns a dictionary of dictionaries"""
-    lexFile = open(filename, 'rb')
+    lexFile = open(filename, 'r')
 
     lexicon = {}
     for line in lexFile.readlines():
@@ -284,7 +284,7 @@ def loadWeightedLexiconFromTopicCSV(filename, threshold=None):
     """Loads a weighted lexicon 
     returns a dictionary of dictionaries"""
     import csv
-    csvReader = csv.reader(open(filename, 'rb'))
+    csvReader = csv.reader(open(filename, 'r'))
     header = next(csvReader) #should be topic_id, word1, ...etc..
     print("Loading %s" % filename)
     lexicon = {}
@@ -1005,7 +1005,7 @@ class WeightedLexicon(Lexicon):
         #first create the table:
         enumCats = "'"+"', '".join([k.upper().replace("'", "\\'") for k in list(self.weightedLexicon.keys())])+"'"   
         drop = """DROP TABLE IF EXISTS """+tablename
-        sql = """CREATE TABLE IF NOT EXISTS %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, term VARCHAR(140), category ENUM(%s), weight DOUBLE, INDEX(term), INDEX(category)) CHARACTER SET %s COLLATE %s ENGINE=%s""" % (tablename, enumCats, fwc.DEF_ENCODING, fwc.DEF_COLLATIONS[self.encoding.lower()], fwc.DEF_MYSQL_ENGINE)
+        sql = """CREATE TABLE IF NOT EXISTS %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, term VARCHAR(140), category ENUM(%s), weight DOUBLE, INDEX(term), INDEX(category)) CHARACTER SET %s COLLATE %s ENGINE=%s""" % (tablename, enumCats, fwc.DEF_ENCODING,fwc.DEF_COLLATIONS[fwc.DEF_ENCODING.lower()], fwc.DEF_MYSQL_ENGINE)
         print("Running: ", drop)
         print("and:     ", sql)
         try:

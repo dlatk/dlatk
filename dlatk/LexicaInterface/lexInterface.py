@@ -381,7 +381,7 @@ class Lexicon(object):
     lexiconDB = fwc.DEF_LEXICON_DB
 
     def __init__(self, lex = None, mysql_host = fwc.MYSQL_HOST):
-        (self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(db=lexiconDB, host=mysql_host)
+        (self.dbConn, self.dbCursor, self.dictCursor) = dbConnect(db=lexiconDB, host=mysql_host)
         self.mysql_host = mysql_host
         self.currentLexicon = lex
 

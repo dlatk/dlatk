@@ -750,7 +750,6 @@ class OutcomeAnalyzer(OutcomeGetter):
             numRed += 1
             if numRed % 200 == 0: fwc.warn("  %d features correlated"%(numRed))
             firstLoop = False
-        # exit() # Maarten
 
         if p_correction_method and not p_correction_method.startswith("bonf"): 
             ##change correls here. 

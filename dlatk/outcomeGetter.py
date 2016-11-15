@@ -359,6 +359,8 @@ enabled, so the total word count for your groups might be off
 
         if self.fold_column:
             folds = dict(self.getGroupAndOutcomeValues(self.fold_column))
+        else:
+            folds = None
 
         if includeFoldLabels:
             return (groups, ocs, controls, folds)

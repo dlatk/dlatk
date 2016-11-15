@@ -905,6 +905,7 @@ class FeatureExtractor(FeatureWorker):
             rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
 
             total_messages = float(len(rows))
+            if total_messages == 0: continue
             spam_messages = 0
             insert_rows = []
             for row in rows:

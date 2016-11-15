@@ -235,7 +235,8 @@ def main(fn_args = None):
     group.add_argument('--zScoreGroup', action='store_true', dest='zScoreGroup', default=False,
                        help="Outputs a certain group's zScore for all feats, which group is determined by the boolean outcome value [MUST be boolean outcome]") 
     group.add_argument('--p_correction', metavar='METHOD', type=str, dest='p_correction_method', default=getInitVar('p_correction_method', conf_parser, fwc.DEF_P_CORR),
-                       help='Specify a p-value correction method: simes, holm, hochberg, hommel, bonferroni, BH, BY, fdr, none')
+                       help='Specify a p-value correction method: simes, holm, hochberg, hommel, bonferroni, BH, BY, fdr, none',
+                       choices=fwc.DEF_P_MAPPING.keys())
     group.add_argument('--no_bonferroni', action='store_false', dest='bonferroni', default=True,
                        help='Turn off bonferroni correction of p-values.')
     group.add_argument('--no_correction', action='store_const', const='', dest='p_correction_method',
@@ -603,13 +604,13 @@ def main(fn_args = None):
     if not args.bonferroni:
       print("--no_bonf has been depricated. Default p correction method is now Benjamini, Hochberg. Please use --no_correction instead of --no_bonf.")
       sys.exit(1)
-    if args.p_correction_method:
-      if args.p_correction_method.lower() == "none":
-        print("For no correction please use --no_correction instead of --p_correction none")
-        sys.exit(1)
-      if args.p_correction_method not in fwc.DEF_P_MAPPING.keys():
-        print("--p_correction_method takes %s as an argument" % ", ".join(fwc.DEF_P_MAPPING.keys()))
-        sys.exit(1)
+    # if args.p_correction_method:
+    #   if args.p_correction_method.lower() == "none":
+    #     print("For no correction please use --no_correction instead of --p_correction none")
+    #     sys.exit(1)
+    #   if args.p_correction_method not in fwc.DEF_P_MAPPING.keys():
+    #     print("--p_correction_method takes %s as an argument" % ", ".join(fwc.DEF_P_MAPPING.keys()))
+    #     sys.exit(1)
 
 
 

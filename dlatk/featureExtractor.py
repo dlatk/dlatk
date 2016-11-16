@@ -100,8 +100,10 @@ class FeatureExtractor(FeatureWorker):
         #Create Table:
         drop = """DROP TABLE IF EXISTS %s""" % (tableName)
         sql = "CREATE TABLE %s like %s" % (tableName, self.corptable)
+        alter = """ALTER TABLE %s MODIFY %s LONGTEXT""" % (tableName, self.message_field)
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, alter, charset=self.encoding, use_unicode=self.use_unicode)
         mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
 

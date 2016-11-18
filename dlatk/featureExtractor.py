@@ -734,7 +734,8 @@ class FeatureExtractor(FeatureWorker):
             """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
         mm.executeWriteMany(self.corpdb, self.dbCursor, sql, newRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
-    def rttext(self, message):
+    # helper methods for addDedupFilterTable
+    def _rttext(self, message):
         """
         """
         regnrt = re.compile(r"\(*RT[\s!.-:]*@\w+([\)\s:]|$)")
@@ -772,13 +773,60 @@ class FeatureExtractor(FeatureWorker):
                 rt = re.sub('[|,.//]$','',message[:a.span()[0]].strip()).strip()
                 com = re.sub('^:','',message[a.span()[1]:].strip()).strip()
         return rt, com
+    def _regex_or(self, *items):
+        r = '|'.join(items)
+        r = '(' + r + ')'
+        return r
+    def _pos_lookahead(self, r):
+        return '(?=' + r + ')'
+    def _optional(self, r):
+        return '(%s)?' % r
 
 
-    def addDedupFilterTable(self):
+    def addDedupFilterTable(self, anonymize=True):
         """
         Groups all messages in a given table and filters deplicate messages within the correl_field. Writes
-        a new message table called corptable_dedup.
+        a new message table called corptable_dedup. Deduplication written by Daniel Preotiuc-Pietro and adapted for DLATK. 
+        Removal of urls, punctuation, etc. taken from the twokenize tokenizer written by Brendan O'connor.
         """
+        mycompile = lambda pat:  re.compile(pat,  re.UNICODE)
+
+        PunctChars = r'''['“".?!,:;]'''
+        Entity = '&(amp|lt|gt|quot);'
+        EmoticonsDN= '(:\)|:\(|:-\)|>:]|:o\)|:3|:c\)|:>|=]|8\)|=\)|:}|:^\)|>:D\)|:-D|:D|8-D|8D|x-D|xD|X-D|XD|=-D|=D|=-3|=3\)|8-\)|:-\)\)|:\)\)|>-\[|:-\(|:\(|:-c|:c|:-<|:<|:-\[|:\[|:{|>.>|<.<|>.<|:-\|\||D:<|D:|D8|D;|D=|DX|v.v|D-\':|>;\]|;-\)|;\)|\*-\)|\*\)|;-\]|;\]|;D|;^\)|>:P|:-P|:P|X-P|x-p|xp|XP|:-p|:p|=p|:-b|:b|>:o|>:O|:-O|:O|:0|o_O|o_0|o.O|8-0|>:\\|>:/|:-/|:-.|:/|:\\|=/|=\\|:S|:\||:-\||>:X|:-X|:X|:-#|:#|:$|O:-\)|0:-3|0:3|O:-\)|O:\)|0;^\)|>:\)|>;\)|>:-\)|:\'-\(|:\'\(|:\'-\)|:\'\)|;\)\)|;;\)|<3|8-}|>:D<|=\)\)|=\(\(|x\(|X\(|:-\*|:\*|:\">|~X\(|:-?)'        
+        UrlStart1 = self._regex_or('https?://', r'www\.')
+        CommonTLDs = self._regex_or('com','co\\.uk','org','net','info','ca')
+        UrlStart2 = r'[a-z0-9\.-]+?' + r'\.' + CommonTLDs + self._pos_lookahead(r'[/ \W\b]')
+        UrlBody = r'[^ \t\r\n<>]*?'  # * not + for case of:  "go to bla.com." -- don't want period
+        UrlExtraCrapBeforeEnd = '%s+?' % self._regex_or(PunctChars, Entity)
+        UrlEnd = self._regex_or( r'\.\.+', r'[<>]', r'\s', '$')
+        Url = (r'\b' + 
+            self._regex_or(UrlStart1, UrlStart2) + 
+            UrlBody + 
+            self._pos_lookahead( self._optional(UrlExtraCrapBeforeEnd) + UrlEnd))
+        NumNum = r'\d+\.\d+'
+        NumberWithCommas = r'(\d+,)+?\d{3}' + self._pos_lookahead(self._regex_or('[^,]','$'))
+        Punct = '%s+' % PunctChars
+        Separators = self._regex_or('--+', '―')
+        Timelike = r'\d+:\d+h{0,1}' # removes the h trailing the hour like in 18:00h
+        Number = r'^\d+'
+        OneCharTokens = r'^.{1}$' # remove the one character tokens (maybe too agressive)
+        ParNumber = r'[()][+-]*\d+[()]*' # remove stuff like (+1 (-2 that appear as tokens
+
+        ExcludeThese = [
+            EmoticonsDN,
+            Url,
+            NumNum,
+            NumberWithCommas,
+            Punct,
+            Separators,
+            Timelike,
+            Number,
+            OneCharTokens,
+            ParNumber
+        ]
+        Exclude_RE = mycompile(self._regex_or(*ExcludeThese))
+        
         tokenizer = Tokenizer(use_unicode=self.use_unicode)
 
         new_table = self.corptable + "_dedup"
@@ -820,17 +868,20 @@ class FeatureExtractor(FeatureWorker):
 
             bf = []
             for row in rows:
+                row = list(row)
                 try:
                     message = row[messageIndex]
                     textrt = ''
                     if retweetedStatusIdx:
                         textrt = row[retweetedStatusIdx]
                     if not textrt:
-                        textrt = self.rttext(message)[0]
+                        textrt = self._rttext(message)[0]
                     if not textrt == '':
                         message = textrt
-                        #continue
-                    words = tokenizer.tokenize(message)
+                        continue
+                    #words = tokenizer.tokenize(message)
+                    words = [word for word in tokenizer.tokenize(message) if ((word[0]!='#') and (word[0]!='@') and not Exclude_RE.search(word))]
+                    
                     message = ' '.join(words).lower()
                     if len(words)>=6:
                         if 'YouTube' in words:
@@ -838,8 +889,15 @@ class FeatureExtractor(FeatureWorker):
                         else:
                             message = ' '.join(words[0:6])
                     if message not in bf:
-                        rows_to_write.append(row)
                         bf.append(message)
+                        if anonymize:
+                            message = row[messageIndex]
+                            message = re.sub(Url, "<URL>", message)
+                            message = re.sub(r'(?<=^|(?<=[^a-zA-Z0-9-_\.]))@([A-Za-z]+[A-Za-z0-9]+)', "<USER>", message)
+                            row[messageIndex] = message
+                        rows_to_write.append(row)
+                    else:
+                        pass
                 except:
                     continue
             if len(rows_to_write) >= fwc.MYSQL_BATCH_INSERT_SIZE:

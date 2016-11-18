@@ -861,7 +861,7 @@ def main(fn_args = None):
 
     if args.deduplicate:
         if not fe: fe = FE()
-        fe.addDedupFilterTable()
+        fe.addDedupFilterTable(anonymize=args.cleanmessages)
 
     if args.spamfilter:
         if not fe: fe = FE()

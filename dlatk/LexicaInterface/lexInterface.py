@@ -284,7 +284,7 @@ def loadWeightedLexiconFromTopicCSV(filename, threshold=None):
     """Loads a weighted lexicon 
     returns a dictionary of dictionaries"""
     import csv
-    csvReader = csv.reader(open(filename, 'rb'))
+    csvReader = csv.reader(open(filename, 'r'))
     header = next(csvReader) #should be topic_id, word1, ...etc..
     print("Loading %s" % filename)
     lexicon = {}
@@ -379,9 +379,10 @@ class Lexicon(object):
     dbCursor = None
     currentLexicon = None
     lexiconDB = fwc.DEF_LEXICON_DB
+    encoding = fwc.DEF_ENCODING
 
     def __init__(self, lex = None, mysql_host = fwc.MYSQL_HOST):
-        (self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(db=lexiconDB, host=mysql_host)
+        (self.dbConn, self.dbCursor, self.dictCursor) = dbConnect(db=self.lexiconDB, host=mysql_host)
         self.mysql_host = mysql_host
         self.currentLexicon = lex
 

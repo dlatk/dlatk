@@ -127,7 +127,7 @@ class LDAExtractor(FeatureExtractor):
     @staticmethod
     def printDistToCSV(dist, fileName):
         print("[Writing Distribution CSV to %s]" %fileName)
-        csvWriter = csv.writer(open(fileName, 'wb'))
+        csvWriter = csv.writer(open(fileName, 'w'))
         csvWriter.writerow(['topic_id', 'word1', 'word1_score', 'word2', 'word2_score', '...'])
         for topic in sorted(list(dist.keys()), key = lambda k: int(k) if str(k).isdigit() else k):
             wordDist = dist[topic]

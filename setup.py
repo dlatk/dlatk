@@ -79,7 +79,7 @@ INSTALL_REQUIRES = [
 ]
 EXTRAS_REQUIRE = {
   'image': ['image'],
-  'jsonrpclib': ['jsonrpclib>=0.1.3']
+  'jsonrpclib-pelix': ['jsonrpclib-pelix>=0.2.8'],
   'langid': ['langid>=1.1.4'],
   'rpy2': ['rpy2'],
   'simplejson': ['simplejson>=3.3.1'],

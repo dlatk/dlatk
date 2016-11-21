@@ -399,7 +399,7 @@ class Lexicon(object):
         enumCats = "'"+"', '".join([k.upper().replace("'", "\\'") for k in list(self.currentLexicon.keys())])+"'"   
         drop = """DROP TABLE IF EXISTS """+tablename
         sql = """CREATE TABLE IF NOT EXISTS %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                 term VARCHAR(128), category ENUM(%s), INDEX(term), INDEX(category)) CHARACTER SET %s COLLATE %s ENGINE=%s""" % (tablename, enumCats, fwc.DEF_ENCODING, fwc.DEF_COLLATIONS[self.encoding.lower()], fwc.DEF_MYSQL_ENGINE)
+                 term VARCHAR(128), category ENUM(%s), INDEX(term), INDEX(category)) CHARACTER SET %s COLLATE %s ENGINE=%s""" % (tablename, enumCats, fwc.DEF_ENCODING, fwc.DEF_COLLATIONS[fwc.DEF_ENCODING.lower()], fwc.DEF_MYSQL_ENGINE)
         print("Running: ", drop)
         print("and:     ", sql)
         try:
@@ -1005,7 +1005,7 @@ class WeightedLexicon(Lexicon):
         #first create the table:
         enumCats = "'"+"', '".join([k.upper().replace("'", "\\'") for k in list(self.weightedLexicon.keys())])+"'"   
         drop = """DROP TABLE IF EXISTS """+tablename
-        sql = """CREATE TABLE IF NOT EXISTS %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, term VARCHAR(140), category ENUM(%s), weight DOUBLE, INDEX(term), INDEX(category)) CHARACTER SET %s COLLATE %s ENGINE=%s""" % (tablename, enumCats, fwc.DEF_ENCODING,fwc.DEF_COLLATIONS[fwc.DEF_ENCODING.lower()], fwc.DEF_MYSQL_ENGINE)
+        sql = """CREATE TABLE IF NOT EXISTS %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, term VARCHAR(140), category ENUM(%s), weight DOUBLE, INDEX(term), INDEX(category)) CHARACTER SET %s COLLATE %s ENGINE=%s""" % (tablename, enumCats, fwc.DEF_ENCODING, fwc.DEF_COLLATIONS[fwc.DEF_ENCODING.lower()], fwc.DEF_MYSQL_ENGINE)
         print("Running: ", drop)
         print("and:     ", sql)
         try:

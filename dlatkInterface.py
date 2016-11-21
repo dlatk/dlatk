@@ -184,6 +184,8 @@ def main(fn_args = None):
                        help='Switch to override controls listed in init file.')
     group.add_argument('--outcome_interaction', '--interaction', type=str, metavar='TERM(S)', dest='outcomeinteraction', nargs='+', default=getInitVar('outcomeinteraction', conf_parser, fwc.DEF_OUTCOME_CONTROLS, varList=True),
                        help='Fields in outcome table to use as controls and interaction terms for correlation(regression).')
+    group.add_argument('--fold_column', '--fold_labels', type=str, dest='fold_column', default=None,
+                       help='Fields in outcome table to use as labels for prespecified folds in classification/regression cross-validation.')
     group.add_argument('--feat_names', type=str, metavar='FIELD(S)', dest='featnames', nargs='+', default=getInitVar('featnames', conf_parser, fwc.DEF_FEAT_NAMES, varList=True),
                        help='Limit outputs to the given set of features.')
     group.add_argument("--group_freq_thresh", type=int, metavar='N', dest="groupfreqthresh", default=getInitVar('groupfreqthresh', conf_parser, None),
@@ -233,7 +235,8 @@ def main(fn_args = None):
     group.add_argument('--zScoreGroup', action='store_true', dest='zScoreGroup', default=False,
                        help="Outputs a certain group's zScore for all feats, which group is determined by the boolean outcome value [MUST be boolean outcome]") 
     group.add_argument('--p_correction', metavar='METHOD', type=str, dest='p_correction_method', default=getInitVar('p_correction_method', conf_parser, fwc.DEF_P_CORR),
-                       help='Specify a p-value correction method: simes, holm, hochberg, hommel, bonferroni, BH, BY, fdr, none')
+                       help='Specify a p-value correction method: simes, holm, hochberg, hommel, bonferroni, BH, BY, fdr, none',
+                       choices=fwc.DEF_P_MAPPING.keys())
     group.add_argument('--no_bonferroni', action='store_false', dest='bonferroni', default=True,
                        help='Turn off bonferroni correction of p-values.')
     group.add_argument('--no_correction', action='store_const', const='', dest='p_correction_method',
@@ -307,6 +310,8 @@ def main(fn_args = None):
                        help='Finds residuals for controls and tries to predict beyond them (only for combo test)')
     group.add_argument('--prediction_csv', '--pred_csv', action='store_true', dest='pred_csv',
                        help='write yhats in a separate csv')
+    group.add_argument('--probability_csv', '--prob_csv', action='store_true', dest='prob_csv',
+                       help='write probabilities for yhats in a separate csv')
     group.add_argument('--weighted_eval', type=str, dest='weightedeval', default=None,
                        help='Column to weight the evaluation.')
     group.add_argument('--no_standardize', action='store_false', dest='standardize', default=True,
@@ -392,6 +397,11 @@ def main(fn_args = None):
     group.add_argument('--language_filter', '--lang_filter',  type=str, metavar='FIELD(S)', dest='langfilter', nargs='+', default=[],
                        help='Filter message table for list of languages.')
     group.add_argument('--clean_messages', dest='cleanmessages', action = 'store_true', help="Remove URLs, hashtags and @ mentions from messages")
+    group.add_argument('--deduplicate', action='store_true', dest='deduplicate', 
+                       help='Removes duplicate messages within correl_field grouping, writes to new table corptable_dedup Not to be run at the message level.')
+    group.add_argument('--spam_filter', dest='spamfilter', metavar="SPAM_THRESHOLD", type=float, nargs='?', const=fwc.DEF_SPAM_FILTER,
+                       help='Removes users (by correl_field grouping) with percentage of spam messages > threshold, writes to new table corptable_nospam '
+                       'with new column is_spam. Defaul threshold = %s'%fwc.DEF_SPAM_FILTER)
 
     group = parser.add_argument_group('LDA Helper Actions', '')
     group.add_argument('--add_message_id', type=str, nargs=2, dest='addmessageid',
@@ -594,6 +604,15 @@ def main(fn_args = None):
     if not args.bonferroni:
       print("--no_bonf has been depricated. Default p correction method is now Benjamini, Hochberg. Please use --no_correction instead of --no_bonf.")
       sys.exit(1)
+    # if args.p_correction_method:
+    #   if args.p_correction_method.lower() == "none":
+    #     print("For no correction please use --no_correction instead of --p_correction none")
+    #     sys.exit(1)
+    #   if args.p_correction_method not in fwc.DEF_P_MAPPING.keys():
+    #     print("--p_correction_method takes %s as an argument" % ", ".join(fwc.DEF_P_MAPPING.keys()))
+    #     sys.exit(1)
+
+
 
     ##Argument adjustments: 
     if not args.valuefunc: args.valuefunc = lambda d: d
@@ -647,7 +666,7 @@ def main(fn_args = None):
         return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.corpdir, wordTable = args.wordTable)
 
     def OG():
-        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.groupfreqthresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable)
+        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.groupfreqthresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, fold_column = args.fold_column)
 
     def OA():
         return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.groupfreqthresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
@@ -839,6 +858,15 @@ def main(fn_args = None):
     if args.langfilter:
         if not fe: fe = FE()
         fe.addLanguageFilterTable(args.langfilter, args.cleanmessages, args.lowercaseonly)
+
+    if args.deduplicate:
+        if not fe: fe = FE()
+        fe.addDedupFilterTable(anonymize=args.cleanmessages)
+
+    if args.spamfilter:
+        if not fe: fe = FE()
+        fe.addSpamFilterTable(threshold=args.spamfilter)
+
 
     if args.addmessageid:
         messageFile=open(args.addmessageid[0], 'rb')
@@ -1492,6 +1520,12 @@ def main(fn_args = None):
             if args.outputname:
                 outputStream = open(args.outputname+'.predicted_data.csv', 'w')
             ClassifyPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
+            print("Wrote to: %s" % str(outputStream))
+            outputStream.close()
+        if args.prob_csv:
+            if args.outputname:
+                outputStream = open(args.outputname+'.prediction_probabilities.csv', 'w')
+            ClassifyPredictor.printComboControlPredictionProbsToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
             print("Wrote to: %s" % str(outputStream))
             outputStream.close()
 

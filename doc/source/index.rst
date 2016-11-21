@@ -6,14 +6,14 @@
 Differential Language Analysis ToolKit
 --------------------------------------
 
-DLATK is an end to end text analysis package written in Python and developed by the World Well-Being Project at the University of Pennsylvania. It contains:
+DLATK is an end to end human text analysis package, specifically suited for social media and social scientific applications. It is written in Python 3 and developed by the World Well-Being Project at the University of Pennsylvania. It contains:
 
 * feature extraction
 * part-of-speech tagging
 * correlation
 * prediction and classification
 * mediation 
-* clustering
+* dimensionality reduction and clustering
 * wordcloud visualization
 
 DLATK can utilize:

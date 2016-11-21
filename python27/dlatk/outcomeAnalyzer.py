@@ -62,7 +62,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         assert mm.tableExists(self.corpdb, self.dbCursor, featGetter.featureTable, charset=self.encoding, use_unicode=self.use_unicode), 'feature table does not exist (make sure to quote it)'
 
         #get outcome data to work with
-        (groups, allOutcomes, controls) = OutcomeGetter.getGroupsAndOutcomes()
+        (groups, allOutcomes, controls) = self.getGroupsAndOutcomes()
         print "LENGTH OF GROUPS!! %d" % len(groups)
         allFeats = featGetter.getDistinctFeatures(where)
 

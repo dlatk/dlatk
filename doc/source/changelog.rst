@@ -3,6 +3,18 @@
 Changelog
 =========
 
+1.0.1 (2016-11-21)
+------------------
+  - New feature: --deduplicate flag added to remove duplicate tweets within user
+  - New feature: --spam_filter added
+  - New feature: --cleanmessages added to --deduplicate and --spam_filter
+  - New feature: --fold_column added to classifyPredictor and regressionPredictor
+  - Bug fix: --print_csv
+  - Bug fix: csv from binary to text mode lexInterface
+  - Bug fix: add_postimexdiff, nlp server
+  - Improving feature: error messages when incorrectly specifying --p_correction
+  - Improving feature: changed _tok message tables to always be stored as longtext
+
 1.0.0 (2016-10-21)
 ------------------
   - New feature: python 3.5 version, changed from FeatureWorker to dlatk

@@ -6,6 +6,7 @@
 ##
 ## ./runTagger.sh -input example_tweets.txt -output tagged_tweets.txt
 ##
+## hansens@seas.upenn.edu
 
 import argparse
 from subprocess import check_call, Popen, PIPE

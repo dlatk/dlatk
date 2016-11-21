@@ -4,7 +4,7 @@ Installation
 
 Python 2 vs 3
 =============
-DLATK is available for python 2.7 and 3.5, with the 3.5 version being the official release. The 2.7 version is fully functional (as of v1.0) but will not be maintained. Please make sure you ``pip`` is bound to Python 3 for the commands below. 
+DLATK is available for python 2.7 and 3.5, with the 3.5 version being the official release. The 2.7 version is fully functional (as of v0.6.1) but will not be maintained and also does not contain some of the newer features available in v1.0. Please make sure you ``pip`` is bound to Python 3 for the commands below. 
 
 To install the Python 2.7 version run:
 
@@ -71,14 +71,14 @@ DLATK comes packaged with two sample databases: dla_tutorial and permaLexicon. S
 Install Optional Dependencies
 =============================
 
-Python
-------
+Python Modules
+--------------
 
 You can install the optional python dependencies with
 
 .. code-block:: bash
 
-		pip install image langid rpy2 wordcloud
+		pip install image jsonrpclib-pelix langid rpy2 simplejson textstat wordcloud
 
 Load NLTK corpus
 ----------------
@@ -101,8 +101,8 @@ Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)
 #. Download the tgz file (for version 0.3) from http://www.cs.cmu.edu/~ark/TweetNLP/.
 #. Extract this file into ``../dlatk/Tools/TwitterTagger/``.
 
-(Optional) Install the IBM Wordcloud jar file. 
-----------------------------------------------
+Install the IBM Wordcloud jar file 
+----------------------------------
 
 The IBM wordcloud module is our default. To install this you must sign up for a IBM DeveloperWorks account and download ibm-word-cloud.jar. Place this file into ``../dlatk/lib/``. 
 
@@ -112,10 +112,17 @@ If you are unable to install this jar then you can use the python wordcloud modu
 
 2. Change ``wordcloud_algorithm='ibm'`` in ../dlatk/lib/wordcloud.py to ``wordcloud_algorithm='amueller'``.
 
+**Note**: You must install either the IBM Wordcloud jar or the Python wordcloud module to print wordclouds. 
+
+Mallet
+------
+
+`Mallet <http://mallet.cs.umass.edu/>`_ can be used with DLATK to create LDA topics (see the :doc:`tutorials/tut_lda` tutorial). Directions on downloading and installing can be found `here <http://mallet.cs.umass.edu/download.php>`_.
+
 Command Line Interface
 ======================
 
-DLATK is run using dlatkInterface.py which is added to /usr/bin/local during the installation process. 
+DLATK is run using dlatkInterface.py which is added to /usr/local/bin during the installation process. 
 
 MySQL Configuration
 ===================
@@ -148,8 +155,11 @@ Python
 Python (optional)
 -----------------
 * image 
+* jsonrpclib-pelix (>=0.2.8)
 * langid (>=1.1.4)
 * rpy2 (2.6.0)
+* simplejson (>=3.3.1)
+* textstat (>=0.6.1)
 * wordcloud (>=1.1.3)
 
 Other

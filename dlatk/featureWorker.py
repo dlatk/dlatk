@@ -280,7 +280,7 @@ class FeatureWorker(object):
         """
         newlist = set()
         if args_use_unicode:
-            print("making black or white list: [%s] [%s] [%s]" %([str(feat,'utf-8') if isinstance(feat, str) else feat for feat in args_featlist], args_lextable, args_categories))
+            print("making black or white list: [%s] [%s] [%s]" %([feat if isinstance(feat, str) else feat for feat in args_featlist], args_lextable, args_categories))
         else:
             print("making black or white list: [%s] [%s] [%s]" %([feat if isinstance(feat, str) else feat for feat in args_featlist], args_lextable, args_categories))
         if args_lextable and args_categories:
@@ -295,7 +295,7 @@ class FeatureWorker(object):
         elif args_featlist:
             for feat in args_featlist:
                 if args_use_unicode:
-                    feat = str(feat, 'utf-8') if isinstance(feat, str) else feat
+                    feat = feat if isinstance(feat, str) else feat
                 else:
                     feat = feat if isinstance(feat, str) else feat
                 # newlist.add(feat.lower())

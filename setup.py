@@ -79,8 +79,11 @@ INSTALL_REQUIRES = [
 ]
 EXTRAS_REQUIRE = {
   'image': ['image'],
+  'jsonrpclib-pelix': ['jsonrpclib-pelix>=0.2.8'],
   'langid': ['langid>=1.1.4'],
   'rpy2': ['rpy2'],
+  'simplejson': ['simplejson>=3.3.1'],
+  'textstat': ['textstat>=0.6.1'],
   'wordcloud':  ['wordcloud>1.1.3'],
 }
 

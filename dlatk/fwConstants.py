@@ -76,7 +76,7 @@ DEF_MIN_FREQ = int(1) #min frequency per group to keep (don't advise above 1)
 DEF_P_OCC = float(.01) #percentage of groups a feature must appear in, to keep it
 DEF_PMI = 3.0
 DEF_MIN_FEAT_SUM = 0 #minimum sum of feature total to keep
-DEF_STANFORD_POS_MODEL = '../Tools/StanfordTagger/stanford-postagger-2012-01-06/models/english-bidirectional-distsim.tagger'
+DEF_STANFORD_POS_MODEL = '../Tools/StanfordTagger/stanford-postagger-2012-01-06/models/english-bidirectional-distsim.tagger' # for code release
 DEF_LEXICON_DB = 'permaLexicon'
 DEF_FEAT_TABLE = 'feat$1gram$messages_en$user_id$16to16$0_01'
 DEF_COLLOCTABLE = 'test_collocs'
@@ -134,8 +134,10 @@ nl, nn, no, oc, or, pa, pl, ps, pt, qu, ro, ru, rw,
 se, si, sk, sl, sq, sr, sv, sw, ta, te, th, tl, tr,
 ug, uk, ur, vi, vo, wa, xh, zh, zu"""
 
+DEF_SPAM_FILTER = 0.2 # threshold for removing spam users
+
 ##CoreNLP settings
-DEF_CORENLP_DIR = '../Tools/corenlp-python'
+DEF_CORENLP_DIR = '../Tools/corenlp-python' # for code release
 DEF_CORENLP_SERVER_COMMAND = './corenlp/corenlp.py'
 DEF_CORENLP_PORT = 20202   #default: 20202
 #CORE NLP PYTHON SERVER COMMAND (must be running): ./corenlp/corenlp.py -p 20202 -q 

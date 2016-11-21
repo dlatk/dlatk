@@ -22,6 +22,7 @@ import glob
 ##DEFAULTS FOR RELEASED VERSION
 _InstallPath = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '/Tools/StanfordParser/' # folder
 _InstallDir = glob.glob(_InstallPath + "stanford-parser-full*")[0]
+
 _DefaultParams ={
     'save_file' : 'parsed.data',
     'save_dir' : 'backupParses',

@@ -127,14 +127,14 @@ class OutcomeAnalyzer(OutcomeGetter):
         assert mm.tableExists(self.corpdb, self.dbCursor, featGetter.featureTable, charset=self.encoding, use_unicode=self.use_unicode), 'feature table does not exist (make sure to quote it)'
 
         #get outcome data to work with
-        (groups, allOutcomes, controls) = OutcomeGetter.getGroupsAndOutcomes()
+        (groups, allOutcomes, controls) = self.getGroupsAndOutcomes()
         print("LENGTH OF GROUPS!! %d" % len(groups))
         allFeats = featGetter.getDistinctFeatures(where)
 
         #adjust keys for outcomes and controls:
         allOutcomes = dict([('outcome_'+key, value) for key, value in allOutcomes.items()])
         controls = dict([('cntrl_'+key, value) for key, value in controls.items()])
-
+        
         #create all keys
         allKeys = list(['group_id'])#row label header
         allKeys.extend(list(allOutcomes.keys()))#outcome header
@@ -750,7 +750,6 @@ class OutcomeAnalyzer(OutcomeGetter):
             numRed += 1
             if numRed % 200 == 0: fwc.warn("  %d features correlated"%(numRed))
             firstLoop = False
-        # exit() # Maarten
 
         if p_correction_method and not p_correction_method.startswith("bonf"): 
             ##change correls here. 

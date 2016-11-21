@@ -192,6 +192,8 @@ def main(fn_args = None):
                        help='Switch to override controls listed in init file.')
     group.add_argument('--outcome_interaction', '--interaction', type=str, metavar='TERM(S)', dest='outcomeinteraction', nargs='+', default=getInitVar('outcomeinteraction', conf_parser, fwc.DEF_OUTCOME_CONTROLS, varList=True),
                        help='Fields in outcome table to use as controls and interaction terms for correlation(regression).')
+    group.add_argument('--fold_column', '--fold_labels', type=str, dest='fold_column', default=None,
+                       help='Fields in outcome table to use as labels for prespecified folds in classification/regression cross-validation.')
     group.add_argument('--feat_names', type=str, metavar='FIELD(S)', dest='featnames', nargs='+', default=getInitVar('featnames', conf_parser, fwc.DEF_FEAT_NAMES, varList=True),
                        help='Limit outputs to the given set of features.')
     group.add_argument("--group_freq_thresh", type=int, metavar='N', dest="groupfreqthresh", default=getInitVar('groupfreqthresh', conf_parser, None),
@@ -313,6 +315,8 @@ def main(fn_args = None):
                        help='Finds residuals for controls and tries to predict beyond them (only for combo test)')
     group.add_argument('--prediction_csv', '--pred_csv', action='store_true', dest='pred_csv',
                        help='write yhats in a separate csv')
+    group.add_argument('--probability_csv', '--prob_csv', action='store_true', dest='prob_csv',
+                       help='write probabilities for yhats in a separate csv')
     group.add_argument('--weighted_eval', type=str, dest='weightedeval', default=None,
                        help='Column to weight the evaluation.')
     group.add_argument('--no_standardize', action='store_false', dest='standardize', default=True,
@@ -634,7 +638,7 @@ def main(fn_args = None):
         else:
             args.encoding = fwc.DEF_ENCODING
 
-    if not args.groupfreqthresh:
+    if not args.groupfreqthresh and args.groupfreqthresh != 0:
         setGFTWarning = False
         args.groupfreqthresh = fwc.getGroupFreqThresh(args.correl_field)
     else:
@@ -653,7 +657,7 @@ def main(fn_args = None):
         return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.corpdir, wordTable = args.wordTable)
 
     def OG():
-        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.groupfreqthresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable)
+        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.groupfreqthresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, fold_column = args.fold_column)
 
     def OA():
         return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.groupfreqthresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
@@ -1473,6 +1477,13 @@ def main(fn_args = None):
             ClassifyPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
             print "Wrote to: %s" % str(outputStream)
             outputStream.close()
+        if args.prob_csv:
+            if args.outputname:
+                outputStream = open(args.outputname+'.prediction_probabilities.csv', 'w')
+            ClassifyPredictor.printComboControlPredictionProbsToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
+            print "Wrote to: %s" % str(outputStream)
+            outputStream.close()
+
 
     if args.predictclassifiers:
         cp.predict(sparse = args.sparse, groupsWhere = args.groupswhere)

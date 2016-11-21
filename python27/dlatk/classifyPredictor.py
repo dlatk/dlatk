@@ -227,8 +227,8 @@ class ClassifyPredictor:
             #{'C':[0.01, 0.1, 0.001, 0.0001, 0.00001], 'penalty':['l1'], 'dual':[False]} #timex l2 rpca....
             #{'C':[0.1, 1, 10], 'penalty':['l1'], 'dual':[False]} #timex l2 rpca....
             #{'C':[0.00001], 'penalty':['l2']} # UnivVsMultiv choice Maarten 
-            {'C':[0.01], 'penalty':['l1']} # UnivVsMultiv choice Maarten
-            #{'C':[1000000], 'penalty':['l2'], 'dual':[False]} # for a l0 penalty approximation
+            #{'C':[0.01], 'penalty':['l1']} # UnivVsMultiv choice Maarten
+            {'C':[1000000], 'penalty':['l2'], 'dual':[False]} # for a l0 penalty approximation
             #{'C':[1000000000000], 'penalty':['l2'], 'dual':[False]} # for a l0 penalty approximation
             #{'C':[100], 'penalty':['l1'], 'dual':[False]} # gender prediction
             ],
@@ -238,10 +238,10 @@ class ClassifyPredictor:
             #{'n_jobs': [10], 'n_estimators': [1000], 'criterion':['gini']}, 
             #{'n_jobs': [10], 'n_estimators': [100], 'criterion':['entropy']}, 
             #{'n_jobs': [12], 'n_estimators': [50], 'max_features': ["sqrt", "log2", None], 'criterion':['gini'], 'min_samples_split': [1]}, 
-            #{'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2]}, 
-            {'n_jobs': [12], 'n_estimators': [200], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2]}, 
-            {'n_jobs': [9], 'n_estimators': [1500], 'max_features': ["sqrt"], 'criterion':['gini'], 
-             'min_samples_split': [2], 'class_weight': ['auto'], 'random_state': [42]}, 
+            {'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2]}, 
+            #{'n_jobs': [12], 'n_estimators': [200], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2]}, 
+            #{'n_jobs': [9], 'n_estimators': [1500], 'max_features': ["sqrt"], 'criterion':['gini'], 
+            # 'min_samples_split': [2], 'class_weight': ['auto'], 'random_state': [42]}, 
             ],
         'etcsmall': [ 
             {'n_jobs': [8], 'n_estimators': [1500], 'max_features': [1.00], 'criterion':['gini'], 
@@ -497,11 +497,18 @@ class ClassifyPredictor:
         ##TODO ADD RESIDUALIZED CONTROLS: use "warm_start" with ETC or gradient boosting
         
         ###################################
-        #1. setup groups for random folds
+        #1. setup groups for random folds (or prespecified folds -pnc)
         if blacklist: print "USING BLACKLIST: %s" %str(blacklist)
-        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
+        (groups, allOutcomes, allControls, foldLabels) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere, includeFoldLabels=True)
         groupFolds = []
-        if not stratifyFolds: 
+        if foldLabels:
+            print "    ***explicit fold labels specified, not splitting or stratifying again***"
+            stratifyFolds = False
+            temp = {}
+            for k,v in sorted(foldLabels.iteritems()): temp.setdefault(v, []).append(k)
+            groupFolds = temp.values()
+            nFolds = len(groupFolds)
+        elif not stratifyFolds: 
             print "[number of groups: %d (%d Folds)] non-stratified / using same folds for all outcomes" % (len(groups), nFolds)
             random.seed(self.randomState)
             groupList = list(groups)
@@ -581,6 +588,7 @@ class ClassifyPredictor:
                         #even classes across the outcomes
                         print "Warning: Stratifying outcome classes across folds (thus, folds will differ across outcomes)."
                         groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = 42)
+                    
 
                     #for warmStartControls or controlCombinedProbs
                     lastClassifiers= [None]*nFolds

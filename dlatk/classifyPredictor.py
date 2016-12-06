@@ -44,6 +44,7 @@ from sklearn.utils import shuffle
 from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier, GradientBoostingClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model.base import LinearModel
+from sklearn.linear_model import SGDClassifier
 from sklearn.base import ClassifierMixin
 
 #scipy
@@ -269,8 +270,6 @@ class ClassifyPredictor:
             {'n_estimators': [500], 'random_state': [42], 
              'subsample':[0.4], 'max_depth': [5]  },
             ],
-
-
         }
 
     modelToClassName = {
@@ -281,7 +280,7 @@ class ClassifyPredictor:
         'rfc' : 'RandomForestClassifier',
         'pac' : 'PassiveAggressiveClassifier',
         #'lda' : 'LDA', #linear discriminant analysis
-        'gbc' : 'GradientBoostingClassifier',
+        'gbc' : 'GradientBoostingClassifier'
         }
     
     modelToCoeffsName = {
@@ -520,8 +519,10 @@ class ClassifyPredictor:
             print("    ***explicit fold labels specified, not splitting or stratifying again***")
             stratifyFolds = False
             temp = {}
-            for k,v in sorted(foldLabels.iteritems()): temp.setdefault(v, []).append(k)
-            groupFolds = temp.values()
+            # for k,v in sorted(foldLabels.iteritems()): temp.setdefault(v, []).append(k)
+            # groupFolds = temp.values()
+            for k,v in sorted(foldLabels.items()): temp.setdefault(v, []).append(k)
+            groupFolds = list(temp.values())
             nFolds = len(groupFolds)
         elif not stratifyFolds: 
             print("[number of groups: %d (%d Folds)] non-stratified / using same folds for all outcomes" % (len(groups), nFolds))

@@ -283,7 +283,9 @@ class RegressionPredictor:
             #{'kernel':['rbf'], 'gamma': [0.1, 1, 0.001, .0001], 'C':[.1, .01, 1, .001, 10]}#swl
             ],
         'sgdregressor': [
-            {'alpha':[250000, 25000, 250, 25, 1, 0.1, .01, .001, .0001, .00001, .000001], 'penalty':['l1']}#testing for personality
+            # {'alpha':[250000, 25000, 250, 25, 1, 0.1, .01, .001, .0001, .00001, .000001], 'penalty':['l1']}#testing for personality
+            # {'penalty':['l1'], 'fit_intercept':[True], 'alpha':np.array([.0001,.00001,.00001,.000001,.0000001,0.]), 'verbose':[0], 'n_iter':[500]},
+            {'penalty':['l1'], 'fit_intercept':[True], 'alpha':np.array([10000,1000,100,10,1,.1,.01,.001,.0001]), 'verbose':[0], 'n_iter':[50]},
             ],
         'extratrees':[
             #{'n_estimators': [20], 'n_jobs': [10], 'random_state': [42], 'compute_importances' : [True]},
@@ -353,7 +355,7 @@ class RegressionPredictor:
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 60000
-    backOffPerc = .05 #when the num_featrue / training_insts is less than this backoff to backoffmodel
+    backOffPerc = .00 #when the num_featrue / training_insts is less than this backoff to backoffmodel
     #backOffModel = 'ridgecv'
     backOffModel = 'linear'
 
@@ -567,7 +569,7 @@ class RegressionPredictor:
         print("\n[TEST COMPLETE]\n")
 
     #####################################################
-    ####### Meain Testing Method ########################
+    ####### Main Testing Method ########################
     def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
                           allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None, residualizedControls = False, groupsWhere = ''):
         """Tests regressors, by cross-validating over folds with different combinations of controls"""
@@ -579,8 +581,9 @@ class RegressionPredictor:
         if foldLabels:
             print("    ***explicit fold labels specified, not splitting again***")
             temp = {}
-            for k,v in sorted(foldLabels.iteritems()): temp.setdefault(v, []).append(k)
-            groupFolds = temp.values()
+            # for k,v in sorted(foldLabels.iteritems()): temp.setdefault(v, []).append(k)
+            for k,v in sorted(foldLabels.items()): temp.setdefault(v, []).append(k)
+            groupFolds = list(temp.values())
             nFolds = len(groupFolds)
         else:
             random.seed(self.randomState)

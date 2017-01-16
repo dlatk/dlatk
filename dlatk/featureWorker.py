@@ -284,12 +284,12 @@ class FeatureWorker(object):
         else:
             print("making black or white list: [%s] [%s] [%s]" %([feat if isinstance(feat, str) else feat for feat in args_featlist], args_lextable, args_categories))
         if args_lextable and args_categories:
-            (conn, cur, dcur) = mm.dbConnect(args_lexdb, charset=self.encoding, use_unicode=self.use_unicode)
+            (conn, cur, dcur) = mm.dbConnect(args_lexdb, charset=fwc.DEF_ENCODING, use_unicode=args_use_unicode)
             sql = 'SELECT term FROM %s' % (args_lextable)
             if (len(args_categories) > 0) and args_categories[0] != '*':
                 sql = 'SELECT term FROM %s WHERE category in (%s)'%(args_lextable, ','.join(['\''+str(x)+'\'' for x in args_categories]))
 
-            rows = mm.executeGetList(args_lexdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
+            rows = mm.executeGetList(args_lexdb, cur, sql, charset=fwc.DEF_ENCODING, use_unicode=args_use_unicode)
             for row in rows:
                 newlist.add(row[0])
         elif args_featlist:

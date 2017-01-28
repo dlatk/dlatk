@@ -201,9 +201,10 @@ class ClassifyPredictor:
             #{'kernel': ['linear'], 'C': [100, 10, 1000, 1], 'random_state': [42]}
             ],
         'linear-svc':[
+            #{'C':[0.01], 'penalty':['l2'], 'dual':[True]} #timex message-level
             #{'C':[10, 1, 0.1, 0.01, 0.001, 0.0001, 0.0025, 0.00025, 0.00001, 0.000001, 0.000025, 0.0000001, 0.0000025, 0.00000001, 0.00000025], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]}, #swl
             #{'C':[100, 10, 1, 500, 1000, 5000, 10000, 25000, 0.1, 0.01, 0.001, 0.0001], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]}
-            {'C':[0.0001, 0.001, 0.00001, 0.01], 'penalty':['l2'], 'dual':[True]}
+            #{'C':[0.0001, 0.001, 0.00001, 0.01], 'penalty':['l2'], 'dual':[True]}
             #{'C':[0.01, 0.1, 0.001, 1, 0.0001, 10, 0.00001, 0.000001, 0.0000001], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]} #swl user
             #{'C':[0.01, 0.1, 0.001, 1, 0.0001, 10], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]} #depression user
             #{'C':[0.01, 0.1, 0.001, 0.0001, 0.00001, 0.000001], 'loss':['l2'], 'penalty':['l2'], 'dual':[False]} #depression user lots o feats
@@ -220,12 +221,11 @@ class ClassifyPredictor:
             #{'C':1.0, 'fit_intercept':True, 'loss':'l2', penalty:'l2'}, #if not centered data, use fit_intercept
             #{'C':1.0, 'dual':False}, #when N_samples > n_features
             #{'C':[0.01, 0.1, 1, 10, 0.001], 'penalty':['l2'], 'dual':[True]} #timex message-level
-            #{'C':[0.01], 'penalty':['l2'], 'dual':[True]} #timex message-level
 
             ###with l1 feature selection:
+            {'C':[0.01], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']} #age, general sparse setting #words n phrases, gender (best 0.01=> 91.4 )
             #{'C':[0.01, 0.1, 0.001], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']}, #FIRST PASS l1 OPTION; swl message-level
             #{'C':[10, 1, 0.1, 0.01, 0.001, 0.0001, 0.0025, 0.00025, 0.00001, 0.000001, 0.000025, 0.0000001, 0.0000025, 0.00000001, 0.00000025], 'penalty':['l1'], 'dual':[False]} #swl
-            #{'C':[0.01], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']} #age, general sparse setting #words n phrases, gender (best 0.01=> 91.4 )
             #{'C':[0.1], 'penalty':['l1'], 'dual':[False], 'multi_class':['crammer_singer']} #
             #{'C':[0.01, 0.1, 1, 10, 0.001], 'penalty':['l1'], 'dual':[False]} #timex message-level
             #{'C':[0.000001], 'penalty':['l2']}, # UnivVsMultiv choice Maarten 

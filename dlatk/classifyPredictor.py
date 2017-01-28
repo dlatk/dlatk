@@ -33,6 +33,7 @@ from sklearn.preprocessing import StandardScaler, label_binarize
 from sklearn.linear_model import PassiveAggressiveClassifier, LogisticRegression, Lasso
 from sklearn.svm import SVR
 from sklearn.multiclass import OneVsRestClassifier
+from sklearn.naive_bayes import MultinomialNB, GaussianNB
 
 from sklearn.cross_validation import StratifiedKFold, KFold, ShuffleSplit, train_test_split
 from sklearn.decomposition import RandomizedPCA, MiniBatchSparsePCA, PCA, KernelPCA, NMF
@@ -270,6 +271,13 @@ class ClassifyPredictor:
             {'n_estimators': [500], 'random_state': [42], 
              'subsample':[0.4], 'max_depth': [5]  },
             ],
+        'mnb': [
+            {'alpha': [1.0], 'fit_prior': [True], 'class_prior': [None]},
+            ], 
+        'gnb': [
+            {},
+            # {'priors': [None]}, # 'priors' becomes a parameter in sklearn 0.18
+            ], 
         }
 
     modelToClassName = {
@@ -280,14 +288,17 @@ class ClassifyPredictor:
         'rfc' : 'RandomForestClassifier',
         'pac' : 'PassiveAggressiveClassifier',
         #'lda' : 'LDA', #linear discriminant analysis
-        'gbc' : 'GradientBoostingClassifier'
+        'gbc' : 'GradientBoostingClassifier',
+        'mnb' : 'MultinomialNB',
+        'gnb' : 'GaussianNB', 
         }
     
     modelToCoeffsName = {
         ##TODO##
         'linear-svc' : 'coef_',
         'svc' : 'coef_',
-        'lr': 'coef_'
+        'lr': 'coef_',
+        'mnb': 'coef_',
         }
 
     #cvJobs = 3 #when lots of data 

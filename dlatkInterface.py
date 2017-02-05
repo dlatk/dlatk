@@ -1542,7 +1542,7 @@ def main(fn_args = None):
     if args.predictCtoOutcomeTable:
         if not fgs: fgs = FGs()
         if not fe: fe = FE()
-        cp.predictToOutcomeTable(sparse = args.sparse, fe = fe, name = args.predictCtoOutcomeTable)
+        cp.predictToOutcomeTable(sparse = args.sparse, fe = fe, name = args.predictCtoOutcomeTable, groupsWhere = args.groupswhere)
 
     if args.predictalltofeats and cp:
         if not fe: fe = FE()

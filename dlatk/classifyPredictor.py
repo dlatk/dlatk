@@ -33,7 +33,7 @@ from sklearn.preprocessing import StandardScaler, label_binarize
 from sklearn.linear_model import PassiveAggressiveClassifier, LogisticRegression, Lasso
 from sklearn.svm import SVR
 from sklearn.multiclass import OneVsRestClassifier
-from sklearn.naive_bayes import MultinomialNB, GaussianNB
+from sklearn.naive_bayes import MultinomialNB, GaussianNB, BernoulliNB
 
 from sklearn.cross_validation import StratifiedKFold, KFold, ShuffleSplit, train_test_split
 from sklearn.decomposition import RandomizedPCA, MiniBatchSparsePCA, PCA, KernelPCA, NMF
@@ -272,11 +272,14 @@ class ClassifyPredictor:
              'subsample':[0.4], 'max_depth': [5]  },
             ],
         'mnb': [
-            {'alpha': [1.0], 'fit_prior': [True], 'class_prior': [None]},
+            {'alpha': [1.0], 'fit_prior': [False], 'class_prior': [None]},
             ], 
         'gnb': [
             {},
             # {'priors': [None]}, # 'priors' becomes a parameter in sklearn 0.18
+            ], 
+        'bnb': [
+            {'alpha': [1.0], 'fit_prior': [False], 'binarize':[True]},
             ], 
         }
 
@@ -291,6 +294,7 @@ class ClassifyPredictor:
         'gbc' : 'GradientBoostingClassifier',
         'mnb' : 'MultinomialNB',
         'gnb' : 'GaussianNB', 
+        'bnb' : 'BernoulliNB',
         }
     
     modelToCoeffsName = {
@@ -299,6 +303,7 @@ class ClassifyPredictor:
         'svc' : 'coef_',
         'lr': 'coef_',
         'mnb': 'coef_',
+        'bnb' : 'feature_log_prob_',
         }
 
     #cvJobs = 3 #when lots of data 

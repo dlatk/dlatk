@@ -151,7 +151,7 @@ def main(fn_args = None):
                        help='Name of topic file to use to build the topic lexicon.')
     group.add_argument('--num_topic_words', type=int, dest='numtopicwords', default=fwc.DEF_MAX_TOP_TC_WORDS,
                        help='Number of topic words to use as labels.')
-    group.add_argument('--topic_lexicon', type=str, dest='topiclexicon', default='',
+    group.add_argument('--topic_lexicon', '--topic_lex', type=str, dest='topiclexicon', default='',
                        help='this is the (topic) lexicon name specified as part of --make_feat_labelmap_lex and --add_topiclex_from_topicfile')
     group.add_argument('--topic_list', type=str, dest='topiclist', default='', nargs='+',
                        help='this is the list of topics to group together in a plot for --feat_flexibin')

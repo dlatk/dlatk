@@ -34,8 +34,8 @@ MAX_TO_DISABLE_KEYS = 50000 #number of groups * n must be less than this to disa
 MAX_SQL_PRINT_CHARS = 256
 
 ##Corpus Settings:
-DEF_CORPDB = 'fb20'
-DEF_CORPTABLE = 'messages_en'
+DEF_CORPDB = 'dla_tutorial'
+DEF_CORPTABLE = 'msgs'
 DEF_CORREL_FIELD = 'user_id'
 DEF_MESSAGE_FIELD = 'message'
 DEF_MESSAGEID_FIELD = 'message_id'
@@ -59,8 +59,8 @@ DEF_NUM_RAND_MESSAGES = 100
 MAX_WRITE_RECORDS = 1000 #maximum number of records to write at a time (for add_terms...)
 
 ##Outcome settings
-DEF_OUTCOME_TABLE = 'masterstats_andy'
-DEF_OUTCOME_FIELD = 'SWL'
+DEF_OUTCOME_TABLE = 'masterstats_r500'
+DEF_OUTCOME_FIELD = 'demog_age'
 DEF_OUTCOME_FIELDS = []
 DEF_OUTCOME_CONTROLS = []
 DEF_GROUP_FREQ_THRESHOLD = int(1000) #min. number of total feature values that the group has, to use it

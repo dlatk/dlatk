@@ -878,8 +878,13 @@ def main(fn_args = None):
         ma.addDedupFilterTable(anonymize=args.cleanmessages)
 
     if args.spamfilter:
-        if not ma: ma = ma()
+        if not ma: ma = MA()
         ma.addSpamFilterTable(threshold=args.spamfilter)
+
+    if args.cleanmessages and not (args.langfilter or args.deduplicate) :
+        if not ma: ma = MA()
+        ma.addAnonymizedTable()
+
 
     # LDA
     if args.addmessageid:

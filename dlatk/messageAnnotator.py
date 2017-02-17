@@ -17,7 +17,7 @@ except ImportError:
     pass
 
 class MessageAnnotator(FeatureWorker):
-    """Deals with message tables .....
+    """Deals with filtering or adding columns to message tables.
 
     Returns
     -------
@@ -118,6 +118,65 @@ class MessageAnnotator(FeatureWorker):
         if rows_to_write:
             sql = """INSERT INTO """+new_table+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
             mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+
+    def addAnonymizedTable(self):
+        """
+        
+        """
+        new_table = self.corptable + "_an"
+        drop = """DROP TABLE IF EXISTS %s""" % (new_table)
+        create = """CREATE TABLE %s like %s""" % (new_table, self.corptable)
+        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, create, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, new_table, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+
+        #Find column names:
+        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
+        messageIndex = columnNames.index(self.message_field)
+        try:
+            retweetedStatusIdx = columnNames.index("retweeted_status_text")
+        except:
+            retweetedStatusIdx = None
+            pass
+
+        #find all groups that are not already inserted
+        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
+        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
+        fwc.warn("anonymizing messages for %d '%s's"%(len(cfRows), self.correl_field))
+
+        groupsAtTime = 1
+        rows_to_write = []
+        counter = 1
+        for groups in fwc.chunks(cfRows, groupsAtTime):
+
+            # get msgs for groups:
+            sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
+            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode))
+            rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
+
+            for row in rows:
+                row = list(row)
+                try:
+                    message = row[messageIndex]
+                    message = tc.replaceUser(message)
+                    message = tc.replaceURL(message)
+                    row[messageIndex] = message
+                    rows_to_write.append(row)
+                except:
+                    continue
+            if len(rows_to_write) >= fwc.MYSQL_BATCH_INSERT_SIZE:
+                sql = """INSERT INTO """+new_table+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
+                mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                rows_to_write = []
+
+            if (counter % 500 == 0):
+                print('%d anonymized messages inserted!' % (counter))
+            counter += 1
+
+        if rows_to_write:
+            sql = """INSERT INTO """+new_table+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
+            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+
 
     def addSpamFilterTable(self, threshold=fwc.DEF_SPAM_FILTER):
         """

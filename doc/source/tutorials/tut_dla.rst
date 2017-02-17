@@ -19,10 +19,10 @@ In this tutorial we will walk you through the process of running DLA using the d
 Answers for this tutorial:
 
 * We will be using text from blogs (a subset of data from `this corpus <http://u.cs.biu.ac.il/~koppel/BlogCorpus.htm>`_).
-* We will look at age, gender and personality and how they correlate with LIWC and Facebook topics.
+* We will look at age and gender and how they correlate with n-grams and Facebook topics.
 * We will group the data at the user level. 
 
-**Difference between mysql and dlatk**: You will be using our infrastructure code (which is primarily written in Python) and mysql. If you are new to using a terminal this can be confusing. Step 0 shows you how to install the infrastructure code. You will start every command with **dlatkInterface.py**. As the name suggests, this is an interface to a much larger set of code called Feature Worker. The *.py* tells you that this is a Python file. On the other hand, **mysql** is a database management system. You access the mysql command line interface by typing **mysql** in your terminal. Mysql commands only work in the mysql command line interface, just as fwInterface only works in the terminal. Anytime you are asked to run a mysql command you must first type *mysql*. To exit you simply type *exit*. You should also note that all mysql commands end with a semicolon. When running this tutorial it might be helpful to have two terminal windows open, one for mysql and another for dlatk. 
+**Difference between mysql and dlatk**: You will be using our infrastructure code (which is primarily written in Python) and MySQL. If you are new to using a terminal this can be confusing. You will start every command with **dlatkInterface.py**. As the name suggests, this is an interface to a much larger set of code called dlatk. The *.py* tells you that this is a Python file. On the other hand, **MySQL** is a database management system. You access the MySQL command line interface by typing **mysql** in your terminal. MySQL commands only work in the MySQL command line interface, just as dlatkInterface only works in the terminal. Anytime you are asked to run a MySQL command you must first type *mysql*. To exit you simply type *exit*. You should also note that all MySQL commands end with a semicolon. When running this tutorial it might be helpful to have two terminal windows open, one for MySQL and another for dlatk. 
 
 STEP 0 - Prepare
 ================
@@ -37,14 +37,14 @@ The text we will use is the mysql database **dla_tutorial** and in the table **m
  CREATE TABLE msgs_xxx LIKE msgs; 
  INSERT INTO msgs_xxx SELECT * FROM msgs;
 
-The relationships we will look at are ngram usage versus age and gender.  We will also look at Facebook topics versus age and gender and personality scores.  This outcome data is stored in the table **dla_tutorial.blog_outcomes** in the columns **age** and  **gender**.  
+The relationships we will look at are ngram usage versus age and gender.  We will also look at Facebook topics versus age and gender.  This outcome data is stored in the table **dla_tutorial.blog_outcomes** in the columns **age** and  **gender**.  
 
 We will group our data by user. You can see both the message table and the outcome table have a column called **user_id**. 
 
 STEP 1 - Feature Extraction
 ===========================
 
-Generate n-gram Features
+Generate 1-gram Features
 ------------------------
 This step generates a quantitative summary of a body of text.  It basically does word/n-gram counts on a group by group basis.  It also normalizes by group, so at the end of this you can answer questions like “what proportion of words used by USER 234459 were the word ‘the’”.
 
@@ -148,37 +148,25 @@ Given the definition of group norm above, what would you expect to get if you su
 
 	select group_id, sum(group_norm) from dla_tutorial.feat$1gram$msgs_xxx$user_id$16to16 group by group_id limit 10;
 
-Generate Lexicon (topic) Features
----------------------------------
-This step **uses the 1gram feature table** that was used in step 1a in addition to some topic definitions.  It calculates a value that characterizes how strongly each topic was present in the text of a given group.  Sometimes this is as simple as aggregating counts.  Sometimes there is a weighting factor involved.  LIWC2007 and many other topic tables exists in the permaLexicon database schema. `Go here <http://www.liwc.net/>`_ for more information on LIWC (Linguistic Inquiry and Word Count). First, lets look at the LIWC2007 lex table:
+Generate 1to3-gram Features
+---------------------------
 
-.. code-block:: mysql
-
-	mysql> select * from permaLexicon.LIWC2007 limit 10;
-	+----+--------+----------+--------+
-	| id | term   | category | weight |
-	+----+--------+----------+--------+
-	|  1 | y'all  | PPRON    |      1 |
-	|  2 | ive    | PPRON    |      1 |
-	|  3 | weve   | PPRON    |      1 |
-	|  4 | she'll | PPRON    |      1 |
-	|  5 | you'd  | PPRON    |      1 |
-	|  6 | thoust | PPRON    |      1 |
-	|  7 | mine   | PPRON    |      1 |
-	|  8 | his    | PPRON    |      1 |
-	|  9 | shes   | PPRON    |      1 |
-	| 10 | theyd  | PPRON    |      1 |
-	+----+--------+----------+--------+
-
-Every lex table will have the columns id, term, category and weight. Since LIWC is an unweighted lexica the weight column is set to 1.
+Now we will generate a 1-3 gram table which will contain all 1grams, 2grams 3grams for each user. This next command will create four tables, one table for each ngram and one combined table containing every table created during the process. 
 
 .. code-block:: bash
 
-	# EXPECTED OUTPUT TABLE
-	# feat$cat_LIWC2007$msgs_xxx$user_id$16to16
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_lex_table -l LIWC2007
+	##EXPECTED OUTPUT TABLES 
+	#feat$1gram$msgs_xxx$user_id$16to16
+	#feat$2gram$msgs_xxx$user_id$16to16
+	#feat$3gram$msgs_xxx$user_id$16to16
+	#feat$1to3gram$msgs_xxx$user_id$16to16
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_ngrams -n 1 2 3 --combine_feat_tables 1to3gram
 
-Or we could use a weighted, data driven lexicon like our 2000 Facebook topics. These topics were created from Facebook data using Latent Dirichlet allocation (LDA). `Go here <https://en.wikipedia.org/wiki/Latent_Dirichlet_allocation>`_ for more info on LDA. Also see our :doc:`tut_lda`. The Facebook topic table in permaLexicon looks like
+The argument to the :doc:`../fwinterface/fwflag_combine_feat_tables` flag is used to name the combined table. We used 1to3gram which have us the feature table feat$1to3gram$msgs_xxx$user_id$16to16. 
+
+Generate Lexicon (topic) Features
+---------------------------------
+This step **uses the 1gram feature table** that was used in step 1a in addition to some topic definitions.  It calculates a value that characterizes how strongly each topic was present in the text of a given group.  Sometimes this is as simple as aggregating counts.  Sometimes there is a weighting factor involved.  We will use a weighted, data driven lexicon like our 2000 Facebook topics (topics are distributed with this release). These topics were created from Facebook data using Latent Dirichlet allocation (LDA). `Go here <https://en.wikipedia.org/wiki/Latent_Dirichlet_allocation>`_ for more info on LDA. Also see our :doc:`tut_lda`. The Facebook topic table in permaLexicon looks like
 
 .. code-block:: mysql
 
@@ -198,7 +186,9 @@ Or we could use a weighted, data driven lexicon like our 2000 Facebook topics. T
 	| 10 | blow    | 344      |    0.0120238095238 |
 	+----+---------+----------+--------------------+
 
-The main differences to notice are the category names and the weights. Since this lexica was produced using a data driven approach we make no attempt to label the categories (for example, in LIWC above we see the category 'personal pronouns'). Also, this lexica contains weight in the form of conditional probabilities. We now apply this to our message set:
+Every lex table will have the columns: id, term, category and weight. In an unweighted lexica (for example `LIWC <http://www.liwc.net/>`_ (Linguistic Inquiry and Word Count)) the weight column is set to 1.
+
+Since this lexica was produced using a data driven approach we make no attempt to label the categories and give them numerical ids. For example, in LIWC we see the category 'personal pronouns'. The Facebook lexica contains weight in the form of conditional probabilities. We now apply this to our message set:
 
 .. code-block:: bash
 
@@ -212,7 +202,6 @@ Brief descriptions of the flags:
 * :doc:`../fwinterface/fwflag_l`: 
 * :doc:`../fwinterface/fwflag_weighted_lexicon`: 
 
-Note -  for *LIWC2007* we are NOT using weights, but we are for *met_a30_2000_cp*.
 Note - dlatk pieces together the expected name of the 1gram table using the information you give it in the -d, -t, and -c options 
 Note - in the table name *met_a30_2000_cp*, met stands for messages english tokenizen, a30 stands for alpha = 30 (a tuning parameter in the LDA process) and 2000 means there are 2000 topics.
 
@@ -228,14 +217,13 @@ Again, you can view the tables with the following **mysql** commands:
 .. code-block:: mysql
 
 	select * from dla_tutorial.feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16 limit 10;
-	select * from dla_tutorial.feat$cat_LIWC2007$msgs_xxx$user_id$16to16 limit 10;
 
 What should the group norms sum to for a single group in the lexicon tables? Will this be the same as above? Why or why not?
 
 .. code-block:: mysql
 
 	select group_id, sum(group_norm) from dla_tutorial.feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16 group by group_id limit 10;
-	select group_id, sum(group_norm) from dla_tutorial.feat$cat_LIWC2007$msgs_xxx$user_id$16to16 group by group_id limit 10;
+
 
 STEP 2 - Insights (DLA): Correlate features with outcomes
 =========================================================
@@ -315,11 +303,18 @@ This means that every user in our dataset passes the group frequency threshold, 
 
 Output will be written to the file **xxx_output_topic_tagcloud.txt**. The topic tagcloud output will be in a directory called *xxx_output_topic_tagcloud_wordclouds*
 
-|| border=1
-||! Topics most correlated with outcome !||
-||! Outcome ||! Positive Correlation ||! Negative Correlation ||
-|| Gender ||  Attach:gender_pos.png || Attach:gender_neg.png ||
-|| Age    ||  Attach:age_pos.png ||  Attach:age_neg.png ||
+.. |gender_pos| image:: ../../_static/gender_pos.png
+.. |gender_neg| image:: ../../_static/gender_neg.png
+.. |age_pos| image:: ../../_static/age_pos.png
+.. |age_neg| image:: ../../_static/age_neg.png
+
+============   ====================   ====================
+Outcome        Positive Correlation   Negative Correlation
+============   ====================   ====================
+Gender         |gender_pos|           |gender_neg|
+Age            |age_pos|              |age_neg|
+============   ====================   ====================
+
 
 Here is the general syntax for some other commands:
 

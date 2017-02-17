@@ -10,7 +10,7 @@ Switch
 Description
 ===========
 
-For functions that use the date field of the message table (currently only --add_timexdiff? and --add_postimexdiff?), specifies the MySQL column containing the date.
+For functions that use the date field of the message table (currently only --add_timexdiff and --add_postimexdiff), specifies the MySQL column containing the date.
 
 Argument and Default Value
 ==========================
@@ -32,6 +32,7 @@ None
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
 
 

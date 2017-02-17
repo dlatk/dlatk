@@ -24,18 +24,28 @@ This will create a table called TABLE_seg (where TABLE is specified by :doc:`fwf
 Choose the segmentation model by using :doc:`fwflag_segmentation_model`. 
 After having done this, use :doc:`fwflag_add_ngrams_from_tokenized` to extract ngrams.
 
-How it works
+How it works:
+
 The infrastructure writes the (message_id, message) pairs to a tempfile, runs the segmentor using the "command line" (os.system) and prints the segmented messages to a different temp file.
 The segmentor adds weird things (splits up long numbers; URLS incorrectly), so the python code fixes that.
 Weibo by default turns 'emoji' into '[emoji_label_word]' which get's split up by the segmentor, so the python code joins them together again.
 
-Example on one message
+Example on one message:
+
 Original message:
- [神马]欧洲站夏季女装雪纺短袖长裤女士运动时尚休闲套装女夏装2014新款  http://t.cn/RvCypCj
+
+.. code-block:: bash
+
+	[神马]欧洲站夏季女装雪纺短袖长裤女士运动时尚休闲套装女夏装2014新款  http://t.cn/RvCypCj
+
 Will turn into:
- ["[\u795e\u9a6c]", "\u6b27\u6d32", "\u7ad9", "\u590f\u5b63", "\u5973\u88c5", "\u96ea\u7eba",
-  "\u77ed\u8896", "\u957f\u88e4", "\u5973\u58eb", "\u8fd0\u52a8", "\u65f6\u5c1a", "\u4f11\u95f2",
-  "\u5957\u88c5", "\u5973", "\u590f\u88c5", "2014", "\u65b0\u6b3e", "http://t.cn/RvCypCj"]
+
+.. code-block:: bash
+
+	["[\u795e\u9a6c]", "\u6b27\u6d32", "\u7ad9", "\u590f\u5b63", "\u5973\u88c5", "\u96ea\u7eba",
+	"\u77ed\u8896", "\u957f\u88e4", "\u5973\u58eb", "\u8fd0\u52a8", "\u65f6\u5c1a", "\u4f11\u95f2",
+	"\u5957\u88c5", "\u5973", "\u590f\u88c5", "2014", "\u65b0\u6b3e", "http://t.cn/RvCypCj"]
+
 To use the segmented (tokenized) table in standalone scripts, simply do JSON.load(message).
 
 
@@ -43,13 +53,19 @@ Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t` Optional Switches:
-:doc:`fwflag_segmentation_model` 
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t` 
+
+Optional Switches:
+
+* :doc:`fwflag_segmentation_model` 
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
 
 
- # Uses CBT model to segment the messages in messages_2014_06 and put them into
- # a new table called messages_2014_06_seg
- ~/fwInterface.py :doc:`fwflag_d` randomWeibo :doc:`fwflag_t` messages_2014_06 :doc:`fwflag_c` message_id :doc:`fwflag_add_segmented` 
+	# Uses CBT model to segment the messages in messages_2014_06 and put them into
+	# a new table called messages_2014_06_seg
+	dlatkInterface.py -d randomWeibo -t messages_2014_06 -c message_id --add_segmented

@@ -44,4 +44,4 @@ Example Commands
 .. code-block:: python
 
 	# Creates the table: lex$cat_met_a30_2000_cp_w$primals_new$dp_id$16to16
-	./dlatkInterface.py -d primals -t primals_new -c dp_id --group_freq_thresh 40000 --add_corp_lex_table -l met_a30_2000_cp --weighted_lex
+	dlatkInterface.py -d primals -t primals_new -c dp_id --group_freq_thresh 40000 --add_corp_lex_table -l met_a30_2000_cp --weighted_lex

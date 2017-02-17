@@ -50,22 +50,22 @@ Optional Switches:
 Example Commands
 ================
 
-.. code-block:: python
+.. code-block:: bash
 
 	# Simply extracts 1grams from the message table “messages”
 	# Creates: feat$1gram$messages$user_id$16to16
-	./dlatkInterface.py -d 2004blogs -t messages -c user_id --add_ngrams
+	dlatkInterface.py -d 2004blogs -t messages -c user_id --add_ngrams
 
 	# Extracts 1grams then 2grams, then combines the two new feature tables into a new one.
 	# Creates:
 	#	feat$1gram$messages$user_id$16to16
 	# 	feat$2gram$messages$user_id$16to16
 	# 	feat$1to2gram$messages$user_id$16to16
-	./dlatkInterface.py -d 2004blogs -t messages -c user_id --add_ngrams -n 1 2 --combine_feat_tables 1to2gram
+	dlatkInterface.py -d 2004blogs -t messages -c user_id --add_ngrams -n 1 2 --combine_feat_tables 1to2gram
 
 To extract only the 1-grams that appear in the lexicon table ANEW (not really a collocation table; off-label use of :doc:`fwflag_use_collocs`): 
 
-.. code-block:: python
+.. code-block:: bash
 
-	./dlatkInterface.py -d fbtrust -t messagesEn -c user_id --add_ngrams --use_collocs --colloc_table ANEW --colloc_column term --feature_type_name ANEWterms
+	dlatkInterface.py -d fbtrust -t messagesEn -c user_id --add_ngrams --use_collocs --colloc_table ANEW --colloc_column term --feature_type_name ANEWterms
 

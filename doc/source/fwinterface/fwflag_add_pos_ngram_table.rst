@@ -30,14 +30,22 @@ Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t` Optional Switches:
-:doc:`fwflag_anscombe`, :doc:`fwflag_sqrt`, :doc:`fwflag_log`, :doc:`fwflag_boolean` :doc:`fwflag_feat_occ_filter` :doc:`fwflag_feat_colloc_filter` 
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t` 
+
+Optional Switches:
+
+* :doc:`fwflag_anscombe`, :doc:`fwflag_sqrt`, :doc:`fwflag_log`, :doc:`fwflag_boolean`
+* :doc:`fwflag_feat_occ_filter`
+* :doc:`fwflag_feat_colloc_filter` 
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
 
 
- # Simply extracts 1gram (with POS) from the message table “msgs_r10k”
- # Uses the fact that msgs_r10k_pos exists.
- # Creates: feat$1gram_pos$msgs_r10k$user_id$16to16
- ~/fwInterface.py :doc:`fwflag_d` fb20 :doc:`fwflag_t` msgs_r10k :doc:`fwflag_c` user_id :doc:`fwflag_add_pos_ngram_table` 
+	# Simply extracts 1gram (with POS) from the message table "msgs_r10k"
+	# Uses the fact that msgs_r10k_pos exists.
+	# Creates: feat$1gram_pos$msgs_r10k$user_id$16to16
+	dlatkInterface.py -d fb20 -t msgs_r10k -c user_id --add_pos_ngram_table

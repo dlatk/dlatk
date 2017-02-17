@@ -20,22 +20,32 @@ None
 Details
 =======
 
-Similarly to :doc:`fwflag_test_regression`, this switch causes the data to be randomly spit in N chunks (where N is either 5 by default or defined by :doc:`fwflag_folds`). For each chunk, a model is trained on the remaining N:doc:`fwflag_1` chunks and tested on this chunk.
+Similarly to :doc:`fwflag_test_regression`, this switch causes the data to be randomly spit in N chunks (where N is either 5 by default or defined by :doc:`fwflag_folds`). For each chunk, a model is trained on the remaining N-1 chunks and tested on this chunk.
+
 After all chunks have been tested on, the accuracies and other metrics are averaged and printed out, which says something about the parameters and model chosen.
 
-If you included :doc:`fwflag_controls` in your command, multiple K:doc:`fwflag_fold` CV will be done, one run for each of all the possible subsets of controls. Unless :doc:`fwflag_control_combo_sizes` or :doc:`fwflag_all_controls_only` is specified.
+If you included :doc:`fwflag_controls` in your command, multiple K-fold CV will be done, one run for each of all the possible subsets of controls. Unless :doc:`fwflag_control_combo_sizes` or :doc:`fwflag_all_controls_only` is specified.
 
 Note that all remarks about feature selection and model/parameter selection from :doc:`fwflag_train_regression` apply, so please read that section.
 
 Output
+
 Per fold, the following line will be printed to the standard output (numbers are examples)
+
+.. code-block:: bash
+
  FOLD R^2: 0.6293 (MSE: 26.8697; MAE: 3.6475; mean train mae: 6.4276)
+
 R^2 Coefficient of Determination
 MSE Mean Squared Error of the prediction on the test set
 MAE Mean Absolute Error of the prediction on the test set
 mean train mae Mean Absolute Error of predicting the mean from the training set  on the test set (baseline)
 At the end of the folds, you'll get output that looks like this:
- {'age': {(): {1: {'N': 9998,
+
+.. code-block:: bash
+
+
+  {'age': {(): {1: {'N': 9998,
                    'R': 0.79009985308749586,
                    'R2': 0.62425777784888248,
                    'R2_folds': 0.62368517193313822,
@@ -66,15 +76,22 @@ At the end of the folds, you'll get output that looks like this:
                    '{model_desc}': 'RidgeCV(alphas=array([ 1.00000e+03,  1.00000e+00,  1.00000e:doc:`fwflag_01`,  1.00000e+01,     1.00000e+02,  1.00000e+04,  1.00000e+05]),
                                             cv=None, fit_intercept=True, gcv_mode=None, loss_func=None,   normalize=False, 
                                             score_func=None, scoring=None, store_cv_values=False)'}}}} 
+
 If there were controls included, you get 
- {'age': {(): {1: {'N': 9998,
+
+
+.. code-block:: bash
+
+  {'age': {(): {1: {'N': 9998,
                     ...}},
              ('gender',): {0: {'N': 9998,
                                ...},
                            1: {'N': 9998,
                                ...}}
- }}
+  }}
+
 The first set of metrics ((): {1...) is the prediction performance of the language features alone, without any of the controls.
+
 ('gender',) means gender was included as a control in the prediction of age, and the first item in the dictionary ({0: {...}) is the performance using just the control values, no language, and then the ({1: {...}) is the performance with both controls and language. As you add controls, there will be 2n result dictionaries.
 
 
@@ -82,14 +99,28 @@ Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`, :doc:`fwflag_f`, :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes` Optional Switches:
-:doc:`fwflag_model` :doc:`fwflag_no_standardize` :doc:`fwflag_folds` :doc:`fwflag_sparse` :doc:`fwflag_group_freq_thresh` :doc:`fwflag_all_controls_only` :doc:`fwflag_control_combo_sizes` :doc:`fwflag_no_lang` 
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_f`
+* :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes` 
+
+Optional Switches:
+
+* :doc:`fwflag_model`
+* :doc:`fwflag_no_standardize`
+* :doc:`fwflag_folds`
+* :doc:`fwflag_sparse`
+* :doc:`fwflag_group_freq_thresh`
+* :doc:`fwflag_all_controls_only`
+* :doc:`fwflag_control_combo_sizes`
+* :doc:`fwflag_no_lang` 
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
 
 
- # Runs 10:doc:`fwflag_fold` cross validation on predicting the users ages from 1grams.
- # This essentially will tell you how well your model & features do at predicting age.
- ~/fwInterface.py :doc:`fwflag_d` fb20 :doc:`fwflag_t` messages_en :doc:`fwflag_c` user_id :doc:`fwflag_f` 'feat$1gram$messages_en$user_id$16to16$0_01' 
- :doc:`fwflag_outcome_table` masterstats_andy_r10k :doc:`fwflag_outcomes` age :doc:`fwflag_combo_test_regression` :doc:`fwflag_model` ridgecv :doc:`fwflag_folds` 10
+  # Runs 10-fold cross validation on predicting the users ages from 1grams.
+  # This essentially will tell you how well your model & features do at predicting age.
+  dlatkInterface.py -d fb20 -t messages_en -c user_id -f 'feat$1gram$messages_en$user_id$16to16$0_01' --outcome_table masterstats_andy_r10k --outcomes age --combo_test_regression --model ridgecv --folds 10

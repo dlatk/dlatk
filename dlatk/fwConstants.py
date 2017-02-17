@@ -110,10 +110,16 @@ DEF_MODEL = 'ridgecv'
 DEF_CLASS_MODEL = 'svc'
 DEF_COMB_MODELS = ['ridgecv']
 DEF_FOLDS = 5
-DEF_FEATURE_SELECTION_MAPPING = {
+DEF_RP_FEATURE_SELECTION_MAPPING = {
     'magic_sauce': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/max(1.5,len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])', 
     'univariatefwe': 'SelectFwe(f_regression, alpha=60.0)',
-    'pca':'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
+    'pca': 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
+    'none': None,
+}
+DEF_CP_FEATURE_SELECTION_MAPPING = {
+    'magic_sauce': 'Pipeline([("1_univariate_select", SelectFwe(f_classif, alpha=30.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])', 
+    'univariatefwe': 'SelectFwe(f_classif, alpha=60.0)',
+    'pca': 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
     'none': None,
 }
 DEFAULT_MAX_PREDICT_AT_A_TIME = 100000
@@ -343,30 +349,6 @@ def pCorrection(pDict, method=DEF_P_CORR, pLevelsSimes=[0.05, 0.01, 0.001], rDic
             i+=1
     return new_pDict
 
-def removeNonAscii(s): 
-    """remove non-ascii values from string s and replace with <UNICODE>"""
-    if s:
-        new_words = []
-        for w in s.split():
-            if len("".join(i for i in w if (ord(i)<128 and ord(i)>20))) < len(w):
-                new_words.append("<UNICODE>")
-            else:
-                new_words.append(w)
-        return " ".join(new_words)
-    return ''
-
-def removeNonUTF8(s): 
-    """remove non-utf8 values from string s and replace with <NON-UTF8>"""
-    if s:
-        new_words = []
-        for w in s.split():
-            if len(w.encode("utf-8",'ignore').decode('utf-8','ignore')) < len(w):
-                new_words.append("<NON-UTF8>")
-            else:
-                new_words.append(w)
-        return " ".join(new_words)
-    return ''
-
 def reverseDictDict(d):
     """reverses the order of keys in a dict of dicts"""
     assert isinstance(next(iter(d.values())), dict), 'reverseDictDict not given a dictionary of dictionaries'
@@ -404,22 +386,6 @@ def rowsToColumns(X):
     """Changes each X from being represented in columns to rows """
     return [X[0:, c] for c in range(len(X[0]))]
 
-multSpace = re.compile(r'\s\s+')
-startSpace = re.compile(r'^\s+')
-endSpace = re.compile(r'\s+$')
-multDots = re.compile(r'\.\.\.\.\.+') #more than four periods
-newlines = re.compile(r'\s*\n\s*')
-#multDots = re.compile(r'\[a-z]\[a-z]\.\.\.+') #more than four periods
-
-def shrinkSpace(s):
-    """turns multipel spaces into 1"""
-    s = multSpace.sub(' ',s)
-    s = multDots.sub('....',s)
-    s = endSpace.sub('',s)
-    s = startSpace.sub('',s)
-    s = newlines.sub(' <NEWLINE> ',s)
-    return s
-
 def stratifiedZScoreybyX0(X, y):
     """zscores based on the means of all unique ys"""
     #TODO: probably faster in vector operations
@@ -451,12 +417,6 @@ def switchColumnsAndRows(X):
     """Toggles X between rows of columns and columns of rows """
     if not isinstance(X, np.ndarray): X = array(X)
     return array([X[0:, c] for c in range(len(X[0]))])
-
-newlines = re.compile(r'\s*\n\s*')
-
-def treatNewlines(s):
-    s = newlines.sub(' <NEWLINE> ',s)
-    return s
 
 def tupleToStr(tp):
     """Takes in a tuple and returns a string with spaces instead of commas"""

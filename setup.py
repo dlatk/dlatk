@@ -12,13 +12,13 @@ except ImportError:
   from distutils.core import setup
 
 
-DESCRIPTION = "DLATK is an end to end human text analysis package, specifically suited for social media and social scientific applications. It is written in Python 3 and developed by the World Well-Being Project at the University of Pennsylvania. "
+DESCRIPTION = "DLATK is an end to end human text analysis package, specifically suited for social media and social scientific applications. It is written in Python 3 and developed by the World Well-Being Project at the University of Pennsylvania and Stony Brook University. "
 LONG_DESCRIPTION = """
 DLATK v1.0
 ----------
 
-This package offers end to end text analysis: feature extraction, correlation, 
-mediation and prediction / classification. For more information please visit:
+This package offers end to end text analysis: feature extraction, part-of-speech tagging, correlation, 
+mediation, prediction / classification, dimensionality reduction and clustering, and wordcloud visualization. For more information please visit:
 
   * http://dlatk.wwbp.org
   * https://www.github.com/dlatk/dlatk
@@ -56,9 +56,10 @@ CLASSIFIERS = [
   'Programming Language :: Python :: 3.5',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 PACKAGE_DATA = {
   'dlatk': ['data/*.sql'],
+  'dlatk.lib': ['lib/meloche_bd.ttf', 'lib/oval_big_mask.png', 'lib/oval_mask.png'],
 }
 INCLUDE_PACKAGE_DATA = True
 SETUP_REQUIRES = [

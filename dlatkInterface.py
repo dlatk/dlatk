@@ -171,6 +171,8 @@ def main(fn_args = None):
                        help='Table containing which groups run in various bins (for ttest).')
     group.add_argument('--ls', action='store_true', dest='listfeattables', default=False,
                        help='list all feature tables for given corpdb, corptable and correl_field')
+    group.add_argument('--top_messages', type=int, dest='top_messages', nargs='?', const=fwc.DEF_TOP_MESSAGES, default=False,
+                       help='Print top messages with the largest score for a given topic.')
 
 
     group = parser.add_argument_group('Outcome Variables', '')
@@ -829,8 +831,6 @@ def main(fn_args = None):
         if not fg: fg = FG()
         fg.printJoinedFeatureLines(args.printjoinedfeaturelines)
 
-    
-
     # transform message tables 
     if args.addldamsgs:
         if not mt: mt = MT()
@@ -1054,6 +1054,18 @@ def main(fn_args = None):
         outputFile = outputFile.replace("$", ".")
         print("Created output filename: %s" % outputFile)
         return outputFile
+
+    #Feature Only options:
+    if args.top_messages:
+      if not args.feattable:
+        print("You must specify a feature table, extracted at the message level.")
+        sys.exit()
+      if not any(substring in args.feattable for substring in ["mess", "msg"]):
+        print("WARNING: Your feature table doesn't seem to be at the message level.")
+      if not fg: fg = FG()
+
+      outputFile = makeOutputFilename(args, None, None, suffix="_topmsgs.csv") if args.outputname else None
+      fg.getTopMessages(args.lextable, outputFile, args.top_messages, args.feat_whitelist)
 
     #Outcome Only options:
     if args.printcsv:

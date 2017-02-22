@@ -104,6 +104,7 @@ DEF_P_MAPPING = { # maps old R method names to statsmodel names
         "fdr_tsbky": "fdr_tsbky", 
     }
 DEF_CONF_INT = 0.95
+DEF_TOP_MESSAGES = 10
 
 ##Prediction Settings:
 DEF_MODEL = 'ridgecv'

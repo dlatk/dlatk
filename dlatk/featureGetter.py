@@ -1,6 +1,7 @@
 from configparser import SafeConfigParser
 import MySQLdb
 import pandas as pd
+import csv
 
 #math / stats:
 from numpy import zeros, sqrt, array, std, mean
@@ -785,6 +786,59 @@ class FeatureGetter(FeatureWorker):
         sql = """SELECT group_id, feat, value, group_norm from %s""" % (self.featureTable)
         if (where): sql += ' WHERE ' + where
         return pd.read_sql(sql=sql, con=db_eng, index_col=index)
+
+    def getTopMessages(self, lex_tbl, outputfile, lim_num, whitelist):
+        """"""
+        assert mm.tableExists(self.corpdb, self.dbCursor, self.featureTable, charset=self.encoding, use_unicode=self.use_unicode), 'feature table does not exist (make sure to quote it)'
+        assert mm.tableExists(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode), 'message table does not exist (make sure to quote it)'
+        # if lex_tbl:
+        #     assert mm.tableExists(self.lexicondb, self.dbCursor, ".".join([self.lexicondb, lex_tbl]), charset=self.encoding, use_unicode=self.use_unicode), 'lex table does not exist (make sure to quote it)'
+        
+        if lex_tbl:
+            feat_sql = """SELECT DISTINCT category FROM {db}.{tbl}""".format(db=self.lexicondb, tbl=lex_tbl)
+            if whitelist:
+                feat_sql += """ where category in ({whitelist})""".format(whitelist="'" + "', '".join(whitelist) + "'")
+        else:
+            feat_sql = """SELECT DISTINCT feat FROM {db}.{tbl}""".format(db=self.corpdb, tbl=self.featureTable)
+            if whitelist:
+                feat_sql += """ where feat in ({whitelist})""".format(whitelist="'" + "', '".join(whitelist) + "'")
+        features = mm.executeGetList(self.corpdb, self.dbCursor, feat_sql, charset=self.encoding, use_unicode=self.use_unicode)
+        with open(outputfile, 'w') as f:
+            csv_writer = csv.writer(f)
+            if lex_tbl:
+                header = ["message_id", "message", "category", "top_words"]
+            else:
+                header = ["message_id", "message", "feature"]
+            csv_writer.writerow(header)
+            i = 0
+            for feat in features:
+                i += 1
+                if i % 100 == 0: print("Writing %s features" % str(i))
+                feat = feat[0]
+                if lex_tbl:
+                    cat_sql = """SELECT term FROM {db}.{tbl} WHERE category = '{cat}' 
+                        ORDER BY weight DESC LIMIT 15""".format(db=self.lexicondb, tbl=lex_tbl, cat=feat)
+                    data =  mm.executeGetList(self.corpdb, self.dbCursor, cat_sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode)
+                    words = ", ".join([str(row[0]) for row in data])
+                    feat_to_search = feat
+                else:
+                    words = None
+                    feat_to_search = "'" + feat + "'"
+
+                gid_sql = """SELECT group_id FROM {db}.{tbl}
+                    WHERE feat = {cat} ORDER BY group_norm DESC LIMIT {lim}""".format(db=self.corpdb, tbl=self.featureTable, cat=feat_to_search, lim=lim_num)
+
+                msg_ids =  mm.executeGetList(self.corpdb, self.dbCursor, gid_sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode)
+
+                ids = [str(msgs_id[0]) for msgs_id in msg_ids]
+                msg_sql = """SELECT message_id, message FROM {db}.{tbl} WHERE message_id in ({msg_ids})""".format(db=self.corpdb, tbl=self.corptable, msg_ids=", ".join(ids))
+
+                msgs =  mm.executeGetList(self.corpdb, self.dbCursor, msg_sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode)
+                for msg in msgs:
+                    tup = [msg[0], msg[1], feat]
+                    if words: tup.append(words)
+                    csv_writer.writerow(tup)
+
 
     @staticmethod
     def pairedTTest(y1, y2):

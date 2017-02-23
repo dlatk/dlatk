@@ -96,41 +96,6 @@ class FeatureExtractor(FeatureWorker):
         return newtablename
 
 
-    def insertLDARows(self, ldas, tableName, columnNames, messageIndex, messageIdIndex):
-        """?????
-
-        Parameters
-        ----------
-        ldas : ?????
-            ?????
-        tableName : ?????
-            ?????
-        columnNames : ?????
-            ?????
-        messageIndex : ?????
-            ?????
-        messageIdIndex : ?????
-            ?????
-
-        """
-        message_ids = [str(msg_id) for msg_id in ldas.keys() if str(msg_id).isdigit()]
-        sql = """SELECT %s from %s where %s IN ('%s')""" % (
-            ','.join(columnNames), self.corptable, self.messageid_field,
-            "','".join(message_ids))
-        rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode))
-
-        #generate row data:
-        newRows = []
-        for row in rows:
-            if row[messageIndex] and not row[messageIndex].isspace():
-                newRow = list(row)
-                newRow[messageIndex] = json.dumps(ldas[str(row[messageIdIndex])])
-                newRows.append(newRow)
-
-        #insert
-        sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
-            """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-        mm.executeWriteMany(self.corpdb, self.dbCursor, sql, newRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
     ##Feature Tables ##
 

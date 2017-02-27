@@ -263,7 +263,7 @@ class MessageAnnotator(FeatureWorker):
     # TODO: add nicer implementation
     def yieldMessages(self, messageTable, totalcount):
         if totalcount > 10*fwc.MAX_SQL_SELECT:
-            for i in xrange(0,totalcount, fwc.MAX_SQL_SELECT):
+            for i in range(0,totalcount, fwc.MAX_SQL_SELECT):
                 sql = "SELECT * FROM %s limit %d, %d" % (messageTable, i, fwc.MAX_SQL_SELECT)
                 for m in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode):
                     yield [i for i in m]

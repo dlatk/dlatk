@@ -1032,7 +1032,9 @@ class WeightedLexicon(Lexicon):
         try:
             nbInserted = 0
             length = len(values)
-            for v in zip(*[iter(values)]*100):
+            chunks = zip(*[iter(values)]*100)
+            pprint.pprint(chunks)
+            for v in chunks:
                 nbInserted += self.dbCursor.executemany(sqlQuery, v)    
             remainingValues = values[nbInserted:]
             if remainingValues:

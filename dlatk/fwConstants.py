@@ -14,6 +14,7 @@ from numpy import sqrt, log2, array, mean, std, isnan, fabs, round
 from numpy.random import permutation
 import numpy as np
 from scipy.stats import zscore, norm, t
+from scipy.sparse import csr_matrix
 from sklearn.metrics import roc_auc_score
 from sklearn.linear_model import LogisticRegression
 import statsmodels.stats.multitest as mt
@@ -111,7 +112,7 @@ DEF_CLASS_MODEL = 'svc'
 DEF_COMB_MODELS = ['ridgecv']
 DEF_FOLDS = 5
 DEF_FEATURE_SELECTION_MAPPING = {
-    'magic_sauce': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/max(1.5,len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])', 
+    'magic_sauce': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/len(self.featureGetters)+0.5), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])', 
     'univariatefwe': 'SelectFwe(f_regression, alpha=60.0)',
     'pca':'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
     'none': None,

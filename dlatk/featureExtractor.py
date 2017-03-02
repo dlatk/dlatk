@@ -1,10 +1,7 @@
 import re
 import json
 import sys
-import time
-import multiprocessing
 import csv
-import os
 import gzip
 import datetime
 from pprint import pprint
@@ -13,44 +10,29 @@ from collections import Counter
 import traceback
 from xml.dom.minidom import parseString as xmlParseString
 from datetime import timedelta
-from html.parser import HTMLParser
+
 
 #math / stats:
 from math import floor, log10
 from numpy import mean, std
-import imp
+#import imp
 
 #nltk
 try:
     from nltk.tree import ParentedTree
     from nltk.corpus import wordnet as wn
-    import nltk.data
 except ImportError:
     print("warning: unable to import nltk.tree or nltk.corpus or nltk.data")
 
 #infrastructure
 from .featureWorker import FeatureWorker
 from . import fwConstants as fwc
+from . import textCleaner as tc
 from .mysqlMethods import mysqlMethods as mm
 
 #local / nlp
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
-try:
-    from .lib.StanfordParser import StanfordParser
-except ImportError:
-    fwc.warn("Cannot import StanfordParser (interface with the Stanford Parser)")
-    pass
-try:
-    from .lib.TweetNLP import TweetNLP
-except ImportError:
-    fwc.warn("Cannot import TweetNLP (interface with CMU Twitter tokenizer / pos tagger)")
-    pass
-try:
-    import langid
-    from langid.langid import LanguageIdentifier, model
-except ImportError:
-    fwc.warn("Cannot import langid (cannot use addLanguageFilterTable)")
-    pass
+
 try:
     import jsonrpclib
     from simplejson import loads
@@ -85,189 +67,6 @@ class FeatureExtractor(FeatureWorker):
 
     ##INSTANCE METHODS##
 
-    ##Message Tables ##
-    def addTokenizedMessages(self):
-        """Creates a parsed version of the message table
-
-        Returns
-        -------
-        tableName : str
-            Name of tokenized message table: corptable_tok.
-        """
-        tableName = "%s_tok" %(self.corptable)
-        tokenizer = Tokenizer(use_unicode=self.use_unicode)
-
-        #Create Table:
-        drop = """DROP TABLE IF EXISTS %s""" % (tableName)
-        sql = "CREATE TABLE %s like %s" % (tableName, self.corptable)
-        alter = """ALTER TABLE %s MODIFY %s LONGTEXT""" % (tableName, self.message_field)
-        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.execute(self.corpdb, self.dbCursor, alter, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-
-        #Find column names:
-        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
-        messageIndex = columnNames.index(self.message_field)
-
-        #find all groups
-        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
-        msgs = 0#keeps track of the number of messages read
-        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
-        fwc.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-
-        #iterate through groups in chunks
-        groupsAtTime = 1000;
-        groupsWritten = 0
-        for groups in fwc.chunks(cfRows, groupsAtTime):
-
-            #get msgs for groups:
-            sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
-            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))#, False)
-            messages = [r[messageIndex] for r in rows]
-
-            #tokenize msgs:
-            parses = [json.dumps(tokenizer.tokenize(m)) for m in messages]
-
-            #add msgs into new tables
-            sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
-                    """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-            for i in range(len(rows)):
-                rows[i] = list(rows[i])
-                rows[i][messageIndex] = str(parses[i])
-            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-
-            groupsWritten += groupsAtTime
-            if groupsWritten % 10 == 0:
-                fwc.warn("  %.1fk %ss' messages tokenized and written" % (groupsWritten/float(1000), self.correl_field))
-
-        #re-enable keys:
-        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-
-        return tableName
-
-
-    def addSentTokenizedMessages(self):
-        """Creates a sentence tokenized version of message table
-
-        Returns
-        -------
-        tableName : str
-            Name of sentence tokenized message table: corptable_stoks.
-        """
-        tableName = "%s_stoks" %(self.corptable)
-        sentDetector = nltk.data.load('tokenizers/punkt/english.pickle')
-
-        #Create Table:
-        drop = """DROP TABLE IF EXISTS %s""" % (tableName)
-        sql = "CREATE TABLE %s like %s" % (tableName, self.corptable)
-        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-
-        #Find column names:
-        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
-        messageIndex = columnNames.index(self.message_field)
-
-        #find all groups
-        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
-        msgs = 0#keeps track of the number of messages read
-        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
-        fwc.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-
-        #iterate through groups in chunks
-        groupsAtTime = 10000;
-        groupsWritten = 0
-        for groups in fwc.chunks(cfRows, groupsAtTime):
-
-            #get msgs for groups:
-            sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
-            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))#, False)
-            messages = [r[messageIndex] for r in rows]
-
-            #tokenize msgs:
-            # parses = map(lambda m: json.dumps(sentDetector.tokenize(fwc.removeNonAscii(treatNewlines(m.strip())))), messages)
-            if self.use_unicode:
-                parses = [json.dumps(sentDetector.tokenize(fwc.removeNonUTF8(fwc.treatNewlines(m.strip())))) for m in messages]
-            else:
-                parses = [json.dumps(sentDetector.tokenize(fwc.removeNonUTF8(fwc.treatNewlines(m.strip())))) for m in messages]
-                #parses = [json.dumps(sentDetector.tokenize(fwc.removeNonAscii(fwc.treatNewlines(m.strip())))) for m in messages]
-            #add msgs into new tables
-            sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
-                    """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-            for i in range(len(rows)):
-                rows[i] = list(rows[i])
-                rows[i][messageIndex] = str(parses[i])
-            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-
-            groupsWritten += groupsAtTime
-            if groupsWritten % 10000 == 0:
-                fwc.warn("  %.1fk %ss' messages sent tokenized and written" % (groupsWritten/float(1000), self.correl_field))
-
-        #re-enable keys:
-        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-
-        return tableName
-
-    def printTokenizedLines(self, filename, whiteListFeatTable = None):
-        """Prints tokenized messages in format mallet can use
-
-        Parameters
-        ----------
-        filename : str
-            name of file to print to.
-        whiteListFeatTable : :obj:`str`, optional
-            name of white list feature table.
-        """
-        imp.reload(sys)
-        if not self.use_unicode: sys.setdefaultencoding('utf8')
-        sql = """SELECT %s, %s  from %s""" % (self.messageid_field, self.message_field,self.corptable+'_tok')
-        messagesEnc = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        try:
-            messagesTok = [(m[0], json.loads(m[1])) for m in messagesEnc]
-        except ValueError as e:
-            raise ValueError("One of the tokenized messages was badly JSON encoded, please check your data again. (Maybe MySQL truncated the data?)")
-
-        whiteSet = None
-        if whiteListFeatTable:
-            sql = "SELECT distinct feat FROM %s " % whiteListFeatTable[0]
-            whiteSet = set([s[0] for s in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)])
-
-        f = open(filename, 'w')
-        for m in messagesTok:
-            toks = m[1]
-            if whiteSet:
-                toks = [w for w in toks if w in whiteSet]
-            f.write("""%s en %s\n""" %(m[0], ' '.join([s for s in toks])))
-        f.close()
-        fwc.warn("Wrote tokenized file to: %s"%filename)
-
-    def printJoinedFeatureLines(self, filename, delimeter = ' '):
-        """Prints feature table with line per group joined by delimeter (with multi-word expressions joined by underscores) for import into Mallet.
-
-        Parameters
-        ----------
-        filename : str
-            name of file to print to.
-        delimeter : :obj:`str`, optional
-            String used to join features.
-        """
-        imp.reload(sys)
-        if not self.use_unicode: sys.setdefaultencoding('utf8')
-        f = open(filename, 'w')
-        for (gid, featValues) in self.yieldValuesSparseByGroups():
-            message = delimeter.join([delimeter.join([feat.replace(' ', '_')]*val) for feat, value in featValues.items()])
-            if self.use_unicode:
-                f.write("""%s en %s\n""" %(gid, message))
-            else:
-                f.write("""%s en %s\n""" %(gid, message.encode('utf-8')))
-
-        f.close()
-        fwc.warn("Wrote joined features file to: %s"%filename)
-
-
     def addTopicLexFromTopicFile(self, topicfile, newtablename, topiclexmethod, threshold):
         """Creates a lexicon from a topic file
 
@@ -296,821 +95,6 @@ class FeatureExtractor(FeatureWorker):
             topiclex.createWeightedLexiconTable(newtablename)
         return newtablename
 
-    def addParsedMessages(self):
-        """Creates a parsed version of the message table
-
-        Returns
-        -------
-        tableNames : dict
-            Dictionary of table names: {"pos": corptable_pos, "const": corptable_const, "dep": corptable_dep}
-        """
-        parseTypes = ['pos', 'const', 'dep']
-        tableNames = dict( [(t, "%s_%s" %(self.corptable, t)) for t in parseTypes] )
-
-        #Create Tables: (TODO make continue)
-        for t, name in list(tableNames.items()):
-            sql = "CREATE TABLE IF NOT EXISTS %s like %s" % (name, self.corptable)
-            mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-            mm.standardizeTable(self.corpdb, self.dbCursor, name, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
-            mm.enableTableKeys(self.corpdb, self.dbCursor, name, charset=self.encoding, use_unicode=self.use_unicode)#just incase interrupted, so we can find un-parsed groups
-
-        #Find column names:
-        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
-        messageIndex = columnNames.index(self.message_field)
-
-        #find if parsed table already has rows:
-        countsql = """SELECT count(*) FROM %s""" % (tableNames[parseTypes[0]])
-        cnt = mm.executeGetList(self.corpdb, self.dbCursor, countsql, charset=self.encoding, use_unicode=self.use_unicode)[0][0]
-
-        #find all groups that are not already inserted
-        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
-        if cnt: #limit to those not done yet:
-            usql = """SELECT a.%s FROM %s AS a LEFT JOIN %s AS b ON a.%s = b.%s WHERE b.%s IS NULL group by a.%s""" % (
-                self.correl_field, self.corptable, tableNames[parseTypes[0]], self.messageid_field, self.messageid_field, self.messageid_field, self.correl_field)
-        msgs = 0#keeps track of the number of messages read
-        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
-        fwc.warn("parsing messages for %d '%s's"%(len(cfRows), self.correl_field))
-
-        #disable keys (waited until after finding groups)
-        for t, name in list(tableNames.items()):
-            mm.disableTableKeys(self.corpdb, self.dbCursor, name, charset=self.encoding, use_unicode=self.use_unicode)
-
-        #iterate through groups in chunks
-        if any(field in self.correl_field.lower() for field in ["mess", "msg"]) or self.correl_field.lower().startswith("id"):
-            groupsAtTime = 100 # if messages
-        else:
-            groupsAtTime = 10 # if user ids
-            fwc.warn("""Parsing at the non-message level is not recommended. Please rerun at message level""", attention=True)
-
-        psAtTime = fwc.CORES / 4
-        try:
-            sp = StanfordParser()
-        except NameError:
-            fwc.warn("Method not available without StanfordParser interface")
-            raise
-        groupsWritten = 0
-        activePs = set()
-        for groups in fwc.chunks(cfRows, groupsAtTime):
-            #get msgs for groups:
-            sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
-            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
-            rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
-            messages = [r[messageIndex] for r in rows]
-            messages = [m if m else '_' for m in messages]
-
-            #check for limit of active processes
-            while (len(activePs) >= psAtTime):
-                time.sleep(10)
-                toRemove = set()
-                for proc in activePs:
-                    if not proc.is_alive():
-                        toRemove.add(proc)
-                        proc.join()
-                        groupsWritten += groupsAtTime
-                        if groupsWritten % 200 == 0:
-                            fwc.warn("  %.1fk %ss' messages parsed and written" % (groupsWritten/float(1000), self.correl_field))
-                for proc in toRemove:
-                    activePs.remove(proc)
-                    fwc.warn (" %s removed. (processes running: %d)" % (str(proc), len(activePs)) )
-
-
-            groupsWritten += groupsAtTime
-            if groupsWritten % 200 == 0:
-                fwc.warn("  %.1fk %ss' messages parsed and written" % (groupsWritten/float(1000), self.correl_field))
-
-            #parse msgs
-            p = multiprocessing.Process(target=FeatureExtractor.parseAndWriteMessages, args=(self, sp, tableNames, messages, messageIndex, columnNames, rows))
-            fwc.warn (" %s starting. (processes previously running: %d)" % (str(p), len(activePs)) )
-            p.start()
-            activePs.add(p)
-
-        #wait for remaining processes
-        temp = activePs.copy()
-        for proc in temp:
-            activePs.remove(proc)
-            proc.join()
-
-        #re-enable keys:
-        for t, name in list(tableNames.items()):
-            mm.enableTableKeys(self.corpdb, self.dbCursor, name, charset=self.encoding, use_unicode=self.use_unicode)
-
-        return tableNames
-
-    def addSegmentedMessages(self, model="ctb", tmpdir="/tmp"):
-        """Exports the messages to a csv, writes to a tmp file, segments, cleans up and reimports as JSON list
-
-        Parameters
-        -------
-        model : :obj:`str`, optional
-            model used for segmentation: ctb (Penn Chinese Treebank) or pku (Beijing Univ.)
-        tmpdir : :obj:`dict`, optional
-            temp directory for storing intermediate results
-        """
-
-        assert model.lower() in ["ctb", "pku"], "Available models for segmentation are CTB or PKU"
-        # Maarten
-        sql = "select %s, %s from %s" % (self.messageid_field, self.message_field, self.corptable)
-        rows = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-
-        tmpfile = tmpdir+"/tmpChineseUnsegmented.txt"
-        tmpfile_seg = tmpdir+"/tmpChineseSegmented.txt"
-
-        with open(tmpfile, "w+") as a:
-            w = csv.writer(a)
-            w.writerows(rows)
-
-        os.system("/home/maarten/research/tools/stanford-segmenter-2014-08-27/segment.sh %s %s UTF-8 0 > %s" % (model.lower(), tmpfile, tmpfile_seg))
-
-        new_rows = []
-        raw = []
-        with open(tmpfile_seg, "r") as b:
-            raw = [r for r in b]
-        try:
-            r = csv.reader(raw)
-            new_rows = [i for i in r]
-        except:
-            new_rows = []
-            for row in raw:
-                r = csv.reader([row])
-                new_rows.append(next(r))
-
-        new_rows = [[i[0].strip().replace(" ",""), # Message_ids shouldn't get split
-                     i[1].strip().replace("[ ","[").replace(" ]", "]").replace(" http : //", " http://").replace(" https : //", " https://")]
-                    for i in new_rows[:]]
-
-        # os.system("rm %s %s" % (tmpfile, tmpfile_seg))
-
-        new_rows = [(i[0], json.dumps(i[1].split(" "))) for i in new_rows[:]]
-
-        # Now that we have the new rows, we should insert them. 1) Create table, 2) insert
-        sql = "SELECT column_name, column_type FROM INFORMATION_SCHEMA.COLUMNS "
-        sql += "WHERE table_name = '%s' AND COLUMN_NAME in ('%s', '%s') and table_schema = '%s'" % (
-            self.corptable, self.message_field, self.messageid_field, self.corpdb)
-        types = {k:v for k,v in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)}
-        sql2 = "CREATE TABLE %s (" % (self.corptable+"_seg")
-        sql2 += "%s %s primary key, %s %s character set %s collate %s ENGINE=%s" % (self.messageid_field,
-                                                                                         types[self.messageid_field],
-                                                                                         self.message_field,
-                                                                                         types[self.message_field],
-                                                                                         self.encoding,
-                                                                                         fwc.DEF_COLLATIONS[self.encoding.lower()],
-                                                                                         fwc.DEF_MYSQL_ENGINE)
-        sql2 += ")"
-        mm.execute(self.corpdb, self.dbCursor, "drop table if exists "+self.corptable+"_seg", charset=self.encoding, use_unicode=self.use_unicode)
-        mm.execute(self.corpdb, self.dbCursor, sql2, charset=self.encoding, use_unicode=self.use_unicode)
-
-        sql = "INSERT INTO %s " % (self.corptable+"_seg")
-        sql += " VALUES (%s, %s)"
-        N = 50000
-        totalLength = len(new_rows)
-        for l in range(0, totalLength, N):
-            print("Inserting rows (%5.2f%% done)" % (float(min(l+N,totalLength))*100/totalLength))
-            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, new_rows[l:l+N], writeCursor=self.dbConn.cursor(), charset=self.encoding)
-
-
-    def parseAndWriteMessages(self, sp, tableNames, messages, messageIndex, columnNames, rows):
-        """Parses, then write messages, used for parallelizing parsing
-
-        Parameters
-        -------
-        sp : StanfordParser object
-            ?????
-        tableNames : dict
-            {parse type: tablename}
-        messages : list
-            messages to be parsed
-        messageIndex : int
-            index of message field
-        columnNames : list
-            column names in table
-        rows : list
-            complete row from mysql table
-
-        Returns
-        -------
-        True
-        """
-        parses = sp.parse(messages)
-        #add msgs into new tables
-        for pt, tableName in list(tableNames.items()):
-            sql = """REPLACE INTO """+tableName+""" ("""+', '.join(columnNames)+\
-                """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-            for i in range(len(rows)):
-                rows[i] = list(rows[i])
-                rows[i][messageIndex] = str(parses[i][pt])
-
-            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
-        return True
-
-    def addTweetPOSMessages(self):
-        """Creates a POS tagged (by TweetNLP) version of the message table
-
-        Returns
-        -------
-        tableName : str
-            Name of POS message table: corptable_tweetpos
-        """
-        tableName = "%s_tweetpos" %(self.corptable)
-        try:
-            tagger = TweetNLP()
-        except NameError:
-            fwc.warn("Method not available without TweetNLP interface")
-            raise
-
-        #Create Table:
-        drop = """DROP TABLE IF EXISTS %s""" % (tableName)
-        sql = "CREATE TABLE %s like %s" % (tableName, self.corptable)
-        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-
-        #Find column names:
-        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
-        messageIndex = columnNames.index(self.message_field)
-
-        #find all groups
-        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
-        msgs = 0 #keeps track of the number of messages read
-        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
-        fwc.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-
-        #iterate through groups in chunks
-        groupsAtTime = 100;
-        groupsWritten = 0
-        for groups in fwc.chunks(cfRows, groupsAtTime):
-
-            #get msgs for groups:
-            sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
-            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))#, False)
-            messages = [r[messageIndex] for r in rows]
-
-            #tokenize msgs:
-            parses = [json.dumps(tagger.tag(m)) for m in messages]
-
-            #add msgs into new tables
-            sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
-                    """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-            for i in range(len(rows)):
-                rows[i] = list(rows[i])
-                rows[i][messageIndex] = str(parses[i])
-            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-
-            groupsWritten += groupsAtTime
-            if groupsWritten % 100 == 0:
-                fwc.warn("  %.1fk %ss' messages tagged and written" % (groupsWritten/float(1000), self.correl_field))
-
-        #re-enable keys:
-        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-
-        return tableName
-
-    def addTweetTokenizedMessages(self):
-        """Creates a tokenized (by TweetNLP) version of the message table
-
-        Returns
-        -------
-        tableName : str
-            Name of tokenized message table: corptable_tweettok
-        """
-        tableName = "%s_tweettok" %(self.corptable)
-        try:
-            tokenizer = TweetNLP()
-        except NameError:
-            fwc.warn("Method not available without TweetNLP interface")
-            raise
-
-        #Create Table:
-        drop = """DROP TABLE IF EXISTS %s""" % (tableName)
-        sql = "CREATE TABLE %s like %s" % (tableName, self.corptable)
-        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-
-        #Find column names:
-        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
-        messageIndex = columnNames.index(self.message_field)
-
-        #find all groups
-        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
-        msgs = 0#keeps track of the number of messages read
-        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql)]
-        fwc.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-
-        #iterate through groups in chunks
-        groupsAtTime = 200;
-        groupsWritten = 0
-        for groups in fwc.chunks(cfRows, groupsAtTime):
-
-            #get msgs for groups:
-            sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
-            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))#, False)
-            messages = [r[messageIndex] for r in rows]
-
-            #tokenize msgs:
-            parses = [json.dumps(tokenizer.tokenize(m)) for m in messages]
-
-            #add msgs into new tables
-            sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
-                    """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-            for i in range(len(rows)):
-                rows[i] = list(rows[i])
-                rows[i][messageIndex] = str(parses[i])
-            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-
-            groupsWritten += groupsAtTime
-            if groupsWritten % 200 == 0:
-                fwc.warn("  %.1fk %ss' messages tagged and written" % (groupsWritten/float(1000), self.correl_field))
-
-        #re-enable keys:
-        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-
-        return tableName
-
-    def addLDAMessages(self, ldaStatesFile):
-        """Creates a LDA topic version of message table
-
-        Parameters
-        ----------
-        ldaStatesFile : str
-            Path to file created with addMessageID.py
-
-        Returns
-        -------
-        tableName : str
-            Name of LDA message table: corptable_lda$ldaStatesFileBaseName
-        """
-        fin = open(ldaStatesFile, 'r') #done first so throws error if not existing
-        baseFileName = os.path.splitext(os.path.basename(ldaStatesFile))[0].replace('-', '_')
-        tableName = "%s_lda$%s" %(self.corptable, baseFileName)
-
-        #Create Table:
-        drop = """DROP TABLE IF EXISTS %s""" % (tableName)
-        sql = """CREATE TABLE %s like %s""" % (tableName, self.corptable)
-        alter = """ALTER TABLE %s MODIFY %s LONGTEXT""" % (tableName, self.message_field)
-        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.execute(self.corpdb, self.dbCursor, alter, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-
-        #Find column names:
-        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
-        messageIndex = columnNames.index(self.message_field)
-        messageIdIndex = columnNames.index(self.messageid_field)
-
-
-        commentLine = re.compile('^\#')
-        ldaColumnLabels = ['doc', 'message_id', 'index', 'term_id', 'term', 'topic_id']
-        labelRange = list(range(len(ldaColumnLabels)))
-        ldas = dict() #stored ldas currently being looked at
-        msgsAtTime = 100
-        msgsWritten = 0
-
-        ##iterate through file:
-        for line in fin:
-            if not commentLine.match(line):
-                line = line.strip()
-                fields = line.split()
-                currentLDA = dict( [(ldaColumnLabels[i], fields[i]) for i in  labelRange])
-                currentId = currentLDA['message_id']
-                if currentId not in ldas:
-                    if  len(ldas) >= msgsAtTime:#insert
-                        self.insertLDARows(ldas, tableName, columnNames, messageIndex, messageIdIndex)
-                        ldas = dict() #reset memory
-                        msgsWritten += msgsAtTime
-                        if msgsWritten % 20000 == 0:
-                            fwc.warn("  %.1fk messages' lda topics written" % (msgsWritten/float(1000)))
-                    ldas[currentId] = [currentLDA]
-                else:
-                    ldas[currentId].append(currentLDA)
-
-        #write remainder:
-        self.insertLDARows(ldas, tableName, columnNames, messageIndex, messageIdIndex)
-
-        #re-enable keys:
-        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-
-        return tableName
-
-    def insertLDARows(self, ldas, tableName, columnNames, messageIndex, messageIdIndex):
-        """?????
-
-        Parameters
-        ----------
-        ldas : ?????
-            ?????
-        tableName : ?????
-            ?????
-        columnNames : ?????
-            ?????
-        messageIndex : ?????
-            ?????
-        messageIdIndex : ?????
-            ?????
-
-        """
-        message_ids = [str(msg_id) for msg_id in ldas.keys() if str(msg_id).isdigit()]
-        sql = """SELECT %s from %s where %s IN ('%s')""" % (
-            ','.join(columnNames), self.corptable, self.messageid_field,
-            "','".join(message_ids))
-        rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode))
-
-        #generate row data:
-        newRows = []
-        for row in rows:
-            if row[messageIndex] and not row[messageIndex].isspace():
-                newRow = list(row)
-                newRow[messageIndex] = json.dumps(ldas[str(row[messageIdIndex])])
-                newRows.append(newRow)
-
-        #insert
-        sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
-            """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-        mm.executeWriteMany(self.corpdb, self.dbCursor, sql, newRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-
-    # helper methods for addDedupFilterTable
-    def _rttext(self, message):
-        """
-        """
-        regnrt = re.compile(r"\(*RT[\s!.-:]*@\w+([\)\s:]|$)")
-        regrt = re.compile(r"^RT[\s!.-:]+")
-        reguser = re.compile(r"@\w+")
-        regbr = re.compile(r"\[.*\]")
-        regv1 = re.compile(r"\(via @\w+\)")
-        regv2 = re.compile(r" via @\w+")
-
-        rt = ''
-        com = ''
-        c = regnrt.search(message)
-        if c:
-            rt = message[c.span()[1]:].strip().strip(':').strip()
-            com = message[:c.span()[0]].strip().strip(':').strip()
-            if c.span()[1] == len(message):
-                aux = com
-                com = rt
-                rt = aux
-        else:
-            d = regrt.search(message)
-            e = reguser.search(message)
-            if d and e:
-                com = message[d.span()[1]:e.span()[0]]
-                rt = message[e.span()[1]:]
-        a = regv1.search(message)
-        if not a:
-            a = regv2.search(message)
-        if a:
-            if a.span()[0] == 0:
-                b = regbr.search(message)
-                rt = re.sub('^:','',message[a.span()[1]:b.span()[0]].strip()).strip()
-                com = b.group()[1:len(b.group())-1]
-            else:
-                rt = re.sub('[|,.//]$','',message[:a.span()[0]].strip()).strip()
-                com = re.sub('^:','',message[a.span()[1]:].strip()).strip()
-        return rt, com
-    def _regex_or(self, *items):
-        r = '|'.join(items)
-        r = '(' + r + ')'
-        return r
-    def _pos_lookahead(self, r):
-        return '(?=' + r + ')'
-    def _optional(self, r):
-        return '(%s)?' % r
-
-
-    def addDedupFilterTable(self, anonymize=True):
-        """
-        Groups all messages in a given table and filters deplicate messages within the correl_field. Writes
-        a new message table called corptable_dedup. Deduplication written by Daniel Preotiuc-Pietro and adapted for DLATK.
-        Removal of urls, punctuation, etc. taken from the twokenize tokenizer written by Brendan O'connor.
-        """
-        mycompile = lambda pat:  re.compile(pat,  re.UNICODE)
-
-        PunctChars = r'''['“".?!,:;]'''
-        Entity = '&(amp|lt|gt|quot);'
-        EmoticonsDN= '(:\)|:\(|:-\)|>:]|:o\)|:3|:c\)|:>|=]|8\)|=\)|:}|:^\)|>:D\)|:-D|:D|8-D|8D|x-D|xD|X-D|XD|=-D|=D|=-3|=3\)|8-\)|:-\)\)|:\)\)|>-\[|:-\(|:\(|:-c|:c|:-<|:<|:-\[|:\[|:{|>.>|<.<|>.<|:-\|\||D:<|D:|D8|D;|D=|DX|v.v|D-\':|>;\]|;-\)|;\)|\*-\)|\*\)|;-\]|;\]|;D|;^\)|>:P|:-P|:P|X-P|x-p|xp|XP|:-p|:p|=p|:-b|:b|>:o|>:O|:-O|:O|:0|o_O|o_0|o.O|8-0|>:\\|>:/|:-/|:-.|:/|:\\|=/|=\\|:S|:\||:-\||>:X|:-X|:X|:-#|:#|:$|O:-\)|0:-3|0:3|O:-\)|O:\)|0;^\)|>:\)|>;\)|>:-\)|:\'-\(|:\'\(|:\'-\)|:\'\)|;\)\)|;;\)|<3|8-}|>:D<|=\)\)|=\(\(|x\(|X\(|:-\*|:\*|:\">|~X\(|:-?)'
-        UrlStart1 = self._regex_or('https?://', r'www\.')
-        CommonTLDs = self._regex_or('com','co\\.uk','org','net','info','ca')
-        UrlStart2 = r'[a-z0-9\.-]+?' + r'\.' + CommonTLDs + self._pos_lookahead(r'[/ \W\b]')
-        UrlBody = r'[^ \t\r\n<>]*?'  # * not + for case of:  "go to bla.com." -- don't want period
-        UrlExtraCrapBeforeEnd = '%s+?' % self._regex_or(PunctChars, Entity)
-        UrlEnd = self._regex_or( r'\.\.+', r'[<>]', r'\s', '$')
-        Url = (r'\b' +
-            self._regex_or(UrlStart1, UrlStart2) +
-            UrlBody +
-            self._pos_lookahead( self._optional(UrlExtraCrapBeforeEnd) + UrlEnd))
-        NumNum = r'\d+\.\d+'
-        NumberWithCommas = r'(\d+,)+?\d{3}' + self._pos_lookahead(self._regex_or('[^,]','$'))
-        Punct = '%s+' % PunctChars
-        Separators = self._regex_or('--+', '―')
-        Timelike = r'\d+:\d+h{0,1}' # removes the h trailing the hour like in 18:00h
-        Number = r'^\d+'
-        OneCharTokens = r'^.{1}$' # remove the one character tokens (maybe too agressive)
-        ParNumber = r'[()][+-]*\d+[()]*' # remove stuff like (+1 (-2 that appear as tokens
-
-        ExcludeThese = [
-            EmoticonsDN,
-            Url,
-            NumNum,
-            NumberWithCommas,
-            Punct,
-            Separators,
-            Timelike,
-            Number,
-            OneCharTokens,
-            ParNumber
-        ]
-        Exclude_RE = mycompile(self._regex_or(*ExcludeThese))
-
-        tokenizer = Tokenizer(use_unicode=self.use_unicode)
-
-        new_table = self.corptable + "_dedup"
-        drop = """DROP TABLE IF EXISTS %s""" % (new_table)
-        create = """CREATE TABLE %s like %s""" % (new_table, self.corptable)
-        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.execute(self.corpdb, self.dbCursor, create, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, new_table, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
-
-        #Find column names:
-        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
-        messageIndex = columnNames.index(self.message_field)
-        try:
-            retweetedStatusIdx = columnNames.index("retweeted_status_text")
-        except:
-            retweetedStatusIdx = None
-            pass
-
-        #find all groups that are not already inserted
-        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
-        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
-        fwc.warn("deduplicating messages for %d '%s's"%(len(cfRows), self.correl_field))
-
-        # if message level analysis
-        if any(field in self.correl_field.lower() for field in ["mess", "msg"]) or self.correl_field.lower().startswith("id"):
-            groupsAtTime = 1
-            fwc.warn("""Deduplicating only works with a non-message level grouping such as users or counties.""", attention=True)
-            exit()
-
-        groupsAtTime = 1
-        rows_to_write = []
-        counter = 1
-        for groups in fwc.chunks(cfRows, groupsAtTime):
-
-            # get msgs for groups:
-            sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
-            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode))
-            rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
-
-            bf = []
-            for row in rows:
-                row = list(row)
-                try:
-                    message = row[messageIndex]
-                    textrt = ''
-                    if retweetedStatusIdx:
-                        textrt = row[retweetedStatusIdx]
-                    if not textrt:
-                        textrt = self._rttext(message)[0]
-                    if not textrt == '':
-                        message = textrt
-                        continue
-                    #words = tokenizer.tokenize(message)
-                    words = [word for word in tokenizer.tokenize(message) if ((word[0]!='#') and (word[0]!='@') and not Exclude_RE.search(word))]
-
-                    message = ' '.join(words).lower()
-                    if len(words)>=6:
-                        if 'YouTube' in words:
-                            message = ' '.join(words[0:5])
-                        else:
-                            message = ' '.join(words[0:6])
-                    if message not in bf:
-                        bf.append(message)
-                        if anonymize:
-                            message = row[messageIndex]
-                            message = re.sub(Url, "<URL>", message)
-                            message = re.sub(r'(?<=^|(?<=[^a-zA-Z0-9-_\.]))@([A-Za-z]+[A-Za-z0-9]+)', "<USER>", message)
-                            row[messageIndex] = message
-                        rows_to_write.append(row)
-                    else:
-                        pass
-                except:
-                    continue
-            if len(rows_to_write) >= fwc.MYSQL_BATCH_INSERT_SIZE:
-                sql = """INSERT INTO """+new_table+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-                mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-                rows_to_write = []
-
-            if (counter % 500 == 0):
-                print('%d deduplicated users inserted!' % (counter))
-            counter += 1
-
-        if rows_to_write:
-            sql = """INSERT INTO """+new_table+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-
-    def addSpamFilterTable(self, threshold=fwc.DEF_SPAM_FILTER):
-        """
-        Groups all messages in a given table and filters spam messages within the correl_field. Writes
-        a new message table called corptable_nospam with additional integer column is_spam (0 = not spam, 1 = spam).
-        Spam words = 'share', 'win', 'check', 'enter', 'products', 'awesome', 'prize', 'sweeps', 'bonus', 'gift'
-
-        Parameters
-        ----------
-        threshold : float
-            percentage of spam messages to be considered a spam user
-        """
-        spam_words = ['share', 'win', 'check', 'enter', 'products', 'awesome', 'prize', 'sweeps', 'bonus', 'gift']
-
-        new_table = self.corptable + "_nospam"
-        drop = """DROP TABLE IF EXISTS %s""" % (new_table)
-        create = """CREATE TABLE %s like %s""" % (new_table, self.corptable)
-        add_colum = """ALTER TABLE %s ADD COLUMN is_spam INT(2) NULL""" % (new_table)
-        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.execute(self.corpdb, self.dbCursor, create, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.execute(self.corpdb, self.dbCursor, add_colum, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, new_table, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
-
-        #Find column names:
-        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
-        insertColumnNames = columnNames + ['is_spam']
-        messageIndex = columnNames.index(self.message_field)
-
-        #find all groups that are not already inserted
-        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
-        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
-        fwc.warn("Removing spam messages for %d '%s's"%(len(cfRows), self.correl_field))
-
-        # if message level analysis
-        if any(field in self.correl_field.lower() for field in ["mess", "msg"]) or self.correl_field.lower().startswith("id"):
-            groupsAtTime = 1
-            fwc.warn("""This will remove any messages that contain *any* spam words. Consider rerunning at the user level.""", attention=True)
-
-
-        groupsAtTime = 1
-        rows_to_write = []
-        counter = 1
-        users_removed = 0
-        for groups in fwc.chunks(cfRows, groupsAtTime):
-
-            # get msgs for groups:
-            sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
-            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode))
-            rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
-
-            total_messages = float(len(rows))
-            if total_messages == 0: continue
-            spam_messages = 0
-            insert_rows = []
-            for row in rows:
-                try:
-                    if any(word in row[messageIndex] for word in spam_words):
-                        spam_messages += 1
-                        insert_rows.append(row + (1,))
-                    else:
-                        insert_rows.append(row + (0,))
-                except:
-                    continue
-
-            if spam_messages/total_messages < threshold:
-                rows_to_write += insert_rows
-            else:
-                users_removed += 1
-
-            if len(rows_to_write) >= fwc.MYSQL_BATCH_INSERT_SIZE:
-                sql = """INSERT INTO """+new_table+""" ("""+', '.join(insertColumnNames)+""") VALUES ("""  +", ".join(['%s']*len(insertColumnNames)) + """)"""
-                mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-                rows_to_write = []
-
-            if (counter % 500 == 0):
-                print('%d users filtered!' % (counter))
-            counter += 1
-
-        if rows_to_write:
-            sql = """INSERT INTO """+new_table+""" ("""+', '.join(insertColumnNames)+""") VALUES ("""  +", ".join(['%s']*len(insertColumnNames)) + """)"""
-            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-        print('%d users removed!' % (users_removed))
-
-    # TODO: add nicer implementation
-    def yieldMessages(self, messageTable, totalcount):
-        if totalcount > 10*fwc.MAX_SQL_SELECT:
-            for i in xrange(0,totalcount, MAX_SQL_SELECT):
-                sql = "SELECT * FROM %s limit %d, %d" % (messageTable, i, fwc.MAX_SQL_SELECT)
-                for m in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode):
-                    yield [i for i in m]
-        else:
-            sql = "SELECT * FROM %s" % messageTable
-            for m in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode):
-                yield m
-
-    def addLanguageFilterTable(self, langs, cleanMessages, lowercase):
-        """Filters all messages in corptable for a given language. Keeps messages if
-        confidence is greater than 80%. Uses the langid library.
-
-        Parameters
-        ----------
-        langs : list
-            list of languages to filter for
-        cleanMessages : boolean
-            remove URLs, hashtags and @ mentions from messages before running langid
-        lowercase : boolean
-            convert message to all lowercase before running langid
-        """
-        identifier = LanguageIdentifier.from_modelstring(model, norm_probs=True)
-
-        new_table = self.corptable + "_%s"
-
-        columnNames = mm.getTableColumnNames(self.corpdb, self.corptable, charset=self.encoding, use_unicode=self.use_unicode)
-        messageIndex = [i for i, col in enumerate(columnNames) if col.lower() == fwc.DEF_MESSAGE_FIELD.lower()][0]
-        messageIDindex = [i for i, col in enumerate(columnNames) if col.lower() == fwc.DEF_MESSAGEID_FIELD.lower()][0]
-
-        # CREATE NEW TABLES IF NEEDED
-        messageTables = {l: new_table % l for l in langs}
-        for l, table in messageTables.items():
-            drop = """DROP TABLE IF EXISTS %s""" % (table)
-            create = """CREATE TABLE %s like %s""" % (table, self.corptable)
-            mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
-            mm.execute(self.corpdb, self.dbCursor, create, charset=self.encoding, use_unicode=self.use_unicode)
-            mm.standardizeTable(self.corpdb, self.dbCursor, table, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
-
-        #ITERATE THROUGH EACH MESSAGE WRITING THOSE THAT ARE ENGLISH
-        messageDataToAdd = {l: list() for l in langs}
-        messageDataCounts = {l: 0 for l in langs}
-        totalMessages = 0
-        totalMessagesKept = 0
-        sql = """SELECT COUNT(*) FROM %s""" % self.corptable
-        totalMessagesInTable = mm.executeGetList(self.corpdb, self.dbCursor, sql)[0][0]
-
-        print("Reading %s messages" % ",".join([str(totalMessagesInTable)[::-1][i:i+3] for i in range(0,len(str(totalMessagesInTable)),3)])[::-1])
-        memory_limit = fwc.MYSQL_BATCH_INSERT_SIZE if fwc.MYSQL_BATCH_INSERT_SIZE < totalMessagesInTable else totalMessagesInTable/20
-
-        html = HTMLParser()
-        for messageRow in self.yieldMessages(self.corptable, totalMessagesInTable):
-            messageRow = list(messageRow)
-            totalMessages+=1
-            message = messageRow[messageIndex]
-
-            try:
-                message = message.encode('utf-8', 'ignore').decode('windows-1252', 'ignore')
-            except UnicodeEncodeError as e:
-                raise ValueError("UnicodeEncodeError"+ str(e) + str([message]))
-            except UnicodeDecodeError as e:
-                print(type(message))
-                print([message.decode('utf-8')])
-                raise ValueError("UnicodeDecodeError"+ str(e) + str([message]))
-            try:
-                message = html.unescape(message)
-                messageRow[messageIndex] = message
-
-                if cleanMessages:
-                    message = re.sub(r"(?:\#|\@|https?\://)\S+", "", message)
-            except Exception as e:
-                print(e)
-                print([message])
-
-            try:
-                if lowercase:
-                    message = message.lower()
-            except Exception as e:
-                print(e)
-                print([message])
-
-
-            lang, conf = None, None
-            try:
-                lang, conf = identifier.classify(message)
-            except TypeError as e:
-                print(("         Error, ignoring row %s" % str(messageRow)))
-
-            if lang in langs and conf > .80 :
-                messageDataToAdd[lang].append(messageRow)
-                messageDataCounts[lang] += 1
-
-                totalMessagesKept+=1
-            else:
-                continue
-
-            if totalMessagesKept % memory_limit == 0:
-                #write messages every so often to clear memory
-                for l, messageData in messageDataToAdd.items():
-                    sql = """INSERT INTO """+messageTables[l]+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-                    mm.executeWriteMany(self.corpdb, self.dbCursor, sql, messageData, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-                    messageDataToAdd[l] = list()
-
-                for l, nb in [(x[0], len(x[1])) for x in iter(messageDataToAdd.items())]:
-                    messageDataCounts[l] += nb
-
-                print("  %6d rows written (%6.3f %% done)" % (totalMessagesKept,
-                                                              100*float(totalMessages)/totalMessagesInTable))
-
-        if messageDataToAdd:
-            print("Adding final rows")
-            for l, messageData in messageDataToAdd.items():
-                sql = """INSERT INTO """+messageTables[l]+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-                mm.executeWriteMany(self.corpdb, self.dbCursor, sql, messageData, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-
-        print("Kept %d out of %d messages" % (totalMessagesKept, totalMessages))
-        pprint({messageTables[l]: v for l, v in messageDataCounts.items()})
 
 
     ##Feature Tables ##
@@ -1163,7 +147,7 @@ class FeatureExtractor(FeatureWorker):
         fwc.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
         if len(cfRows)*n < fwc.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
 
-        warnedMaybeForeignLanguage = False
+        #warnedMaybeForeignLanguage = False
         for cfRow in cfRows:
             cf_id = cfRow[0]
 
@@ -1181,14 +165,14 @@ class FeatureExtractor(FeatureWorker):
                     msgs+=1
                     if msgs % fwc.PROGRESS_AFTER_ROWS == 0: #progress update
                         fwc.warn("Messages Read: %dk" % int(msgs/1000))
-                    message = fwc.treatNewlines(message)
-                    message = fwc.shrinkSpace(message)
+                    message = tc.treatNewlines(message)
+                    message = tc.shrinkSpace(message)
 
                     #words = message.split()
                     if not self.use_unicode:
-                        words = [fwc.removeNonAscii(w) for w in tokenizer.tokenize(message)]
+                        words = [tc.removeNonAscii(w) for w in tokenizer.tokenize(message)]
                     else:
-                        words = [fwc.removeNonUTF8(w) for w in tokenizer.tokenize(message)]
+                        words = [tc.removeNonUTF8(w) for w in tokenizer.tokenize(message)]
 
                     gram = '' ## MAARTEN
                     for i in range(0,(len(words) - n)+1):
@@ -1224,7 +208,7 @@ class FeatureExtractor(FeatureWorker):
                         rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
                 except:
                     print([k for k, v in freqs.items()])
-                    exit()
+                    sys.exit()
                 while insert_idx_start < len(rows):
                     insert_rows = rows[insert_idx_start:min(insert_idx_end, len(rows))]
                     #_warn("Inserting rows %d to %d... " % (insert_idx_start, insert_idx_end))
@@ -1310,7 +294,7 @@ class FeatureExtractor(FeatureWorker):
         fwc.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
         if len(cfRows)*n < fwc.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
 
-        warnedMaybeForeignLanguage = False
+        #warnedMaybeForeignLanguage = False
         for cfRow in cfRows:
             cf_id = cfRow[0]
 
@@ -1328,14 +312,14 @@ class FeatureExtractor(FeatureWorker):
                     msgs+=1
                     if msgs % fwc.PROGRESS_AFTER_ROWS == 0: #progress update
                         fwc.warn("Messages Read: %dk" % int(msgs/1000))
-                    message = fwc.treatNewlines(message)
-                    message = fwc.shrinkSpace(message)
+                    message = tc.treatNewlines(message)
+                    message = tc.shrinkSpace(message)
 
                     #words = message.split()
                     if self.use_unicode:
-                        words = [fwc.removeNonUTF8(w) for w in list(message)]
+                        words = [tc.removeNonUTF8(w) for w in list(message)]
                     else:
-                        words = [fwc.removeNonAscii(w) for w in list(message)]
+                        words = [tc.removeNonAscii(w) for w in list(message)]
 
                     gram = '' ## MAARTEN
                     for i in range(0,(len(words) - n)+1):
@@ -1568,12 +552,12 @@ class FeatureExtractor(FeatureWorker):
 
         '''
         ###### BEGIN extract to new function
-        message = fwc.treatNewlines(message)
+        message = tc.treatNewlines(message)
         if self.use_unicode:
-            message = fwc.removeNonUTF8(message)
+            message = tc.removeNonUTF8(message)
         else:
-            message = fwc.removeNonAscii(message) #TODO: don't use for foreign languages
-        message = fwc.shrinkSpace(message)
+            message = tc.removeNonAscii(message) #TODO: don't use for foreign languages
+        message = tc.shrinkSpace(message)
 
         #TODO - update this to a word based dict, eg maxCollocSize[word[i]]
         maxCollocSize = 5
@@ -1684,12 +668,12 @@ class FeatureExtractor(FeatureWorker):
                         fwc.warn("Messages Read: %dk" % int(msgs/1000))
 
                     #TODO: remove if keeping other characters
-                    message = fwc.treatNewlines(message)
+                    message = tc.treatNewlines(message)
                     if self.use_unicode:
-                        message = fwc.removeNonUTF8(message) #TODO: don't use for foreign languages
+                        message = tc.removeNonUTF8(message) #TODO: don't use for foreign languages
                     else:
-                        message = fwc.removeNonAscii(message) #TODO: don't use for foreign languages
-                    message = fwc.shrinkSpace(message)
+                        message = tc.removeNonAscii(message) #TODO: don't use for foreign languages
+                    message = tc.shrinkSpace(message)
 
                     self._countFeatures(collocSet, maxCollocSizeByFirstWord, message, tokenizer, freqs, lowercase_only, includeSubCollocs)
                     #TODO - save this somewhere?  Accumulate for all  messages... way to sum hash tables?  Or just pass it in?
@@ -1783,12 +767,12 @@ class FeatureExtractor(FeatureWorker):
                         fwc.warn("Messages Read: %dk" % int(msgs/1000))
                     if msgs > 1000*2915:
                         break
-                    message = fwc.treatNewlines(message)
+                    message = tc.treatNewlines(message)
                     if self.use_unicode:
-                        message = fwc.removeNonUTF8(message)
+                        message = tc.removeNonUTF8(message)
                     else:
-                        message = fwc.removeNonAscii(message)
-                    message = fwc.shrinkSpace(message)
+                        message = tc.removeNonAscii(message)
+                    message = tc.shrinkSpace(message)
 
                     words = tokenizer.tokenize(message)
                     # _warn(words)
@@ -2103,7 +1087,6 @@ class FeatureExtractor(FeatureWorker):
             mids = set() #currently seen message ids
             freqs = dict() #holds frequency of n-grams
             totalGrams = 0 #total number of (non-distinct) n-grams seen for this user
-            totalChars = 0
 
             #grab n-grams by messages for that cf:
             for messageRow in self.getMessagesForCorrelField(cf_id, warnMsg = False):
@@ -2113,12 +1096,12 @@ class FeatureExtractor(FeatureWorker):
                     msgs+=1
                     if msgs % fwc.PROGRESS_AFTER_ROWS == 0: #progress update
                         fwc.warn("Messages Read: %dk" % int(msgs/1000))
-                    message = fwc.treatNewlines(message)
+                    message = tc.treatNewlines(message)
                     if self.use_unicode:
-                        message = fwc.removeNonUTF8(message)
+                        message = tc.removeNonUTF8(message)
                     else:
-                        message = fwc.removeNonAscii(message)
-                    message = fwc.shrinkSpace(message)
+                        message = tc.removeNonAscii(message)
+                    message = tc.shrinkSpace(message)
 
 
                     #words = message.split()
@@ -2227,7 +1210,6 @@ class FeatureExtractor(FeatureWorker):
 
             mids = set() #currently seen message ids
             scores = list()
-            totalGrams = 0 #total number of (non-distinct) n-grams seen for this user
 
             #grab n-grams by messages for that cf:
             for messageRow in self.getMessagesForCorrelField(cf_id, warnMsg = False):
@@ -2305,7 +1287,6 @@ class FeatureExtractor(FeatureWorker):
         """
         #create table name
         if not tableName:
-            valueExtension = ''
             tableName = 'feat$'+featureName+'$'+self.corptable+'$'+self.correl_field
             if valueFunc:
                 tableName += '$' + str(16)+'to'+"%d"%round(valueFunc(16))
@@ -2596,7 +1577,7 @@ class FeatureExtractor(FeatureWorker):
                 attributeRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
             except:
                 print(groupId)
-                exit()
+                sys.exit()
 
             totalFeatCountForThisGroupId = 0
 
@@ -2712,7 +1693,7 @@ class FeatureExtractor(FeatureWorker):
         reporting_percent = 0.01
         reporting_int = max(floor(reporting_percent * len(groupIdRows)), 1)
         groupIdCounter = 0
-        stripsynset = re.compile(r'')
+        #stripsynset = re.compile(r'')
         for groupIdRow in groupIdRows:
             groupId = groupIdRow[0]
 
@@ -2835,7 +1816,7 @@ class FeatureExtractor(FeatureWorker):
         reporting_percent = 0.01
         reporting_int = max(floor(reporting_percent * len(groupIdRows)), 1)
         groupIdCounter = 0
-        stripsynset = re.compile(r'')
+        #stripsynset = re.compile(r'')
         for groupIdRow in groupIdRows:
             groupId = groupIdRow[0]
 
@@ -3087,8 +2068,6 @@ class FeatureExtractor(FeatureWorker):
 
         corenlpServer = jsonrpclib.Server("http://localhost:%d"% serverPort)
 
-        tokenizer = Tokenizer(use_unicode=self.use_unicode)
-
         #CREATE TABLE:
         featureName = 'timex'
         featureTableName = self.createFeatureTable(featureName, "VARCHAR(24)", 'DOUBLE', tableName)
@@ -3121,12 +2100,12 @@ class FeatureExtractor(FeatureWorker):
                     msgs+=1
                     if msgs % fwc.PROGRESS_AFTER_ROWS == 0: #progress update
                         fwc.warn("Messages Read: %dk" % int(msgs/1000))
-                    message = fwc.treatNewlines(message)
+                    message = tc.treatNewlines(message)
                     if self.use_unicode:
-                        message = fwc.removeNonUTF8(message)
+                        message = tc.removeNonUTF8(message)
                     else:
-                        message = fwc.removeNonAscii(message)
-                    message = fwc.shrinkSpace(message)
+                        message = tc.removeNonAscii(message)
+                    message = tc.shrinkSpace(message)
 
                     parseInfo = loads(corenlpServer.parse(message))
                     #print parseInfo #debug
@@ -3213,8 +2192,6 @@ class FeatureExtractor(FeatureWorker):
         ##NOTE: correl_field should have an index for this to be quick
         corenlpServer = jsonrpclib.Server("http://localhost:%d"% serverPort)
 
-        tokenizer = Tokenizer(use_unicode=self.use_unicode)
-
         #CREATE TABLES:
         featureName = 'timex'
         featureTableName = self.createFeatureTable(featureName, "VARCHAR(24)", 'DOUBLE', tableName)
@@ -3260,12 +2237,12 @@ class FeatureExtractor(FeatureWorker):
                     msgs+=1
                     if msgs % fwc.PROGRESS_AFTER_ROWS == 0: #progress update
                         fwc.warn("Messages Read: %dk" % int(msgs/1000))
-                    message = fwc.treatNewlines(message)
+                    message = tc.treatNewlines(message)
                     if self.use_unicode:
-                        message = fwc.removeNonUTF8(message)
+                        message = tc.removeNonUTF8(message)
                     else:
-                        message = fwc.removeNonAscii(message)
-                    message = fwc.shrinkSpace(message)
+                        message = tc.removeNonAscii(message)
+                    message = tc.shrinkSpace(message)
 
                     parseInfo = loads(corenlpServer.parse(message))
 

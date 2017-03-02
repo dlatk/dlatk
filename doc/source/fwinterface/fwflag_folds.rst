@@ -20,24 +20,35 @@ Argument is integer representing number of folds. Default number of folds is 5.
 Details
 =======
 
-The original sample is randomly partitioned into n subsamples, n:doc:`fwflag_1` of which are used for training. This is repeated n times. The n trained models are then combined into a single model.
+The original sample is randomly partitioned into n subsamples, n-1 of which are used for training. This is repeated n times. The n trained models are then combined into a single model.
 
 
 Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t` :doc:`fwflag_f` :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes` Optional Switches:
-:doc:`fwflag_combo_test_regression` :doc:`fwflag_control_adjust_outcomes_regression`?, :doc:`fwflag_control_adjust_reg`? :doc:`fwflag_predict_cv_to_feats`?, :doc:`fwflag_predict_combo_to_feats`?, :doc:`fwflag_predict_regression_all_to_feats`? :doc:`fwflag_combo_test_classifiers` 
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_f`
+* :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes`
+
+Optional Switches:
+
+* :doc:`fwflag_combo_test_regression`
+* --control_adjust_outcomes_regression
+* --control_adjust_reg
+* --predict_cv_to_feats
+* --predict_combo_to_feats
+* --predict_regression_all_to_feats
+* :doc:`fwflag_combo_test_classifiers` 
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
 
 
- # Runs 10:doc:`fwflag_fold` cross validation on predicting the users' genders from 1grams.
- # This essentially will tell you how well your model & features do at predicting gender.
- # Splits the data in 10 chunks, for each chunk training a model on the remaining 9 chunks.
- ~/fwInterface.py :doc:`fwflag_d` fb20 :doc:`fwflag_t` messages_en :doc:`fwflag_c` user_id :doc:`fwflag_f` 'feat$1gram$messages_en$user_id$16to16$0_01' 
- :doc:`fwflag_outcome_table` masterstats_andy_r10k :doc:`fwflag_outcomes` gender :doc:`fwflag_combo_test_classifiers` :doc:`fwflag_model` linear:doc:`fwflag_svc` :doc:`fwflag_folds` 10
-References
-https://en.wikipedia.org/wiki/Cross:doc:`fwflag_validation_#k-fold_cross-validation` 
+	# Runs 10:doc:`fwflag_fold` cross validation on predicting the users' genders from 1grams.
+	# This essentially will tell you how well your model & features do at predicting gender.
+	# Splits the data in 10 chunks, for each chunk training a model on the remaining 9 chunks.
+	dlatkInterface.py -d fb20 -t messages_en -c user_id -f 'feat$1gram$messages_en$user_id$16to16$0_01' --outcome_table masterstats_andy_r10k --outcomes gender --combo_test_classifiers --model linear-svc --folds 10

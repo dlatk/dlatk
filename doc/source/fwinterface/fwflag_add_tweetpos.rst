@@ -24,24 +24,38 @@ This will create a table called TABLE_tweetpos (where TABLE is specified by :doc
 
 Example on one message
 Original message:
- @f_ckj i think that curly hair is getting to you 😂
+
+.. code-block:: bash
+
+	@f_ckj i think that curly hair is getting to you 😂
+
 POS message:
- {"tokens": ["@f_ckj", "i", "think", "that", "curly", "hair", "is", "getting", "to", "you", "&", "#128514", ";"], 
- "original": "@f_ckj i think that curly hair is getting to you 😂", 
- "probs": ["0.9994", "0.9898", "0.9999", "0.4810", "0.9903", "0.9992", "0.9955", "0.9959", "0.9967", "0.9992", "0.9806", "0.3757", "0.9448"], 
- "tags": ["@", "O", "V", "D", "A", "N", "V", "V", "P", "O", "&", "#", ","]} 
+
+.. code-block:: bash
+
+	{"tokens": ["@f_ckj", "i", "think", "that", "curly", "hair", "is", "getting", "to", "you", "&", "#128514", ";"], 
+	"original": "@f_ckj i think that curly hair is getting to you 😂", 
+	"probs": ["0.9994", "0.9898", "0.9999", "0.4810", "0.9903", "0.9992", "0.9955", "0.9959", "0.9967", "0.9992", "0.9806", "0.3757", "0.9448"], 
+	"tags": ["@", "O", "V", "D", "A", "N", "V", "V", "P", "O", "&", "#", ","]} 
 
 Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t` Optional Switches:
-:doc:`fwflag_messageid_field` :doc:`fwflag_message_field` 
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t` 
+
+Optional Switches:
+
+* :doc:`fwflag_messageid_field`
+* :doc:`fwflag_message_field` 
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
 
 
  # General form
  # Creates the tables: TABLE_tok
- ./fwInterface.py :doc:`fwflag_d` DATABASE :doc:`fwflag_t` TABLE :doc:`fwflag_c` GROUP_BY_FIELD :doc:`fwflag_add_tweetpos` 
+ dlatkInterface.py -d DATABASE -t TABLE -c GROUP_BY_FIELD --add_tweetpos

@@ -22,6 +22,7 @@ from sklearn.linear_model import LogisticRegression
 #infrastructure
 from .outcomeGetter import OutcomeGetter
 from . import fwConstants as fwc
+from . import textCleaner as tc
 from .mysqlMethods import mysqlMethods as mm
 
 
@@ -508,8 +509,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                     for reg in whitelist_re:
                         if reg.match(feat):
                             endFeats.add(feat)
-            out[outcome] = {line[0]: (line[4], 0.0, len(outcome_groups), int(freqs[line[0]])) for line in results if line[0] in endFeats}
-
+            out[outcome] = {line[0]: (line[4], 0.0, len(outcome_groups), (0.0, 0.0), int(freqs[line[0]])) for line in results if line[0] in endFeats}
+            
         return out
 
     def zScoreGroup(self, featGetter, outcomeWithOutcome = False, includeFreqs = False, blacklist=None, whitelist = None):
@@ -2181,7 +2182,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 if use_unicode:
                     print("%s:%d:%s" % (w.replace(' ', '_'), int(occ), color))
                 else:
-                    if len(w) > len(fwc.removeNonAscii(w)):
+                    if len(w) > len(tc.removeNonAscii(w)):
                         fwc.warn("Unicode being ignored, %s is being skipped" % w)
                     else:
                         print("%s:%d:%s" % (w.replace(' ', '_'), int(occ), color))
@@ -2190,7 +2191,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 if use_unicode:
                     print("%s:%d" % (w.replace(' ', '_'), int(occ)))
                 else:
-                    if len(w) > len(fwc.removeNonAscii(w)):
+                    if len(w) > len(tc.removeNonAscii(w)):
                         fwc.warn("Unicode being ignored, %s is being skipped" % w)
                     else:
                         print("%s:%d" % (w.replace(' ', '_'), int(occ)))

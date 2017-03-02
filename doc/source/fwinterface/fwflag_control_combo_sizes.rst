@@ -10,12 +10,12 @@ Alias for --control_combo_sizes
 Description
 ===========
 
-null
 
 Argument and Default Value
 ==========================
 
-null
 
 Details
-=======Alias for :doc:`fwflag_control_combo_sizes` 
+=======
+
+Alias for :doc:`fwflag_control_combo_sizes` 

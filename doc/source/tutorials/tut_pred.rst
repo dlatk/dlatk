@@ -245,4 +245,4 @@ which gives the output
 	| b67875fbdbabb1187715721697517139 | AGE    |  20.9407575669782 |        25 |            0 | 
 	+----------------------------------+--------+-------------------+-----------+--------------+
 
-One can also create a predictive lexicon using the [[FwInterfaceDocumentation/regression_to_lexicon|--regression_to_lexicon]] switch, which is beyond the scope of this tutorial. For more information please read `Sap et al. (2014) - Developing Age and Gender Predictive Lexica over Social Media <http://wwbp.org/papers/emnlp2014_developingLexica.pdf>`_.
+One can also create a predictive lexicon using the :doc:`../fwinterface/fwflag_regression_to_lexicon` switch, which is beyond the scope of this tutorial. For more information please read `Sap et al. (2014) - Developing Age and Gender Predictive Lexica over Social Media <http://wwbp.org/papers/emnlp2014_developingLexica.pdf>`_.

@@ -1581,8 +1581,13 @@ class ClassifyPredictor:
                 print("No CV parameters available")
                 raise IndexError
             #print dict(self.cvParams[modelName][0])
-
-            classifier.fit(X, y)
+            try:
+                classifier.fit(X, y)
+            except ValueError as e:
+                print("ValueError: %s, try using the --no_standardize flag or a different feature selection pipeline" % e)
+                exit()
+            except:
+                raise
             #print "coefs"
             #print classifier.coef_
             print(("model: %s " % str(classifier)))

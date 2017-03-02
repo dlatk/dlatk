@@ -31,6 +31,7 @@ Optional Switches:
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
 
 

@@ -27,21 +27,23 @@ Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_f`, :doc:`fwflag_feat_table` :doc:`fwflag_set_p_occ` RATIO_OF_GROUPS
+
+* :doc:`fwflag_f`
+* :doc:`fwflag_set_p_occ` RATIO_OF_GROUPS
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
 
 
- # Extract ngrams and filter in one command
- ./fwInterface.py :doc:`fwflag_d` fb22 :doc:`fwflag_t` msgsEn_r5k :doc:`fwflag_c` user_id :doc:`fwflag_add_ngrams` :doc:`fwflag_n` 1 2 3 :doc:`fwflag_combine_feat_tables` 1to3gram :doc:`fwflag_feat_occ_filter` :doc:`fwflag_set_p_occ` 0.05
+	# Extract ngrams and filter in one command
+	dlatkInterface.py -d fb22 -t msgsEn_r5k -c user_id --add_ngrams -n 1 2 3 --combine_feat_tables 1to3gram --feat_occ_filter --set_p_occ 0.05
 
 
- # Add a filter to a table that was generated without using collocs
- ./fwInterface.py :doc:`fwflag_d` fb22 :doc:`fwflag_t` msgsEn_r5k :doc:`fwflag_c` user_id :doc:`fwflag_f` ’feat$1to3gram$msgsEn_r5k$user_id$16to16’ :doc:`fwflag_feat_occ_filter` :doc:`fwflag_set_p_occ` 0.05
+	# Add a filter to a table that was generated without using collocs
+	dlatkInterface.py -d fb22 -t msgsEn_r5k -c user_id -f 'feat$1to3gram$msgsEn_r5k$user_id$16to16' --feat_occ_filter --set_p_occ 0.05
 
 
- # Add a filter to a table that was generated using collocs, override the default group_freq_thresh value
- ./fwInterface.py :doc:`fwflag_d` fb22 :doc:`fwflag_t` msgsEn_r5k :doc:`fwflag_c` user_id :doc:`fwflag_f` ’feat$colloc$msgsEn_r5k$user_id$16to16’ :doc:`fwflag_word_table` ‘feat$colloc$msgsEn_r5k$user_id$16to16’ \ 
- :doc:`fwflag_feat_occ_filter` :doc:`fwflag_set_p_occ` 0.05 :doc:`fwflag_group_freq_thresh` 50
+	# Add a filter to a table that was generated using collocs, override the default group_freq_thresh value
+	dlatkInterface.py -d fb22 -t msgsEn_r5k -c user_id -f 'feat$colloc$msgsEn_r5k$user_id$16to16' --word_table 'feat$colloc$msgsEn_r5k$user_id$16to16 --feat_occ_filter --set_p_occ 0.05 --group_freq_thresh 50

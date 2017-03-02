@@ -4,6 +4,8 @@ Packaged Datasets
 
 All datasets are available on our `github <http://www.github.com/dlatk/dlatk>`_ page, the `World Well-Being Project <http://www.wwbp.org>`_ site and via the pip install.
 
+Note: some lexica and datasets are distributed on more restrictive licenses than DLATK. Please review each before use.
+
 
 Language Data
 =============

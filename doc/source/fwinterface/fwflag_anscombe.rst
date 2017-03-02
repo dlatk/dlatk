@@ -31,16 +31,21 @@ Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t` The transformation switches are used during feature extraction and therefore need at least one feature extraction command: :doc:`fwflag_add_ngrams`, :doc:`fwflag_add_lex_table`, etc.
-Optional Switches:
-None
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t` 
+
+The transformation switches are used during feature extraction and therefore need at least one feature extraction command: 
+
+* :doc:`fwflag_add_ngrams`, :doc:`fwflag_add_lex_table`, etc.
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
 
 
- # Creates the table: feat$cat_LEX_TABLE$TABLE$GROUP_BY_FIELD$16to8 
- ./fwInterface.py :doc:`fwflag_d` DATABSE :doc:`fwflag_t` TABLE :doc:`fwflag_c` GROUP_BY_FIELD :doc:`fwflag_add_lex_table` :doc:`fwflag_l` LEX_TABLE  :doc:`fwflag_anscombe` 
- # Creates the table: feat$cat_met_a30_2000_cp_w$primals_new$dp_id$16to8
- ./fwInterface.py :doc:`fwflag_d` primals :doc:`fwflag_t` primals_new :doc:`fwflag_c` dp_id :doc:`fwflag_group_freq_thresh` 40000 :doc:`fwflag_add_lex_table` :doc:`fwflag_l` met_a30_2000_cp :doc:`fwflag_weighted_lex` :doc:`fwflag_anscombe` 
+	# Creates the table: feat$cat_LEX_TABLE$TABLE$GROUP_BY_FIELD$16to8 
+	dlatkInterface.py -d DATABSE -t TABLE -c GROUP_BY_FIELD --add_lex_table -l LEX_TABLE  --anscombe
+	
+	# Creates the table: feat$cat_met_a30_2000_cp_w$primals_new$dp_id$16to8
+	dlatkInterface.py -d primals -t primals_new -c dp_id --group_freq_thresh 40000 --add_lex_table -l met_a30_2000_cp --weighted_lex --anscombe

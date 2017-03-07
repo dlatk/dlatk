@@ -327,6 +327,9 @@ class MessageAnnotator(FeatureWorker):
                 print(type(message))
                 print([message.decode('utf-8')])
                 raise ValueError("UnicodeDecodeError"+ str(e) + str([message]))
+            except AttributeError as e:
+                print("Empty message, skipped")
+                continue
             try:
                 message = html.unescape(message)
                 messageRow[messageIndex] = message

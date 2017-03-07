@@ -1,10 +1,6 @@
 import re
 from . import fwConstants as fwc
 
-try:
-    import twokenize
-except ImportError:
-    print("warning: unable to twokenize, using happierfuntokenizing instead")
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 
 ### general dlatk methods
@@ -317,8 +313,10 @@ def sentenceNormalization(message, normalizeDict, use_unicode=fwc.DEF_UNICODE_SW
     message = re.sub(r'[^\x00-\x7F]+',' ', message)
     
     try:
+        import twokenize
         tokens = twokenize.tokenizeRawTweetText(message)
-    except:
+    except ImportError:
+        print("warning: unable to twokenize, using happierfuntokenizing instead")
         tokenizer = Tokenizer(use_unicode)
         tokens = tokenizer.tokenize(message)
 

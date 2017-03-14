@@ -947,6 +947,17 @@ class OutcomeAnalyzer(OutcomeGetter):
                 if numRed % 200 == 0: fwc.warn("  %d features correlated"%(numRed))
                 firstLoop = False
 
+        if p_correction_method and not p_correction_method.startswith("bonf"):
+            newAucs = dict()
+            for outcomeField, featRs in aucs.iteritems():
+                newAucs[outcomeField] = dict()
+                pDict = dict( [(k, tup[1]) for k, tup in featRs.iteritems()] )
+                rDict = dict( [(k, tup[0]) for k, tup in featRs.iteritems()] )
+                pDict = fwc.pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
+                for k, tup in featRs.iteritems():
+                    newAucs[outcomeField][k] = (tup[0], pDict[k]) + tup[2:]
+            aucs = newAucs
+
         if self.featureMapping:
             #pickle.dump((aucs, self.featureMapping), open("aucs-featmapping.p", "wb"))
             newAucs = dict()

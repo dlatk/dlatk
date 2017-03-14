@@ -20,8 +20,13 @@ from pprint import pprint
 import glob
 
 ##DEFAULTS FOR RELEASED VERSION
-#_InstallPath = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '/Tools/StanfordParser/' # folder
-#_InstallDir = glob.glob(_InstallPath + "stanford-parser-full*")[0]
+# from ..fwConstants import warn
+# try: 
+#     _InstallPath = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '/Tools/StanfordParser/' # folder
+#     _InstallDir = glob.glob(_InstallPath + "stanford-parser-full*")[0]
+# except:
+#     warn("Cannot find StanfordParser, please check that this was installed properly")
+#     pass
 
 ##DEFAULTS:
 _InstallPath = '/home/hansens/Tools/StanfordParser/' # folder

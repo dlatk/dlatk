@@ -428,7 +428,7 @@ class MessageTransformer(FeatureWorker):
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-        if sentPerRow:
+        if cleanMessages:
             sql = """ALTER TABLE %s CHANGE `%s` `%s` VARCHAR(64)""" % (tableName, self.messageid_field, self.messageid_field)
             mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 

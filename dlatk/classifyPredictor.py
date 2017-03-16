@@ -931,8 +931,8 @@ class ClassifyPredictor:
         #########################################
         #3. predict for all possible outcomes
         predictions = dict()
-        testGroupsOrder = list(UGroups) 
-        #testGroupsOrder = list(XGroups)
+        #testGroupsOrder = list(UGroups) 
+        testGroupsOrder = list(XGroups)
         
         for outcomeName in sorted(outcomes):
             print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
@@ -952,6 +952,7 @@ class ClassifyPredictor:
                 print("  (feature group: %d)" % (i))
 
                 multiXtest.append(csr_matrix(df.values))
+
                 # print "Maarten", csr_matrix(df.values).shape, csr_matrix(df.values).todense()
 
             #############
@@ -1054,105 +1055,147 @@ class ClassifyPredictor:
 
     def predictToOutcomeTable(self, standardize = True, sparse = False, fe = None, name = None, restrictToGroups = None, groupsWhere = ''):
 
-        if not self.multiXOn:
-            print("model trained without multiX, reverting to old predict")
-            return self.old_predict(standardize, sparse, restrictToGroups)
+        # if not self.multiXOn:
+        #     print("model trained without multiX, reverting to old predict")
+        #     return self.old_predict(standardize, sparse, restrictToGroups)
 
-        ################
-        #1. setup groups
-        (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
-        if restrictToGroups: #restrict to groups
-            rGroups = restrictToGroups
-            if isinstance(restrictToGroups, dict):
-                rGroups = [item for sublist in list(restrictToGroups.values()) for item in sublist]
-            groups = groups.intersection(rGroups)
-            for outcomeName, outcomes in allOutcomes.items():
-                allOutcomes[outcomeName] = dict([(g, outcomes[g]) for g in groups if (g in outcomes)])
-            for controlName, controlValues in allControls.items():
-                controls[controlName] = dict([(g, controlValues[g]) for g in groups])
-        print("[number of groups: %d]" % (len(groups)))
+        # ################
+        # #1. setup groups
+        # (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
+        # if restrictToGroups: #restrict to groups
+        #     rGroups = restrictToGroups
+        #     if isinstance(restrictToGroups, dict):
+        #         rGroups = [item for sublist in list(restrictToGroups.values()) for item in sublist]
+        #     groups = groups.intersection(rGroups)
+        #     for outcomeName, outcomes in allOutcomes.items():
+        #         allOutcomes[outcomeName] = dict([(g, outcomes[g]) for g in groups if (g in outcomes)])
+        #     for controlName, controlValues in allControls.items():
+        #         controls[controlName] = dict([(g, controlValues[g]) for g in groups])
+        # print("[number of groups: %d]" % (len(groups)))
 
-        ####################
-        #2. get data for Xs:
-        groupNormsList = []
-        XGroups = None #holds the set of X groups across all feature spaces and folds (intersect with this to get consistent keys across everything
-        UGroups = None
-        for i in range(len(self.featureGetters)):
-            fg = self.featureGetters[i]
-            (groupNorms, newFeatureNames) = fg.getGroupNormsSparseFeatsFirst(groups)
+        # ####################
+        # #2. get data for Xs:
+        # groupNormsList = []
+        # XGroups = None #holds the set of X groups across all feature spaces and folds (intersect with this to get consistent keys across everything
+        # UGroups = None
+        # for i in range(len(self.featureGetters)):
+        #     fg = self.featureGetters[i]
+        #     (groupNorms, newFeatureNames) = fg.getGroupNormsSparseFeatsFirst(groups)
             
-            print(" [Aligning current X with training X: feature group: %d]" %i)
-            groupNormValues = []
-            #print self.featureNamesList[i][:10]#debug
-            for feat in self.featureNamesList[i]:
-                if feat in groupNorms:
-                    groupNormValues.append(groupNorms[feat])
-                else:
-                    groupNormValues.append(dict())
-            groupNormsList.append(groupNormValues)
-            print("  Features Aligned: %d" % len(groupNormValues))
-            fgGroups = getGroupsFromGroupNormValues(groupNormValues)
-            if not XGroups:
-                XGroups = set(fgGroups)
-                UGroups = set(fgGroups)
-            else:
-                XGroups = XGroups & fgGroups #intersect groups from all feature tables
-                UGroups = UGroups | fgGroups #intersect groups from all feature tables
-                #potential source of bug: if a sparse feature table doesn't have all the groups it should
-                #potential source of bug: if a sparse feature table doesn't have all of the groups which it should
-        #XGroups = XGroups & groups #this should not be needed
-        if len(XGroups) < len(groups): 
-            print(" Different number of groups available for different outcomes.")
+        #     print(" [Aligning current X with training X: feature group: %d]" %i)
+        #     groupNormValues = []
+        #     #print self.featureNamesList[i][:10]#debug
+        #     for feat in self.featureNamesList[i]:
+        #         if feat in groupNorms:
+        #             groupNormValues.append(groupNorms[feat])
+        #         else:
+        #             groupNormValues.append(dict())
+        #     groupNormsList.append(groupNormValues)
+        #     print("  Features Aligned: %d" % len(groupNormValues))
+        #     fgGroups = getGroupsFromGroupNormValues(groupNormValues)
+        #     if not XGroups:
+        #         XGroups = set(fgGroups)
+        #         UGroups = set(fgGroups)
+        #     else:
+        #         XGroups = XGroups & fgGroups #intersect groups from all feature tables
+        #         UGroups = UGroups | fgGroups #intersect groups from all feature tables
+        #         #potential source of bug: if a sparse feature table doesn't have all the groups it should
+        #         #potential source of bug: if a sparse feature table doesn't have all of the groups which it should
+        # #XGroups = XGroups & groups #this should not be needed
+        # if len(XGroups) < len(groups): 
+        #     print(" Different number of groups available for different outcomes.")
         
-        ################################
-        #2b) setup control data:
-        controlValues = list(allControls.values())
-        if controlValues:
-            groupNormsList.append(controlValues)
+        # ################################
+        # #2b) setup control data:
+        # controlValues = list(allControls.values())
+        # if controlValues:
+        #     groupNormsList.append(controlValues)
 
-        #########################################
-        #3. predict for all possible outcomes
-        predictions = dict()
-        testGroupsOrder = list(UGroups) 
-        #testGroupsOrder = list(XGroups) 
-        for outcomeName, outcomes in sorted(allOutcomes.items()):
-            print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
-            if isinstance(restrictToGroups, dict): #outcome specific restrictions:
-                outcomes = dict([(g, o) for g, o in outcomes.items() if g in restrictToGroups[outcomeName]])
-            thisTestGroupsOrder = [gid for gid in testGroupsOrder if gid in outcomes]
-            if len(thisTestGroupsOrder) < len(testGroupsOrder):
-                print("   this outcome has less groups. Shrunk groups to %d total." % (len(thisTestGroupsOrder)))
-            (multiXtest, ytest) = ([], None)
-            for i in range(len(groupNormsList)): #get each feature group data (i.e. feature table)
-                groupNormValues = groupNormsList[i]
-                (Xdicts, ydict) = (groupNormValues, outcomes)
-                print("  (feature group: %d)" % (i))
-                (Xtest, ytest) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = thisTestGroupsOrder)
-                multiXtest.append(Xtest)
+        # #########################################
+        # #3. predict for all possible outcomes
+        # predictions = dict()
+        # testGroupsOrder = list(UGroups) 
+        # #testGroupsOrder = list(XGroups) 
+        # for outcomeName, outcomes in sorted(allOutcomes.items()):
+        #     print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
+        #     if isinstance(restrictToGroups, dict): #outcome specific restrictions:
+        #         outcomes = dict([(g, o) for g, o in outcomes.items() if g in restrictToGroups[outcomeName]])
+        #     thisTestGroupsOrder = [gid for gid in testGroupsOrder if gid in outcomes]
+        #     if len(thisTestGroupsOrder) < len(testGroupsOrder):
+        #         print("   this outcome has less groups. Shrunk groups to %d total." % (len(thisTestGroupsOrder)))
+        #     (multiXtest, ytest) = ([], None)
+        #     for i in range(len(groupNormsList)): #get each feature group data (i.e. feature table)
+        #         groupNormValues = groupNormsList[i]
+        #         (Xdicts, ydict) = (groupNormValues, outcomes)
+        #         print("  (feature group: %d)" % (i))
+        #         (Xtest, ytest) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = thisTestGroupsOrder)
+        #         multiXtest.append(Xtest)
                                                
-                print("   [Test size: %d ]" % (len(ytest)))
+        #         print("   [Test size: %d ]" % (len(ytest)))
             
 
-            #############
-            #4) predict
-            ypred = self._multiXpredict(self.classificationModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
-                                            multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
-            print("[Done. Evaluation:]")
-            acc = accuracy_score(ytest, ypred)
-            f1 = f1_score(ytest, ypred)
-            testCounter = Counter(ytest)
-            mfclass = Counter(ytest).most_common(1)[0][0]
-            mfclass_acc = testCounter[mfclass] / float(len(ytest))
-            print(" *confusion matrix: \n%s"% str(confusion_matrix(ytest, ypred)))
-            print(" *precision and recall: \n%s" % classification_report(ytest, ypred))
-            print(" *ACC: %.4f (mfclass_acc: %.4f); mfclass: %s\n" % (acc, mfclass_acc, str(mfclass)))
+        #     #############
+        #     #4) predict
+        #     ypred = self._multiXpredict(self.classificationModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
+        #                                     multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
+        #     print("[Done. Evaluation:]")
+        #     acc = accuracy_score(ytest, ypred)
+        #     f1 = f1_score(ytest, ypred)
+        #     testCounter = Counter(ytest)
+        #     mfclass = Counter(ytest).most_common(1)[0][0]
+        #     mfclass_acc = testCounter[mfclass] / float(len(ytest))
+        #     print(" *confusion matrix: \n%s"% str(confusion_matrix(ytest, ypred)))
+        #     print(" *precision and recall: \n%s" % classification_report(ytest, ypred))
+        #     print(" *ACC: %.4f (mfclass_acc: %.4f); mfclass: %s\n" % (acc, mfclass_acc, str(mfclass)))
 
-            mse = metrics.mean_squared_error(ytest, ypred)
-            print("*Mean Squared Error:                 %.4f"% mse)
-            assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups" 
-            predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder,ypred)))
+        #     mse = metrics.mean_squared_error(ytest, ypred)
+        #     print("*Mean Squared Error:                 %.4f"% mse)
+        #     assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups" 
+        #     predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder,ypred)))
 
-        print("[Prediction Complete]")
+        # print("[Prediction Complete]")
+
+        # #featNames = list(predictions.keys())
+        # predDF = pd.DataFrame(predictions)
+        # # print predDF
+        
+        # name = "p_%s" % self.modelName[:4] + "$" + name
+        # # 4: use self.outcomeGetter.createOutcomeTable(tableName, dataFrame)
+        # self.outcomeGetter.createOutcomeTable(name, predDF, 'replace')
+
+        # step1: get groups from feature table
+        groups = self.featureGetter.getDistinctGroupsFromFeatTable()
+        groups = list(groups)
+        chunks = [groups]
+
+        # 2: chunks of groups (only if necessary)
+        if len(groups) > self.maxPredictAtTime:
+            numChunks = int(len(groups) / float(self.maxPredictAtTime)) + 1
+            print("TOTAL GROUPS (%d) TOO LARGE. Breaking up to run in %d chunks." % (len(groups), numChunks))
+            random.seed(self.randomState)
+            random.shuffle(groups)        
+            chunks =  [x for x in foldN(groups, numChunks)]
+
+        predictions = dict() #outcomes->groups->prediction               
+
+        totalPred = 0
+        for c,chunk in enumerate(chunks):
+            print("\n\n**CHUNK %d\n" % c)
+
+            # 3: predict for each chunk for each outcome
+            
+            chunkPredictions = self.predictNoOutcomeGetter(chunk, standardize, sparse)
+            #predictions is now outcomeName => group_id => value (outcomeName can become feat)
+            #merge chunk predictions into predictions:
+            for outcomeName in chunkPredictions.keys():
+                try:
+                    predictions[outcomeName].update(chunkPredictions[outcomeName])
+                except KeyError:
+                    predictions[outcomeName] = chunkPredictions[outcomeName]
+            if chunk:
+                totalPred += len(chunk)
+            else: totalPred = len(groups)
+            print(" Total Predicted: %d" % totalPred)
 
         featNames = list(predictions.keys())
         predDF = pd.DataFrame(predictions)
@@ -1161,48 +1204,6 @@ class ClassifyPredictor:
         name = "p_%s" % self.modelName[:4] + "$" + name
         # 4: use self.outcomeGetter.createOutcomeTable(tableName, dataFrame)
         self.outcomeGetter.createOutcomeTable(name, predDF, 'replace')
-
-        # # step1: get groups from feature table
-        # groups = self.featureGetter.getDistinctGroupsFromFeatTable()
-        # groups = list(groups)
-        # chunks = [groups]
-
-        # # 2: chunks of groups (only if necessary)
-        # if len(groups) > self.maxPredictAtTime:
-        #     numChunks = int(len(groups) / float(self.maxPredictAtTime)) + 1
-        #     print("TOTAL GROUPS (%d) TOO LARGE. Breaking up to run in %d chunks." % (len(groups), numChunks))
-        #     random.seed(self.randomState)
-        #     random.shuffle(groups)        
-        #     chunks =  [x for x in foldN(groups, numChunks)]
-
-        # predictions = dict() #outcomes->groups->prediction               
-
-        # totalPred = 0
-        # for c,chunk in enumerate(chunks):
-        #     print("\n\n**CHUNK %d\n" % c)
-
-        #     # 3: predict for each chunk for each outcome
-            
-        #     chunkPredictions = self.predictNoOutcomeGetter(chunk, standardize, sparse)
-        #     #predictions is now outcomeName => group_id => value (outcomeName can become feat)
-        #     #merge chunk predictions into predictions:
-        #     for outcomeName in chunkPredictions.keys():
-        #         try:
-        #             predictions[outcomeName].update(chunkPredictions[outcomeName])
-        #         except KeyError:
-        #             predictions[outcomeName] = chunkPredictions[outcomeName]
-        #     if chunk:
-        #         totalPred += len(chunk)
-        #     else: totalPred = len(groups)
-        #     print(" Total Predicted: %d" % totalPred)
-
-        # featNames = list(predictions.keys())
-        # predDF = pd.DataFrame(predictions)
-        # # print predDF
-        
-        # name = "p_%s" % self.modelName[:4] + "$" + name
-        # # 4: use self.outcomeGetter.createOutcomeTable(tableName, dataFrame)
-        # self.outcomeGetter.createOutcomeTable(name, predDF, 'replace')
 
     def predictToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = ''):
         if not fe:
@@ -1863,7 +1864,7 @@ class ClassifyPredictor:
                 for adaptCol in adaptColumns:
                     #c =np.insert(c,c.shape[1],thelist[0][:,0],axis=1)
                     adaptMatrix=np.insert(adaptMatrix,adaptMatrix.shape[1],controls_mat[:,adaptCol],axis=1)
-                    
+
         #for i in xrange(len(multiX)):
         i=0
         while i < len(multiX): # changed to while loop by Youngseo
@@ -1872,6 +1873,7 @@ class ClassifyPredictor:
             X = multiX[i]
             if not sparse and isinstance(X,csr_matrix): #edited by Youngseo
                 X = X.todense()
+
             (scaler, fSelector) = (None, None)
             if multiScalers: 
                 scaler = multiScalers[i]
@@ -1881,7 +1883,7 @@ class ClassifyPredictor:
             #run transformations:
             if scaler:
                 print(("  predict: applying standard scaler to X[%d]: %s" % (i, str(scaler)))) #debug
-                X = scaler.transform(X)
+                X = scaler.fit_transform(X)
             if fSelector:
                 print(("  predict: applying feature selection to X[%d]: %s" % (i, str(fSelector)))) #debug
                 newX = fSelector.transform(X)
@@ -1960,13 +1962,29 @@ class ClassifyPredictor:
 
 
     ######################
-    def load(self, filename):
+    def load(self, filename, pickle2_7=True):
         print("[Loading %s]" % filename)
-        f = open(filename,'rb')
-        tmp_dict = pickle.load(f, encoding='latin1')
-        f.close()          
+        with open(filename, 'rb') as f:
+            if pickle2_7:
+                from .featureWorker  import FeatureWorker
+                from . import occurrenceSelection, pca_mod
+                sys.modules['FeatureWorker'] = FeatureWorker
+                sys.modules['FeatureWorker.occurrenceSelection'] = occurrenceSelection
+                sys.modules['FeatureWorker.pca_mod'] = pca_mod
+            tmp_dict = pickle.load(f, encoding='latin1')
+            f.close()          
+        try:
+            print("Outcomes in loaded model:", list(tmp_dict['classificationModels'].keys()))
+        except KeyError:
+            if 'regressionModels' in tmp_dict:
+                warn("You are trying to load a regression model for classification.")
+                warn("Try the classification version of the flag you are using, for example --predict_classifiers_to_feats instead of --predict_regression_to_feats.")
+            else:
+                warn("No classification models found in the pickle.")
+            sys.exit()
 
-        self.__dict__.update(tmp_dict) 
+        tmp_dict['outcomes'] = list(tmp_dict['classificationModels'].keys()) 
+        self.__dict__.update(tmp_dict)
 
     def save(self, filename):
         print("[Saving %s]" % filename)

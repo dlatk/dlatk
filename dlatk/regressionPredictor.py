@@ -1160,7 +1160,7 @@ class RegressionPredictor:
             else: totalPred = len(groups)
             print(" Total Predicted: %d" % totalPred)
 
-        featNames = list(predictions.keys())
+        #featNames = list(predictions.keys())
         predDF = pd.DataFrame(predictions)
         # print predDF
 
@@ -1724,7 +1724,16 @@ class RegressionPredictor:
                 sys.modules['FeatureWorker.pca_mod'] = pca_mod
             tmp_dict = pickle.load(f, encoding='latin1')
             f.close()          
-        print("Outcomes in loaded model:", list(tmp_dict['regressionModels'].keys()))
+        try:
+            print("Outcomes in loaded model:", list(tmp_dict['regressionModels'].keys()))
+        except KeyError:
+            if 'classificationModels' in tmp_dict:
+                warn("You are trying to load a classification model for regression.")
+                warn("Try the regression version of the flag you are using, for example --predict_regression_to_feats instead of --predict_classifiers_to_feats.")
+            else:
+                warn("No regression models found in the pickle.")
+            sys.exit()
+
         tmp_dict['outcomes'] = list(tmp_dict['regressionModels'].keys()) 
         self.__dict__.update(tmp_dict)
 

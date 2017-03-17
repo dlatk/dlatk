@@ -426,7 +426,7 @@ def main(fn_args = None):
     group = parser.add_argument_group('Refinement Actions', '')
     group.add_argument('--feat_occ_filter', action='store_true', dest='featoccfilter',
                        help='remove infrequent features. (uses variables feat_table and p_occ).')
-    group.add_argument('--combine_feat_tables', type=str, dest='combinefeattables', default=None,
+    group.add_argument('--combine_feat_tables', '--combine_feats', type=str, dest='combinefeattables', default=None,
                        help='Given multiple feature table, combines them (provide feature name) ')
     group.add_argument('--add_feat_norms', action='store_true', dest='addfeatnorms',
                        help='calculates and adds the mean normalized (feat_norm) value for each row (uses variable feat_table).')

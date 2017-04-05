@@ -4,7 +4,7 @@ from . import fwConstants as fwc
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 
 ### general dlatk methods
-def removeNonAscii(s): 
+def removeNonAscii(s):
     """remove non-ascii values from string s and replace with <UNICODE>"""
     if s:
         new_words = []
@@ -16,7 +16,7 @@ def removeNonAscii(s):
         return " ".join(new_words)
     return ''
 
-def removeNonUTF8(s): 
+def removeNonUTF8(s):
     """remove non-utf8 values from string s and replace with <NON-UTF8>"""
     if s:
         new_words = []
@@ -68,15 +68,16 @@ PunctChars = r'''['“".?!,:;]'''
 Entity = '&(amp|lt|gt|quot);'
 EmoticonsDN= '(:\)|:\(|:-\)|>:]|:o\)|:3|:c\)|:>|=]|8\)|=\)|:}|:^\)|>:D\)|:-D|:D|8-D|8D|x-D|xD|X-D|XD|=-D|=D|=-3|=3\)|8-\)|:-\)\)|:\)\)|>-\[|:-\(|:\(|:-c|:c|:-<|:<|:-\[|:\[|:{|>.>|<.<|>.<|:-\|\||D:<|D:|D8|D;|D=|DX|v.v|D-\':|>;\]|;-\)|;\)|\*-\)|\*\)|;-\]|;\]|;D|;^\)|>:P|:-P|:P|X-P|x-p|xp|XP|:-p|:p|=p|:-b|:b|>:o|>:O|:-O|:O|:0|o_O|o_0|o.O|8-0|>:\\|>:/|:-/|:-.|:/|:\\|=/|=\\|:S|:\||:-\||>:X|:-X|:X|:-#|:#|:$|O:-\)|0:-3|0:3|O:-\)|O:\)|0;^\)|>:\)|>;\)|>:-\)|:\'-\(|:\'\(|:\'-\)|:\'\)|;\)\)|;;\)|<3|8-}|>:D<|=\)\)|=\(\(|x\(|X\(|:-\*|:\*|:\">|~X\(|:-?)'
 UrlStart1 = regex_or('https?://', r'www\.')
-CommonTLDs = regex_or('com','co\\.uk','org','net','info','ca')
+CommonTLDs = regex_or('com','co\\.uk','org','net','info','ca', 'co')
 UrlStart2 = r'[a-z0-9\.-]+?' + r'\.' + CommonTLDs + pos_lookahead(r'[/ \W\b]')
 UrlBody = r'[^ \t\r\n<>]*?'  # * not + for case of:  "go to bla.com." -- don't want period
 UrlExtraCrapBeforeEnd = '%s+?' % regex_or(PunctChars, Entity)
 UrlEnd = regex_or( r'\.\.+', r'[<>]', r'\s', '$')
-Url = (r'\b' +
+Url = regex_or((r'[a-z0-9\.-]+?' + r'\.' + CommonTLDs + UrlEnd),(r'\b' +
     regex_or(UrlStart1, UrlStart2) +
     UrlBody +
-    pos_lookahead(optional(UrlExtraCrapBeforeEnd) + UrlEnd))
+    pos_lookahead(optional(UrlExtraCrapBeforeEnd) + UrlEnd)))
+
 NumNum = r'\d+\.\d+'
 NumberWithCommas = r'(\d+,)+?\d{3}' + pos_lookahead(regex_or('[^,]','$'))
 Punct = '%s+' % PunctChars
@@ -146,7 +147,7 @@ def replaceURL(message):
 
 def replaceUser(message):
     message = re.sub(r"@\w+", "<USER>", message)
-    return message                        
+    return message
 
 
 
@@ -156,7 +157,7 @@ def _remove_handles(text):
     Remove Twitter username handles from text.
     """
     pattern = re.compile(r"(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){20}(?!@))|(?<![A-Za-z0-9_!@#\$%&*])@(([A-Za-z0-9_]){1,19})(?![A-Za-z0-9_]*@)")
-    
+
     # Substitute hadnles with ' ' to ensure that text on either side of removed handles are tokenized correctly
     return pattern.sub(' ', text)
 
@@ -227,7 +228,7 @@ def sentenceNormalization(message, normalizeDict, use_unicode=fwc.DEF_UNICODE_SW
 
             #inspired by http://en.wikipedia.org/wiki/User:Scapler/emoticons#East_Asian_style
             eastEmote.replace("2", "1", 1), basicface,
-            # iOS 'emoji' characters (some smileys, some symbols) [\ue001-\uebbb]  
+            # iOS 'emoji' characters (some smileys, some symbols) [\ue001-\uebbb]
             # TODO should try a big precompiled lexicon from Wikipedia, Dan Ramage told me (BTO) he does this
 
             # myleott: o.O and O.o are two of the biggest sources of differences
@@ -275,7 +276,7 @@ def sentenceNormalization(message, normalizeDict, use_unicode=fwc.DEF_UNICODE_SW
     #         Ewan Klein <ewan@inf.ed.ac.uk> (modifications)
     #         Pierpaolo Pantone <> (modifications)
 
-    
+
     ### normalize text
     # normalize EOL
     message = message.replace("\n","")
@@ -284,9 +285,9 @@ def sentenceNormalization(message, normalizeDict, use_unicode=fwc.DEF_UNICODE_SW
     message = re.sub(Hearts, "", message)        # remove Hearts entity, regex from CMU's Twokenize
     message = re.sub(Arrows, "", message)        # remove Arrows entity, regex from CMU's Twokenize
     message = re.sub(str(decorations), "", message)       # remove decorations entity, regex from CMU's Twokenize
-    
-        
-    message = _remove_urls(message)       # remove URLs      
+
+
+    message = _remove_urls(message)       # remove URLs
     message = re.sub(r"""[\w.+-]+@[\w-]+\.(?:[\w-]\.?)+[\w-]""", "", message)        # remove email addresses, regex from NLTK Twitter Tokenizer
     message = re.sub(r"""(?:\#+[\w_]+[\w\'_\-]*[\w_]+)""", "", message)  # remove Twitter hashtags, regex from NLTK Twitter Tokenizer
     message = re.sub(entity, "", message)        # remove HTML entity, entity regex from CMU's Twokenize
@@ -295,14 +296,14 @@ def sentenceNormalization(message, normalizeDict, use_unicode=fwc.DEF_UNICODE_SW
     message = re.sub(emoticon, "", message) # remove emoticon, emoticon regex from CMU's Twokenize
     message = _remove_handles(message) # regex from NLTK Twitter Tokenizer
     message = _reduce_lengthening(message) # regex from NLTK Twitter Tokenizer
-        
+
     message = re.sub(r"""[`'’′]""", "'", message)  # normalize Apostrophe
-    message = re.sub(r"""[“”]""", '"', message)  # normalize quotes 
+    message = re.sub(r"""[“”]""", '"', message)  # normalize quotes
 
     # normalize EOS punctuation
-    message = re.sub('\?\?+', '?', message) 
-    message = re.sub('\.\.+', '.', message) 
-    message = re.sub('\!\!+', '!', message) 
+    message = re.sub('\?\?+', '?', message)
+    message = re.sub('\.\.+', '.', message)
+    message = re.sub('\!\!+', '!', message)
     message = message.replace("?!", "?")
     message = message.replace("!?", "?")
     message = message.replace(".!", "!")
@@ -311,7 +312,7 @@ def sentenceNormalization(message, normalizeDict, use_unicode=fwc.DEF_UNICODE_SW
     message = message.replace("?.", "?")
     message = message.replace(".?", "?")
     message = re.sub(r'[^\x00-\x7F]+',' ', message)
-    
+
     try:
         import twokenize
         tokens = twokenize.tokenizeRawTweetText(message)

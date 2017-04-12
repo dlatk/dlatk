@@ -510,7 +510,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                         if reg.match(feat):
                             endFeats.add(feat)
             out[outcome] = {line[0]: (line[4], 0.0, len(outcome_groups), (0.0, 0.0), int(freqs[line[0]])) for line in results if line[0] in endFeats}
-            
+
         return out
 
     def zScoreGroup(self, featGetter, outcomeWithOutcome = False, includeFreqs = False, blacklist=None, whitelist = None):
@@ -1830,6 +1830,28 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         """
         if paramString: print(paramString + "\n")
+        clean_lex = True
+        censor_dict = {"fuck":"f**k",
+                "pussy":"p**sy",
+                "bitch":"b**ch",
+                "bitches":"b**ches",
+                "fuckn":"f**kn",
+                "motherfucker":"motherf**ker",
+                "fucked":"f**ked",
+                "fucking":"f**king",
+                "dick":"d**k",
+                "dickhead":"d**khead",
+                "cock":"c**k",
+                "shit":"s**t",
+                "bullshit":"bulls**t",
+                "fuckin":"f**kin",
+                "whore":"w**re",
+                "hoe":"h**",
+                "hoes":"h**s",
+                "nigga":"n**ga",
+                "niggas":"n**gas",
+                "nigga's":"n**ga's",
+                "niggaz":"n**gaz"}
 
         fsock = None
         if outputFile:
@@ -1851,6 +1873,12 @@ class OutcomeAnalyzer(OutcomeGetter):
             newTopicWords = dict()
             for cat, tw in topicWords.items():
                 newTopicWords[cat] = [(term, weight) for term, weight in tw if term in words][:maxWords]
+                if clean_lex:
+                    fwc.warn("In clean_lex")
+                    newTopicWords[cat] = [(censor_dict[term], weight) if term in censor_dict.keys() \
+                                          else (term, weight) for term, weight in tw if term in words][:maxWords]
+
+                    # tw = [ if t in censor_dict.keys() else t for t in tw]
                 # _warn('Topic %s: %d -> %d (%s)' % (cat,len(tw),len(newTopicWords[cat]),str(newTopicWords[cat][:5])))
             topicWords = newTopicWords
 
@@ -1953,8 +1981,32 @@ class OutcomeAnalyzer(OutcomeGetter):
         topicWords : list
             list of words
         """
+        fwc.warn("**TEST TEST TEST TEST TEST**")
+        clean_lex = True
+        censor_dict = {"fuck":"f**k",
+                "pussy":"p**sy",
+                "bitch":"b**ch",
+                "bitches":"b**ches",
+                "fuckn":"f**kn",
+                "motherfucker":"motherf**ker",
+                "fucked":"f**ked",
+                "fucking":"f**king",
+                "dick":"d**k",
+                "dickhead":"d**khead",
+                "cock":"c**k",
+                "shit":"s**t",
+                "bullshit":"bulls**t",
+                "fuckin":"f**kin",
+                "whore":"w**re",
+                "hoe":"h**",
+                "hoes":"h**s",
+                "nigga":"n**ga",
+                "niggas":"n**gas",
+                "nigga's":"n**ga's",
+                "niggaz":"n**gaz"}
         rList = sorted(rs, key= lambda f: abs(f[1][OutcomeAnalyzer.r_idx]) if not isnan(f[1][OutcomeAnalyzer.r_idx]) else 0, reverse=True)[:maxTopics]
         usedWordSets = list() # a list of sets of topic words
+
         for (topic, rf) in rList:
             print("\n")
             (r, p, n, ci, freq) = rf
@@ -1965,6 +2017,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 print("**The following topic had no words from the topic lexicion**")
                 print(("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, CI: (%.4f, %.4f), Freq: %d]" % (topic, r, p, n, ci[0], ci[1], freq)).decode("utf-8"))
                 continue
+
             if duplicateFilter:
                 currentWords = set([t[0] for t in tw])
                 shouldCont = False
@@ -1980,13 +2033,15 @@ class OutcomeAnalyzer(OutcomeGetter):
             if freq < 2000:
                 print("**The frequency for this topic is too small**")
 
+            if clean_lex:
+                tw = [(censor_dict[t[0]],t[1]) if t[0] in censor_dict.keys() else t for t in tw]
+                
             print("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, CI: (%.3f, %.3f), Freq: %d]" % (topic, r, p, n, ci[0], ci[1], freq))
             # if using 1gram words and frequencies
             # (r, p, n, freq) belong to the category only
             tw = [(w_f[0], (w_f[1], p, n, ci, w_f[1])) for w_f in tw] if not wordFreqs else [(w_f1[0], (w_f1[1]*float(wordFreqs[w_f1[0]]), p, n, ci, wordFreqs[w_f1[0]])) for w_f1 in tw]
             OutcomeAnalyzer.printTagCloudFromTuples(tw, maxWords, rankOrderR = True, colorScheme=colorScheme, use_unicode=use_unicode)
 
-        # pprint(topicWords)
         return topicWords
 
     def buildTopicLabelDict(self, topic_lex, num_words=3):

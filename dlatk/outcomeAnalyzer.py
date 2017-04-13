@@ -1956,28 +1956,6 @@ class OutcomeAnalyzer(OutcomeGetter):
             list of words
         """
 
-        # censor_dict = {"fuck":"f**k",
-        #         "pussy":"p**sy",
-        #         "bitch":"b**ch",
-        #         "bitches":"b**ches",
-        #         "fuckn":"f**kn",
-        #         "motherfucker":"motherf**ker",
-        #         "fucked":"f**ked",
-        #         "fucking":"f**king",
-        #         "dick":"d**k",
-        #         "dickhead":"d**khead",
-        #         "cock":"c**k",
-        #         "shit":"s**t",
-        #         "bullshit":"bulls**t",
-        #         "fuckin":"f**kin",
-        #         "whore":"w**re",
-        #         "hoe":"h**",
-        #         "hoes":"h**s",
-        #         "nigga":"n**ga",
-        #         "niggas":"n**gas",
-        #         "nigga's":"n**ga's",
-        #         "niggaz":"n**gaz"}
-
         rList = sorted(rs, key= lambda f: abs(f[1][OutcomeAnalyzer.r_idx]) if not isnan(f[1][OutcomeAnalyzer.r_idx]) else 0, reverse=True)[:maxTopics]
         usedWordSets = list() # a list of sets of topic words
 
@@ -2007,8 +1985,6 @@ class OutcomeAnalyzer(OutcomeGetter):
             if freq < 2000:
                 print("**The frequency for this topic is too small**")
 
-            # if cleanCloud:
-            #     tw = [(censor_dict[t[0]],t[1]) if t[0] in censor_dict.keys() else t for t in tw]
 
             print("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, CI: (%.3f, %.3f), Freq: %d]" % (topic, r, p, n, ci[0], ci[1], freq))
             # if using 1gram words and frequencies
@@ -2171,7 +2147,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
     @staticmethod
-    def printTagCloudFromTuples(rList, maxWords, rankOrderFreq = True, rankOrderR = False, colorScheme='multi', use_unicode=True, cleanCloud=False):
+    def printTagCloudFromTuples(rList, maxWords, rankOrderFreq = True, rankOrderR = False, colorScheme='multi', use_unicode=True, cleanCloud=False, censor_dict=fwc.DEF_CENSOR_DICT):
         """
         Prints a tag cloud from a set of tuples
 
@@ -2191,38 +2167,13 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         """
         #rlist is a list of (word, correl) tuples
-        fwc.warn('printTagCloudFromTuples')
 
         if len(rList) < 1:
             print("rList has less than no items\n")
             return False
         rList = sorted(rList, key= lambda f: abs(f[1][OutcomeAnalyzer.r_idx]) if not isnan(f[1][OutcomeAnalyzer.r_idx]) else 0, reverse=True)[:maxWords]
 
-        censor_dict = {"fuck":"f**k",
-                "pussy":"p**sy",
-                "bitch":"b**ch",
-                "bitches":"b**ches",
-                "fuckn":"f**kn",
-                "motherfucker":"motherf**ker",
-                "fucked":"f**ked",
-                "fucking":"f**king",
-                "dick":"d**k",
-                "dickhead":"d**khead",
-                "cock":"c**k",
-                "shit":"s**t",
-                "bullshit":"bulls**t",
-                "fuckin":"f**kin",
-                "whore":"w**re",
-                "hoe":"h**",
-                "hoes":"h**s",
-                "nigga":"n**ga",
-                "niggas":"n**gas",
-                "nigga's":"n**ga's",
-                "niggaz":"n**gaz"}
 
-
-        fwc.warn('*** clean cloud ***')
-        fwc.warn(cleanCloud)
         if cleanCloud:
             rList = [(censor_dict[t[0]],t[1]) if t[0] in censor_dict.keys() else t for t in rList]
 

@@ -1275,7 +1275,6 @@ def main(fn_args = None):
     if args.topictc or args.corptopictc:
         if args.corptopictc: oa.lexicondb = oa.corpdb
         outputFile = makeOutputFilename(args, fg, oa, suffix='_topic_tagcloud')
-        fwc.warn(args.cleancloud)
         # use plottingWhitelistPickle to link to a pickle file containing the words driving the categories
         oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats, maxWords=args.numtopicwords, cleanCloud=args.cleancloud)
         # don't want to base on this: maxWords = args.maxtcwords)

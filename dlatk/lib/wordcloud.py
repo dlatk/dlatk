@@ -888,34 +888,13 @@ def getFeatWithLimit(schema, table, group = '', amount = 50, orderBy = 'group_no
     return mm.executeGetList(schema, dbCursor, query)
 
 # wordcloud print methods
-def makeLexiconTopicWordclouds(lexdb, lextable, output, color, max_words=15, cleanCloud=False):
+def makeLexiconTopicWordclouds(lexdb, lextable, output, color, max_words=15, cleanCloud=False, censor_dict=fwc.DEF_CENSOR_DICT):
     if not os.path.exists(output):
         os.makedirs(output)
     (dbConn, dbCursor, dictCursor) = mm.dbConnect(lexdb)
     query = """SELECT distinct(category) FROM %s.%s""" % (lexdb, lextable)
     categories = map(lambda x: x[0], mm.executeGetList(lexdb, dbCursor, query))
 
-    censor_dict = {"fuck":"f**k",
-            "pussy":"p**sy",
-            "bitch":"b**ch",
-            "bitches":"b**ches",
-            "fuckn":"f**kn",
-            "motherfucker":"motherf**ker",
-            "fucked":"f**ked",
-            "fucking":"f**king",
-            "dick":"d**k",
-            "dickhead":"d**khead",
-            "cock":"c**k",
-            "shit":"s**t",
-            "bullshit":"bulls**t",
-            "fuckin":"f**kin",
-            "whore":"w**re",
-            "hoe":"h**",
-            "hoes":"h**s",
-            "nigga":"n**ga",
-            "niggas":"n**gas",
-            "nigga's":"n**ga's",
-            "niggaz":"n**gaz"}
 
     for category in categories:
         query = """SELECT term, weight FROM %s.%s WHERE category = \'%s\' ORDER BY weight desc LIMIT %d""" % (lexdb, lextable, category, max_words)

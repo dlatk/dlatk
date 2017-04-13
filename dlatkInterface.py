@@ -253,6 +253,9 @@ def main(fn_args = None):
                        help='Report freqs.')
     group.add_argument('--tagcloud_colorscheme', type=str, dest='tagcloudcolorscheme', default=getInitVar('tagcloudcolorscheme', conf_parser, 'multi'),
                        help='specify a color scheme to use for tagcloud generation. Default: multi, also accepts red, blue, red-random, redblue, bluered')
+    group.add_argument('--clean_cloud', action='store_true', dest='cleancloud', default=False,
+                   help='Replaces characters in the middle of explatives/slurs with ***. ex: f**k')
+
     group.add_argument('--interactions', action='store_true', dest='interactions', default=False,
                        help='Includes interaction terms in multiple regression.')
     group.add_argument('--bootstrapp', '--bootstrap', dest='bootstrapp', type=int, default = 0,
@@ -831,31 +834,31 @@ def main(fn_args = None):
         if not fg: fg = FG()
         fg.printJoinedFeatureLines(args.printjoinedfeaturelines)
 
-    # transform message tables 
+    # transform message tables
     if args.addldamsgs:
         if not mt: mt = MT()
         mt.addLDAMessages(args.addldamsgs)
-        
+
     if args.addtokenized:
         if not mt: mt = MT()
         mt.addTokenizedMessages()
-        
+
     if args.addsegmented:
         if not mt: mt = MT()
         mt.addSegmentedMessages(args.segmentationModel)
-        
+
     if args.addtweetpos:
         if not mt: mt = MT()
         mt.addTweetPOSMessages()
-        
+
     if args.addtweettok:
         if not mt: mt = MT()
         mt.addTweetTokenizedMessages()
-        
+
     if args.addsenttokenized or args.addsentperrow:
         if not mt: mt = MT()
         mt.addSentTokenizedMessages(args.addsentperrow, args.cleanmessages)
-        
+
     if args.printtokenizedlines:
         if not mt: mt = MT()
         if args.feat_whitelist:
@@ -863,12 +866,12 @@ def main(fn_args = None):
             #TODO: change whitelistfeat table to get a list instead.
         else:
             mt.printTokenizedLines(args.printtokenizedlines)
-            
+
     if args.addparses:
         if not mt: mt = MT()
         mt.addParsedMessages()
 
-    # annotate message tables 
+    # annotate message tables
     if args.langfilter:
         if not ma: ma = MA()
         ma.addLanguageFilterTable(args.langfilter, args.cleanmessages, args.lowercaseonly)
@@ -1262,7 +1265,7 @@ def main(fn_args = None):
 
     if args.tagcloud:
         outputFile = makeOutputFilename(args, fg, oa, suffix="_tagcloud")
-        oa.printTagCloudData(correls, args.maxP, outputFile, str(args), maxWords = args.maxtcwords, duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme)
+        oa.printTagCloudData(correls, args.maxP, outputFile, str(args), maxWords = args.maxtcwords, duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, cleanCloud = args.cleancloud)
     if args.makewordclouds:
         if not args.tagcloud:
             print("ERROR, can't use --make_wordclouds without --tagcloud", file=sys.stderr)
@@ -1272,8 +1275,9 @@ def main(fn_args = None):
     if args.topictc or args.corptopictc:
         if args.corptopictc: oa.lexicondb = oa.corpdb
         outputFile = makeOutputFilename(args, fg, oa, suffix='_topic_tagcloud')
+        fwc.warn(args.cleancloud)
         # use plottingWhitelistPickle to link to a pickle file containing the words driving the categories
-        oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats, maxWords=args.numtopicwords)
+        oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats, maxWords=args.numtopicwords, cleanCloud=args.cleancloud)
         # don't want to base on this: maxWords = args.maxtcwords)
     if args.maketopicwordclouds:
         if not args.topictc and not args.corptopictc:
@@ -1638,7 +1642,7 @@ def main(fn_args = None):
     ##Plot Actions:
     if args.makealltopicwordclouds:
         outputFile = makeOutputFilename(args, None, None, suffix="_alltopics/")
-        wordcloud.makeLexiconTopicWordclouds(lexdb=args.lexicondb, lextable=args.topiclexicon, output=outputFile, color=args.tagcloudcolorscheme, max_words=args.numtopicwords)
+        wordcloud.makeLexiconTopicWordclouds(lexdb=args.lexicondb, lextable=args.topiclexicon, output=outputFile, color=args.tagcloudcolorscheme, max_words=args.numtopicwords, cleanCloud=args.cleancloud)
     if args.barplot:
         outputFile = makeOutputFilename(args, fg, oa, "barplot")
         oa.barPlot(correls, outputFile)

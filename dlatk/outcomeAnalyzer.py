@@ -1721,7 +1721,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         return keptTopics
 
 
-    def printTagCloudData(self, correls, maxP = fwc.DEF_P, outputFile='', paramString = None, maxWords = 100, duplicateFilter = False, colorScheme='multi'):
+    def printTagCloudData(self, correls, maxP = fwc.DEF_P, outputFile='', paramString = None, maxWords = 100, duplicateFilter = False, colorScheme='multi', cleanCloud = False):
         """
         Prints data that can be inputted into tag cloud software
 
@@ -1781,27 +1781,27 @@ class OutcomeAnalyzer(OutcomeGetter):
 
             print("PositiveRs:\n------------")
             if colorScheme == 'bluered':
-                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme='blue', use_unicode=self.use_unicode)
+                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme='blue', use_unicode=self.use_unicode, cleanCloud = cleanCloud)
             elif colorScheme == 'redblue':
-                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme='red', use_unicode=self.use_unicode)
+                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme='red', use_unicode=self.use_unicode, cleanCloud = cleanCloud)
             else:
-                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme=colorScheme, use_unicode=self.use_unicode)
+                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme=colorScheme, use_unicode=self.use_unicode, cleanCloud = cleanCloud)
             # OutcomeAnalyzer.plotWordcloudFromTuples(posRs, maxWords, outputFile + ".%s.%s"%(outcomeField, "posR"), wordcloud )
 
             print("\nNegative Rs:\n-------------")
             if colorScheme == 'bluered':
-                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme='red', use_unicode=self.use_unicode)
+                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme='red', use_unicode=self.use_unicode, cleanCloud = cleanCloud)
             elif colorScheme == 'redblue':
-                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme='blue', use_unicode=self.use_unicode)
+                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme='blue', use_unicode=self.use_unicode, cleanCloud = cleanCloud)
             else:
-                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme=colorScheme, use_unicode=self.use_unicode)
+                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme=colorScheme, use_unicode=self.use_unicode, cleanCloud = cleanCloud)
             # OutcomeAnalyzer.plotWordcloudFromTuples(negRs, maxWords, outputFile + ".%s.%s"%(outcomeField, "negR"), wordcloud )
 
         if outputFile:
             fsock.close()
             sys.stdout = sys.__stdout__
 
-    def printTopicTagCloudData(self, correls, topicLex, maxP = fwc.DEF_P, paramString = None, maxWords = 15, maxTopics = 100, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False):
+    def printTopicTagCloudData(self, correls, topicLex, maxP = fwc.DEF_P, paramString = None, maxWords = 15, maxTopics = 100, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False, cleanCloud=False):
         """
         Prints Topic Tag Cloud data to text file
 
@@ -1826,32 +1826,12 @@ class OutcomeAnalyzer(OutcomeGetter):
         outputFile : :obj:`str`, optional
             output file name
         useFeatTableFeats : :obj:`boolean`, optional
+        cleanCloud : :obj:`boolean`, optional
+            if true replace explatives with *** in center of word, ex: f**k
 
 
         """
         if paramString: print(paramString + "\n")
-        clean_lex = True
-        censor_dict = {"fuck":"f**k",
-                "pussy":"p**sy",
-                "bitch":"b**ch",
-                "bitches":"b**ches",
-                "fuckn":"f**kn",
-                "motherfucker":"motherf**ker",
-                "fucked":"f**ked",
-                "fucking":"f**king",
-                "dick":"d**k",
-                "dickhead":"d**khead",
-                "cock":"c**k",
-                "shit":"s**t",
-                "bullshit":"bulls**t",
-                "fuckin":"f**kin",
-                "whore":"w**re",
-                "hoe":"h**",
-                "hoes":"h**s",
-                "nigga":"n**ga",
-                "niggas":"n**gas",
-                "nigga's":"n**ga's",
-                "niggaz":"n**gaz"}
 
         fsock = None
         if outputFile:
@@ -1873,12 +1853,6 @@ class OutcomeAnalyzer(OutcomeGetter):
             newTopicWords = dict()
             for cat, tw in topicWords.items():
                 newTopicWords[cat] = [(term, weight) for term, weight in tw if term in words][:maxWords]
-                if clean_lex:
-                    fwc.warn("In clean_lex")
-                    newTopicWords[cat] = [(censor_dict[term], weight) if term in censor_dict.keys() \
-                                          else (term, weight) for term, weight in tw if term in words][:maxWords]
-
-                    # tw = [ if t in censor_dict.keys() else t for t in tw]
                 # _warn('Topic %s: %d -> %d (%s)' % (cat,len(tw),len(newTopicWords[cat]),str(newTopicWords[cat][:5])))
             topicWords = newTopicWords
 
@@ -1897,20 +1871,20 @@ class OutcomeAnalyzer(OutcomeGetter):
 
             print("PositiveRs:\n------------")
             if colorScheme == 'bluered':
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='blue', use_unicode=self.use_unicode)
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='blue', use_unicode=self.use_unicode, cleanCloud=cleanCloud)
             elif colorScheme == 'redblue':
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='red', use_unicode=self.use_unicode)
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='red', use_unicode=self.use_unicode, cleanCloud=cleanCloud)
 
             else:
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme=colorScheme, use_unicode=self.use_unicode)
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme=colorScheme, use_unicode=self.use_unicode, cleanCloud=cleanCloud)
 
             print("\nNegative Rs:\n-------------")
             if colorScheme == 'bluered':
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='red', use_unicode=self.use_unicode)
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='red', use_unicode=self.use_unicode, cleanCloud=cleanCloud)
             elif colorScheme == 'redblue':
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='blue', use_unicode=self.use_unicode)
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='blue', use_unicode=self.use_unicode, cleanCloud=cleanCloud)
             else:
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme=colorScheme, use_unicode=self.use_unicode)
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme=colorScheme, use_unicode=self.use_unicode, cleanCloud=cleanCloud)
 
         if outputFile:
             fsock.close()
@@ -1951,7 +1925,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         return topicWords
 
     @staticmethod
-    def printTopicListTagCloudFromTuples(rs, topicWords, maxWords = 25, maxTopics = 40, duplicateFilter = False, wordFreqs = None, filterThresh = 0.25, colorScheme='multi', use_unicode=True):
+    def printTopicListTagCloudFromTuples(rs, topicWords, maxWords = 25, maxTopics = 40, duplicateFilter = False, wordFreqs = None, filterThresh = 0.25, colorScheme='multi', use_unicode=True, cleanCloud=False):
         """
         print topic tag cloud
 
@@ -1981,29 +1955,29 @@ class OutcomeAnalyzer(OutcomeGetter):
         topicWords : list
             list of words
         """
-        fwc.warn("**TEST TEST TEST TEST TEST**")
-        clean_lex = True
-        censor_dict = {"fuck":"f**k",
-                "pussy":"p**sy",
-                "bitch":"b**ch",
-                "bitches":"b**ches",
-                "fuckn":"f**kn",
-                "motherfucker":"motherf**ker",
-                "fucked":"f**ked",
-                "fucking":"f**king",
-                "dick":"d**k",
-                "dickhead":"d**khead",
-                "cock":"c**k",
-                "shit":"s**t",
-                "bullshit":"bulls**t",
-                "fuckin":"f**kin",
-                "whore":"w**re",
-                "hoe":"h**",
-                "hoes":"h**s",
-                "nigga":"n**ga",
-                "niggas":"n**gas",
-                "nigga's":"n**ga's",
-                "niggaz":"n**gaz"}
+
+        # censor_dict = {"fuck":"f**k",
+        #         "pussy":"p**sy",
+        #         "bitch":"b**ch",
+        #         "bitches":"b**ches",
+        #         "fuckn":"f**kn",
+        #         "motherfucker":"motherf**ker",
+        #         "fucked":"f**ked",
+        #         "fucking":"f**king",
+        #         "dick":"d**k",
+        #         "dickhead":"d**khead",
+        #         "cock":"c**k",
+        #         "shit":"s**t",
+        #         "bullshit":"bulls**t",
+        #         "fuckin":"f**kin",
+        #         "whore":"w**re",
+        #         "hoe":"h**",
+        #         "hoes":"h**s",
+        #         "nigga":"n**ga",
+        #         "niggas":"n**gas",
+        #         "nigga's":"n**ga's",
+        #         "niggaz":"n**gaz"}
+
         rList = sorted(rs, key= lambda f: abs(f[1][OutcomeAnalyzer.r_idx]) if not isnan(f[1][OutcomeAnalyzer.r_idx]) else 0, reverse=True)[:maxTopics]
         usedWordSets = list() # a list of sets of topic words
 
@@ -2033,14 +2007,14 @@ class OutcomeAnalyzer(OutcomeGetter):
             if freq < 2000:
                 print("**The frequency for this topic is too small**")
 
-            if clean_lex:
-                tw = [(censor_dict[t[0]],t[1]) if t[0] in censor_dict.keys() else t for t in tw]
-                
+            # if cleanCloud:
+            #     tw = [(censor_dict[t[0]],t[1]) if t[0] in censor_dict.keys() else t for t in tw]
+
             print("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, CI: (%.3f, %.3f), Freq: %d]" % (topic, r, p, n, ci[0], ci[1], freq))
             # if using 1gram words and frequencies
             # (r, p, n, freq) belong to the category only
             tw = [(w_f[0], (w_f[1], p, n, ci, w_f[1])) for w_f in tw] if not wordFreqs else [(w_f1[0], (w_f1[1]*float(wordFreqs[w_f1[0]]), p, n, ci, wordFreqs[w_f1[0]])) for w_f1 in tw]
-            OutcomeAnalyzer.printTagCloudFromTuples(tw, maxWords, rankOrderR = True, colorScheme=colorScheme, use_unicode=use_unicode)
+            OutcomeAnalyzer.printTagCloudFromTuples(tw, maxWords, rankOrderR = True, colorScheme=colorScheme, use_unicode=use_unicode, cleanCloud = cleanCloud)
 
         return topicWords
 
@@ -2197,7 +2171,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
     @staticmethod
-    def printTagCloudFromTuples(rList, maxWords, rankOrderFreq = True, rankOrderR = False, colorScheme='multi', use_unicode=True):
+    def printTagCloudFromTuples(rList, maxWords, rankOrderFreq = True, rankOrderR = False, colorScheme='multi', use_unicode=True, cleanCloud=False):
         """
         Prints a tag cloud from a set of tuples
 
@@ -2217,10 +2191,42 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         """
         #rlist is a list of (word, correl) tuples
+        fwc.warn('printTagCloudFromTuples')
+
         if len(rList) < 1:
             print("rList has less than no items\n")
             return False
         rList = sorted(rList, key= lambda f: abs(f[1][OutcomeAnalyzer.r_idx]) if not isnan(f[1][OutcomeAnalyzer.r_idx]) else 0, reverse=True)[:maxWords]
+
+        censor_dict = {"fuck":"f**k",
+                "pussy":"p**sy",
+                "bitch":"b**ch",
+                "bitches":"b**ches",
+                "fuckn":"f**kn",
+                "motherfucker":"motherf**ker",
+                "fucked":"f**ked",
+                "fucking":"f**king",
+                "dick":"d**k",
+                "dickhead":"d**khead",
+                "cock":"c**k",
+                "shit":"s**t",
+                "bullshit":"bulls**t",
+                "fuckin":"f**kin",
+                "whore":"w**re",
+                "hoe":"h**",
+                "hoes":"h**s",
+                "nigga":"n**ga",
+                "niggas":"n**gas",
+                "nigga's":"n**ga's",
+                "niggaz":"n**gaz"}
+
+
+        fwc.warn('*** clean cloud ***')
+        fwc.warn(cleanCloud)
+        if cleanCloud:
+            rList = [(censor_dict[t[0]],t[1]) if t[0] in censor_dict.keys() else t for t in rList]
+
+
         if rankOrderR:
             for i in range(len(rList)):
                 newValues = rList[i]
@@ -2380,7 +2386,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         return htmlcode.replace(' ', '0')
 
 
-    def generateTagCloudImage(self, correls, maxP = fwc.DEF_P, paramString = None, colorScheme='multi' ):
+    def generateTagCloudImage(self, correls, maxP = fwc.DEF_P, paramString = None, colorScheme='multi', cleanCloud = False):
         """
         Generates a tag cloud image from correls
 
@@ -2410,9 +2416,9 @@ class OutcomeAnalyzer(OutcomeGetter):
             negRs = [(k, float(-1*v)) for k, v in sigRs.items() if v < 0]
 
             print("PositiveRs:\n------------")
-            OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme=colorScheme, use_unicode=self.use_unicode)
+            OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme=colorScheme, use_unicode=self.use_unicode, cleanCloud = cleanCloud)
             print("\nNegative Rs:\n-------------")
-            OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme=colorScheme, use_unicode=self.use_unicode)
+            OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme=colorScheme, use_unicode=self.use_unicode, cleanCloud = cleanCloud)
 
     @staticmethod
     def generateTagCloudImageFromTuples(rList, maxWords):

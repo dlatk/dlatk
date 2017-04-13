@@ -81,9 +81,9 @@ def _makeRandomColorTuples(num_rgb_tuples, rgb_bounds=[0, 0.39]):
     ro_color_list = ro.StrVector([x[0] for x in ro_colors])
     return ro_color_list
 
-def wordcloud(word_list, freq_list, output_prefix='test', 
-    color_list=None, random_colors=True, random_order=False, 
-    width=None, height=None, rgb=False, title=None, 
+def wordcloud(word_list, freq_list, output_prefix='test',
+    color_list=None, random_colors=True, random_order=False,
+    width=None, height=None, rgb=False, title=None,
     fontFamily="Helvetica-Narrow", keepPdfs=False, fontStyle=None,
     font_path="",
     min_font_size=40, max_font_size=250, max_words=500,
@@ -96,20 +96,20 @@ def wordcloud(word_list, freq_list, output_prefix='test',
 
     if font_path == "":
         font_path = PERMA_path + "/meloche_bd.ttf"
-    
+
     if wordcloud_algorithm == 'old': #old wordcloud function
         # requires rpy2, Cairo(rpackage), Wordcloud(rpackage), extrafont(Rpackage), ImageMagick (installed on the system)
         # also: sudo apt-get install libcairo2-dev libxt-dev
         try:
             import rpy2.robjects as ro
             from rpy2.robjects.packages import importr
-            ro.r.library('Cairo')       #Optional, only used for old wordcloud module                                                                                                                              
-            ro.r.library('wordcloud')   #Optional, only used for old wordcloud module 
+            ro.r.library('Cairo')       #Optional, only used for old wordcloud module
+            ro.r.library('wordcloud')   #Optional, only used for old wordcloud module
             GRDEVICES = importr('grDevices')
             brewer = importr('RColorBrewer')
         except:
             sys.exit('R wordcloud library not imported')
-        
+
 
         def _makeColorTuplesFromRgbTuples(rgbTuples):
             r, g, b = list(zip(*rgbTuples))
@@ -118,7 +118,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
             ro_colors = list(map(ro.r.rgb, r, g, b, [255]*N, blank_lists, [255]*N))
             ro_color_list = ro.StrVector([x[0] for x in ro_colors])
             return ro_color_list
-        
+
         assert(len(word_list) == len(freq_list))
 
         if width is None:
@@ -143,7 +143,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
         else:
             ro_colors = _makeRandomColorTuples(size)
 
-        if output_prefix: 
+        if output_prefix:
             # (if Cairo gives an error you need to install it locally through R: install.packages("Cairo"))
             if fontStyle:
                 fontFamily = fontFamily + ':' + fontStyle
@@ -213,7 +213,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
             else:
                 color_string_list = color_list #assume that the color list already has usable color strings
                 if not random_colors: ordered_colors = True
-        
+
         else:
             color_string_list = _makeRandomColorTuples(len(word_list))
             #create list of random color tuples, one for each word
@@ -221,8 +221,8 @@ def wordcloud(word_list, freq_list, output_prefix='test',
         sorted_word_list, sorted_freq_list = list(zip(*word_freq_tup))
 
 
-        
-        color_dict = {sorted_word_list[i]: color_string_list[i] for i in range(0, len(sorted_word_list))} 
+
+        color_dict = {sorted_word_list[i]: color_string_list[i] for i in range(0, len(sorted_word_list))}
         #create dictionary where each word is mapped to a rgb value
 
         def color_func(word=None, font_size=None, position=None,
@@ -251,7 +251,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
                     background_color=background_color,
                     mask=img_array).generate_from_frequencies(word_freq_tup)
 
-        if output_prefix: 
+        if output_prefix:
             #TODO: pdf output?
             pngFile = output_prefix + "_wc.png"
             cloud.to_file(pngFile)
@@ -259,7 +259,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
         else:
             warn('No filename specified. Wordcloud not created.')
             #Hey buddy. You didn't specify the filename.
-    
+
     elif wordcloud_algorithm == 'ibm':
         if width is None:
             width = 1000
@@ -292,14 +292,14 @@ def wordcloud(word_list, freq_list, output_prefix='test',
         words_loc = words_loc + '.txt'
 
         # if (output_prefix[:2] == './' or output_prefix[:1] == '/' ):
-        #     words_loc = output_prefix 
+        #     words_loc = output_prefix
         # else: #assuming relative path
         #     words_loc = "./" + output_prefix
 
         # if (output_prefix[-1:] == '/'):
         #     words_loc = words_loc[:-1] + '.txt'
         # else:
-        #     words_loc = words_loc + '.txt'   
+        #     words_loc = words_loc + '.txt'
 
 
         with open(words_loc, 'w') as f:
@@ -315,7 +315,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
                 else:
                     color_string_list = color_list #assume that the color list already has usable color strings
                     if not random_colors: ordered_colors = True
-            
+
             else:
                 color_string_list = _makeRandomColorTuples(len(word_list))
                 #create list of random color tuples, one for each word
@@ -336,8 +336,8 @@ def wordcloud(word_list, freq_list, output_prefix='test',
                     print(tup)
                 #str is necessary in case the words are numbers
 
-        command = ['java','-jar', PERMA_path + '/ibm-word-cloud.jar', '-c', 
-                    config_loc, '-w', str(width), '-h', str(height), '-i', 
+        command = ['java','-jar', PERMA_path + '/ibm-word-cloud.jar', '-c',
+                    config_loc, '-w', str(width), '-h', str(height), '-i',
                     words_loc, '-o', pngFile]
         print('Generating wordcloud at ' + pngFile)
 
@@ -402,7 +402,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
     processedFiles = {}
 
     if not directory:
-        directory = os.path.dirname(filename)        
+        directory = os.path.dirname(filename)
         filename = os.path.basename(filename)
 
     fileFolders = {}
@@ -410,7 +410,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
     basefilename = filename[:-4]
     # basefolder = os.path.join(directory, basefilename + '.output-dir')
     basefolder = os.path.join(directory, basefilename + '_wordclouds')
-    
+
     with open(os.path.join(directory, filename), 'rb') as f:
         lastline = ''; tagTriples = [];
         getwords = False; posneg=''; isNewTagcloud = False;
@@ -545,13 +545,13 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
         except Exception as e:
             print('WARNING: ERROR happened for file: %s'%(output_file,))
             print(e)
-        
+
         # ii += 1
         # if ii > 2:
         #     break
 
     return processedFiles
-    
+
 # wordcloud tools
 def freqToColor(freq, maxFreq = 1000, resolution=64, colorScheme='multi'):
     perc = freq / float(maxFreq)
@@ -579,12 +579,12 @@ def freqToColor(freq, maxFreq = 1000, resolution=64, colorScheme='multi'):
         else: #med. blue to strong blue
             (red, green, blue) = fwc.rgbColorMix((48, 48, 156), (0, 0, 110), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
     #red:
-    elif colorScheme=='red': 
+    elif colorScheme=='red':
         if perc < 0.50: #light red to med. red
             (red, green, blue) = fwc.rgbColorMix((236, 76, 76), (156, 48, 48), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
         else: #med. red to strong red
             (red, green, blue) = fwc.rgbColorMix((156, 48, 48), (110, 0, 0), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
-    elif colorScheme=='green': 
+    elif colorScheme=='green':
         (red, green, blue) = fwc.rgbColorMix((166, 247, 178), (27, 122, 26), resolution)[int((1.00-(1-perc))*resolution) - 1]
 
     elif colorScheme == 'test':
@@ -613,7 +613,7 @@ def getRankedFreqList(word_list, max_size = 75, min_size = 30, scale = 'linear')
     num_blocks = int(log(len(word_list), 2) + 1)
     range = max_size - min_size
     block_size = range/(num_blocks - 1)
-    
+
 
     i = 1;
     while i <= len(word_list):
@@ -656,7 +656,7 @@ def getColorList(word_list, freq_list = [], randomize = False, colorScheme = 'mu
             freq = (random() * max_freq) + 1 #a number from 1 to max_freq
             colorHex = freqToColor(freq, maxFreq = max_freq, colorScheme = colorScheme)
             color_list.append(colorHex)
-        
+
         elif freq_list:
             assert (len(word_list) == len(freq_list))
             rank_list = rankdata(freq_list, method = 'ordinal') #, method = 'ordinal'
@@ -711,7 +711,7 @@ def getMeanAndStd(word, ngramTable, schema, num_groups = -1, distTable = '', dis
         #print int(num_groups[0][0])
 
     elif distTableSource is not None:
-        #TODO: let user specify distTableSource     
+        #TODO: let user specify distTableSource
         query = 'SELECT count(distinct(group_id)) FROM {}.{}'.format(schema, distTableSource)
         result = mm.executeGetList(schema, dbCursor, query)
         num_groups = int(result[0][0])
@@ -802,8 +802,8 @@ def updateZscore(schema, ngramTable, user = '', use_feat_table = False, distTabl
                 query = "UPDATE {}.{} SET z = {} where group_id = \'{}\' and feat=\'{}\'".format(schema, ngramTable, z, user, ngram)
 
             except UnicodeEncodeError:
-                query = "UPDATE {}.{} SET z = 0 where group_id = \'{}\' and feat=\'{}\'".format(schema, ngramTable, user, ngram.encode('utf-8'))        
-                
+                query = "UPDATE {}.{} SET z = 0 where group_id = \'{}\' and feat=\'{}\'".format(schema, ngramTable, user, ngram.encode('utf-8'))
+
 
             if counter % 1000 == 0: print(query)
             mm.executeGetList(schema, dbCursor, query)
@@ -821,7 +821,7 @@ def getZscore(word, user, ngramTable, schema, distTable = ''):
     group_norm = mm.executeGetList(schema, dbCursor, query)
 
     if not group_norm:
-        return 0 
+        return 0
     if isinstance(group_norm, tuple):
         #print group_norm
         group_norm = group_norm[0]
@@ -868,7 +868,7 @@ def getUniqueNgrams(schema, ngramTable, user = '', max = -1):
 
 def getFeatWithLimit(schema, table, group = '', amount = 50, orderBy = 'group_norm', desc = True):
     """
-    get the first n amount of words, using the orderBy (asc or desc) column to sort. 
+    get the first n amount of words, using the orderBy (asc or desc) column to sort.
     if group is specified, get from that specific group
     returns list of (feat, group_norm)
     """
@@ -887,14 +887,35 @@ def getFeatWithLimit(schema, table, group = '', amount = 50, orderBy = 'group_no
     query = 'SELECT feat, group_norm FROM {}.{} {} ORDER BY {} DESC{}'.format(schema, table, select_group, orderBy, limit)
     return mm.executeGetList(schema, dbCursor, query)
 
-# wordcloud print methods    
-def makeLexiconTopicWordclouds(lexdb, lextable, output, color, max_words=15):
+# wordcloud print methods
+def makeLexiconTopicWordclouds(lexdb, lextable, output, color, max_words=15, cleanCloud=False):
     if not os.path.exists(output):
         os.makedirs(output)
     (dbConn, dbCursor, dictCursor) = mm.dbConnect(lexdb)
-
     query = """SELECT distinct(category) FROM %s.%s""" % (lexdb, lextable)
     categories = map(lambda x: x[0], mm.executeGetList(lexdb, dbCursor, query))
+
+    censor_dict = {"fuck":"f**k",
+            "pussy":"p**sy",
+            "bitch":"b**ch",
+            "bitches":"b**ches",
+            "fuckn":"f**kn",
+            "motherfucker":"motherf**ker",
+            "fucked":"f**ked",
+            "fucking":"f**king",
+            "dick":"d**k",
+            "dickhead":"d**khead",
+            "cock":"c**k",
+            "shit":"s**t",
+            "bullshit":"bulls**t",
+            "fuckin":"f**kin",
+            "whore":"w**re",
+            "hoe":"h**",
+            "hoes":"h**s",
+            "nigga":"n**ga",
+            "niggas":"n**gas",
+            "nigga's":"n**ga's",
+            "niggaz":"n**gaz"}
 
     for category in categories:
         query = """SELECT term, weight FROM %s.%s WHERE category = \'%s\' ORDER BY weight desc LIMIT %d""" % (lexdb, lextable, category, max_words)
@@ -903,6 +924,10 @@ def makeLexiconTopicWordclouds(lexdb, lextable, output, color, max_words=15):
 
         ranked_freq_list = normalizeFreqList(freq_list, word_count = max_words)
         color_list = getColorList(word_list, freq_list = ranked_freq_list, colorScheme = color)
+
+        if cleanCloud:
+            word_list = tuple([censor_dict[t] if t in censor_dict.keys() else t for t in word_list])
+
 
         output_name = os.path.join(output, 'topic_' + str(category))
         wordcloud(word_list, ranked_freq_list, color_list = color_list, output_prefix = output_name)

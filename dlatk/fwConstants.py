@@ -270,6 +270,23 @@ def conf_interval(r, samp_size, percent=DEF_CONF_INT):
         tup = (np.nan, np.nan)
     return tup
 
+
+def meanXperY(x, y):
+    """find the mean x for each label y"""
+    sums = dict()
+    counts = dict()
+    for i in xrange(len(x)):
+        try:
+            sums[y[i]] += x[i]
+            counts[y[i]] += 1
+        except KeyError:
+            sums[y[i]] = x
+            counts[y[i]] = 1
+    means = dict()
+    for yKey in sums.iterkeys():
+        means[yKey] = sums[yKey] / float(counts[yKey])
+    return means
+    
 def fiftyChecks(args):
     Xc, Xend, y, check = args
     np.random.seed()

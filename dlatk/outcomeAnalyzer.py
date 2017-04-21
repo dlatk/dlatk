@@ -571,7 +571,8 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     def correlateWithFeatures(self, featGetter, spearman = False, p_correction_method = 'BH', interaction = None,
                               blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False, outcomeWithOutcomeOnly = False,
-                              zscoreRegression = True, logisticReg = False, outputInteraction = False, groupsWhere = ''):
+                              zscoreRegression = True, logisticReg = False, outputInteraction = False, 
+                              groupsWhere = ''):
         """Finds the correlations between features and outcomes
 
         Parameters
@@ -643,12 +644,18 @@ class OutcomeAnalyzer(OutcomeGetter):
                             (X, y) = (zscore(X), zscore(y) if not logisticReg else y)
                         results = None
                         try:
+                            means = None
                             if logisticReg:
                                 results = sm.Logit(y, X).fit(disp=False) #runs regression
+                                #add means for each group
+                                means = meanXperY(X[:,-1], y)
                             else:
                                 results = sm.OLS(y, X).fit() #runs regression
                             conf = fwc.conf_interval(results.params[-1], len(y))
-                            tup = (results.params[-1], results.pvalues[-1], len(y), conf)
+                            if means: 
+                                tup = (results.params[-1], results.pvalues[-1], len(y), conf, means)
+                            else: 
+                                tup = (results.params[-1], results.pvalues[-1], len(y), conf)
 
                             print(results.summary(outcomeField, sorted(controls.keys())))#debug
                         except (ValueError, Exception) as err:
@@ -849,7 +856,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                             fwc.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
                             #TODO: add line of error
                         #all controls alone:
-                        lr = LogisticRegression(penalty='l2', C=1000000, fit_intercept=True)
+                        lr = LogisticRegression(penalty='l2', C=10000000, fit_intercept=True)
                         Xc = X[:,:-1]
                         probs = lr.fit(Xc,y).predict_proba(Xc)
                         cauc = roc_auc_score(y, probs[:,1])
@@ -857,7 +864,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                         print("===================================\n")
 
                     #do the rest:
-                    lr = LogisticRegression(penalty='l2', C=1000000, fit_intercept=True)
+                    lr = LogisticRegression(penalty='l2', C=10000000, fit_intercept=True)
                     probs = lr.fit(X,y).predict_proba(X)
                     auc = roc_auc_score(y, probs[:,1])
                     if lr.coef_[0,-1] < 0: #mark the auc negative if the relationship with the feature is neg

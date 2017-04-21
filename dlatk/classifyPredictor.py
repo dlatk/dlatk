@@ -708,7 +708,7 @@ class ClassifyPredictor:
                             predictionProbs.update(dict(zip(testGroupsOrder,ypredProbs)))
 
                             acc = accuracy_score(ytest, ypred)
-                            f1 = f1_score(ytest, ypred)
+                            f1 = f1_score(ytest, ypred, average='macro')
                             auc = pos_neg_auc(ytest, ypredProbs[:,-1])
                             # classes = list(set(ytest))
                             # ytest_binary = label_binarize(ytest,classes=classes)
@@ -758,7 +758,7 @@ class ClassifyPredictor:
                         ytrue, ypred, ypredProbs = alignDictsAsy(outcomes, predictions, predictionProbs)
                         ypredProbs = array(ypredProbs)
                         reportStats['acc'] = accuracy_score(ytrue, ypred)
-                        reportStats['f1'] = f1_score(ytrue, ypred)
+                        reportStats['f1'] = f1_score(ytrue, ypred, average='macro')
                         reportStats['auc'] = pos_neg_auc(ytrue, ypredProbs[:,-1])
                         testCounter = Counter(ytrue)
                         reportStats['mfclass_acc'] = testCounter[mfclass] / float(len(ytrue))
@@ -871,7 +871,7 @@ class ClassifyPredictor:
                                             multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
             print("[Done. Evaluation:]")
             acc = accuracy_score(ytest, ypred)
-            f1 = f1_score(ytest, ypred)
+            f1 = f1_score(ytest, ypred, average='macro')
             testCounter = Counter(ytest)
             mfclass = Counter(ytest).most_common(1)[0][0]
             mfclass_acc = testCounter[mfclass] / float(len(ytest))

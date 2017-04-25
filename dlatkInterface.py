@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Interface Module to DLATK
@@ -13,6 +13,7 @@ from pprint import pprint
 from numpy import isnan, sqrt, log2
 from configparser import SafeConfigParser
 import gzip
+
 
 try:
     from dlatk.lib import wordcloud
@@ -411,7 +412,7 @@ def main(fn_args = None):
 
     group = parser.add_argument_group('LDA Helper Actions', '')
     group.add_argument('--add_message_id', type=str, nargs=2, dest='addmessageid',
-                       help='Adds the message ID’s to the topic distributions and stores the result in --output_name. Previously addMessageID.py (two agrs: MESSAGE_FILE, STATE_FILE)')
+                       help='Adds the message IDs to the topic distributions and stores the result in --output_name. Previously addMessageID.py (two agrs: MESSAGE_FILE, STATE_FILE)')
 
 
     group = parser.add_argument_group('Semantic Extraction Actions', '')

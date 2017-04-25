@@ -236,8 +236,8 @@ class ClassifyPredictor:
             ],
         'lr': [
             #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l2'], 'dual':[False]}, 
-            {'C':[0.01, 0.1, 0.001, 1, .0001], 'penalty':['l2'], 'dual':[False]}, 
-            #{'C':[.01], 'penalty':['l2'], 'dual':[False]},#svd-d features small
+            #{'C':[0.01, 0.1, 0.001, 1, .0001], 'penalty':['l2'], 'dual':[False]}, 
+            {'C':[.01], 'penalty':['l2'], 'dual':[False]},#svd-d features small
             #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l1'], 'dual':[False]},
             #{'C':[0.1, 1, 0.01], 'penalty':['l1'], 'dual':[False]} #timex message-level
             #{'C':[10, 1, 100, 1000], 'penalty':['l1'], 'dual':[False]} 
@@ -2067,6 +2067,39 @@ class ClassifyPredictor:
            v.insert(0,k)  
            writer.writerow(v)
         
+    @staticmethod
+    def printComboControlPredictionProbsToCSV(scores, outputstream, paramString = None, delimiter='|'):
+         """prints predictions with all combinations of controls to csv)"""
+         predictionData = {}
+         data = defaultdict(list)
+         columns = ["Id"]
+         if paramString:
+             print >>outputstream, paramString+"\n"
+         i = 0
+         outcomeKeys = sorted(scores.keys())
+         previousColumnNames = []
+         for outcomeName in outcomeKeys:
+             outcomeScores = scores[outcomeName]
+             controlNames = sorted(list(set([controlName for controlTuple in outcomeScores.keys() for controlName in controlTuple])))
+             rowKeys = sorted(outcomeScores.keys(), key = lambda k: len(k))
+             for rk in rowKeys:
+                 for withLang, s in outcomeScores[rk].iteritems():
+                     i+=1
+                     mc = "_".join(rk)
+                     if(withLang):
+                         mc += "_withLanguage"
+                     columns.append(outcomeName+'_'+mc)
+                     predictionData[str(i)+'_'+outcomeName+'_'+mc] = s['predictionProbs']
+                     for k,v in s['predictionProbs'].iteritems():
+                         data[k].append(v)
+
+         writer = csv.writer(outputstream)
+         writer.writerow(columns)
+         for k,v in data.iteritems():
+            v.insert(0,k)
+            writer.writerow(v)
+
+
     #################
     ## Deprecated:
     def old_train(self, standardize = True, sparse = False, restrictToGroups = None):

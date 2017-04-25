@@ -1462,12 +1462,12 @@ def main(fn_args = None):
         if args.combotestregression:
             comboScores = rp.testControlCombos(sparse = args.sparse, blacklist = blacklist,
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
-                                           nFolds = args.folds, savePredictions = args.pred_csv, weightedEvalOutcome = args.weightedeval,
+                                           nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval,
                                            standardize = args.standardize, residualizedControls = args.res_controls, groupsWhere = args.groupswhere)
         elif args.controladjustreg:
             comboScores = rp.adjustOutcomesFromControls(standardize = args.standardize, sparse = args.sparse,
                                                         allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
-                                                        nFolds = args.folds, savePredictions = args.pred_csv, groupsWhere = args.groupswhere)
+                                                        nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), groupsWhere = args.groupswhere)
         if args.pred_csv:
             outputStream = sys.stdout
             if args.outputname:
@@ -1539,7 +1539,7 @@ def main(fn_args = None):
     if args.combotestclassifiers:
         comboScores = cp.testControlCombos(standardize = args.standardize, sparse = args.sparse, blacklist = blacklist,
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
-                                           nFolds = args.folds, savePredictions = args.pred_csv, weightedEvalOutcome = args.weightedeval, stratifyFolds=args.stratifyfolds,
+                                           nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval, stratifyFolds=args.stratifyfolds,
                                            adaptTables = args.adapttable, adaptColumns = args.adaptcolumns, groupsWhere = args.groupswhere)
         if args.csv:
             outputStream = sys.stdout

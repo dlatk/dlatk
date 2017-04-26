@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Interface Module to DLATK
@@ -13,6 +13,7 @@ from pprint import pprint
 from numpy import isnan, sqrt, log2
 from configparser import SafeConfigParser
 import gzip
+
 
 try:
     from dlatk.lib import wordcloud
@@ -414,7 +415,7 @@ def main(fn_args = None):
 
     group = parser.add_argument_group('LDA Helper Actions', '')
     group.add_argument('--add_message_id', type=str, nargs=2, dest='addmessageid',
-                       help='Adds the message ID’s to the topic distributions and stores the result in --output_name. Previously addMessageID.py (two agrs: MESSAGE_FILE, STATE_FILE)')
+                       help='Adds the message IDs to the topic distributions and stores the result in --output_name. Previously addMessageID.py (two agrs: MESSAGE_FILE, STATE_FILE)')
 
 
     group = parser.add_argument_group('Semantic Extraction Actions', '')
@@ -1464,12 +1465,12 @@ def main(fn_args = None):
         if args.combotestregression:
             comboScores = rp.testControlCombos(sparse = args.sparse, blacklist = blacklist,
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
-                                           nFolds = args.folds, savePredictions = args.pred_csv, weightedEvalOutcome = args.weightedeval,
+                                           nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval,
                                            standardize = args.standardize, residualizedControls = args.res_controls, groupsWhere = args.groupswhere)
         elif args.controladjustreg:
             comboScores = rp.adjustOutcomesFromControls(standardize = args.standardize, sparse = args.sparse,
                                                         allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
-                                                        nFolds = args.folds, savePredictions = args.pred_csv, groupsWhere = args.groupswhere)
+                                                        nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), groupsWhere = args.groupswhere)
         if args.pred_csv:
             outputStream = sys.stdout
             if args.outputname:
@@ -1541,7 +1542,7 @@ def main(fn_args = None):
     if args.combotestclassifiers:
         comboScores = cp.testControlCombos(standardize = args.standardize, sparse = args.sparse, blacklist = blacklist,
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
-                                           nFolds = args.folds, savePredictions = args.pred_csv, weightedEvalOutcome = args.weightedeval, stratifyFolds=args.stratifyfolds,
+                                           nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval, stratifyFolds=args.stratifyfolds,
                                            adaptTables = args.adapttable, adaptColumns = args.adaptcolumns, groupsWhere = args.groupswhere)
         if args.csv:
             outputStream = sys.stdout

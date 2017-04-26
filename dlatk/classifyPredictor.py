@@ -236,8 +236,8 @@ class ClassifyPredictor:
             ],
         'lr': [
             #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l2'], 'dual':[False]}, 
-            {'C':[0.01, 0.1, 0.001, 1, .0001], 'penalty':['l2'], 'dual':[False]}, 
-            #{'C':[.01], 'penalty':['l2'], 'dual':[False]},#svd-d features small
+            #{'C':[0.01, 0.1, 0.001, 1, .0001], 'penalty':['l2'], 'dual':[False]}, 
+            {'C':[.01], 'penalty':['l2'], 'dual':[False]},#svd-d features small
             #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l1'], 'dual':[False]},
             #{'C':[0.1, 1, 0.01], 'penalty':['l1'], 'dual':[False]} #timex message-level
             #{'C':[10, 1, 100, 1000], 'penalty':['l1'], 'dual':[False]} 
@@ -708,7 +708,7 @@ class ClassifyPredictor:
                             predictionProbs.update(dict(zip(testGroupsOrder,ypredProbs)))
 
                             acc = accuracy_score(ytest, ypred)
-                            f1 = f1_score(ytest, ypred)
+                            f1 = f1_score(ytest, ypred, average='macro')
                             auc = pos_neg_auc(ytest, ypredProbs[:,-1])
                             # classes = list(set(ytest))
                             # ytest_binary = label_binarize(ytest,classes=classes)
@@ -758,13 +758,14 @@ class ClassifyPredictor:
                         ytrue, ypred, ypredProbs = alignDictsAsy(outcomes, predictions, predictionProbs)
                         ypredProbs = array(ypredProbs)
                         reportStats['acc'] = accuracy_score(ytrue, ypred)
-                        reportStats['f1'] = f1_score(ytrue, ypred)
+                        reportStats['f1'] = f1_score(ytrue, ypred, average='macro')
                         reportStats['auc'] = pos_neg_auc(ytrue, ypredProbs[:,-1])
                         testCounter = Counter(ytrue)
                         reportStats['mfclass_acc'] = testCounter[mfclass] / float(len(ytrue))
 
                         if savePredictions: 
                             reportStats['predictions'] = predictions
+                            reportStats['predictionProbs'] = {k:v[-1] for k,v in predictionProbs.items()}
                         #pprint(reportStats) #debug
                         mfclass = Counter(ytest).most_common(1)[0][0]
                         print("* Overall Fold Acc: %.4f (+- %.4f) vs. MFC Accuracy: %.4f (based on test rather than train)"% (reportStats['folds_acc'], reportStats['folds_se_acc'], reportStats['folds_mfclass_acc']))
@@ -871,7 +872,7 @@ class ClassifyPredictor:
                                             multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
             print("[Done. Evaluation:]")
             acc = accuracy_score(ytest, ypred)
-            f1 = f1_score(ytest, ypred)
+            f1 = f1_score(ytest, ypred, average='macro')
             testCounter = Counter(ytest)
             mfclass = Counter(ytest).most_common(1)[0][0]
             mfclass_acc = testCounter[mfclass] / float(len(ytest))
@@ -2017,7 +2018,9 @@ class ClassifyPredictor:
             #setup column and row names:
             controlNames = sorted(list(set([controlName for controlTuple in list(outcomeScores.keys()) for controlName in controlTuple])))
             rowKeys = sorted(list(outcomeScores.keys()), key = lambda k: len(k))
-            scoreNames = sorted(iter(outcomeScores[rowKeys[0]].values()).next().keys(), key=str.lower)
+            #scoreNames = sorted(next(iter(outcomeScores[rowKeys[0]].values())).keys(), key=str.lower)
+            scoreNames = sorted(list(set(name for k in rowKeys for v in outcomeScores[k].values() for name in list(v.keys()))), key=str.lower)
+            
             columnNames = ['row_id', 'outcome', 'model_controls'] + scoreNames + ['w/ lang.'] + controlNames
 
             #csv:
@@ -2033,7 +2036,7 @@ class ClassifyPredictor:
                     for cn in controlNames:
                         rowDict[cn] = 1 if cn in rk else 0
                     rowDict['w/ lang.'] = withLang
-                    rowDict.update({(k,v) for (k,v) in list(sc.items()) if k is not 'predictions'})
+                    rowDict.update({(k,v) for (k,v) in list(sc.items()) if ((k is not 'predictions') and k is not 'predictionProbs')})
                     csvOut.writerow(rowDict)
     @staticmethod
     def printComboControlPredictionsToCSV(scores, outputstream, paramString = None, delimiter='|'):
@@ -2046,6 +2049,13 @@ class ClassifyPredictor:
         i = 0
         outcomeKeys = sorted(scores.keys())
         previousColumnNames = []
+        # get all group ids 
+        groups = set()
+        for outcomeName in scores:
+            for rk in scores[outcomeName]:
+                for withLang in scores[outcomeName][rk]:
+                    groups.update([k for k in scores[outcomeName][rk][withLang]['predictions']])
+
         for outcomeName in outcomeKeys:
             outcomeScores = scores[outcomeName]
             controlNames = sorted(list(set([controlName for controlTuple in list(outcomeScores.keys()) for controlName in controlTuple])))
@@ -2058,8 +2068,12 @@ class ClassifyPredictor:
                         mc += "_withLanguage"
                     columns.append(outcomeName+'_'+mc)
                     predictionData[str(i)+'_'+outcomeName+'_'+mc] = s['predictions']
-                    for k,v in s['predictions'].items():
-                        data[k].append(v)
+                    for group_id in groups:
+                        if group_id in s['predictions']:
+                            data[group_id].append(s['predictions'][group_id])
+                        else:
+                            data[group_id].append('nan')
+
         
         writer = csv.writer(outputstream)
         writer.writerow(columns)
@@ -2067,6 +2081,49 @@ class ClassifyPredictor:
            v.insert(0,k)  
            writer.writerow(v)
         
+    @staticmethod
+    def printComboControlPredictionProbsToCSV(scores, outputstream, paramString = None, delimiter='|'):
+        """prints predictions with all combinations of controls to csv)"""
+        predictionData = {}
+        data = defaultdict(list)
+        columns = ["Id"]
+        if paramString:
+           print(paramString+"\n", file=outputstream)
+        i = 0
+        outcomeKeys = sorted(scores.keys())
+        previousColumnNames = []
+        # get all group ids 
+        groups = set()
+        for outcomeName in scores:
+            for rk in scores[outcomeName]:
+                for withLang in scores[outcomeName][rk]:
+                    groups.update([k for k in scores[outcomeName][rk][withLang]['predictionProbs']])
+
+        for i, outcomeName in enumerate(outcomeKeys):
+            outcomeScores = scores[outcomeName]
+            controlNames = sorted(list(set([controlName for controlTuple in outcomeScores.keys() for controlName in controlTuple])))
+            rowKeys = sorted(outcomeScores.keys(), key = lambda k: len(k))
+            for rk in rowKeys:
+                for withLang, s in outcomeScores[rk].items():
+                    i+=1
+                    mc = "_".join(rk)
+                    if(withLang):
+                        mc += "_withLanguage"
+                    columns.append(outcomeName+'_'+mc)
+                    predictionData[str(i)+'_'+outcomeName+'_'+mc] = s['predictionProbs']
+                    for group_id in groups:
+                        if group_id in s['predictionProbs']:
+                            data[group_id].append(s['predictionProbs'][group_id])
+                        else:
+                            data[group_id].append('nan')
+
+        writer = csv.writer(outputstream)
+        writer.writerow(columns)
+        for k,v in data.items():
+           v.insert(0,k)
+           writer.writerow(v)
+
+
     #################
     ## Deprecated:
     def old_train(self, standardize = True, sparse = False, restrictToGroups = None):

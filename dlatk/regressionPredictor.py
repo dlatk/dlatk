@@ -1446,30 +1446,30 @@ class RegressionPredictor:
                 if 'mean_' in dir(self.multiFSelectors[outcome][i]):
                     print("RPCA mean: ", self.multiFSelectors[outcome][i].mean_)
 
-                if 'steps' in dir(self.multiFSelectors[outcome][i]):
-                    if 'mean_' in dir(self.multiFSelectors[outcome][i].steps[1][1]):
-                        print(self.multiFSelectors[outcome][i].steps[1][1].mean_, len(self.multiFSelectors[outcome][i].steps[1][1].mean_))
-                        mean = self.multiFSelectors[outcome][i].steps[1][1].mean_.copy()
-                        t = self.multiFSelectors[outcome][i].steps[0][1].inverse_transform(mean).flatten()
-                        print(self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept), self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept).sum())
-                        print(t, len(t))
-                        print(coefficients)
-                        # coefficients = coefficients + t
-                        print(coefficients)
-                        # INTERCEPT CORRECTION : dot product of coefficients.mean from PCA
-                        print("Pipelines don't work with this option (predtolex)")
-                        sys.exit()
+                #if 'steps' in dir(self.multiFSelectors[outcome][i]):
+                #    if 'mean_' in dir(self.multiFSelectors[outcome][i].steps[1][1]):
+                #        print(self.multiFSelectors[outcome][i].steps[1][1].mean_, len(self.multiFSelectors[outcome][i].steps[1][1].mean_))
+                #        mean = self.multiFSelectors[outcome][i].steps[1][1].mean_.copy()
+                #        t = self.multiFSelectors[outcome][i].steps[0][1].inverse_transform(mean).flatten()
+                #        print(self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept), self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept).sum())
+                #        print(t, len(t))
+                #        print(coefficients)
+                #        # coefficients = coefficients + t
+                #        print(coefficients)
+                #        # INTERCEPT CORRECTION : dot product of coefficients.mean from PCA
+                #        print("Pipelines don't work with this option (predtolex)")
+                #        sys.exit()
 
 
                 # coefficients.resize(1,len(coefficients))
                 # print coefficients.shape
                 # Inverting the scaling 
-                if self.multiScalers[outcome][i]:
-                    print("Standardscaler doesn't work with Prediction To Lexicon")
-                    print(self.multiScalers[outcome][i].mean_, self.multiScalers[outcome][i].std_)
-                    coefficients = self.multiScalers[outcome][i].inverse_transform(coefficients).flatten()
-                else: 
-                    coefficients = coefficients.flatten() 
+                #if self.multiScalers[outcome][i]:
+                #    print("Standardscaler doesn't work with Prediction To Lexicon")
+                #    print(self.multiScalers[outcome][i].mean_, self.multiScalers[outcome][i].std_)
+                #    coefficients = self.multiScalers[outcome][i].inverse_transform(coefficients).flatten()
+                #else: 
+                #    coefficients = coefficients.flatten() 
                 
                 # featTableFeats contains the list of features 
                 if len(coefficients) != len(featTableFeats):

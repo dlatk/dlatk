@@ -669,6 +669,8 @@ class RegressionPredictor:
                         ## 2 f) calculate residuals, if applicable:
                         nonresOutcomes = dict(outcomes) #backup for accuracy calc. #new outcomes become residuals
                         resControlPreds = {} #predictions form controls only
+                        resControlAllPreds = {} 
+                        newOutcomes = []
                         if residualizedControls and controlValues and withLanguage:
                             #TODO: make this and below a function:
                             print("CREATING RESIDUALS")
@@ -699,6 +701,30 @@ class RegressionPredictor:
                                 #DEBUG: random sort
                                 #random.shuffle(res_ypred)
                                 resControlPreds.update(dict(zip(testGroupsOrder,res_ypred)))
+
+
+
+                                allGroups = set()
+                                for chunk in groupFolds:
+                                    for c in chunk:  
+                                        allGroups.add(c)
+                                allGroupsOrder = list(thisOutcomeGroups & allGroups)
+                                (Xall, yall) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = allGroupsOrder)
+                                res_yall_pred = self._multiXpredict(res_regressor, [Xall], multiScalers = res_multiScalers, multiFSelectors = res_multiFSelectors, sparse = sparse)
+                                resControlAllPreds = dict(zip(allGroupsOrder, res_yall_pred))
+
+                                outcomes_ = {}
+                                for gid, value in outcomes.items():
+                                    try:
+                                        #print "true outcome: %.4f, controlPred: %.4f" % (value, resControlPreds[gid])#debug
+                                        outcomes_[gid] = value - resControlAllPreds[gid]
+                                        #print " new value %.4f" % outcomes[gid] #debug
+                                    except KeyError:
+                                        print (" warn: no control prediction found for gid %s, removing from outcomes" % str(gid))
+                                        # del outcomes_[gid]
+                                newOutcomes.append(outcomes_)
+
+
 
                                 R2 = metrics.r2_score(ytest, res_ypred)
                                 mse = metrics.mean_squared_error(ytest, res_ypred)
@@ -746,7 +772,10 @@ class RegressionPredictor:
                             for i in gnListIndices:
                                 groupNormValues = thisGroupNormsList[i]
                                 #featureNames = featureNameList[i] #(if needed later, make sure to add controls to this)
-                                (Xdicts, ydict) = (groupNormValues, outcomes)
+                                if residualizedControls and controlValues and withLanguage:
+                                    (Xdicts, ydict) = (groupNormValues, newOutcomes[testChunk])
+                                else:
+                                    (Xdicts, ydict) = (groupNormValues, outcomes)                                
                                 print("   (feature group: %d): [Initial size: %d]" % (i, len(ydict)))
                                 (Xtrain, ytrain) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = trainGroupsOrder)
                                 (Xtest, ytest) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = testGroupsOrder)

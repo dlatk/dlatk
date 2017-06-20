@@ -1145,7 +1145,7 @@ class RegressionPredictor:
             mse = metrics.mean_squared_error(ytest, ypred)
             print("*Mean Squared Error:                 %.4f"% mse)
             mae = metrics.mean_absolute_error(ytest, ypred)
-            print("*Mean Absolute Error:                %.4f"% mae)
+            print("*Mean Absolute Error:      groupsWhere          %.4f"% mae)
             assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups" 
             predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder,ypred)))
 
@@ -1153,10 +1153,10 @@ class RegressionPredictor:
 
         return predictions
 
-    def predictToOutcomeTable(self, standardize = True, sparse = False, fe = None, name = None, nFolds = 10):
+    def predictToOutcomeTable(self, standardize = True, sparse = False, name = None, nFolds = 10, groupsWhere = ''):
 
         # step1: get groups from feature table
-        groups = self.featureGetter.getDistinctGroupsFromFeatTable()
+        groups = self.featureGetter.getDistinctGroupsFromFeatTable(where=groupsWhere)
         groups = list(groups)
         chunks = [groups]
 

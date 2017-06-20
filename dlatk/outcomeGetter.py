@@ -159,9 +159,8 @@ class OutcomeGetter(FeatureWorker):
         if isinstance(dataframe.index[0], str):
             import sqlalchemy
             dataframe.index = dataframe.index.astype(str)
-            print(dataframe.index)
             dtype = {self.correl_field : sqlalchemy.types.VARCHAR(max([len(i) for i in dataframe.index]))}
-            print(dataframe)
+            dataframe.index.name = self.correl_field
         dataframe.to_sql(tablename, eng, index_label = self.correl_field, if_exists = ifExists, chunksize=fwc.MYSQL_BATCH_INSERT_SIZE, dtype = dtype)
         print("New table created: %s" % tablename)
 
@@ -389,21 +388,6 @@ enabled, so the total word count for your groups might be off
             df.index.names = ['group_id']
             return df
 
-    def getAnnotationTableAsDF(self, fields=['unit_id', 'worker_id', 'score'], where='', index=['unit_id', 'worker_id'], pivot=True, fillNA=False):
-        """return a dataframe of unit_it, worker_id, score"""
-        if fillNA and not pivot:
-            fwc.warn("fillNA set to TRUE but pivot set to FALSE. No missing values will be filled.") 
-        db_eng = get_db_engine(self.corpdb)
-        sql = """SELECT %s, %s, %s from %s""" % tuple(fields + [self.outcome_table])
-        if (where): sql += ' WHERE ' + where
-        if pivot:
-            if fillNA:
-                return pd.read_sql(sql=sql, con=db_eng, index_col=index).unstack().fillna(value=0)
-            else:
-                return pd.read_sql(sql=sql, con=db_eng, index_col=index).unstack()
-        else:
-            return pd.read_sql(sql=sql, con=db_eng, index_col=index) 
-    
     def numGroupsPerOutcome(self, featGetter, outputfile, where = ''):
         """prints sas-style csv file output"""
         #get outcome data to work with

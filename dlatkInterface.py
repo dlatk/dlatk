@@ -1503,9 +1503,9 @@ def main(fn_args = None):
         rp.predictToFeatureTable(sparse = args.sparse, fe = fe, name = args.predictrtofeats, standardize = args.standardize, groupsWhere = args.groupswhere)
 
     if args.predictRtoOutcomeTable:
-        if not fgs: fgs = FGs()
-        if not fe: fe = FE()
-        rp.predictToOutcomeTable(sparse = args.sparse, fe = fe, name = args.predictRtoOutcomeTable)
+        #if not fgs: fgs = FGs()
+        #if not fe: fe = FE()
+        rp.predictToOutcomeTable(sparse = args.sparse, name = args.predictRtoOutcomeTable, groupsWhere = args.groupswhere)
 
     if args.predictalltofeats and rp:
         if not fe: fe = FE()

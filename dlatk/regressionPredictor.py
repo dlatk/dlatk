@@ -1145,7 +1145,7 @@ class RegressionPredictor:
             mse = metrics.mean_squared_error(ytest, ypred)
             print("*Mean Squared Error:                 %.4f"% mse)
             mae = metrics.mean_absolute_error(ytest, ypred)
-            print("*Mean Absolute Error:      groupsWhere          %.4f"% mae)
+            print("*Mean Absolute Error:                %.4f"% mae)
             assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups" 
             predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder,ypred)))
 

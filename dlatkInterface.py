@@ -546,6 +546,8 @@ def main(fn_args = None):
                        help='writes the reduction model to a specified lexicon')
     group.add_argument('--fit_reducer', action='store_true', dest='fitreducer', default=False,
                        help='reduces a feature space to clusters')
+    group.add_argument('--num_factors', '--n_components', dest='n_components', default=None,
+                       help='Number of factors in clustering method. Used with --fit_reducer.')
     group.add_argument('--cca', type=int, dest='cca', default=0,
                        help='Performs sparse CCA on a set of features and a set of outcomes.'+
                        "Argument is number of components to output (Uses R's PMA package)")
@@ -608,7 +610,6 @@ def main(fn_args = None):
         args = parser.parse_args(fn_args.split())
     else:
         args = parser.parse_args(remaining_argv)
-
 
     ##Warnings
     if not args.bonferroni:
@@ -1438,7 +1439,8 @@ def main(fn_args = None):
     if args.fitreducer or args.reducertolexicon:
         if not og: og = OG()
         if not fg: fg = FG()
-        dr = DimensionReducer(fg, args.model, og)
+        dr = DimensionReducer(fg, args.model, og, args.n_components)
+
 
     if args.loadmodels and rp:
         rp.load(args.picklefile)

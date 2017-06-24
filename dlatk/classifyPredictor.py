@@ -26,7 +26,7 @@ from sklearn.svm import SVC, LinearSVC
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.cross_validation import StratifiedKFold, KFold, ShuffleSplit, train_test_split
 from sklearn.grid_search import GridSearchCV 
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score, precision_score, recall_score, roc_curve, auc, roc_auc_score
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score, precision_score, recall_score, roc_curve, auc, roc_auc_score, matthews_corrcoef
 from sklearn.feature_selection import f_classif, SelectPercentile, SelectKBest, SelectFdr, SelectFpr, SelectFwe
 
 from sklearn.preprocessing import StandardScaler, label_binarize
@@ -760,6 +760,7 @@ class ClassifyPredictor:
                         reportStats['acc'] = accuracy_score(ytrue, ypred)
                         reportStats['f1'] = f1_score(ytrue, ypred, average='macro')
                         reportStats['auc'] = pos_neg_auc(ytrue, ypredProbs[:,-1])
+                        reportStats['matt_ccoef'] = matthews_corrcoef(ytrue, ypred)
                         testCounter = Counter(ytrue)
                         reportStats['mfclass_acc'] = testCounter[mfclass] / float(len(ytrue))
 

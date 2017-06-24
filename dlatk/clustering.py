@@ -133,7 +133,7 @@ class DimensionReducer:
         'rpca' : 'RandomizedPCA',
         }
 
-    def __init__(self, fg, modelName='nmf', og=None):
+    def __init__(self, fg, modelName='nmf', og=None, n_components=None):
         # initialize regression predictor
         self.outcomeGetter = og
         self.featureGetter = fg
@@ -148,8 +148,29 @@ class DimensionReducer:
         # selects appropriate features/columns
         self.fSelectors = dict()
 
-        
         self.featureNames = []  # holds the order the features are expected in
+
+        self._set_n_components(modelName, n_components)
+            
+
+    def _set_n_components(self, modelName, n_components):
+        try: 
+            self.params[modelName]
+        except:
+            warn("Model %s not recognized. Try: %s" % (modelName, ", ".join(self.params.keys())))
+            sys.exit()
+        if modelName == 'lda':
+            component_name = 'nb_topics'
+        else:
+            component_name = 'n_components'
+        try:
+            n_components = int(n_components)
+        except:
+            n_components = self.params[modelName][component_name]
+            warn("n_components must be integer valued. Setting to default: %s" % n_components)
+
+        self.params[modelName][component_name] = n_components
+
 
     def fit(self, standardize=True, sparse=False, restrictToGroups=None):
         """Create clusters"""

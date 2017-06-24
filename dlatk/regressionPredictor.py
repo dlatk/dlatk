@@ -669,6 +669,8 @@ class RegressionPredictor:
                         ## 2 f) calculate residuals, if applicable:
                         nonresOutcomes = dict(outcomes) #backup for accuracy calc. #new outcomes become residuals
                         resControlPreds = {} #predictions form controls only
+                        resControlAllPreds = {} 
+                        newOutcomes = []
                         if residualizedControls and controlValues and withLanguage:
                             #TODO: make this and below a function:
                             print("CREATING RESIDUALS")
@@ -699,6 +701,30 @@ class RegressionPredictor:
                                 #DEBUG: random sort
                                 #random.shuffle(res_ypred)
                                 resControlPreds.update(dict(zip(testGroupsOrder,res_ypred)))
+
+
+
+                                allGroups = set()
+                                for chunk in groupFolds:
+                                    for c in chunk:  
+                                        allGroups.add(c)
+                                allGroupsOrder = list(thisOutcomeGroups & allGroups)
+                                (Xall, yall) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = allGroupsOrder)
+                                res_yall_pred = self._multiXpredict(res_regressor, [Xall], multiScalers = res_multiScalers, multiFSelectors = res_multiFSelectors, sparse = sparse)
+                                resControlAllPreds = dict(zip(allGroupsOrder, res_yall_pred))
+
+                                outcomes_ = {}
+                                for gid, value in outcomes.items():
+                                    try:
+                                        #print "true outcome: %.4f, controlPred: %.4f" % (value, resControlPreds[gid])#debug
+                                        outcomes_[gid] = value - resControlAllPreds[gid]
+                                        #print " new value %.4f" % outcomes[gid] #debug
+                                    except KeyError:
+                                        print (" warn: no control prediction found for gid %s, removing from outcomes" % str(gid))
+                                        # del outcomes_[gid]
+                                newOutcomes.append(outcomes_)
+
+
 
                                 R2 = metrics.r2_score(ytest, res_ypred)
                                 mse = metrics.mean_squared_error(ytest, res_ypred)
@@ -746,7 +772,10 @@ class RegressionPredictor:
                             for i in gnListIndices:
                                 groupNormValues = thisGroupNormsList[i]
                                 #featureNames = featureNameList[i] #(if needed later, make sure to add controls to this)
-                                (Xdicts, ydict) = (groupNormValues, outcomes)
+                                if residualizedControls and controlValues and withLanguage:
+                                    (Xdicts, ydict) = (groupNormValues, newOutcomes[testChunk])
+                                else:
+                                    (Xdicts, ydict) = (groupNormValues, outcomes)                                
                                 print("   (feature group: %d): [Initial size: %d]" % (i, len(ydict)))
                                 (Xtrain, ytrain) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = trainGroupsOrder)
                                 (Xtest, ytest) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = testGroupsOrder)
@@ -1124,10 +1153,10 @@ class RegressionPredictor:
 
         return predictions
 
-    def predictToOutcomeTable(self, standardize = True, sparse = False, fe = None, name = None, nFolds = 10):
+    def predictToOutcomeTable(self, standardize = True, sparse = False, name = None, nFolds = 10, groupsWhere = ''):
 
         # step1: get groups from feature table
-        groups = self.featureGetter.getDistinctGroupsFromFeatTable()
+        groups = self.featureGetter.getDistinctGroupsFromFeatTable(where=groupsWhere)
         groups = list(groups)
         chunks = [groups]
 
@@ -1446,30 +1475,30 @@ class RegressionPredictor:
                 if 'mean_' in dir(self.multiFSelectors[outcome][i]):
                     print("RPCA mean: ", self.multiFSelectors[outcome][i].mean_)
 
-                if 'steps' in dir(self.multiFSelectors[outcome][i]):
-                    if 'mean_' in dir(self.multiFSelectors[outcome][i].steps[1][1]):
-                        print(self.multiFSelectors[outcome][i].steps[1][1].mean_, len(self.multiFSelectors[outcome][i].steps[1][1].mean_))
-                        mean = self.multiFSelectors[outcome][i].steps[1][1].mean_.copy()
-                        t = self.multiFSelectors[outcome][i].steps[0][1].inverse_transform(mean).flatten()
-                        print(self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept), self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept).sum())
-                        print(t, len(t))
-                        print(coefficients)
-                        # coefficients = coefficients + t
-                        print(coefficients)
-                        # INTERCEPT CORRECTION : dot product of coefficients.mean from PCA
-                        print("Pipelines don't work with this option (predtolex)")
-                        sys.exit()
+                #if 'steps' in dir(self.multiFSelectors[outcome][i]):
+                #    if 'mean_' in dir(self.multiFSelectors[outcome][i].steps[1][1]):
+                #        print(self.multiFSelectors[outcome][i].steps[1][1].mean_, len(self.multiFSelectors[outcome][i].steps[1][1].mean_))
+                #        mean = self.multiFSelectors[outcome][i].steps[1][1].mean_.copy()
+                #        t = self.multiFSelectors[outcome][i].steps[0][1].inverse_transform(mean).flatten()
+                #        print(self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept), self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept).sum())
+                #        print(t, len(t))
+                #        print(coefficients)
+                #        # coefficients = coefficients + t
+                #        print(coefficients)
+                #        # INTERCEPT CORRECTION : dot product of coefficients.mean from PCA
+                #        print("Pipelines don't work with this option (predtolex)")
+                #        sys.exit()
 
 
                 # coefficients.resize(1,len(coefficients))
                 # print coefficients.shape
                 # Inverting the scaling 
-                if self.multiScalers[outcome][i]:
-                    print("Standardscaler doesn't work with Prediction To Lexicon")
-                    print(self.multiScalers[outcome][i].mean_, self.multiScalers[outcome][i].std_)
-                    coefficients = self.multiScalers[outcome][i].inverse_transform(coefficients).flatten()
-                else: 
-                    coefficients = coefficients.flatten() 
+                #if self.multiScalers[outcome][i]:
+                #    print("Standardscaler doesn't work with Prediction To Lexicon")
+                #    print(self.multiScalers[outcome][i].mean_, self.multiScalers[outcome][i].std_)
+                #    coefficients = self.multiScalers[outcome][i].inverse_transform(coefficients).flatten()
+                #else: 
+                #    coefficients = coefficients.flatten() 
                 
                 # featTableFeats contains the list of features 
                 if len(coefficients) != len(featTableFeats):

@@ -46,9 +46,9 @@ DEF_LEXTABLE = 'wn_O'
 DEF_DATE_FIELD = 'updated_time'
 DEF_COLLATIONS = {
         'utf8mb4': 'utf8mb4_bin',
-        'utf8': 'utf8_general_ci', 
-        'latin1': 'latin1_swedish_ci', 
-        'latin2': 'latin2_general_ci', 
+        'utf8': 'utf8_general_ci',
+        'latin1': 'latin1_swedish_ci',
+        'latin2': 'latin2_general_ci',
         'ascii': 'ascii_general_ci',
     }
 DEF_MYSQL_ENGINE = 'MYISAM'
@@ -87,22 +87,22 @@ DEF_COLUMN_PMI_FILTER = "pmi_filter_val"
 DEF_P = 0.05 # p value for printing tagclouds
 DEF_P_CORR = 'BH' #Benjamini, Hochberg
 DEF_P_MAPPING = { # maps old R method names to statsmodel names
-        "holm": "holm",  
-        "hochberg": "simes-hochberg", 
-        "simes": "simes", 
-        "hommel": "hommel", 
-        "bonferroni": "bonferroni", 
-        "bonf": "bonferroni", 
-        "BH": "fdr_bh", 
-        "BY": "fdr_by", 
-        "fdr": "fdr_bh", 
-        "sidak": "sidak", 
-        "holm-sidak": "holm-sidak", 
+        "holm": "holm",
+        "hochberg": "simes-hochberg",
+        "simes": "simes",
+        "hommel": "hommel",
+        "bonferroni": "bonferroni",
+        "bonf": "bonferroni",
+        "BH": "fdr_bh",
+        "BY": "fdr_by",
+        "fdr": "fdr_bh",
+        "sidak": "sidak",
+        "holm-sidak": "holm-sidak",
         "simes-hochberg": "simes-hochberg",
-        "fdr_bh": "fdr_bh", 
-        "fdr_by": "fdr_by", 
-        "fdr_tsbh": "fdr_tsbh", 
-        "fdr_tsbky": "fdr_tsbky", 
+        "fdr_bh": "fdr_bh",
+        "fdr_by": "fdr_by",
+        "fdr_tsbh": "fdr_tsbh",
+        "fdr_tsbky": "fdr_tsbky",
     }
 DEF_CONF_INT = 0.95
 DEF_TOP_MESSAGES = 10
@@ -113,13 +113,13 @@ DEF_CLASS_MODEL = 'svc'
 DEF_COMB_MODELS = ['ridgecv']
 DEF_FOLDS = 5
 DEF_RP_FEATURE_SELECTION_MAPPING = {
-    'magic_sauce': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.1)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])', 
+    'magic_sauce': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.1)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
     'univariatefwe': 'SelectFwe(f_regression, alpha=60.0)',
     'pca': 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
     'none': None,
 }
 DEF_CP_FEATURE_SELECTION_MAPPING = {
-    'magic_sauce': 'Pipeline([("1_univariate_select", SelectFwe(f_classif, alpha=30.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])', 
+    'magic_sauce': 'Pipeline([("1_univariate_select", SelectFwe(f_classif, alpha=30.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
     'univariatefwe': 'SelectFwe(f_classif, alpha=60.0)',
     'pca': 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
     'none': None,
@@ -150,7 +150,7 @@ DEF_SPAM_FILTER = 0.2 # threshold for removing spam users
 DEF_CORENLP_DIR = '/home/hansens/Tools/corenlp-python'
 DEF_CORENLP_SERVER_COMMAND = './corenlp/corenlp.py'
 DEF_CORENLP_PORT = 20202   #default: 20202
-#CORE NLP PYTHON SERVER COMMAND (must be running): ./corenlp/corenlp.py -p 20202 -q 
+#CORE NLP PYTHON SERVER COMMAND (must be running): ./corenlp/corenlp.py -p 20202 -q
 
 TAG_RE = re.compile(r'<[^>]+>')
 URL_RE = re.compile(r'(?:http[s]?\:\/\/)?(?:[\w\_\-]+\.)+(?:com|net|gov|edu|info|org|ly|be|gl|co|gs|pr|me|cc|us|uk|gd|nl|ws|am|im|fm|kr|to|jp|sg|int|mil|arpa|ac|ad|ae|af|ag|ai|al|am|an|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|bq|br|bs|bt|bv|bw|by|bz|bzh|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cs|cu|cv|cw|cx|cy|cz|dd|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|yu|za|zm|zr|zw)+(?:\/[^\s ]+)?')
@@ -174,6 +174,27 @@ PERMA_SORTED = ['P+',
                 'neu'
                 ]
 
+DEF_CENSOR_DICT = {"fuck":"f**k",
+        "pussy":"p**sy",
+        "bitch":"b**ch",
+        "bitches":"b**ches",
+        "fuckn":"f**kn",
+        "motherfucker":"motherf**ker",
+        "fucked":"f**ked",
+        "fucking":"f**king",
+        "dick":"d**k",
+        "dickhead":"d**khead",
+        "cock":"c**k",
+        "shit":"s**t",
+        "bullshit":"bulls**t",
+        "fuckin":"f**kin",
+        "whore":"w**re",
+        "hoe":"h**",
+        "hoes":"h**s",
+        "nigga":"n**ga",
+        "niggas":"n**gas",
+        "nigga's":"n**ga's",
+        "niggaz":"n**gaz"}
 GIGS_OF_MEMORY = 512 #used to determine when to use queries that hold data in memory
 CORES = 32 #used to determine multi-processing
 
@@ -228,7 +249,7 @@ def alignDictsAsX(X, sparse=False, returnKeyList=False):
             return (sparseX, keys)
         else:
             return (sparseX)
-    else: 
+    else:
         listX = [[x[k] for x in X] for k in keys]
         if returnKeyList:
             return (listX, keys)
@@ -389,8 +410,8 @@ def rgbColorMix(fromColor, toColor, resolution, randomness = False):
     gradientColors = []
     for i in range(resolution):
         gradientColors.append(tuple([int(x) for x in round(fromColor + (i * fromToInc))]))
-    if randomness: 
-        for i in range(len(gradientColors)): 
+    if randomness:
+        for i in range(len(gradientColors)):
             color = gradientColors[i]
             newcolor = []
             for value in color:
@@ -411,7 +432,7 @@ def stratifiedZScoreybyX0(X, y):
     #first separate all rows for each y
     X0sToYs = dict()
     for i in range(len(y)):
-        try: 
+        try:
             X0sToYs[X[i][0]].append(y[i])
         except KeyError:
             X0sToYs[X[i][0]] = [y[i]]
@@ -420,7 +441,7 @@ def stratifiedZScoreybyX0(X, y):
     meanYforX0s = []
     for ys in X0sToYs.values():
         meanYforX0s.append(mean(ys)) #should turn into a row
-        
+
     #figure out mean and std-dev for meanXs:
     meanOfMeans = mean(meanYforX0s) #should be a row
     stdDevOfMeans = std(meanYforX0s) #shoudl be a row

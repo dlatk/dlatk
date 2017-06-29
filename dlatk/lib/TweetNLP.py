@@ -15,7 +15,7 @@ import os
 
 ##DEFAULTS:
 #_DefaultDir = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) # for code release
-_DefaultDir = '/home/hansedns'
+_DefaultDir = '/home/hansens'
 _DefaultParams ={
     'tagger_dir' : _DefaultDir + '/Tools/TwitterTagger/ark-tweet-nlp-0.3',
     'tagger_command' : './runTagger.sh',

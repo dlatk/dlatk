@@ -14,7 +14,7 @@ except ImportError:
 
 DESCRIPTION = "DLATK is an end to end human text analysis package, specifically suited for social media and social scientific applications. It is written in Python 3 and developed by the World Well-Being Project at the University of Pennsylvania and Stony Brook University. "
 LONG_DESCRIPTION = """
-DLATK v1.0
+DLATK v1.1
 ----------
 
 This package offers end to end text analysis: feature extraction, part-of-speech tagging, correlation, 

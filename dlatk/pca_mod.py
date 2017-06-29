@@ -8,7 +8,7 @@
 #
 # License: BSD 3 clause
 
-## Modded Feature Worker: randomized PCA can take a percentage
+## Modded DLATK: randomized PCA can take a percentage
 
 from math import log, sqrt
 import warnings

@@ -3,6 +3,20 @@
 Changelog
 =========
 
+1.1.0 (2017-06-29)
+------------------
+  - New feature: added --n_components / --num_factors flag to --fit_reducer
+  - New feature: --clean_cloud flag working for n_gram correlatin, all clouds, and topic clouds
+  - New feature: added p correction to correlate --auc
+  - New feature: messageAnnotator and messageTransformer classes added
+  - New feature: clustering.py changed to dimensionReducer.py
+  - New feature: FeatureWorker changed to DLAWorker
+  - New feature: --clean_messages flag for anonymizing message tables
+  - Improving feature: residualized control model in --combo_test_regression 
+  - Improving feature: changed f1 to macro f1 instead of pos-class f1
+  - Bug fix: in --predict_regression_to_outcome_table
+  - Bug fix: in --regression_to_lexicon
+
 1.0.1 (2016-11-21)
 ------------------
   - New feature: --deduplicate flag added to remove duplicate tweets within user

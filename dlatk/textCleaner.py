@@ -1,5 +1,5 @@
 import re
-from . import fwConstants as fwc
+from . import dlaConstants as dlac
 
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 
@@ -174,7 +174,7 @@ def _remove_urls(text):
     # Substitute urls with ' ' to ensure that text on either side of removed handles are tokenized correctly
     return pattern.sub(' ', text)
 
-def sentenceNormalization(message, normalizeDict, use_unicode=fwc.DEF_UNICODE_SWITCH):
+def sentenceNormalization(message, normalizeDict, use_unicode=dlac.DEF_UNICODE_SWITCH):
 
 
     # borrowed from CMU's Twokenize.

@@ -21,7 +21,7 @@ from sklearn.linear_model import LogisticRegression
 
 #infrastructure
 from .outcomeGetter import OutcomeGetter
-from . import fwConstants as fwc
+from . import dlaConstants as dlac
 from . import textCleaner as tc
 from .mysqlMethods import mysqlMethods as mm
 
@@ -72,27 +72,27 @@ class OutcomeAnalyzer(OutcomeGetter):
         """
         parser = SafeConfigParser()
         parser.read(initFile)
-        corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else fwc.DEF_CORPDB
-        corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else fwc.DEF_CORPTABLE
-        correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else fwc.DEF_CORREL_FIELD
-        mysql_host = parser.get('constants','mysql_host') if parser.has_option('constants','mysql_host') else fwc.MYSQL_HOST
-        message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else fwc.DEF_MESSAGE_FIELD
-        messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else fwc.DEF_MESSAGEID_FIELD
-        encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else fwc.DEF_ENCODING
-        use_unicode = True if parser.get('constants','use_unicode')=="True" else False if parser.has_option('constants','use_unicode') else fwc.DEF_UNICODE_SWITCH
-        lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else fwc.DEF_LEXICON_DB
-        outcome_table = parser.get('constants','outcometable') if parser.has_option('constants','outcometable') else fwc.DEF_OUTCOME_TABLE
-        outcome_value_fields = [o.strip() for o in parser.get('constants','outcomefields').split(",")] if parser.has_option('constants','outcomefields') else [fwc.DEF_OUTCOME_FIELD] # possible list
-        outcome_controls = [o.strip() for o in parser.get('constants','outcomecontrols').split(",")] if parser.has_option('constants','outcomecontrols') else fwc.DEF_OUTCOME_CONTROLS # possible list
-        outcome_interaction = [o.strip() for o in parser.get('constants','outcome_interaction').split(",")] if parser.has_option('constants','outcome_interaction') else fwc.DEF_OUTCOME_CONTROLS # possible list
-        group_freq_thresh = parser.get('constants','groupfreqthresh') if parser.has_option('constants','groupfreqthresh') else fwc.getGroupFreqThresh(correl_field)
+        corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else dlac.DEF_CORPDB
+        corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else dlac.DEF_CORPTABLE
+        correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else dlac.DEF_CORREL_FIELD
+        mysql_host = parser.get('constants','mysql_host') if parser.has_option('constants','mysql_host') else dlac.MYSQL_HOST
+        message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else dlac.DEF_MESSAGE_FIELD
+        messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else dlac.DEF_MESSAGEID_FIELD
+        encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else dlac.DEF_ENCODING
+        use_unicode = True if parser.get('constants','use_unicode')=="True" else False if parser.has_option('constants','use_unicode') else dlac.DEF_UNICODE_SWITCH
+        lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else dlac.DEF_LEXICON_DB
+        outcome_table = parser.get('constants','outcometable') if parser.has_option('constants','outcometable') else dlac.DEF_OUTCOME_TABLE
+        outcome_value_fields = [o.strip() for o in parser.get('constants','outcomefields').split(",")] if parser.has_option('constants','outcomefields') else [dlac.DEF_OUTCOME_FIELD] # possible list
+        outcome_controls = [o.strip() for o in parser.get('constants','outcomecontrols').split(",")] if parser.has_option('constants','outcomecontrols') else dlac.DEF_OUTCOME_CONTROLS # possible list
+        outcome_interaction = [o.strip() for o in parser.get('constants','outcome_interaction').split(",")] if parser.has_option('constants','outcome_interaction') else dlac.DEF_OUTCOME_CONTROLS # possible list
+        group_freq_thresh = parser.get('constants','groupfreqthresh') if parser.has_option('constants','groupfreqthresh') else dlac.getGroupFreqThresh(correl_field)
         featureMappingTable = parser.get('constants','featlabelmaptable') if parser.has_option('constants','featlabelmaptable') else ''
         featureMappingLex = parser.get('constants','featlabelmaplex') if parser.has_option('constants','featlabelmaplex') else ''
         output_name = parser.get('constants','output_name') if parser.has_option('constants','output_name') else ''
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
         return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, group_freq_thresh = group_freq_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable)
 
-    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host=fwc.MYSQL_HOST, message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, use_unicode=fwc.DEF_UNICODE_SWITCH, lexicondb=fwc.DEF_LEXICON_DB, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls=fwc.DEF_OUTCOME_CONTROLS, outcome_interaction=fwc.DEF_OUTCOME_CONTROLS, group_freq_thresh = None, featureMappingTable='', featureMappingLex='',  output_name='', wordTable = None):
+    def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_host=dlac.MYSQL_HOST, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb=dlac.DEF_LEXICON_DB, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls=dlac.DEF_OUTCOME_CONTROLS, outcome_interaction=dlac.DEF_OUTCOME_CONTROLS, group_freq_thresh = None, featureMappingTable='', featureMappingLex='',  output_name='', wordTable = None):
         super(OutcomeAnalyzer, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, group_freq_thresh, featureMappingTable, featureMappingLex,  wordTable)
         self.output_name = output_name
 
@@ -145,9 +145,9 @@ class OutcomeAnalyzer(OutcomeGetter):
         #write csv:
         csvOut = csv.DictWriter(open(outputfile, 'w'), fieldnames=allKeys)
         outcomesByGroup = dict()
-        if allOutcomes and len(allOutcomes) > 0: outcomesByGroup = fwc.reverseDictDict(allOutcomes)
+        if allOutcomes and len(allOutcomes) > 0: outcomesByGroup = dlac.reverseDictDict(allOutcomes)
         controlsByGroup = dict()
-        if controls and len(controls) > 0: controlsByGroup = fwc.reverseDictDict(controls)
+        if controls and len(controls) > 0: controlsByGroup = dlac.reverseDictDict(controls)
         firstRow = dict([(k, k) for k in allKeys])
         csvOut.writerow(firstRow)
         numPed = 0
@@ -166,7 +166,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             rowDict['group_id'] = str(group)
             csvOut.writerow(rowDict)
             numPed += 1
-            if numPed % 1000 == 0: fwc.warn("  %d groups printed"%(numPed))
+            if numPed % 1000 == 0: dlac.warn("  %d groups printed"%(numPed))
 
     def printBinnedGroupsAndOutcomesToCSV(self, featGetter, outputfile, where = '', freqs = False):
         """
@@ -250,11 +250,11 @@ class OutcomeAnalyzer(OutcomeGetter):
                     featFreqs.update(dict([('outcome_'+k, len(v)) for k, v in allOutcomes.items()]))
 
         #run correlations:
-        fwc.warn("Yielding data to correlate over %s, adjusting for: %s%s" % (str(self.outcome_value_fields),
+        dlac.warn("Yielding data to correlate over %s, adjusting for: %s%s" % (str(self.outcome_value_fields),
                                                                             str(self.outcome_controls),
                                                                             " interaction with "+str(self.outcome_interaction) if self.outcome_interaction else "."))
         if whitelist:
-            fwc.warn(" (number of features above may be off due to whitelist)")
+            dlac.warn(" (number of features above may be off due to whitelist)")
         if not outcomeWithOutcomeOnly:
             assert featGetter and featGetter.featureTable, "Correlate requires a specified feature table"
         featsToYield = []
@@ -352,10 +352,10 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         if sample1 & sample2:
             if len(sample1) < len(sample2):
-                fwc.warn("****** WARNING: some of the groups in sample1 are also present in sample2. Those groups will be removed from sample2 ******")
+                dlac.warn("****** WARNING: some of the groups in sample1 are also present in sample2. Those groups will be removed from sample2 ******")
                 sample2 = sample2 - sample1
             else:
-                fwc.warn("****** WARNING: some of the groups in sample2 are also present in sample1. Those groups will be removed from sample1 ******")
+                dlac.warn("****** WARNING: some of the groups in sample2 are also present in sample1. Those groups will be removed from sample1 ******")
                 sample1 = sample1 - sample2
 
         raise NotImplementedError("Need to look at only those features that have been used by the users in the smaller sample")
@@ -479,7 +479,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             results = tile(results, (len(counts_dict),))
             results['feat'] = list(counts_dict.keys())
 
-            fwc.warn("Using '%s' to find relationship" % value_considered)
+            dlac.warn("Using '%s' to find relationship" % value_considered)
             counts = array([i[value_considered] for i in list(counts_dict.values())])
             if counts.shape[1] < 2:
                 print("Your outcomes table is empty!(probably)")
@@ -552,7 +552,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     print("Outcome Encoding Error: zScoreGroup only works on binary outcomes")
                     raise ValueError
 
-                (dataList, outcomeList) = fwc.alignDictsAsLists(dataDict, outcomes)
+                (dataList, outcomeList) = dlac.alignDictsAsLists(dataDict, outcomes)
                 # Aligned lists of group_norm, outcome_value
                 # To-do:
                 # zscore dataList, and then return the item in the list that corresponds to the
@@ -630,14 +630,14 @@ class OutcomeAnalyzer(OutcomeGetter):
                         # Do regression showing the effect of the controls only
                         # i.e. show the coefficients from the controls alone
 
-                        (X, y) = fwc.alignDictsAsXy([controls[k] for k in sorted(controls.keys())], outcomes)
+                        (X, y) = dlac.alignDictsAsXy([controls[k] for k in sorted(controls.keys())], outcomes)
                         #X = np.array(X).astype(np.float)#debug: we should be able to avoid this by casting correctly originally
                         #y = np.array(y).astype(np.float)#debug: we should be able to avoid this by casting correctly originally
 
                         # print "alignDict time: %f"% float(time.time() - t0)#debug
                         if spearman:
-                            X = fwc.switchColumnsAndRows([rankdata(x)
-                                                      for x in fwc.switchColumnsAndRows(X)])
+                            X = dlac.switchColumnsAndRows([rankdata(x)
+                                                      for x in dlac.switchColumnsAndRows(X)])
                             y = rankdata(y)
                         if zscoreRegression:
                             # print "MAARTEN\t", type(X[0][0]), type(y[0])
@@ -651,7 +651,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                                 means = meanXperY(X[:,-1], y)
                             else:
                                 results = sm.OLS(y, X).fit() #runs regression
-                            conf = fwc.conf_interval(results.params[-1], len(y))
+                            conf = dlac.conf_interval(results.params[-1], len(y))
                             if means: 
                                 tup = (results.params[-1], results.pvalues[-1], len(y), conf, means)
                             else: 
@@ -660,8 +660,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                             print(results.summary(outcomeField, sorted(controls.keys())))#debug
                         except (ValueError, Exception) as err:
                             mode = 'Logistic regression' if logisticReg else 'OLS'
-                            fwc.warn("%s threw ValueError: %s" % (mode,str(err)))
-                            fwc.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
+                            dlac.warn("%s threw ValueError: %s" % (mode,str(err)))
+                            dlac.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
                     #t0 = time.time()#debug
 
                     # Interaction: append to X the multiplication of outcome column & the interaction
@@ -670,7 +670,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     controlsKeys = [control for control, values in controls.items() if control not in interaction] + interaction
 
                     # controls.values() makes the labels go away, turns it into a list
-                    (X, y) = fwc.alignDictsAsXy(controlsValues + [dataDict], outcomes)
+                    (X, y) = dlac.alignDictsAsXy(controlsValues + [dataDict], outcomes)
                     # X is a matrix, y is a column vector
                     # Each row of X is: [control1, control2, ..., interaction1, interaction2, ..., group_norm]
                     #                       0         1           len(controls) len(controls)+1    len(controls)+len(interaction)
@@ -684,7 +684,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
                     #print "alignDict time: %f"% float(time.time() - t0)#debug
                     if spearman:
-                        X = fwc.switchColumnsAndRows([rankdata(x) for x in fwc.switchColumnsAndRows(X)])
+                        X = dlac.switchColumnsAndRows([rankdata(x) for x in dlac.switchColumnsAndRows(X)])
                         y = rankdata(y)
                     #X = np.array(X).astype(np.float)#debug: we should be able to avoid this by casting correctly originally
                     #y = np.array(y).astype(np.float)#debug: we should be able to avoid this by casting correctly originally
@@ -697,7 +697,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                             results = sm.Logit(y, X, missing='drop').fit(disp=False)
                         else:
                             results = sm.OLS(y, X).fit() #runs regression
-                        conf = fwc.conf_interval(results.params[-1], len(y))
+                        conf = dlac.conf_interval(results.params[-1], len(y))
                         tup = (results.params[-1], results.pvalues[-1], len(y), conf)
 
                         if outputInteraction:
@@ -708,27 +708,27 @@ class OutcomeAnalyzer(OutcomeGetter):
 
                     except (ValueError,Exception) as err:
                         mode = 'Logistic regression' if logisticReg else 'OLS'
-                        fwc.warn("%s threw ValueError: [%s]" % (mode, str(err)))
-                        fwc.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
+                        dlac.warn("%s threw ValueError: [%s]" % (mode, str(err)))
+                        dlac.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
 
                 else: #run pearson / spearman correlation (if not logitsic or not controls)
-                    (dataList, outcomeList) = fwc.alignDictsAsLists(dataDict, outcomes)
+                    (dataList, outcomeList) = dlac.alignDictsAsLists(dataDict, outcomes)
                     # pdb.set_trace()
                     #LAD addition: added because pearsonr messes up when trying to regress between different types: Decimal and float
                     outcomeList = list(map(float, outcomeList))
 
                     if spearman: tup = spearmanr(dataList, outcomeList) + (len(dataList),)
                     else: tup = pearsonr(dataList, outcomeList) + (len(dataList),)
-                    conf = fwc.conf_interval(tup[self.r_idx], tup[self.n_idx])
+                    conf = dlac.conf_interval(tup[self.r_idx], tup[self.n_idx])
                     tup = tup + (conf,)
                 if not tup or not tup[self.r_idx]:
-                    fwc.warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
+                    dlac.warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
                     if includeFreqs: tup = (float('nan'), float('nan'), len(y), (float('nan'), float('nan')), 0)
                     else: tup = (float('nan'), float('nan'), len(y), (float('nan'), float('nan')))
                 else:
                     if p_correction_method.startswith("bonf"):
-                        tup = fwc.bonfPCorrection(tup, numFeats)
-                        if outputInteraction: interaction_tuples = {k: fwc.bonfPCorrection(v, numFeats) + v[2:] for k, v in interaction_tuples.items()}
+                        tup = dlac.bonfPCorrection(tup, numFeats)
+                        if outputInteraction: interaction_tuples = {k: dlac.bonfPCorrection(v, numFeats) + v[2:] for k, v in interaction_tuples.items()}
                     if includeFreqs:
                         try:
                             tup = tup + (int(featFreqs[feat]), )
@@ -740,7 +740,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
                         except KeyError:
                             if not whitelist:
-                                fwc.warn("unable to find total freq for '%s'" % feat)
+                                dlac.warn("unable to find total freq for '%s'" % feat)
                             tup = tup + (float('nan'), )
                             if outputInteraction:
                                 interaction_tuples = {k: v + (float('nan'), ) for k, v in interaction_tuples.items()}
@@ -756,7 +756,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                             correls[inter] = {feat: tup}
 
             numRed += 1
-            if numRed % 200 == 0: fwc.warn("  %d features correlated"%(numRed))
+            if numRed % 200 == 0: dlac.warn("  %d features correlated"%(numRed))
             firstLoop = False
 
         if p_correction_method and not p_correction_method.startswith("bonf"):
@@ -764,7 +764,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             for outcomeField, featCorrels in correls.items():
                 pDict = dict( [(k, tup[self.p_idx]) for k, tup in featCorrels.items()] )
                 rDict = dict( [(k, tup[self.r_idx]) for k, tup in featCorrels.items()] )
-                pDict = fwc.pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
+                pDict = dlac.pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
                 for k, tup in featCorrels.items():
                     featCorrels[k] = (tup[self.r_idx], pDict[k]) + tup[self.n_idx:]
 
@@ -834,7 +834,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 # find correlation or regression coef, p-value, and N (stored in tup)
                 if controls: #consider controls
 
-                    (X, y) = fwc.alignDictsAsXy([controls[k] for k in sorted(controls.keys())] + [dataDict], outcomes)
+                    (X, y) = dlac.alignDictsAsXy([controls[k] for k in sorted(controls.keys())] + [dataDict], outcomes)
                     if zscoreRegression:
                         X = zscore(X)
 
@@ -852,8 +852,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                                     auc -= 1
                                 print("  %11s: %.4f" %(cntrl, auc))
                         except (ValueError, Exception) as err:
-                            fwc.warn("threw ValueError: %s" % str(err))
-                            fwc.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
+                            dlac.warn("threw ValueError: %s" % str(err))
+                            dlac.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
                             #TODO: add line of error
                         #all controls alone:
                         lr = LogisticRegression(penalty='l2', C=10000000, fit_intercept=True)
@@ -875,8 +875,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                             print("%d/%d: %.3f cauc vs %.3f c+tpc (%.3f difference); YES bootstrapping" % (featNum,numFeats,abs(cauc),check,check-abs(cauc)))
                             Xc = X[:,:-1]
                             Xend = X[:,-1][...,None]
-                            pool = multiprocessing.Pool(int(fwc.CORES/3))
-                            fCount = sum(pool.map(fwc.fiftyChecks, [(Xc, Xend, y, check)]*int(bootstrapP/50) ) )
+                            pool = multiprocessing.Pool(int(dlac.CORES/3))
+                            fCount = sum(pool.map(dlac.fiftyChecks, [(Xc, Xend, y, check)]*int(bootstrapP/50) ) )
 
                             tup = (auc, fCount/float(bootstrapP), len(y), conf)
                             pool.close()
@@ -890,7 +890,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
                 else: #no controls
                     cauc = 0.50
-                    (X, y) = fwc.alignDictsAsLists(dataDict, outcomes)
+                    (X, y) = dlac.alignDictsAsLists(dataDict, outcomes)
                     y = list(map(float, y))
                     if zscoreRegression:
                         X = zscore(X)
@@ -899,8 +899,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                         if auc < 0.5:
                             auc -= 1
                     except (ValueError, Exception) as err:
-                        fwc.warn("threw ValueError: %s" % str(err))
-                        fwc.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
+                        dlac.warn("threw ValueError: %s" % str(err))
+                        dlac.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
 
                     #Bootstrap without controls:
                     if bootstrapP:
@@ -910,8 +910,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                             #print X
                             Xc = None
                             #Xend = X[:,-1][...,None]
-                            pool = multiprocessing.Pool(int(fwc.CORES/3))
-                            fCount = sum(pool.map(fwc.fiftyChecks, [(Xc, X, y, check)]*int(bootstrapP/50) ) )
+                            pool = multiprocessing.Pool(int(dlac.CORES/3))
+                            fCount = sum(pool.map(dlac.fiftyChecks, [(Xc, X, y, check)]*int(bootstrapP/50) ) )
                             # print fCount
                             # test = fiftyChecks((Xc, X, y, check))
                             # print test
@@ -928,12 +928,12 @@ class OutcomeAnalyzer(OutcomeGetter):
 
                 #adjust or add to tup...
                 if not tup or not tup[0]:
-                    fwc.warn("unable to AUC feature '%s' with '%s'" %(feat, outcomeField))
+                    dlac.warn("unable to AUC feature '%s' with '%s'" %(feat, outcomeField))
                     if includeFreqs: tup = (float('nan'), float('nan'), len(y), conf, 0)
                     else: tup = (float('nan'), float('nan'), len(y), conf)
                 else:
                     if p_correction_method.startswith("bonf"):
-                        tup = fwc.bonfPCorrection(tup, numFeats)
+                        tup = dlac.bonfPCorrection(tup, numFeats)
                     if includeFreqs:
                         try:
                             if self.use_unicode:
@@ -943,7 +943,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
                         except KeyError:
                             if not whitelist:
-                                fwc.warn("unable to find total freq for '%s'" % feat)
+                                dlac.warn("unable to find total freq for '%s'" % feat)
                             tup = tup + (float('nan'), )
                     try:
                         aucs[outcomeField][feat] = tup
@@ -951,7 +951,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                         aucs[outcomeField] = {feat: tup}
 
                 numRed += 1
-                if numRed % 200 == 0: fwc.warn("  %d features correlated"%(numRed))
+                if numRed % 200 == 0: dlac.warn("  %d features correlated"%(numRed))
                 firstLoop = False
 
         if p_correction_method and not p_correction_method.startswith("bonf"):
@@ -960,7 +960,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 newAucs[outcomeField] = dict()
                 pDict = dict( [(k, tup[1]) for k, tup in featRs.iteritems()] )
                 rDict = dict( [(k, tup[0]) for k, tup in featRs.iteritems()] )
-                pDict = fwc.pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
+                pDict = dlac.pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
                 for k, tup in featRs.iteritems():
                     newAucs[outcomeField][k] = (tup[0], pDict[k]) + tup[2:]
             aucs = newAucs
@@ -1029,12 +1029,12 @@ class OutcomeAnalyzer(OutcomeGetter):
                             if firstLoop:
                                 # show the coefficients from the controls alone
                                 thisControlKeys = sorted(controls.keys())
-                                (X, y) = fwc.alignDictsAsXy([controls[k] for k in thisControlKeys], outcomes)
+                                (X, y) = dlac.alignDictsAsXy([controls[k] for k in thisControlKeys], outcomes)
 
                                 # print "alignDict time: %f"% float(time.time() - t0)#debug
 
                                 if spearman:
-                                    X = fwc.switchColumnsAndRows([rankdata(x) for x in fwc.switchColumnsAndRows(X)])
+                                    X = dlac.switchColumnsAndRows([rankdata(x) for x in dlac.switchColumnsAndRows(X)])
                                     y = rankdata(y)
                                 if zscoreRegression: (X, y) = (zscore(X), zscore(y))
 
@@ -1053,17 +1053,17 @@ class OutcomeAnalyzer(OutcomeGetter):
                                         comboCorrels[outcomeField][controlKeyCombo]['__CONTROL_'+thisControlKeys[c]] = tup
                                     print(results.summary(outcomeField, sorted(controls.keys())))#debug
                                 except ValueError as err:
-                                    fwc.warn("OLS threw ValueError: %s" % str(err))
-                                    fwc.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
+                                    dlac.warn("OLS threw ValueError: %s" % str(err))
+                                    dlac.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
 
                             #t0 = time.time()#debug
 
-                            (X, y) = fwc.alignDictsAsXy(list(controls.values()) + [dataDict], outcomes)
+                            (X, y) = dlac.alignDictsAsXy(list(controls.values()) + [dataDict], outcomes)
 
                             # print "alignDict time: %f"% float(time.time() - t0)#debug
 
                             if spearman:
-                                X = fwc.switchColumnsAndRows([rankdata(x) for x in fwc.switchColumnsAndRows(X)])
+                                X = dlac.switchColumnsAndRows([rankdata(x) for x in dlac.switchColumnsAndRows(X)])
                                 y = rankdata(y)
                             if zscoreRegression: (X, y) = (zscore(X), zscore(y))
                             results = None
@@ -1072,28 +1072,28 @@ class OutcomeAnalyzer(OutcomeGetter):
                                 tup = (results.params[-1], results.pvalues[-1], len(y))
                                 #print results.summary(outcomeField, controls.keys()+[feat])#debug
                             except ValueError as err:
-                                fwc.warn("OLS threw ValueError: %s" % str(err))
-                                fwc.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
+                                dlac.warn("OLS threw ValueError: %s" % str(err))
+                                dlac.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
 
                         else:
                             # If not controls : run pearson / spearman correlation
-                            (dataList, outcomeList) = fwc.alignDictsAsLists(dataDict, outcomes)
+                            (dataList, outcomeList) = dlac.alignDictsAsLists(dataDict, outcomes)
                             if spearman: tup = spearmanr(dataList, outcomeList) + (len(dataList),)
                             else: tup = pearsonr(dataList, outcomeList) + (len(dataList),)
 
                         if not tup or not tup[0]:
-                            fwc.warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
+                            dlac.warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
                             if includeFreqs: tup = (float('nan'), float('nan'), float('nan'), float('nan'))
                             else: tup = (float('nan'), float('nan'), float('nan'))
                         else:
                             if p_correction_method.startswith("bonf"):
-                                tup = fwc.bonfPCorrection(tup, numFeats)
+                                tup = dlac.bonfPCorrection(tup, numFeats)
                             if includeFreqs:
 
                                 try:
                                     tup = tup + (int(featFreqs[str(feat)]), )
                                 except KeyError:
-                                    fwc.warn("unable to find total freq for '%s'" % feat)
+                                    dlac.warn("unable to find total freq for '%s'" % feat)
                                     tup = tup + (float('nan'), )
                         try:
                             comboCorrels[outcomeField][controlKeyCombo][feat] = tup
@@ -1106,7 +1106,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                                 comboCorrels[outcomeField][controlKeyCombo][feat] = tup
 
             numRed += 1
-            if numRed % 200 == 0: fwc.warn("  %d features correlated"%(numRed))
+            if numRed % 200 == 0: dlac.warn("  %d features correlated"%(numRed))
             firstLoop = False
 
 
@@ -1117,7 +1117,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 for controlCombo, featCorrels in featComboCorrels.items():
                     pDict = dict( [(k, tup[1]) for k, tup in featCorrels.items()] )
                     rDict = dict( [(k, tup[0]) for k, tup in featCorrels.items()] )
-                    pDict = fwc.pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
+                    pDict = dlac.pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
                     for k, tup in featComboCorrels.items():
                         featComboCorrels[k][controlCombo] = (tup[0], pDict[k]) + tup[2:]
 
@@ -1185,9 +1185,9 @@ class OutcomeAnalyzer(OutcomeGetter):
             outcomeKeys = list(allOutcomes.keys())
             numOutcomes = len(outcomeKeys)
             outcomeColumns = dict((outcomeKeys[i], i) for i in range(len(outcomeKeys)))
-            (X, y) = fwc.alignDictsAsXy(list(allOutcomes.values()) + list(controls.values()), dataDict)
+            (X, y) = dlac.alignDictsAsXy(list(allOutcomes.values()) + list(controls.values()), dataDict)
             if spearman:
-                X = fwc.switchColumnsAndRows([rankdata(x) for x in fwc.switchColumnsAndRows(X)])
+                X = dlac.switchColumnsAndRows([rankdata(x) for x in dlac.switchColumnsAndRows(X)])
                 y = rankdata(y)
             if zscoreRegression: (X, y) = (zscore(X), zscore(y))
             results = None
@@ -1211,35 +1211,35 @@ class OutcomeAnalyzer(OutcomeGetter):
                     i += 1
                     if not tup[0]: #if there was no coefficient for some reason
                         if not whitelist:
-                            fwc.warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
+                            dlac.warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
                         if includeFreqs: tup = (float('nan'), float('nan'), float('nan'), float('nan'))
                         else: tup = (float('nan'), float('nan'), float('nan'))
                     else:
                         if p_correction_method.startswith("bonf"):
-                            tup = fwc.bonfPCorrection(tup, numFeats)
+                            tup = dlac.bonfPCorrection(tup, numFeats)
                         if includeFreqs:
                             try:
                                 if not featFreqs: raise KeyError
                                 tup = tup + (int(featFreqs[str(feat)]), )
                             except KeyError:
                                 if not whitelist:
-                                    fwc.warn("unable to find total freq for '%s'" % feat)
+                                    dlac.warn("unable to find total freq for '%s'" % feat)
                                 tup = tup + (float('nan'), )
                     currentCoeffs[outcomeName] = tup
             except ValueError as err: #if OLS couldn't run
-                fwc.warn("OLS threw ValueError: %s" % str(err))
-                fwc.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
+                dlac.warn("OLS threw ValueError: %s" % str(err))
+                dlac.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
 
             coeffs[feat] = currentCoeffs
             numRed += 1
-            if numRed % 200 == 0: fwc.warn("  %d features regressed over"%(numRed))
+            if numRed % 200 == 0: dlac.warn("  %d features regressed over"%(numRed))
 
         if p_correction_method and not p_correction_method.startswith("bonf"):
             ##change correls here.
             for feat, outcomeCoeffs in coeffs.items():
                 pDict = dict( [(k, tup[1]) for k, tup in featCorrels.items()] )
                 rDict = dict( [(k, tup[0]) for k, tup in featCorrels.items()] )
-                pDict = fwc.pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
+                pDict = dlac.pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
                 for k, tup in outcomeCoeffs.items():
                     outcomeCoeffsCorrels[k] = (tup[0], pDict[k]) + tup[2:]
 
@@ -1293,15 +1293,15 @@ class OutcomeAnalyzer(OutcomeGetter):
                 print("Generating plot data for feature '%s' and outcome %s (controlled for %s)" % (feat, outcomeField, str(list(allControls.keys()))))
                 (X, y) = (None, None)
                 if allControls:
-                    (X, y) = fwc.alignDictsAsXy([outcomes] + list(allControls.values()), dataDict)
+                    (X, y) = dlac.alignDictsAsXy([outcomes] + list(allControls.values()), dataDict)
                 else:
-                    (X, y) = fwc.alignDictsAsLists(outcomes, dataDict)
+                    (X, y) = dlac.alignDictsAsLists(outcomes, dataDict)
                 if zscoreRegression:
                     # (X, y) = (zscore(X), y)
                     # (X, y) = (zscore(X), zscore(y))
                     #(X, y) = (zscore(X), zscore(y))
-                    (X, y) = fwc.stratifiedZScoreybyX0(X, y)
-                elif allControls: fwc.warn("running loess with controls without zscore does not produce reliable output")
+                    (X, y) = dlac.stratifiedZScoreybyX0(X, y)
+                elif allControls: dlac.warn("running loess with controls without zscore does not produce reliable output")
                 sortedX0set = []
                 if len(X.shape) > 1: sortedX0set = sorted(set(X[:,0]))
                 else: sortedX0set = sorted(set(X))
@@ -1328,7 +1328,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             import rpy2.robjects as ro
             from rpy2.robjects.packages import importr
         except:
-            fwc.warn("You must have rpy2 installed for this.")
+            dlac.warn("You must have rpy2 installed for this.")
             exit()
 
         ro.r.library('ggplot2')
@@ -1392,7 +1392,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 ro.r('plotdata <- data.frame(feature=rep("%s", length(yhat)), %s=%s, yhat=yhat)'%(feat, outcome, outcome))
                 #ro.r('plotdata <- data.frame(feature=rep("%s", length(yhat)), %s=%s, yhat=yhat, lty=rep(1+floor((%d-1)/3.0), length(yhat)))'%(feat, outcome, outcome, ii)) #dashed <- HAS
                 ro.r('full.plotdata <- rbind(full.plotdata, plotdata)')
-                fwc.warn('finished feature: %s'%(feat,))
+                dlac.warn('finished feature: %s'%(feat,))
 
                 # ro.r('''plot <- plot + scale_y_continuous('Standardized Relative Frequency', limits=c(-3.3,3.3), breaks=c(-3,0,3)) + scale_x_continuous('Age', limits=c(10, 70), breaks=seq(15,65,10))''')
                 # ro.r('''save(full.plotdata, file='plotdata.RObj')''')
@@ -1404,7 +1404,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 # outputname = outcome.upper() + '-' + '-'.join(featToFeatData.keys()) + '.jpg' if not outputname else outputname
                 outputname = outcome.upper() + '-' + '-'.join(list(featToFeatData.keys())) + '.svg' if not outputname else outputname ## HAS
                 output_filename = os.path.join(outputdir, outputname)
-                fwc.warn( 'Writing to file: %s'%(output_filename,) )
+                dlac.warn( 'Writing to file: %s'%(output_filename,) )
 
                 plotscript_filename = '/tmp/plotscript-%s.R'%(time_uuid,)
                 with open(plotscript_filename, 'w') as f:
@@ -1709,8 +1709,8 @@ class OutcomeAnalyzer(OutcomeGetter):
             (r, p, n, ci, freq) = rf
             tw = topicWords.get(topic)
             if not tw:
-                fwc.warn("**The following topic had no words from the topic lexicion**")
-                fwc.warn("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, Freq: %d]\n" % (topic, r, p, n, freq))
+                dlac.warn("**The following topic had no words from the topic lexicion**")
+                dlac.warn("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, Freq: %d]\n" % (topic, r, p, n, freq))
                 continue
             currentWords = set([t[0] for t in tw])
             shouldCont = False
@@ -1722,13 +1722,13 @@ class OutcomeAnalyzer(OutcomeGetter):
             if not shouldCont:
                 keptTopics.add(topic)
             if freq < 1000:
-                fwc.warn("**The frequency for this topic was very small**")
-                fwc.warn("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, CI: (%.4f,%.4f), Freq: %d]\n" % (topic, r, p, n, ci[0], ci[1], freq))
+                dlac.warn("**The frequency for this topic was very small**")
+                dlac.warn("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, CI: (%.4f,%.4f), Freq: %d]\n" % (topic, r, p, n, ci[0], ci[1], freq))
 
         return keptTopics
 
 
-    def printTagCloudData(self, correls, maxP = fwc.DEF_P, outputFile='', paramString = None, maxWords = 100, duplicateFilter = False, colorScheme='multi', cleanCloud = False):
+    def printTagCloudData(self, correls, maxP = dlac.DEF_P, outputFile='', paramString = None, maxWords = 100, duplicateFilter = False, colorScheme='multi', cleanCloud = False):
         """
         Prints data that can be inputted into tag cloud software
 
@@ -1777,12 +1777,12 @@ class OutcomeAnalyzer(OutcomeGetter):
                     wordFreqs = dict( [(w, v[self.freq_idx]) for (w, v) in list(rs.items()) if not ' ' in w] ) #word->freq dict
                 if posRs:
                     if len(posRs[0][1]) < self.correls_length - 1:
-                        fwc.warn("printTagCloudData: not enough data or duplicateFilter option, skipping filter for %s posRs\n"%outcomeField)
+                        dlac.warn("printTagCloudData: not enough data or duplicateFilter option, skipping filter for %s posRs\n"%outcomeField)
                     else:
                         posRs = OutcomeAnalyzer.duplicateFilter(posRs, wordFreqs, maxWords * 3)
                 if negRs:
                     if len(negRs[0][1]) < self.correls_length - 1:
-                        fwc.warn("printTagCloudData: not enough data or duplicateFilter option, skipping filter for %s negRs\n"%outcomeField)
+                        dlac.warn("printTagCloudData: not enough data or duplicateFilter option, skipping filter for %s negRs\n"%outcomeField)
                     else:
                         negRs = OutcomeAnalyzer.duplicateFilter(negRs, wordFreqs, maxWords * 3)
 
@@ -1808,7 +1808,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             fsock.close()
             sys.stdout = sys.__stdout__
 
-    def printTopicTagCloudData(self, correls, topicLex, maxP = fwc.DEF_P, paramString = None, maxWords = 15, maxTopics = 100, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False, cleanCloud=False):
+    def printTopicTagCloudData(self, correls, topicLex, maxP = dlac.DEF_P, paramString = None, maxWords = 15, maxTopics = 100, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False, cleanCloud=False):
         """
         Prints Topic Tag Cloud data to text file
 
@@ -1915,7 +1915,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             {term : weight}
         """
         if not topicLex:
-            fwc.warn("No topic lexicon selected, please specify it with --topic_lexicon TOP_LEX")
+            dlac.warn("No topic lexicon selected, please specify it with --topic_lexicon TOP_LEX")
             exit(2)
         sql = "SELECT term, category, weight FROM %s.%s"%(self.lexicondb, topicLex)
         catList = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
@@ -2154,7 +2154,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
     @staticmethod
-    def printTagCloudFromTuples(rList, maxWords, rankOrderFreq = True, rankOrderR = False, colorScheme='multi', use_unicode=True, cleanCloud=False, censor_dict=fwc.DEF_CENSOR_DICT):
+    def printTagCloudFromTuples(rList, maxWords, rankOrderFreq = True, rankOrderR = False, colorScheme='multi', use_unicode=True, cleanCloud=False, censor_dict=dlac.DEF_CENSOR_DICT):
         """
         Prints a tag cloud from a set of tuples
 
@@ -2213,7 +2213,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     print("%s:%d:%s" % (w.replace(' ', '_'), int(occ), color))
                 else:
                     if len(w) > len(tc.removeNonAscii(w)):
-                        fwc.warn("Unicode being ignored, %s is being skipped" % w)
+                        dlac.warn("Unicode being ignored, %s is being skipped" % w)
                     else:
                         print("%s:%d:%s" % (w.replace(' ', '_'), int(occ), color))
 
@@ -2222,7 +2222,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     print("%s:%d" % (w.replace(' ', '_'), int(occ)))
                 else:
                     if len(w) > len(tc.removeNonAscii(w)):
-                        fwc.warn("Unicode being ignored, %s is being skipped" % w)
+                        dlac.warn("Unicode being ignored, %s is being skipped" % w)
                     else:
                         print("%s:%d" % (w.replace(' ', '_'), int(occ)))
 
@@ -2309,33 +2309,33 @@ class OutcomeAnalyzer(OutcomeGetter):
         if colorScheme=='multi':
         #print "%d %d %.4f" %(freq, maxFreq, perc)#debug
             if perc < 0.17: #grey to darker grey
-                (red, green, blue) = fwc.rgbColorMix((168, 168, 168),(124, 124, 148), resolution)[int(((1.00-(1-perc))/0.17)*resolution) - 1]
+                (red, green, blue) = dlac.rgbColorMix((168, 168, 168),(124, 124, 148), resolution)[int(((1.00-(1-perc))/0.17)*resolution) - 1]
             elif perc >= 0.17 and perc < 0.52: #grey to blue
-                (red, green, blue) = fwc.rgbColorMix((124, 124, 148), (32, 32, 210), resolution)[int(((0.830-(1-perc))/0.35)*resolution) - 1]
+                (red, green, blue) = dlac.rgbColorMix((124, 124, 148), (32, 32, 210), resolution)[int(((0.830-(1-perc))/0.35)*resolution) - 1]
             elif perc >= 0.52 and perc < 0.90: #blue to red
-                (red, green, blue) = fwc.rgbColorMix((32, 32, 210), (200, 16, 32), resolution)[int(((0.48-(1-perc))/0.38)*resolution) - 1]
+                (red, green, blue) = dlac.rgbColorMix((32, 32, 210), (200, 16, 32), resolution)[int(((0.48-(1-perc))/0.38)*resolution) - 1]
             else: #red to dark red
-                (red, green, blue) = fwc.rgbColorMix((200, 16, 32), (128, 0, 0), resolution)[int(((0.10-(1-perc))/0.10)*resolution) - 1]
+                (red, green, blue) = dlac.rgbColorMix((200, 16, 32), (128, 0, 0), resolution)[int(((0.10-(1-perc))/0.10)*resolution) - 1]
         # blue:
         elif colorScheme=='blue':
             if perc < 0.50: #light blue to med. blue
-                (red, green, blue) = fwc.rgbColorMix((76, 76, 236), (48, 48, 156), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
+                (red, green, blue) = dlac.rgbColorMix((76, 76, 236), (48, 48, 156), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
             else: #med. blue to strong blue
-                (red, green, blue) = fwc.rgbColorMix((48, 48, 156), (0, 0, 110), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
+                (red, green, blue) = dlac.rgbColorMix((48, 48, 156), (0, 0, 110), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
         #red:
         elif colorScheme=='red':
             if perc < 0.50: #light red to med. red
-                (red, green, blue) = fwc.rgbColorMix((236, 76, 76), (156, 48, 48), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
+                (red, green, blue) = dlac.rgbColorMix((236, 76, 76), (156, 48, 48), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
             else: #med. red to strong red
-                (red, green, blue) = fwc.rgbColorMix((156, 48, 48), (110, 0, 0), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
+                (red, green, blue) = dlac.rgbColorMix((156, 48, 48), (110, 0, 0), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
         elif colorScheme=='green':
-            (red, green, blue) = fwc.rgbColorMix((166, 247, 178), (27, 122, 26), resolution)[int((1.00-(1-perc))*resolution) - 1]
+            (red, green, blue) = dlac.rgbColorMix((166, 247, 178), (27, 122, 26), resolution)[int((1.00-(1-perc))*resolution) - 1]
         #red+randomness:
         elif colorScheme=='red-random':
             if perc < 0.50: #light blue to med. blue
-                (red, green, blue) = fwc.rgbColorMix((236, 76, 76), (156, 48, 48), resolution, True)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
+                (red, green, blue) = dlac.rgbColorMix((236, 76, 76), (156, 48, 48), resolution, True)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
             else: #med. blue to strong blue
-                (red, green, blue) = fwc.rgbColorMix((156, 48, 48), (110, 0, 0), resolution, True)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
+                (red, green, blue) = dlac.rgbColorMix((156, 48, 48), (110, 0, 0), resolution, True)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
 
 
         #print "(%d %d %d)" %(red, green, blue)#debug
@@ -2344,7 +2344,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         return htmlcode.replace(' ', '0')
 
 
-    def generateTagCloudImage(self, correls, maxP = fwc.DEF_P, paramString = None, colorScheme='multi', cleanCloud = False):
+    def generateTagCloudImage(self, correls, maxP = dlac.DEF_P, paramString = None, colorScheme='multi', cleanCloud = False):
         """
         Generates a tag cloud image from correls
 
@@ -2412,7 +2412,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     def barPlot(self, correls, outputFile = None, featSet = set(), featsPerOutcome = 5):
         from rFeaturePlot import FeaturePlotter
-        fwc.warn("Generating Bar Plot.")
+        dlac.warn("Generating Bar Plot.")
         if not outputFile: outputFile = '_'.join(self.outcome_value_fields)
         #generate features to use: (ignore featsPerOutcome if featset is passed in)
         if not featSet:
@@ -2428,24 +2428,24 @@ class OutcomeAnalyzer(OutcomeGetter):
         FeaturePlotter().barPlot(outputFile, newCorrels)
 
     def correlMatrix(self, correlMatrix, outputFile = None, outputFormat='html', sort = False, pValue = True, nValue = True, cInt = True, freq = False, paramString = None):
-        fwc.warn("Generating Correlation Matrix.")
+        dlac.warn("Generating Correlation Matrix.")
 
         if outputFile:
             #redirect
             outputFile = outputFile +'.'+outputFormat
-            fwc.warn(" print to file: %s" % outputFile)
+            dlac.warn(" print to file: %s" % outputFile)
         outputFilePtr = sys.stdout
         if outputFile: outputFilePtr = open(outputFile, 'w')
         if paramString: print(paramString + "\n \n", file=outputFilePtr)
 
         outputFormat = outputFormat.lower()
-        fwc.warn('=====================%d===================='%(len(correlMatrix),))
+        dlac.warn('=====================%d===================='%(len(correlMatrix),))
         if outputFormat == 'pickle':
             import pickle as pickle
             pickle.dump(correlMatrix, open(outputFile, "wb" ))
         elif outputFormat == 'csv':
             if (len(correlMatrix)>0):
-                self.outputCorrelMatrixCSV(fwc.reverseDictDict(correlMatrix), pValue, nValue, cInt, freq, outputFilePtr=outputFilePtr)
+                self.outputCorrelMatrixCSV(dlac.reverseDictDict(correlMatrix), pValue, nValue, cInt, freq, outputFilePtr=outputFilePtr)
                 if sort: self.outputSortedCorrelCSV(correlMatrix, pValue, nValue, cInt, freq, outputFilePtr=outputFilePtr)
         elif outputFormat == 'html':
             if (len(correlMatrix)>0):
@@ -2453,21 +2453,21 @@ class OutcomeAnalyzer(OutcomeGetter):
                 if sort: header += ' or see them <a href="#sorted">sorted by r-values</a>'
                 header += '<br><br></div>'
                 print(header, file=outputFilePtr)
-                self.outputCorrelMatrixHTML(fwc.reverseDictDict(correlMatrix), pValue, nValue, cInt, freq, outputFilePtr=outputFilePtr)
+                self.outputCorrelMatrixHTML(dlac.reverseDictDict(correlMatrix), pValue, nValue, cInt, freq, outputFilePtr=outputFilePtr)
                 if sort: self.outputSortedCorrelHTML(correlMatrix, pValue, nValue, cInt, freq, outputFilePtr=outputFilePtr)
         else:
-            fwc.warn("unknown output format: %s"% outputFormat)
+            dlac.warn("unknown output format: %s"% outputFormat)
 
     @staticmethod
     def outputCorrelMatrixCSV(correlMatrix, pValue = True, nValue = True, cInt=True, freq=True, outputFilePtr = sys.stdout):
-        keys1 = sorted(list(correlMatrix.keys()), key = fwc.permaSortedKey)
+        keys1 = sorted(list(correlMatrix.keys()), key = dlac.permaSortedKey)
         # keys2 = sorted(correlMatrix[keys1[0]].keys(), key = permaSortedKey)
         keys2 = set([j for i in list(correlMatrix.values()) for j in list(i.keys())])
-        keys2 = sorted(list(keys2), key = fwc.permaSortedKey)
+        keys2 = sorted(list(keys2), key = dlac.permaSortedKey)
         writer = csv.writer(outputFilePtr)
         titlerow = ['feature']
         for key2 in keys2:
-            titlerow.append(fwc.tupleToStr(key2))
+            titlerow.append(dlac.tupleToStr(key2))
             if pValue: titlerow.append('p')
             if nValue: titlerow.append('N')
             if cInt:
@@ -2476,7 +2476,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             if freq: titlerow.append('freq')
         writer.writerow(titlerow)
         for key1 in keys1:
-            row = [fwc.tupleToStr(key1)]
+            row = [dlac.tupleToStr(key1)]
             for key2 in keys2:
                 (r, p, n, ci, f) = correlMatrix[key1].get(key2, [0, 1, 0, (0,0), 0])[:OutcomeAnalyzer.correls_length]
                 row.append(r)
@@ -2489,14 +2489,14 @@ class OutcomeAnalyzer(OutcomeGetter):
             try:
                 writer.writerow(row)
             except UnicodeEncodeError:
-                fwc.warn("Line contains unprintable unicode, skipped: %s" % row)
+                dlac.warn("Line contains unprintable unicode, skipped: %s" % row)
 
     @staticmethod
     def outputSortedCorrelCSV(correlMatrix, pValue = True, nValue = True, cInt = True, freq=False, outputFilePtr = sys.stdout, topN=50):
         """Ouputs a sorted correlation matrix (note correlmatrix is reversed from non-sorted) """
         #TODO: topN
         print("\nSORTED:", file=outputFilePtr)
-        keys1 = sorted(list(correlMatrix.keys()), key = fwc.permaSortedKey)
+        keys1 = sorted(list(correlMatrix.keys()), key = dlac.permaSortedKey)
         sortedData = dict()
         titlerow = ['rank']
         maxLen = 0
@@ -2520,7 +2520,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 data = sortedData[key1]
                 if rank < len(data):#print this keys rank item
                     data = data[rank]
-                    row.append(fwc.tupleToStr(data[0])) #name of feature
+                    row.append(dlac.tupleToStr(data[0])) #name of feature
                     (r, p, n, ci, f) = data[1][:OutcomeAnalyzer.correls_length]
                     row.append(r)
                     if pValue: row.append(p)
@@ -2532,7 +2532,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             try:
                 writer.writerow(row)
             except UnicodeEncodeError:
-                fwc.warn("Line contains unprintable unicode, skipped: %s" % row)
+                dlac.warn("Line contains unprintable unicode, skipped: %s" % row)
 
         titlerow = ['rank']
         for key1 in keys1:
@@ -2553,7 +2553,7 @@ class OutcomeAnalyzer(OutcomeGetter):
     def outputComboCorrelMatrixCSV(comboCorrelMatrix, outputstream = sys.stdout, paramString = None):
         """prints correl matrices for all combinations of features, always prints p-values, n, and freq)"""
         print(paramString+"\n", file=outputstream)
-        outcomeKeys = sorted(list(comboCorrelMatrix.keys()), key = fwc.permaSortedKey)
+        outcomeKeys = sorted(list(comboCorrelMatrix.keys()), key = dlac.permaSortedKey)
         for outcomeName in outcomeKeys:
             columnKeys = sorted(list(comboCorrelMatrix[outcomeName].keys()), key = lambda k: len(k))
             columnNames = ['feature'] + sum([['b_'+str(ck), 'p_'+str(ck), 'n_'+str(ck)] for ck in columnKeys], [])[:] + ['freq']
@@ -2595,14 +2595,14 @@ class OutcomeAnalyzer(OutcomeGetter):
         output += "<table border=1><tr>"
         output += '<td></td>'
         # correlMatrix: dictionary of rows - dictionary of columns
-        keys1 = sorted(list(correlMatrix.keys()), key = fwc.permaSortedKey)
+        keys1 = sorted(list(correlMatrix.keys()), key = dlac.permaSortedKey)
         # keys2 = sorted(correlMatrix[keys1[0]].keys(), key = permaSortedKey)
         keys2 = set([j for i in list(correlMatrix.values()) for j in list(i.keys())])
-        keys2 = sorted(list(keys2), key = fwc.permaSortedKey)
+        keys2 = sorted(list(keys2), key = dlac.permaSortedKey)
         lastKey2 = keys2[-1]
         for key2 in keys2:
 
-            output += "<td><b>%s</b></td>" % fwc.tupleToStr(key2)
+            output += "<td><b>%s</b></td>" % dlac.tupleToStr(key2)
             if pValue: output += '<td class="sml"><em>(p)</em></td>'
             if nValue: output += '<td class="sml"><em>N</em></td>'
             if cInt:
@@ -2612,7 +2612,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         output += "</tr>\n"
 
         for key1 in keys1:
-            output += "<tr><td><b>%s</b></td>" % fwc.tupleToStr(key1)
+            output += "<tr><td><b>%s</b></td>" % dlac.tupleToStr(key1)
             ffreq = 0
             for key2 in keys2:
                 (r, p, n, ci, f) = correlMatrix[key1].get(key2, [0, 1, 0, (0,0), ffreq])[:OutcomeAnalyzer.correls_length]
@@ -2672,14 +2672,14 @@ class OutcomeAnalyzer(OutcomeGetter):
         output += '<a href="#bottomSorted">Go to bottom</a>'
         output += "<p> SORTED:"
         output += "<table border=1>"
-        keys1 = sorted(list(correlMatrix.keys()), key = fwc.permaSortedKey)
+        keys1 = sorted(list(correlMatrix.keys()), key = dlac.permaSortedKey)
         sortedData = dict()
         maxLen = 0
         output += "<tr><td><b>rank</b></td>"
         for key1 in keys1:
             sortedData[key1] = sorted(iter(correlMatrix[key1].items()), key=lambda k_v2: (-1*float(k_v2[1][OutcomeAnalyzer.r_idx]) if not isnan(float(k_v2[1][OutcomeAnalyzer.r_idx])) else 0, k_v2[0]))
             if len(sortedData[key1]) > maxLen: maxLen = len(sortedData[key1])
-            output += "<td><b>%s<br/>r</b></td>"%fwc.tupleToStr(key1)
+            output += "<td><b>%s<br/>r</b></td>"%dlac.tupleToStr(key1)
 
             pnf = []
             if pValue: pnf.append("<em>(p)</em>")
@@ -2725,7 +2725,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     else: #must be nan or inf
                         bgcolor = "rgb(190, 190, 190)"
 
-                    output += "<td class='%s' style='background-color:%s;'>%s<br />%.3f</td>" % (fgclass, bgcolor,fwc.tupleToStr(data[0]), r)
+                    output += "<td class='%s' style='background-color:%s;'>%s<br />%.3f</td>" % (fgclass, bgcolor,dlac.tupleToStr(data[0]), r)
                     pnf = []
                     if pValue: pnf.append("<em>(%6.4f)</em>"%float(p))
                     if nValue: pnf.append("<em>%d</em>" % int(n))
@@ -2741,7 +2741,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         output += "<tr><td><b>rank</b></td>"
         for key1 in keys1:
-            output += "<td><b>%s<br/>r</b></td>"%fwc.tupleToStr(key1)
+            output += "<td><b>%s<br/>r</b></td>"%dlac.tupleToStr(key1)
             pnf = []
             if pValue: pnf.append("<em>(p)</em>")
             if nValue: pnf.append("<em>N</em>")
@@ -2763,13 +2763,13 @@ class OutcomeAnalyzer(OutcomeGetter):
         print(output, file=outputFilePtr)
         print("</p>", file=outputFilePtr)
 
-    def printSignificantCoeffs(self, coeffs, outputFile = None, outputFormat='tsv', sort = False, pValue = True, nValue = False, maxP = fwc.DEF_P, paramString = None):
-        fwc.warn("Generating Significant Coeffs.")
+    def printSignificantCoeffs(self, coeffs, outputFile = None, outputFormat='tsv', sort = False, pValue = True, nValue = False, maxP = dlac.DEF_P, paramString = None):
+        dlac.warn("Generating Significant Coeffs.")
 
         if outputFile:
             #redirect
             outputFile = outputFile +'.'+outputFormat
-            fwc.warn(" print to file: %s" % outputFile)
+            dlac.warn(" print to file: %s" % outputFile)
             old_stdout = sys.stdout
             sys.stdout = open(outputFile, 'w')
         if paramString: print(paramString + "\n")
@@ -2791,14 +2791,14 @@ class OutcomeAnalyzer(OutcomeGetter):
         if outputFormat == 'html':
             raise NotImplementedError
         else:
-            fwc.warn("unknown output format: %s"% outputFormat)
+            dlac.warn("unknown output format: %s"% outputFormat)
 
         if outputFile:
             #unredirect
             sys.stdout = old_stdout
 
-    def writeSignificantCoeffs4dVis(self, coeffs, outputFile, outputFormat='tsv', sort = False, pValue = True, nValue = False, maxP = fwc.DEF_P, paramString = None, interactions = False):
-        fwc.warn("Generating Significant Coeffs.")
+    def writeSignificantCoeffs4dVis(self, coeffs, outputFile, outputFormat='tsv', sort = False, pValue = True, nValue = False, maxP = dlac.DEF_P, paramString = None, interactions = False):
+        dlac.warn("Generating Significant Coeffs.")
 
         # import pdb
         # pdb.set_trace()
@@ -2826,7 +2826,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 print(header)
                 for ngram, outcomeDict in sigCoeffs.items():
                     if '\t' in ngram:
-                        fwc.warn('ngram [%s] skipped because it had a tab in it' % (ngram, ))
+                        dlac.warn('ngram [%s] skipped because it had a tab in it' % (ngram, ))
                         continue
                     # linedata has: ngram, outcome_1_r, outcome_2_r, ... outcome_n_r, outcome_1_pValue, outcome_2_pValue, ... outcome_n_pValue, num_users, ngram_frequency
                     linedata = [ngram] + list([outcomeDict[x][self.r_idx] for x in outcomes]) + list([outcomeDict[x][self.p_idx] for x in outcomes]) + list(outcomeDict[outcomes[0]][self.n_idx:4])
@@ -2834,7 +2834,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     gf.write(line)
                     print(line)
         else:
-            fwc.warn("unknown output format: %s"% outputFormat)
+            dlac.warn("unknown output format: %s"% outputFormat)
         pprint(sigCoeffs)
 
     def tableToDenseCsv(self, row_column, col_column, value_column, output_csv_filename=None, compress_csv=True):

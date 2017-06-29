@@ -2,10 +2,10 @@ import sys
 import time
 import MySQLdb
 
-from . import fwConstants as fwc
+from . import dlaConstants as dlac
 from .mysqlMethods import mysqlMethods as mm 
 
-class FeatureWorker(object):
+class DLAWorker(object):
     """Generic class for functions working with features
 
     Parameters
@@ -33,10 +33,10 @@ class FeatureWorker(object):
 
     Returns
     -------
-    FeatureWorker object
+    DLAWorker object
     """
     
-    def __init__(self, corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb = fwc.DEF_LEXICON_DB, date_field=fwc.DEF_DATE_FIELD, wordTable = None):
+    def __init__(self, corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb = dlac.DEF_LEXICON_DB, date_field=dlac.DEF_DATE_FIELD, wordTable = None):
         self.corpdb = corpdb
         self.corptable = corptable
         self.correl_field = correl_field
@@ -195,7 +195,7 @@ class FeatureWorker(object):
         FeatureGetter
         """
         from .featureGetter import FeatureGetter
-        if lexicon_count_table: fwc.warn(lexicon_count_table)
+        if lexicon_count_table: dlac.warn(lexicon_count_table)
         wordTable = self.getWordTable() if not lexicon_count_table else lexicon_count_table
 
         assert mm.tableExists(self.corpdb, self.dbCursor, wordTable), "Need to create word table to use current functionality: %s" % wordTable
@@ -284,12 +284,12 @@ class FeatureWorker(object):
         else:
             print("making black or white list: [%s] [%s] [%s]" %([feat if isinstance(feat, str) else feat for feat in args_featlist], args_lextable, args_categories))
         if args_lextable and args_categories:
-            (conn, cur, dcur) = mm.dbConnect(args_lexdb, charset=fwc.DEF_ENCODING, use_unicode=args_use_unicode)
+            (conn, cur, dcur) = mm.dbConnect(args_lexdb, charset=dlac.DEF_ENCODING, use_unicode=args_use_unicode)
             sql = 'SELECT term FROM %s' % (args_lextable)
             if (len(args_categories) > 0) and args_categories[0] != '*':
                 sql = 'SELECT term FROM %s WHERE category in (%s)'%(args_lextable, ','.join(['\''+str(x)+'\'' for x in args_categories]))
 
-            rows = mm.executeGetList(args_lexdb, cur, sql, charset=fwc.DEF_ENCODING, use_unicode=args_use_unicode)
+            rows = mm.executeGetList(args_lexdb, cur, sql, charset=dlac.DEF_ENCODING, use_unicode=args_use_unicode)
             for row in rows:
                 newlist.add(row[0])
         elif args_featlist:
@@ -314,6 +314,6 @@ class FeatureWorker(object):
 #
 if __name__ == "__main__":
     ##Argument Parser:
-    print("featureWorker.py Command-line Interface is Deprecated.\nUse dlatkInterface.py")
+    print("dlaWorker.py Command-line Interface is Deprecated.\nUse dlatkInterface.py")
     sys.exit(0)
 

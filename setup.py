@@ -56,7 +56,7 @@ CLASSIFIERS = [
   'Programming Language :: Python :: 3.5',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '1.0.1'
+VERSION = '1.1.0'
 PACKAGE_DATA = {
   'dlatk': ['data/*.sql'],
   'dlatk.lib': ['lib/meloche_bd.ttf', 'lib/oval_big_mask.png', 'lib/oval_mask.png'],

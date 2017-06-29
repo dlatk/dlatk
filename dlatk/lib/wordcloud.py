@@ -18,13 +18,13 @@ from math import log, sqrt
 from random import random
 from scipy.stats import rankdata
 
-from .. import fwConstants as fwc
+from .. import dlaConstants as dlac
 from ..mysqlMethods import mysqlMethods as mm
 
 try:
     from PIL import Image
 except ImportError:
-    fwc.warn("Image module cannot be imported")
+    dlac.warn("Image module cannot be imported")
     pass
 
 font_ii = 1
@@ -559,42 +559,42 @@ def freqToColor(freq, maxFreq = 1000, resolution=64, colorScheme='multi'):
     if colorScheme=='multi':
     #print "%d %d %.4f" %(freq, maxFreq, perc)#debug
         if perc < 0.17: #grey to darker grey
-            (red, green, blue) = fwc.rgbColorMix((168, 168, 168),(124, 124, 148), resolution)[int(((1.00-(1-perc))/0.17)*resolution) - 1]
+            (red, green, blue) = dlac.rgbColorMix((168, 168, 168),(124, 124, 148), resolution)[int(((1.00-(1-perc))/0.17)*resolution) - 1]
         elif perc >= 0.17 and perc < 0.52: #grey to blue
-            (red, green, blue) = fwc.rgbColorMix((124, 124, 148), (32, 32, 210), resolution)[int(((0.830-(1-perc))/0.35)*resolution) - 1]
+            (red, green, blue) = dlac.rgbColorMix((124, 124, 148), (32, 32, 210), resolution)[int(((0.830-(1-perc))/0.35)*resolution) - 1]
         elif perc >= 0.52 and perc < 0.90: #blue to red
-            (red, green, blue) = fwc.rgbColorMix((32, 32, 210), (200, 16, 32), resolution)[int(((0.48-(1-perc))/0.38)*resolution) - 1]
+            (red, green, blue) = dlac.rgbColorMix((32, 32, 210), (200, 16, 32), resolution)[int(((0.48-(1-perc))/0.38)*resolution) - 1]
         else: #red to dark red
-            (red, green, blue) = fwc.rgbColorMix((200, 16, 32), (128, 0, 0), resolution)[int(((0.10-(1-perc))/0.10)*resolution) - 1]
+            (red, green, blue) = dlac.rgbColorMix((200, 16, 32), (128, 0, 0), resolution)[int(((0.10-(1-perc))/0.10)*resolution) - 1]
     # blue:
     elif colorScheme=='blue':
         if perc <= 0.50: #light blue to med. blue
-            (red, green, blue) = fwc.rgbColorMix((170, 170, 210), (90, 90, 240), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
+            (red, green, blue) = dlac.rgbColorMix((170, 170, 210), (90, 90, 240), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
         else: #med. blue to strong blue
-            (red, green, blue) = fwc.rgbColorMix((90, 90, 240), (30, 30, 140), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
+            (red, green, blue) = dlac.rgbColorMix((90, 90, 240), (30, 30, 140), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
                 # blue:
     elif colorScheme=='old_blue':
         if perc < 0.50: #light blue to med. blue
-            (red, green, blue) = fwc.rgbColorMix((76, 76, 236), (48, 48, 156), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
+            (red, green, blue) = dlac.rgbColorMix((76, 76, 236), (48, 48, 156), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
         else: #med. blue to strong blue
-            (red, green, blue) = fwc.rgbColorMix((48, 48, 156), (0, 0, 110), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
+            (red, green, blue) = dlac.rgbColorMix((48, 48, 156), (0, 0, 110), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
     #red:
     elif colorScheme=='red':
         if perc < 0.50: #light red to med. red
-            (red, green, blue) = fwc.rgbColorMix((236, 76, 76), (156, 48, 48), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
+            (red, green, blue) = dlac.rgbColorMix((236, 76, 76), (156, 48, 48), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
         else: #med. red to strong red
-            (red, green, blue) = fwc.rgbColorMix((156, 48, 48), (110, 0, 0), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
+            (red, green, blue) = dlac.rgbColorMix((156, 48, 48), (110, 0, 0), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
     elif colorScheme=='green':
-        (red, green, blue) = fwc.rgbColorMix((166, 247, 178), (27, 122, 26), resolution)[int((1.00-(1-perc))*resolution) - 1]
+        (red, green, blue) = dlac.rgbColorMix((166, 247, 178), (27, 122, 26), resolution)[int((1.00-(1-perc))*resolution) - 1]
 
     elif colorScheme == 'test':
         (red, green, blue) = (255, 255, 255)
     #red+randomness:
     elif colorScheme=='red-random':
         if perc < 0.50: #light blue to med. blue
-            (red, green, blue) = fwc.rgbColorMix((236, 76, 76), (156, 48, 48), resolution, True)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
+            (red, green, blue) = dlac.rgbColorMix((236, 76, 76), (156, 48, 48), resolution, True)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
         else: #med. blue to strong blue
-            (red, green, blue) = fwc.rgbColorMix((156, 48, 48), (110, 0, 0), resolution, True)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
+            (red, green, blue) = dlac.rgbColorMix((156, 48, 48), (110, 0, 0), resolution, True)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
 
     htmlcode = "%02s%02s%02s" % (hex(red)[2:], hex(green)[2:], hex(blue)[2:])
     return htmlcode.replace(' ', '0')
@@ -888,7 +888,7 @@ def getFeatWithLimit(schema, table, group = '', amount = 50, orderBy = 'group_no
     return mm.executeGetList(schema, dbCursor, query)
 
 # wordcloud print methods
-def makeLexiconTopicWordclouds(lexdb, lextable, output, color, max_words=15, cleanCloud=False, censor_dict=fwc.DEF_CENSOR_DICT):
+def makeLexiconTopicWordclouds(lexdb, lextable, output, color, max_words=15, cleanCloud=False, censor_dict=dlac.DEF_CENSOR_DICT):
     if not os.path.exists(output):
         os.makedirs(output)
     (dbConn, dbCursor, dictCursor) = mm.dbConnect(lexdb)

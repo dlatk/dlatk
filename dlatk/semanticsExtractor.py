@@ -13,7 +13,7 @@ from pprint import pprint
 
 from .featureExtractor import FeatureExtractor
 from .outcomeGetter import OutcomeGetter
-from . import featureWorker
+from . import dlaWorker
 
 #############################################################
 ## Static Variables and Methods

@@ -1962,14 +1962,14 @@ class ClassifyPredictor:
 
 
 
-    ######################
+    ###################
     def load(self, filename, pickle2_7=True):
         print("[Loading %s]" % filename)
         with open(filename, 'rb') as f:
             if pickle2_7:
-                from .featureWorker  import FeatureWorker
+                from .dlaWorker  import DLAWorker
                 from . import occurrenceSelection, pca_mod
-                sys.modules['FeatureWorker'] = FeatureWorker
+                sys.modules['FeatureWorker'] = DLAWorker
                 sys.modules['FeatureWorker.occurrenceSelection'] = occurrenceSelection
                 sys.modules['FeatureWorker.pca_mod'] = pca_mod
             tmp_dict = pickle.load(f, encoding='latin1')

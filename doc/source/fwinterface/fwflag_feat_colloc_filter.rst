@@ -15,14 +15,12 @@ Filter multigram features based on how commonly they appear together
 Argument and Default Value
 ==========================
 
-This filters multigram features based on their PMI value/(number of words -1) and creates a new feature table that contains only the multi grams that were above a given threshold.  The PMI value for a bigram b composed of word1 followed by word2 is calculated as follows:
+PMI threshold will be set to it's default which is 3.0 (overridden by :doc:`fwflag_set_pmi_threshold`)
 
 Details
 =======
 
-This filters multigram features based on their PMI value/(number of words :doc:`fwflag_1`) and creates a new feature table that contains only the multi grams that were above a given threshold.  The PMI value for a bigram b composed of word1 followed by word2 is calculated as follows:
-
-
+This filters multigram features based on their PMI value/(number of words - 1) and creates a new feature table that contains only the multi grams that were above a given threshold.  The PMI value for a bigram b composed of word1 followed by word2 is calculated as follows:
 
 In this case  is the number of times x shows up divided by the total number of words in a document.
 
@@ -39,15 +37,15 @@ Normalized (Pointwise) Mutual Information in Collocation Extraction by Gerlof Bo
 Other Switches
 ==============
 
-Required Switches:
-None, pmi threshold will be set to it's default which is 3.0
 Optional Switches:
-:doc:`fwflag_set_pmi_threshold` <val>
+
+* :doc:`fwflag_set_pmi_threshold` <val>
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
 
 
-./fwInterface.py :doc:`fwflag_d` fb22 :doc:`fwflag_t` messagesEn :doc:`fwflag_c` user_id :doc:`fwflag_f` 'feat$2to3gram$messagesEn$user_id$16to16$0_02' :doc:`fwflag_feat_colloc_filter` :doc:`fwflag_set_pmi_threshold` 6.0
+	dlatkInterface.py -d fb22 -t messagesEn -c user_id -f 'feat$2to3gram$messagesEn$user_id$16to16$0_02' --colloc_filter --set_pmi_threshold 6.0
 

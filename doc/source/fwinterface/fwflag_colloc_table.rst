@@ -21,4 +21,3 @@ Details
 =======
 
 Modifies :doc:`fwflag_use_collocs` 
-Categories: fwInterface

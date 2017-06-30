@@ -25,8 +25,12 @@ Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_d`, :doc:`fwflag_corpdb` :doc:`fwflag_outcomes` :doc:`fwflag_outcome_table` Optional Switches:
-:doc:`fwflag_output_dir`? 
+
+* :doc:`fwflag_d`, :doc:`fwflag_corpdb`
+* :doc:`fwflag_outcomes`
+* :doc:`fwflag_outcome_table` 
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash

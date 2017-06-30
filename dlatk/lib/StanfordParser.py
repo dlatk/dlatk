@@ -19,9 +19,15 @@ import re
 from pprint import pprint
 import glob
 
-##DEFAULTS FOR RELEASED VERSION
-_InstallPath = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '/Tools/StanfordParser/' # folder
-_InstallDir = glob.glob(_InstallPath + "stanford-parser-full*")[0]
+#DEFAULTS FOR RELEASED VERSION
+from ..dlaConstants import warn
+try: 
+    _InstallPath = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '/Tools/StanfordParser/' # folder
+    _InstallDir = glob.glob(_InstallPath + "stanford-parser-full*")[0]
+except:
+    _InstallPath = ""
+    _InstallDir = ""
+    pass
 
 _DefaultParams ={
     'save_file' : 'parsed.data',
@@ -38,6 +44,9 @@ class StanfordParser:
     def __init__(self, **kwargs):
         self.__dict__.update(_DefaultParams)
         self.__dict__.update(kwargs)
+        if not self.parser_dir:
+            warn("Cannot find StanfordParser, please check that this was installed properly")
+            sys.exit()
         
     def parse(self, sents):
         """returns a list of dicts with parse information: const, dep, and pos """

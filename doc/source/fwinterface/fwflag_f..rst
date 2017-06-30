@@ -18,4 +18,5 @@ Argument and Default Value
 null
 
 Details
-=======Feature table; usually given as :doc:`fwflag_f`. 
+=======
+Feature table; usually given as :doc:`fwflag_f`. 

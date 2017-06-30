@@ -34,23 +34,31 @@ Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`, :doc:`fwflag_f`, :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes` :doc:`fwflag_no_standardize` Needs one of these two switches:
-:doc:`fwflag_train_classifiers` :doc:`fwflag_load_model` 
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_f`
+* :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes`
+* :doc:`fwflag_no_standardize` 
+
+Needs one of these two switches:
+
+* :doc:`fwflag_train_classifiers`
+* :doc:`fwflag_load_model` 
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
 
 
- # Trains a classification model to predict gender for users from 1grams, without standardizing
- # Will save the model to a picklefile called deleteMeGender.pickle, and create a lexicon called dd_testGenderLex
- ~/fwInterface.py :doc:`fwflag_d` fb20 :doc:`fwflag_t` messages_en :doc:`fwflag_c` user_id :doc:`fwflag_f` 'feat$1gram$messages_en$user_id$16to16$0_01' 
- :doc:`fwflag_outcome_table` masterstats_andy_r10k :doc:`fwflag_outcomes` gender :doc:`fwflag_train_classifiers` :doc:`fwflag_save_model` :doc:`fwflag_picklefile` deleteMeGender.pickle 
- :doc:`fwflag_no_standardize` :doc:`fwflag_classification_to_lexicon` testGenderLex
+	# Trains a classification model to predict gender for users from 1grams, without standardizing
+	# Will save the model to a picklefile called deleteMeGender.pickle, and create a lexicon called dd_testGenderLex
+	dlatkInterface.py -d fb20 -t messages_en -c user_id -f 'feat$1gram$messages_en$user_id$16to16$0_01' --outcome_table masterstats_andy_r10k --outcomes gender --train_classifiers --save_model --picklefile deleteMeGender.pickle --no_standardize --classification_to_lexicon testGenderLex
 
- # Given a model that was previously made, this turns the model into a lexicon called dd_testAgeLex
- ~/fwInterface.py :doc:`fwflag_d` fb20 :doc:`fwflag_t` messages_en :doc:`fwflag_c` user_id :doc:`fwflag_f` 'feat$1gram$messages_en$user_id$16to16$0_01' 
- :doc:`fwflag_load_model` :doc:`fwflag_picklefile` deleteMeGender.pickle 
- :doc:`fwflag_classification_to_lexicon` testGenderLex
+	# Given a model that was previously made, this turns the model into a lexicon called dd_testAgeLex
+	dlatkInterface.py -d fb20 -t messages_en -c user_id -f 'feat$1gram$messages_en$user_id$16to16$0_01' --load_model --picklefile deleteMeGender.pickle --classification_to_lexicon testGenderLex
+
 References
+==========
 
 Sap et al. (2014) - Developing Age and Gender Predictive Lexica over Social Media

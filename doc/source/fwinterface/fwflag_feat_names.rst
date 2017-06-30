@@ -20,17 +20,19 @@ Argument is features to limit analyses to.
 Details
 =======
 
-Part of FeatureGetter [FG(), FGs()] objects. Currently only used in scatterplot?
+Part of FeatureGetter [FG(), FGs()] objects. Currently only used in scatterplot.
 
 
 Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_f`, :doc:`fwflag_feat_table` Optional Switches:
-:doc:`fwflag_scatterplot` 
+
+* :doc:`fwflag_f`
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
 
 

@@ -24,12 +24,14 @@ Details
 Other Switches
 ==============
 
-Required Switches:
-None
 Optional Switches:
-:doc:`fwflag_csv` :doc:`fwflag_rmatrix` 
+
+* :doc:`fwflag_csv`
+* :doc:`fwflag_rmatrix` 
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
 
 

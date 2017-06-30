@@ -10,7 +10,7 @@ Switch
 Description
 ===========
 
-Plots a binned feature table, uses --num_bins?, --group_id_range?, --feat_table, --flexiplot_file
+Plots a binned feature table, uses --num_bins, --group_id_range, --f, --flexiplot_file
 
 Argument and Default Value
 ==========================
@@ -25,11 +25,15 @@ Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_num_bins`? :doc:`fwflag_group_id_range`? :doc:`fwflag_feat_table` :doc:`fwflag_flexiplot_file` Optional Switches:
 
+* --num_bins
+* --group_id_range
+* :doc:`fwflag_f`
+* --flexiplot_file
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
 
 

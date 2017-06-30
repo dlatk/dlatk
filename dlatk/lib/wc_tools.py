@@ -148,39 +148,57 @@ def normalizeFreqList(old_freq_list, word_count = 15):
 # 	return rank_list
 
 def getColorList(word_list, freq_list = [], randomize = False, colorScheme = 'multi', scale = 'linear'):
-	color_list = []
 
 	max_freq = 1000
-	for i in range(len(word_list)):
-		if randomize:
+	
+	if freq_list:
+		assert(len(word_list) == len(freq_list))
+
+		# keep original order so we can un-sort the color_list
+		original_rank = list(range(len(word_list)))
+
+		# tuple_list: list of (freq, original rank)
+		tuple_list = zip(freq_list, original_rank)
+
+		sorted_tuple_list = sorted(tuple_list, key=lambda x: x[0])
+		(sorted_freq_list, new_rank_list) = zip(*sorted_tuple_list)
+		new_rank_list = list(new_rank_list)
+
+		rank_list = rankdata(sorted_freq_list, method = 'ordinal').tolist() #, method = 'ordinal'
+		#print rank_list
+		if scale == 'sqrt':
+			max_size = max([sqrt(x) for x in freq_list]) #scaled via sqrt
+		elif scale == 'linear':
+			max_size = len(freq_list)
+
+		color_list = []
+		for i in range(len(word_list)):
+			if scale == 'sqrt':
+				freq = sqrt(freq_list[i])
+			elif scale == 'linear':
+				freq = rank_list[i]
+
+			colorHex = freqToColor(freq, maxFreq = max_size, colorScheme = colorScheme)
+			color_list.append(colorHex)
+
+		# undoing the sorting
+		tuple_list_to_reverse = zip(new_rank_list, color_list)
+		reverted_tuple_list = sorted(tuple_list_to_reverse, key=lambda x: x[0])
+		unordered_rank_list, unordered_color_list = zip(*reverted_tuple_list)
+
+		assert len(list(unordered_rank_list)) == len(list(range(len(word_list))))
+		return unordered_color_list
+
+
+	elif randomize:
+		color_list = []
+		for i in range(len(word_list)):
 			#print 'Randomizing colors'
 			freq = (random() * max_freq) + 1 #a number from 1 to max_freq
 			colorHex = freqToColor(freq, maxFreq = max_freq, colorScheme = colorScheme)
 			color_list.append(colorHex)
-		
-		elif freq_list:
-			assert (len(word_list) == len(freq_list))
-			rank_list = rankdata(freq_list, method = 'ordinal') #, method = 'ordinal'
-			#print rank_list
-			if scale == 'sqrt':
-				max_size = max([sqrt(x) for x in freq_list]) #scaled via sqrt
-				freq = sqrt(freq_list[i])
 
-			elif scale == 'linear':
-				max_size = len(freq_list)
-				freq = rank_list[i]
-
-			#max_size = min([max_size, 100])
-			#freq = min(freq_list[i], 100)
-			colorHex = freqToColor(freq, maxFreq = max_size, colorScheme = colorScheme)
-			color_list.append(colorHex)
-			#print '{} {}'.format(word_list[i], max_size)
-		else:
-			print('Randomize is False, but freq_list is not provided.')
-
-
-
-	return color_list
+		return color_list
 
 def getFeatValueAndZ(user, schema, ngramTable, min_value = 5, ordered = True, z_threshold = 0):
 	#returns list of (feat, value, z) for a given user

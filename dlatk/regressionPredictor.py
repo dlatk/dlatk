@@ -58,7 +58,7 @@ import math
 #infrastructure
 from .classifyPredictor import ClassifyPredictor
 from .mysqlMethods import mysqlMethods as mm
-from .fwConstants import DEFAULT_MAX_PREDICT_AT_A_TIME
+from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME
 
 
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
@@ -256,11 +256,11 @@ class RegressionPredictor:
             #{'alpha': [10000, 100, 1, 0.1, 0.01, 0.001, 0.0001], 'max_iter' : [2000]}, 
             #{'alpha': [0.01], 'max_iter' : [1500]}, 
             #{'alpha': [0.1, 0.01, 0.001], 'max_iter' : [1500]}, 
-            {'alpha': [0.001], 'max_iter' : [1500], 'rho': [0.8]}, 
+            {'alpha': [0.001], 'max_iter' : [1500], 'l1_ratio': [0.8]}, 
             ],
         'elasticnetcv': [
             #{'alpha': [10000, 25000, 1000, 2500, 100, 250, 1, 25, .01, 2.5, .01, .25, .001, .025, .0001, .0025, .00001, .00025, 100000, 250000, 1000000]}, 
-            #{'n_alphas': [10], 'max_iter':[1600], 'rho' : [.1, .5, .7, .9, .95, .99, 1]}, 
+            #{'n_alphas': [10], 'max_iter':[1600], 'l1_ratio' : [.1, .5, .7, .9, .95, .99, 1]}, 
             #{'n_alphas': [11], 'max_iter':[1300], 'l1_ratio' : [.95], 'n_jobs': [10]}, 
             {'n_alphas': [100], 'max_iter':[5000], 'l1_ratio':np.array([1., .99, 0.975, .95, .9, .75, .5, .1, .05, 0.025, .01, 0.]), 'n_jobs':[10], 'verbose':[1], 'cv':[10]}, 
             #{'n_alphas': [9], 'max_iter':[1100], 'l1_ratio' : [.95], 'n_jobs': [6]}, 
@@ -283,7 +283,9 @@ class RegressionPredictor:
             #{'kernel':['rbf'], 'gamma': [0.1, 1, 0.001, .0001], 'C':[.1, .01, 1, .001, 10]}#swl
             ],
         'sgdregressor': [
-            {'alpha':[250000, 25000, 250, 25, 1, 0.1, .01, .001, .0001, .00001, .000001], 'penalty':['l1']}#testing for personality
+            # {'alpha':[250000, 25000, 250, 25, 1, 0.1, .01, .001, .0001, .00001, .000001], 'penalty':['l1']}#testing for personality
+            # {'penalty':['l1'], 'fit_intercept':[True], 'alpha':np.array([.0001,.00001,.00001,.000001,.0000001,0.]), 'verbose':[0], 'n_iter':[500]},
+            {'penalty':['l1'], 'fit_intercept':[True], 'alpha':np.array([10000,1000,100,10,1,.1,.01,.001,.0001]), 'verbose':[0], 'n_iter':[50]},
             ],
         'extratrees':[
             #{'n_estimators': [20], 'n_jobs': [10], 'random_state': [42], 'compute_importances' : [True]},
@@ -567,7 +569,7 @@ class RegressionPredictor:
         print("\n[TEST COMPLETE]\n")
 
     #####################################################
-    ####### Meain Testing Method ########################
+    ####### Main Testing Method ########################
     def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
                           allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None, residualizedControls = False, groupsWhere = ''):
         """Tests regressors, by cross-validating over folds with different combinations of controls"""
@@ -579,8 +581,9 @@ class RegressionPredictor:
         if foldLabels:
             print("    ***explicit fold labels specified, not splitting again***")
             temp = {}
-            for k,v in sorted(foldLabels.iteritems()): temp.setdefault(v, []).append(k)
-            groupFolds = temp.values()
+            # for k,v in sorted(foldLabels.iteritems()): temp.setdefault(v, []).append(k)
+            for k,v in sorted(foldLabels.items()): temp.setdefault(v, []).append(k)
+            groupFolds = list(temp.values())
             nFolds = len(groupFolds)
         else:
             random.seed(self.randomState)
@@ -666,6 +669,8 @@ class RegressionPredictor:
                         ## 2 f) calculate residuals, if applicable:
                         nonresOutcomes = dict(outcomes) #backup for accuracy calc. #new outcomes become residuals
                         resControlPreds = {} #predictions form controls only
+                        resControlAllPreds = {} 
+                        newOutcomes = []
                         if residualizedControls and controlValues and withLanguage:
                             #TODO: make this and below a function:
                             print("CREATING RESIDUALS")
@@ -696,6 +701,30 @@ class RegressionPredictor:
                                 #DEBUG: random sort
                                 #random.shuffle(res_ypred)
                                 resControlPreds.update(dict(zip(testGroupsOrder,res_ypred)))
+
+
+
+                                allGroups = set()
+                                for chunk in groupFolds:
+                                    for c in chunk:  
+                                        allGroups.add(c)
+                                allGroupsOrder = list(thisOutcomeGroups & allGroups)
+                                (Xall, yall) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = allGroupsOrder)
+                                res_yall_pred = self._multiXpredict(res_regressor, [Xall], multiScalers = res_multiScalers, multiFSelectors = res_multiFSelectors, sparse = sparse)
+                                resControlAllPreds = dict(zip(allGroupsOrder, res_yall_pred))
+
+                                outcomes_ = {}
+                                for gid, value in outcomes.items():
+                                    try:
+                                        #print "true outcome: %.4f, controlPred: %.4f" % (value, resControlPreds[gid])#debug
+                                        outcomes_[gid] = value - resControlAllPreds[gid]
+                                        #print " new value %.4f" % outcomes[gid] #debug
+                                    except KeyError:
+                                        print (" warn: no control prediction found for gid %s, removing from outcomes" % str(gid))
+                                        # del outcomes_[gid]
+                                newOutcomes.append(outcomes_)
+
+
 
                                 R2 = metrics.r2_score(ytest, res_ypred)
                                 mse = metrics.mean_squared_error(ytest, res_ypred)
@@ -743,7 +772,10 @@ class RegressionPredictor:
                             for i in gnListIndices:
                                 groupNormValues = thisGroupNormsList[i]
                                 #featureNames = featureNameList[i] #(if needed later, make sure to add controls to this)
-                                (Xdicts, ydict) = (groupNormValues, outcomes)
+                                if residualizedControls and controlValues and withLanguage:
+                                    (Xdicts, ydict) = (groupNormValues, newOutcomes[testChunk])
+                                else:
+                                    (Xdicts, ydict) = (groupNormValues, outcomes)                                
                                 print("   (feature group: %d): [Initial size: %d]" % (i, len(ydict)))
                                 (Xtrain, ytrain) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = trainGroupsOrder)
                                 (Xtest, ytest) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = testGroupsOrder)
@@ -1121,10 +1153,10 @@ class RegressionPredictor:
 
         return predictions
 
-    def predictToOutcomeTable(self, standardize = True, sparse = False, fe = None, name = None, nFolds = 10):
+    def predictToOutcomeTable(self, standardize = True, sparse = False, name = None, nFolds = 10, groupsWhere = ''):
 
         # step1: get groups from feature table
-        groups = self.featureGetter.getDistinctGroupsFromFeatTable()
+        groups = self.featureGetter.getDistinctGroupsFromFeatTable(where=groupsWhere)
         groups = list(groups)
         chunks = [groups]
 
@@ -1157,7 +1189,7 @@ class RegressionPredictor:
             else: totalPred = len(groups)
             print(" Total Predicted: %d" % totalPred)
 
-        featNames = list(predictions.keys())
+        #featNames = list(predictions.keys())
         predDF = pd.DataFrame(predictions)
         # print predDF
 
@@ -1443,30 +1475,30 @@ class RegressionPredictor:
                 if 'mean_' in dir(self.multiFSelectors[outcome][i]):
                     print("RPCA mean: ", self.multiFSelectors[outcome][i].mean_)
 
-                if 'steps' in dir(self.multiFSelectors[outcome][i]):
-                    if 'mean_' in dir(self.multiFSelectors[outcome][i].steps[1][1]):
-                        print(self.multiFSelectors[outcome][i].steps[1][1].mean_, len(self.multiFSelectors[outcome][i].steps[1][1].mean_))
-                        mean = self.multiFSelectors[outcome][i].steps[1][1].mean_.copy()
-                        t = self.multiFSelectors[outcome][i].steps[0][1].inverse_transform(mean).flatten()
-                        print(self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept), self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept).sum())
-                        print(t, len(t))
-                        print(coefficients)
-                        # coefficients = coefficients + t
-                        print(coefficients)
-                        # INTERCEPT CORRECTION : dot product of coefficients.mean from PCA
-                        print("Pipelines don't work with this option (predtolex)")
-                        sys.exit()
+                #if 'steps' in dir(self.multiFSelectors[outcome][i]):
+                #    if 'mean_' in dir(self.multiFSelectors[outcome][i].steps[1][1]):
+                #        print(self.multiFSelectors[outcome][i].steps[1][1].mean_, len(self.multiFSelectors[outcome][i].steps[1][1].mean_))
+                #        mean = self.multiFSelectors[outcome][i].steps[1][1].mean_.copy()
+                #        t = self.multiFSelectors[outcome][i].steps[0][1].inverse_transform(mean).flatten()
+                #        print(self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept), self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept).sum())
+                #        print(t, len(t))
+                #        print(coefficients)
+                #        # coefficients = coefficients + t
+                #        print(coefficients)
+                #        # INTERCEPT CORRECTION : dot product of coefficients.mean from PCA
+                #        print("Pipelines don't work with this option (predtolex)")
+                #        sys.exit()
 
 
                 # coefficients.resize(1,len(coefficients))
                 # print coefficients.shape
                 # Inverting the scaling 
-                if self.multiScalers[outcome][i]:
-                    print("Standardscaler doesn't work with Prediction To Lexicon")
-                    print(self.multiScalers[outcome][i].mean_, self.multiScalers[outcome][i].std_)
-                    coefficients = self.multiScalers[outcome][i].inverse_transform(coefficients).flatten()
-                else: 
-                    coefficients = coefficients.flatten() 
+                #if self.multiScalers[outcome][i]:
+                #    print("Standardscaler doesn't work with Prediction To Lexicon")
+                #    print(self.multiScalers[outcome][i].mean_, self.multiScalers[outcome][i].std_)
+                #    coefficients = self.multiScalers[outcome][i].inverse_transform(coefficients).flatten()
+                #else: 
+                #    coefficients = coefficients.flatten() 
                 
                 # featTableFeats contains the list of features 
                 if len(coefficients) != len(featTableFeats):
@@ -1711,17 +1743,26 @@ class RegressionPredictor:
 
     ######################
     def load(self, filename, pickle2_7=True):
-        print("[Loading %s]" % filename)
+        print("[Loading %s]" % filename, pickle2_7)
         with open(filename, 'rb') as f:
             if pickle2_7:
-                from .featureWorker  import FeatureWorker
+                from .dlaWorker  import DLAWorker
                 from . import occurrenceSelection, pca_mod
-                sys.modules['FeatureWorker'] = FeatureWorker
+                sys.modules['FeatureWorker'] = DLAWorker
                 sys.modules['FeatureWorker.occurrenceSelection'] = occurrenceSelection
                 sys.modules['FeatureWorker.pca_mod'] = pca_mod
             tmp_dict = pickle.load(f, encoding='latin1')
             f.close()          
-        print("Outcomes in loaded model:", list(tmp_dict['regressionModels'].keys()))
+        try:
+            print("Outcomes in loaded model:", list(tmp_dict['regressionModels'].keys()))
+        except KeyError:
+            if 'classificationModels' in tmp_dict:
+                warn("You are trying to load a classification model for regression.")
+                warn("Try the regression version of the flag you are using, for example --predict_regression_to_feats instead of --predict_classifiers_to_feats.")
+            else:
+                warn("No regression models found in the pickle.")
+            sys.exit()
+
         tmp_dict['outcomes'] = list(tmp_dict['regressionModels'].keys()) 
         self.__dict__.update(tmp_dict)
 

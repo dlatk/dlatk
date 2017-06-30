@@ -3,12 +3,12 @@ import MySQLdb
 import pandas as pd
 from configparser import SafeConfigParser
 
-from .featureWorker import FeatureWorker
-from . import fwConstants as fwc
+from .dlaWorker import DLAWorker
+from . import dlaConstants as dlac
 from .mysqlMethods import mysqlMethods as mm
 from .mysqlMethods.mysql_iter_funcs import get_db_engine
 
-class OutcomeGetter(FeatureWorker):
+class OutcomeGetter(DLAWorker):
     """Deals with outcome tables
 
     Parameters
@@ -70,30 +70,30 @@ class OutcomeGetter(FeatureWorker):
         """
         parser = SafeConfigParser()
         parser.read(initFile)
-        corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else fwc.DEF_CORPDB
-        corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else fwc.DEF_CORPTABLE
-        correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else fwc.DEF_CORREL_FIELD
-        mysql_host = parser.get('constants','mysql_host') if parser.has_option('constants','mysql_host') else fwc.MYSQL_HOST
-        message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else fwc.DEF_MESSAGE_FIELD
-        messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else fwc.DEF_MESSAGEID_FIELD
-        encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else fwc.DEF_ENCODING
+        corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else dlac.DEF_CORPDB
+        corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else dlac.DEF_CORPTABLE
+        correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else dlac.DEF_CORREL_FIELD
+        mysql_host = parser.get('constants','mysql_host') if parser.has_option('constants','mysql_host') else dlac.MYSQL_HOST
+        message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else dlac.DEF_MESSAGE_FIELD
+        messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else dlac.DEF_MESSAGEID_FIELD
+        encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else dlac.DEF_ENCODING
         if parser.has_option('constants','use_unicode'):
             use_unicode = True if parser.get('constants','use_unicode')=="True" else False
         else:
-            use_unicode = fwc.DEF_UNICODE_SWITCH
-        lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else fwc.DEF_LEXICON_DB
-        outcome_table = parser.get('constants','outcometable') if parser.has_option('constants','outcometable') else fwc.DEF_OUTCOME_TABLE
-        outcome_value_fields = [o.strip() for o in parser.get('constants','outcomefields').split(",")] if parser.has_option('constants','outcomefields') else [fwc.DEF_OUTCOME_FIELD] # possible list
-        outcome_controls = [o.strip() for o in parser.get('constants','outcomecontrols').split(",")] if parser.has_option('constants','outcomecontrols') else fwc.DEF_OUTCOME_CONTROLS # possible list
-        outcome_interaction = [o.strip() for o in parser.get('constants','outcomeinteraction').split(",")] if parser.has_option('constants','outcomeinteraction') else fwc.DEF_OUTCOME_CONTROLS # possible list
-        group_freq_thresh = parser.get('constants','groupfreqthresh') if parser.has_option('constants','groupfreqthresh') else fwc.getGroupFreqThresh(correl_field)
+            use_unicode = dlac.DEF_UNICODE_SWITCH
+        lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else dlac.DEF_LEXICON_DB
+        outcome_table = parser.get('constants','outcometable') if parser.has_option('constants','outcometable') else dlac.DEF_OUTCOME_TABLE
+        outcome_value_fields = [o.strip() for o in parser.get('constants','outcomefields').split(",")] if parser.has_option('constants','outcomefields') else [dlac.DEF_OUTCOME_FIELD] # possible list
+        outcome_controls = [o.strip() for o in parser.get('constants','outcomecontrols').split(",")] if parser.has_option('constants','outcomecontrols') else dlac.DEF_OUTCOME_CONTROLS # possible list
+        outcome_interaction = [o.strip() for o in parser.get('constants','outcomeinteraction').split(",")] if parser.has_option('constants','outcomeinteraction') else dlac.DEF_OUTCOME_CONTROLS # possible list
+        group_freq_thresh = parser.get('constants','groupfreqthresh') if parser.has_option('constants','groupfreqthresh') else dlac.getGroupFreqThresh(correl_field)
         featureMappingTable = parser.get('constants','featlabelmaptable') if parser.has_option('constants','featlabelmaptable') else ''
         featureMappingLex = parser.get('constants','featlabelmaplex') if parser.has_option('constants','featlabelmaplex') else ''
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
         return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, group_freq_thresh=group_freq_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex, wordTable=wordTable)
     
 
-    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host=fwc.MYSQL_HOST, message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, use_unicode=fwc.DEF_UNICODE_SWITCH, lexicondb = fwc.DEF_LEXICON_DB, outcome_table=fwc.DEF_OUTCOME_TABLE, outcome_value_fields=[fwc.DEF_OUTCOME_FIELD], outcome_controls = fwc.DEF_OUTCOME_CONTROLS, outcome_interaction = fwc.DEF_OUTCOME_CONTROLS, group_freq_thresh = None, featureMappingTable='', featureMappingLex='', wordTable = None, fold_column = None):
+    def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_host=dlac.MYSQL_HOST, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb = dlac.DEF_LEXICON_DB, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls = dlac.DEF_OUTCOME_CONTROLS, outcome_interaction = dlac.DEF_OUTCOME_CONTROLS, group_freq_thresh = None, featureMappingTable='', featureMappingLex='', wordTable = None, fold_column = None):
         super(OutcomeGetter, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable = wordTable)
         self.outcome_table = outcome_table
 
@@ -120,7 +120,7 @@ class OutcomeGetter(FeatureWorker):
         self.outcome_controls = outcome_controls
         self.outcome_interaction = outcome_interaction
         if not group_freq_thresh and group_freq_thresh != 0:
-            self.group_freq_thresh = fwc.getGroupFreqThresh(self.correl_field)
+            self.group_freq_thresh = dlac.getGroupFreqThresh(self.correl_field)
         else:
             self.group_freq_thresh = group_freq_thresh
         self.featureMapping = self.getFeatureMapping(featureMappingTable, featureMappingLex, False)
@@ -159,10 +159,9 @@ class OutcomeGetter(FeatureWorker):
         if isinstance(dataframe.index[0], str):
             import sqlalchemy
             dataframe.index = dataframe.index.astype(str)
-            print(dataframe.index)
             dtype = {self.correl_field : sqlalchemy.types.VARCHAR(max([len(i) for i in dataframe.index]))}
-            print(dataframe)
-        dataframe.to_sql(tablename, eng, index_label = self.correl_field, if_exists = ifExists, chunksize=fwc.MYSQL_BATCH_INSERT_SIZE, dtype = dtype)
+            dataframe.index.name = self.correl_field
+        dataframe.to_sql(tablename, eng, index_label = self.correl_field, if_exists = ifExists, chunksize=dlac.MYSQL_BATCH_INSERT_SIZE, dtype = dtype)
         print("New table created: %s" % tablename)
 
     def getDistinctOutcomeValues(self, outcome = None, includeNull = True, where = ''):
@@ -288,7 +287,7 @@ class OutcomeGetter(FeatureWorker):
 
     def getGroupsAndOutcomes(self, lexicon_count_table=None, groupsWhere = '', includeFoldLabels=False):
         if self.group_freq_thresh and self.wordTable != self.get1gramTable():
-            fwc.warn("""You specified a --word_table and --group_freq_thresh is
+            dlac.warn("""You specified a --word_table and --group_freq_thresh is
 enabled, so the total word count for your groups might be off
 (remove "--word_table WT" to solve this issue)""", attention=False)
             
@@ -299,7 +298,7 @@ enabled, so the total word count for your groups might be off
         controls = dict()
 
         #get outcome values:
-        fwc.warn("Loading Outcomes and Getting Groups for: %s" % str(outcomeFieldList)) #debug
+        dlac.warn("Loading Outcomes and Getting Groups for: %s" % str(outcomeFieldList)) #debug
         if outcomeFieldList:
             for outcomeField in outcomeFieldList:
                 outcomes[outcomeField] = dict(self.getGroupAndOutcomeValues(outcomeField, where=groupsWhere))
@@ -389,21 +388,6 @@ enabled, so the total word count for your groups might be off
             df.index.names = ['group_id']
             return df
 
-    def getAnnotationTableAsDF(self, fields=['unit_id', 'worker_id', 'score'], where='', index=['unit_id', 'worker_id'], pivot=True, fillNA=False):
-        """return a dataframe of unit_it, worker_id, score"""
-        if fillNA and not pivot:
-            fwc.warn("fillNA set to TRUE but pivot set to FALSE. No missing values will be filled.") 
-        db_eng = get_db_engine(self.corpdb)
-        sql = """SELECT %s, %s, %s from %s""" % tuple(fields + [self.outcome_table])
-        if (where): sql += ' WHERE ' + where
-        if pivot:
-            if fillNA:
-                return pd.read_sql(sql=sql, con=db_eng, index_col=index).unstack().fillna(value=0)
-            else:
-                return pd.read_sql(sql=sql, con=db_eng, index_col=index).unstack()
-        else:
-            return pd.read_sql(sql=sql, con=db_eng, index_col=index) 
-    
     def numGroupsPerOutcome(self, featGetter, outputfile, where = ''):
         """prints sas-style csv file output"""
         #get outcome data to work with

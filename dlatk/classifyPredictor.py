@@ -33,6 +33,7 @@ from sklearn.preprocessing import StandardScaler, label_binarize
 from sklearn.linear_model import PassiveAggressiveClassifier, LogisticRegression, Lasso
 from sklearn.svm import SVR
 from sklearn.multiclass import OneVsRestClassifier
+from sklearn.naive_bayes import MultinomialNB, GaussianNB, BernoulliNB
 
 from sklearn.cross_validation import StratifiedKFold, KFold, ShuffleSplit, train_test_split
 from sklearn.decomposition import RandomizedPCA, MiniBatchSparsePCA, PCA, KernelPCA, NMF
@@ -44,6 +45,7 @@ from sklearn.utils import shuffle
 from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier, GradientBoostingClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model.base import LinearModel
+from sklearn.linear_model import SGDClassifier
 from sklearn.base import ClassifierMixin
 
 #scipy
@@ -57,7 +59,7 @@ import math
 
 #infrastructure
 from .mysqlMethods import mysqlMethods as mm
-from .fwConstants import warn
+from .dlaConstants import warn
 
 #For ROC curves
 try:
@@ -200,9 +202,10 @@ class ClassifyPredictor:
             #{'kernel': ['linear'], 'C': [100, 10, 1000, 1], 'random_state': [42]}
             ],
         'linear-svc':[
+            #{'C':[0.01], 'penalty':['l2'], 'dual':[True]} #timex message-level
             #{'C':[10, 1, 0.1, 0.01, 0.001, 0.0001, 0.0025, 0.00025, 0.00001, 0.000001, 0.000025, 0.0000001, 0.0000025, 0.00000001, 0.00000025], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]}, #swl
             #{'C':[100, 10, 1, 500, 1000, 5000, 10000, 25000, 0.1, 0.01, 0.001, 0.0001], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]}
-            {'C':[0.0001, 0.001, 0.00001, 0.01], 'penalty':['l2'], 'dual':[True]}
+            #{'C':[0.0001, 0.001, 0.00001, 0.01], 'penalty':['l2'], 'dual':[True]}
             #{'C':[0.01, 0.1, 0.001, 1, 0.0001, 10, 0.00001, 0.000001, 0.0000001], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]} #swl user
             #{'C':[0.01, 0.1, 0.001, 1, 0.0001, 10], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]} #depression user
             #{'C':[0.01, 0.1, 0.001, 0.0001, 0.00001, 0.000001], 'loss':['l2'], 'penalty':['l2'], 'dual':[False]} #depression user lots o feats
@@ -219,12 +222,11 @@ class ClassifyPredictor:
             #{'C':1.0, 'fit_intercept':True, 'loss':'l2', penalty:'l2'}, #if not centered data, use fit_intercept
             #{'C':1.0, 'dual':False}, #when N_samples > n_features
             #{'C':[0.01, 0.1, 1, 10, 0.001], 'penalty':['l2'], 'dual':[True]} #timex message-level
-            #{'C':[0.01], 'penalty':['l2'], 'dual':[True]} #timex message-level
 
             ###with l1 feature selection:
+            {'C':[0.01], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']} #age, general sparse setting #words n phrases, gender (best 0.01=> 91.4 )
             #{'C':[0.01, 0.1, 0.001], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']}, #FIRST PASS l1 OPTION; swl message-level
             #{'C':[10, 1, 0.1, 0.01, 0.001, 0.0001, 0.0025, 0.00025, 0.00001, 0.000001, 0.000025, 0.0000001, 0.0000025, 0.00000001, 0.00000025], 'penalty':['l1'], 'dual':[False]} #swl
-            #{'C':[0.01], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']} #age, general sparse setting #words n phrases, gender (best 0.01=> 91.4 )
             #{'C':[0.1], 'penalty':['l1'], 'dual':[False], 'multi_class':['crammer_singer']} #
             #{'C':[0.01, 0.1, 1, 10, 0.001], 'penalty':['l1'], 'dual':[False]} #timex message-level
             #{'C':[0.000001], 'penalty':['l2']}, # UnivVsMultiv choice Maarten 
@@ -234,8 +236,8 @@ class ClassifyPredictor:
             ],
         'lr': [
             #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l2'], 'dual':[False]}, 
-            {'C':[0.01, 0.1, 0.001, 1, .0001], 'penalty':['l2'], 'dual':[False]}, 
-            #{'C':[.01], 'penalty':['l2'], 'dual':[False]},#svd-d features small
+            #{'C':[0.01, 0.1, 0.001, 1, .0001], 'penalty':['l2'], 'dual':[False]}, 
+            {'C':[.01], 'penalty':['l2'], 'dual':[False]},#svd-d features small
             #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l1'], 'dual':[False]},
             #{'C':[0.1, 1, 0.01], 'penalty':['l1'], 'dual':[False]} #timex message-level
             #{'C':[10, 1, 100, 1000], 'penalty':['l1'], 'dual':[False]} 
@@ -269,8 +271,16 @@ class ClassifyPredictor:
             {'n_estimators': [500], 'random_state': [42], 
              'subsample':[0.4], 'max_depth': [5]  },
             ],
-
-
+        'mnb': [
+            {'alpha': [1.0], 'fit_prior': [False], 'class_prior': [None]},
+            ], 
+        'gnb': [
+            {},
+            # {'priors': [None]}, # 'priors' becomes a parameter in sklearn 0.18
+            ], 
+        'bnb': [
+            {'alpha': [1.0], 'fit_prior': [False], 'binarize':[True]},
+            ], 
         }
 
     modelToClassName = {
@@ -282,13 +292,18 @@ class ClassifyPredictor:
         'pac' : 'PassiveAggressiveClassifier',
         #'lda' : 'LDA', #linear discriminant analysis
         'gbc' : 'GradientBoostingClassifier',
+        'mnb' : 'MultinomialNB',
+        'gnb' : 'GaussianNB', 
+        'bnb' : 'BernoulliNB',
         }
     
     modelToCoeffsName = {
         ##TODO##
         'linear-svc' : 'coef_',
         'svc' : 'coef_',
-        'lr': 'coef_'
+        'lr': 'coef_',
+        'mnb': 'coef_',
+        'bnb' : 'feature_log_prob_',
         }
 
     #cvJobs = 3 #when lots of data 
@@ -520,8 +535,10 @@ class ClassifyPredictor:
             print("    ***explicit fold labels specified, not splitting or stratifying again***")
             stratifyFolds = False
             temp = {}
-            for k,v in sorted(foldLabels.iteritems()): temp.setdefault(v, []).append(k)
-            groupFolds = temp.values()
+            # for k,v in sorted(foldLabels.iteritems()): temp.setdefault(v, []).append(k)
+            # groupFolds = temp.values()
+            for k,v in sorted(foldLabels.items()): temp.setdefault(v, []).append(k)
+            groupFolds = list(temp.values())
             nFolds = len(groupFolds)
         elif not stratifyFolds: 
             print("[number of groups: %d (%d Folds)] non-stratified / using same folds for all outcomes" % (len(groups), nFolds))
@@ -691,7 +708,7 @@ class ClassifyPredictor:
                             predictionProbs.update(dict(zip(testGroupsOrder,ypredProbs)))
 
                             acc = accuracy_score(ytest, ypred)
-                            f1 = f1_score(ytest, ypred)
+                            f1 = f1_score(ytest, ypred, average='macro')
                             auc = pos_neg_auc(ytest, ypredProbs[:,-1])
                             # classes = list(set(ytest))
                             # ytest_binary = label_binarize(ytest,classes=classes)
@@ -708,8 +725,8 @@ class ClassifyPredictor:
                             (rho, rho_p) = spearmanr(ytest, ypred)
                             testStats['rho'].append(rho)
                             testStats['rho-p'].append(rho_p)
-                            testStats['precision'].append(precision_score(ytest, ypred))
-                            testStats['recall'].append(recall_score(ytest, ypred))
+                            testStats['precision'].append(precision_score(ytest, ypred, average='macro'))
+                            testStats['recall'].append(recall_score(ytest, ypred, average='macro'))
                             testStats['mfclass_acc'].append(mfclass_acc)
                             testStats.update({'train_size': len(ytrain), 'test_size': len(ytest), 'num_features' : num_feats, 
                              '{model_desc}': str(classifier).replace('\t', "  ").replace('\n', " ").replace('  ', " "),
@@ -741,13 +758,14 @@ class ClassifyPredictor:
                         ytrue, ypred, ypredProbs = alignDictsAsy(outcomes, predictions, predictionProbs)
                         ypredProbs = array(ypredProbs)
                         reportStats['acc'] = accuracy_score(ytrue, ypred)
-                        reportStats['f1'] = f1_score(ytrue, ypred)
+                        reportStats['f1'] = f1_score(ytrue, ypred, average='macro')
                         reportStats['auc'] = pos_neg_auc(ytrue, ypredProbs[:,-1])
                         testCounter = Counter(ytrue)
                         reportStats['mfclass_acc'] = testCounter[mfclass] / float(len(ytrue))
 
                         if savePredictions: 
                             reportStats['predictions'] = predictions
+                            reportStats['predictionProbs'] = {k:v[-1] for k,v in predictionProbs.items()}
                         #pprint(reportStats) #debug
                         mfclass = Counter(ytest).most_common(1)[0][0]
                         print("* Overall Fold Acc: %.4f (+- %.4f) vs. MFC Accuracy: %.4f (based on test rather than train)"% (reportStats['folds_acc'], reportStats['folds_se_acc'], reportStats['folds_mfclass_acc']))
@@ -854,7 +872,7 @@ class ClassifyPredictor:
                                             multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
             print("[Done. Evaluation:]")
             acc = accuracy_score(ytest, ypred)
-            f1 = f1_score(ytest, ypred)
+            f1 = f1_score(ytest, ypred, average='macro')
             testCounter = Counter(ytest)
             mfclass = Counter(ytest).most_common(1)[0][0]
             mfclass_acc = testCounter[mfclass] / float(len(ytest))
@@ -914,8 +932,8 @@ class ClassifyPredictor:
         #########################################
         #3. predict for all possible outcomes
         predictions = dict()
-        testGroupsOrder = list(UGroups) 
-        #testGroupsOrder = list(XGroups)
+        #testGroupsOrder = list(UGroups) 
+        testGroupsOrder = list(XGroups)
         
         for outcomeName in sorted(outcomes):
             print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
@@ -935,6 +953,7 @@ class ClassifyPredictor:
                 print("  (feature group: %d)" % (i))
 
                 multiXtest.append(csr_matrix(df.values))
+
                 # print "Maarten", csr_matrix(df.values).shape, csr_matrix(df.values).todense()
 
             #############
@@ -951,7 +970,7 @@ class ClassifyPredictor:
         return predictions
 
 
-    def predictAllToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, nFolds = 10, groupsWhere = ''):
+    def predictAllToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = ''):
         if not fe:
             print("Must provide a feature extractor object")
             sys.exit(0)
@@ -1035,7 +1054,115 @@ class ClassifyPredictor:
         return
                              
 
-    def predictToOutcomeTable(self, standardize = True, sparse = False, fe = None, name = None, nFolds = 10):
+    def predictToOutcomeTable(self, standardize = True, sparse = False, fe = None, name = None, restrictToGroups = None, groupsWhere = ''):
+
+        # if not self.multiXOn:
+        #     print("model trained without multiX, reverting to old predict")
+        #     return self.old_predict(standardize, sparse, restrictToGroups)
+
+        # ################
+        # #1. setup groups
+        # (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
+        # if restrictToGroups: #restrict to groups
+        #     rGroups = restrictToGroups
+        #     if isinstance(restrictToGroups, dict):
+        #         rGroups = [item for sublist in list(restrictToGroups.values()) for item in sublist]
+        #     groups = groups.intersection(rGroups)
+        #     for outcomeName, outcomes in allOutcomes.items():
+        #         allOutcomes[outcomeName] = dict([(g, outcomes[g]) for g in groups if (g in outcomes)])
+        #     for controlName, controlValues in allControls.items():
+        #         controls[controlName] = dict([(g, controlValues[g]) for g in groups])
+        # print("[number of groups: %d]" % (len(groups)))
+
+        # ####################
+        # #2. get data for Xs:
+        # groupNormsList = []
+        # XGroups = None #holds the set of X groups across all feature spaces and folds (intersect with this to get consistent keys across everything
+        # UGroups = None
+        # for i in range(len(self.featureGetters)):
+        #     fg = self.featureGetters[i]
+        #     (groupNorms, newFeatureNames) = fg.getGroupNormsSparseFeatsFirst(groups)
+            
+        #     print(" [Aligning current X with training X: feature group: %d]" %i)
+        #     groupNormValues = []
+        #     #print self.featureNamesList[i][:10]#debug
+        #     for feat in self.featureNamesList[i]:
+        #         if feat in groupNorms:
+        #             groupNormValues.append(groupNorms[feat])
+        #         else:
+        #             groupNormValues.append(dict())
+        #     groupNormsList.append(groupNormValues)
+        #     print("  Features Aligned: %d" % len(groupNormValues))
+        #     fgGroups = getGroupsFromGroupNormValues(groupNormValues)
+        #     if not XGroups:
+        #         XGroups = set(fgGroups)
+        #         UGroups = set(fgGroups)
+        #     else:
+        #         XGroups = XGroups & fgGroups #intersect groups from all feature tables
+        #         UGroups = UGroups | fgGroups #intersect groups from all feature tables
+        #         #potential source of bug: if a sparse feature table doesn't have all the groups it should
+        #         #potential source of bug: if a sparse feature table doesn't have all of the groups which it should
+        # #XGroups = XGroups & groups #this should not be needed
+        # if len(XGroups) < len(groups): 
+        #     print(" Different number of groups available for different outcomes.")
+        
+        # ################################
+        # #2b) setup control data:
+        # controlValues = list(allControls.values())
+        # if controlValues:
+        #     groupNormsList.append(controlValues)
+
+        # #########################################
+        # #3. predict for all possible outcomes
+        # predictions = dict()
+        # testGroupsOrder = list(UGroups) 
+        # #testGroupsOrder = list(XGroups) 
+        # for outcomeName, outcomes in sorted(allOutcomes.items()):
+        #     print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
+        #     if isinstance(restrictToGroups, dict): #outcome specific restrictions:
+        #         outcomes = dict([(g, o) for g, o in outcomes.items() if g in restrictToGroups[outcomeName]])
+        #     thisTestGroupsOrder = [gid for gid in testGroupsOrder if gid in outcomes]
+        #     if len(thisTestGroupsOrder) < len(testGroupsOrder):
+        #         print("   this outcome has less groups. Shrunk groups to %d total." % (len(thisTestGroupsOrder)))
+        #     (multiXtest, ytest) = ([], None)
+        #     for i in range(len(groupNormsList)): #get each feature group data (i.e. feature table)
+        #         groupNormValues = groupNormsList[i]
+        #         (Xdicts, ydict) = (groupNormValues, outcomes)
+        #         print("  (feature group: %d)" % (i))
+        #         (Xtest, ytest) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = thisTestGroupsOrder)
+        #         multiXtest.append(Xtest)
+                                               
+        #         print("   [Test size: %d ]" % (len(ytest)))
+            
+
+        #     #############
+        #     #4) predict
+        #     ypred = self._multiXpredict(self.classificationModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
+        #                                     multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
+        #     print("[Done. Evaluation:]")
+        #     acc = accuracy_score(ytest, ypred)
+        #     f1 = f1_score(ytest, ypred)
+        #     testCounter = Counter(ytest)
+        #     mfclass = Counter(ytest).most_common(1)[0][0]
+        #     mfclass_acc = testCounter[mfclass] / float(len(ytest))
+        #     print(" *confusion matrix: \n%s"% str(confusion_matrix(ytest, ypred)))
+        #     print(" *precision and recall: \n%s" % classification_report(ytest, ypred))
+        #     print(" *ACC: %.4f (mfclass_acc: %.4f); mfclass: %s\n" % (acc, mfclass_acc, str(mfclass)))
+
+        #     mse = metrics.mean_squared_error(ytest, ypred)
+        #     print("*Mean Squared Error:                 %.4f"% mse)
+        #     assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups" 
+        #     predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder,ypred)))
+
+        # print("[Prediction Complete]")
+
+        # #featNames = list(predictions.keys())
+        # predDF = pd.DataFrame(predictions)
+        # # print predDF
+        
+        # name = "p_%s" % self.modelName[:4] + "$" + name
+        # # 4: use self.outcomeGetter.createOutcomeTable(tableName, dataFrame)
+        # self.outcomeGetter.createOutcomeTable(name, predDF, 'replace')
 
         # step1: get groups from feature table
         groups = self.featureGetter.getDistinctGroupsFromFeatTable()
@@ -1456,8 +1583,13 @@ class ClassifyPredictor:
                 print("No CV parameters available")
                 raise IndexError
             #print dict(self.cvParams[modelName][0])
-
-            classifier.fit(X, y)
+            try:
+                classifier.fit(X, y)
+            except ValueError as e:
+                print("ValueError: %s, try using the --no_standardize flag or a different feature selection pipeline" % e)
+                exit()
+            except:
+                raise
             #print "coefs"
             #print classifier.coef_
             print(("model: %s " % str(classifier)))
@@ -1733,7 +1865,7 @@ class ClassifyPredictor:
                 for adaptCol in adaptColumns:
                     #c =np.insert(c,c.shape[1],thelist[0][:,0],axis=1)
                     adaptMatrix=np.insert(adaptMatrix,adaptMatrix.shape[1],controls_mat[:,adaptCol],axis=1)
-                    
+
         #for i in xrange(len(multiX)):
         i=0
         while i < len(multiX): # changed to while loop by Youngseo
@@ -1742,6 +1874,7 @@ class ClassifyPredictor:
             X = multiX[i]
             if not sparse and isinstance(X,csr_matrix): #edited by Youngseo
                 X = X.todense()
+
             (scaler, fSelector) = (None, None)
             if multiScalers: 
                 scaler = multiScalers[i]
@@ -1751,7 +1884,7 @@ class ClassifyPredictor:
             #run transformations:
             if scaler:
                 print(("  predict: applying standard scaler to X[%d]: %s" % (i, str(scaler)))) #debug
-                X = scaler.transform(X)
+                X = scaler.fit_transform(X)
             if fSelector:
                 print(("  predict: applying feature selection to X[%d]: %s" % (i, str(fSelector)))) #debug
                 newX = fSelector.transform(X)
@@ -1829,14 +1962,30 @@ class ClassifyPredictor:
 
 
 
-    ######################
-    def load(self, filename):
+    ###################
+    def load(self, filename, pickle2_7=True):
         print("[Loading %s]" % filename)
-        f = open(filename,'rb')
-        tmp_dict = pickle.load(f, encoding='latin1')
-        f.close()          
+        with open(filename, 'rb') as f:
+            if pickle2_7:
+                from .dlaWorker  import DLAWorker
+                from . import occurrenceSelection, pca_mod
+                sys.modules['FeatureWorker'] = DLAWorker
+                sys.modules['FeatureWorker.occurrenceSelection'] = occurrenceSelection
+                sys.modules['FeatureWorker.pca_mod'] = pca_mod
+            tmp_dict = pickle.load(f, encoding='latin1')
+            f.close()          
+        try:
+            print("Outcomes in loaded model:", list(tmp_dict['classificationModels'].keys()))
+        except KeyError:
+            if 'regressionModels' in tmp_dict:
+                warn("You are trying to load a regression model for classification.")
+                warn("Try the classification version of the flag you are using, for example --predict_classifiers_to_feats instead of --predict_regression_to_feats.")
+            else:
+                warn("No classification models found in the pickle.")
+            sys.exit()
 
-        self.__dict__.update(tmp_dict) 
+        tmp_dict['outcomes'] = list(tmp_dict['classificationModels'].keys()) 
+        self.__dict__.update(tmp_dict)
 
     def save(self, filename):
         print("[Saving %s]" % filename)
@@ -1869,7 +2018,9 @@ class ClassifyPredictor:
             #setup column and row names:
             controlNames = sorted(list(set([controlName for controlTuple in list(outcomeScores.keys()) for controlName in controlTuple])))
             rowKeys = sorted(list(outcomeScores.keys()), key = lambda k: len(k))
-            scoreNames = sorted(iter(outcomeScores[rowKeys[0]].values()).next().keys(), key=str.lower)
+            #scoreNames = sorted(next(iter(outcomeScores[rowKeys[0]].values())).keys(), key=str.lower)
+            scoreNames = sorted(list(set(name for k in rowKeys for v in outcomeScores[k].values() for name in list(v.keys()))), key=str.lower)
+            
             columnNames = ['row_id', 'outcome', 'model_controls'] + scoreNames + ['w/ lang.'] + controlNames
 
             #csv:
@@ -1885,7 +2036,7 @@ class ClassifyPredictor:
                     for cn in controlNames:
                         rowDict[cn] = 1 if cn in rk else 0
                     rowDict['w/ lang.'] = withLang
-                    rowDict.update({(k,v) for (k,v) in list(sc.items()) if k is not 'predictions'})
+                    rowDict.update({(k,v) for (k,v) in list(sc.items()) if ((k is not 'predictions') and k is not 'predictionProbs')})
                     csvOut.writerow(rowDict)
     @staticmethod
     def printComboControlPredictionsToCSV(scores, outputstream, paramString = None, delimiter='|'):
@@ -1898,6 +2049,13 @@ class ClassifyPredictor:
         i = 0
         outcomeKeys = sorted(scores.keys())
         previousColumnNames = []
+        # get all group ids 
+        groups = set()
+        for outcomeName in scores:
+            for rk in scores[outcomeName]:
+                for withLang in scores[outcomeName][rk]:
+                    groups.update([k for k in scores[outcomeName][rk][withLang]['predictions']])
+
         for outcomeName in outcomeKeys:
             outcomeScores = scores[outcomeName]
             controlNames = sorted(list(set([controlName for controlTuple in list(outcomeScores.keys()) for controlName in controlTuple])))
@@ -1910,8 +2068,12 @@ class ClassifyPredictor:
                         mc += "_withLanguage"
                     columns.append(outcomeName+'_'+mc)
                     predictionData[str(i)+'_'+outcomeName+'_'+mc] = s['predictions']
-                    for k,v in s['predictions'].items():
-                        data[k].append(v)
+                    for group_id in groups:
+                        if group_id in s['predictions']:
+                            data[group_id].append(s['predictions'][group_id])
+                        else:
+                            data[group_id].append('nan')
+
         
         writer = csv.writer(outputstream)
         writer.writerow(columns)
@@ -1919,6 +2081,49 @@ class ClassifyPredictor:
            v.insert(0,k)  
            writer.writerow(v)
         
+    @staticmethod
+    def printComboControlPredictionProbsToCSV(scores, outputstream, paramString = None, delimiter='|'):
+        """prints predictions with all combinations of controls to csv)"""
+        predictionData = {}
+        data = defaultdict(list)
+        columns = ["Id"]
+        if paramString:
+           print(paramString+"\n", file=outputstream)
+        i = 0
+        outcomeKeys = sorted(scores.keys())
+        previousColumnNames = []
+        # get all group ids 
+        groups = set()
+        for outcomeName in scores:
+            for rk in scores[outcomeName]:
+                for withLang in scores[outcomeName][rk]:
+                    groups.update([k for k in scores[outcomeName][rk][withLang]['predictionProbs']])
+
+        for i, outcomeName in enumerate(outcomeKeys):
+            outcomeScores = scores[outcomeName]
+            controlNames = sorted(list(set([controlName for controlTuple in outcomeScores.keys() for controlName in controlTuple])))
+            rowKeys = sorted(outcomeScores.keys(), key = lambda k: len(k))
+            for rk in rowKeys:
+                for withLang, s in outcomeScores[rk].items():
+                    i+=1
+                    mc = "_".join(rk)
+                    if(withLang):
+                        mc += "_withLanguage"
+                    columns.append(outcomeName+'_'+mc)
+                    predictionData[str(i)+'_'+outcomeName+'_'+mc] = s['predictionProbs']
+                    for group_id in groups:
+                        if group_id in s['predictionProbs']:
+                            data[group_id].append(s['predictionProbs'][group_id])
+                        else:
+                            data[group_id].append('nan')
+
+        writer = csv.writer(outputstream)
+        writer.writerow(columns)
+        for k,v in data.items():
+           v.insert(0,k)
+           writer.writerow(v)
+
+
     #################
     ## Deprecated:
     def old_train(self, standardize = True, sparse = False, restrictToGroups = None):

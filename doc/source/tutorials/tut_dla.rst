@@ -303,11 +303,18 @@ This means that every user in our dataset passes the group frequency threshold, 
 
 Output will be written to the file **xxx_output_topic_tagcloud.txt**. The topic tagcloud output will be in a directory called *xxx_output_topic_tagcloud_wordclouds*
 
-|| border=1
-||! Topics most correlated with outcome !||
-||! Outcome ||! Positive Correlation ||! Negative Correlation ||
-|| Gender ||  Attach:gender_pos.png || Attach:gender_neg.png ||
-|| Age    ||  Attach:age_pos.png ||  Attach:age_neg.png ||
+.. |gender_pos| image:: ../../_static/gender_pos.png
+.. |gender_neg| image:: ../../_static/gender_neg.png
+.. |age_pos| image:: ../../_static/age_pos.png
+.. |age_neg| image:: ../../_static/age_neg.png
+
+============   ====================   ====================
+Outcome        Positive Correlation   Negative Correlation
+============   ====================   ====================
+Gender         |gender_pos|           |gender_neg|
+Age            |age_pos|              |age_neg|
+============   ====================   ====================
+
 
 Here is the general syntax for some other commands:
 

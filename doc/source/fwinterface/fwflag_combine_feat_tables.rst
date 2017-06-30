@@ -28,20 +28,30 @@ Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`, :doc:`fwflag_f` Optional Switches:
-:doc:`fwflag_add_ngrams` :doc:`fwflag_add_ngrams_from_tokenized` :doc:`fwflag_feat_occ_filter` :doc:`fwflag_feat_colloc_filter` 
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_f` 
+
+Optional Switches:
+
+* :doc:`fwflag_add_ngrams`
+* :doc:`fwflag_add_ngrams_from_tokenized`
+* :doc:`fwflag_feat_occ_filter`
+* :doc:`fwflag_feat_colloc_filter` 
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
 
 
- # Simply combines two tables:
- # Creates: feat$1to2gram$messages$user_id$16to16
- ./fwInterface.py :doc:`fwflag_d` 2004blogs :doc:`fwflag_t` messages :doc:`fwflag_c` user_id :doc:`fwflag_f` 'feat$1gram$messages$user_id$16to16' 'feat$2gram$messages$user_id$16to16' :doc:`fwflag_combine_feat_tables` 1to2gram
+	# Simply combines two tables:
+	# Creates: feat$1to2gram$messages$user_id$16to16
+	dlatkInterface.py -d 2004blogs -t messages -c user_id -f 'feat$1gram$messages$user_id$16to16' 'feat$2gram$messages$user_id$16to16' --combine_feat_tables 1to2gram
 
- # Extracts 1grams then 2grams, then combines the two new feature tables into a new one.
- # Creates:
- #	feat$1gram$messages$user_id$16to16
- # 	feat$2gram$messages$user_id$16to16
- # 	feat$1to2gram$messages$user_id$16to16
- ./fwInterface.py :doc:`fwflag_d` 2004blogs :doc:`fwflag_t` messages :doc:`fwflag_c` user_id :doc:`fwflag_add_ngrams` :doc:`fwflag_n` 1 2 :doc:`fwflag_combine_feat_tables` 1to2gram
+	# Extracts 1grams then 2grams, then combines the two new feature tables into a new one.
+	# Creates:
+	#	feat$1gram$messages$user_id$16to16
+	# 	feat$2gram$messages$user_id$16to16
+	# 	feat$1to2gram$messages$user_id$16to16
+	dlatkInterface.py -d 2004blogs -t messages -c user_id --add_ngrams -n 1 2 --combine_feat_tables 1to2gram

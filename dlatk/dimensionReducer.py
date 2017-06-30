@@ -13,10 +13,22 @@ try:
     import rpy2.robjects as ro
     from rpy2.rinterface import RNULLType
 except ImportError:
-    warn("rpy2 cannot be imported")
+    try:
+        import readline
+        from rpy2.robjects.packages import importr
+        import rpy2.robjects as ro
+        from rpy2.rinterface import RNULLType
+    except ImportError:
+        warn("rpy2 cannot be imported")
+        pass
     pass
 
 import pandas as pd
+try:
+    import pandas.rpy.common as com
+except ImportError:
+    warn("pandas.rpy.common cannot be imported")
+    pass
 
 from inspect import ismethod
 import sys
@@ -646,8 +658,10 @@ class CCA:
         Xcomp_dict = {k: {i:(j,
                              0.0 if j != 0 else 1,
                              cca["nGroups"],
+                             (0,0) if j != 0 else (1,1),
                              Xfreqs[i]) for i, j in v.items()} for k, v in Xcomp.to_dict().items()}
         Zcomp_dict = {k: {i:(j,0.0 if j != 0 else 1,cca["nGroups"],
+                             (0,0) if j != 0 else (1,1),
                              Zfreqs[i] if i in list(Zfreqs.keys()) else Xfreqs[i]
                          ) for i, j in v.items()} for k, v in Zcomp2.to_dict().items()}
 
@@ -706,11 +720,11 @@ class CCA:
             'd': d,
         }
 
-        with open("/localdata/county-disease/CCA/Xt_Z.Xcomp.Zcomp.d.pickle","wb+") as f:
-            print("Dumping data to /localdata/county-disease/CCA/Xt_Z.Xcomp.Zcomp.d.pickle")
-            pickle.dump((Xt_Z, Xcomp, Zcomp, d), f)
-            print("Dumping data to /localdata/county-disease/CCA/X.Z.pickle")
-            pickle.dump((X,Z), f)
+        # with open("/localdata/county-disease/CCA/Xt_Z.Xcomp.Zcomp.d.pickle","wb+") as f:
+        #     print("Dumping data to /localdata/county-disease/CCA/Xt_Z.Xcomp.Zcomp.d.pickle")
+        #     pickle.dump((Xt_Z, Xcomp, Zcomp, d), f)
+        #     print("Dumping data to /localdata/county-disease/CCA/X.Z.pickle")
+        #     pickle.dump((X,Z), f)
         
         reconstruction_err = [ 
             sum(np.linalg.norm(np.outer(Xcomp[i]*d_i,Zcomp[i].transpose()),axis=0))/sum(np.linalg.norm(Xt_Z, axis=0))
@@ -733,8 +747,11 @@ class CCA:
         Xcomp_dict = {k: {i:(j,
                              0.0 if j != 0 else 1,
                              cca["nGroups"],
+                             (0,0) if j != 0 else (1,1),
                              Xfreqs[i]) for i, j in v.items()} for k, v in Xcomp.to_dict().items()}
-        Zcomp_dict = {k: {i:(j,0.0 if j != 0 else 1,cca["nGroups"],Zfreqs[i]) for i, j in v.items()} for k, v in Zcomp.to_dict().items()}
+        Zcomp_dict = {k: {i:(j,0.0 if j != 0 else 1,cca["nGroups"],
+                             (0,0) if j != 0 else (1,1),
+                            Zfreqs[i]) for i, j in v.items()} for k, v in Zcomp.to_dict().items()}
 
         return Xcomp_dict, Zcomp_dict, d_dict
         ## output: {outcome: feat: (r,p,n,freq)}

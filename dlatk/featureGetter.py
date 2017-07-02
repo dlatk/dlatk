@@ -9,12 +9,12 @@ from scipy.stats import t as spt
 import numpy as np
 
 #infrastructure
-from . import fwConstants as fwc
-from .featureWorker import FeatureWorker
+from . import dlaConstants as dlac
+from .dlaWorker import DLAWorker
 from .mysqlMethods import mysqlMethods as mm
 from .mysqlMethods import mysql_iter_funcs as mif
 
-class FeatureGetter(FeatureWorker):
+class FeatureGetter(DLAWorker):
     """General class for reading from feature tables.
 
     Parameters
@@ -53,25 +53,25 @@ class FeatureGetter(FeatureWorker):
 
         parser = SafeConfigParser()
         parser.read(initFile)
-        corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else fwc.DEF_CORPDB
-        corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else fwc.DEF_CORPTABLE
-        correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else fwc.DEF_CORREL_FIELD
-        mysql_host = parser.get('constants','mysql_host') if parser.has_option('constants','mysql_host') else fwc.MYSQL_HOST
-        message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else fwc.DEF_MESSAGE_FIELD
-        messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else fwc.DEF_MESSAGEID_FIELD
-        encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else fwc.DEF_ENCODING
+        corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else dlac.DEF_CORPDB
+        corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else dlac.DEF_CORPTABLE
+        correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else dlac.DEF_CORREL_FIELD
+        mysql_host = parser.get('constants','mysql_host') if parser.has_option('constants','mysql_host') else dlac.MYSQL_HOST
+        message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else dlac.DEF_MESSAGE_FIELD
+        messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else dlac.DEF_MESSAGEID_FIELD
+        encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else dlac.DEF_ENCODING
         if parser.has_option('constants','use_unicode'):
             use_unicode = True if parser.get('constants','use_unicode')=="True" else False
         else:
-            use_unicode = fwc.DEF_UNICODE_SWITCH
-        lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else fwc.DEF_LEXICON_DB
-        featureTable = parser.get('constants','feattable') if parser.has_option('constants','feattable') else fwc.DEF_FEAT_TABLE
-        featNames = parser.get('constants','featnames') if parser.has_option('constants','featnames') else fwc.DEF_FEAT_NAMES
+            use_unicode = dlac.DEF_UNICODE_SWITCH
+        lexicondb = parser.get('constants','lexicondb') if parser.has_option('constants','lexicondb') else dlac.DEF_LEXICON_DB
+        featureTable = parser.get('constants','feattable') if parser.has_option('constants','feattable') else dlac.DEF_FEAT_TABLE
+        featNames = parser.get('constants','featnames') if parser.has_option('constants','featnames') else dlac.DEF_FEAT_NAMES
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
         return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, wordTable = None)
 
 
-    def __init__(self, corpdb=fwc.DEF_CORPDB, corptable=fwc.DEF_CORPTABLE, correl_field=fwc.DEF_CORREL_FIELD, mysql_host=fwc.MYSQL_HOST, message_field=fwc.DEF_MESSAGE_FIELD, messageid_field=fwc.DEF_MESSAGEID_FIELD, encoding=fwc.DEF_ENCODING, use_unicode=fwc.DEF_UNICODE_SWITCH, lexicondb = fwc.DEF_LEXICON_DB, featureTable=fwc.DEF_FEAT_TABLE, featNames=fwc.DEF_FEAT_NAMES, wordTable = None):
+    def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_host=dlac.MYSQL_HOST, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb = dlac.DEF_LEXICON_DB, featureTable=dlac.DEF_FEAT_TABLE, featNames=dlac.DEF_FEAT_NAMES, wordTable = None):
         super(FeatureGetter, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable=wordTable)
         self.featureTable = featureTable    
         self.featNames = featNames
@@ -247,7 +247,7 @@ class FeatureGetter(FeatureWorker):
         return mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
 
     def getGroupsAndFeats(self, where=''):
-        fwc.warn("Loading Features and Getting Groups.")
+        dlac.warn("Loading Features and Getting Groups.")
         groups = set()
         features = dict()
         featNames = set(self.featNames)
@@ -276,7 +276,7 @@ class FeatureGetter(FeatureWorker):
         if not groups: groups = self.getDistinctGroups(where)
         allFeats = self.getDistinctFeatures(where)
         #fill in zeros (this can get quite big!)
-        fwc.warn("Adding zeros to group norms (%d groups * %d feats)." %(len(groups), len(allFeats)))
+        dlac.warn("Adding zeros to group norms (%d groups * %d feats)." %(len(groups), len(allFeats)))
         for gid in groups:
             if not gid in gns: gns[gid] = dict()
             for feat in allFeats:
@@ -309,7 +309,7 @@ class FeatureGetter(FeatureWorker):
         if blacklist:
             allFeats = list(set(allFeats) - set(blacklist))
         #fill in zeros (this can get quite big!)
-        fwc.warn("Adding zeros to group norms (%d groups * %d feats)." %(len(groups), len(allFeats)))
+        dlac.warn("Adding zeros to group norms (%d groups * %d feats)." %(len(groups), len(allFeats)))
         for feat in allFeats:
             if not feat in gns: gns[feat] = dict()
             thisGn = gns[feat]
@@ -348,7 +348,7 @@ class FeatureGetter(FeatureWorker):
         if not feats: 
             allFeats = self.getDistinctFeatures(where)
         else:
-            fwc.warn("feats restricted to %s" % feats)
+            dlac.warn("feats restricted to %s" % feats)
         
         numFeats = len(allFeats)
         gCond = None
@@ -367,10 +367,10 @@ class FeatureGetter(FeatureWorker):
             getGroupNormsForFeats = self.getValuesAndGroupNormsForFeats
             
         #figure out if too big for memory:
-        fwc.warn("Yielding norms with zeros (%d groups * %d feats)." %(len(groups), numFeats))
+        dlac.warn("Yielding norms with zeros (%d groups * %d feats)." %(len(groups), numFeats))
         gns = dict()
         vals = dict() #only gets field if values is true
-        if (numFeats * numGroups) < 12500000*fwc.GIGS_OF_MEMORY:
+        if (numFeats * numGroups) < 12500000*dlac.GIGS_OF_MEMORY:
             #statically acquire all gns
             gnlist = []
             if gCond: 
@@ -394,7 +394,7 @@ class FeatureGetter(FeatureWorker):
                 if values:
                     vals[feat][gid] = float(tup[2])
         else:
-            fwc.warn("Too big to keep gns in memory, querying for each feature (slower, but less memory intensive)")
+            dlac.warn("Too big to keep gns in memory, querying for each feature (slower, but less memory intensive)")
 
         def getFeatValuesAndGNs(feat):
             if gns:
@@ -403,7 +403,7 @@ class FeatureGetter(FeatureWorker):
                         return (vals[feat].copy(), gns[feat].copy())
                     return (None, gns[feat].copy())
                 except KeyError:
-                    fwc.warn("Couldn't find gns for feat: %s (group_freq_thresh may be too high)" % feat)
+                    dlac.warn("Couldn't find gns for feat: %s (group_freq_thresh may be too high)" % feat)
                     return (None, dict())
             else:#must query for feat
                 gnDict = None 
@@ -452,7 +452,7 @@ class FeatureGetter(FeatureWorker):
         if not allFeats:
             allFeats = self.getDistinctFeatures(where)
         #fill in zeros (this can get quite big!)
-        fwc.warn("Yielding norms with zeros for %d groups * %d feats." %(len(groups), len(allFeats)))
+        dlac.warn("Yielding norms with zeros for %d groups * %d feats." %(len(groups), len(allFeats)))
         for gid in groups:
             thisGns = dict()
             if gid in gns: thisGns.update(gns[gid])
@@ -478,7 +478,7 @@ class FeatureGetter(FeatureWorker):
         if not allFeats:
             allFeats = self.getDistinctFeatures(where)
         #fill in zeros (this can get quite big!)
-        fwc.warn("Yielding values with zeros for %d groups * %d feats." %(len(groups), len(allFeats)))
+        dlac.warn("Yielding values with zeros for %d groups * %d feats." %(len(groups), len(allFeats)))
         for gid in groups:
             thisValues = dict()
             if gid in values: thisValues.update(values[gid])
@@ -504,7 +504,7 @@ class FeatureGetter(FeatureWorker):
         if not allFeats:
             allFeats = self.getDistinctFeatures(where)
         #fill in zeros (this can get quite big!)
-        fwc.warn("Yielding values with zeros for %d groups * %d feats." %(len(groups), len(allFeats)))
+        dlac.warn("Yielding values with zeros for %d groups * %d feats." %(len(groups), len(allFeats)))
         for gid in groups:
             thisValues = dict()
             if gid in values: thisValues = values[gid]
@@ -517,7 +517,7 @@ class FeatureGetter(FeatureWorker):
             message = delimeter.join([delimeter.join([feat.replace(' ', '_')]*value) for feat, value in featValues.items()])
             f.write("""%s en %s\n""" %(gid, message))
         f.close()
-        fwc.warn("Wrote joined features file to: %s"%filename)
+        dlac.warn("Wrote joined features file to: %s"%filename)
     
     def getFeatNorms(self, where = ''):
         """returns a list of (group_id, feature, feat_norm) triples"""
@@ -548,7 +548,7 @@ class FeatureGetter(FeatureWorker):
         if not groups: groups = self.getDistinctGroups(where)
 
         #fill in zeros (this can get quite big!)
-        fwc.warn("Adding zeros to feat norms (%d groups * %d feats)." %(len(groups), len(list(meanData.keys()))))
+        dlac.warn("Adding zeros to feat norms (%d groups * %d feats)." %(len(groups), len(list(meanData.keys()))))
         meanData = self.getFeatMeanData() # feat : (mean, std, zero_mean)
         for gid in groups:
             if not gid in fns: fns[gid] = dict()
@@ -571,14 +571,14 @@ class FeatureGetter(FeatureWorker):
         """ returns a list of lists: each row is a group_id and each col is a feature"""
         """ the first row has a blank first entry and then a list of unique features"""
         """ the first column has a blank first entry and then a list of unique group_ids"""
-        fwc.warn("running getContingencyArrayFeatNorm")
+        dlac.warn("running getContingencyArrayFeatNorm")
 
-        fwc.warn("Getting distinct feature / groupId lists and (feat, featNormZero) list")
+        dlac.warn("Getting distinct feature / groupId lists and (feat, featNormZero) list")
         distinctFeatureList = self.getDistinctFeatures( where )
         featureZeroList = self.getFeatureZeros( where )
         distinctGroupList = self.getDistinctGroups( where )
 
-        fwc.warn("Converting feature / groupId lists to dictionaries (item: index) for quick insertion")
+        dlac.warn("Converting feature / groupId lists to dictionaries (item: index) for quick insertion")
         distinctFeatureDict = {}
         counter = 0
         for feature in distinctFeatureList:
@@ -591,16 +591,16 @@ class FeatureGetter(FeatureWorker):
             distinctGroupDict[group] = counter
             counter += 1
         
-        fwc.warn("Making a 2d array (matrix) with ncol = nDistinctFeatures and nrow = nDistinctGroupIds")
-        fwc.warn("For each distinct feature, intializing that column with feat norm zeros' value")
+        dlac.warn("Making a 2d array (matrix) with ncol = nDistinctFeatures and nrow = nDistinctGroupIds")
+        dlac.warn("For each distinct feature, intializing that column with feat norm zeros' value")
         contingencyMatrix = zeros( ( len(distinctGroupList), len(distinctFeatureList) ) )
         for tup in featureZeroList:
             (feat, featNormZero) = tup
             columnIndexToZero = distinctFeatureDict[ feat ] 
             contingencyMatrix[ :, columnIndexToZero ] = featNormZero
 
-        fwc.warn("calling getFeatNormsSS, iterating through (with SS cursor)")
-        fwc.warn("for each iteration, using the index dictionaries to insert the entry into the matrix")
+        dlac.warn("calling getFeatNormsSS, iterating through (with SS cursor)")
+        dlac.warn("for each iteration, using the index dictionaries to insert the entry into the matrix")
         ssCursor = self.getFeatNormsSS( where )
         for tup in ssCursor:
             (gid, feat, featNorm) = tup
@@ -608,7 +608,7 @@ class FeatureGetter(FeatureWorker):
             rowIndexForInsertion = distinctGroupDict[ gid ]
             contingencyMatrix[ rowIndexForInsertion, columnIndexForInsertion ] = featNorm
 
-        fwc.warn("returning [contingency matrix, rownames (distinct groups), and colnames (distinct features)]")
+        dlac.warn("returning [contingency matrix, rownames (distinct groups), and colnames (distinct features)]")
         return [ contingencyMatrix, distinctGroupList, distinctFeatureList ]
 
 

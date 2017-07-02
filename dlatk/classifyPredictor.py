@@ -59,7 +59,7 @@ import math
 
 #infrastructure
 from .mysqlMethods import mysqlMethods as mm
-from .fwConstants import warn
+from .dlaConstants import warn
 
 #For ROC curves
 try:
@@ -725,8 +725,8 @@ class ClassifyPredictor:
                             (rho, rho_p) = spearmanr(ytest, ypred)
                             testStats['rho'].append(rho)
                             testStats['rho-p'].append(rho_p)
-                            testStats['precision'].append(precision_score(ytest, ypred))
-                            testStats['recall'].append(recall_score(ytest, ypred))
+                            testStats['precision'].append(precision_score(ytest, ypred, average='macro'))
+                            testStats['recall'].append(recall_score(ytest, ypred, average='macro'))
                             testStats['mfclass_acc'].append(mfclass_acc)
                             testStats.update({'train_size': len(ytrain), 'test_size': len(ytest), 'num_features' : num_feats, 
                              '{model_desc}': str(classifier).replace('\t', "  ").replace('\n', " ").replace('  ', " "),
@@ -1963,14 +1963,14 @@ class ClassifyPredictor:
 
 
 
-    ######################
+    ###################
     def load(self, filename, pickle2_7=True):
         print("[Loading %s]" % filename)
         with open(filename, 'rb') as f:
             if pickle2_7:
-                from .featureWorker  import FeatureWorker
+                from .dlaWorker  import DLAWorker
                 from . import occurrenceSelection, pca_mod
-                sys.modules['FeatureWorker'] = FeatureWorker
+                sys.modules['FeatureWorker'] = DLAWorker
                 sys.modules['FeatureWorker.occurrenceSelection'] = occurrenceSelection
                 sys.modules['FeatureWorker.pca_mod'] = pca_mod
             tmp_dict = pickle.load(f, encoding='latin1')

@@ -22,7 +22,7 @@ except ImportError:
     print('LexInterface:warning: nltk.corpus module not imported.')
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/dlatk/LexicaInterface",""))
-import dlatk.fwConstants as fwc
+import dlatk.dlaConstants as dlac
 from dlatk.mysqlMethods.mysqlMethods import abstractDBConnect, dbConnect
 
 ##CONSTANTS (STATIC VARIABLES)##
@@ -378,9 +378,9 @@ class Lexicon(object):
     dbConn = None
     dbCursor = None
     currentLexicon = None
-    lexiconDB = fwc.DEF_LEXICON_DB
+    lexiconDB = dlac.DEF_LEXICON_DB
 
-    def __init__(self, lex = None, mysql_host = fwc.MYSQL_HOST):
+    def __init__(self, lex = None, mysql_host = dlac.MYSQL_HOST):
         (self.dbConn, self.dbCursor, self.dictCursor) = dbConnect(db=self.lexiconDB, host=mysql_host)
         self.mysql_host = mysql_host
         self.currentLexicon = lex
@@ -399,14 +399,14 @@ class Lexicon(object):
         enumCats = "'"+"', '".join([k.upper().replace("'", "\\'") for k in list(self.currentLexicon.keys())])+"'"   
         drop = """DROP TABLE IF EXISTS """+tablename
         sql = """CREATE TABLE IF NOT EXISTS %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                 term VARCHAR(128), category ENUM(%s), INDEX(term), INDEX(category)) CHARACTER SET %s COLLATE %s ENGINE=%s""" % (tablename, enumCats, fwc.DEF_ENCODING, fwc.DEF_COLLATIONS[fwc.DEF_ENCODING.lower()], fwc.DEF_MYSQL_ENGINE)
+                 term VARCHAR(128), category ENUM(%s), INDEX(term), INDEX(category)) CHARACTER SET %s COLLATE %s ENGINE=%s""" % (tablename, enumCats, dlac.DEF_ENCODING, dlac.DEF_COLLATIONS[dlac.DEF_ENCODING.lower()], dlac.DEF_MYSQL_ENGINE)
         print("Running: ", drop)
         print("and:     ", sql)
         try:
             self.dbCursor.execute(drop)
             self.dbCursor.execute(sql)
         except MySQLdb.Error as e:
-            fwc.warn("MYSQL ERROR in createLexiconTable" + str(e))
+            dlac.warn("MYSQL ERROR in createLexiconTable" + str(e))
             sys.exit(1)
 
         #next insert rows:
@@ -424,7 +424,7 @@ class Lexicon(object):
         try:
             self.dbCursor.executemany(sqlQuery, values)
         except MySQLdb.Error as e:
-            fwc.warn("MYSQL ERROR in insertLexiconRows:" + str(e) + sqlQuery);
+            dlac.warn("MYSQL ERROR in insertLexiconRows:" + str(e) + sqlQuery);
             sys.exit(1)
 
             
@@ -444,7 +444,7 @@ class Lexicon(object):
         self.dbCursor.execute(sqlQuery)
         data = self.dbCursor.fetchall()
 #        except MySQLdb.Error, e:
-#            fwc.warn(" MYSQL ERROR" + str(e))
+#            dlac.warn(" MYSQL ERROR" + str(e))
 #            sys.exit(1)
         lexicon = {}
         for row in data:
@@ -555,7 +555,7 @@ class Lexicon(object):
         termREs = dict((term, re.compile(r'\b(%s)\b' % re.escape(term).replace('\\*', '\w*'), re.I)) for term in termList)
         termLCs = dict((term, term.rstrip('*').lower()) for term in termList)
 
-        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=fwc.MYSQL_HOST, user=fwc.USER)
+        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=dlac.MYSQL_HOST, user=dlac.USER)
         writeCursor = corpDb.cursor()
         #get field list:
         sql = """SELECT column_name FROM information_schema.columns WHERE table_name='%s' and table_schema='%s'""" % (corptable, corpdb)
@@ -571,7 +571,7 @@ class Lexicon(object):
             print(sql)
             corpCursor.execute(sql)
         except MySQLdb.Error as e:
-            fwc.warn("MYSQL ERROR in addTermsToCorpus:" + str(e) + sqlQuery);
+            dlac.warn("MYSQL ERROR in addTermsToCorpus:" + str(e) + sqlQuery);
             sys.exit(1)
         newRows = []
         row = corpCursor.fetchone()
@@ -579,7 +579,7 @@ class Lexicon(object):
         sqlQuery = """REPLACE INTO """+corptable+""" values ("""+""", """.join(list('%s' for f in fields))+""")"""
         while row:
             if (len(row) != len(fields)):
-                fwc.warn("row not correct size: " + str(row))
+                dlac.warn("row not correct size: " + str(row))
                 sys.exit(1)
 
             else:
@@ -597,7 +597,7 @@ class Lexicon(object):
                         #newRows = map (lambda r: r[f] = r[f].replace("'",  for f in range(fields))
                     writeCursor.execute(updateSql)
                 except Exception as e:
-                    fwc.warn("Exception during mysql call:" + str(e) + ': ' + sqlQuery);
+                    dlac.warn("Exception during mysql call:" + str(e) + ': ' + sqlQuery);
                     pprint.PrettyPrinter().pprint(newRows) #debug
                     sys.exit(1)
             
@@ -612,7 +612,7 @@ class Lexicon(object):
                             newRow[fieldIndex['num_matches']] = num_matches
                             newRow[fieldIndex['id']] = str(row[fieldIndex[messageidfield]])+'.'+term
                             newRows.append(newRow)
-                if record % fwc.MAX_WRITE_RECORDS == 0: 
+                if record % dlac.MAX_WRITE_RECORDS == 0: 
                     print("\n writing new rows up to: %d " % record)
                     #write them back in:
                     try:
@@ -620,7 +620,7 @@ class Lexicon(object):
                         writeCursor.executemany(sqlQuery, newRows)
                         newRows = []
                     except Exception as e:
-                        fwc.warn("Exception during mysql call:" + str(e) + ': ' + sqlQuery);
+                        dlac.warn("Exception during mysql call:" + str(e) + ': ' + sqlQuery);
                         pprint.PrettyPrinter().pprint(newRows) #debug
                         sys.exit(1)
 
@@ -630,7 +630,7 @@ class Lexicon(object):
         try:
             writeCursor.executemany(sqlQuery, newRows)
         except Exception as e:
-            fwc.warn("Exception during mysql call:" + str(e) + ': ' + sqlQuery);
+            dlac.warn("Exception during mysql call:" + str(e) + ': ' + sqlQuery);
             sys.exit(1)
 
 
@@ -638,24 +638,24 @@ class Lexicon(object):
         """Creates a lexicon (all in one category) from a examining word frequencies in a corpus"""
         wordList = dict()
         
-        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=fwc.MYSQL_HOST, user=fwc.USER)
+        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=dlac.MYSQL_HOST, user=dlac.USER)
 
         #Go through each message      
         try:
             sql = """SELECT %s FROM %s""" % (messagefield, corptable)
             if messageidfield: 
                 sql += """ GROUP BY %s""" %  messageidfield
-            fwc.warn(sql+"\n")
+            dlac.warn(sql+"\n")
             corpCursor.execute(sql)
         except MySQLdb.Error as e:
-            fwc.warn("MYSQL ERROR1:" + str(e) + sqlQuery)
+            dlac.warn("MYSQL ERROR1:" + str(e) + sqlQuery)
             sys.exit(1)
         row = corpCursor.fetchone()
         rowNum = 0
         while row:
             rowNum+=1
             if rowNum % 10000 == 0:
-                fwc.warn("On Row: %s\n" % rowNum)
+                dlac.warn("On Row: %s\n" % rowNum)
             message = row[0]
             words = message.split()
             for word in words:
@@ -790,7 +790,7 @@ class Lexicon(object):
         return words
 
     def likeExamples(self, corpdb, corptable, messagefield, numForEach = 60, onlyPrintIfMin = True, onlyPrintStartingAlpha = True):
-        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=fwc.MYSQL_HOST, user=fwc.USER)
+        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=dlac.MYSQL_HOST, user=dlac.USER)
 
         print("<html><head>")
         print("<style>")
@@ -836,7 +836,7 @@ class Lexicon(object):
         print("</table></body></html>")
 
     def likeSamples(self, corpdb, corptable, messagefield, category, lexicon_name, number_of_messages):
-        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=fwc.MYSQL_HOST, user=fwc.USER)
+        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=dlac.MYSQL_HOST, user=dlac.USER)
 
         #csvFile = open('/tmp/examples.csv', 'w')
         csvFile = open(lexicon_name+"_"+category+'.csv','wb')
@@ -923,9 +923,8 @@ class Lexicon(object):
 
 class WeightedLexicon(Lexicon):
     """WeightedLexicons have an additional dictionary with weights for each term in the regular lexicon"""
-    def __init__(self, weightedLexicon=None, lex=None, mysql_host = fwc.MYSQL_HOST):
+    def __init__(self, weightedLexicon=None, lex=None, mysql_host = dlac.MYSQL_HOST):
         super(WeightedLexicon, self).__init__(lex, mysql_host = mysql_host)
-        print(self.mysql_host)
         self.weightedLexicon = weightedLexicon
      
     def isTableLexiconWeighted(self, tablename):
@@ -934,7 +933,7 @@ class WeightedLexicon(Lexicon):
         self.dbCursor.execute(sql)
         data = self.dbCursor.fetchall()
 #        except MySQLdb.Error, e:
-#            fwc.warn(" MYSQL ERROR" + str(e))
+#            dlac.warn(" MYSQL ERROR" + str(e))
 #            sys.exit(1)
         if len(data) > 0:
             numColumns = len(data)
@@ -976,7 +975,7 @@ class WeightedLexicon(Lexicon):
         self.dbCursor.execute(sqlQuery)
         data = self.dbCursor.fetchall()
 #        except MySQLdb.Error, e:
-#            fwc.warn(" MYSQL ERROR" + str(e))
+#            dlac.warn(" MYSQL ERROR" + str(e))
 #            sys.exit(1)
         lexicon = {}
         for (term, category, weight) in data:
@@ -1005,14 +1004,14 @@ class WeightedLexicon(Lexicon):
         #first create the table:
         enumCats = "'"+"', '".join([k.upper().replace("'", "\\'") for k in list(self.weightedLexicon.keys())])+"'"   
         drop = """DROP TABLE IF EXISTS """+tablename
-        sql = """CREATE TABLE IF NOT EXISTS %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, term VARCHAR(140), category ENUM(%s), weight DOUBLE, INDEX(term), INDEX(category)) CHARACTER SET %s COLLATE %s ENGINE=%s""" % (tablename, enumCats, fwc.DEF_ENCODING, fwc.DEF_COLLATIONS[fwc.DEF_ENCODING.lower()], fwc.DEF_MYSQL_ENGINE)
+        sql = """CREATE TABLE IF NOT EXISTS %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, term VARCHAR(140), category ENUM(%s), weight DOUBLE, INDEX(term), INDEX(category)) CHARACTER SET %s COLLATE %s ENGINE=%s""" % (tablename, enumCats, dlac.DEF_ENCODING, dlac.DEF_COLLATIONS[dlac.DEF_ENCODING.lower()], dlac.DEF_MYSQL_ENGINE)
         print("Running: ", drop)
         print("and:     ", sql)
         try:
             self.dbCursor.execute(drop)
             self.dbCursor.execute(sql)
         except MySQLdb.Error as e:
-            fwc.warn("MYSQL ERROR2" + str(e))
+            dlac.warn("MYSQL ERROR2" + str(e))
             sys.exit(1)
 
         #next insert rows:
@@ -1028,7 +1027,7 @@ class WeightedLexicon(Lexicon):
             for term in lex[cat]:
                 # print 'cat: %s term: %s' % (cat, term)
                 if self.weightedLexicon[cat][term] != 0:
-                    values.extend([[term, cat, self.weightedLexicon[cat][term]]])
+                    values.extend([[term, cat.upper(), self.weightedLexicon[cat][term]]])
         try:
             nbInserted = 0
             length = len(values)
@@ -1045,7 +1044,7 @@ class WeightedLexicon(Lexicon):
                 
 
         except MySQLdb.Error as e:
-            fwc.warn("MYSQL ERROR:" + str(e) + sqlQuery);
+            dlac.warn("MYSQL ERROR:" + str(e) + sqlQuery);
             sys.exit(1)
 
     def mapToSuperLexicon(self, superLexiconMapping):
@@ -1240,21 +1239,21 @@ if __name__ == "__main__":
                           help="Expands the lexicon to more terms.")
 
     group = OptionGroup(_optParser, "Add Terms OR Corpus Lexicon Options","")
-    group.add_option("-d", "--corpus_db", dest="corpdb", metavar='DB', default = fwc.DEF_CORPDB,
+    group.add_option("-d", "--corpus_db", dest="corpdb", metavar='DB', default = dlac.DEF_CORPDB,
                          help="Corpus database to use [default: %default]")
-    group.add_option("-t", "--corpus_table", dest="corptable", metavar='TABLE', default = fwc.DEF_CORPTABLE,
+    group.add_option("-t", "--corpus_table", dest="corptable", metavar='TABLE', default = dlac.DEF_CORPTABLE,
                          help="Corpus table to use [default: %default]")
-    group.add_option("--corpus_term_field", dest="termfield", metavar='FIELD', default = fwc.DEF_TERM_FIELD    ,
+    group.add_option("--corpus_term_field", dest="termfield", metavar='FIELD', default = dlac.DEF_TERM_FIELD    ,
                          help="field of the corpus table that contains terms (lexicon table always uses 'term') [default: %default]")
-    group.add_option("--corpus_message_field", dest="messagefield", metavar='FIELD', default = fwc.DEF_MESSAGE_FIELD    ,
+    group.add_option("--corpus_message_field", dest="messagefield", metavar='FIELD', default = dlac.DEF_MESSAGE_FIELD    ,
                          help="field of the corpus table that contains the actual message [default: %default]")
-    group.add_option("--corpus_messageid_field", dest="messageidfield", metavar='FIELD', default = fwc.DEF_MESSAGEID_FIELD    ,
+    group.add_option("--corpus_messageid_field", dest="messageidfield", metavar='FIELD', default = dlac.DEF_MESSAGEID_FIELD    ,
                          help="field of the table that contains message ids (set to '' to not use group by [default: %default]")
-    group.add_option("--min_word_freq", dest="minwordfreq", metavar='NUM', type='int', default = fwc.DEF_MIN_WORD_FREQ    ,
+    group.add_option("--min_word_freq", dest="minwordfreq", metavar='NUM', type='int', default = dlac.DEF_MIN_WORD_FREQ    ,
                          help="minimum number of instances to include in lexicon (-l option) [default: %default]")
     group.add_option("--lexicon_category", dest="lexicon_cat", metavar="CATEGORY", 
                          help="category in lexicon to get random samples from")
-    group.add_option("--num_rand_messages", dest="num_messages", metavar="NUM", type='int', default = fwc.DEF_NUM_RAND_MESSAGES,
+    group.add_option("--num_rand_messages", dest="num_messages", metavar="NUM", type='int', default = dlac.DEF_NUM_RAND_MESSAGES,
                          help="number of random messages to select when getting samples from lexicon category")
 #    group.add_option("--fulltext", action="store_true", dest="fulltext", default = False,
 #                          help="utilizes fulltext searches to improve performance (TODO)")

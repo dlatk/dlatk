@@ -58,7 +58,7 @@ import math
 #infrastructure
 from .classifyPredictor import ClassifyPredictor
 from .mysqlMethods import mysqlMethods as mm
-from .fwConstants import DEFAULT_MAX_PREDICT_AT_A_TIME
+from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME
 
 
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
@@ -1743,12 +1743,12 @@ class RegressionPredictor:
 
     ######################
     def load(self, filename, pickle2_7=True):
-        print("[Loading %s]" % filename)
+        print("[Loading %s]" % filename, pickle2_7)
         with open(filename, 'rb') as f:
             if pickle2_7:
-                from .featureWorker  import FeatureWorker
+                from .dlaWorker  import DLAWorker
                 from . import occurrenceSelection, pca_mod
-                sys.modules['FeatureWorker'] = FeatureWorker
+                sys.modules['FeatureWorker'] = DLAWorker
                 sys.modules['FeatureWorker.occurrenceSelection'] = occurrenceSelection
                 sys.modules['FeatureWorker.pca_mod'] = pca_mod
             tmp_dict = pickle.load(f, encoding='latin1')

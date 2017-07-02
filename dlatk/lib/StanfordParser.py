@@ -20,15 +20,16 @@ from pprint import pprint
 import glob
 
 ##DEFAULTS FOR RELEASED VERSION
-# from ..fwConstants import warn
+# from ..dlaConstants import warn
 # try: 
 #     _InstallPath = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '/Tools/StanfordParser/' # folder
 #     _InstallDir = glob.glob(_InstallPath + "stanford-parser-full*")[0]
 # except:
-#     warn("Cannot find StanfordParser, please check that this was installed properly")
+#     _InstallPath = ""
+#     _InstallDir = ""
 #     pass
 
-##DEFAULTS:
+#DEFAULTS:
 _InstallPath = '/home/hansens/Tools/StanfordParser/' # folder
 _InstallDir = 'stanford-parser-2012-02-03'
 
@@ -47,6 +48,9 @@ class StanfordParser:
     def __init__(self, **kwargs):
         self.__dict__.update(_DefaultParams)
         self.__dict__.update(kwargs)
+        if not self.parser_dir:
+            warn("Cannot find StanfordParser, please check that this was installed properly")
+            sys.exit()
         
     def parse(self, sents):
         """returns a list of dicts with parse information: const, dep, and pos """

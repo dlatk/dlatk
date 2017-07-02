@@ -20,14 +20,14 @@ try:
 except ImportError:
     print('warning: wordcloud not found.')
 from dlatk.semanticsExtractor import SemanticsExtractor
-import dlatk.featureWorker as featureWorker
+import dlatk.dlaWorker as dlaWorker
 from dlatk.regressionPredictor import RegressionPredictor, CombinedRegressionPredictor, ClassifyToRegressionPredictor
 from dlatk.classifyPredictor import ClassifyPredictor
-from dlatk.clustering import DimensionReducer, CCA
+from dlatk.dimensionReducer import DimensionReducer, CCA
 from dlatk.mediation import MediationAnalysis
 from dlatk import DDLA
 from dlatk.LexicaInterface import lexInterface
-from dlatk.featureWorker import FeatureWorker
+from dlatk.dlaWorker import DLAWorker
 from dlatk.featureExtractor import FeatureExtractor
 from dlatk.featureGetter import FeatureGetter
 from dlatk.featureRefiner import FeatureRefiner
@@ -35,7 +35,7 @@ from dlatk.messageAnnotator import MessageAnnotator
 from dlatk.messageTransformer import MessageTransformer
 from dlatk.outcomeGetter import OutcomeGetter
 from dlatk.outcomeAnalyzer import OutcomeAnalyzer
-import dlatk.fwConstants as fwc
+import dlatk.dlaConstants as dlac
 
 def getInitVar(variable, parser, default, varList=False):
     if parser:
@@ -62,7 +62,7 @@ def main(fn_args = None):
 
     # Meta variables
     group = init_parser.add_argument_group('Meta Variables', '')
-    group.add_argument('--to_file', dest='toinitfile', nargs='?', const=fwc.DEF_INIT_FILE, default=None,
+    group.add_argument('--to_file', dest='toinitfile', nargs='?', const=dlac.DEF_INIT_FILE, default=None,
                       help='write flag values to text file')
     group.add_argument('--from_file', type=str, dest='frominitfile', default='',
                        help='reads flag values from file')
@@ -81,31 +81,31 @@ def main(fn_args = None):
 
     group = parser.add_argument_group('Corpus Variables', 'Defining the data from which features are extracted.')
 
-    group.add_argument('-d', '--corpdb', metavar='DB', dest='corpdb', default=getInitVar('corpdb', conf_parser, fwc.DEF_CORPDB),
+    group.add_argument('-d', '--corpdb', metavar='DB', dest='corpdb', default=getInitVar('corpdb', conf_parser, dlac.DEF_CORPDB),
                         help='Corpus Database Name.')
-    group.add_argument('-t', '--corptable', metavar='TABLE', dest='corptable', default=getInitVar('corptable', conf_parser, fwc.DEF_CORPTABLE),
+    group.add_argument('-t', '--corptable', metavar='TABLE', dest='corptable', default=getInitVar('corptable', conf_parser, dlac.DEF_CORPTABLE),
                         help='Corpus Table.')
-    group.add_argument('-c', '--correl_field', metavar='FIELD', dest='correl_field', default=getInitVar('correl_field', conf_parser, fwc.DEF_CORREL_FIELD),
+    group.add_argument('-c', '--correl_field', metavar='FIELD', dest='correl_field', default=getInitVar('correl_field', conf_parser, dlac.DEF_CORREL_FIELD),
                         help='Correlation Field (AKA Group Field): The field which features are aggregated over.')
-    group.add_argument('-H', '--host', metavar='HOST', dest='mysql_host', default=getInitVar('mysql_host', conf_parser, fwc.MYSQL_HOST),
-                       help='Host that the mysql server runs on (default: %s)' % fwc.MYSQL_HOST)
-    group.add_argument('--message_field', metavar='FIELD', dest='message_field', default=getInitVar('message_field', conf_parser, fwc.DEF_MESSAGE_FIELD),
+    group.add_argument('-H', '--host', metavar='HOST', dest='mysql_host', default=getInitVar('mysql_host', conf_parser, dlac.MYSQL_HOST),
+                       help='Host that the mysql server runs on (default: %s)' % dlac.MYSQL_HOST)
+    group.add_argument('--message_field', metavar='FIELD', dest='message_field', default=getInitVar('message_field', conf_parser, dlac.DEF_MESSAGE_FIELD),
                         help='The field where the text to be analyzed is located.')
-    group.add_argument('--messageid_field', metavar='FIELD', dest='messageid_field', default=getInitVar('messageid_field', conf_parser, fwc.DEF_MESSAGEID_FIELD),
+    group.add_argument('--messageid_field', metavar='FIELD', dest='messageid_field', default=getInitVar('messageid_field', conf_parser, dlac.DEF_MESSAGEID_FIELD),
                         help='The unique identifier for the message.')
-    group.add_argument('--date_field', metavar='FIELD', dest='date_field', default=getInitVar('date_field', conf_parser, fwc.DEF_DATE_FIELD),
+    group.add_argument('--date_field', metavar='FIELD', dest='date_field', default=getInitVar('date_field', conf_parser, dlac.DEF_DATE_FIELD),
                         help='Date a message was sent (if avail, for timex processing).')
-    group.add_argument('--lexicondb', metavar='DB', dest='lexicondb', default=getInitVar('lexicondb', conf_parser, fwc.DEF_LEXICON_DB),
+    group.add_argument('--lexicondb', metavar='DB', dest='lexicondb', default=getInitVar('lexicondb', conf_parser, dlac.DEF_LEXICON_DB),
                         help='The database which stores all lexicons.')
     group.add_argument('--encoding', metavar='DB', dest='encoding', default=getInitVar('encoding', conf_parser, ''),
                         help='MySQL encoding')
-    group.add_argument('--no_unicode', action='store_false', dest='useunicode', default=fwc.DEF_UNICODE_SWITCH,
+    group.add_argument('--no_unicode', action='store_false', dest='useunicode', default=dlac.DEF_UNICODE_SWITCH,
                        help='Turn off unicode for reading/writing mysql and text processing.')
 
     group = parser.add_argument_group('Feature Variables', 'Use of these is dependent on the action.')
     group.add_argument('-f', '--feat_table', metavar='TABLE', dest='feattable', type=str, nargs='+', default=getInitVar('feattable', conf_parser, None, varList=True),
                        help='Table containing feature information to work with')
-    group.add_argument('-n', '--set_n', metavar='N', dest='n', type=int, nargs='+', default=[fwc.DEF_N],
+    group.add_argument('-n', '--set_n', metavar='N', dest='n', type=int, nargs='+', default=[dlac.DEF_N],
                        help='The n value used for n-grams or co-occurence features')
     group.add_argument('--no_metafeats', action='store_false', dest='metafeats', default=True,
                        help='indicate not to extract meta features (word, message length) with ngrams')
@@ -114,9 +114,9 @@ def main(fn_args = None):
                        '(or use --word_table to extract from other than 1gram)')
     group.add_argument('--word_table', metavar='WORDTABLE', dest='wordTable', default=getInitVar('wordTable', conf_parser, None),
                        help='Table that contains the list of words to give for lex extraction/group_freq_thresh')
-    group.add_argument('--colloc_table', metavar='TABLE', dest='colloc_table', default=fwc.DEF_COLLOCTABLE,
+    group.add_argument('--colloc_table', metavar='TABLE', dest='colloc_table', default=dlac.DEF_COLLOCTABLE,
                         help='Table that holds a list of collocations to be used as features.')
-    group.add_argument('--colloc_column', metavar='COLUMN', dest='colloc_column', default=fwc.DEF_COLUMN_COLLOC,
+    group.add_argument('--colloc_column', metavar='COLUMN', dest='colloc_column', default=dlac.DEF_COLUMN_COLLOC,
                         help='Column giving collocations to be used as features.')
     group.add_argument('--feature_type_name', metavar='STRING', dest='feature_type_name',
                         help='Customize the name of output features.')
@@ -144,21 +144,21 @@ def main(fn_args = None):
                        help='anscombe transforms normalized group_norm lexicon freq information.')
     group.add_argument('--lex_boolean', action='store_const', dest='lexvaluefunc', const=lambda d: float(1.0),
                        help='boolean transforms normalized group_norm freq information (1 if true).')
-    group.add_argument('--set_p_occ', metavar='P', dest='pocc', type=float, default=fwc.DEF_P_OCC,
+    group.add_argument('--set_p_occ', metavar='P', dest='pocc', type=float, default=dlac.DEF_P_OCC,
                        help='The probability of occurence of either a feature or group (altnernatively if > 1, then limits to top p_occ features instead).')
-    group.add_argument('--set_pmi_threshold', metavar='PMI', dest='pmi', type=float, default=fwc.DEF_PMI,
+    group.add_argument('--set_pmi_threshold', metavar='PMI', dest='pmi', type=float, default=dlac.DEF_PMI,
                        help='The threshold for the feat_colloc_filter.')
-    group.add_argument('--set_min_feat_sum', metavar='N', dest='minfeatsum', type=int, default=fwc.DEF_MIN_FEAT_SUM,
+    group.add_argument('--set_min_feat_sum', metavar='N', dest='minfeatsum', type=int, default=dlac.DEF_MIN_FEAT_SUM,
                        help='The minimum a feature must occur across all groups, to be kept.')
     group.add_argument('--topic_file', type=str, dest='topicfile', default='',
                        help='Name of topic file to use to build the topic lexicon.')
-    group.add_argument('--num_topic_words', type=int, dest='numtopicwords', default=fwc.DEF_MAX_TOP_TC_WORDS,
+    group.add_argument('--num_topic_words', type=int, dest='numtopicwords', default=dlac.DEF_MAX_TOP_TC_WORDS,
                        help='Number of topic words to use as labels.')
     group.add_argument('--topic_lexicon', '--topic_lex', type=str, dest='topiclexicon', default='',
                        help='this is the (topic) lexicon name specified as part of --make_feat_labelmap_lex and --add_topiclex_from_topicfile')
     group.add_argument('--topic_list', type=str, dest='topiclist', default='', nargs='+',
                        help='this is the list of topics to group together in a plot for --feat_flexibin')
-    group.add_argument('--topic_lex_method', type=str, dest='topiclexmethod', default=fwc.DEF_TOPIC_LEX_METHOD,
+    group.add_argument('--topic_lex_method', type=str, dest='topiclexmethod', default=dlac.DEF_TOPIC_LEX_METHOD,
                        help='must be one of: "csv_lik", "standard"')
     group.add_argument('--weighted_lexicon', action='store_true', dest='weightedlexicon', default=False,
                        help='use with Extraction Action add_lex_table to make weighted lexicon features')
@@ -172,38 +172,38 @@ def main(fn_args = None):
                        help='Table containing which groups run in various bins (for ttest).')
     group.add_argument('--ls', action='store_true', dest='listfeattables', default=False,
                        help='list all feature tables for given corpdb, corptable and correl_field')
-    group.add_argument('--top_messages', type=int, dest='top_messages', nargs='?', const=fwc.DEF_TOP_MESSAGES, default=False,
+    group.add_argument('--top_messages', type=int, dest='top_messages', nargs='?', const=dlac.DEF_TOP_MESSAGES, default=False,
                        help='Print top messages with the largest score for a given topic.')
 
 
     group = parser.add_argument_group('Outcome Variables', '')
-    group.add_argument('--outcome_table', type=str, metavar='TABLE', dest='outcometable', default=getInitVar('outcometable', conf_parser, fwc.DEF_OUTCOME_TABLE),
+    group.add_argument('--outcome_table', type=str, metavar='TABLE', dest='outcometable', default=getInitVar('outcometable', conf_parser, dlac.DEF_OUTCOME_TABLE),
                        help='Table holding outcomes (make sure correl_field type matches corpus\').')
-    group.add_argument('--outcome_fields', '--outcomes',  type=str, metavar='FIELD(S)', dest='outcomefields', nargs='+', default=getInitVar('outcomefields', conf_parser, fwc.DEF_OUTCOME_FIELDS, varList=True),
+    group.add_argument('--outcome_fields', '--outcomes',  type=str, metavar='FIELD(S)', dest='outcomefields', nargs='+', default=getInitVar('outcomefields', conf_parser, dlac.DEF_OUTCOME_FIELDS, varList=True),
                        help='Fields to compare with.')
     group.add_argument('--no_outcomes', action='store_const', const=[], dest='outcomefields',
                        help='Switch to override outcomes listed in init file.')
-    group.add_argument('--outcome_controls', '--controls', type=str, metavar='FIELD(S)', dest='outcomecontrols', nargs='+', default=getInitVar('outcomecontrols', conf_parser, fwc.DEF_OUTCOME_CONTROLS, varList=True),
+    group.add_argument('--outcome_controls', '--controls', type=str, metavar='FIELD(S)', dest='outcomecontrols', nargs='+', default=getInitVar('outcomecontrols', conf_parser, dlac.DEF_OUTCOME_CONTROLS, varList=True),
                        help='Fields in outcome table to use as controls for correlation(regression).')
     group.add_argument('--no_controls', action='store_const', const=[], dest='outcomecontrols',
                        help='Switch to override controls listed in init file.')
-    group.add_argument('--outcome_interaction', '--interaction', type=str, metavar='TERM(S)', dest='outcomeinteraction', nargs='+', default=getInitVar('outcomeinteraction', conf_parser, fwc.DEF_OUTCOME_CONTROLS, varList=True),
+    group.add_argument('--outcome_interaction', '--interaction', type=str, metavar='TERM(S)', dest='outcomeinteraction', nargs='+', default=getInitVar('outcomeinteraction', conf_parser, dlac.DEF_OUTCOME_CONTROLS, varList=True),
                        help='Fields in outcome table to use as controls and interaction terms for correlation(regression).')
     group.add_argument('--fold_column', '--fold_labels', type=str, dest='fold_column', default=None,
                        help='Fields in outcome table to use as labels for prespecified folds in classification/regression cross-validation.')
-    group.add_argument('--feat_names', type=str, metavar='FIELD(S)', dest='featnames', nargs='+', default=getInitVar('featnames', conf_parser, fwc.DEF_FEAT_NAMES, varList=True),
+    group.add_argument('--feat_names', type=str, metavar='FIELD(S)', dest='featnames', nargs='+', default=getInitVar('featnames', conf_parser, dlac.DEF_FEAT_NAMES, varList=True),
                        help='Limit outputs to the given set of features.')
     group.add_argument("--group_freq_thresh", type=int, metavar='N', dest="groupfreqthresh", default=getInitVar('groupfreqthresh', conf_parser, None),
                        help="minimum WORD frequency per correl_field to include correl_field in results")
     group.add_argument('--output_name', '--output', type=str, dest='outputname', default=getInitVar('outputname', conf_parser, ''),
                        help='overrides the default filename for output')
-    group.add_argument('--max_tagcloud_words', type=int, metavar='N', dest='maxtcwords', default=fwc.DEF_MAX_TC_WORDS,
+    group.add_argument('--max_tagcloud_words', type=int, metavar='N', dest='maxtcwords', default=dlac.DEF_MAX_TC_WORDS,
                        help='Max words to appear in a tagcloud')
-    group.add_argument('--show_feat_freqs', action='store_true', dest='showfeatfreqs', default=fwc.DEF_SHOW_FEAT_FREQS,)
-    group.add_argument('--not_show_feat_freqs', action='store_false', dest='showfeatfreqs', default=fwc.DEF_SHOW_FEAT_FREQS,
+    group.add_argument('--show_feat_freqs', action='store_true', dest='showfeatfreqs', default=dlac.DEF_SHOW_FEAT_FREQS,)
+    group.add_argument('--not_show_feat_freqs', action='store_false', dest='showfeatfreqs', default=dlac.DEF_SHOW_FEAT_FREQS,
                        help='show / dont show feature frequencies in output.')
-    group.add_argument('--tagcloud_filter', action='store_true', dest='tcfilter', default=fwc.DEF_TC_FILTER,)
-    group.add_argument('--no_tagcloud_filter', action='store_false', dest='tcfilter', default=fwc.DEF_TC_FILTER,
+    group.add_argument('--tagcloud_filter', action='store_true', dest='tcfilter', default=dlac.DEF_TC_FILTER,)
+    group.add_argument('--no_tagcloud_filter', action='store_false', dest='tcfilter', default=dlac.DEF_TC_FILTER,
                        help='filter / dont filter tag clouds for duplicate info in phrases.')
     group.add_argument('--feat_labelmap_table', type=str, dest='featlabelmaptable', default=getInitVar('featlabelmaptable', conf_parser, ''),
                        help='specifies an lda mapping tablename to be used for LDA topic mapping')
@@ -239,9 +239,9 @@ def main(fn_args = None):
                        help='Use AUC instead of linear regression/correlation [only works with binary outcome values]')
     group.add_argument('--zScoreGroup', action='store_true', dest='zScoreGroup', default=False,
                        help="Outputs a certain group's zScore for all feats, which group is determined by the boolean outcome value [MUST be boolean outcome]")
-    group.add_argument('--p_correction', metavar='METHOD', type=str, dest='p_correction_method', default=getInitVar('p_correction_method', conf_parser, fwc.DEF_P_CORR),
+    group.add_argument('--p_correction', metavar='METHOD', type=str, dest='p_correction_method', default=getInitVar('p_correction_method', conf_parser, dlac.DEF_P_CORR),
                        help='Specify a p-value correction method: simes, holm, hochberg, hommel, bonferroni, BH, BY, fdr, none',
-                       choices=fwc.DEF_P_MAPPING.keys())
+                       choices=dlac.DEF_P_MAPPING.keys())
     group.add_argument('--no_bonferroni', action='store_false', dest='bonferroni', default=True,
                        help='Turn off bonferroni correction of p-values.')
     group.add_argument('--no_correction', action='store_const', const='', dest='p_correction_method',
@@ -261,7 +261,7 @@ def main(fn_args = None):
                        help='Includes interaction terms in multiple regression.')
     group.add_argument('--bootstrapp', '--bootstrap', dest='bootstrapp', type=int, default = 0,
                        help="Bootstrap p-values (only works for AUCs for now) ")
-    group.add_argument("--p_value", type=float, metavar='P', dest="maxP", default = getInitVar('maxP', conf_parser, float(fwc.DEF_P)),
+    group.add_argument("--p_value", type=float, metavar='P', dest="maxP", default = getInitVar('maxP', conf_parser, float(dlac.DEF_P)),
                        help="Significance threshold for returning results. Default = 0.05.")
     group.add_argument("--where", type=str, dest="groupswhere", default = '',
                        help="Filter groups with sql-style call. ")
@@ -271,11 +271,11 @@ def main(fn_args = None):
                        help='Run mediation analysis.')
     group.add_argument('--mediation_bootstrap', '--mediation_boot', action='store_true', dest='mediationboot', default=False,
                        help='Run mediation analysis with bootstrapping. The parametric (non-bootstrapping) method is default.')
-    group.add_argument("--mediation_boot_num", type=int, metavar='N', dest="mediationbootnum", default = int(fwc.DEF_MEDIATION_BOOTSTRAP),
+    group.add_argument("--mediation_boot_num", type=int, metavar='N', dest="mediationbootnum", default = int(dlac.DEF_MEDIATION_BOOTSTRAP),
                        help="The number of repetitions to run in bootstrapping with mediation analysis. Default = 1000.")
-    group.add_argument('--outcome_pathstarts', '--path_starts', type=str, metavar='FIELD(S)', dest='outcomepathstarts', nargs='+', default=fwc.DEF_OUTCOME_PATH_STARTS,
+    group.add_argument('--outcome_pathstarts', '--path_starts', type=str, metavar='FIELD(S)', dest='outcomepathstarts', nargs='+', default=dlac.DEF_OUTCOME_PATH_STARTS,
                        help='Fields in outcome table to use as treatment in mediation analysis.')
-    group.add_argument('--outcome_mediators', '--mediators', type=str, metavar='FIELD(S)', dest='outcomemediators', nargs='+', default=fwc.DEF_OUTCOME_MEDIATORS,
+    group.add_argument('--outcome_mediators', '--mediators', type=str, metavar='FIELD(S)', dest='outcomemediators', nargs='+', default=dlac.DEF_OUTCOME_MEDIATORS,
                        help='Fields in outcome table to use as mediators in mediation analysis.')
     group.add_argument('--feat_as_path_start', action='store_true', dest='feat_as_path_start', default=False,
                        help='Use path start variables located in a feature table. Used in mediation analysis.')
@@ -298,13 +298,13 @@ def main(fn_args = None):
                        help='NOT IMPLEMENTED: Table(s) containing feature information to be adapted')
     group.add_argument('--adapt_control_names', metavar='COLUMN', dest='adaptcolumns', type=str, nargs='+', default=None,
                         help='NOT IMPLEMENTED: Controls to be used for adaptation.')
-    group.add_argument('--model', type=str, metavar='name', dest='model', default=getInitVar('model', conf_parser, fwc.DEF_MODEL),
+    group.add_argument('--model', type=str, metavar='name', dest='model', default=getInitVar('model', conf_parser, dlac.DEF_MODEL),
                        help='Model to use when predicting: svc, linear-svc, ridge, linear.')
-    group.add_argument('--combined_models', type=str, nargs='+', metavar='name', dest='combmodels', default=fwc.DEF_COMB_MODELS,
+    group.add_argument('--combined_models', type=str, nargs='+', metavar='name', dest='combmodels', default=dlac.DEF_COMB_MODELS,
                        help='Model to use when predicting: svc, linear-svc, ridge, linear.')
     group.add_argument('--sparse', action='store_true', dest='sparse', default=False,
                        help='use sparse representation for X when training / testing')
-    group.add_argument('--folds', type=int, metavar='NUM', dest='folds', default=fwc.DEF_FOLDS,
+    group.add_argument('--folds', type=int, metavar='NUM', dest='folds', default=dlac.DEF_FOLDS,
                        help='Number of folds for functions that run n-fold cross-validation')
     group.add_argument('--picklefile', type=str, metavar='filename', dest='picklefile', default='',
                        help='Name of file to save or load pickle of model')
@@ -344,14 +344,14 @@ def main(fn_args = None):
                        help='count all sub n-grams of collocated n-grams'
                             'if "happy birthday" is designated as a collocation, when you see "happy birthday" in text'
                             'count it as an instance of "happy", "birthday", and "happy birthday"')
-    group.add_argument('--colloc_pmi_thresh', metavar="PMI", dest='colloc_pmi_thresh', type=float, default=fwc.DEF_PMI,
+    group.add_argument('--colloc_pmi_thresh', metavar="PMI", dest='colloc_pmi_thresh', type=float, default=dlac.DEF_PMI,
                        help='The PMI threshold for which multigrams from the colloctable to conscider as valid collocs'
                             'looks at the feat_colloc_filter column of the specified colloc table')
 
     group.add_argument('--add_char_ngrams', action='store_true', dest='addcharngrams',
                        help='add a character n-gram feature table. (uses: n, can flag: sqrt), gzip_csv'
                        'can be used with or without --use_collocs')
-    group.add_argument('--no_lower', action='store_false', dest='lowercaseonly', default=fwc.LOWERCASE_ONLY,
+    group.add_argument('--no_lower', action='store_false', dest='lowercaseonly', default=dlac.LOWERCASE_ONLY,
                        help='')
 
     group.add_argument('--add_lex_table', action='store_true', dest='addlextable',
@@ -409,9 +409,9 @@ def main(fn_args = None):
     group.add_argument('--clean_messages', dest='cleanmessages', action = 'store_true', help="Remove URLs, hashtags and @ mentions from messages")
     group.add_argument('--deduplicate', action='store_true', dest='deduplicate',
                        help='Removes duplicate messages within correl_field grouping, writes to new table corptable_dedup Not to be run at the message level.')
-    group.add_argument('--spam_filter', dest='spamfilter', metavar="SPAM_THRESHOLD", type=float, nargs='?', const=fwc.DEF_SPAM_FILTER,
+    group.add_argument('--spam_filter', dest='spamfilter', metavar="SPAM_THRESHOLD", type=float, nargs='?', const=dlac.DEF_SPAM_FILTER,
                        help='Removes users (by correl_field grouping) with percentage of spam messages > threshold, writes to new table corptable_nospam '
-                       'with new column is_spam. Defaul threshold = %s'%fwc.DEF_SPAM_FILTER)
+                       'with new column is_spam. Defaul threshold = %s'%dlac.DEF_SPAM_FILTER)
 
     group = parser.add_argument_group('LDA Helper Actions', '')
     group.add_argument('--add_message_id', type=str, nargs=2, dest='addmessageid',
@@ -615,15 +615,6 @@ def main(fn_args = None):
     if not args.bonferroni:
       print("--no_bonf has been depricated. Default p correction method is now Benjamini, Hochberg. Please use --no_correction instead of --no_bonf.")
       sys.exit(1)
-    # if args.p_correction_method:
-    #   if args.p_correction_method.lower() == "none":
-    #     print("For no correction please use --no_correction instead of --p_correction none")
-    #     sys.exit(1)
-    #   if args.p_correction_method not in fwc.DEF_P_MAPPING.keys():
-    #     print("--p_correction_method takes %s as an argument" % ", ".join(fwc.DEF_P_MAPPING.keys()))
-    #     sys.exit(1)
-
-
 
     ##Argument adjustments:
     if not args.valuefunc: args.valuefunc = lambda d: d
@@ -656,19 +647,19 @@ def main(fn_args = None):
         if not args.useunicode:
             args.encoding = 'latin1'
         else:
-            args.encoding = fwc.DEF_ENCODING
+            args.encoding = dlac.DEF_ENCODING
 
     if not args.groupfreqthresh and args.groupfreqthresh != 0:
         setGFTWarning = False
-        args.groupfreqthresh = fwc.getGroupFreqThresh(args.correl_field)
+        args.groupfreqthresh = dlac.getGroupFreqThresh(args.correl_field)
     else:
         setGFTWarning = True
 
-    FeatureWorker.lexicon_db = args.lexicondb
+    DLAWorker.lexicon_db = args.lexicondb
 
     ##Process Arguments
-    def FW():
-        return FeatureWorker(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
+    def DLAW():
+        return DLAWorker(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
 
     def MA():
         return MessageAnnotator(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
@@ -717,7 +708,7 @@ def main(fn_args = None):
                               wordTable = args.wordTable)
                 for featTable in featTable]
 
-    fw = None
+    dlaw = None
     ma = None
     mt = None
     fe = None
@@ -735,8 +726,8 @@ def main(fn_args = None):
 
     # Show feature tables
     if args.listfeattables:
-        if not fw: fw = FW()
-        feat_tables = fw.getFeatureTables()
+        if not dlaw: dlaw = DLAW()
+        feat_tables = dlaw.getFeatureTables()
         print('Found %s available feature tables' % (len(feat_tables)))
         for table in feat_tables: print(str(table[0]))
 
@@ -745,8 +736,8 @@ def main(fn_args = None):
         if not fe: fe = FE()
 
         if args.use_collocs:
-            pmi_filter_thresh = args.colloc_pmi_thresh if args.colloc_pmi_thresh else fwc.DEF_PMI
-            collocs_list = fe._getCollocsFromTable(args.colloc_table, pmi_filter_thresh, args.colloc_column, fwc.DEF_COLUMN_PMI_FILTER)
+            pmi_filter_thresh = args.colloc_pmi_thresh if args.colloc_pmi_thresh else dlac.DEF_PMI
+            collocs_list = fe._getCollocsFromTable(args.colloc_table, pmi_filter_thresh, args.colloc_column, dlac.DEF_COLUMN_PMI_FILTER)
             if args.feature_type_name:
                 feature_type_name = args.feature_type_name
             else:
@@ -1028,9 +1019,9 @@ def main(fn_args = None):
     (whitelist, blacklist) = (None, None)
     # Wildcards are not handled!!!
     if args.blacklist:
-        blacklist = FeatureWorker.makeBlackWhiteList(args.feat_blacklist, args.lextable, args.categories, args.lexicondb, args.useunicode)
+        blacklist = DLAWorker.makeBlackWhiteList(args.feat_blacklist, args.lextable, args.categories, args.lexicondb, args.useunicode)
     if args.whitelist:
-        whitelist = FeatureWorker.makeBlackWhiteList(args.feat_whitelist, args.lextable, args.categories, args.lexicondb, args.useunicode)
+        whitelist = DLAWorker.makeBlackWhiteList(args.feat_whitelist, args.lextable, args.categories, args.lexicondb, args.useunicode)
 
     def makeOutputFilename(args, fg=None, og=None, prefix=None, suffix=None):
         if args.outputname:
@@ -1141,7 +1132,7 @@ def main(fn_args = None):
                 out = out_name.split(" from ")[-1]
                 print("Maarten", out_name, out)
 
-                whitelist = FeatureWorker.makeBlackWhiteList(ddla_whitelist, '', [], args.lexicondb)
+                whitelist = DLAWorker.makeBlackWhiteList(ddla_whitelist, '', [], args.lexicondb, args.useunicode)
 
                 # print str([i for j in correls.values() for i in j.iteritems() if i[1][0]*i[1][0] > 1])[:300]
                 # exit()
@@ -1338,7 +1329,7 @@ def main(fn_args = None):
             sys.exit()
 
         # default mode, catch no feature table or no outcome table
-        if not (args.feat_as_path_start or args.feat_as_outcome or args.feat_as_control or args.no_features) and (not args.feattable or args.outcometable == fwc.DEF_OUTCOME_TABLE):
+        if not (args.feat_as_path_start or args.feat_as_outcome or args.feat_as_control or args.no_features) and (not args.feattable or args.outcometable == dlac.DEF_OUTCOME_TABLE):
             print("You must specify a feature table (-f FEAT_TABLE) and an outcome table (--outcome_table OUTCOME_TABLE)")
             sys.exit()
 
@@ -1367,7 +1358,7 @@ def main(fn_args = None):
         else:
             if args.feattable:
                 print("WARNING: You specified an feature table AND the flag --no_features. This table is being ignored.")
-            if args.outcometable == fwc.DEF_OUTCOME_TABLE:
+            if args.outcometable == dlac.DEF_OUTCOME_TABLE:
                 print("You must specify an outcome table")
                 sys.exit()
             if len(args.outcomepathstarts) == 0 or len(args.outcomemediators) == 0 or len(args.outcomefields) == 0:
@@ -1430,7 +1421,7 @@ def main(fn_args = None):
         if args.featureselectionstring:
             RegressionPredictor.featureSelectionString = args.featureselectionstring
         elif args.featureselection:
-            RegressionPredictor.featureSelectionString = fwc.DEF_RP_FEATURE_SELECTION_MAPPING[args.featureselection]
+            RegressionPredictor.featureSelectionString = dlac.DEF_RP_FEATURE_SELECTION_MAPPING[args.featureselection]
         rp = RegressionPredictor(og, fgs, args.model)
     if args.testcombregression:
         if not og: og = OG()
@@ -1520,14 +1511,14 @@ def main(fn_args = None):
     ##CLASSIFICATION:
     cp = None
     if args.trainclassifiers or args.testclassifiers or args.combotestclassifiers or args.predictclassifiers or args.predictctofeats or args.classToLex or args.roc or args.predictCtoOutcomeTable:
-        if args.model == fwc.DEF_MODEL:#if model wasnt changed form a regression model
-            args.model = fwc.DEF_CLASS_MODEL
+        if args.model == dlac.DEF_MODEL:#if model wasnt changed form a regression model
+            args.model = dlac.DEF_CLASS_MODEL
         if not og: og = OG()
         if not fgs: fgs = FGs()
         if args.featureselectionstring:
             ClassifyPredictor.featureSelectionString = args.featureselectionstring
         elif args.featureselection:
-            ClassifyPredictor.featureSelectionString = fwc.DEF_CP_FEATURE_SELECTION_MAPPING[args.featureselection]
+            ClassifyPredictor.featureSelectionString = dlac.DEF_CP_FEATURE_SELECTION_MAPPING[args.featureselection]
         cp = ClassifyPredictor(og, fgs, args.model) #todo change to a method variables (like og...etc..)
 
 
@@ -1654,7 +1645,7 @@ def main(fn_args = None):
         (groups, outcome_to_gid_to_value, controls) = og.getGroupsAndOutcomes()
         outcome_to_values = dict(  [(k_v[0], list(k_v[1].values())) for k_v in list(outcome_to_gid_to_value.items())]  )
         outputFile = makeOutputFilename(args, None, og, "desc_stats")
-        from FeatureWorker.lib.descStats import StatsPlotter
+        from dlatk.lib.descStats import StatsPlotter
         sp = StatsPlotter(args.corpdb)
         sp.plotDescStats(outcome_to_values, len(groups), outputFile)
 
@@ -1674,7 +1665,7 @@ def main(fn_args = None):
         else:
             scatter_dict_2 = outcome_to_gid_to_value
 
-        from FeatureWorker.lib.descStats import StatsPlotter
+        from dlatk.lib.descStats import StatsPlotter
         sp = StatsPlotter()
         for scatter_group_1 in scatter_dict_1:
             for scatter_group_2 in scatter_dict_2:
@@ -1710,40 +1701,40 @@ def main(fn_args = None):
       with open(init_args.toinitfile, 'w') as init_file:
         init_file.write("[constants]\n")
 
-        if (args.corpdb and args.corpdb != fwc.DEF_CORPDB): init_file.write("corpdb = " + str(args.corpdb)+"\n")
-        if (args.corptable and args.corptable != fwc.DEF_CORPTABLE): init_file.write("corptable = " + str(args.corptable)+"\n")
+        if (args.corpdb and args.corpdb != dlac.DEF_CORPDB): init_file.write("corpdb = " + str(args.corpdb)+"\n")
+        if (args.corptable and args.corptable != dlac.DEF_CORPTABLE): init_file.write("corptable = " + str(args.corptable)+"\n")
         if (args.correl_field): init_file.write("correl_field = " + str(args.correl_field)+"\n")
-        if (args.mysql_host and args.mysql_host != fwc.MYSQL_HOST): init_file.write("mysql_host = " + str(args.mysql_host)+"\n")
-        if (args.message_field and args.message_field != fwc.DEF_MESSAGE_FIELD): init_file.write("message_field = " + str(args.message_field)+"\n")
-        if (args.messageid_field and args.messageid_field != fwc.DEF_MESSAGEID_FIELD): init_file.write("messageid_field = " + str(args.messageid_field)+"\n")
-        if (args.encoding and args.encoding != fwc.DEF_ENCODING): init_file.write("encoding = " + str(args.encoding)+"\n")
-        if (args.lexicondb and args.lexicondb != fwc.DEF_LEXICON_DB): init_file.write("lexicondb = " + str(args.lexicondb)+"\n")
-        if (args.feattable and args.feattable != fwc.DEF_FEAT_TABLE):
+        if (args.mysql_host and args.mysql_host != dlac.MYSQL_HOST): init_file.write("mysql_host = " + str(args.mysql_host)+"\n")
+        if (args.message_field and args.message_field != dlac.DEF_MESSAGE_FIELD): init_file.write("message_field = " + str(args.message_field)+"\n")
+        if (args.messageid_field and args.messageid_field != dlac.DEF_MESSAGEID_FIELD): init_file.write("messageid_field = " + str(args.messageid_field)+"\n")
+        if (args.encoding and args.encoding != dlac.DEF_ENCODING): init_file.write("encoding = " + str(args.encoding)+"\n")
+        if (args.lexicondb and args.lexicondb != dlac.DEF_LEXICON_DB): init_file.write("lexicondb = " + str(args.lexicondb)+"\n")
+        if (args.feattable and args.feattable != dlac.DEF_FEAT_TABLE):
             if isinstance(args.feattable, str):
                 init_file.write("feattable = " + args.feattable+"\n")
             else:
                 init_file.write("feattable = " + ", ".join([str(ftable) for ftable in args.feattable])+"\n")
-        if (args.featnames and args.featnames != fwc.DEF_FEAT_NAMES): init_file.write("featnames = " + ", ".join([str(feat) for feat in args.featnames])+"\n")
-        if (args.date_field and args.date_field != fwc.DEF_DATE_FIELD): init_file.write("date_field = " + str(args.date_field)+"\n")
-        if (args.outcometable and args.outcometable != fwc.DEF_OUTCOME_TABLE): init_file.write("outcometable = " + str(args.outcometable)+"\n")
-        if (args.outcomefields and args.outcomefields != fwc.DEF_OUTCOME_FIELDS): init_file.write("outcomefields = " + ", ".join([str(out) for out in args.outcomefields])+"\n")
-        if (args.outcomecontrols and args.outcomecontrols != fwc.DEF_OUTCOME_CONTROLS): init_file.write("outcomecontrols = " + ", ".join([str(out) for out in args.outcomecontrols])+"\n")
-        if (args.outcomeinteraction and args.outcomeinteraction != fwc.DEF_OUTCOME_CONTROLS): init_file.write("outcomeinteraction = " + ", ".join([str(out) for out in args.outcomeinteraction])+"\n")
+        if (args.featnames and args.featnames != dlac.DEF_FEAT_NAMES): init_file.write("featnames = " + ", ".join([str(feat) for feat in args.featnames])+"\n")
+        if (args.date_field and args.date_field != dlac.DEF_DATE_FIELD): init_file.write("date_field = " + str(args.date_field)+"\n")
+        if (args.outcometable and args.outcometable != dlac.DEF_OUTCOME_TABLE): init_file.write("outcometable = " + str(args.outcometable)+"\n")
+        if (args.outcomefields and args.outcomefields != dlac.DEF_OUTCOME_FIELDS): init_file.write("outcomefields = " + ", ".join([str(out) for out in args.outcomefields])+"\n")
+        if (args.outcomecontrols and args.outcomecontrols != dlac.DEF_OUTCOME_CONTROLS): init_file.write("outcomecontrols = " + ", ".join([str(out) for out in args.outcomecontrols])+"\n")
+        if (args.outcomeinteraction and args.outcomeinteraction != dlac.DEF_OUTCOME_CONTROLS): init_file.write("outcomeinteraction = " + ", ".join([str(out) for out in args.outcomeinteraction])+"\n")
         if (args.featlabelmaptable and args.featlabelmaptable != ''): init_file.write("featlabelmaptable = " + str(args.featlabelmaptable)+"\n")
         if (args.featlabelmaplex and args.featlabelmaplex != ''): init_file.write("featlabelmaplex = " + str(args.featlabelmaplex)+"\n")
         if (args.wordTable): init_file.write("wordTable = " + str(args.wordTable)+"\n")
         if (args.outputname): init_file.write("outputname = " + str(args.outputname)+"\n")
-        if (args.groupfreqthresh and args.groupfreqthresh != int(fwc.DEF_GROUP_FREQ_THRESHOLD)): init_file.write("groupfreqthresh = " + str(args.groupfreqthresh)+"\n")
+        if (args.groupfreqthresh and args.groupfreqthresh != int(dlac.DEF_GROUP_FREQ_THRESHOLD)): init_file.write("groupfreqthresh = " + str(args.groupfreqthresh)+"\n")
         if (args.lextable): init_file.write("lextable = " + str(args.lextable)+"\n")
-        if (args.p_correction_method and args.p_correction_method != fwc.DEF_P_CORR): init_file.write("p_correction_method = " + str(args.p_correction_method)+"\n")
+        if (args.p_correction_method and args.p_correction_method != dlac.DEF_P_CORR): init_file.write("p_correction_method = " + str(args.p_correction_method)+"\n")
         if (args.tagcloudcolorscheme and args.tagcloudcolorscheme != 'multi'): init_file.write("tagcloudcolorscheme = " + str(args.tagcloudcolorscheme)+"\n")
-        if (args.maxP and args.maxP != float(fwc.DEF_P)): init_file.write("maxP = " + str(args.maxP)+"\n")
-        if (args.model and args.model != fwc.DEF_MODEL): init_file.write("model = " + str(args.model)+"\n")
+        if (args.maxP and args.maxP != float(dlac.DEF_P)): init_file.write("maxP = " + str(args.maxP)+"\n")
+        if (args.model and args.model != dlac.DEF_MODEL): init_file.write("model = " + str(args.model)+"\n")
 
         init_file.close()
 
-    fwc.warn("--\nInterface Runtime: %.2f seconds"% float(time.time() - start_time))
-    fwc.warn("DLATK exits with success! A good day indeed  ¯\_(ツ)_/¯.")
+    dlac.warn("--\nInterface Runtime: %.2f seconds"% float(time.time() - start_time))
+    dlac.warn("DLATK exits with success! A good day indeed  ¯\_(ツ)_/¯.")
 
 if __name__ == "__main__":
     main()

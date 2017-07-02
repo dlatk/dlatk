@@ -12,13 +12,11 @@ import warnings
 import sys
 import time
 
-from dlatk.fwConstants import DEF_ENCODING, MYSQL_ERROR_SLEEP, MYSQL_HOST, MAX_ATTEMPTS, warn
+from dlatk.dlaConstants import DEF_ENCODING, MYSQL_ERROR_SLEEP, MYSQL_HOST, MAX_ATTEMPTS, warn
 
-def get_db_engine(db_schema, db_host = None, charset=DEF_ENCODING, db_config = '~/.my.cnf', port=3306):
+def get_db_engine(db_schema, db_host = MYSQL_HOST, charset=DEF_ENCODING, db_config = '~/.my.cnf', port=3306):
     eng = None
     attempts = 0;
-    if not db_host:
-        db_host = MYSQL_HOST if socket.gethostname()=='wwbp' else 'wwbp-venti'
     while (1):
         try:
             db_url = URL(drivername='mysql', host=db_host, port=port,

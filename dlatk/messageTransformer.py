@@ -9,15 +9,15 @@ import os
 import re
 
 #infrastructure
-from .featureWorker import FeatureWorker
-from . import fwConstants as fwc
+from .dlaWorker import DLAWorker
+from . import dlaConstants as dlac
 from . import textCleaner as tc
 from .mysqlMethods import mysqlMethods as mm
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 try:
     from .lib.StanfordParser import StanfordParser
 except ImportError:
-    fwc.warn("Cannot import StanfordParser (interface with the Stanford Parser)")
+    dlac.warn("Cannot import StanfordParser (interface with the Stanford Parser)")
     pass
 
 #nltk
@@ -28,11 +28,11 @@ except ImportError:
 try:
     from .lib.TweetNLP import TweetNLP
 except ImportError:
-    fwc.warn("Cannot import TweetNLP (interface with CMU Twitter tokenizer / pos tagger)")
+    dlac.warn("Cannot import TweetNLP (interface with CMU Twitter tokenizer / pos tagger)")
     pass
 
 
-class MessageTransformer(FeatureWorker):
+class MessageTransformer(DLAWorker):
     """Deals with message tables .....
 
     Returns
@@ -105,7 +105,7 @@ class MessageTransformer(FeatureWorker):
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, alter, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
@@ -134,7 +134,7 @@ class MessageTransformer(FeatureWorker):
                         ldas = dict() #reset memory
                         msgsWritten += msgsAtTime
                         if msgsWritten % 20000 == 0:
-                            fwc.warn("  %.1fk messages' lda topics written" % (msgsWritten/float(1000)))
+                            dlac.warn("  %.1fk messages' lda topics written" % (msgsWritten/float(1000)))
                     ldas[currentId] = [currentLDA]
                 else:
                     ldas[currentId].append(currentLDA)
@@ -165,7 +165,7 @@ class MessageTransformer(FeatureWorker):
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, alter, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
@@ -176,12 +176,12 @@ class MessageTransformer(FeatureWorker):
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
         #msgs = 0#keeps track of the number of messages read
         cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
-        fwc.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
+        dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
 
         #iterate through groups in chunks
         groupsAtTime = 1000;
         groupsWritten = 0
-        for groups in fwc.chunks(cfRows, groupsAtTime):
+        for groups in dlac.chunks(cfRows, groupsAtTime):
 
             #get msgs for groups:
             sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
@@ -201,7 +201,7 @@ class MessageTransformer(FeatureWorker):
 
             groupsWritten += groupsAtTime
             if groupsWritten % 10 == 0:
-                fwc.warn("  %.1fk %ss' messages tokenized and written" % (groupsWritten/float(1000), self.correl_field))
+                dlac.warn("  %.1fk %ss' messages tokenized and written" % (groupsWritten/float(1000), self.correl_field))
 
         #re-enable keys:
         mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
@@ -265,8 +265,8 @@ class MessageTransformer(FeatureWorker):
                                                                                          self.message_field,
                                                                                          types[self.message_field],
                                                                                          self.encoding,
-                                                                                         fwc.DEF_COLLATIONS[self.encoding.lower()],
-                                                                                         fwc.DEF_MYSQL_ENGINE)
+                                                                                         dlac.DEF_COLLATIONS[self.encoding.lower()],
+                                                                                         dlac.DEF_MYSQL_ENGINE)
         sql2 += ")"
         mm.execute(self.corpdb, self.dbCursor, "drop table if exists "+self.corptable+"_seg", charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql2, charset=self.encoding, use_unicode=self.use_unicode)
@@ -293,7 +293,7 @@ class MessageTransformer(FeatureWorker):
         try:
             tagger = TweetNLP()
         except NameError:
-            fwc.warn("Method not available without TweetNLP interface")
+            dlac.warn("Method not available without TweetNLP interface")
             raise
 
         #Create Table:
@@ -301,7 +301,7 @@ class MessageTransformer(FeatureWorker):
         sql = "CREATE TABLE %s like %s" % (tableName, self.corptable)
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
@@ -312,12 +312,12 @@ class MessageTransformer(FeatureWorker):
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
         #msgs = 0 #keeps track of the number of messages read
         cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
-        fwc.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
+        dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
 
         #iterate through groups in chunks
         groupsAtTime = 100;
         groupsWritten = 0
-        for groups in fwc.chunks(cfRows, groupsAtTime):
+        for groups in dlac.chunks(cfRows, groupsAtTime):
 
             #get msgs for groups:
             sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
@@ -337,7 +337,7 @@ class MessageTransformer(FeatureWorker):
 
             groupsWritten += groupsAtTime
             if groupsWritten % 100 == 0:
-                fwc.warn("  %.1fk %ss' messages tagged and written" % (groupsWritten/float(1000), self.correl_field))
+                dlac.warn("  %.1fk %ss' messages tagged and written" % (groupsWritten/float(1000), self.correl_field))
 
         #re-enable keys:
         mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
@@ -356,7 +356,7 @@ class MessageTransformer(FeatureWorker):
         try:
             tokenizer = TweetNLP()
         except NameError:
-            fwc.warn("Method not available without TweetNLP interface")
+            dlac.warn("Method not available without TweetNLP interface")
             raise
 
         #Create Table:
@@ -364,7 +364,7 @@ class MessageTransformer(FeatureWorker):
         sql = "CREATE TABLE %s like %s" % (tableName, self.corptable)
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
@@ -375,12 +375,12 @@ class MessageTransformer(FeatureWorker):
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
         #msgs = 0#keeps track of the number of messages read
         cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql)]
-        fwc.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
+        dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
 
         #iterate through groups in chunks
         groupsAtTime = 200;
         groupsWritten = 0
-        for groups in fwc.chunks(cfRows, groupsAtTime):
+        for groups in dlac.chunks(cfRows, groupsAtTime):
 
             #get msgs for groups:
             sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
@@ -400,7 +400,7 @@ class MessageTransformer(FeatureWorker):
 
             groupsWritten += groupsAtTime
             if groupsWritten % 200 == 0:
-                fwc.warn("  %.1fk %ss' messages tagged and written" % (groupsWritten/float(1000), self.correl_field))
+                dlac.warn("  %.1fk %ss' messages tagged and written" % (groupsWritten/float(1000), self.correl_field))
 
         #re-enable keys:
         mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
@@ -426,7 +426,7 @@ class MessageTransformer(FeatureWorker):
         sql = "CREATE TABLE %s like %s" % (tableName, self.corptable)
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
         if cleanMessages:
             sql = """ALTER TABLE %s CHANGE `%s` `%s` VARCHAR(64)""" % (tableName, self.messageid_field, self.messageid_field)
@@ -436,12 +436,12 @@ class MessageTransformer(FeatureWorker):
             normalizeDict = {}
             
             # Han, Bo  and  Cook, Paul  and  Baldwin, Timothy, 2012
-            sql = """select word, norm from %s.%s""" % (fwc.DEF_LEXICON_DB, "han_bo_emnlp_dict")
+            sql = """select word, norm from %s.%s""" % (dlac.DEF_LEXICON_DB, "han_bo_emnlp_dict")
             normalizeDict.update(dict(list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))))
             
             # Fei Liu, Fuliang Weng, Bingqing Wang, Yang Liu, 2011 
             # Fei Liu, Fuliang Weng, Xiao Jiang, 2012
-            sql = """select word, norm from %s.%s""" % (fwc.DEF_LEXICON_DB, "liu_weng_test_set_3802")
+            sql = """select word, norm from %s.%s""" % (dlac.DEF_LEXICON_DB, "liu_weng_test_set_3802")
             normalizeDict.update(dict(list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))))
             
         
@@ -454,12 +454,12 @@ class MessageTransformer(FeatureWorker):
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
         #msgs = 0#keeps track of the number of messages read
         cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
-        fwc.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
+        dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
 
         #iterate through groups in chunks
         groupsAtTime = 10000;
         groupsWritten = 0
-        for groups in fwc.chunks(cfRows, groupsAtTime):
+        for groups in dlac.chunks(cfRows, groupsAtTime):
             if sentPerRow: sentRows = list()
             
             #get msgs for groups:
@@ -499,7 +499,7 @@ class MessageTransformer(FeatureWorker):
 
             groupsWritten += groupsAtTime
             if groupsWritten % 10000 == 0:
-                fwc.warn("  %.1fk %ss' messages sent tokenized and written" % (groupsWritten/float(1000), self.correl_field))
+                dlac.warn("  %.1fk %ss' messages sent tokenized and written" % (groupsWritten/float(1000), self.correl_field))
 
         #re-enable keys:
         mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
@@ -537,7 +537,7 @@ class MessageTransformer(FeatureWorker):
                 toks = [w for w in toks if w in whiteSet]
             f.write("""%s en %s\n""" %(m[0], ' '.join([s for s in toks])))
         f.close()
-        fwc.warn("Wrote tokenized file to: %s"%filename)
+        dlac.warn("Wrote tokenized file to: %s"%filename)
 
     def parseAndWriteMessages(self, sp, tableNames, messages, messageIndex, columnNames, rows):
         """Parses, then write messages, used for parallelizing parsing
@@ -588,7 +588,7 @@ class MessageTransformer(FeatureWorker):
         for t, name in list(tableNames.items()):
             sql = "CREATE TABLE IF NOT EXISTS %s like %s" % (name, self.corptable)
             mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-            mm.standardizeTable(self.corpdb, self.dbCursor, name, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+            mm.standardizeTable(self.corpdb, self.dbCursor, name, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
             mm.enableTableKeys(self.corpdb, self.dbCursor, name, charset=self.encoding, use_unicode=self.use_unicode)#just incase interrupted, so we can find un-parsed groups
 
         #Find column names:
@@ -606,7 +606,7 @@ class MessageTransformer(FeatureWorker):
                 self.correl_field, self.corptable, tableNames[parseTypes[0]], self.messageid_field, self.messageid_field, self.messageid_field, self.correl_field)
         #msgs = 0#keeps track of the number of messages read
         cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
-        fwc.warn("parsing messages for %d '%s's"%(len(cfRows), self.correl_field))
+        dlac.warn("parsing messages for %d '%s's"%(len(cfRows), self.correl_field))
 
         #disable keys (waited until after finding groups)
         for t, name in list(tableNames.items()):
@@ -617,17 +617,18 @@ class MessageTransformer(FeatureWorker):
             groupsAtTime = 100 # if messages
         else:
             groupsAtTime = 10 # if user ids
-            fwc.warn("""Parsing at the non-message level is not recommended. Please rerun at message level""", attention=True)
+            dlac.warn("""Parsing at the non-message level is not recommended. Please rerun at message level""", attention=True)
 
-        psAtTime = fwc.CORES / 4
+        psAtTime = dlac.CORES / 4
+
         try:
             sp = StanfordParser()
         except NameError:
-            fwc.warn("Method not available without StanfordParser interface")
+            dlac.warn("Method not available without StanfordParser interface")
             raise
         groupsWritten = 0
         activePs = set()
-        for groups in fwc.chunks(cfRows, groupsAtTime):
+        for groups in dlac.chunks(cfRows, groupsAtTime):
             #get msgs for groups:
             sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
             rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
@@ -645,19 +646,19 @@ class MessageTransformer(FeatureWorker):
                         proc.join()
                         groupsWritten += groupsAtTime
                         if groupsWritten % 200 == 0:
-                            fwc.warn("  %.1fk %ss' messages parsed and written" % (groupsWritten/float(1000), self.correl_field))
+                            dlac.warn("  %.1fk %ss' messages parsed and written" % (groupsWritten/float(1000), self.correl_field))
                 for proc in toRemove:
                     activePs.remove(proc)
-                    fwc.warn (" %s removed. (processes running: %d)" % (str(proc), len(activePs)) )
+                    dlac.warn (" %s removed. (processes running: %d)" % (str(proc), len(activePs)) )
 
 
             groupsWritten += groupsAtTime
             if groupsWritten % 200 == 0:
-                fwc.warn("  %.1fk %ss' messages parsed and written" % (groupsWritten/float(1000), self.correl_field))
+                dlac.warn("  %.1fk %ss' messages parsed and written" % (groupsWritten/float(1000), self.correl_field))
 
             #parse msgs
             p = multiprocessing.Process(target=MessageTransformer.parseAndWriteMessages, args=(self, sp, tableNames, messages, messageIndex, columnNames, rows))
-            fwc.warn (" %s starting. (processes previously running: %d)" % (str(p), len(activePs)) )
+            dlac.warn (" %s starting. (processes previously running: %d)" % (str(p), len(activePs)) )
             p.start()
             activePs.add(p)
 

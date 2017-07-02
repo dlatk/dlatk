@@ -8,7 +8,7 @@ import csv
 from random import sample
 from math import floor
 
-from dlatk.fwConstants import USER, MAX_ATTEMPTS, MYSQL_ERROR_SLEEP, MYSQL_HOST, DEF_ENCODING, MAX_SQL_PRINT_CHARS, DEF_UNICODE_SWITCH, DEF_MYSQL_ENGINE, warn
+from dlatk.dlaConstants import USER, MAX_ATTEMPTS, MYSQL_ERROR_SLEEP, MYSQL_HOST, DEF_ENCODING, MAX_SQL_PRINT_CHARS, DEF_UNICODE_SWITCH, DEF_MYSQL_ENGINE, warn
 
 #DB INFO:
 PASSWD = ''

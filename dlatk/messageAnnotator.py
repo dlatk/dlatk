@@ -4,19 +4,19 @@ from html.parser import HTMLParser
 from pprint import pprint
 
 #infrastructure
-from .featureWorker import FeatureWorker
+from .dlaWorker import DLAWorker
 from . import textCleaner as tc
-from . import fwConstants as fwc
+from . import dlaConstants as dlac
 from .mysqlMethods import mysqlMethods as mm
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 
 try:
     from langid.langid import LanguageIdentifier, model
 except ImportError:
-    fwc.warn("Cannot import langid (cannot use addLanguageFilterTable)")
+    dlac.warn("Cannot import langid (cannot use addLanguageFilterTable)")
     pass
 
-class MessageAnnotator(FeatureWorker):
+class MessageAnnotator(DLAWorker):
     """Deals with filtering or adding columns to message tables.
 
     Returns
@@ -41,7 +41,7 @@ class MessageAnnotator(FeatureWorker):
         create = """CREATE TABLE %s like %s""" % (new_table, self.corptable)
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, create, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, new_table, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, new_table, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
         columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
@@ -55,18 +55,18 @@ class MessageAnnotator(FeatureWorker):
         #find all groups that are not already inserted
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
         cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
-        fwc.warn("deduplicating messages for %d '%s's"%(len(cfRows), self.correl_field))
+        dlac.warn("deduplicating messages for %d '%s's"%(len(cfRows), self.correl_field))
 
         # if message level analysis
         if any(field in self.correl_field.lower() for field in ["mess", "msg"]) or self.correl_field.lower().startswith("id"):
             groupsAtTime = 1
-            fwc.warn("""Deduplicating only works with a non-message level grouping such as users or counties.""", attention=True)
+            dlac.warn("""Deduplicating only works with a non-message level grouping such as users or counties.""", attention=True)
             sys.exit()
 
         groupsAtTime = 1
         rows_to_write = []
         counter = 1
-        for groups in fwc.chunks(cfRows, groupsAtTime):
+        for groups in dlac.chunks(cfRows, groupsAtTime):
 
             # get msgs for groups:
             sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
@@ -106,7 +106,7 @@ class MessageAnnotator(FeatureWorker):
                         pass
                 except:
                     continue
-            if len(rows_to_write) >= fwc.MYSQL_BATCH_INSERT_SIZE:
+            if len(rows_to_write) >= dlac.MYSQL_BATCH_INSERT_SIZE:
                 sql = """INSERT INTO """+new_table+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
                 mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
                 rows_to_write = []
@@ -128,7 +128,7 @@ class MessageAnnotator(FeatureWorker):
         create = """CREATE TABLE %s like %s""" % (new_table, self.corptable)
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, create, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, new_table, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, new_table, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
         columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
@@ -142,12 +142,12 @@ class MessageAnnotator(FeatureWorker):
         #find all groups that are not already inserted
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
         cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
-        fwc.warn("anonymizing messages for %d '%s's"%(len(cfRows), self.correl_field))
+        dlac.warn("anonymizing messages for %d '%s's"%(len(cfRows), self.correl_field))
 
         groupsAtTime = 1
         rows_to_write = []
         counter = 1
-        for groups in fwc.chunks(cfRows, groupsAtTime):
+        for groups in dlac.chunks(cfRows, groupsAtTime):
 
             # get msgs for groups:
             sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
@@ -164,7 +164,7 @@ class MessageAnnotator(FeatureWorker):
                     rows_to_write.append(row)
                 except:
                     continue
-            if len(rows_to_write) >= fwc.MYSQL_BATCH_INSERT_SIZE:
+            if len(rows_to_write) >= dlac.MYSQL_BATCH_INSERT_SIZE:
                 sql = """INSERT INTO """+new_table+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
                 mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
                 rows_to_write = []
@@ -178,7 +178,7 @@ class MessageAnnotator(FeatureWorker):
             mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
 
-    def addSpamFilterTable(self, threshold=fwc.DEF_SPAM_FILTER):
+    def addSpamFilterTable(self, threshold=dlac.DEF_SPAM_FILTER):
         """
         Groups all messages in a given table and filters spam messages within the correl_field. Writes
         a new message table called corptable_nospam with additional integer column is_spam (0 = not spam, 1 = spam).
@@ -198,7 +198,7 @@ class MessageAnnotator(FeatureWorker):
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, create, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, add_colum, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, new_table, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, new_table, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
 
         #Find column names:
         columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
@@ -208,19 +208,19 @@ class MessageAnnotator(FeatureWorker):
         #find all groups that are not already inserted
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
         cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
-        fwc.warn("Removing spam messages for %d '%s's"%(len(cfRows), self.correl_field))
+        dlac.warn("Removing spam messages for %d '%s's"%(len(cfRows), self.correl_field))
 
         # if message level analysis
         if any(field in self.correl_field.lower() for field in ["mess", "msg"]) or self.correl_field.lower().startswith("id"):
             groupsAtTime = 1
-            fwc.warn("""This will remove any messages that contain *any* spam words. Consider rerunning at the user level.""", attention=True)
+            dlac.warn("""This will remove any messages that contain *any* spam words. Consider rerunning at the user level.""", attention=True)
 
 
         groupsAtTime = 1
         rows_to_write = []
         counter = 1
         users_removed = 0
-        for groups in fwc.chunks(cfRows, groupsAtTime):
+        for groups in dlac.chunks(cfRows, groupsAtTime):
 
             # get msgs for groups:
             sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
@@ -246,7 +246,7 @@ class MessageAnnotator(FeatureWorker):
             else:
                 users_removed += 1
 
-            if len(rows_to_write) >= fwc.MYSQL_BATCH_INSERT_SIZE:
+            if len(rows_to_write) >= dlac.MYSQL_BATCH_INSERT_SIZE:
                 sql = """INSERT INTO """+new_table+""" ("""+', '.join(insertColumnNames)+""") VALUES ("""  +", ".join(['%s']*len(insertColumnNames)) + """)"""
                 mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
                 rows_to_write = []
@@ -262,9 +262,9 @@ class MessageAnnotator(FeatureWorker):
 
     # TODO: add nicer implementation
     def yieldMessages(self, messageTable, totalcount):
-        if totalcount > 10*fwc.MAX_SQL_SELECT:
-            for i in range(0,totalcount, fwc.MAX_SQL_SELECT):
-                sql = "SELECT * FROM %s limit %d, %d" % (messageTable, i, fwc.MAX_SQL_SELECT)
+        if totalcount > 10*dlac.MAX_SQL_SELECT:
+            for i in range(0,totalcount, dlac.MAX_SQL_SELECT):
+                sql = "SELECT * FROM %s limit %d, %d" % (messageTable, i, dlac.MAX_SQL_SELECT)
                 for m in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode):
                     yield [i for i in m]
         else:
@@ -290,8 +290,8 @@ class MessageAnnotator(FeatureWorker):
         new_table = self.corptable + "_%s"
 
         columnNames = mm.getTableColumnNames(self.corpdb, self.corptable, charset=self.encoding, use_unicode=self.use_unicode)
-        messageIndex = [i for i, col in enumerate(columnNames) if col.lower() == fwc.DEF_MESSAGE_FIELD.lower()][0]
-        #messageIDindex = [i for i, col in enumerate(columnNames) if col.lower() == fwc.DEF_MESSAGEID_FIELD.lower()][0]
+        messageIndex = [i for i, col in enumerate(columnNames) if col.lower() == dlac.DEF_MESSAGE_FIELD.lower()][0]
+        #messageIDindex = [i for i, col in enumerate(columnNames) if col.lower() == dlac.DEF_MESSAGEID_FIELD.lower()][0]
 
         # CREATE NEW TABLES IF NEEDED
         messageTables = {l: new_table % l for l in langs}
@@ -300,7 +300,7 @@ class MessageAnnotator(FeatureWorker):
             create = """CREATE TABLE %s like %s""" % (table, self.corptable)
             mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
             mm.execute(self.corpdb, self.dbCursor, create, charset=self.encoding, use_unicode=self.use_unicode)
-            mm.standardizeTable(self.corpdb, self.dbCursor, table, collate=fwc.DEF_COLLATIONS[self.encoding.lower()], engine=fwc.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+            mm.standardizeTable(self.corpdb, self.dbCursor, table, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
 
         #ITERATE THROUGH EACH MESSAGE WRITING THOSE THAT ARE ENGLISH
         messageDataToAdd = {l: list() for l in langs}
@@ -311,7 +311,7 @@ class MessageAnnotator(FeatureWorker):
         totalMessagesInTable = mm.executeGetList(self.corpdb, self.dbCursor, sql)[0][0]
 
         print("Reading %s messages" % ",".join([str(totalMessagesInTable)[::-1][i:i+3] for i in range(0,len(str(totalMessagesInTable)),3)])[::-1])
-        memory_limit = fwc.MYSQL_BATCH_INSERT_SIZE if fwc.MYSQL_BATCH_INSERT_SIZE < totalMessagesInTable else totalMessagesInTable/20
+        memory_limit = dlac.MYSQL_BATCH_INSERT_SIZE if dlac.MYSQL_BATCH_INSERT_SIZE < totalMessagesInTable else totalMessagesInTable/20
 
         html = HTMLParser()
         for messageRow in self.yieldMessages(self.corptable, totalMessagesInTable):

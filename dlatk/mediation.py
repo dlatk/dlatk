@@ -14,7 +14,7 @@ import collections
 import patsy
 from math import sqrt
 from scipy.stats import zscore
-from .fwConstants import pCorrection, DEF_P, DEF_MAX_MED_SUMMARY_SIZE, warn
+from .dlaConstants import pCorrection, DEF_P, DEF_MAX_MED_SUMMARY_SIZE, warn
 import itertools
 
 class MediationAnalysis:

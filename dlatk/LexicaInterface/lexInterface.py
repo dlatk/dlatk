@@ -1018,6 +1018,34 @@ class WeightedLexicon(Lexicon):
         self.insertWeightedLexiconRows(tablename)
         print("Done creating lexicon: %s" % tablename)
 
+    def createSuperTopicTable(self, tablename, reducedlex, lextable):
+        """Creates a super topic table: unrolls a reduced lexicon at the word level"""
+        
+        if not lextable:
+            print("You must supply a lex table")
+            sys.exit(1)
+
+        #first create the table:
+        drop = """DROP TABLE IF EXISTS """+tablename
+        sql = """CREATE TABLE {supertable} AS SELECT reduced.category, orig.term, SUM(reduced.weight * orig.weight) AS weight 
+                FROM {reducedtopic} reduced, {origtopic} orig 
+                WHERE reduced.term=orig.category 
+                GROUP BY reduced.category, orig.term""".format(supertable=tablename, reducedtopic=reducedlex, origtopic=lextable)
+        keys = """ALTER TABLE {supertable} ADD INDEX `term` (`term` ASC), ADD INDEX `category` (`category` ASC)""".format(supertable=tablename)
+        
+        try:
+            print("Running: ", drop)
+            self.dbCursor.execute(drop)
+            print("and:     ", sql)
+            self.dbCursor.execute(sql)
+            print("Addings keys to term and category")
+            self.dbCursor.execute(keys)
+        except MySQLdb.Error as e:
+            dlac.warn("MYSQL ERROR2" + str(e))
+            sys.exit(1)
+
+        print("Done creating super topics: %s" % tablename)
+
     def insertWeightedLexiconRows(self, tablename, lex = None):
         """Adds rows, taken from the lexicon variable to mysql"""
         if not lex: lex = self.weightedLexicon

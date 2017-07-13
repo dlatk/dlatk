@@ -69,6 +69,7 @@ DEF_SHOW_FEAT_FREQS = True
 DEF_MAX_TC_WORDS = 100
 DEF_MAX_TOP_TC_WORDS = 15
 DEF_TC_FILTER = True
+DEF_WEIGHTS = ''
 
 ##Feature Settings:
 DEF_N = int(1)

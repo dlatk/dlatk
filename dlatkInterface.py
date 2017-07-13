@@ -256,6 +256,8 @@ def main(fn_args = None):
                        help='specify a color scheme to use for tagcloud generation. Default: multi, also accepts red, blue, red-random, redblue, bluered')
     group.add_argument('--clean_cloud', action='store_true', dest='cleancloud', default=False,
                    help='Replaces characters in the middle of explatives/slurs with ***. ex: f**k')
+    group.add_argument('--weighted_sample', dest='weightedsample', default=dlac.DEF_WEIGHTS,
+                        help='Field in outcome table to use as weights for correlation(regression).')
 
     group.add_argument('--interactions', action='store_true', dest='interactions', default=False,
                        help='Includes interaction terms in multiple regression.')
@@ -498,6 +500,7 @@ def main(fn_args = None):
                        help="Makes a tagcloud file from the DDLA output. Uses deltaR as size, r_INDEX as color. ")
 
 
+
     group = parser.add_argument_group('Multiple Regression Actions', 'Find multiple relationships at once')
     group.add_argument('--multir', action='store_true', dest='multir',
                        help='multivariate regression with outcome (uses variable feat_table and all outcome variables, optionally csv).')
@@ -544,6 +547,8 @@ def main(fn_args = None):
                        help='Uses the classification coefficients to create a weighted lexicon.')
     group.add_argument('--reducer_to_lexicon', type=str, dest='reducertolexicon', default=None,
                        help='writes the reduction model to a specified lexicon')
+    group.add_argument('--super_topics', type=str, dest='supertopics', default=None,
+                       help='unroll reduced topics to the word level')
     group.add_argument('--fit_reducer', action='store_true', dest='fitreducer', default=False,
                        help='reduces a feature space to clusters')
     group.add_argument('--num_factors', '--n_components', dest='n_components', default=None,
@@ -632,6 +637,9 @@ def main(fn_args = None):
 
     if args.weightedeval:
         args.outcomefields.append(args.weightedeval)
+
+    if args.weightedsample:
+        args.outcomefields.append(args.weightedsample)
 
     if args.makewordclouds:
         if not args.tagcloud:
@@ -967,7 +975,7 @@ def main(fn_args = None):
             args.wordTable = args.feattable
         if not fr: fr=FR()
         args.feattable = fr.createTableWithRemovedFeats(args.pocc, args.minfeatsum, args.groupfreqthresh, setGFTWarning)
-
+        
     if args.featcollocfilter:
         if not fr: fr=FR()
         if args.use_collocs:
@@ -1431,6 +1439,13 @@ def main(fn_args = None):
         if not og: og = OG()
         if not fg: fg = FG()
         dr = DimensionReducer(fg, args.model, og, args.n_components)
+    if args.supertopics and not args.reducertolexicon:
+        print("WARNING: you must use --reducer_to_lexicon with --super_topics")
+        sys.exit(1)
+    if args.supertopics and not args.lextable:
+        print("WARNING: you must use -l with --super_topics")
+        sys.exit(1)
+
 
 
     if args.loadmodels and rp:
@@ -1443,7 +1458,7 @@ def main(fn_args = None):
         print("WARNING: using an non 16to16 feature table")
 
     if args.trainregression:
-        rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere)
+        rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample)
 
     if args.testregression:
         rp.test(sparse = args.sparse, blacklist = blacklist,  standardize = args.standardize, groupsWhere = args.groupswhere)
@@ -1459,7 +1474,8 @@ def main(fn_args = None):
             comboScores = rp.testControlCombos(sparse = args.sparse, blacklist = blacklist,
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
                                            nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval,
-                                           standardize = args.standardize, residualizedControls = args.res_controls, groupsWhere = args.groupswhere)
+                                           standardize = args.standardize, residualizedControls = args.res_controls, groupsWhere = args.groupswhere, 
+                                           weightedSample = args.weightedsample)
         elif args.controladjustreg:
             comboScores = rp.adjustOutcomesFromControls(standardize = args.standardize, sparse = args.sparse,
                                                         allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
@@ -1623,11 +1639,15 @@ def main(fn_args = None):
     if args.reducertolexicon:
         lexicons = dr.modelToLexicon()
         for outcomeName, lexDict in lexicons.items():
+            print("ON: ", outcomeName)
             lexiconName = args.reducertolexicon
             if outcomeName != 'noOutcome':
                 lexiconName += '_'+outcomeName
             lexicon = lexInterface.WeightedLexicon(lexDict, mysql_host = args.mysql_host)
             lexicon.createLexiconTable(lexiconName)
+            if args.supertopics:
+                lexicon.createSuperTopicTable(args.supertopics, lexiconName, args.lextable)
+
 
     if args.savemodels and dr:
         dr.save(args.picklefile)

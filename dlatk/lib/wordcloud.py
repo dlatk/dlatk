@@ -460,7 +460,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
                         ngrams, freqs, colors = list(zip(*tags))
                         ngramString = '.'.join(ngrams[0:min(6, len(ngrams))])
                         ngramString = '' ## LAD delete this line to add ngrams / entries back into the file
-                        fileFolders[newFilename[0:-4]] = (outcome, '.'.join([posneg, topicR, topicId, ngramString, topicDup, topicFreq]))
+                        fileFolders[newFilename[0:-4]] = (outcome, '.'.join(filter(None, [posneg, topicR, topicId, ngramString, topicDup, topicFreq])))
 
                     getwords = False; tagTriples = [];
                     topicDup = ''; topicId = None; topicR = None; topicFreq = None;
@@ -510,7 +510,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
                     ngrams, freqs, colors = list(zip(*tags))
                     ngramString = '.'.join(ngrams[0:min(6, len(ngrams))])
                     ngramString = '' ## LAD delete this line to add ngrams / entries back into the file
-                    suffixList = [posneg, topicR, topicId, ngramString, topicDup, topicFreq]
+                    suffixList = filter(None, [posneg, topicR, topicId, ngramString, topicDup, topicFreq])
                     fileFolders[newFilename[0:-4]] = (outcome, '.'.join(suffixList))
 
     # from pprint import pprint as pp
@@ -533,13 +533,21 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
         output_file = None
         if toFolders:
             outcome, endname = fileFolders[filename]
-            try:
-                os.mkdir(os.path.join(basefolder, outcome))
-            except OSError:
-                pass
-            output_file = os.path.join(basefolder, outcome, endname)
+            if topicR:
+                try:
+                    os.mkdir(os.path.join(basefolder, outcome))
+                except OSError:
+                    pass
+                output_file = os.path.join(basefolder, outcome, endname)
+            else:
+                try:
+                    os.mkdir(os.path.join(basefolder))
+                except OSError:
+                    pass
+                output_file = os.path.join(basefolder, outcome+'_'+endname)
+
         else:
-            output_file = os.path.join(directory, filename)
+            output_filez = os.path.join(directory, filename)
         try:
             wordcloud(ngrams, freqs,output_file, colors, rgb=False, title=title, fontFamily=fontFamily, fontStyle=fontStyle)
         except Exception as e:

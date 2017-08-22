@@ -416,6 +416,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
         getwords = False; posneg=''; isNewTagcloud = False;
         outcome = ''; topicId = None; topicR = None; topicFreq = None;
         topicDup = '';
+        topicFiles = False
 
         for line in f.readlines():
             line = line.strip().decode("utf-8")
@@ -469,6 +470,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
             if line and len(line) >= 10 and line[0:10] == '[Topic Id:':
                 topicId, topicR, topicFreq = processTopicLine(line)
                 getwords = True
+                topicFiles = True
             if line and len(line)>=6 and line[0:3]=='**[' and line[-3:]==']**':
                 topicDup = duplicateFilterLineIntoInformativeString(line)
             if line and len(line)==12 and line == '------------':
@@ -533,7 +535,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
         output_file = None
         if toFolders:
             outcome, endname = fileFolders[filename]
-            if topicR:
+            if topicFiles:
                 try:
                     os.mkdir(os.path.join(basefolder, outcome))
                 except OSError:

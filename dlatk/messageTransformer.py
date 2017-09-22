@@ -61,10 +61,11 @@ class MessageTransformer(DLAWorker):
             ?????
 
         """
-        message_ids = [str(msg_id) for msg_id in ldas.keys() if str(msg_id).isdigit()]
+        message_ids = [str(msg_id) for msg_id in ldas.keys()]
         sql = """SELECT %s from %s where %s IN ('%s')""" % (
             ','.join(columnNames), self.corptable, self.messageid_field,
             "','".join(message_ids))
+
         rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode))
 
         #generate row data:
@@ -74,7 +75,7 @@ class MessageTransformer(DLAWorker):
                 newRow = list(row)
                 newRow[messageIndex] = json.dumps(ldas[str(row[messageIdIndex])])
                 newRows.append(newRow)
-
+                
         #insert
         sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
             """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""

@@ -1486,7 +1486,7 @@ def main(fn_args = None):
         if not og: og = OG()
         if not fgs: fgs = FGs() #all feature getters
         crp = CombinedRegressionPredictor(og, fgs, args.combmodels, args.model)
-    if args.fitreducer or args.reducertolexicon:
+    if args.fitreducer or args.reducertolexicon or args.supertopics:
         if not og: og = OG()
         if not fg: fg = FG()
         dr = DimensionReducer(fg, args.model, og, args.n_components)
@@ -1598,7 +1598,6 @@ def main(fn_args = None):
 
     comboScores = None
     if args.combotestclassifiers:
-        for i in range(10):
         comboScores = cp.testControlCombos(standardize = args.standardize, sparse = args.sparse, blacklist = blacklist,
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
                                            nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval, stratifyFolds=args.stratifyfolds,
@@ -1686,20 +1685,24 @@ def main(fn_args = None):
         #dr.fit(sparse = args.sparse, blacklist = blacklist)
         dr.fit(sparse = args.sparse)
 
-    if args.reducertolexicon:
-        lexicons = dr.modelToLexicon()
-        for outcomeName, lexDict in lexicons.items():
-            print("ON: ", outcomeName)
-            lexiconName = args.reducertolexicon
-            if outcomeName != 'noOutcome':
-                lexiconName += '_'+outcomeName
-            lexicon = lexInterface.WeightedLexicon(lexDict, mysql_host = args.mysql_host)
-            lexicon.createLexiconTable(lexiconName)
-            args.reducedlexicon = lexiconName
-    if args.supertopics:
-        lexicon.createSuperTopicTable(args.supertopics, args.reducedlexicon, args.lextable)
-
-
+    if args.reducertolexicon or args.supertopics:
+        if args.reducertolexicon:
+          lexicons = dr.modelToLexicon()
+          print(dr)
+          print(lexicons)
+          for outcomeName, lexDict in lexicons.items():
+              print("ON: ", outcomeName)
+              lexiconName = args.reducertolexicon if args.reducertolexicon else args.reducedlexicon
+              if outcomeName != 'noOutcome':
+                  lexiconName += '_'+outcomeName
+              lexicon = lexInterface.WeightedLexicon(lexDict, mysql_host = args.mysql_host)
+              lexicon.createLexiconTable(lexiconName)
+              if args.supertopics:
+                  lexicon.createSuperTopicTable(args.supertopics, lexiconName, args.lextable)
+        else:
+            lexicon = lexInterface.WeightedLexicon("", mysql_host = args.mysql_host)
+            lexicon.createSuperTopicTable(args.supertopics, args.reducedlexicon, args.lextable)
+            
     if args.savemodels and dr:
         dr.save(args.picklefile)
 

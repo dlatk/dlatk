@@ -23,7 +23,7 @@ from dlatk.semanticsExtractor import SemanticsExtractor
 import dlatk.dlaWorker as dlaWorker
 from dlatk.regressionPredictor import RegressionPredictor, CombinedRegressionPredictor, ClassifyToRegressionPredictor
 from dlatk.classifyPredictor import ClassifyPredictor
-from dlatk.dimensionReducer import DimensionReducer, CCA
+from dlatk.dimensionReducer import DimensionReducer, CCA, MultiCCA
 from dlatk.mediation import MediationAnalysis
 from dlatk import DDLA
 from dlatk.LexicaInterface import lexInterface
@@ -258,6 +258,10 @@ def main(fn_args = None):
                    help='Replaces characters in the middle of explatives/slurs with ***. ex: f**k')
     group.add_argument('--weighted_sample', dest='weightedsample', default=dlac.DEF_WEIGHTS,
                         help='Field in outcome table to use as weights for correlation(regression).')
+    group.add_argument('--save_error', dest='saveerror', default=None,
+                        help='Save model error in pickle in correlation(regression).')
+
+
 
     group.add_argument('--interactions', action='store_true', dest='interactions', default=False,
                        help='Includes interaction terms in multiple regression.')
@@ -406,6 +410,8 @@ def main(fn_args = None):
                        help='add flesch-kincaid scores, averaged per group.')
     group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
+
+    group = parser.add_argument_group('Message Cleaning Actions', '')
     group.add_argument('--language_filter', '--lang_filter',  type=str, metavar='FIELD(S)', dest='langfilter', nargs='+', default=[],
                        help='Filter message table for list of languages.')
     group.add_argument('--clean_messages', dest='cleanmessages', action = 'store_true', help="Remove URLs, hashtags and @ mentions from messages")
@@ -499,8 +505,6 @@ def main(fn_args = None):
     group.add_argument('--DDLATagcloud', dest='ddlaTagcloud', action='store_true',
                        help="Makes a tagcloud file from the DDLA output. Uses deltaR as size, r_INDEX as color. ")
 
-
-
     group = parser.add_argument_group('Multiple Regression Actions', 'Find multiple relationships at once')
     group.add_argument('--multir', action='store_true', dest='multir',
                        help='multivariate regression with outcome (uses variable feat_table and all outcome variables, optionally csv).')
@@ -524,9 +528,8 @@ def main(fn_args = None):
                        help='predict outcomes into an outcome table (provide a name)')
     group.add_argument('--predict_cv_to_feats', '--predict_combo_to_feats', '--predict_regression_all_to_feats', type=str, dest='predictalltofeats', default=None,
                        help='predict outcomes into a feature file (provide a name)')
-    group.add_argument('--stratify_folds', action='store_true', dest='stratifyfolds', default=False,
-                       help='stratify folds during combo_test_classifiers')
 
+    group = parser.add_argument_group('Classification Actions', '')
     group.add_argument('--train_classifiers', '--train_class', action='store_true', dest='trainclassifiers', default=False,
                        help='train classification models for each outcome field based on feature table')
     group.add_argument('--test_classifiers', action='store_true', dest='testclassifiers', default=False,
@@ -545,14 +548,28 @@ def main(fn_args = None):
                        help='Uses the regression coefficients to create a weighted lexicon.')
     group.add_argument('--classification_to_lexicon', dest='classToLex', type=str, default=None,
                        help='Uses the classification coefficients to create a weighted lexicon.')
+    group.add_argument('--stratify_folds', action='store_true', dest='stratifyfolds', default=False,
+                       help='stratify folds during combo_test_classifiers')
+    group.add_argument('--train_c2r', action='store_true', dest='trainclasstoreg', default=False,
+                       help='train a model that goes from classification to prediction')
+    group.add_argument('--test_c2r', action='store_true', dest='testclasstoreg', default=False,
+                       help='trains and tests classification for each outcome')
+    group.add_argument('--predict_c2r', action='store_true', dest='predictclasstoreg', default=False,
+                       help='predict w/ classification to regression model')
+    
+    group = parser.add_argument_group('Clustering Actions', '')
     group.add_argument('--reducer_to_lexicon', type=str, dest='reducertolexicon', default=None,
                        help='writes the reduction model to a specified lexicon')
     group.add_argument('--super_topics', type=str, dest='supertopics', default=None,
                        help='unroll reduced topics to the word level')
+    group.add_argument('--reduced_lexicon', '--reduced_lex',  type=str, dest='reducedlexicon', default=None,
+                       help='use during super topics creation if you have already run --reducer_to_lexicon')
     group.add_argument('--fit_reducer', action='store_true', dest='fitreducer', default=False,
                        help='reduces a feature space to clusters')
     group.add_argument('--num_factors', '--n_components', dest='n_components', default=None,
                        help='Number of factors in clustering method. Used with --fit_reducer.')
+    
+    group = parser.add_argument_group('CCA Actions', '')
     group.add_argument('--cca', type=int, dest='cca', default=0,
                        help='Performs sparse CCA on a set of features and a set of outcomes.'+
                        "Argument is number of components to output (Uses R's PMA package)")
@@ -573,14 +590,23 @@ def main(fn_args = None):
     group.add_argument('--to_sql_table', dest='newSQLtable',type=str,
                        help='Using --cca_predict_components, predict components to sql table,'+
                        'the name of which you should provide here')
-
-    group.add_argument('--train_c2r', action='store_true', dest='trainclasstoreg', default=False,
-                       help='train a model that goes from classification to prediction')
-    group.add_argument('--test_c2r', action='store_true', dest='testclasstoreg', default=False,
-                       help='trains and tests classification for each outcome')
-    group.add_argument('--predict_c2r', action='store_true', dest='predictclasstoreg', default=False,
-                       help='predict w/ classification to regression model')
-
+    group.add_argument('--useXFeats', dest='usexfeats',action="store_true", default = False,
+                       help='Use feats stored in X matrix when predicting CCA components to SQL')
+    group.add_argument('--useXControls', dest='usexcontrols',action="store_true", default = False,
+                       help='Use controls stored in X matrix when predicting CCA components to SQL')
+    group.add_argument('--multi_cca', '--multicca', type=int, dest='multicca', default=0,
+                       help='Performs sparse MultiCCA on a set of features, a set of outcomes and a set of controls.'+
+                       "Argument is number of components to output (Uses R's PMA package)")
+    group.add_argument('--multi_cca_penalties', dest='multiccapenalties', type=float, nargs='+', default=[],
+                       help='')
+    group.add_argument('--multi_cca_controls', dest='multiccacontrols', nargs='+', default=[],
+                       help='')
+    group.add_argument('--multi_cca_outcomes', dest='multiccaoutcomes', nargs='+', default=[],
+                       help='')
+    group.add_argument('--multi_cca_permute', dest='multiCCAPermute', type=int,default=0,
+                       help='Wrapper for the PMA package MultiCCA.permute function that determines the'+
+                       ' ideal L1 Penalties for Xi matrices'+
+                       'argument: number of permutations')
 
     group.add_argument('--save_models', action='store_true', dest='savemodels', default=False,
                        help='saves predictive models (uses --picklefile)')
@@ -1192,16 +1218,25 @@ def main(fn_args = None):
         else:
             cca.ccaPermute(nPerms = args.ccaPermute)
 
-    if args.predictCcaCompsFromModel:
+    if args.multiCCAPermute:
         if not og: og = OG()
         if not fg: fg = FG()
-        cca = CCA(fg, og)
-        if args.loadmodels:
-            cca.loadModel(args.picklefile)
-        components = cca.predictCompsToSQL(tablename=args.newSQLtable,
-                                           csv = args.csv,
-                                           outputname = args.outputname if args.outputname
-                                           else args.outputdir + '/rMatrix.' + fg.featureTable + '.' + og.outcome_table  + '.' + '_'.join(og.outcome_value_fields))
+        mcca = MultiCCA(fg, og, args.multicca)
+        mcca.multiCCAPermute(controlSubset = args.multiccacontrols, 
+                            outcomeSubset = args.multiccaoutcomes, 
+                            nPerms = args.multiCCAPermute)
+
+    if args.multiccaoutcomes or args.multiccacontrols or args.multicca:
+        if not oa: oa = OA()
+        if not fg: fg = FG()
+        mcca = MultiCCA(fg, oa, args.multicca)
+        (featComp, outcomeComp, dVectorDict) = mcca.multiCCA(controlSubset = args.multiccacontrols, 
+                                                            outcomeSubset = args.multiccaoutcomes, 
+                                                            penalties = args.multiccapenalties)
+
+        if args.savemodels:
+            mcca.saveModel(args.picklefile)
+
     if args.cca:
         if not oa: oa = OA()
         if not fg: fg = FG()
@@ -1236,6 +1271,18 @@ def main(fn_args = None):
         if args.savemodels:
             cca.saveModel(args.picklefile)
 
+    if args.predictCcaCompsFromModel:
+        if not og: og = OG()
+        if not fg: fg = FG()
+        cca = CCA(fg, og)
+        if args.loadmodels:
+            cca.loadModel(args.picklefile)
+        components = cca.predictCompsToSQL(tablename=args.newSQLtable,
+                                           csv = args.csv,
+                                           outputname = args.outputname if args.outputname
+                                           else args.outputdir + '/rMatrix.' + fg.featureTable + '.' + og.outcome_table  + '.' + '_'.join(og.outcome_value_fields),
+                                           useXFeats = args.usexfeats, useXControls = args.usexcontrols)
+
     if args.correlate:
         pprint(args)
         for outcomeField, featRs in correls.items():
@@ -1243,7 +1290,10 @@ def main(fn_args = None):
             cnt = 0
             for featR in featRs.items():
                 if featR[1][1] < args.maxP: cnt +=1
-            pprint(sorted(list(featRs.items()), key= lambda f: f[1] if not isnan(f[1][0]) else 0),depth=3, compact=True)
+            try:
+                pprint(sorted(list(featRs.items()), key= lambda f: f[1] if not isnan(f[1][0]) else 0),depth=3, compact=True)
+            except:
+                pass
             print("\n%d features significant at p < %s" % (cnt, args.maxP))
 
     if args.rmatrix and not args.cca:
@@ -1283,6 +1333,7 @@ def main(fn_args = None):
         if not args.topictc and not args.corptopictc:
             print("ERROR, can't use --make_topic_wordclouds without --topic_tagcloud or --corp_topic_tagcloud", file=sys.stderr)
             sys.exit()
+        print(outputFile)
         wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True)
 
     comboCorrels = None
@@ -1439,14 +1490,12 @@ def main(fn_args = None):
         if not og: og = OG()
         if not fg: fg = FG()
         dr = DimensionReducer(fg, args.model, og, args.n_components)
-    if args.supertopics and not args.reducertolexicon:
-        print("WARNING: you must use --reducer_to_lexicon with --super_topics")
-        sys.exit(1)
     if args.supertopics and not args.lextable:
         print("WARNING: you must use -l with --super_topics")
         sys.exit(1)
-
-
+    if args.supertopics and not args.reducedlexicon and not args.reducertolexicon:
+        print("WARNING: you must use --reduced_lexicon with --super_topics if not running --reducer_to_lexicon")
+        sys.exit(1)
 
     if args.loadmodels and rp:
         rp.load(args.picklefile)
@@ -1475,7 +1524,7 @@ def main(fn_args = None):
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
                                            nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval,
                                            standardize = args.standardize, residualizedControls = args.res_controls, groupsWhere = args.groupswhere, 
-                                           weightedSample = args.weightedsample)
+                                           weightedSample = args.weightedsample, saveError = args.saveerror)
         elif args.controladjustreg:
             comboScores = rp.adjustOutcomesFromControls(standardize = args.standardize, sparse = args.sparse,
                                                         allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
@@ -1549,6 +1598,7 @@ def main(fn_args = None):
 
     comboScores = None
     if args.combotestclassifiers:
+        for i in range(10):
         comboScores = cp.testControlCombos(standardize = args.standardize, sparse = args.sparse, blacklist = blacklist,
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
                                            nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval, stratifyFolds=args.stratifyfolds,
@@ -1645,8 +1695,9 @@ def main(fn_args = None):
                 lexiconName += '_'+outcomeName
             lexicon = lexInterface.WeightedLexicon(lexDict, mysql_host = args.mysql_host)
             lexicon.createLexiconTable(lexiconName)
-            if args.supertopics:
-                lexicon.createSuperTopicTable(args.supertopics, lexiconName, args.lextable)
+            args.reducedlexicon = lexiconName
+    if args.supertopics:
+        lexicon.createSuperTopicTable(args.supertopics, args.reducedlexicon, args.lextable)
 
 
     if args.savemodels and dr:

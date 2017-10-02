@@ -23,7 +23,7 @@ from dlatk.semanticsExtractor import SemanticsExtractor
 import dlatk.dlaWorker as dlaWorker
 from dlatk.regressionPredictor import RegressionPredictor, CombinedRegressionPredictor, ClassifyToRegressionPredictor
 from dlatk.classifyPredictor import ClassifyPredictor
-from dlatk.dimensionReducer import DimensionReducer, CCA, MultiCCA
+from dlatk.dimensionReducer import DimensionReducer, CCA
 from dlatk.mediation import MediationAnalysis
 from dlatk import DDLA
 from dlatk.LexicaInterface import lexInterface
@@ -1688,8 +1688,6 @@ def main(fn_args = None):
     if args.reducertolexicon or args.supertopics:
         if args.reducertolexicon:
           lexicons = dr.modelToLexicon()
-          print(dr)
-          print(lexicons)
           for outcomeName, lexDict in lexicons.items():
               print("ON: ", outcomeName)
               lexiconName = args.reducertolexicon if args.reducertolexicon else args.reducedlexicon

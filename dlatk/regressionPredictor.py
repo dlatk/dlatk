@@ -641,7 +641,8 @@ class RegressionPredictor:
     ####### Main Testing Method ########################
     def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
                           allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None, 
-                          residualizedControls = False, groupsWhere = '', weightedSample = ''):
+                          residualizedControls = False, groupsWhere = '', weightedSample = '',
+                          saveError = None):
         """Tests regressors, by cross-validating over folds with different combinations of controls"""
         
         ###################################
@@ -965,6 +966,10 @@ class RegressionPredictor:
 
                         else:
                             ytrue, ypred = alignDictsAsy(outcomes, predictions)
+                            if saveError:
+                                bias = '_' + saveError
+                                with open('/sandata/sgiorgi/bias_correction/model_error/' + str(outcomeName) + bias + '.pickle', 'wb') as fp:
+                                    pickle.dump([ytrue, ypred], fp)
                         reportStats.update(self.accuracyStats(ytrue, ypred))
                         reportStats['N'] = len(ytrue)
 
@@ -1586,7 +1591,7 @@ class RegressionPredictor:
                 #    coefficients = self.multiScalers[outcome][i].inverse_transform(coefficients).flatten()
                 #else: 
                 #    coefficients = coefficients.flatten() 
-                
+                coefficients = coefficients.flatten()
                 # featTableFeats contains the list of features 
                 if len(coefficients) != len(featTableFeats):
                     print("length of coefficients (%d) does not match number of features (%d)" % (len(coefficients), len(featTableFeats)))
@@ -1806,7 +1811,7 @@ class RegressionPredictor:
             #run transformations:
             if scaler:
                 print("  predict: applying standard scaler to X[%d]: %s" % (i, str(scaler))) #debug
-                X = scaler.fit_transform(X)
+                X = scaler.transform(X)
             if fSelector:
                 print("  predict: applying feature selection to X[%d]: %s" % (i, str(fSelector))) #debug
                 newX = fSelector.transform(X)

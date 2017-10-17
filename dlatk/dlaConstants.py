@@ -69,6 +69,7 @@ DEF_SHOW_FEAT_FREQS = True
 DEF_MAX_TC_WORDS = 100
 DEF_MAX_TOP_TC_WORDS = 15
 DEF_TC_FILTER = True
+DEF_WEIGHTS = ''
 
 ##Feature Settings:
 DEF_N = int(1)
@@ -308,7 +309,7 @@ def meanXperY(x, y):
     for yKey in sums.iterkeys():
         means[yKey] = sums[yKey] / float(counts[yKey])
     return means
-    
+
 def fiftyChecks(args):
     Xc, Xend, y, check = args
     np.random.seed()
@@ -342,8 +343,6 @@ def permaSortedKey(s):
         s = str(s[0])
     if isinstance (s, (float, int)):
         return s
-    if s.upper() in PERMA_SORTED:
-        return PERMA_SORTED.index(s.upper())
     return s
 
 def pCorrection(pDict, method=DEF_P_CORR, pLevelsSimes=[0.05, 0.01, 0.001], rDict = None):

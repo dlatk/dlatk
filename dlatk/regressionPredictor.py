@@ -108,6 +108,61 @@ def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
         else:
             return (array(listX), array(listy))
 
+def alignDictsAsXyz(X, y, z, sparse = False, returnKeyList = False, keys = None):
+    """turns a list of dicts for x and a dict for y and z into a matrix X and vectors y and z"""
+    if not keys: 
+        keys = frozenset(list(set(y.keys()).union(z.keys())))
+        if sparse:
+            keys = keys.intersection([item for sublist in X for item in sublist]) #union X keys
+        else:
+            keys = keys.intersection(*[list(x.keys()) for x in X]) #intersect X keys
+        keys = list(keys) #to make sure it stays in order
+    listy = None
+    try:
+        listy = [float(y[k]) for k in keys]
+    except KeyError:
+        print("!!!WARNING: alignDictsAsXyz: gid not found in y; groups are being dropped (bug elsewhere likely)!!!!")
+        ykeys = list(y.keys())
+        keys = [k for k in keys if k in ykeys]
+        listy = [float(y[k]) for k in keys]
+
+    listz = None
+    try:
+        listz = [float(z[k]) for k in keys]
+    except KeyError:
+        print("!!!WARNING: alignDictsAsXyz: gid not found in z; groups are being dropped (bug elsewhere likely)!!!!")
+        zkeys = list(z.keys())
+        keys = [k for k in keys if k in zkeys]
+        listz = [float(z[k]) for k in keys]
+
+    if sparse:
+        keyToIndex = dict([(keys[i], i) for i in range(len(keys))])
+        row = []
+        col = []
+        data = []
+        # columns: features.
+        for c in range(len(X)):
+            column = X[c]
+            for keyid, value in column.items():
+                if keyid in keyToIndex:
+                    row.append(keyToIndex[keyid])
+                    col.append(c)
+                    data.append(value)
+
+        assert all([isinstance(x,numbers.Number) for x in data]), "Data is corrupt, there are non float elements in the group norms (some might be NULL?)"
+        sparseX = csr_matrix((data,(row,col)), shape = (len(keys), len(X)), dtype=np.float)
+        if returnKeyList:
+            return (sparseX, array(listy), array(listz), keys)
+        else:
+            return (sparseX, array(listy), array(listz))
+        
+    else: 
+        listX = [[x[k] for x in X] for k in keys]
+        if returnKeyList:
+            return (array(listX), array(listy), array(listz), keys)
+        else:
+            return (array(listX), array(listy), array(listz))
+
 def alignDictsAsy(y, *yhats, **kwargs):
     keys = None
     if not keys in kwargs: 
@@ -442,11 +497,11 @@ class RegressionPredictor:
         self.multiXOn = False
         """boolean: whether multiX was used for training."""
 
-    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
+    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = ''):
         """Train Regressors"""
 
         ################
-        #1. setup groups
+        #1a. setup groups
         (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
         if restrictToGroups: #restrict to groups
             rGroups = restrictToGroups
@@ -458,6 +513,16 @@ class RegressionPredictor:
             for controlName, controlValues in allControls.items():
                 allControls[controlName] = dict([(g, controlValues[g]) for g in groups])
         print("[number of groups: %d]" % (len(groups)))
+
+        #1b: setup weightedSample
+        wSample = None
+        if weightedSample:
+            try:
+                wSample = allOutcomes[weightedSample]
+                del allOutcomes[weightedSample]
+            except KeyError:
+                print("Must specify weighted sample outcome as a regular outcome in order to get data.")
+                sys.exit(1)
 
         ####################
         #2. get data for Xs:
@@ -499,7 +564,11 @@ class RegressionPredictor:
                 (Xdicts, ydict) = (groupNormValues, outcomes)
                 print("  (feature group: %d)" % (i))
                 # trainGroupsOrder is the order of the group_norms
-                (Xtrain, ytrain) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = trainGroupsOrder)
+                if wSample:
+                    (Xtrain, ytrain, sampleWeights) = alignDictsAsXyz(Xdicts, ydict, wSample, sparse=True, keys = trainGroupsOrder)
+                else:
+                    sampleWeights = None
+                    (Xtrain, ytrain) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = trainGroupsOrder)
                 if len(ytrain) > self.trainingSize:
                     Xtrain, Xthrowaway, ytrain, ythrowaway = train_test_split(Xtrain, ytrain, test_size=len(ytrain) - self.trainingSize, random_state=self.randomState)
                 multiXtrain.append(Xtrain)
@@ -508,7 +577,7 @@ class RegressionPredictor:
             #############
             #4) fit model
             (self.regressionModels[outcomeName], self.multiScalers[outcomeName], self.multiFSelectors[outcomeName]) = \
-                self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse)
+                self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights)
 
         print("\n[TRAINING COMPLETE]\n")
         self.featureNamesList = featureNamesList
@@ -571,7 +640,9 @@ class RegressionPredictor:
     #####################################################
     ####### Main Testing Method ########################
     def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
-                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None, residualizedControls = False, groupsWhere = ''):
+                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None, 
+                          residualizedControls = False, groupsWhere = '', weightedSample = '',
+                          saveError = None):
         """Tests regressors, by cross-validating over folds with different combinations of controls"""
         
         ###################################
@@ -602,6 +673,16 @@ class RegressionPredictor:
                 del allOutcomes[weightedEvalOutcome]
             except KeyError:
                 print("Must specify weighted eval outcome as a regular outcome in order to get data.")
+                sys.exit(1)
+
+        #1b: setup weightedSample
+        wSample = None
+        if weightedSample:
+            try:
+                wSample = allOutcomes[weightedSample]
+                del allOutcomes[weightedSample]
+            except KeyError:
+                print("Must specify weighted sample outcome as a regular outcome in order to get data.")
                 sys.exit(1)
 
         ####################
@@ -690,13 +771,17 @@ class RegressionPredictor:
                                 groupNormValues = thisGroupNormsList[-1]
                                 (Xdicts, ydict) = (groupNormValues, outcomes)
                                 print("  [Initial size: %d]" % (len(ydict)))
-                                (Xtrain, ytrain) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = trainGroupsOrder)
+                                if wSample:
+                                    (Xtrain, ytrain, sampleWeights) = alignDictsAsXyz(Xdicts, ydict, wSample, sparse=True, keys = trainGroupsOrder)
+                                else:
+                                    sampleWeights = None
+                                    (Xtrain, ytrain) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = trainGroupsOrder)
                                 (Xtest, ytest) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = testGroupsOrder)
-
+                                
                                 assert len(ytest) == testSize, "ytest not the right size"
                                 if len(ytrain) > self.trainingSize:
                                     Xtrain, Xthrowaway, ytrain, ythrowaway = train_test_split(Xtrain, ytrain, test_size=len(ytrain) - self.trainingSize, random_state=self.randomState)
-                                (res_regressor, res_multiScalers, res_multiFSelectors) = self._multiXtrain([Xtrain], ytrain, standardize, sparse = sparse)
+                                (res_regressor, res_multiScalers, res_multiFSelectors) = self._multiXtrain([Xtrain], ytrain, standardize, sparse = sparse, weightedSample=sampleWeights)
                                 res_ypred = self._multiXpredict(res_regressor, [Xtest], multiScalers = res_multiScalers, multiFSelectors = res_multiFSelectors, sparse = sparse)
                                 #DEBUG: random sort
                                 #random.shuffle(res_ypred)
@@ -777,9 +862,12 @@ class RegressionPredictor:
                                 else:
                                     (Xdicts, ydict) = (groupNormValues, outcomes)                                
                                 print("   (feature group: %d): [Initial size: %d]" % (i, len(ydict)))
-                                (Xtrain, ytrain) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = trainGroupsOrder)
+                                if wSample:
+                                    (Xtrain, ytrain, sampleWeights) = alignDictsAsXyz(Xdicts, ydict, wSample, sparse=True, keys = trainGroupsOrder)
+                                else:
+                                    sampleWeights = None
+                                    (Xtrain, ytrain) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = trainGroupsOrder)
                                 (Xtest, ytest) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = testGroupsOrder)
-
                                 assert len(ytest) == testSize, "ytest not the right size"
                                 if len(ytrain) > self.trainingSize:
                                     Xtrain, Xthrowaway, ytrain, ythrowaway = train_test_split(Xtrain, ytrain, test_size=len(ytrain) - self.trainingSize, random_state=self.randomState)
@@ -790,7 +878,7 @@ class RegressionPredictor:
 
                             ################################
                             #4) fit model and test accuracy:
-                            (regressor, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse)
+                            (regressor, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample=sampleWeights)
                             ypred = self._multiXpredict(regressor, multiXtest, multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse)
                             predictions.update(dict(zip(testGroupsOrder,ypred)))
                             #pprint(ypred[:10])
@@ -878,6 +966,10 @@ class RegressionPredictor:
 
                         else:
                             ytrue, ypred = alignDictsAsy(outcomes, predictions)
+                            if saveError:
+                                bias = '_' + saveError
+                                with open('/sandata/sgiorgi/bias_correction/model_error/' + str(outcomeName) + bias + '.pickle', 'wb') as fp:
+                                    pickle.dump([ytrue, ypred], fp)
                         reportStats.update(self.accuracyStats(ytrue, ypred))
                         reportStats['N'] = len(ytrue)
 
@@ -1499,7 +1591,7 @@ class RegressionPredictor:
                 #    coefficients = self.multiScalers[outcome][i].inverse_transform(coefficients).flatten()
                 #else: 
                 #    coefficients = coefficients.flatten() 
-                
+                coefficients = coefficients.flatten()
                 # featTableFeats contains the list of features 
                 if len(coefficients) != len(featTableFeats):
                     print("length of coefficients (%d) does not match number of features (%d)" % (len(coefficients), len(featTableFeats)))
@@ -1589,9 +1681,9 @@ class RegressionPredictor:
             return regressor, scaler, fSelector
 
 
-    def _multiXtrain(self, X, y, standardize = True, sparse = False):
+    def _multiXtrain(self, X, y, standardize = True, sparse = False, weightedSample = None):
         """does the actual regression training, first feature selection: can be used by both train and test
-           craete multiple scalers and feature selectors
+           create multiple scalers and feature selectors
            and just one regression model (of combining the Xes into 1)
         """
 
@@ -1673,7 +1765,7 @@ class RegressionPredictor:
             #print dict(self.cvParams[modelName][0])
 
             try:
-                regressor.fit(X, y)
+                regressor.fit(X, y, sample_weight = weightedSample)
             except LinAlgError:
                 print("Lin Algebra error, X:")
                 pprint(X)
@@ -1719,7 +1811,7 @@ class RegressionPredictor:
             #run transformations:
             if scaler:
                 print("  predict: applying standard scaler to X[%d]: %s" % (i, str(scaler))) #debug
-                X = scaler.fit_transform(X)
+                X = scaler.transform(X)
             if fSelector:
                 print("  predict: applying feature selection to X[%d]: %s" % (i, str(fSelector))) #debug
                 newX = fSelector.transform(X)

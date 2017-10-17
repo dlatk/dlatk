@@ -760,7 +760,11 @@ class ClassifyPredictor:
                         reportStats['acc'] = accuracy_score(ytrue, ypred)
                         reportStats['f1'] = f1_score(ytrue, ypred, average='macro')
                         reportStats['auc'] = pos_neg_auc(ytrue, ypredProbs[:,-1])
-                        reportStats['matt_ccoef'] = matthews_corrcoef(ytrue, ypred)
+                        try:
+                            reportStats['matt_ccoef'] = matthews_corrcoef(ytrue, ypred)
+                        except ValueError as e:
+                            warn("matt_ccoef: %s" % e)
+                            reportStats['matt_ccoef'] = 'multiclass'
                         testCounter = Counter(ytrue)
                         reportStats['mfclass_acc'] = testCounter[mfclass] / float(len(ytrue))
 

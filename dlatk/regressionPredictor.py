@@ -50,7 +50,7 @@ from scipy.stats.stats import pearsonr, spearmanr
 from scipy.stats import t
 from scipy.sparse import csr_matrix
 import numpy as np
-from numpy import sqrt, array, std, mean, ceil, absolute, append, log
+from numpy import sqrt, array, std, mean, ceil, absolute, append, log, log2
 from numpy.linalg.linalg import LinAlgError
 
 import math

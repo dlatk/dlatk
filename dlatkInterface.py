@@ -326,7 +326,7 @@ def main(fn_args = None):
                        help='turn off standardizing variables before prediction')
     group.add_argument('--feature_selection', '--feat_selection', metavar='NAME', type=str, dest='featureselection', default=getInitVar('featureselection', conf_parser, ''),
                        help='Specify feature selection pipeline in prediction: magic_sauce, univariateFWE, PCA.')
-    group.add_argument('--feature_selection_string', '--feat_selection_string', metavar='NAME', type=str, dest='featureselectionstring', default=getInitVar('featureselectionstring', conf_parser, ''),
+    group.add_argument('--feature_selection_string', metavar='NAME', type=str, dest='featureselectionstring', default=getInitVar('featureselectionstring', conf_parser, ''),
                        help='Specify any feature selection pipeline in prediction.')
 
 

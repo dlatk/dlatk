@@ -2068,6 +2068,8 @@ class FeatureExtractor(DLAWorker):
 
         corenlpServer = jsonrpclib.Server("http://localhost:%d"% serverPort)
 
+        #corenlpServer = getCoreNLPServer(pipeline = ['tokenizer', 'pos',] serverPort = serverPort)
+
         #CREATE TABLE:
         featureName = 'timex'
         featureTableName = self.createFeatureTable(featureName, "VARCHAR(24)", 'DOUBLE', tableName)

@@ -176,6 +176,8 @@ def main(fn_args = None):
                        help='list all feature tables for given corpdb, corptable and correl_field')
     group.add_argument('--top_messages', type=int, dest='top_messages', nargs='?', const=dlac.DEF_TOP_MESSAGES, default=False,
                        help='Print top messages with the largest score for a given topic.')
+    group.add_argument('--extension', metavar='EXTENSION', dest='extension', default=None,
+                       help='String added to the end of the feature table name')
 
 
     group = parser.add_argument_group('Outcome Variables', '')
@@ -787,7 +789,7 @@ def main(fn_args = None):
         else:
             ftables = list()
             for n in args.n:
-                ftables.append(fe.addNGramTable(n, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc, metaFeatures = args.metafeats))
+                ftables.append(fe.addNGramTable(n, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc, metaFeatures = args.metafeats, extension = args.extension))
             if len(ftables) > 1:
                 args.feattable = ftables;
             else:
@@ -818,7 +820,7 @@ def main(fn_args = None):
 
     if args.addlextable:
         if not fe: fe = FE()
-        args.feattable = fe.addLexiconFeat(args.lextable, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc, isWeighted=args.weightedlexicon, featValueFunc=args.lexvaluefunc)
+        args.feattable = fe.addLexiconFeat(args.lextable, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc, isWeighted=args.weightedlexicon, featValueFunc=args.lexvaluefunc, extension=args.extension)
 
     if args.addcorplextable:
         if not args.lextable:

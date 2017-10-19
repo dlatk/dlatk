@@ -99,7 +99,7 @@ class FeatureExtractor(DLAWorker):
 
     ##Feature Tables ##
 
-    def addNGramTable(self, n, lowercase_only=dlac.LOWERCASE_ONLY, min_freq=1, tableName = None, valueFunc = lambda d: d, metaFeatures = True):
+    def addNGramTable(self, n, lowercase_only=dlac.LOWERCASE_ONLY, min_freq=1, tableName = None, valueFunc = lambda d: d, metaFeatures = True, extension = None):
         """Creates feature tuples (correl_field, feature, values) table where features are ngrams
 
         Parameters
@@ -131,13 +131,13 @@ class FeatureExtractor(DLAWorker):
         #CREATE TABLE:
         featureName = str(n)+'gram'
         varcharLength = min((dlac.VARCHAR_WORD_LENGTH-(n-1))*n, 255)
-        featureTableName = self.createFeatureTable(featureName, "VARCHAR(%d)"%varcharLength, 'INTEGER', tableName, valueFunc)
+        featureTableName = self.createFeatureTable(featureName, "VARCHAR(%d)"%varcharLength, 'INTEGER', tableName, valueFunc, extension = extension)
 
         if metaFeatures:
             # If metafeats is on, make a metafeature table as well
             mfLength = 16
             mfName = "meta_"+featureName
-            mfTableName = self.createFeatureTable(mfName, "VARCHAR(%d)" % mfLength, 'INTEGER', tableName, valueFunc)
+            mfTableName = self.createFeatureTable(mfName, "VARCHAR(%d)" % mfLength, 'INTEGER', tableName, valueFunc, extension = extension)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
         usql = """SELECT %s FROM %s GROUP BY %s""" % (
@@ -1464,7 +1464,7 @@ class FeatureExtractor(DLAWorker):
 
         return tableName
 
-    def addLexiconFeat(self, lexiconTableName, lowercase_only=dlac.LOWERCASE_ONLY, tableName=None, valueFunc = lambda x: float(x), isWeighted=False, featValueFunc=lambda d: float(d)):
+    def addLexiconFeat(self, lexiconTableName, lowercase_only=dlac.LOWERCASE_ONLY, tableName=None, valueFunc = lambda x: float(x), isWeighted=False, featValueFunc=lambda d: float(d), extension=None):
         """Creates a feature table given a 1gram feature table name, a lexicon table / database name
 
         Parameters
@@ -1538,7 +1538,7 @@ class FeatureExtractor(DLAWorker):
             lexiconTableName += "_16to"+str(int(featValueFunc(16)))
 
 
-        tableName = self.createFeatureTable("cat_%s"%lexiconTableName, 'VARCHAR(%d)'%max_category_string_length, 'INTEGER', tableName, valueFunc)
+        tableName = self.createFeatureTable("cat_%s"%lexiconTableName, 'VARCHAR(%d)'%max_category_string_length, 'INTEGER', tableName, valueFunc, extension=extension)
 
 
         #4. grab all distinct group ids

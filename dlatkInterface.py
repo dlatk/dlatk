@@ -262,8 +262,6 @@ def main(fn_args = None):
                    help='Replaces characters in the middle of explatives/slurs with ***. ex: f**k')
     group.add_argument('--weighted_sample', dest='weightedsample', default=dlac.DEF_WEIGHTS,
                         help='Field in outcome table to use as weights for correlation(regression).')
-    group.add_argument('--save_error', dest='saveerror', default=None,
-                        help='Save model error in pickle in correlation(regression).')
 
 
 
@@ -1532,7 +1530,7 @@ def main(fn_args = None):
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
                                            nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval,
                                            standardize = args.standardize, residualizedControls = args.res_controls, groupsWhere = args.groupswhere, 
-                                           weightedSample = args.weightedsample, saveError = args.saveerror)
+                                           weightedSample = args.weightedsample)
         elif args.controladjustreg:
             comboScores = rp.adjustOutcomesFromControls(standardize = args.standardize, sparse = args.sparse,
                                                         allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,

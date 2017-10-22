@@ -641,8 +641,7 @@ class RegressionPredictor:
     ####### Main Testing Method ########################
     def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
                           allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None, 
-                          residualizedControls = False, groupsWhere = '', weightedSample = '',
-                          saveError = None):
+                          residualizedControls = False, groupsWhere = '', weightedSample = ''):
         """Tests regressors, by cross-validating over folds with different combinations of controls"""
         
         ###################################
@@ -966,10 +965,6 @@ class RegressionPredictor:
 
                         else:
                             ytrue, ypred = alignDictsAsy(outcomes, predictions)
-                            if saveError:
-                                bias = '_' + saveError
-                                with open('/sandata/sgiorgi/bias_correction/model_error/' + str(outcomeName) + bias + '.pickle', 'wb') as fp:
-                                    pickle.dump([ytrue, ypred], fp)
                         reportStats.update(self.accuracyStats(ytrue, ypred))
                         reportStats['N'] = len(ytrue)
 
@@ -1765,7 +1760,10 @@ class RegressionPredictor:
             #print dict(self.cvParams[modelName][0])
 
             try:
-                regressor.fit(X, y, sample_weight = weightedSample)
+                try:
+                    regressor.fit(X, y, sample_weight = weightedSample)
+                except TypeError:
+                    regressor.fit(X, y)
             except LinAlgError:
                 print("Lin Algebra error, X:")
                 pprint(X)

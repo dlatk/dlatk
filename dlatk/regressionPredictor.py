@@ -39,6 +39,7 @@ from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model.base import LinearModel
 from sklearn.base import RegressorMixin
+from sklearn.exceptions import NotFittedError
 
 #modified sklearns: 
 from .occurrenceSelection import OccurrenceThreshold
@@ -58,7 +59,7 @@ import math
 #infrastructure
 from .classifyPredictor import ClassifyPredictor
 from .mysqlMethods import mysqlMethods as mm
-from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME
+from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, warn
 
 
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
@@ -1809,7 +1810,13 @@ class RegressionPredictor:
             #run transformations:
             if scaler:
                 print("  predict: applying standard scaler to X[%d]: %s" % (i, str(scaler))) #debug
-                X = scaler.transform(X)
+                try:
+                    X = scaler.transform(X)
+                except NotFittedError as e:
+                    warn(e)
+                    warn("Fitting scaler")
+                    X = scaler.fit_transform(X)
+
             if fSelector:
                 print("  predict: applying feature selection to X[%d]: %s" % (i, str(fSelector))) #debug
                 newX = fSelector.transform(X)

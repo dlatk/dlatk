@@ -86,14 +86,15 @@ class OutcomeGetter(DLAWorker):
         outcome_value_fields = [o.strip() for o in parser.get('constants','outcomefields').split(",")] if parser.has_option('constants','outcomefields') else [dlac.DEF_OUTCOME_FIELD] # possible list
         outcome_controls = [o.strip() for o in parser.get('constants','outcomecontrols').split(",")] if parser.has_option('constants','outcomecontrols') else dlac.DEF_OUTCOME_CONTROLS # possible list
         outcome_interaction = [o.strip() for o in parser.get('constants','outcomeinteraction').split(",")] if parser.has_option('constants','outcomeinteraction') else dlac.DEF_OUTCOME_CONTROLS # possible list
+        outcome_categories = [o.strip() for o in parser.get('constants','outcomecategories').split(",")] if parser.has_option('constants','outcomecategories') else [] # possible list
         group_freq_thresh = parser.get('constants','groupfreqthresh') if parser.has_option('constants','groupfreqthresh') else dlac.getGroupFreqThresh(correl_field)
         featureMappingTable = parser.get('constants','featlabelmaptable') if parser.has_option('constants','featlabelmaptable') else ''
         featureMappingLex = parser.get('constants','featlabelmaplex') if parser.has_option('constants','featlabelmaplex') else ''
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
-        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, group_freq_thresh=group_freq_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex, wordTable=wordTable)
+        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, outcome_categories=outcome_categories, group_freq_thresh=group_freq_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex, wordTable=wordTable)
     
 
-    def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_host=dlac.MYSQL_HOST, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb = dlac.DEF_LEXICON_DB, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls = dlac.DEF_OUTCOME_CONTROLS, outcome_interaction = dlac.DEF_OUTCOME_CONTROLS, group_freq_thresh = None, featureMappingTable='', featureMappingLex='', wordTable = None, fold_column = None):
+    def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_host=dlac.MYSQL_HOST, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb = dlac.DEF_LEXICON_DB, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls = dlac.DEF_OUTCOME_CONTROLS, outcome_interaction = dlac.DEF_OUTCOME_CONTROLS, outcome_categories = [], group_freq_thresh = None, featureMappingTable='', featureMappingLex='', wordTable = None, fold_column = None):
         super(OutcomeGetter, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable = wordTable)
         self.outcome_table = outcome_table
 
@@ -119,6 +120,7 @@ class OutcomeGetter(DLAWorker):
         self.outcome_value_fields = outcome_value_fields
         self.outcome_controls = outcome_controls
         self.outcome_interaction = outcome_interaction
+        self.outcome_categories = outcome_categories
         if not group_freq_thresh and group_freq_thresh != 0:
             self.group_freq_thresh = dlac.getGroupFreqThresh(self.correl_field)
         else:
@@ -305,6 +307,28 @@ enabled, so the total word count for your groups might be off
                 if outcomeField in self.outcome_value_fields:
                     groups.update(list(outcomes[outcomeField].keys()))
             
+            if self.outcome_categories:
+                for cat in self.outcome_categories:
+                    cat_label_list = []
+                    try:
+                        cat_labels = set([lbl for lbl in outcomes[cat].values()])
+                        for lbl in cat_labels:
+                            cat_label_str = "_".join([cat, lbl]).replace(" ", "_").lower()
+                            outcomes[cat_label_str] = {gid:1 if l == lbl else 0 for gid, l in outcomes[cat].items() }
+                            cat_label_list.append(cat_label_str)
+                    except:
+                        dlac.warn("Arguments of --cat_to_bin do not match --outcomes or --controls")
+                        sys.exit(1)
+                    del outcomes[cat]
+                    if cat in self.outcome_value_fields:
+                        self.outcome_value_fields.remove(cat)
+                        self.outcome_value_fields += cat_label_list
+                    elif cat in self.outcome_controls:
+                        self.outcome_controls.remove(cat)
+                        self.outcome_controls += cat_label_list
+                    else:
+                        self.outcome_interaction.remove(cat)
+                        self.outcome_interaction += cat_label_list
 
             if self.group_freq_thresh:
                 where = """ group_id in ('%s')""" % ("','".join(str(g) for g in groups))

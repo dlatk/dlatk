@@ -311,7 +311,7 @@ enabled, so the total word count for your groups might be off
                 for cat in self.outcome_categories:
                     cat_label_list = []
                     try:
-                        cat_labels = set([lbl for lbl in outcomes[cat].values()])
+                        cat_labels = set([str(lbl) for lbl in outcomes[cat].values()])
                         for lbl in cat_labels:
                             cat_label_str = "_".join([cat, lbl]).replace(" ", "_").lower()
                             outcomes[cat_label_str] = {gid:1 if l == lbl else 0 for gid, l in outcomes[cat].items() }

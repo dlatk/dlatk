@@ -37,6 +37,7 @@ PACKAGES = ['dlatk',
   'dlatk.lib',
   'dlatk.LexicaInterface',
   'dlatk.mysqlMethods',
+  'dlatk.Tools',
 ]
 LICENSE = 'GNU General Public License v3 (GPLv3)'
 AUTHOR = "H. Andrew Schwartz, Salvatore Giorgi, Maarten Sap, Patrick Crutchley, Lukasz Dziurzynski and Megha Agrawal"

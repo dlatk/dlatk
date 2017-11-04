@@ -348,6 +348,18 @@ enabled, so the total word count for your groups might be off
             #set groups:
             for k in self.outcome_controls + self.outcome_interaction:
                 groups = groups & set(outcomes[k].keys()) #always intersect with controls
+            if self.outcome_categories:
+                for cat in cat_label_list:
+                    if all(outcomes[cat][group] == 0 for group in groups):
+                        del outcomes[cat]
+                        dlac.warn("Removing %s, no non-zero instances" % cat)
+                        if cat in self.outcome_value_fields:
+                            self.outcome_value_fields.remove(cat)
+                        elif cat in self.outcome_controls:
+                            self.outcome_controls.remove(cat)
+                        else:
+                            self.outcome_interaction.remove(cat)
+
             if groupsWhere:
                 outcm = groupsWhere.split()[0].strip()
                 whereusers = set([i[0] for i in self.getGroupAndOutcomeValues(outcm, where=groupsWhere)])

@@ -1027,10 +1027,11 @@ class WeightedLexicon(Lexicon):
 
         #first create the table:
         drop = """DROP TABLE IF EXISTS """+tablename
-        sql = """CREATE TABLE {supertable} AS SELECT reduced.category, orig.term, SUM(reduced.weight * orig.weight) AS weight 
+        sql = """CREATE TABLE {supertable} AS SELECT  orig.term, reduced.category, SUM(reduced.weight * orig.weight) AS weight 
                 FROM {reducedtopic} reduced, {origtopic} orig 
                 WHERE reduced.term=orig.category 
                 GROUP BY reduced.category, orig.term""".format(supertable=tablename, reducedtopic=reducedlex, origtopic=lextable)
+        id_col = """ALTER TABLE {supertable} ADD COLUMN `id` INT(11) NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`);""".format(supertable=tablename)
         keys = """ALTER TABLE {supertable} ADD INDEX `term` (`term` ASC), ADD INDEX `category` (`category` ASC)""".format(supertable=tablename)
         
         try:
@@ -1038,6 +1039,8 @@ class WeightedLexicon(Lexicon):
             self.dbCursor.execute(drop)
             print("and:     ", sql)
             self.dbCursor.execute(sql)
+            print("and:     ", id_col)
+            self.dbCursor.execute(id_col)
             print("Addings keys to term and category")
             self.dbCursor.execute(keys)
         except MySQLdb.Error as e:

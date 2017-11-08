@@ -959,8 +959,8 @@ class OutcomeAnalyzer(OutcomeGetter):
             newAucs = dict()
             for outcomeField, featRs in aucs.items():
                 newAucs[outcomeField] = dict()
-                pDict = dict( [(k, tup[1]) for k, tup in featRs.iteritems()] )
-                rDict = dict( [(k, tup[0]) for k, tup in featRs.iteritems()] )
+                pDict = dict( [(k, tup[1]) for k, tup in featRs.items()] )
+                rDict = dict( [(k, tup[0]) for k, tup in featRs.items()] )
                 pDict = dlac.pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
                 for k, tup in featRs.items():
                     newAucs[outcomeField][k] = (tup[0], pDict[k]) + tup[2:]

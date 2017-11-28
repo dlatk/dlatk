@@ -311,13 +311,16 @@ enabled, so the total word count for your groups might be off
                 for cat in self.outcome_categories:
                     cat_label_list = []
                     try:
+                        if not all(isinstance(lbl, (int, str)) for lbl in outcomes[cat].values()):
+                            dlac.warn("Arguments of --categories_to_binary must contain string or integer values")
+                            sys.exit(1)
                         cat_labels = set([str(lbl) for lbl in outcomes[cat].values()])
                         for lbl in cat_labels:
                             cat_label_str = "_".join([cat, lbl]).replace(" ", "_").lower()
-                            outcomes[cat_label_str] = {gid:1 if l == lbl else 0 for gid, l in outcomes[cat].items() }
+                            outcomes[cat_label_str] = {gid:1 if str(l) == lbl else 0 for gid, l in outcomes[cat].items() }
                             cat_label_list.append(cat_label_str)
                     except:
-                        dlac.warn("Arguments of --cat_to_bin do not match --outcomes or --controls")
+                        dlac.warn("Arguments of --categories_to_binary do not match --outcomes or --controls")
                         sys.exit(1)
                     del outcomes[cat]
                     if cat in self.outcome_value_fields:

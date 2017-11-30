@@ -1,9 +1,13 @@
 import re
 from collections import OrderedDict
 from pprint import pprint
+import pandas as pd
 
 #math / stats:
 from numpy import sqrt, array, std, mean, log2, log
+import math
+from operator import mul
+from functools import reduce
 
 #local / nlp
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
@@ -11,6 +15,7 @@ from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 from .featureGetter import FeatureGetter
 from . import dlaConstants as dlac
 from .mysqlMethods import mysqlMethods as mm
+from .mysqlMethods import mysql_iter_funcs as mif
 
 class FeatureRefiner(FeatureGetter):
     """Deals with the refinement of feature information already in a table (outputs to new table)
@@ -797,3 +802,167 @@ class FeatureRefiner(FeatureGetter):
 
         dlac.warn('Finished inserting.')
         return idf_table
+
+    def _calc_pmi_iter(self, multigram_counts_iter, onegram_counts_iter, total_count, tokenize_func=lambda x:x.split()):
+        '''
+        :param multigram_counts_iter: iterator yields dicts, dicts have columns "feat" and "count"
+            this is the list of multigrams for which we are calculating pmi values
+        :param onegram_counts_iter: iterator yields dicts, dicts have columns "feat" and "count"
+            this should include all onegrams that are included in the multigrams from multigram_counts_iter
+        :param total_count: the total count of words in the body of text from which onegram and multigrams were generated
+        :param tokenize_func: a function that take a string and output's a list of words or tokens
+        :return: an iterator of multigrams with their associated PMI information
+        '''
+
+        onegram_counts_dict = {}
+        print("Reading onegrams into a dict...")
+        count = 0
+        for onegram_count_row in onegram_counts_iter:
+            count += 1
+            if count % 100000 == 0:
+                print("Processing onegram row {}".format(count))
+            onegram = onegram_count_row["feat"]
+            onegram_counts_dict[onegram] = onegram_count_row["count"]
+
+        for multigram_count_row in multigram_counts_iter:
+            multigram_count_row = dict(multigram_count_row)
+            multigram = multigram_count_row['feat']
+            onegrams = tokenize_func(multigram)
+            num_tokens = len(onegrams)
+
+            onegram_presence = [onegram in onegram_counts_dict for onegram in onegrams]
+            if num_tokens <= 1 or not all(onegram_presence):
+                (pmi_val, npmi_val, pmi_filter_val, npmi_filter_val) = (None, None, None, None)
+
+            else:
+                count_multigram = multigram_count_row['count']
+                onegram_counts = [onegram_counts_dict[onegram] for onegram in onegrams]
+                pmi_val = self._colloc_pmi(count_multigram, onegram_counts, total_count)
+                npmi_val = self._colloc_pmi(multigram_count_row['count'], onegram_counts, total_count, normalize=True)
+                pmi_filter_val = pmi_val/(num_tokens - 1)
+                npmi_filter_val = npmi_val/(num_tokens - 1)
+
+            multigram_count_row.update({'pmi':pmi_val, 'pmi_filter_val':pmi_filter_val, 'npmi':npmi_val, 'npmi_filter_val':npmi_filter_val})
+            yield multigram_count_row
+
+    def _colloc_pmi(self, count_colloc, counts_onegrams, total_count, normalize = False, useAndyDenom = False):
+        '''
+        Source: https://svn.spraakdata.gu.se/repos/gerlof/pub/www/Docs/npmi-pfd.pdf
+        :param prob_colloc: float from 0 to 1
+        :param prob_ngrams: list of floats from 0 to 1
+        :return: float from ??? to ???
+        '''
+        prob_colloc = float(count_colloc)/float(total_count)
+        probs_onegrams = [float(onegram_count)/float(total_count) for onegram_count in counts_onegrams]
+        if useAndyDenom:
+            raise NotImplementedError
+        else:
+            denom = float(reduce(mul, probs_onegrams, 1))
+
+        ratio = prob_colloc/denom
+        pmi_val = math.log(ratio, math.e)
+        if normalize:
+            normalization_factor = -1 * math.log(prob_colloc)
+            npmi_val = pmi_val/normalization_factor
+            return npmi_val
+        else:
+            return pmi_val
+
+    def _colloc_lnpmi_vals(self, colloc_list, counts, total_word_count):
+        '''
+        :param colloc_list - list of collocs that we want values calculated for
+        :param counts - dict keyed by colloc, where multiple tokens are separated by spaces
+        :param total_word_count - int
+        :returns dict iter
+        '''
+        for colloc in colloc_list:
+            ##TODO - find way to deal with missing onegrams or two grams
+            onegrams = colloc.split()
+            num_tokens = len(onegrams)
+            prob_colloc = float(counts[colloc])/float(total_word_count)
+            normalization_factor = -1 * math.log(prob_colloc)
+            onegram_probs = [float(counts[onegram])/float(total_word_count) for onegram in onegrams]
+            pmi_denom = reduce(mul, onegram_probs, 1)
+            if num_tokens >= 3:
+                try:
+                    count_prod1 = counts[onegrams[0]] * counts[" ".join(onegrams[1:])]
+                    count_prod2 = counts[" ".join(onegrams[:-1])] * counts[onegrams[-1]]
+                except Exception as e:
+                    raise e
+                andy_denom = float(max(count_prod1, count_prod2))/math.pow(total_word_count, 2)
+            pmi_val = math.log(prob_colloc/pmi_denom, math.e)
+            lpmi_val = math.log(prob_colloc/andy_denom, math.e) if num_tokens >= 3 else pmi_val
+            npmi_val = pmi_val/normalization_factor
+            lnpmi_val = lpmi_val/normalization_factor
+            yield {'feat':colloc, 'num_tokens':num_tokens, 'pmi':pmi_val, 'npmi':npmi_val, 'lpmi':lpmi_val, 'lnpmi':lnpmi_val}
+
+
+    def creatCollocScores(self, ufeat_table):
+        """"""
+        if not isinstance(ufeat_table, str):
+            ufeat_table = self.corptable
+        db_eng = mif.get_db_engine(self.corpdb)
+
+        ufeat_multigram_table = "ufeat$" + ufeat_table
+
+        drop_sql = "DROP TABLE IF EXISTS {ufeat}".format(ufeat=ufeat_multigram_table)
+        dlac.warn(drop_sql)
+        db_eng.execute(drop_sql)
+        create_sql = """CREATE TABLE {ufeat}
+            (id BIGINT PRIMARY KEY AUTO_INCREMENT, feat varchar(102), count bigint, KEY feat (feat) ) 
+            DEFAULT CHARSET=utf8mb4""".format(ufeat=ufeat_multigram_table)
+        dlac.warn(create_sql)
+        db_eng.execute(create_sql)
+        
+        insert_sql = """INSERT INTO {ufeat} (feat, count) SELECT feat, sum(value) count 
+            FROM {ftbl} GROUP BY feat""".format(ufeat=ufeat_multigram_table, ftbl=self.featureTable)
+        dlac.warn(insert_sql)
+        db_eng.execute(insert_sql)
+
+        print("Extending table if necessary...")
+        new_cols = OrderedDict()
+        new_cols['pmi'] = 'DOUBLE';
+        new_cols['pmi_filter_val'] = 'DOUBLE';
+        new_cols['npmi'] = 'DOUBLE';
+        new_cols['npmi_filter_val'] = 'DOUBLE';
+        new_cols['npmi'] = 'DOUBLE';
+        new_cols['npmi_filter_val'] = 'DOUBLE';
+        group_column = self.featureTable.split('$')[3]
+        pocc_column = "pocc_{}_gft0".format(group_column)
+        new_cols[pocc_column] = 'DOUBLE';
+        mif.extend_table(db_eng, ufeat_multigram_table, new_cols)
+
+        print("Querying input data...")
+        total_count = db_eng.execute("SELECT sum(value) FROM {}".format(self.wordTable)).first()[0]
+
+        ###AHHHH this MUST be grouped!!!!
+        onegram_counts_iter =  db_eng.execute("SELECT id, feat, SUM(value) as count FROM {} GROUP BY feat".format(self.wordTable))
+        multigram_counts_iter =  db_eng.execute("SELECT id, feat, count FROM {} WHERE pmi IS NULL AND feat LIKE '% %' AND count > 1".format(ufeat_multigram_table))
+
+        pmi_iter = self._calc_pmi_iter(multigram_counts_iter, onegram_counts_iter, total_count)
+
+        print("Processing npmi data...")
+        mif.mysql_update(db_eng, ufeat_multigram_table, pmi_iter)
+
+        print("Done npmi.")
+
+        ### annotate pocc
+        num_groups_tot = db_eng.execute("SELECT count(distinct group_id) FROM {}".format(self.featureTable)).first()[0]
+
+        print("Loading group counts by feat...")
+        group_count_sql = "SELECT feat, count(*) group_count FROM {} GROUP BY feat".format(self.featureTable)
+        df_group_counts = pd.read_sql(group_count_sql, db_eng, index_col="feat")
+
+        print("Loading ufeat data...")
+        feat_iter =  db_eng.execute("SELECT id, feat FROM {} WHERE count > 1".format(ufeat_multigram_table))
+
+        def pocc_gen():
+            count = 0
+            for (id, feat) in feat_iter:
+                num_groups = df_group_counts.ix[feat]['group_count']
+                yield {'id':id, pocc_column:float(num_groups)/num_groups_tot}
+        pocc_dict_iter = pocc_gen()
+
+        print("Updating ufeat data with pocc values...")
+        mif.mysql_update(db_eng, ufeat_multigram_table, pocc_dict_iter, log_every=10000)
+        return ufeat_multigram_table

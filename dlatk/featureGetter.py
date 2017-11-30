@@ -205,7 +205,7 @@ class FeatureGetter(DLAWorker):
 
     def getGroupNormsForFeat(self, feat, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
-        sql = """SELECT group_id, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, MySQLdb.escape_string(feat))
+        sql = """SELECT group_id, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, feat)
         if (where): sql += ' AND ' + where
         return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg, charset=self.encoding, use_unicode=self.use_unicode) 
 
@@ -423,7 +423,9 @@ class FeatureGetter(DLAWorker):
 
 
         #fill in zeros (this can get quite big!)
+        print("IM")
         for feat in allFeats:
+            print("SALSALSAL", feat)
             (valDict, gnDict) = getFeatValuesAndGNs(feat)
             for gid in groups:
                 if not gid in gnDict: #add zeros!

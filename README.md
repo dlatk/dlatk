@@ -21,7 +21,7 @@ DLATK can utilize:
 
 ## Installation
 
-DLATK is available via conda, pip or github.
+DLATK is available via [docker](https://github.com/pennsignals/dlatk-docker) or through conda, pip or github via:
 
 ```sh
 conda install -c wwbp dlatk
@@ -49,10 +49,33 @@ for recommended and optional dependencies.
 
 The documentation for the latest release is at [dlatk.wwbp.org](dlatk.wwbp.org).
 
+## Citation
+
+If you use DLATK in your work please cite the following [paper](http://aclweb.org/anthology/D17-2010):
+
+```
+@InProceedings{DLATKemnlp2017,
+  author = 	"Schwartz, H. Andrew
+		and Giorgi, Salvatore
+		and Sap, Maarten
+		and Crutchley, Patrick
+		and Eichstaedt, Johannes
+		and Ungar, Lyle",
+  title = 	"DLATK: Differential Language Analysis ToolKit",
+  booktitle = 	"Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing: System Demonstrations",
+  year = 	"2017",
+  publisher = 	"Association for Computational Linguistics",
+  pages = 	"55--60",
+  location = 	"Copenhagen, Denmark",
+  url = 	"http://aclweb.org/anthology/D17-2010"
+}
+
+```
+
 ## License
 
 Licensed under a [GNU General Public License v3 (GPLv3)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
 ## Background
 
-Developed by the [World Well-Being Project](http://www.wwbp.org) based out of the University of Pennsylvania.
+Developed by the [World Well-Being Project](http://www.wwbp.org) based out of the University of Pennsylvania and Stony Brook University.

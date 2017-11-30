@@ -61,10 +61,11 @@ class MessageTransformer(DLAWorker):
             ?????
 
         """
-        message_ids = [str(msg_id) for msg_id in ldas.keys() if str(msg_id).isdigit()]
+        message_ids = [str(msg_id) for msg_id in ldas.keys()]
         sql = """SELECT %s from %s where %s IN ('%s')""" % (
             ','.join(columnNames), self.corptable, self.messageid_field,
             "','".join(message_ids))
+
         rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode))
 
         #generate row data:
@@ -74,7 +75,7 @@ class MessageTransformer(DLAWorker):
                 newRow = list(row)
                 newRow[messageIndex] = json.dumps(ldas[str(row[messageIdIndex])])
                 newRows.append(newRow)
-
+                
         #insert
         sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
             """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
@@ -220,7 +221,6 @@ class MessageTransformer(DLAWorker):
         """
 
         assert model.lower() in ["ctb", "pku"], "Available models for segmentation are CTB or PKU"
-        # Maarten
         sql = "select %s, %s from %s" % (self.messageid_field, self.message_field, self.corptable)
         rows = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
@@ -231,7 +231,7 @@ class MessageTransformer(DLAWorker):
             w = csv.writer(a)
             w.writerows(rows)
 
-        os.system("/home/maarten/research/tools/stanford-segmenter-2014-08-27/segment.sh %s %s UTF-8 0 > %s" % (model.lower(), tmpfile, tmpfile_seg))
+        os.system("%s %s %s UTF-8 0 > %s" % (dlac.DEF_STANFORD_SEGMENTER , model.lower(), tmpfile, tmpfile_seg))
 
         new_rows = []
         raw = []

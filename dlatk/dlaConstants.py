@@ -69,6 +69,7 @@ DEF_SHOW_FEAT_FREQS = True
 DEF_MAX_TC_WORDS = 100
 DEF_MAX_TOP_TC_WORDS = 15
 DEF_TC_FILTER = True
+DEF_WEIGHTS = ''
 
 ##Feature Settings:
 DEF_N = int(1)
@@ -77,7 +78,10 @@ DEF_MIN_FREQ = int(1) #min frequency per group to keep (don't advise above 1)
 DEF_P_OCC = float(.01) #percentage of groups a feature must appear in, to keep it
 DEF_PMI = 3.0
 DEF_MIN_FEAT_SUM = 0 #minimum sum of feature total to keep
-DEF_STANFORD_POS_MODEL = '../Tools/StanfordTagger/stanford-postagger-2012-01-06/models/english-bidirectional-distsim.tagger' # for code release
+# DEF_STANFORD_SEGMENTER = '../Tools/StanfordSegmenter/stanford-segmenter-2014-08-27/segment.sh'
+DEF_STANFORD_SEGMENTER = '/home/maarten/research/tools/stanford-segmenter-2014-08-27/segment.sh'
+# DEF_STANFORD_POS_MODEL = '../Tools/StanfordTagger/stanford-postagger-2012-01-06/models/english-bidirectional-distsim.tagger' # for code release
+DEF_STANFORD_POS_MODEL = '/home/hansens/Tools/StanfordTagger/stanford-postagger-2012-01-06/models/english-bidirectional-distsim.tagger'
 DEF_LEXICON_DB = 'permaLexicon'
 DEF_FEAT_TABLE = 'feat$1gram$messages_en$user_id$16to16$0_01'
 DEF_COLLOCTABLE = 'test_collocs'
@@ -113,6 +117,7 @@ DEF_COMB_MODELS = ['ridgecv']
 DEF_FOLDS = 5
 DEF_RP_FEATURE_SELECTION_MAPPING = {
     'magic_sauce': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.1)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+    'topic_ngram_ms': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(2*(X.shape[0]*.20)/len(self.featureGetters) if X.shape[1] > 2000 else 2*(X.shape[0]*.75)/len(self.featureGetters)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
     'univariatefwe': 'SelectFwe(f_regression, alpha=60.0)',
     'pca': 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
     'none': None,
@@ -145,7 +150,8 @@ ug, uk, ur, vi, vo, wa, xh, zh, zu"""
 DEF_SPAM_FILTER = 0.2 # threshold for removing spam users
 
 ##CoreNLP settings
-DEF_CORENLP_DIR = '../Tools/corenlp-python' # for code release
+#DEF_CORENLP_DIR = '../Tools/corenlp-python' # for code release
+DEF_CORENLP_DIR = '/home/hansens/Tools/corenlp-python'
 DEF_CORENLP_SERVER_COMMAND = './corenlp/corenlp.py'
 DEF_CORENLP_PORT = 20202   #default: 20202
 #CORE NLP PYTHON SERVER COMMAND (must be running): ./corenlp/corenlp.py -p 20202 -q
@@ -305,7 +311,7 @@ def meanXperY(x, y):
     for yKey in sums.iterkeys():
         means[yKey] = sums[yKey] / float(counts[yKey])
     return means
-    
+
 def fiftyChecks(args):
     Xc, Xend, y, check = args
     np.random.seed()
@@ -339,8 +345,6 @@ def permaSortedKey(s):
         s = str(s[0])
     if isinstance (s, (float, int)):
         return s
-    if s.upper() in PERMA_SORTED:
-        return PERMA_SORTED.index(s.upper())
     return s
 
 def pCorrection(pDict, method=DEF_P_CORR, pLevelsSimes=[0.05, 0.01, 0.001], rDict = None):

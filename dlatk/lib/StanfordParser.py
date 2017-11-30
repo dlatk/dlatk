@@ -19,7 +19,7 @@ import re
 from pprint import pprint
 import glob
 
-#DEFAULTS FOR RELEASED VERSION
+##DEFAULTS FOR RELEASED VERSION
 from ..dlaConstants import warn
 try: 
     _InstallPath = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '/Tools/StanfordParser/' # folder

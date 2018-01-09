@@ -174,7 +174,7 @@ def main(fn_args = None):
                        help='Table containing which groups run in various bins (for ttest).')
     
 
-    group.add_argument('--ls', '--show_feat_tables', action='store_true', dest='listfeattables', default=False,
+    group.add_argument('--show_feat_tables', '--ls', '--show_feat_tables', action='store_true', dest='listfeattables', default=False,
                        help='List all feature tables for given corpdb, corptable and correl_field')
     group.add_argument('--show_tables', nargs='?', dest='showtables', default=False, const=True,
                        help='List all non-feature tables. Optional argument for "like"-style SQL call')

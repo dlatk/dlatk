@@ -3,6 +3,10 @@
 Changelog
 =========
 
+1.1.3 (2018-01-09)
+------------------
+  - Improving feature: created the alias --show_feat_tables for --ls
+
 1.1.2 (2018-01-09)
 ------------------
   - New Feature: added --show_tables

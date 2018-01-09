@@ -241,12 +241,12 @@ class ClassifyPredictor:
             #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l1'], 'dual':[False]},
             #{'C':[0.1, 1, 0.01], 'penalty':['l1'], 'dual':[False]} #timex message-level
             #{'C':[10, 1, 100, 1000], 'penalty':['l1'], 'dual':[False]} 
-            {'C':[0.01, 0.1, 0.001, 0.0001, 0.00001], 'penalty':['l1'], 'dual':[False]} #timex l2 rpca....
+            #{'C':[0.01, 0.1, 0.001, 0.0001, 0.00001], 'penalty':['l1'], 'dual':[False]} #timex l2 rpca....
             #{'C':[0.1, 1, 10], 'penalty':['l1'], 'dual':[False]} #timex l2 rpca....
             #{'C':[0.00001], 'penalty':['l2']} # UnivVsMultiv choice Maarten 
             #{'C':[0.01], 'penalty':['l1']} # UnivVsMultiv choice Maarten
             #{'C':[1000000], 'penalty':['l2'], 'dual':[False]} # for a l0 penalty approximation
-            #{'C':[1000000000000], 'penalty':['l2'], 'dual':[False]} # for a l0 penalty approximation
+            {'C':[1000000000000], 'penalty':['l2'], 'dual':[False], 'fit_intercept': [False]} # for a l0 penalty approximation
             #{'C':[100], 'penalty':['l1'], 'dual':[False]} # gender prediction
             ],
 

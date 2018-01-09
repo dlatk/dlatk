@@ -37,9 +37,9 @@ The message column in TABLE_pos is a part of speech tagged version of the origin
 * original message: Everything is breaking apart.
 * parsed message: Everything/NNP is/VBZ breaking/VBG apart/RB ./.
 
-Note: TABLE_pos is tagged according to the Penn Treebank Project tags: https://www.ling.upenn.edu/courses/Fall_2003/ling001/penn_treebank_pos.html
+Note that TABLE_pos is tagged according to the `Penn Treebank Project tags <https://www.ling.upenn.edu/courses/Fall_2003/ling001/penn_treebank_pos.html>`_.
 
-For more details, download the Part-of-speech tagging annotation style manual from https://www.cis.upenn.edu/~treebank/
+For more details, download the `Part-of-speech tagging annotation style manual <https://www.cis.upenn.edu/~treebank/>`_. 
 
 Other Switches
 ==============
@@ -48,19 +48,34 @@ Required Switches:
 
 * :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t` 
 
-Optional Switches:
-
-* None
-
 Example Commands
 ================
 
-.. code-block:: python
+.. code-block:: bash
+	
+	# creates the table msgs_const, msgs_pos, msgs_dep
+	./dlatkInterface.py -d dla_tutorial -t msgs -c message_id --add_parses
 
+.. code-block:: mysql 
 
-	# General form
-	# Creates the tables: TABLE_const, TABLE_dep, TABLE_pos
-	.dlatkInterface.py -d DATABASE -t TABLE -c GROUP_BY_FIELD --add_parses
+	mysql> select message from msgs_const limit 1;
+	+-------------------------------------------------------------------------------------------------+
+	| message                                                                                         |
+	+-------------------------------------------------------------------------------------------------+
+	| (ROOT (S (VP (VB urlLink) (NP (DT The) (NNP Obligatory) (NNP Field) (NNP Shot) (NN urlLink))))) |
+	+-------------------------------------------------------------------------------------------------+
 
-	# Creates the tables: primals_new_const, primals_new_dep, primals_new_pos
-	dlatkInterface.py -d primals -t primals_new -c message_id --add_parses
+	mysql> select message from msgs_pos limit 1;
+	+----------------------------------------------------------------+
+	| message                                                        |
+	+----------------------------------------------------------------+
+	| urlLink/VB The/DT Obligatory/NNP Field/NNP Shot/NNP urlLink/NN |
+	+----------------------------------------------------------------+
+
+	mysql> select message from msgs_dep limit 1;
+	+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+	| message                                                                                                                                                              |
+	+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+	| ['root(ROOT-0, urlLink-1)', 'det(urlLink-6, The-2)', 'nn(urlLink-6, Obligatory-3)', 'nn(urlLink-6, Field-4)', 'nn(urlLink-6, Shot-5)', 'dobj(urlLink-1, urlLink-6)'] |
+	+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+

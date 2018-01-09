@@ -423,9 +423,7 @@ class FeatureGetter(DLAWorker):
 
 
         #fill in zeros (this can get quite big!)
-        print("IM")
         for feat in allFeats:
-            print("SALSALSAL", feat)
             (valDict, gnDict) = getFeatValuesAndGNs(feat)
             for gid in groups:
                 if not gid in gnDict: #add zeros!

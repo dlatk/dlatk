@@ -3,6 +3,12 @@
 Changelog
 =========
 
+1.1.2 (2018-01-09)
+------------------
+  - New Feature: added --show_tables
+  - New Feature: added --describe_tables
+  - New Feature: added --create_random_sample
+
 1.1.1 (2017-11-30)
 ------------------
   - New Feature: added --categories_to_binary

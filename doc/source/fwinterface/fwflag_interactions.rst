@@ -25,11 +25,15 @@ Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_multir`? Optional Switches:
+
+* :doc:`fwflag_multir`
+
+Optional Switches:
+
 None
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+.. code-block:: `fwflag_block`:: python
 
 

@@ -20,12 +20,10 @@ Init file must have the line `[constants]` at the top. Also note that none of th
 .. code-block:: bash
 
 	[constants]
-	corpdb = paHealth
-	corptable = messages
+	corpdb = dla_tutorial
+	corptable = msgs
 	correl_field = user_id
-	message_field = message
-	messageid_field = message_id
-	feattable = feat$1to3gram$msgsPA_2011$cntyYM$16to16$0_01
+	feattable = feat$1gram$msgs$user_id$16to16$0_01
 
 
 Getting feature tables as dataframes
@@ -73,13 +71,13 @@ Get group Norms:
 
 	fg_gns = fg.getGroupNormsAsDF() 
 	fg_gns.head()
-	                        group_norm
-	group_id      feat                   
-	42055_2011_12 <OOV_1gram>    0.082580
-	42057_2011_12 <OOV_1gram>    0.158879
-	42051_2011_12 <OOV_1gram>    0.095937
-	42053_2011_12 <OOV_1gram>    0.117647
-	42059_2011_12 <OOV_1gram>    0.106342
+	                                            group_norm
+	group_id                         feat                 
+	003ae43fae340174a67ffbcf19da1549 neighbors     0.00026
+	                                 all           0.00390
+	                                 jason         0.00026
+	                                 <newline>     0.00130
+	                                 caused        0.00026
 
 Get values:
 
@@ -87,13 +85,13 @@ Get values:
 
 	fg_vals = fg.getValuesAsDF()
 	fg_vals.head()
-	                        value
-	group_id      feat              
-	42055_2011_12 <OOV_1gram>    822
-	42057_2011_12 <OOV_1gram>     17
-	42051_2011_12 <OOV_1gram>    784
-	42053_2011_12 <OOV_1gram>      2
-	42059_2011_12 <OOV_1gram>    275
+	                                            value
+	group_id                         feat            
+	003ae43fae340174a67ffbcf19da1549 neighbors      1
+	                                 all           15
+	                                 jason          1
+	                                 <newline>      5
+	                                 caused         1
 
 Get group norms with zeros:
 
@@ -101,13 +99,14 @@ Get group norms with zeros:
 
 	fg_zgns = fg.getGroupNormsWithZerosAsDF()
 	fg_zgns.head()
-	                  group_norm
-	group_id      feat             
-	42001_2011_12 !        0.015954
-	           ! !      0.000000
-	           ! ! !    0.000000
-	           ! !!     0.000000
-	           ! !!!    0.000000
+	                                       group_norm
+	group_id                         feat            
+	003ae43fae340174a67ffbcf19da1549 !       0.096464
+	                                 "       0.000780
+	                                 #       0.000000
+	                                 #12     0.000000
+	                                 $       0.000000
+	                                 %       0.000000
 
 Create a pivot table:
 
@@ -115,31 +114,32 @@ Create a pivot table:
 
 	fg_zgns_piv = fg.getGroupNormsWithZerosAsDF(pivot=True)
 	fg_zgns_piv.head()
-	           group_norm                                              
-	feat                   !       ! !     ! ! !      ! !! ! !!!    ! !!!!   
-	group_id                                                                 
-	42001_2011_12   0.015954  0.000000  0.000000  0.000000     0  0.000000   
-	42003_2011_12   0.012275  0.000014  0.000004  0.000006     0  0.000001   
-	42005_2011_12   0.008801  0.000000  0.000000  0.000000     0  0.000000   
-	42007_2011_12   0.010857  0.000000  0.000000  0.000000     0  0.000000   
-	42009_2011_12   0.012678  0.000000  0.000000  0.000000     0  0.000000
+	                                       group_norm                                              
+	feat                                ¿    –    —    ‘         ’    “    ”    •   
+	group_id                                                                        
+	003ae43fae340174a67ffbcf19da1549  0.0  0.0  0.0  0.0  0.000000  0.0  0.0  0.0   
+	01f6c25f87600f619e05767bf8942a5f  0.0  0.0  0.0  0.0  0.000677  0.0  0.0  0.0   
+	02be98c1005c0e7605385fbc5009de61  0.0  0.0  0.0  0.0  0.000000  0.0  0.0  0.0   
+	0318cc38971845f7470f34704de7339d  0.0  0.0  0.0  0.0  0.001647  0.0  0.0  0.0   
+	040b2b154e4074a72d8a7b9697ec76d2  0.0  0.0  0.0  0.0  0.000000  0.0  0.0  0.0
 
 Create a sparse dataframe:
 
 .. code-block:: python
 
-   g_sparse = fg.getGroupNormsWithZerosAsDF(sparse=True)
+   fg_sparse = fg.getGroupNormsWithZerosAsDF(sparse=True)
    fg_sparse.density
-   0.054158277796754875
+   0.07432567922874671
  
    fg_sparse.head()
-                         group_norm
-   group_id      feat             
-   42001_2011_12 !        0.015954
-                 ! !      0.000000
-                 ! ! !    0.000000
-                 ! !!     0.000000
-                 ! !!!    0.000000
+	                                       group_norm
+	group_id                         feat            
+	003ae43fae340174a67ffbcf19da1549 !       0.096464
+	                                 "       0.000780
+	                                 #       0.000000
+	                                 #12     0.000000
+	                                 $       0.000000
+	                                 %       0.000000
 
 Outcomes
 --------
@@ -148,15 +148,13 @@ Init file:
 .. code-block:: bash
 
 	[constants]
-	corpdb = paHealth
-	corptable = msgsPA
-	correl_field = cnty
-	message_field = message
-	messageid_field = message_id
-	outcometable = outcomes
-	outcomefields = ED_perc, AIDD_perc
-	outcomecontrols = age_1to4, age_5to9
-	feattable = feat$1to3gram$msgsPA_2013$cnty$16to16$0_01
+	corpdb = dla_tutorial
+	corptable = msgs
+	correl_field = user_id
+	feattable = feat$1gram$msgs$user_id$16to16$0_01
+	outcometable = blog_outcomes
+	outcomefields = age, is_education
+	outcomecontrols = gender
 
 Initialize:
 
@@ -172,23 +170,24 @@ Get outcomes and controls:
 	outAndCont = og.getGroupsAndOutcomesAsDF()
 	outAndCont.head()
 
-	        AIDD_perc  ED_perc  age_1to4  age_5to9
-	42001         41       17  0.044758  0.060233
-	42003         27       19  0.041452  0.052760
-	42005         30       21  0.042384  0.053213
-	42007         35       14  0.042023  0.054353
-	42009         31        8  0.042326  0.059348
+	          age  is_education  gender
+	group_id                           
+	28451      27           NaN       0
+	174357     23           NaN       1
+	216833     24           NaN       0
+	317581     26           NaN       0
+	446275     17           NaN       1
 
 	outcome = og.getGroupAndOutcomeValuesAsDF()
 	outcome.head()
 
-	        ED_perc
-	cnty          
-	42001       17
-	42003       19
-	42005       21
-	42007       14
-	42009        8
+	         age
+	user_id     
+	3991108   17
+	3417138   25
+	3673414   14
+	3361075   16
+	4115327   14
 
 Features and Outcomes in one dataframe
 --------------------------------------

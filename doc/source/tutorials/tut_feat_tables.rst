@@ -26,7 +26,7 @@ These tables are generally created with the :doc:`../fwinterface/fwflag_add_ngra
 
 **Field 3** Gives the group ID (:doc:`../fwinterface/fwflag_c`) that features were grouped by
 
-:Field 4:Specifies scaling on features:
+**Field 4** Specifies scaling on features:
 
 * *16to16*: Unscaled
 * *16to8*: :doc:`../fwinterface/fwflag_anscombe`

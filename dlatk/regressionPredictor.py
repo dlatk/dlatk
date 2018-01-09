@@ -59,7 +59,7 @@ import math
 #infrastructure
 from .classifyPredictor import ClassifyPredictor
 from .mysqlMethods import mysqlMethods as mm
-from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, warn
+from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, DEFAUL_RANDOM_SEED, warn
 
 
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
@@ -457,7 +457,7 @@ class RegressionPredictor:
     #featureSelectPerc = 0.20 #only perform feature selection on a sample of training (set to 1 to perform on all)
 
     testPerc = .20 #percentage of sample to use as test set (the rest is training)
-    randomState = 42 #percentage of sample to use as test set (the rest is training)
+    randomState = DEFAUL_RANDOM_SEED #percentage of sample to use as test set (the rest is training)
     #randomState = 64 #percentage of sample to use as test set (the rest is training)
 
     trainingSize = 1000000 #if this is smaller than the training set, then it will be reduced to this. 

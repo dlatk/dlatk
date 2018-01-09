@@ -20,7 +20,7 @@ None
 Details
 =======
 
-:doc:`fwflag_f` should be an ngram table.
+The :doc:`fwflag_f` flag should be an ngram table.
 
 Resulting value refers to value in ngram table. Group_norm refers to tf:doc:`fwflag_idf` score.
 
@@ -28,12 +28,27 @@ Resulting value refers to value in ngram table. Group_norm refers to tf:doc:`fwf
 Other Switches
 ==============
 
-Required: :doc:`fwflag_d`, :doc:`fwflag_t`, :doc:`fwflag_f` 
+Required: 
+
+* :doc:`fwflag_d`, :doc:`fwflag_t`, :doc:`fwflag_c` 
+* :doc:`fwflag_f` 
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+.. code-block:: bash
 
- # Creates tf:doc:`fwflag_idf` table at plu.feat$tf_idf_1gram$msgsEn$user_id 
- ~/fwInterface.py :doc:`fwflag_d` plu :doc:`fwflag_t` msgsEn :doc:`fwflag_f` 'feat$1gram$msgsEn$user_id$16to16' :doc:`fwflag_tf_idf` 
+   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' --tf_idf
+
+.. code-block:: mysql
+
+   mysql> select * from feat$tf_idf_1gram$msgs$user_id order limit 5;;
+   +---------+----------+-----------+-------+--------------------+
+   | id      | group_id | feat      | value | group_norm         |
+   +---------+----------+-----------+-------+--------------------+
+   |  307349 |  2033616 | delivered |     1 | 0.0000878334772103 |
+   |  278647 |  4144593 | crap      |     6 |  0.000998442620366 |
+   | 1043863 |  3482840 | story     |     2 |  0.000334689956064 |
+   | 1150911 |  2876677 | uh        |     2 |  0.000141436336165 |
+   |  283547 |  3711805 | crosses   |     2 |  0.000827587016091 |
+   +---------+----------+-----------+-------+--------------------+ 

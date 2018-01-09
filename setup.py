@@ -14,7 +14,7 @@ except ImportError:
 
 DESCRIPTION = "DLATK is an end to end human text analysis package, specifically suited for social media and social scientific applications. It is written in Python 3 and developed by the World Well-Being Project at the University of Pennsylvania and Stony Brook University. "
 LONG_DESCRIPTION = """
-DLATK v1.1.1
+DLATK v1.1.2
 ----------
 
 This package offers end to end text analysis: feature extraction, part-of-speech tagging, correlation, 
@@ -24,12 +24,33 @@ mediation, prediction / classification, dimensionality reduction and clustering,
   * https://www.github.com/dlatk/dlatk
   * http://wwbp.org
 
+CITATION
+--------
+
+If you use DLATK in your work please cite the following paper:
+
+  @InProceedings{DLATKemnlp2017,
+    author =  "Schwartz, H. Andrew
+        and Giorgi, Salvatore
+        and Sap, Maarten
+        and Crutchley, Patrick
+        and Eichstaedt, Johannes
+        and Ungar, Lyle",
+    title =   "DLATK: Differential Language Analysis ToolKit",
+    booktitle =  "Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing: System Demonstrations",
+    year =    "2017",
+    publisher =  "Association for Computational Linguistics",
+    pages =   "55--60",
+    location =   "Copenhagen, Denmark",
+    url =  "http://aclweb.org/anthology/D17-2010"
+  }
+
 CONTACT
 -------
 
 Please send bug reports, patches, and other feedback to
 
-  Salvatore Giorgi (sgiorgi@sas.upenn.edu) or H. Andrew Schwartz (hansens@sas.upenn.edu)
+  Salvatore Giorgi (sgiorgi@sas.upenn.edu) or H. Andrew Schwartz (has@cs.stonybrook.edu)
 
 """
 DISTNAME = 'dlatk'
@@ -41,9 +62,9 @@ PACKAGES = ['dlatk',
 ]
 LICENSE = 'GNU General Public License v3 (GPLv3)'
 AUTHOR = "H. Andrew Schwartz, Salvatore Giorgi, Maarten Sap, Patrick Crutchley, Lukasz Dziurzynski and Megha Agrawal"
-EMAIL = "hansens@sas.upenn.edu, sgiorgi@sas.upenn.edu"
-MAINTAINER = "Salvatore Giorgi, H. Andrew Schwartz, Patrick Crutchley"
-MAINTAINER_EMAIL = "sgiorgi@sas.upenn.edu, hansens@sas.upenn.edu, pcrutchl@psych.upenn.edu"
+EMAIL = "has@cs.stonybrook.edu, sgiorgi@sas.upenn.edu"
+MAINTAINER = "Salvatore Giorgi, H. Andrew Schwartz"
+MAINTAINER_EMAIL = "sgiorgi@sas.upenn.edu, has@cs.stonybrook.edu"
 URL = "http://dlatk.wwbp.org"
 DOWNLOAD_URL = 'https://github.com/dlatk/dlatk'
 CLASSIFIERS = [

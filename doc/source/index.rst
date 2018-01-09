@@ -41,7 +41,7 @@ Getting Started
 Citations
 ---------
 
-If you use DLATK in your work please cite the following paper:
+If you use DLATK in your work please cite the following `paper <http://aclweb.org/anthology/D17-2010>`_:
 
 .. code-block:: bash
 

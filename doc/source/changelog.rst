@@ -3,6 +3,10 @@
 Changelog
 =========
 
+1.1.4 (2018-01-1)
+------------------
+  - Bug fix: added __init__.py file to Tools directory to fix pip install
+
 1.1.3 (2018-01-09)
 ------------------
   - Improving feature: created the alias --show_feat_tables for --ls

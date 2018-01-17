@@ -281,7 +281,7 @@ class RegressionPredictor:
             {'alphas': np.array([1, .01, .0001, 100, 10000, 1000000])}, 
             ],
         'ridgehighcv': [
-            {'alphas': np.array([10,100, 1, 1000, 10000, 100000, 1000000])}, 
+            {'alphas': np.array([10,100, 1.0, 1000, 10000, 100000, 1000000])}, 
         ],
         'ridgelowcv': [
             {'alphas': np.array([.01, .1, .001, 1, .0001, .00001])}, 
@@ -411,7 +411,7 @@ class RegressionPredictor:
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 60000
-    backOffPerc = .05 #when the num_featrue / training_insts is less than this backoff to backoffmodel
+    backOffPerc = .01 #when the num_featrue / training_insts is less than this backoff to backoffmodel
     #backOffModel = 'ridgecv'
     backOffModel = 'linear'
 
@@ -1735,8 +1735,12 @@ class RegressionPredictor:
         for nextX in multiX[1:]:
             X = np.append(X, nextX, 1)
         modelName = self.modelName.lower()
-        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
-            print("number of features is small enough, backing off to %s" % self.backOffModel)
+        totalFeats = 0
+        for Xi in multiX[0]:
+            totalFeats += X.shape[1]
+        if (totalFeats / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
+            print("number of features is small enough (feats: %d, observations: %d), backing off to: %s" %\
+                  (totalFeats, X.shape[0], self.backOffModel))
             modelName = self.backOffModel.lower()
 
         if hasMultValuesPerItem(self.cvParams[modelName]) and modelName[-2:] != 'cv':

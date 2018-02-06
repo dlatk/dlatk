@@ -7,7 +7,7 @@ from pprint import pprint
 from .dlaWorker import DLAWorker
 from . import textCleaner as tc
 from . import dlaConstants as dlac
-from .mysqlMethods import mysqlMethods as mm
+from .mysqlmethods import mysqlMethods as mm
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 
 try:

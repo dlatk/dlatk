@@ -3,6 +3,34 @@
 Changelog
 =========
 
+1.1.4 (2018-01-1)
+------------------
+  - Bug fix: added __init__.py file to Tools directory to fix pip install
+
+1.1.3 (2018-01-09)
+------------------
+  - Improving feature: created the alias --show_feat_tables for --ls
+
+1.1.2 (2018-01-09)
+------------------
+  - New Feature: added --show_tables
+  - New Feature: added --describe_tables
+  - New Feature: added --create_random_sample
+
+1.1.1 (2017-11-30)
+------------------
+  - New Feature: added --categories_to_binary
+  - New Feature: added --create_collocation_scores
+  - New Feature: added --weighted_sample for running weight regression
+  - New Feature: added --reduced_lexicon flag for creating super topics
+  - New Feature: added --extension
+  - Improving feature: allow LDA messages to have non-numeric message id
+  - Improving feature: removed extra '.' from tagcloud filenames
+  - Improving feature: moved location of Stanford Segmenter to dlaConstants
+  - Bug fix: in --predict_regression_to_outcome_table and --predict_regression_to_feats
+  - Bug fix: in setup.py for adding Tools directory
+  - Bug fix: fixed bug in super topics (added auto increment id) 
+
 1.1.0 (2017-06-29)
 ------------------
   - New feature: added --n_components / --num_factors flag to --fit_reducer

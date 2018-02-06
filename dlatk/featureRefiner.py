@@ -14,8 +14,8 @@ from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 
 from .featureGetter import FeatureGetter
 from . import dlaConstants as dlac
-from .mysqlMethods import mysqlMethods as mm
-from .mysqlMethods import mysql_iter_funcs as mif
+from .mysqlmethods import mysqlMethods as mm
+from .mysqlmethods import mysql_iter_funcs as mif
 
 class FeatureRefiner(FeatureGetter):
     """Deals with the refinement of feature information already in a table (outputs to new table)

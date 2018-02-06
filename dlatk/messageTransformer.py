@@ -12,7 +12,7 @@ import re
 from .dlaWorker import DLAWorker
 from . import dlaConstants as dlac
 from . import textCleaner as tc
-from .mysqlMethods import mysqlMethods as mm
+from .mysqlmethods import mysqlMethods as mm
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 try:
     from .lib.StanfordParser import StanfordParser

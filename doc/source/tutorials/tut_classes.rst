@@ -27,12 +27,13 @@ Both  *FeatureGetter*, *OutcomeGetter* and *OutcomeAnalyzer* allow you to pass a
 .. code-block:: bash
 
 	[constants]
-	corpdb = paHealth
-	corptable = messages
+	corpdb = dla_tutorial
+	corptable = msgs
 	correl_field = user_id
-	message_field = message
-	messageid_field = message_id
-	feattable = feat$1to3gram$msgsPA_2011$cntyYM$16to16$0_01
+	feattable = feat$1gram$msgs$user_id$16to16$0_01
+	outcometable = blog_outcomes
+	outcomefields = age, is_education
+	outcomecontrols = gender
 
 To initialize one of these classes using an init file do the following:
 

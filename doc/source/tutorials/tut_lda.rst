@@ -20,8 +20,7 @@ If necessary create a message table to run LDA on
 
 	use dla_tutorial; 
 	create table msgs_lda like msgs;
-	insert into msgs_lda select * from messages_en where rand()<(2/706);
-	# this example is running on a random 20 million tweets @]
+	insert into msgs_lda select * from msgs where rand()<(2/6);
 
 We will create an output folder in your home directory
 
@@ -36,7 +35,7 @@ Using the infrastructure to tokenize the messages and print the tokenized messag
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs_lda -c id --add_tokenized   #creates table *msgs_lda_tok* in *dla_tutorial*
+	dlatkInterface.py -d dla_tutorial -t msgs_lda -c message_id --add_tokenized   #creates table *msgs_lda_tok* in *dla_tutorial*
 
 	dlatkInterface.py -d dla_tutorial -t msgs_lda --print_tokenized_lines ~/lda_tutorial/msgs_lda.txt
 
@@ -60,7 +59,7 @@ You can use this step in place of step 2, option A.
 	dlatkInterface.py -d dla_tutorial -t msgs_lda -c message_id -f 'feat$1gram$msgs_lda$message_id$16to16' --print_joined_feature_lines msgs_lda.txt
 
 
-Step 4: Format for Mallet
+Step 3: Format for Mallet
 -------------------------
 Prepares the messages and tokenizes them again for Mallet, removing stopwords and non English characters. For help use `./bin/mallet import-file --help`
 
@@ -71,7 +70,7 @@ Prepares the messages and tokenizes them again for Mallet, removing stopwords an
 	--output ~/lda_tutorial/msgs_lda.mallet \ 
 	--remove-stopwords --keep-sequence [--extra-stopwords EXTRA_STOPWORDS_FILE]
 
-Step 5: Run LDA with Mallet
+Step 4: Run LDA with Mallet
 ---------------------------
 This is the actual LDA step, which might take a while (4 days and a half on 20 mil tweets) for help do `./bin/mallet train-topics --help`
 
@@ -90,7 +89,7 @@ This creates the following files:
 
 *Note*: When dealing with giant sets of data, for example creating Facebook topics, one might encounter the error **Exception in thread "main" java.lang.OutOfMemoryError: Java heap space**. You must edit the following line in **~/Mallet/bin/mallet**: *MEMORY=1g*. You can then change the 1g value upwards – to 2g, 4g, or even higher depending on your system’s RAM, which you can find out by looking up the machine’s system information.
 
-Step 6: Add message ID’s to state file
+Step 5: Add message ID’s to state file
 --------------------------------------
 Adds the message ID’s to the topic distributions and stores the result in lda_topics
 
@@ -98,7 +97,7 @@ Adds the message ID’s to the topic distributions and stores the result in lda_
 
 	dlatkInterface.py --add_message_id ~/lda_tutorial/msgs_lda.txt ~/lda_tutorial/msgs_lda_state.gz --output_name ~/lda_tutorial/lda_topics
 
-Step 7: Import state file into database
+Step 6: Import state file into database
 ---------------------------------------
 Imports the topic-message probability distributions in a raw format (type of JSON) not readable by DLA
 
@@ -110,13 +109,13 @@ This creates the table **msgs_lda_tok_lda$lda_topics** in the database dla_tutor
 
 NOTE - "Duplicate entry 'xxxx' for key 'PRIMARY'" errors may be indicative of an issues with newlines.  See step 2 for a solution.
 
-Step 8: Create topic-word distributions
+Step 7: Create topic-word distributions
 ---------------------------------------
 Creates the readable distributions on the messages
 
 .. code-block:: bash
 
-	python dlatk/LexicaInterface/ldaExtractor.py -d dla_tutorial -t msgs_lda -m 'msgs_lda_tok_lda$lda_topics' --create_dists
+	python dlatk/LexicaInterface/topicExtractor.py -d dla_tutorial -t msgs_lda -m 'msgs_lda_tok_lda$lda_topics' --create_dists
 
 This creates the following files:
 
@@ -126,7 +125,7 @@ This creates the following files:
 * msgs_lda_tok_lda.lda_topics.topicGivenWord.csv
 * msgs_lda_tok_lda.lda_topics.wordGivenTopic.csv
 
-Step 9: Add topic-lexicon to lexicon database
+Step 8: Add topic-lexicon to lexicon database
 ---------------------------------------------
 Generates the lexicons based on different probability distribution types
 
@@ -147,7 +146,7 @@ Generates the lexicons based on different probability distribution types
 	-c msgs_lda_freq_t50ll 
 
 
-Step 10: Extract features from lexicon
+Step 9: Extract features from lexicon
 --------------------------------------
 You’re now ready to start using the topic distribution lexicon
 

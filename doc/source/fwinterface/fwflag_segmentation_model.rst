@@ -5,12 +5,12 @@
 Switch
 ======
 
---segmentation_model
+--segmentation_model model
 
 Description
 ===========
 
-Choose the model for message segmentation
+Choose the model for message segmentation: ctb (default, Penn Chinese Treebank) or pku (Beijing University)
 
 Argument and Default Value
 ==========================
@@ -26,12 +26,25 @@ Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t` :doc:`fwflag_add_segmented` 
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t` 
+* :doc:`fwflag_add_segmented` 
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Use the Penn Chinese Treebank:
 
- # Uses CBT model to segment the messages in messages_2014_06 and put them into
- # a new table called messages_2014_06_seg
- ~/fwInterface.py :doc:`fwflag_d` randomWeibo :doc:`fwflag_t` messages_2014_06 :doc:`fwflag_c` message_id :doc:`fwflag_add_segmented` :doc:`fwflag_segmentation_model` ctb
+.. code-block:: bash
+	
+	# ctb is the default
+	./dlatkInterface.py -d dla_tutorial -t msgs -c message_id --add_segmented  
+
+	# or set explicitly 
+	./dlatkInterface.py -d dla_tutorial -t msgs -c message_id --add_segmented --segmentation_model cbt
+
+Use the Beijing University model:
+
+.. code-block:: bash
+	
+	./dlatkInterface.py -d dla_tutorial -t msgs -c message_id --add_segmented  --segmentation_model pku

@@ -19,7 +19,7 @@ from random import random
 from scipy.stats import rankdata
 
 from .. import dlaConstants as dlac
-from ..mysqlMethods import mysqlMethods as mm
+from ..mysqlmethods import mysqlMethods as mm
 
 try:
     from PIL import Image

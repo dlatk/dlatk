@@ -3,7 +3,7 @@ import time
 import MySQLdb
 
 from . import dlaConstants as dlac
-from .mysqlMethods import mysqlMethods as mm 
+from .mysqlmethods import mysqlMethods as mm 
 
 class DLAWorker(object):
     """Generic class for functions working with features

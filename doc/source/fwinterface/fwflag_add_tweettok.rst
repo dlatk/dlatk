@@ -9,8 +9,7 @@ Switch
 
 Description
 ===========
-
-Creates a tokenized, by TweetNLP, version of the message table.
+Use Carnegie Mellon University's `TweetNLP <http://www.cs.cmu.edu/~ark/TweetNLP/>`_ tokenizer to create a tokenized version of the message table.
 
 Argument and Default Value
 ==========================
@@ -43,17 +42,20 @@ Required Switches:
 
 * :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t` 
 
-Optional Switches:
-
-* :doc:`fwflag_messageid_field`
-* :doc:`fwflag_message_field` 
 
 Example Commands
 ================
 
 .. code-block:: bash
+	
+	# creates the table msgs_tweettok 
+	./dlatkInterface.py -d dla_tutorial -t msgs -c message_id --add_tweettok
 
+.. code-block:: mysql 
 
- # General form
- # Creates the tables: TABLE_tok
- dlatkInterface.py -d DATABASE -t TABLE -c GROUP_BY_FIELD --add_tweettok
+	mysql> select message from msgs_tweettok limit 1;
+	+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+	| message                                                                                                                                                                                                                                                                                                            |
+	+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+	| ["can", "you", "believe", "it", "??", "my", "mom", "wouln't", "let", "me", "go", "out", "on", "my", "b'day", "...", "i", "was", "really", "really", "mad", "at", "her", ".", "still", "am", ".", "but", "i", "got", "more", "presents", "from", "my", "friends", "this", "year", ".", "so", "thats", "great", "."] |
+	+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+

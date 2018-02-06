@@ -5,8 +5,8 @@ from configparser import SafeConfigParser
 
 from .dlaWorker import DLAWorker
 from . import dlaConstants as dlac
-from .mysqlMethods import mysqlMethods as mm
-from .mysqlMethods.mysql_iter_funcs import get_db_engine
+from .mysqlmethods import mysqlMethods as mm
+from .mysqlmethods.mysql_iter_funcs import get_db_engine
 
 class OutcomeGetter(DLAWorker):
     """Deals with outcome tables
@@ -315,6 +315,7 @@ enabled, so the total word count for your groups might be off
                             dlac.warn("Arguments of --categories_to_binary must contain string or integer values")
                             sys.exit(1)
                         cat_labels = set([str(lbl) for lbl in outcomes[cat].values()])
+                        if len(cat_labels) == 2: cat_labels.pop()
                         for lbl in cat_labels:
                             cat_label_str = "_".join([cat, lbl]).replace(" ", "_").lower()
                             outcomes[cat_label_str] = {gid:1 if str(l) == lbl else 0 for gid, l in outcomes[cat].items() }

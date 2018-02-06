@@ -23,7 +23,7 @@ from sklearn.linear_model import LogisticRegression
 from .outcomeGetter import OutcomeGetter
 from . import dlaConstants as dlac
 from . import textCleaner as tc
-from .mysqlMethods import mysqlMethods as mm
+from .mysqlmethods import mysqlMethods as mm
 
 
 class OutcomeAnalyzer(OutcomeGetter):

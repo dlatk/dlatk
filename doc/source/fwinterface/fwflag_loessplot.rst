@@ -27,9 +27,26 @@ Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_d`, :doc:`fwflag_corpdb` :doc:`fwflag_f`, :doc:`fwflag_feat_table` :doc:`fwflag_outcomes` :doc:`fwflag_outcome_table` Optional Switches:
-:doc:`fwflag_output_dir`? :doc:`fwflag_spearman` :doc:`fwflag_group_freq_thresh` :doc:`fwflag_no_bonferroni`? :doc:`fwflag_p_correction` :doc:`fwflag_blacklist` :doc:`fwflag_whitelist` :doc:`fwflag_show_feat_freqs`? / :doc:`fwflag_not_show_feat_freqs`? :doc:`fwflag_output_dir`? :doc:`fwflag_output_name` :doc:`fwflag_topic_lexicon`     
+
+* :doc:`fwflag_d`, :doc:`fwflag_corpdb`
+* :doc:`fwflag_f`, :doc:`fwflag_feat_table`
+* :doc:`fwflag_outcomes` :doc:`fwflag_outcome_table`
+
+Optional Switches:
+
+* :doc:`fwflag_output_dir`
+* :doc:`fwflag_spearman`
+* :doc:`fwflag_group_freq_thresh`
+* :doc:`fwflag_no_bonferroni`
+* :doc:`fwflag_p_correction`
+* :doc:`fwflag_blacklist`
+* :doc:`fwflag_whitelist`
+* :doc:`fwflag_show_feat_freqs`
+* :doc:`fwflag_not_show_feat_freqs`
+* :doc:`fwflag_output_dir`
+* :doc:`fwflag_output_name`
+* :doc:`fwflag_topic_lexicon`
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+.. code-block:: doc:`fwflag_block`:: python

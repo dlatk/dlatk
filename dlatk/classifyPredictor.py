@@ -58,7 +58,7 @@ from numpy import sqrt, array, std, mean, bincount, int64, ceil, absolute, appen
 import math
 
 #infrastructure
-from .mysqlMethods import mysqlMethods as mm
+from .mysqlmethods import mysqlMethods as mm
 from .dlaConstants import warn
 
 #For ROC curves

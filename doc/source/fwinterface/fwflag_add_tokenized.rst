@@ -20,9 +20,7 @@ None
 Details
 =======
 
-This will create a table called TABLE_tok (where TABLE is specified by :doc:`fwflag_t`) in the database specified by :doc:`fwflag_d`. The message column in this new table is a list of tokens. 
-
-This switch is used to create a tokenized version of the message table. It uses WWBP's tokenizer, which splits the message into tokens, then dumps the JSON version of the token list into MySQL text.
+This will create a table called TABLE_tok (where TABLE is specified by :doc:`fwflag_t`) in the database specified by :doc:`fwflag_d`. The message column in this new table is a list of tokens. It uses DLATK's built-in tokenizer Happier Fun Tokenizer, which is an extension of `Happy Fun Tokenizer <http://sentiment.christopherpotts.net/code-data/happyfuntokenizing.py>`_.
 
 If your message is:
 
@@ -46,20 +44,20 @@ Required Switches:
 
 * :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t` 
 
-Optional Switches:
-
-* :doc:`fwflag_message_field` <FIELD> 
-
 
 Example Commands
 ================
 
 .. code-block:: bash
 
+	# Creates the tables: msgs_tok
+	dlatkInterface.py -d dla_tutorial -t msgs -c message_id --add_tokenized
 
-	# General form
-	# Creates the tables: TABLE_tok
-	dlatkInterface.py -d DATABASE -t TABLE -c GROUP_BY_FIELD --add_tokenized
-	
-	# Creates the tables: primals_tok
-	dlatkInterface.py -d primals -t primals_new -c message_id --add_tokenized
+.. code-block:: mysql 
+
+	mysql> select message from msgs_tok limit 1;
+	+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+	| message                                                                                                                                                                                                                                                                                                                |
+	+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+	| ["can", "you", "believe", "it", "?", "?", "my", "mom", "wouln't", "let", "me", "go", "out", "on", "my", "b'day", "...", "i", "was", "really", "really", "mad", "at", "her", ".", "still", "am", ".", "but", "i", "got", "more", "presents", "from", "my", "friends", "this", "year", ".", "so", "thats", "great", "."] |
+	+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+

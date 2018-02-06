@@ -15,7 +15,8 @@ import time
 import MySQLdb
 import random
 
-from optparse import OptionParser, OptionGroup
+#from optparse import OptionParser, OptionGroup
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 try:
     from nltk.corpus import wordnet as wn
 except ImportError:
@@ -23,7 +24,7 @@ except ImportError:
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/dlatk/LexicaInterface",""))
 import dlatk.dlaConstants as dlac
-from dlatk.mysqlMethods.mysqlMethods import abstractDBConnect, dbConnect
+from dlatk.mysqlmethods.mysqlMethods import abstractDBConnect, dbConnect
 
 ##CONSTANTS (STATIC VARIABLES)##
 PERMA_CODES = {'P+': 'positive emotion',
@@ -378,11 +379,11 @@ class Lexicon(object):
     dbConn = None
     dbCursor = None
     currentLexicon = None
-    lexiconDB = dlac.DEF_LEXICON_DB
 
-    def __init__(self, lex = None, mysql_host = dlac.MYSQL_HOST):
-        (self.dbConn, self.dbCursor, self.dictCursor) = dbConnect(db=self.lexiconDB, host=mysql_host)
+    def __init__(self, lex = None, mysql_host = dlac.MYSQL_HOST, lexicon_db=dlac.DEF_LEXICON_DB):
+        (self.dbConn, self.dbCursor, self.dictCursor) = dbConnect(db=lexicon_db, host=mysql_host)
         self.mysql_host = mysql_host
+        self.lexicon_db = lexicon_db
         self.currentLexicon = lex
 
     def __str__(self):
@@ -923,8 +924,8 @@ class Lexicon(object):
 
 class WeightedLexicon(Lexicon):
     """WeightedLexicons have an additional dictionary with weights for each term in the regular lexicon"""
-    def __init__(self, weightedLexicon=None, lex=None, mysql_host = dlac.MYSQL_HOST):
-        super(WeightedLexicon, self).__init__(lex, mysql_host = mysql_host)
+    def __init__(self, weightedLexicon=None, lex=None, mysql_host = dlac.MYSQL_HOST, lexicon_db=dlac.DEF_LEXICON_DB):
+        super(WeightedLexicon, self).__init__(lex, mysql_host = mysql_host, lexicon_db = lexicon_db)
         self.weightedLexicon = weightedLexicon
      
     def isTableLexiconWeighted(self, tablename):
@@ -1198,217 +1199,323 @@ class WeightedLexicon(Lexicon):
 
         return similarity
 
+class LexInterfaceParser(ArgumentParser):
 
-###########################################################
-## Command-prompt helper functions:
+    def __init__(self, description="On Features Class.", prefix_chars='-+', formatter_class=ArgumentDefaultsHelpFormatter, parents=None):
+        ## Argument Parser ##
 
-###########################################################
-## Main / Command-prompt Interface Area
-#
+        super(LexInterfaceParser,self).__init__(description=description, prefix_chars=prefix_chars, formatter_class=formatter_class, parents=parents)
 
-if __name__ == "__main__":
-##SETUP ARGUMENTS##
-    _optParser = OptionParser()
+        group = self.add_argument_group('', '')
+        group.add_argument("-f", "--file", dest="filename",
+                              help="Lexicon Filename")
+        group.add_argument("-g", "--gfile", dest="gfile",
+                              help="Lexicon Filename in google format")
+        group.add_argument("--sparsefile", dest="sparsefile",
+                              help="Lexicon Filename in sparse format")
+        group.add_argument("--weightedsparsefile", dest="weightedsparsefile",
+                              help="Lexicon Filename in weighted sparse format")
+        group.add_argument("--dicfile", dest="dicfile",
+                              help="Lexicon Filename in dic (LIWC) format")
+        group.add_argument("--topicfile", dest="topicfile",
+                              help="Lexicon Filename in topic format")
+        group.add_argument("--topic_csv", "--weighted_file", action='store_true', dest="topiccsv", default=False,
+                              help="tells interface to use the topic csv format to make a weighted lexicon")
+        group.add_argument("--filter", action="store_true", dest="using_filter",
+                              help="Allows lexicon filtering if True")
+        group.add_argument("-n", "--name", dest="name",
+                              help="Existing Lexicon Table Name (will load)")
+        group.add_argument("-c", "--create", dest="create",
+                              help="Create a new lexicon table (must supply new lexicon name, and either -f, -g or -n)")
+        group.add_argument("-p", "--print", action="store_true", dest="printcsv",
+                              help="print lexicon to stdout (default csv format)")
+        group.add_argument("--print_weighted", action="store_true", dest="printweightedcsv",
+                              help="print lexicon to stdout (weighted csv format)")
+        group.add_argument("--pprint", action="store_true", dest="pprint",
+                              help="print lexicon to stdout as pprint output")
+        group.add_argument("-w", "--where", dest="where",
+                              help="where phrase to add to sql query")
+        group.add_argument("-u", "--union", dest="union",
+                              help="Unions two tables and uses the result as myLexicon")
+        group.add_argument("-i", "--intersect", dest="intersect",
+                              help="Intersects two tables and uses the result as myLexicon")
+        group.add_argument("--super_topic", type=str, dest="supertopic",
+                              help="Maps the current lexicon with a super topic mapping lexicon to make a super_topic"),
+        group.add_argument("-r", "--randomize", action="store_true", dest="randomize",
+                              help="Randomizes the categories of terms")
+        group.add_argument("--depol", action="store_true", dest="depol",
+                              help="Depolarize the categories (removes +/-)")
+        group.add_argument("--ungroup", action="store_true", dest="ungroup", default = False,
+                              help="places each word in its own category")
+        group.add_argument("--compare", dest="compare",
+                              help="Unions two tables and uses the result as myLexicon")
+        group.add_argument("--annotate_senses", dest="sense_annotated_lex", type=str,
+                              help="Asks the user to annotate senses of words and creates a new lexicon with senses (new lexicon name is the parameter)")
 
-    _optParser.add_option("-f", "--file", dest="filename",
-                          help="Lexicon Filename")
-    _optParser.add_option("-g", "--gfile", dest="gfile",
-                          help="Lexicon Filename in google format")
-    _optParser.add_option("--sparsefile", dest="sparsefile",
-                          help="Lexicon Filename in sparse format")
-    _optParser.add_option("--weightedsparsefile", dest="weightedsparsefile",
-                          help="Lexicon Filename in weighted sparse format")
-    _optParser.add_option("--dicfile", dest="dicfile",
-                          help="Lexicon Filename in dic (LIWC) format")
-    _optParser.add_option("--topicfile", dest="topicfile",
-                          help="Lexicon Filename in topic format")
-    _optParser.add_option("--topic_csv", "--weighted_file", action='store_true', dest="topiccsv", default=False,
-                          help="tells interface to use the topic csv format to make a weighted lexicon")
-    _optParser.add_option("--filter", action="store_true", dest="using_filter",
-                          help="Allows lexicon filtering if True")
-    _optParser.add_option("-n", "--name", dest="name",
-                          help="Existing Lexicon Table Name (will load)")
-    _optParser.add_option("-c", "--create", dest="create",
-                          help="Create a new lexicon table (must supply new lexicon name, and either -f, -g or -n)")
-    _optParser.add_option("-p", "--print", action="store_true", dest="printcsv",
-                          help="print lexicon to stdout (default csv format)")
-    _optParser.add_option("--print_weighted", action="store_true", dest="printweightedcsv",
-                          help="print lexicon to stdout (weighted csv format)")
-    _optParser.add_option("--pprint", action="store_true", dest="pprint",
-                          help="print lexicon to stdout as pprint output")
-    _optParser.add_option("-w", "--where", dest="where",
-                          help="where phrase to add to sql query")
-    _optParser.add_option("-u", "--union", dest="union",
-                          help="Unions two tables and uses the result as myLexicon")
-    _optParser.add_option("-i", "--intersect", dest="intersect",
-                          help="Intersects two tables and uses the result as myLexicon")
-    _optParser.add_option("--super_topic", type=str, dest="supertopic",
-                          help="Maps the current lexicon with a super topic mapping lexicon to make a super_topic"),
-    _optParser.add_option("-r", "--randomize", action="store_true", dest="randomize",
-                          help="Randomizes the categories of terms")
-    _optParser.add_option("--depol", action="store_true", dest="depol",
-                          help="Depolarize the categories (removes +/-)")
-    _optParser.add_option("--ungroup", action="store_true", dest="ungroup", default = False,
-                          help="places each word in its own category")
-    _optParser.add_option("--compare", dest="compare",
-                          help="Unions two tables and uses the result as myLexicon")
-    _optParser.add_option("--annotate_senses", dest="sense_annotated_lex", type=str,
-                          help="Asks the user to annotate senses of words and creates a new lexicon with senses (new lexicon name is the parameter)")
+        group.add_argument("--topic_threshold", type=float, dest="topicthreshold", default=None,
+                              help="sets the threshold to use for a csv topicfile")
 
-    _optParser.add_option("--topic_threshold", type=float, dest="topicthreshold", default=None,
-                          help="sets the threshold to use for a csv topicfile")
+        group.add_argument("-a", "--add_terms", action="store_true", dest="addterms",
+                              help="Adds terms from the loaded lexicon to a given corpus (options below)")
+        group.add_argument("-l", "--corpus_lexicon", action="store_true", dest="corpuslex",
+                              help="Load a lexicon based on finding words in a given corpus (BETA) (options below)")
+        group.add_argument("--corpus_examples", action="store_true", dest="examples",
+                              help="Find example instances of words in the given corpus (using rlike; equal number for all words)")
+        group.add_argument("--corpus_samples", action="store_true", dest="samples",
+                              help="Find sample of matches for lexicon.")
+        group.add_argument("-e", "--expand_lexicon", action="store_true", dest="expand",
+                              help="Expands the lexicon to more terms.")
 
-    _optParser.add_option("-a", "--add_terms", action="store_true", dest="addterms",
-                          help="Adds terms from the loaded lexicon to a given corpus (options below)")
-    _optParser.add_option("-l", "--corpus_lexicon", action="store_true", dest="corpuslex",
-                          help="Load a lexicon based on finding words in a given corpus (BETA) (options below)")
-    _optParser.add_option("--corpus_examples", action="store_true", dest="examples",
-                          help="Find example instances of words in the given corpus (using rlike; equal number for all words)")
-    _optParser.add_option("--corpus_samples", action="store_true", dest="samples",
-                          help="Find sample of matches for lexicon.")
-    _optParser.add_option("-e", "--expand_lexicon", action="store_true", dest="expand",
-                          help="Expands the lexicon to more terms.")
+        group = self.add_argument_group('Terms OR Corpus Lexicon Options', '')
+        group.add_argument("-d", "--corpus_db", dest="corpdb", metavar='DB', default = dlac.DEF_CORPDB,
+                             help="Corpus database to use [default: %(default)s]")
+        group.add_argument("-t", "--corpus_table", dest="corptable", metavar='TABLE', default = dlac.DEF_CORPTABLE,
+                             help="Corpus table to use [default: %(default)s]")
+        group.add_argument('--lexicondb', metavar='DB', dest='lexicondb', default=dlac.DEF_LEXICON_DB,
+                            help='The database which stores all lexicons.')
+        group.add_argument("--corpus_term_field", dest="termfield", metavar='FIELD', default = dlac.DEF_TERM_FIELD    ,
+                             help="field of the corpus table that contains terms (lexicon table always uses 'term') [default: %(default)s]")
+        group.add_argument("--corpus_message_field", dest="messagefield", metavar='FIELD', default = dlac.DEF_MESSAGE_FIELD    ,
+                             help="field of the corpus table that contains the actual message [default: %(default)s]")
+        group.add_argument("--corpus_messageid_field", dest="messageidfield", metavar='FIELD', default = dlac.DEF_MESSAGEID_FIELD    ,
+                             help="field of the table that contains message ids (set to '' to not use group by [default: %(default)s]")
+        group.add_argument("--min_word_freq", dest="minwordfreq", metavar='NUM', type=int, default = dlac.DEF_MIN_WORD_FREQ    ,
+                             help="minimum number of instances to include in lexicon (-l option) [default: %(default)d]")
+        group.add_argument("--lexicon_category", dest="lexicon_cat", metavar="CATEGORY", 
+                             help="category in lexicon to get random samples from")
+        group.add_argument("--num_rand_messages", dest="num_messages", metavar="NUM", type=int, default = dlac.DEF_NUM_RAND_MESSAGES,
+                             help="number of random messages to select when getting samples from lexicon category")
 
-    group = OptionGroup(_optParser, "Add Terms OR Corpus Lexicon Options","")
-    group.add_option("-d", "--corpus_db", dest="corpdb", metavar='DB', default = dlac.DEF_CORPDB,
-                         help="Corpus database to use [default: %default]")
-    group.add_option("-t", "--corpus_table", dest="corptable", metavar='TABLE', default = dlac.DEF_CORPTABLE,
-                         help="Corpus table to use [default: %default]")
-    group.add_option("--corpus_term_field", dest="termfield", metavar='FIELD', default = dlac.DEF_TERM_FIELD    ,
-                         help="field of the corpus table that contains terms (lexicon table always uses 'term') [default: %default]")
-    group.add_option("--corpus_message_field", dest="messagefield", metavar='FIELD', default = dlac.DEF_MESSAGE_FIELD    ,
-                         help="field of the corpus table that contains the actual message [default: %default]")
-    group.add_option("--corpus_messageid_field", dest="messageidfield", metavar='FIELD', default = dlac.DEF_MESSAGEID_FIELD    ,
-                         help="field of the table that contains message ids (set to '' to not use group by [default: %default]")
-    group.add_option("--min_word_freq", dest="minwordfreq", metavar='NUM', type='int', default = dlac.DEF_MIN_WORD_FREQ    ,
-                         help="minimum number of instances to include in lexicon (-l option) [default: %default]")
-    group.add_option("--lexicon_category", dest="lexicon_cat", metavar="CATEGORY", 
-                         help="category in lexicon to get random samples from")
-    group.add_option("--num_rand_messages", dest="num_messages", metavar="NUM", type='int', default = dlac.DEF_NUM_RAND_MESSAGES,
-                         help="number of random messages to select when getting samples from lexicon category")
-#    group.add_option("--fulltext", action="store_true", dest="fulltext", default = False,
-#                          help="utilizes fulltext searches to improve performance (TODO)")
-
-
-    _optParser.add_option_group(group)
+        ## Initialize any Objects ##
+        self.lexicon = None 
 
 
-    (_options,_args) = _optParser.parse_args()
-    
-##DETERMINE WHAT FUNCTION TO RUN##
-    myLexicon = None
-    if _options.name:
-        myLexicon = WeightedLexicon()
-        myLexicon.loadLexicon(_options.name, _options.where)
-    if _options.filename:
-        myLexicon = WeightedLexicon()
-        myLexicon.setLexicon(loadLexiconFromFile(_options.filename))
-    if _options.gfile:
-        myLexicon = WeightedLexicon()
-        myLexicon.setLexicon(loadLexiconFromGFile(_options.gfile, _options.using_filter))
-    if _options.sparsefile:
-        myLexicon = WeightedLexicon()
-        myLexicon.setLexicon(loadLexiconFromSparse(_options.sparsefile))
-    if _options.dicfile:
-        myLexicon = WeightedLexicon()
-        myLexicon.setLexicon(loadLexiconFromDic(_options.dicfile))
-    if _options.weightedsparsefile:
-        myLexicon = WeightedLexicon(loadWeightedLexiconFromSparse(_options.weightedsparsefile))
-    if _options.topicfile:
-        myLexicon = WeightedLexicon()
-        if _options.topiccsv:
-            myLexicon = WeightedLexicon(loadWeightedLexiconFromTopicCSV(_options.topicfile, _options.topicthreshold))
+
+    def processLDAInterface(self, args):
+        """Main argument processing area"""
+        ##Add Argument Processing here
+        
+        if args.name:
+            self.lexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            self.lexicon.loadLexicon(args.name, args.where)
+        if args.filename:
+            self.lexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            self.lexicon.setLexicon(loadLexiconFromFile(args.filename))
+        if args.gfile:
+            self.lexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            self.lexicon.setLexicon(loadLexiconFromGFile(args.gfile, args.using_filter))
+        if args.sparsefile:
+            self.lexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            self.lexicon.setLexicon(loadLexiconFromSparse(args.sparsefile))
+        if args.dicfile:
+            self.lexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            self.lexicon.setLexicon(loadLexiconFromDic(args.dicfile))
+        if args.weightedsparsefile:
+            self.lexicon = WeightedLexicon(loadWeightedLexiconFromSparse(args.weightedsparsefile), lexicon_db=args.lexicondb)
+        if args.topicfile:
+            self.lexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            if args.topiccsv:
+                self.lexicon = WeightedLexicon(loadWeightedLexiconFromTopicCSV(args.topicfile, args.topicthreshold), lexicon_db=args.lexicondb)
+            else:
+                self.lexicon.setLexicon(loadLexiconFromTopicFile(args.topicfile))
+        if args.corpuslex:
+            self.lexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            self.lexicon.createLexiconFromCorpus(args.corpdb, args.corptable, args.messagefield, args.messageidfield, args.minwordfreq)
+        if args.union:
+            if not self.lexicon:
+                print("Must load a lexicon, either from a file (-f), or from another table (-n)")
+                sys.exit()
+            otherLexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            otherLexicon.loadLexicon(args.union)
+            self.lexicon = self.lexicon.union(otherLexicon)
+        if args.intersect:
+            if not self.lexicon:
+                print("Must load a lexicon, either from a file (-f), or from another table (-n)")
+                sys.exit()
+            otherLexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            otherLexicon.loadLexicon(args.intersect)
+            self.lexicon = self.lexicon.intersect(otherLexicon)
+        if args.supertopic:
+            superLexiconMapping = WeightedLexicon(lexicon_db=args.lexicondb)
+            superLexiconMapping.loadLexicon(args.supertopic)
+            self.lexicon = self.lexicon.mapToSuperLexicon(superLexiconMapping)
+        if args.randomize:
+            if not self.lexicon:
+                print("Must load a lexicon, either from a file (-f), or from another table (-n)")
+                sys.exit()
+            self.lexicon = self.lexicon.randomize()
+        if args.depol:
+            if not self.lexicon:
+                print("Must load a lexicon, either from a file (-f), or from another table (-n)")
+                sys.exit()
+            self.lexicon = self.lexicon.depolCategories()
+        if args.ungroup:
+            if not self.lexicon:
+                print("Must load a lexicon, either from a file (-f), or from another table (-n)")
+                sys.exit()
+            self.lexicon = self.lexicon.unGroupCategories()
+        if args.compare:
+            if not self.lexicon:
+                print("Must load a lexicon, either from a file (-f), or from another table (-n)")
+                sys.exit()
+            otherLexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            otherLexicon.loadLexicon(args.compare)
+            pprint.PrettyPrinter().pprint(self.lexicon.compare(otherLexicon))
+
+        if args.sense_annotated_lex:
+            if not self.lexicon:
+                print("Must load a lexicon, either from a file (-f), or from another table (-n)")
+                sys.exit()
+            self.lexicon.annotateSenses(args.name, args.sense_annotated_lex)
+
+        if args.expand:
+            if not self.lexicon:
+                print("Must load a lexicon, either from a file (-f), or from another table (-n)")
+                sys.exit()
+            self.lexicon = self.lexicon.expand()
+
+        if args.create:
+            if not self.lexicon:
+                print("Must load a lexicon, either from a file (-f), or from another table (-n)")
+                sys.exit()
+            self.lexicon.createLexiconTable(args.create)
+        if args.addterms:
+            if not self.lexicon:
+                print("Must load a lexicon, either from a file (-f), or from another table (-n)")
+                sys.exit()
+            self.lexicon.addTermsToCorpus(args.corpdb, args.corptable, args.termfield, args.messagefield, args.messageidfield, args.fulltext)
+        if args.examples:
+            if not self.lexicon:
+                print("Must load a lexicon, either from a file (-f), or from another table (-n)")
+                sys.exit()
+            self.lexicon.likeExamples(args.corpdb, args.corptable, args.messagefield)
+        if args.samples:
+            if not args.lexicon_cat:
+                print("Must specify a lexicon category with option '--lexicon_cat'")
+                sys.exit()
+            self.lexicon.likeSamples(args.corpdb, args.corptable, args.messagefield, args.lexicon_cat, args.name, args.num_messages)
+        if args.printcsv:
+            if not self.lexicon:
+                print("Must load a lexicon, either from a file (-f), or from another table (-n)")
+                sys.exit()
+            self.lexicon.printCSV()
+        if args.printweightedcsv:
+            if not self.lexicon:
+                print("Must load a lexicon, either from a file (-f), or from another table (-n)")
+                sys.exit()
+            self.lexicon.printWeightedCSV()
+        if args.pprint:
+            if not self.lexicon:
+                print("Must load a lexicon, either from a file (-f), or from another table (-n)")
+                sys.exit()
+            self.lexicon.pprint()
+
+
+
+    def getParser(self):
+        """Just incase someone is confused by the inheritance"""
+        return self
+
+    ###### Shouldn't Need to Edit Below Here ########
+
+    ### These methods can be overWritten when creating subclass ###
+
+    def processLoad(self, args):
+        """processing state load arguments"""
+        #seperated to make things easier for other to inherit this module
+        #(can be overridden)
+
+        #load:
+        if args.load:
+            objTup = self.load(args.savedir, args.load)
+            if isinstance(objTup, tuple):
+                (self.ol, self.lf) = objTup
+            else:
+                print("Nothing to load")     
+
+        if args.liststates:
+            self.printstates(args.savedir)
+
+        if args.drop:
+            self.drop(args.drop)
+
+    def processSave(self, args):
+        """processes the save arguments"""
+        #separated to make it easy for others to put last
+        #(can be overridden)
+        if args.printObj:
+            self.printObjs()
+
+        if args.save:
+            self.save(args.savedir, args.save, (self.ol, self.lf))
+
+    def processArgs(self, args = '', parents = False):
+        """Processes all arguments"""
+
+        ##LOAD ARGUMENTS##
+        if parents or not args:
+            args = self.parse_args()
+
+        ##PROCESS ARGUMENTS##
+        self.processLDAInterface(args)
+
+    def printObjs(self):
+        if self.ol and not self.lf:
+            print("OntoNotes Data:")
+            print(self.ol)
+        if self.lf:
+            print("Language Features:")
+            print(self.lf)
+
+    def drop(self, objNames):
+        for name in objNames:
+            self.__dict__[name] = None
+
+            
+    ##HELPER FUNCTIONS:
+    saveExtension = 'pickle'
+    @staticmethod
+    def save(savedir, savename, objectTup):
+        saveFile = "%s/%s.%s" % (savedir, savename, OnFeaturesParser.saveExtension)
+        print("Saving state to: %s" % saveFile)
+        pickle.dump( objectTup, open( saveFile, "wb" ) )
+
+    @staticmethod
+    def load(savedir, savename):
+        saveFile = "%s/%s.%s" % (savedir, savename, OnFeaturesParser.saveExtension)
+        print("Loading state from: %s" % saveFile)
+        objectTup = pickle.load( open( saveFile, "rb" ) )
+        return objectTup
+
+    @staticmethod
+    def removeStateFile(savedir, savename):
+        saveFile = "%s/%s.%s" % (savedir, savename, OnFeaturesParser.saveExtension)
+        print("Removing state file: %s" % saveFile)
+        os.remove(saveFile)
+
+    matchExtension = re.compile(r'^(.*)\.'+saveExtension+'$')
+    @staticmethod
+    def printstates(savedir):
+        files = os.listdir(savedir)
+        names = []
+        for fname in files:
+            mObj = OnFeaturesParser.matchExtension.match(fname)
+            if mObj:
+                if os.stat("%s/%s"%(savedir,fname)).st_size > 0:
+                    names.append((mObj.group(1), int(os.stat("%s/%s"%(savedir,fname)).st_size /1048576) ))
+        if names:
+            print("\nThe following saved states are available for loading:\n")
+            print("  %-36s %12s" % ('NAME', 'SIZE'))
+            print("  %-36s %12s" % ('----', '----'))
+            for tup in sorted(names, key=lambda t: t[0]):
+                print("  %-36s %10dMB" % tup)
         else:
-            myLexicon.setLexicon(loadLexiconFromTopicFile(_options.topicfile))
-    if _options.corpuslex:
-        myLexicon = WeightedLexicon()
-        myLexicon.createLexiconFromCorpus(_options.corpdb, _options.corptable, _options.messagefield, _options.messageidfield, _options.minwordfreq)
-    if _options.union:
-        if not myLexicon:
-            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
-            sys.exit()
-        otherLexicon = WeightedLexicon()
-        otherLexicon.loadLexicon(_options.union)
-        myLexicon = myLexicon.union(otherLexicon)
-    if _options.intersect:
-        if not myLexicon:
-            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
-            sys.exit()
-        otherLexicon = WeightedLexicon()
-        otherLexicon.loadLexicon(_options.intersect)
-        myLexicon = myLexicon.intersect(otherLexicon)
-    if _options.supertopic:
-        superLexiconMapping = WeightedLexicon()
-        superLexiconMapping.loadLexicon(_options.supertopic)
-        myLexicon = myLexicon.mapToSuperLexicon(superLexiconMapping)
-    if _options.randomize:
-        if not myLexicon:
-            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
-            sys.exit()
-        myLexicon = myLexicon.randomize()
-    if _options.depol:
-        if not myLexicon:
-            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
-            sys.exit()
-        myLexicon = myLexicon.depolCategories()
-    if _options.ungroup:
-        if not myLexicon:
-            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
-            sys.exit()
-        myLexicon = myLexicon.unGroupCategories()
-    if _options.compare:
-        if not myLexicon:
-            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
-            sys.exit()
-        otherLexicon = WeightedLexicon()
-        otherLexicon.loadLexicon(_options.compare)
-        pprint.PrettyPrinter().pprint(myLexicon.compare(otherLexicon))
+            print("\nNo saved states available in directory: %s" % savedir)
 
-    if _options.sense_annotated_lex:
-        if not myLexicon:
-            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
-            sys.exit()
-        myLexicon.annotateSenses(_options.name, _options.sense_annotated_lex)
 
-    if _options.expand:
-        if not myLexicon:
-            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
-            sys.exit()
-        myLexicon = myLexicon.expand()
-
-    if _options.create:
-        if not myLexicon:
-            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
-            sys.exit()
-        myLexicon.createLexiconTable(_options.create)
-    if _options.addterms:
-        if not myLexicon:
-            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
-            sys.exit()
-        myLexicon.addTermsToCorpus(_options.corpdb, _options.corptable, _options.termfield, _options.messagefield, _options.messageidfield, _options.fulltext)
-    if _options.examples:
-        if not myLexicon:
-            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
-            sys.exit()
-        myLexicon.likeExamples(_options.corpdb, _options.corptable, _options.messagefield)
-    if _options.samples:
-        if not _options.lexicon_cat:
-            print("Must specify a lexicon category with option '--lexicon_cat'")
-            sys.exit()
-        myLexicon.likeSamples(_options.corpdb, _options.corptable, _options.messagefield, _options.lexicon_cat, _options.name, _options.num_messages)
-    if _options.printcsv:
-        if not myLexicon:
-            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
-            sys.exit()
-        myLexicon.printCSV()
-    if _options.printweightedcsv:
-        if not myLexicon:
-            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
-            sys.exit()
-        myLexicon.printWeightedCSV()
-    if _options.pprint:
-        if not myLexicon:
-            print("Must load a lexicon, either from a file (-f), or from another table (-n)")
-            sys.exit()
-        myLexicon.pprint()
+###########################################################################
+###########################################################################
+if __name__ == "__main__":
+    parser = LexInterfaceParser()
+    parser.processArgs()
 

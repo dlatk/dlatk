@@ -2,35 +2,40 @@
 Installation
 ************
 
-Python 2 vs 3
-=============
-DLATK is available for python 2.7 and 3.5, with the 3.5 version being the official release. The 2.7 version is fully functional (as of v0.6.1) but will not be maintained and also does not contain some of the newer features available in v1.0. Please make sure you ``pip`` is bound to Python 3 for the commands below.
+DLATK is highly dependent on MySQL. If you do not have MySQL installed and running please skip `Recommended Install`_ and follow the steps in the `Full Install`_ section.
 
-To install the Python 2.7 version run:
-
-.. code-block:: bash
-
-		pip install "dlatk < 1.0"
+Please see :doc:`install_faq` for common install issues.
 
 Recommended Install
 ===================
 
-The easiest way to install dlatk is through pip:
+The easiest way to install dlatk is through `docker <https://github.com/pennsignals/dlatk-docker>`_ or through pip (with sudo privileges):
 
 .. code-block:: bash
 
-		pip install dlatk
+		sudo pip install dlatk
 
-This will install all of the required Python dependencies listed below.
+If you do not have sudo then you can use the --user flag
+
+.. code-block:: bash
+
+		pip install --user dlatk
+
+This will install all of the required Python dependencies listed below. See `Full List of Dependencies`_.
 
 Full Install
-=============
+============
 
-Setup (Linux)
--------------
-**WARNING**: This will install MySQL on your computer.
+Setup
+-----
 
-Install the required Ubuntu libraries. The requirements.sys can be found on the `DLATK GitHub page <http://www.github.com/dlatk/dlatk>`_.   The ``r-base`` package might be difficult to install and can be removed from ``requirements.sys`` if needed though this will limit some functionality.
+Before installing DLATK you need to install the necessary system requirements (MySQL being the most important). The next steps will walk you through how to do this on a machine running Ubuntu or OSX.
+
+Linux
+^^^^^
+*WARNING*: This will install MySQL on your computer.
+
+Install the required Ubuntu libraries. The requirements.sys can be found on the `DLATK GitHub page <http://www.github.com/dlatk/dlatk>`_.   The ``r-base`` package might be difficult to install and can be removed from ``requirements.sys`` if needed though this will limit some minor functionality.
 
 .. code-block:: bash
 
@@ -39,9 +44,9 @@ Install the required Ubuntu libraries. The requirements.sys can be found on the 
 
 DLATK has been tested on Ubuntu 14.04.
 
-Setup (OSX with brew)
----------------------
-**WARNING**: This will install MySQL on your computer.
+OSX (with brew)
+^^^^^^^^^^^^^^^
+*WARNING*: This will install MySQL on your computer.
 
 Install dependencies with brew.
 
@@ -51,8 +56,10 @@ Install dependencies with brew.
 
 DLATK has been tested on OSX 10.11.
 
+With the system requirements out of the way you can now install the Python code via Pip, Anaconda or GitHub:
+
 Install (pip)
--------------
+^^^^^^^^^^^^^
 
 Install the Python 3 version via pip:
 
@@ -67,7 +74,7 @@ To install the Python 2.7 version use:
 		pip install "dlatk < 1.0"
 
 Install (Anaconda)
-------------------
+^^^^^^^^^^^^^^^^^^
 
 Run the following in a Python 3.5 conda env:
 
@@ -76,7 +83,7 @@ Run the following in a Python 3.5 conda env:
 		conda install -c wwbp dlatk
 
 Install (GitHub)
-------------------
+^^^^^^^^^^^^^^^^
 
 Run the following:
 
@@ -85,23 +92,6 @@ Run the following:
 		git clone https://github.com/dlatk/dlatk.git
 		cd dlatk
 		python setup.py install
-
-Install Sample Datasets
------------------------
-DLATK comes packaged with two sample databases: dla_tutorial and permaLexicon. See :doc:`datasets` for more information on the databases. To install them use the following:
-
-.. code-block:: bash
-
-		mysql -u username -p  < /path/to/dlatk/data/dla_tutorial.sql
-		mysql -u username -p  < /path/to/dlatk/data/permaLexicon.sql
-
-The path to DLATK can be found using the following:
-
-.. code-block:: bash
-
-		python -c "import dlatk; print(dlatk.__file__)"
-
-**WARNING**: if these databases already exist the above commands will add tables to the db.
 
 Install Other Dependencies
 --------------------------
@@ -157,58 +147,94 @@ Mallet (optional)
 
 `Mallet <http://mallet.cs.umass.edu/>`_ can be used with DLATK to create LDA topics (see the :doc:`tutorials/tut_lda` tutorial). Directions on downloading and installing can be found `here <http://mallet.cs.umass.edu/download.php>`_.
 
-Command Line Interface
-======================
-
-DLATK is run using dlatkInterface.py which is added to /usr/local/bin during the installation process.
-
-MySQL Configuration
-===================
-
-1. DLATK is *highly* dependent on MySQL. You must have this installed.
-
-2. Any calls to dlatkInterface.py will open MySQL. We assume any table with text data has the following columns:
-
-* message: text data
-* message_id: unique numeric identifier for each message
-
-3. All lexicon tables are assumed to be in a database called permaLexicon (a sample database with this name is distributed with the release). To change this you must edit fwConstants.py: ``DEF_LEXICON_DB = 'permaLexicon'``
-
 Full List of Dependencies
 =========================
 
 Python
 ------
-* matplotlib (>=1.3.1)
-* mysqlclient
-* nltk (>=3.1)
-* numpy
-* pandas (>=0.17.1)
-* python-dateutil (>=2.5.0)
-* scikit-learn (>=0.17.1)
-* scipy
-* SQLAlchemy (>=0.9.9)
-* statsmodels (>=0.6.1)
+* `matplotlib <http://matplotlib.org/>`_ (>=1.3.1)
+* `mysqlclient <https://github.com/PyMySQL/mysqlclient-python>`_
+* `nltk <http://www.nltk.org/>`_ (>=3.1)
+* `numpy <http://www.numpy.org/>`_
+* `pandas <http://pandas.pydata.org/>`_ (>=0.17.1)
+* `python-dateutil <https://dateutil.readthedocs.io/>`_ (>=2.5.0)
+* `scikit-learn <http://www.scikit-learn.org>`_ (>=0.17.1)
+* `scipy <https://www.scipy.org/>`_
+* `SQLAlchemy <https://www.sqlalchemy.org/>`_ (>=0.9.9)
+* `statsmodels <http://statsmodels.sourceforge.net/>`_ (>=0.6.1)
 
 Other
 -----
-* Stanford Parser
-* Tweet NLP
+* `Stanford Parser <http://nlp.stanford.edu/software/lex-parser.shtml>`_
+* `Tweet NLP <http://www.cs.cmu.edu/~ark/TweetNLP/>`_
 
 Python (optional)
 -----------------
 * image
-* jsonrpclib-pelix (>=0.2.8)
-* langid (>=1.1.4)
-* rpy2 (2.6.0)
-* simplejson (>=3.3.1)
-* textstat (>=0.6.1)
-* wordcloud (>=1.1.3)
+* `jsonrpclib-pelix <https://pypi.python.org/pypi/jsonrpclib-pelix/>`_ (>=0.2.8)
+* `langid <https://github.com/saffsd/langid.py>`_ (>=1.1.4)
+* `rpy2 <https://rpy2.readthedocs.io>`_ (2.6.0)
+* `simplejson <https://simplejson.readthedocs.io/en/latest/>`_ (>=3.3.1)
+* `textstat <https://pypi.python.org/pypi/textstat>`_ (>=0.6.1)
+* `wordcloud <https://github.com/amueller/word_cloud>`_ (>=1.1.3)
 
 Other (optional)
 ----------------
 * IBM Wordcloud (for wordcloud visualization)
-* Mallet (for creating LDA topics)
+* `Mallet <http://mallet.cs.umass.edu/>`_ (for creating LDA topics)
+
+Python version support
+======================
+DLATK is available for Python 2.7 and 3.5, with the 3.5 version being the official release. The 2.7 version is fully functional (as of v0.6.1) but will not be maintained and also does not contain some of the newer features available in v1.0.
+
+To install the Python 2.7 version run:
+
+.. code-block:: bash
+
+		pip install "dlatk < 1.0"
+
+
+Getting Started
+===============
+
+Command Line Interface
+----------------------
+
+DLATK is run using dlatkInterface.py which is added to /usr/local/bin during the installation process.
+
+MySQL Configuration
+-------------------
+
+Any calls to dlatkInterface.py will open MySQL. We assume any table with text data has the following columns:
+
+* message: text data
+* message_id: unique numeric identifier for each message
+
+All lexicon tables are assumed to be in a database called permaLexicon (a sample database with this name is distributed with the release). To change this you must edit fwConstants.py: ``DEF_LEXICON_DB = 'permaLexicon'``
+
+Sample Datasets
+---------------
+
+DLATK comes packaged with two sample databases: dla_tutorial and permaLexicon. See :doc:`datasets` for more information on the databases. To install them use the following:
+
+.. code-block:: bash
+
+		mysql -u username -p  < /path/to/dlatk/data/dla_tutorial.sql
+		mysql -u username -p  < /path/to/dlatk/data/permaLexicon.sql
+
+The path to DLATK can be found using the following:
+
+.. code-block:: bash
+
+		python -c "import dlatk; print(dlatk.__file__)"
+
+*WARNING*: if these databases already exist the above commands will add tables to the db.
+
+Next Steps
+----------
+
+Try the :doc:`tutorials/tut_dla` once you have everything running.
+
 
 Install Issues
 ==============

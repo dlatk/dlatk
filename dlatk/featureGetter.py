@@ -11,8 +11,8 @@ import numpy as np
 #infrastructure
 from . import dlaConstants as dlac
 from .dlaWorker import DLAWorker
-from .mysqlMethods import mysqlMethods as mm
-from .mysqlMethods import mysql_iter_funcs as mif
+from .mysqlmethods import mysqlMethods as mm
+from .mysqlmethods import mysql_iter_funcs as mif
 
 class FeatureGetter(DLAWorker):
     """General class for reading from feature tables.

@@ -14,28 +14,31 @@ from numpy import isnan, sqrt, log2
 from configparser import SafeConfigParser
 import gzip
 
-
-try:
-    from dlatk.lib import wordcloud
-except ImportError:
-    print('warning: wordcloud not found.')
-from dlatk.semanticsExtractor import SemanticsExtractor
 import dlatk.dlaWorker as dlaWorker
-from dlatk.regressionPredictor import RegressionPredictor, CombinedRegressionPredictor, ClassifyToRegressionPredictor
+import dlatk.dlaConstants as dlac
+
+from dlatk import DDLA
 from dlatk.classifyPredictor import ClassifyPredictor
 from dlatk.dimensionReducer import DimensionReducer, CCA
-from dlatk.mediation import MediationAnalysis
-from dlatk import DDLA
-from dlatk.LexicaInterface import lexInterface
 from dlatk.dlaWorker import DLAWorker
 from dlatk.featureExtractor import FeatureExtractor
 from dlatk.featureGetter import FeatureGetter
 from dlatk.featureRefiner import FeatureRefiner
+from dlatk.lexicainterface import lexInterface
+from dlatk.mediation import MediationAnalysis
 from dlatk.messageAnnotator import MessageAnnotator
 from dlatk.messageTransformer import MessageTransformer
 from dlatk.outcomeGetter import OutcomeGetter
 from dlatk.outcomeAnalyzer import OutcomeAnalyzer
-import dlatk.dlaConstants as dlac
+from dlatk.regressionPredictor import RegressionPredictor, CombinedRegressionPredictor, ClassifyToRegressionPredictor
+from dlatk.semanticsExtractor import SemanticsExtractor
+from dlatk.topicExtractor import TopicExtractor
+try:
+    from dlatk.lib import wordcloud
+except ImportError:
+    print('warning: wordcloud not found.')
+
+from dlatk.lexicainterface.lexInterface import LexInterfaceParser
 
 def getInitVar(variable, parser, default, varList=False):
     if parser:
@@ -62,6 +65,8 @@ def main(fn_args = None):
 
     # Meta variables
     group = init_parser.add_argument_group('Meta Variables', '')
+    group.add_argument('--lex_interface', dest='lexinterface', action='store_true', default=False,
+                      help='Send arguments to lexInterface.py')
     group.add_argument('--to_file', dest='toinitfile', nargs='?', const=dlac.DEF_INIT_FILE, default=None,
                       help='write flag values to text file')
     group.add_argument('--from_file', type=str, dest='frominitfile', default='',
@@ -69,7 +74,11 @@ def main(fn_args = None):
 
     init_args, remaining_argv = init_parser.parse_known_args()
 
-    if init_args.frominitfile:
+    if init_args.lexinterface:
+        lex_parser = LexInterfaceParser(parents=[init_parser])
+        lex_parser.processArgs(args=remaining_argv, parents=True)
+        sys.exit()
+    elif init_args.frominitfile:
         conf_parser = SafeConfigParser()
         conf_parser.read(init_args.frominitfile)
     else:
@@ -132,7 +141,7 @@ def main(fn_args = None):
                        help='Only permit these features when correlating with outcomes (specify feature names or if feature table then read distinct features).')
     group.add_argument('--sqrt', action='store_const', dest='valuefunc', const=lambda d: sqrt(d),
                        help='square-roots normalized group_norm freq information.')
-    group.add_argument('--log', action='store_const', dest='valuefunc', const=lambda d: log(d+1),
+    group.add_argument('--log', action='store_const', dest='valuefunc', const=lambda d: log2(d+1),
                        help='logs the normalized group_norm freq information.')
     group.add_argument('--anscombe', action='store_const', dest='valuefunc', const=lambda d: 2*sqrt(d+3/float(8)),
                        help='anscombe transforms normalized group_norm freq information.')
@@ -172,12 +181,23 @@ def main(fn_args = None):
                        help='range of group id\'s to include in binning.')
     group.add_argument('--mask_table', type=str, metavar='TABLE', dest='masktable', default=None,
                        help='Table containing which groups run in various bins (for ttest).')
-    group.add_argument('--ls', action='store_true', dest='listfeattables', default=False,
-                       help='list all feature tables for given corpdb, corptable and correl_field')
-    group.add_argument('--top_messages', type=int, dest='top_messages', nargs='?', const=dlac.DEF_TOP_MESSAGES, default=False,
-                       help='Print top messages with the largest score for a given topic.')
+    
+
+    group.add_argument('--show_feat_tables', '--ls', '--show_feat_tables', action='store_true', dest='listfeattables', default=False,
+                       help='List all feature tables for given corpdb, corptable and correl_field')
+    group.add_argument('--show_tables', nargs='?', dest='showtables', default=False, const=True,
+                       help='List all non-feature tables. Optional argument for "like"-style SQL call')
+    group.add_argument('--describe_tables', '--desc_tables', nargs='*', dest='describetables', default=False,
+                       help='')
+    group.add_argument('--create_random_sample', '--create_rand_sample', dest='createrandsample', default=None,
+                       nargs='+', help='')
     group.add_argument('--extension', metavar='EXTENSION', dest='extension', default=None,
                        help='String added to the end of the feature table name')
+    
+    group.add_argument('--top_messages', type=int, dest='top_messages', nargs='?', const=dlac.DEF_TOP_MESSAGES, default=False,
+                       help='Print top messages with the largest score for a given topic.')
+
+    group.add_argument('--my_switch', nargs='*', dest='myswitch', default=False)
 
 
     group = parser.add_argument_group('Outcome Variables', '')
@@ -425,10 +445,13 @@ def main(fn_args = None):
                        help='Removes users (by correl_field grouping) with percentage of spam messages > threshold, writes to new table corptable_nospam '
                        'with new column is_spam. Defaul threshold = %s'%dlac.DEF_SPAM_FILTER)
 
-    group = parser.add_argument_group('LDA Helper Actions', '')
+    group = parser.add_argument_group('LDA Actions', '')
     group.add_argument('--add_message_id', type=str, nargs=2, dest='addmessageid',
                        help='Adds the message IDs to the topic distributions and stores the result in --output_name. Previously addMessageID.py (two agrs: MESSAGE_FILE, STATE_FILE)')
-
+    group.add_argument('-m', '--lda_msg_tbl', metavar='TABLE', dest='ldamsgtbl', type=str, default=dlac.DEF_LDA_MSG_TABLE,
+                           help='LDA Message Table')
+    group.add_argument('--create_dists', action='store_true', dest='createdists', 
+                           help='Create conditional prob, and likelihood distributions.')
 
     group = parser.add_argument_group('Semantic Extraction Actions', '')
     group.add_argument('--add_ner', action='store_true', dest='addner',
@@ -598,19 +621,6 @@ def main(fn_args = None):
                        help='Use feats stored in X matrix when predicting CCA components to SQL')
     group.add_argument('--useXControls', dest='usexcontrols',action="store_true", default = False,
                        help='Use controls stored in X matrix when predicting CCA components to SQL')
-    group.add_argument('--multi_cca', '--multicca', type=int, dest='multicca', default=0,
-                       help='Performs sparse MultiCCA on a set of features, a set of outcomes and a set of controls.'+
-                       "Argument is number of components to output (Uses R's PMA package)")
-    group.add_argument('--multi_cca_penalties', dest='multiccapenalties', type=float, nargs='+', default=[],
-                       help='')
-    group.add_argument('--multi_cca_controls', dest='multiccacontrols', nargs='+', default=[],
-                       help='')
-    group.add_argument('--multi_cca_outcomes', dest='multiccaoutcomes', nargs='+', default=[],
-                       help='')
-    group.add_argument('--multi_cca_permute', dest='multiCCAPermute', type=int,default=0,
-                       help='Wrapper for the PMA package MultiCCA.permute function that determines the'+
-                       ' ideal L1 Penalties for Xi matrices'+
-                       'argument: number of permutations')
 
     group.add_argument('--save_models', action='store_true', dest='savemodels', default=False,
                        help='saves predictive models (uses --picklefile)')
@@ -745,6 +755,8 @@ def main(fn_args = None):
                               args.featnames,
                               wordTable = args.wordTable)
                 for featTable in featTable]
+    def TE():
+        return TopicExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, dlac.DEF_ENCODING, dlac.DEF_UNICODE_SWITCH, args.ldamsgtbl)
 
     dlaw = None
     ma = None
@@ -756,18 +768,54 @@ def main(fn_args = None):
     oa = None
     fg = None
     fgs = None #feature getters
+    te = None
 
     # if not fe:
     #  fe = FE()
     # fe.addFeatsToLexTable(args.lextable, valueFunc = args.valuefunc, isWeighted=args.weightedlexicon, featValueFunc=args.lexvaluefunc)
     # exit()
 
-    # Show feature tables
-    if args.listfeattables:
+    # SQL interface methods
+    if args.listfeattables or args.showtables or args.describetables or args.createrandsample:
         if not dlaw: dlaw = DLAW()
-        feat_tables = dlaw.getFeatureTables()
-        print('Found %s available feature tables' % (len(feat_tables)))
-        for table in feat_tables: print(str(table[0]))
+
+    if isinstance(args.describetables, list) and len(args.describetables) == 0: 
+        if not dlaw: dlaw = DLAW()
+        args.describetables = True
+
+    if args.listfeattables or args.showtables:
+        feat_table = True if args.listfeattables else False
+        tables = dlaw.getTables(like=args.showtables, feat_table=feat_table)
+        print('Found %s available tables' % (len(tables)))
+        for table in tables: print(str(table[0]))
+
+    def printTableDesc(description):
+        header = ['Field', 'Type','Null', 'Key', 'Default', 'Extra']
+        row_format ="{:>25}{:>25}{:>10}{:>10}{:>10}{:>15}" 
+        print(row_format.format(*header))
+        for row in description:
+            print(row_format.format(*[r if r else '' for r in row]))
+
+    if args.describetables:
+        if args.corptable:
+            printTableDesc(dlaw.describeTable(table_name=args.corptable))
+        if isinstance(args.feattable, str):
+            printTableDesc(dlaw.describeTable(table_name=args.feattable))
+        elif isinstance(args.feattable, list):
+            for ftable in args.feattable:
+                printTableDesc(dlaw.describeTable(table_name=ftable))
+        if args.outcometable:
+            printTableDesc(dlaw.describeTable(table_name=args.outcometable))
+        if isinstance(args.describetables, str): args.describetables = [args.describetables]
+        if isinstance(args.describetables, list):
+            for tbl in args.describetables: printTableDesc(dlaw.describeTable(table_name=tbl))
+
+    if args.createrandsample:
+        if len(args.createrandsample) > 2: 
+            print("Error: Only two optional arguments for --create_random_sample")
+            sys.exit(1)
+        percentage, random_seed = args.createrandsample if len(args.createrandsample) > 1 else (args.createrandsample[0], dlac.DEFAUL_RANDOM_SEED)
+        rand_table = dlaw.createRandomSample(float(percentage), random_seed, where=args.groupswhere)
 
     #Feature Extraction:
     if args.addngrams:
@@ -952,6 +1000,12 @@ def main(fn_args = None):
         messageFile.close()
         stateFile.close()
         writeFile.close()
+
+    if args.createdists:
+        if not te:
+            te = TE()
+        te.createDistributions()
+
 
     if args.addtopiclexfromtopicfile:
         if not fe: fe = FE()
@@ -1225,25 +1279,6 @@ def main(fn_args = None):
             cca.ccaPermuteOutcomesVsControls(nPerms = args.ccaPermute)
         else:
             cca.ccaPermute(nPerms = args.ccaPermute)
-
-    if args.multiCCAPermute:
-        if not og: og = OG()
-        if not fg: fg = FG()
-        mcca = MultiCCA(fg, og, args.multicca)
-        mcca.multiCCAPermute(controlSubset = args.multiccacontrols, 
-                            outcomeSubset = args.multiccaoutcomes, 
-                            nPerms = args.multiCCAPermute)
-
-    if args.multiccaoutcomes or args.multiccacontrols or args.multicca:
-        if not oa: oa = OA()
-        if not fg: fg = FG()
-        mcca = MultiCCA(fg, oa, args.multicca)
-        (featComp, outcomeComp, dVectorDict) = mcca.multiCCA(controlSubset = args.multiccacontrols, 
-                                                            outcomeSubset = args.multiccaoutcomes, 
-                                                            penalties = args.multiccapenalties)
-
-        if args.savemodels:
-            mcca.saveModel(args.picklefile)
 
     if args.cca:
         if not oa: oa = OA()
@@ -1627,6 +1662,7 @@ def main(fn_args = None):
             print("Wrote to: %s" % str(outputStream))
             outputStream.close()
         if args.prob_csv:
+            outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.prediction_probabilities.csv', 'w')
             ClassifyPredictor.printComboControlPredictionProbsToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')

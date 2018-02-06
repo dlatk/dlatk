@@ -58,7 +58,7 @@ import math
 
 #infrastructure
 from .classifyPredictor import ClassifyPredictor
-from .mysqlMethods import mysqlMethods as mm
+from .mysqlmethods import mysqlMethods as mm
 from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, warn
 
 

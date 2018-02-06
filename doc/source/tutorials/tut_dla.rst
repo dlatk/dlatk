@@ -1,7 +1,7 @@
 .. _tut_dla:
-==============
-DLATK Tutorial
-==============
+=============================================
+Differential Language Analysis (DLA) Tutorial
+=============================================
 
 In Differential Language Analysis (DLA) we correlate patterns in language with other characteristics such as gender, or voting results.  We may look at text broken down by user, county or individual message among other things.  You can see more about the conceptual aspect of DLA in this `Youtube Video <https://www.google.com/url?q=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DZdTeDED9h-w>`_ and in this journal paper, `Toward Personality Insights from Language Exploration in Social Media <http://wwbp.org/papers/sam2013-dla.pdf>`_.
 

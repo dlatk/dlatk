@@ -31,24 +31,29 @@ Other Switches
 ==============
 
 Required Switches:
+
 None
+
 Optional Switches:
-:doc:`fwflag_colloc_table` <TABLENAME>
-:doc:`fwflag_include_sub_collocs` :doc:`fwflag_feature_type_name` <STRING>
+
+* :doc:`fwflag_colloc_table` <TABLENAME>
+* :doc:`fwflag_include_sub_collocs` :doc:`fwflag_feature_type_name` <STRING>
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
+
+	# Extract and filter in one command
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams --use_collocs --colloc_table 'ufeat$pmi$msgs$lnpmi0_15' --feat_occ_filter --set_p_occ 0.05
 
 
- # Extract and filter in one command
- ./fwInterface.py :doc:`fwflag_d` fb22 :doc:`fwflag_t` msgsEn_r5k :doc:`fwflag_c` user_id :doc:`fwflag_add_ngrams` :doc:`fwflag_use_collocs` :doc:`fwflag_colloc_table` 'ufeat$pmi$fb22_messagesEn$lnpmi0_15' :doc:`fwflag_feat_occ_filter` :doc:`fwflag_set_p_occ` 0.05
 
+	# Add a filter to a table that was generated using collocs, (requires specifying the word table for group_frequency calculation)
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$colloc$msgs$user_id$16to16’ --word_table ’feat$colloc$msgs$user_id$16to16’ --feat_occ_filter --set_p_occ 0.05
 
- # Add a filter to a table that was generated using collocs, (requires specifying the word table for group_frequency calculation)
- ./fwInterface.py :doc:`fwflag_d` fb22 :doc:`fwflag_t` msgsEn_r5k :doc:`fwflag_c` user_id :doc:`fwflag_f` ’feat$colloc$msgsEn_r5k$user_id$16to16’ :doc:`fwflag_word_table` ’feat$colloc$msgsEn_r5k$user_id$16to16’ :doc:`fwflag_feat_occ_filter` :doc:`fwflag_set_p_occ` 0.05
 Example outputs: 
-feat$colloc$msgsEn_r5k$user_id$16to16
-feat$colloc$msgsEn_r5k$user_id$16to16$0_05
-Off:doc:`fwflag_label` use: only extract 1:doc:`fwflag_grams` that appear in the lex table ANEW:
-fwInterface.py :doc:`fwflag_d` fbtrust :doc:`fwflag_t` messagesEn :doc:`fwflag_c` user_id :doc:`fwflag_add_ngrams` :doc:`fwflag_use_collocs` :doc:`fwflag_colloc_table` ANEW :doc:`fwflag_colloc_column` term :doc:`fwflag_feature_type_name` ANEWterms
+
+* feat$colloc$msgsEn_r5k$user_id$16to16
+* feat$colloc$msgsEn_r5k$user_id$16to16$0_05
+

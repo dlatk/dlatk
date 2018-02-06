@@ -28,7 +28,7 @@ except ImportError:
 from .dlaWorker import DLAWorker
 from . import dlaConstants as dlac
 from . import textCleaner as tc
-from .mysqlMethods import mysqlMethods as mm
+from .mysqlmethods import mysqlMethods as mm
 
 #local / nlp
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
@@ -1288,8 +1288,14 @@ class FeatureExtractor(DLAWorker):
         #create table name
         if not tableName:
             tableName = 'feat$'+featureName+'$'+self.corptable+'$'+self.correl_field
-            if valueFunc:
-                tableName += '$' + str(16)+'to'+"%d"%round(valueFunc(16))
+            if 'cat_' in featureName:
+                if valueFunc and round(valueFunc(16)) != 16:
+                    tableName += '$' + str(16)+'to'+"%d"%round(valueFunc(16))
+                wt_abbrv = self.wordTable.split('$')[1][:4]
+                tableName += '$' + wt_abbrv
+            else:
+                if valueFunc:
+                    tableName += '$' + str(16)+'to'+"%d"%round(valueFunc(16))
             if extension:
                 tableName += '$' + extension
 

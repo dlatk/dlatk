@@ -166,11 +166,11 @@ The argument to the :doc:`../fwinterface/fwflag_combine_feat_tables` flag is use
 
 Generate Lexicon (topic) Features
 ---------------------------------
-This step **uses the 1gram feature table** that was used in step 1a in addition to some topic definitions.  It calculates a value that characterizes how strongly each topic was present in the text of a given group.  Sometimes this is as simple as aggregating counts.  Sometimes there is a weighting factor involved.  We will use a weighted, data driven lexicon like our 2000 Facebook topics (topics are distributed with this release). These topics were created from Facebook data using Latent Dirichlet allocation (LDA). `Go here <https://en.wikipedia.org/wiki/Latent_Dirichlet_allocation>`_ for more info on LDA. Also see our :doc:`tut_lda`. The Facebook topic table in permaLexicon looks like
+This step **uses the 1gram feature table** that was used in step 1a in addition to some topic definitions.  It calculates a value that characterizes how strongly each topic was present in the text of a given group.  Sometimes this is as simple as aggregating counts.  Sometimes there is a weighting factor involved.  We will use a weighted, data driven lexicon like our 2000 Facebook topics (topics are distributed with this release). These topics were created from Facebook data using Latent Dirichlet allocation (LDA). `Go here <https://en.wikipedia.org/wiki/Latent_Dirichlet_allocation>`_ for more info on LDA. Also see our :doc:`tut_lda`. The Facebook topic table in dlatk_lexicon looks like
 
 .. code-block:: mysql
 
-	mysql> select * from permaLexicon.met_a30_2000_cp limit 10;
+	mysql> select * from dlatk_lexicon.met_a30_2000_cp limit 10;
 	+----+---------+----------+--------------------+
 	| id | term    | category | weight             |
 	+----+---------+----------+--------------------+
@@ -205,12 +205,12 @@ Brief descriptions of the flags:
 Note - dlatk pieces together the expected name of the 1gram table using the information you give it in the -d, -t, and -c options 
 Note - in the table name *met_a30_2000_cp*, met stands for messages english tokenizen, a30 stands for alpha = 30 (a tuning parameter in the LDA process) and 2000 means there are 2000 topics.
 
-In general use the following syntax (*permaLexicon* is a database where all of our lexica are stored):
+In general use the following syntax (*dlatk_lexicon* is a database where all of our lexica are stored):
 
 .. code-block:: bash
 
 	## GENERAL SYNTAX FOR CREATING LEXICON FEATURE TABLES
-	dlatkInterface.py -d <db> -t <msg_tbl> -c <grp_col> --add_lex_table -l <topic_tbl_from_permalexicon> [--weighted_lexicon]
+	dlatkInterface.py -d <db> -t <msg_tbl> -c <grp_col> --add_lex_table -l <topic_tbl_from_dlatk_lexicon> [--weighted_lexicon]
 
 Again, you can view the tables with the following **mysql** commands:
 

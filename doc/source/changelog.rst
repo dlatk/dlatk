@@ -3,7 +3,17 @@
 Changelog
 =========
 
-1.1.4 (2018-01-1)
+1.1.5 (2018-03-02)
+------------------
+  - Improving feature: changes to LDA process: topicExtractor now accessible inside dlatkInterface
+  - Improving feature: --lex_interface: lexInterface flags accessible inside dlatkInterface
+  - Improving feature: changes default lexicon based feature table names
+  - Improving feature: --categorical flag removes one outcome for any column with only two values.
+  - Improving feature: mysqlMethods changed to mysqlmethods
+  - Improving feature: default lexicon MySQL database now called "dlatk_lexica" (old database called "permaLexicon")
+  - Bug fix: updated ridgehighcv to fix integer bug in sklearn
+
+1.1.4 (2018-01-11)
 ------------------
   - Bug fix: added __init__.py file to Tools directory to fix pip install
 

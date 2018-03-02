@@ -211,7 +211,7 @@ def main(fn_args = None):
                        help='Fields in outcome table to use as controls for correlation(regression).')
     group.add_argument('--no_controls', action='store_const', const=[], dest='outcomecontrols',
                        help='Switch to override controls listed in init file.')
-    group.add_argument('--categories_to_binary', '--cat_to_bin', type=str, metavar='FIELD(S)', dest='cattobinfields', nargs='+', default=[],
+    group.add_argument('--categorical', '--categories_to_binary', '--cat_to_bin', type=str, metavar='FIELD(S)', dest='cattobinfields', nargs='+', default=[],
                        help='Fields with categorical variables to be transformed into a one hot representation')
     group.add_argument('--outcome_interaction', '--interaction', type=str, metavar='TERM(S)', dest='outcomeinteraction', nargs='+', default=getInitVar('outcomeinteraction', conf_parser, dlac.DEF_OUTCOME_CONTROLS, varList=True),
                        help='Fields in outcome table to use as controls and interaction terms for correlation(regression).')

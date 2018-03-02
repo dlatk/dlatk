@@ -3,7 +3,7 @@
 Understanding Feature Table Names
 =================================
 
-This page will explain the **"standard" way of naming feature tables in DLATK**.
+This page will explain the **standard** way of naming feature tables in DLATK.
 
 This is how DLATK expects them to be named.
 
@@ -44,8 +44,8 @@ These tables are generally created with the :doc:`../fwinterface/fwflag_add_lex_
 
 .. code-block:: bash
 
-	feat$cat_met_a30_2000_cp_w$messages_en$cty_id$16to16
-	| f0 |       field 1       |  field 2  |field3|field4|
+	feat$cat_met_a30_2000_cp_w$messages_en$cty_id$1gra
+	| f0 |       field 1      |  field 2  |field3|field4|
 
 **Field 0** Specifies this as a feature table
 
@@ -54,3 +54,5 @@ These tables are generally created with the :doc:`../fwinterface/fwflag_add_lex_
 **Field 2** Gives the message table (:doc:`../fwinterface/fwflag_t`) that the features were derived from
 
 **Field 3** Gives the group ID (:doc:`../fwinterface/fwflag_c`) that features were grouped by
+
+**Field 4** The first four characters from Field 1 of the word table (:doc:`../fwinterface/fwflag_word_table`)  used to derive the lexicon/topic features. By default this is the 1gram table. In previous version (less than 1.1.5) this field specified the scaling on features.

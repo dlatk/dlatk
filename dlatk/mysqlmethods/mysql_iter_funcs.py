@@ -11,10 +11,11 @@ import pandas as pd
 import warnings
 import sys
 import time
+import MySQLdb.cursors
 
 from dlatk.dlaConstants import DEF_ENCODING, MYSQL_ERROR_SLEEP, MYSQL_HOST, MAX_ATTEMPTS, warn
 
-def get_db_engine(db_schema, db_host = MYSQL_HOST, charset=DEF_ENCODING, db_config = '~/.my.cnf', port=3306):
+def get_db_engine(db_schema, db_host = MYSQL_HOST, charset=DEF_ENCODING, db_config = '~/.my.cnf', port=3306, stream=False):
     eng = None
     attempts = 0;
     while (1):
@@ -25,7 +26,10 @@ def get_db_engine(db_schema, db_host = MYSQL_HOST, charset=DEF_ENCODING, db_conf
                     'read_default_file' : db_config,
                     'charset': charset
                 })
-            eng = create_engine(name_or_url=db_url)
+            if stream:
+                eng = create_engine(name_or_url=db_url, connect_args={'cursorclass': MySQLdb.cursors.SSCursor}, pool_recycle=600)
+            else:
+                eng = create_engine(name_or_url=db_url)
             break
         except Exception as e:
             attempts += 1

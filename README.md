@@ -47,7 +47,7 @@ for recommended and optional dependencies.
 
 ## Documentation
 
-The documentation for the latest release is at [dlatk.wwbp.org](dlatk.wwbp.org).
+The documentation for the latest release is at [dlatk.wwbp.org](http://dlatk.wwbp.org).
 
 ## Citation
 

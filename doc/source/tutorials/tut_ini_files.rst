@@ -41,7 +41,7 @@ The above command then shortens to:
 
 .. code-block:: bash
 
-	./dlatkInterface.py --from_file ~/someFile.ini --correlate
+	dlatkInterface.py --from_file ~/someFile.ini --correlate
 
 Using an init file with classes
 -------------------------------

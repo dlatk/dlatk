@@ -39,6 +39,15 @@ Using the infrastructure to tokenize the messages and print the tokenized messag
 
 	dlatkInterface.py -d dla_tutorial -t msgs_lda --print_tokenized_lines ~/lda_tutorial/msgs_lda.txt
 
+This will create the file `~/lda_tutorial/msgs_lda.txt`:
+
+.. code-block:: bash
+	> head ~/lda_tutorial/msgs_lda.txt
+	11 en urllink kitty's claws are digging into tim's legs ... note the expression ... urllink
+	12 en urllink an up close and personal encounter between pup and kitty . a few moments after this photo , pup's ass was kicked by what i can only assume to be puss n boot's cousin ... urllink
+	22 en urllink here i am on the " all you can drink rum cruise " outside of nassau . man , those were the days ... urllink
+	28 en urllink the blue eye .. natural light . urllink
+
 NOTE - if you have newlines in your message this step may cause issues down the line, it is recommended to replace all newlines with a representative character before proceeding
 
 OPTIONAL: If you want to restrict your LDA words to a subset of words in the corpus (e.g., those said by at least N people, or said in no more than Y percent of messages), you can use the :doc:`../fwinterface/fwflag_feat_whitelist` flag, eg:
@@ -70,6 +79,8 @@ Prepares the messages and tokenizes them again for Mallet, removing stopwords an
 	--output ~/lda_tutorial/msgs_lda.mallet \ 
 	--remove-stopwords --keep-sequence [--extra-stopwords EXTRA_STOPWORDS_FILE]
 
+This will create the file `~/lda_tutorial/msgs_lda.mallet`.
+
 Step 4: Run LDA with Mallet
 ---------------------------
 This is the actual LDA step, which might take a while (4 days and a half on 20 mil tweets) for help do `./bin/mallet train-topics --help`
@@ -85,7 +96,21 @@ Here **alpha** is a prior on he number of topics per document. The other hyper-p
 
 This creates the following files:
 
-* 
+* msgs_lda.model
+* msgs_lda_state.gz
+* msgs_lda.keys
+
+The file `msgs_lda.keys` contains the topics and at this point is it good to inspect them to see if you should change any of the above parameters (number of topics, alpha, beta, etc.)
+
+.. code-block:: bash
+
+	> head ~/lda_tutorial/msgs_lda.keys
+	0       0.0025  italian pig americans wolf american straw pigs 04 stick film defamation censored pinocchio brick 03 sopranos pig's offensive june wop 
+	1       0.0025  yoga levi yea pages yay morning boy mix lorraine evening bit law she's joe honey exam property study gay spring 
+	2       0.0025  projection sng recap mtt dried 18 sessions planetpoker 5.50 pokerstars faulty limit summary music-lovers end-users 1540-1608 raritan tester dch brigade 
+	3       0.0025  :) urllink misses marion lovely managed melbourne sean pub sort round rock bus :( tent ;) perth we've elephant flat 
+	4       0.0025  jill alcohol aaaannnndd soorry georgie celica precariously timid mirrors cam defined cat's praying expects hitler valley asses 
+	5       0.0025  apc uhm downsides surpression tly pary undies spybot band-aids pow sprinkles trashed bloated celebrated paramaters thas elses country's immortal association 
 
 *Note*: When dealing with giant sets of data, for example creating Facebook topics, one might encounter the error **Exception in thread "main" java.lang.OutOfMemoryError: Java heap space**. You must edit the following line in **~/Mallet/bin/mallet**: *MEMORY=1g*. You can then change the 1g value upwards – to 2g, 4g, or even higher depending on your system’s RAM, which you can find out by looking up the machine’s system information.
 
@@ -97,6 +122,21 @@ Adds the message ID’s to the topic distributions and stores the result in lda_
 
 	dlatkInterface.py --add_message_id ~/lda_tutorial/msgs_lda.txt ~/lda_tutorial/msgs_lda_state.gz --output_name ~/lda_tutorial/lda_topics
 
+This creates the file `~/lda_tutorial/lda_topics`:
+
+.. code-block:: bash
+
+	> head ~/lda_tutorial/lda_topics
+	#doc source pos typeindex type topic
+	#alpha : 0.0025 0.0025 0.0025 0.0025 ....
+	#beta : 0.01
+	0 2 0 0 miss 1840
+	0 2 1 1 su 661   
+	0 2 2 2 living 623
+	0 2 3 3 skills 466
+	0 2 4 4 teacher 466
+	0 2 5 5 form 1319
+
 Step 6: Import state file into database
 ---------------------------------------
 Imports the topic-message probability distributions in a raw format (type of JSON) not readable by DLA
@@ -105,9 +145,14 @@ Imports the topic-message probability distributions in a raw format (type of JSO
 
 	dlatkInterface.py -d dla_tutorial -t msgs_lda_tok --add_lda_messages  ~/lda_tutorial/lda_topics
 
-This creates the table **msgs_lda_tok_lda$lda_topics** in the database dla_tutorial.
+This creates the table **msgs_lda_tok_lda$lda_topics** in the database dla_tutorial:
 
-NOTE - "Duplicate entry 'xxxx' for key 'PRIMARY'" errors may be indicative of an issues with newlines.  See step 2 for a solution.
+.. code-block:: mysql
+
+	select message from msgs_lda_tok_lda$lda_topics limit 1;
+	| [{"topic_id": "296", "doc": "10", "term": "urllink", "index": "0", "term_id": "191", "message_id": "40"}, {"topic_id": "947", "doc": "10", "term": "busy", "index": "1", "term_id": "249", "message_id": "40"}, {"topic_id": "1804", "doc": "10", "term": "roadway", "index": "2", "term_id": "250", "message_id": "40"}, {"topic_id": "296", "doc": "10", "term": "urllink", "index": "3", "term_id": "191", "message_id": "40"}]
+
+*NOTE* - "Duplicate entry 'xxxx' for key 'PRIMARY'" errors may be indicative of an issues with newlines.  See step 2 for a solution.
 
 Step 7: Create topic-word distributions
 ---------------------------------------
@@ -115,7 +160,7 @@ Creates the readable distributions on the messages
 
 .. code-block:: bash
 
-	python dlatk/LexicaInterface/topicExtractor.py -d dla_tutorial -t msgs_lda -m 'msgs_lda_tok_lda$lda_topics' --create_dists
+	dlatkInterface.py -d dla_tutorial -t msgs_lda -m 'msgs_lda_tok_lda$lda_topics' --create_dists
 
 This creates the following files:
 
@@ -133,18 +178,48 @@ Generates the lexicons based on different probability distribution types
 
 .. code-block:: bash
 
-	python dlatk/LexicaInterface/lexInterface.py --topic_csv \ 
-	--topicfile=~/lda_tutorial/msgs_lda_tok_lda.lda_topics.topicGivenWord.csv \ 
+	dlatkInterface.py --lex_interface --topic_csv  \ 
+	--topicfile=/home/user/lda_tutorial/msgs_lda_tok_lda.lda_topics.topicGivenWord.csv  \ 
 	-c msgs_lda_cp
+
+This will create the table `msgs_lda_cp` in the database `dlatk_lexicon`. You can change the database with the flag :doc:`../fwinterface/fwflag_lexicondb`:
+
+.. code-block:: bash
+
+	mysql> select * from msgs_lda_cp limit 5;
+	+----+----------------+----------+--------------------+
+	| id | term           | category | weight             |
+	+----+----------------+----------+--------------------+
+	|  1 | erm            | 274      |             0.0625 |
+	|  2 | productively   | 274      |  0.333333333333333 |
+	|  3 | jared          | 274      |              0.125 |
+	|  4 | book           | 274      |                  1 |
+	|  5 | sketch         | 274      | 0.0909090909090909 |
+	+----+----------------+----------+--------------------+
+
 
 * frequency, thresholded to loglik >= 50
 
 .. code-block:: bash
 
-	python dlatk/LexicaInterface/lexInterface.py --topic_csv \ 
+	dlatkInterface.py --lex_interface --topic_csv \ 
 	--topicfile=~/lda_tutorial/msgs_lda_tok_lda.lda_topics.freq.threshed50.loglik.csv \ 
 	-c msgs_lda_freq_t50ll 
 
+This will create the table `msgs_lda_freq_t50ll` in the database `dlatk_lexicon`. You can change the database with the flag :doc:`../fwinterface/fwflag_lexicondb`:
+
+.. code-block:: bash
+
+	mysql> select * from msgs_lda_freq_t50ll limit 5;
+	+----+------------------+----------+--------+
+	| id | term             | category | weight |
+	+----+------------------+----------+--------+
+	|  1 | wildest          | 766      |      1 |
+	|  2 | kazadoom         | 766      |      1 |
+	|  3 | sentirnos        | 766      |      1 |
+	|  4 | charlie          | 766      |      1 |
+	|  5 | commondreams.org | 766      |      1 |
+	+----+------------------+----------+--------+
 
 Step 9: Extract features from lexicon
 --------------------------------------
@@ -152,6 +227,6 @@ You’re now ready to start using the topic distribution lexicon
 
 .. code-block:: bash
 
-	dlatkInterface.py -d DATABASE -t MESSAGE_TABLE --add_lex_table -l msgs_lda_cp --weighted_lexicon -c GROUP_ID
+	dlatkInterface.py -d DATABASE -t MESSAGE_TABLE -c GROUP_ID --add_lex_table -l msgs_lda_cp --weighted_lexicon 
 
-(always extract features using the _cp lexicon. The “freq_t50ll” lexicon is only used when generating topic_tagclouds: :doc:`../fwinterface/fwflag_topic_tagcloud` :doc:`../fwinterface/fwflag_topic_lexicon` ...freq_t50ll”)
+(always extract features using the _cp lexicon. The “freq_t50ll” lexicon is only used when generating topic_tagclouds: :doc:`../fwinterface/fwflag_topic_tagcloud` :doc:`../fwinterface/fwflag_topic_lexicon`)

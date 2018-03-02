@@ -11,7 +11,7 @@ The same methods work for both *FeatureGetter* and *OutcomeGetter*.
 
 	from dlatk.featureGetter import FeatureGetter
 
-	fg = FeatureGetter()  # use defaults set in fwConstants.py
+	fg = FeatureGetter()  # use defaults set in dlaConstants.py
 	fg = FeatureGetter(corpdb="someDB", corptable="someTB", correl_field="someField", ...) # specify values
 	fg = FeatureGetter.fromFile('/path/to/init/file') # pass values from file
 

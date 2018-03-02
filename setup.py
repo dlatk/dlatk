@@ -56,8 +56,8 @@ Please send bug reports, patches, and other feedback to
 DISTNAME = 'dlatk'
 PACKAGES = ['dlatk',
   'dlatk.lib',
-  'dlatk.LexicaInterface',
-  'dlatk.mysqlMethods',
+  'dlatk.Lexicainterface',
+  'dlatk.mysqlmethods',
   'dlatk.Tools',
 ]
 LICENSE = 'GNU General Public License v3 (GPLv3)'

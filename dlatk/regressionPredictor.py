@@ -417,7 +417,7 @@ class RegressionPredictor:
 
     # feature selection:
     featureSelectionString = None
-    #featureSelectionString= 'ElasticNet(alpha=1.0, l1_ratio=0.5, fit_intercept=True, normalize=False, precompute="auto", max_iter=1000, copy_X=True, tol=0.0001, warm_start=False, positive=False, rho=None)'
+    #featureSelectionString = 'ElasticNet(alpha=1.0, l1_ratio=0.5, fit_intercept=True, normalize=False, precompute="auto", max_iter=1000, copy_X=True, tol=0.0001, warm_start=False, positive=False, rho=None)'
     #featureSelectionString = 'RandomizedLasso(random_state=self.randomState, n_jobs=self.cvJobs, normalize=False)'
     #featureSelectionString = 'ExtraTreesRegressor(n_jobs=self.cvJobs, random_state=42, compute_importances=True)'
     #featureSelectionString = 'SelectKBest(f_regression, k=int(len(y)/3))'

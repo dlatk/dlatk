@@ -23,7 +23,6 @@ DLATK can utilize:
 - `CMU's TweetNLP <http://www.cs.cmu.edu/~ark/TweetNLP/>`_ 
 - `pandas <http://pandas.pydata.org/>`_ dataframe output
 
-DLATK is licensed under a `GNU General Public License v3 (GPLv3) <https://www.gnu.org/licenses/gpl-3.0.en.html>`_.
 
 Getting Started
 ---------------
@@ -32,16 +31,15 @@ Getting Started
    :maxdepth: 1
 
    install
-   install_faq
-   tutorials/tut_dla
+   tutorials
    datasets
    dlatkinterface_ordered
-   modules
+   papers
 
 Citations
 ---------
 
-If you use DLATK in your work please cite the following `paper <http://aclweb.org/anthology/D17-2010>`_:
+If you use DLATK in your work please cite the following `paper <https://wwbp.org/papers/DLATK_Differential_Language_Analysis_ToolKit.pdf>`_:
 
 .. code-block:: bash
 
@@ -67,7 +65,10 @@ More Information
 
 * `DLATK GitHub page <http://www.github.com/dlatk/dlatk>`_
 * `World Well-Being Project <http://www.wwbp.org>`_
+* `HLAB at Stoney Brook <http://hlab.cs.stonybrook.edu/>`_
+* `dlatk-docker <https://github.com/pennsignals/dlatk-docker>`_
+* :doc:`modules`
 * :doc:`changelog`
 
-
+DLATK is licensed under a `GNU General Public License v3 (GPLv3) <https://www.gnu.org/licenses/gpl-3.0.en.html>`_.
 

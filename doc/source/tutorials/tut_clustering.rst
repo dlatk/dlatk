@@ -75,12 +75,12 @@ This flag takes the output from :doc:`../fwinterface/fwflag_fit_reducer` and sav
 
 	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' --fit_reducer --model nmf --reducer_to_lexicon msgs_reduced10_nmf --n_components 10
 
-This command will produce table *msgs_reduced10_nmf* in the database *permaLexicon*. Here the term column contains topic ids and the category column contains the reduced component number. Weights are entries in the *m x n* facorization matrix produced in the clustering method where *m* is the number of features in your feature table and *n* is the number of components specified by :doc:`../fwinterface/fwflag_n_components`.
+This command will produce table *msgs_reduced10_nmf* in the database *dlatk_lexicon*. Here the term column contains topic ids and the category column contains the reduced component number. Weights are entries in the *m x n* facorization matrix produced in the clustering method where *m* is the number of features in your feature table and *n* is the number of components specified by :doc:`../fwinterface/fwflag_n_components`.
 
 
 .. code-block:: mysql
 
-	mysql> select * from permaLexicon.msgs_reduced10_nmf limit 5;
+	mysql> select * from dlatk_lexicon.msgs_reduced10_nmf limit 5;
 	+----+------+----------+----------------+
 	| id | term | category | weight         |
 	+----+------+----------+----------------+
@@ -112,11 +112,11 @@ Note: For this step you need to first cluster a topic based feature table. Super
 
 	dlatkInterface.py -d dla_tutorial -t msgs -c user_id  --reduced_lexicon msgs_reduced10_nmf --super_topics msgs_10nmf_fbcp -l met_a30_2000_cp
 
-This produces the table *emp_50nmf_fbcp* in *permaLexicon*:
+This produces the table *emp_50nmf_fbcp* in *dlatk_lexicon*:
 
 .. code-block:: mysql
 
-	mysql> select * from permaLexicon.msgs_10nmf_fbcp limit 10;
+	mysql> select * from dlatk_lexicon.msgs_10nmf_fbcp limit 10;
 	+----+--------------+----------+------------------------+
 	| id | term         | category | weight                 |
 	+----+--------------+----------+------------------------+
@@ -186,7 +186,7 @@ We can also create a set of super topics whose weights are based off of the *fre
 .. code-block:: bash
 
 	# create log likihood version of super topics
-	# creates msgs_10nmf_fbll in permaLexicon
+	# creates msgs_10nmf_fbll in dlatk_lexicon
 	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --reduced_lexicon msgs_reduced10_nmf --super_topics msgs_10nmf_fbll -l met_a30_2000_freq_t50ll
 
 	# print wordclouds using all of the above 

@@ -283,7 +283,7 @@ class DLAWorker(object):
             print("making black or white list: [%s] [%s] [%s]" %([feat if isinstance(feat, str) else feat for feat in args_featlist], args_lextable, args_categories))
         else:
             print("making black or white list: [%s] [%s] [%s]" %([feat if isinstance(feat, str) else feat for feat in args_featlist], args_lextable, args_categories))
-        if args_lextable and args_categories:
+        if args_lextable:
             (conn, cur, dcur) = mm.dbConnect(args_lexdb, charset=dlac.DEF_ENCODING, use_unicode=args_use_unicode)
             sql = 'SELECT term FROM %s' % (args_lextable)
             if (len(args_categories) > 0) and args_categories[0] != '*':

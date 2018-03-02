@@ -26,7 +26,7 @@ Regression:
 Classification
 
 * :doc:`../fwinterface/fwflag_predict_classifiers_to_feats`
-* :doc:`../fwinterface/fwflag_predict_classification_to_outcome_table`
+* :doc:`../fwinterface/fwflag_predict_classifiers_to_outcome_table`
 
 
 Predict Regression To Feature Table
@@ -38,11 +38,11 @@ Sample Command
 --------------
 
 .. code-block:: bash
-
+	
 	./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --group_freq_thresh 500 -f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' \
-   'feat$1to3gram$msgs$user_id$16to16' 'feat$1to3gram$msgs$user_id$16to1' --outcome_table ageDummy \
-   --outcomes age --predict_regression_to_feat lbp_age  --load --picklefile \
-   ~/age.2000fbtopics.1to3grams.16to16.16to1.ridge1000.magic_sauce.gft500.pickle
+	'feat$1to3gram$msgs$user_id$16to16' 'feat$1to3gram$msgs$user_id$16to1' --outcome_table ageDummy \
+	--outcomes age --predict_regression_to_feat lbp_age  --load --picklefile \
+	~/age.2000fbtopics.1to3grams.16to16.16to1.ridge1000.magic_sauce.gft500.pickle
 
 Required Switches
 -----------------

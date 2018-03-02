@@ -302,7 +302,7 @@ DLATK supports both unweighted and weighted lexica. Here is an example of an unw
 
 .. code-block:: mysql
 
-   mysql> select * from permaLexicon.LIWC2015 limit 5;
+   mysql> select * from dlatk_lexicon.LIWC2015 limit 5;
    +----+------+----------+--------+
    | id | term | category | weight |
    +----+------+----------+--------+
@@ -337,7 +337,7 @@ Here is an example of a weighted lexicon. Note the use of the --weighted_lexicon
 
 .. code-block:: mysql
 
-   mysql> select * from permaLexicon.met_a30_2000_cp limit 5;
+   mysql> select * from dlatk_lexicon.met_a30_2000_cp limit 5;
    +----+---------+----------+--------------------+
    | id | term    | category | weight             |
    +----+---------+----------+--------------------+

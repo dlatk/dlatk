@@ -1204,7 +1204,7 @@ class LexInterfaceParser(ArgumentParser):
     def __init__(self, description="On Features Class.", prefix_chars='-+', formatter_class=ArgumentDefaultsHelpFormatter, parents=None):
         ## Argument Parser ##
 
-        super(LexInterfaceParser,self).__init__(description=description, prefix_chars=prefix_chars, formatter_class=formatter_class, parents=parents)
+        super(LexInterfaceParser,self).__init__(description=description, prefix_chars=prefix_chars, formatter_class=formatter_class)
 
         group = self.add_argument_group('', '')
         group.add_argument("-f", "--file", dest="filename",

@@ -121,7 +121,7 @@ class DimensionReducer:
     
     params = {
             #'nmf' : { 'n_components': 15, 'init': 'nndsvd', 'sparseness': None, 'beta': 1, 'eta' : 0.1, 'tol': .0001, 'max_iter' : 200, 'nls_max_iter': 2000, 'random_state' :42 },
-            'nmf' : { 'n_components': 30, 'init': 'nndsvd', 'solver':'cd', 'l1_ratio': 0.95, 'alpha': 10, 'max_iter' : 200, 'nls_max_iter': 2000, 'random_state' :42 },
+            'nmf' : { 'n_components': 30, 'init': 'nndsvd', 'solver':'cd', 'l1_ratio': 0.95, 'alpha': 10, 'max_iter' : 200, 'random_state' :42 },
 
             'pca' : { 'n_components': 'mle', 'whiten': False},
             #'pca' : { 'n_components': 'mle', 'whiten': True},

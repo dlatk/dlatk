@@ -75,7 +75,7 @@ Feature Refinement
 * :doc:`fwinterface/fwflag_tf_idf`
 
 Language Insights
------------------
+=================
 * :doc:`fwinterface/fwflag_correlate`
 * :doc:`fwinterface/fwflag_outcome_controls`
 * :doc:`fwinterface/fwflag_interaction_ddla` 

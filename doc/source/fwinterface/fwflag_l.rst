@@ -15,7 +15,7 @@ Name of lexicon that you want to extract
 Argument and Default Value
 ==========================
 
-Name of MySQL table. In db specified by --lexicondb (permaLexicon by default)
+Name of MySQL table. In db specified by --lexicondb (dlatk_lexicon by default)
 
 Details
 =======

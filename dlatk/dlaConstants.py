@@ -344,6 +344,20 @@ def getGroupFreqThresh(correl_field=None):
             group_freq_thresh = 40000
     return group_freq_thresh
 
+def getMetric(logistic=False, idp=False, spearman=False, controls=False):
+    """Return a string which best represents the metric used in the analysis. String is used in output (csv, wordcloud, etc.)"""
+    if logistic:
+        metric = 'B'
+    elif idp:
+        metric = 'R'
+    elif spearman:
+        metric = 'rho'
+    elif controls:
+        metric = 'beta'
+    else:
+        metric = 'r'
+    return metric
+
 def permaSortedKey(s):
     if isinstance(s, (list, tuple)):
         s = str(s[0])

@@ -386,9 +386,9 @@ def _tagcloudToWordcloud(filename='', directory=os.getcwd()):
 
     f.close()
 
-def processTopicLine(line):
+def processTopicLine(line, metric):
     splitLine = line.split(' ')
-    return 'tid-'+splitLine[2][0:-1], 'tR-'+splitLine[4][0:-1][0:5], '' #'tFq'+splitLine[6][0:-1]
+    return 'tid-'+splitLine[2][0:-1], metric + '-'+splitLine[4][0:-1][0:5], '' #'tFq'+splitLine[6][0:-1]
 
 def duplicateFilterLineIntoInformativeString(line):
     splitLine = line.split(' ')
@@ -398,7 +398,7 @@ def coerceToValidFileName(filename):
     valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
     return ''.join(c for c in filename if c in valid_chars)
 
-def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="Helvetica-Narrow", fontStyle=None, toFolders=False, useTopicWords=True):
+def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="Helvetica-Narrow", fontStyle=None, toFolders=False, useTopicWords=True, metric='R'):
     processedFiles = {}
 
     if not directory:
@@ -468,7 +468,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
 
 
             if line and len(line) >= 10 and line[0:10] == '[Topic Id:':
-                topicId, topicR, topicFreq = processTopicLine(line)
+                topicId, topicR, topicFreq = processTopicLine(line, metric)
                 getwords = True
                 topicFiles = True
             if line and len(line)>=6 and line[0:3]=='**[' and line[-3:]==']**':
@@ -564,10 +564,30 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
 
 # wordcloud tools
 def freqToColor(freq, maxFreq = 1000, resolution=64, colorScheme='multi'):
+    """
+    Alter color scheme of plot based on the the word frequencies
+
+    Parameters
+    ----------
+    freq : int
+        word frequency
+    maxFreq : :obj:`int`, optional
+        maximum frequency threshold
+    resolution : :obj:`int`, optional
+        pixels of resolution
+    colorScheme : :obj:`str`, optional
+        specifies color scheme of plot
+
+    Returns
+    -------
+    htmlcode : str
+        string of html code specifying color scheme
+
+
+    """
     perc = freq / float(maxFreq)
     (red, green, blue) = (0, 0, 0)
     if colorScheme=='multi':
-    #print "%d %d %.4f" %(freq, maxFreq, perc)#debug
         if perc < 0.17: #grey to darker grey
             (red, green, blue) = dlac.rgbColorMix((168, 168, 168),(124, 124, 148), resolution)[int(((1.00-(1-perc))/0.17)*resolution) - 1]
         elif perc >= 0.17 and perc < 0.52: #grey to blue
@@ -578,11 +598,10 @@ def freqToColor(freq, maxFreq = 1000, resolution=64, colorScheme='multi'):
             (red, green, blue) = dlac.rgbColorMix((200, 16, 32), (128, 0, 0), resolution)[int(((0.10-(1-perc))/0.10)*resolution) - 1]
     # blue:
     elif colorScheme=='blue':
-        if perc <= 0.50: #light blue to med. blue
-            (red, green, blue) = dlac.rgbColorMix((170, 170, 210), (90, 90, 240), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
+        if perc < 0.50: #light blue to med. blue
+            (red, green, blue) = dlac.rgbColorMix((76, 76, 236), (48, 48, 156), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
         else: #med. blue to strong blue
-            (red, green, blue) = dlac.rgbColorMix((90, 90, 240), (30, 30, 140), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
-                # blue:
+            (red, green, blue) = dlac.rgbColorMix((48, 48, 156), (0, 0, 110), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
     elif colorScheme=='old_blue':
         if perc < 0.50: #light blue to med. blue
             (red, green, blue) = dlac.rgbColorMix((76, 76, 236), (48, 48, 156), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
@@ -596,16 +615,16 @@ def freqToColor(freq, maxFreq = 1000, resolution=64, colorScheme='multi'):
             (red, green, blue) = dlac.rgbColorMix((156, 48, 48), (110, 0, 0), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
     elif colorScheme=='green':
         (red, green, blue) = dlac.rgbColorMix((166, 247, 178), (27, 122, 26), resolution)[int((1.00-(1-perc))*resolution) - 1]
-
-    elif colorScheme == 'test':
-        (red, green, blue) = (255, 255, 255)
+    elif colorScheme=='teal':
+        (red, green, blue) = dlac.rgbColorMix((198, 255, 255), (0, 128, 128), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
     #red+randomness:
     elif colorScheme=='red-random':
         if perc < 0.50: #light blue to med. blue
             (red, green, blue) = dlac.rgbColorMix((236, 76, 76), (156, 48, 48), resolution, True)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
         else: #med. blue to strong blue
             (red, green, blue) = dlac.rgbColorMix((156, 48, 48), (110, 0, 0), resolution, True)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
-
+    else:
+        dlac.warn('Warning: "%s" colorscheme not found, defaulting to black' % (colorScheme))
     htmlcode = "%02s%02s%02s" % (hex(red)[2:], hex(green)[2:], hex(blue)[2:])
     return htmlcode.replace(' ', '0')
 

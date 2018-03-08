@@ -24,6 +24,7 @@ from .outcomeGetter import OutcomeGetter
 from . import dlaConstants as dlac
 from . import textCleaner as tc
 from .mysqlmethods import mysqlMethods as mm
+from .lib.wordcloud import freqToColor
 
 
 class OutcomeAnalyzer(OutcomeGetter):
@@ -615,7 +616,6 @@ class OutcomeAnalyzer(OutcomeGetter):
         numRed = 0
 
         firstLoop = True
-        #print "WHITELIST: %s" % str(whitelist) #debug
 
         # Yields data for one feature at a time
         for (groups, allOutcomes, controls, feat, dataDict, numFeats, featFreqs) in self.yieldDataForOneFeatAtATime(featGetter, blacklist, whitelist, outcomeWithOutcome, includeFreqs, groupsWhere, outcomeWithOutcomeOnly):
@@ -632,16 +632,12 @@ class OutcomeAnalyzer(OutcomeGetter):
                         # i.e. show the coefficients from the controls alone
 
                         (X, y) = dlac.alignDictsAsXy([controls[k] for k in sorted(controls.keys())], outcomes)
-                        #X = np.array(X).astype(np.float)#debug: we should be able to avoid this by casting correctly originally
-                        #y = np.array(y).astype(np.float)#debug: we should be able to avoid this by casting correctly originally
 
-                        # print "alignDict time: %f"% float(time.time() - t0)#debug
                         if spearman:
                             X = dlac.switchColumnsAndRows([rankdata(x)
                                                       for x in dlac.switchColumnsAndRows(X)])
                             y = rankdata(y)
                         if zscoreRegression:
-                            # print "MAARTEN\t", type(X[0][0]), type(y[0])
                             (X, y) = (zscore(X), zscore(y) if not logisticReg else y)
                         results = None
                         try:
@@ -1809,7 +1805,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             fsock.close()
             sys.stdout = sys.__stdout__
 
-    def printTopicTagCloudData(self, correls, topicLex, maxP = dlac.DEF_P, paramString = None, maxWords = 15, maxTopics = 100, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False, cleanCloud=False):
+    def printTopicTagCloudData(self, correls, topicLex, maxP = dlac.DEF_P, paramString = None, maxWords = 15, maxTopics = 100, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False, cleanCloud=False, metric='R'):
         """
         Prints Topic Tag Cloud data to text file
 
@@ -1877,22 +1873,22 @@ class OutcomeAnalyzer(OutcomeGetter):
             posRs = [(k, v) for k, v in sigRs.items() if v[self.r_idx] > 0]
             negRs = [(k, (float(-1*v[self.r_idx]),) + v[1:]) for k, v in sigRs.items() if v[self.r_idx] < 0]
 
-            print("PositiveRs:\n------------")
+            print("Positive %ss:\n------------" % (metric))
             if colorScheme == 'bluered':
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='blue', use_unicode=self.use_unicode, cleanCloud=cleanCloud)
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='blue', use_unicode=self.use_unicode, cleanCloud=cleanCloud, metric=metric)
             elif colorScheme == 'redblue':
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='red', use_unicode=self.use_unicode, cleanCloud=cleanCloud)
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='red', use_unicode=self.use_unicode, cleanCloud=cleanCloud, metric=metric)
 
             else:
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme=colorScheme, use_unicode=self.use_unicode, cleanCloud=cleanCloud)
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme=colorScheme, use_unicode=self.use_unicode, cleanCloud=cleanCloud, metric=metric)
 
-            print("\nNegative Rs:\n-------------")
+            print("\nNegative %ss:\n------------" % (metric))
             if colorScheme == 'bluered':
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='red', use_unicode=self.use_unicode, cleanCloud=cleanCloud)
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='red', use_unicode=self.use_unicode, cleanCloud=cleanCloud, metric=metric)
             elif colorScheme == 'redblue':
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='blue', use_unicode=self.use_unicode, cleanCloud=cleanCloud)
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='blue', use_unicode=self.use_unicode, cleanCloud=cleanCloud, metric=metric)
             else:
-                OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme=colorScheme, use_unicode=self.use_unicode, cleanCloud=cleanCloud)
+                OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme=colorScheme, use_unicode=self.use_unicode, cleanCloud=cleanCloud, metric=metric)
 
         if outputFile:
             fsock.close()
@@ -1933,7 +1929,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         return topicWords
 
     @staticmethod
-    def printTopicListTagCloudFromTuples(rs, topicWords, maxWords = 25, maxTopics = 40, duplicateFilter = False, wordFreqs = None, filterThresh = 0.25, colorScheme='multi', use_unicode=True, cleanCloud=False):
+    def printTopicListTagCloudFromTuples(rs, topicWords, maxWords = 25, maxTopics = 40, duplicateFilter = False, wordFreqs = None, filterThresh = 0.25, colorScheme='multi', use_unicode=True, cleanCloud=False, metric='R'):
         """
         print topic tag cloud
 
@@ -1975,7 +1971,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             tw = topicWords.get(topic)
             if not tw:
                 print("**The following topic had no words from the topic lexicion**")
-                print(("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, CI: (%.4f, %.4f), Freq: %d]" % (topic, r, p, n, ci[0], ci[1], freq)).decode("utf-8"))
+                print(("[Topic Id: %s, %s: %.3f, p: %.4f, N: %d, CI: (%.4f, %.4f), Freq: %d]" % (topic, metric, r, p, n, ci[0], ci[1], freq)).decode("utf-8"))
                 continue
 
             if duplicateFilter:
@@ -1994,7 +1990,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 print("**The frequency for this topic is too small**")
 
 
-            print("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, CI: (%.3f, %.3f), Freq: %d]" % (topic, r, p, n, ci[0], ci[1], freq))
+            print("[Topic Id: %s, %s: %.3f, p: %.4f, N: %d, CI: (%.3f, %.3f), Freq: %d]" % (topic, metric, r, p, n, ci[0], ci[1], freq))
             # if using 1gram words and frequencies
             # (r, p, n, freq) belong to the category only
             tw = [(w_f[0], (w_f[1], p, n, ci, w_f[1])) for w_f in tw] if not wordFreqs else [(w_f1[0], (w_f1[1]*float(wordFreqs[w_f1[0]]), p, n, ci, wordFreqs[w_f1[0]])) for w_f1 in tw]
@@ -2209,7 +2205,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         for (w, occ, freq) in rList:
             if freq:
-                color = OutcomeAnalyzer.freqToColor(freq, maxFreq, colorScheme=colorScheme)
+                color = freqToColor(freq, maxFreq, colorScheme=colorScheme)
                 if use_unicode:
                     print("%s:%d:%s" % (w.replace(' ', '_'), int(occ), color))
                 else:
@@ -2280,69 +2276,6 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         # pprint(('after filter', newList))
         return newList
-
-
-    @staticmethod
-    def freqToColor(freq, maxFreq = 1000, resolution=64, colorScheme='multi'):
-        """
-        Alter color scheme of plot based on the the word frequencies
-
-        Parameters
-        ----------
-        freq : int
-            word frequency
-        maxFreq : :obj:`int`, optional
-            maximum frequency threshold
-        resolution : :obj:`int`, optional
-            pixels of resolution
-        colorScheme : :obj:`str`, optional
-            specifies color scheme of plot
-
-        Returns
-        -------
-        htmlcode : str
-            string of html code specifying color scheme
-
-
-        """
-        perc = freq / float(maxFreq)
-        (red, green, blue) = (0, 0, 0)
-        if colorScheme=='multi':
-        #print "%d %d %.4f" %(freq, maxFreq, perc)#debug
-            if perc < 0.17: #grey to darker grey
-                (red, green, blue) = dlac.rgbColorMix((168, 168, 168),(124, 124, 148), resolution)[int(((1.00-(1-perc))/0.17)*resolution) - 1]
-            elif perc >= 0.17 and perc < 0.52: #grey to blue
-                (red, green, blue) = dlac.rgbColorMix((124, 124, 148), (32, 32, 210), resolution)[int(((0.830-(1-perc))/0.35)*resolution) - 1]
-            elif perc >= 0.52 and perc < 0.90: #blue to red
-                (red, green, blue) = dlac.rgbColorMix((32, 32, 210), (200, 16, 32), resolution)[int(((0.48-(1-perc))/0.38)*resolution) - 1]
-            else: #red to dark red
-                (red, green, blue) = dlac.rgbColorMix((200, 16, 32), (128, 0, 0), resolution)[int(((0.10-(1-perc))/0.10)*resolution) - 1]
-        # blue:
-        elif colorScheme=='blue':
-            if perc < 0.50: #light blue to med. blue
-                (red, green, blue) = dlac.rgbColorMix((76, 76, 236), (48, 48, 156), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
-            else: #med. blue to strong blue
-                (red, green, blue) = dlac.rgbColorMix((48, 48, 156), (0, 0, 110), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
-        #red:
-        elif colorScheme=='red':
-            if perc < 0.50: #light red to med. red
-                (red, green, blue) = dlac.rgbColorMix((236, 76, 76), (156, 48, 48), resolution)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
-            else: #med. red to strong red
-                (red, green, blue) = dlac.rgbColorMix((156, 48, 48), (110, 0, 0), resolution)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
-        elif colorScheme=='green':
-            (red, green, blue) = dlac.rgbColorMix((166, 247, 178), (27, 122, 26), resolution)[int((1.00-(1-perc))*resolution) - 1]
-        #red+randomness:
-        elif colorScheme=='red-random':
-            if perc < 0.50: #light blue to med. blue
-                (red, green, blue) = dlac.rgbColorMix((236, 76, 76), (156, 48, 48), resolution, True)[int(((1.00-(1-perc))/0.5)*resolution) - 1]
-            else: #med. blue to strong blue
-                (red, green, blue) = dlac.rgbColorMix((156, 48, 48), (110, 0, 0), resolution, True)[int(((0.5-(1-perc))/0.5)*resolution) - 1]
-
-
-        #print "(%d %d %d)" %(red, green, blue)#debug
-
-        htmlcode = "%02s%02s%02s" % (hex(red)[2:], hex(green)[2:], hex(blue)[2:])
-        return htmlcode.replace(' ', '0')
 
 
     def generateTagCloudImage(self, correls, maxP = dlac.DEF_P, paramString = None, colorScheme='multi', cleanCloud = False):
@@ -2428,7 +2361,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 newCorrels[feat][outcomeField] = featRs[feat]
         FeaturePlotter().barPlot(outputFile, newCorrels)
 
-    def correlMatrix(self, correlMatrix, outputFile = None, outputFormat='html', sort = False, pValue = True, nValue = True, cInt = True, freq = False, paramString = None):
+    def correlMatrix(self, correlMatrix, outputFile = None, outputFormat='html', sort = False, pValue = True, nValue = True, cInt = True, freq = False, paramString = None, metric='r'):
         dlac.warn("Generating Correlation Matrix.")
 
         if outputFile:
@@ -2447,15 +2380,15 @@ class OutcomeAnalyzer(OutcomeGetter):
         elif outputFormat == 'csv':
             if (len(correlMatrix)>0):
                 self.outputCorrelMatrixCSV(dlac.reverseDictDict(correlMatrix), pValue, nValue, cInt, freq, outputFilePtr=outputFilePtr)
-                if sort: self.outputSortedCorrelCSV(correlMatrix, pValue, nValue, cInt, freq, outputFilePtr=outputFilePtr)
+                if sort: self.outputSortedCorrelCSV(correlMatrix, pValue, nValue, cInt, freq, outputFilePtr=outputFilePtr, metric=metric)
         elif outputFormat == 'html':
             if (len(correlMatrix)>0):
                 header = '<head><meta charset="UTF-8"></head><br><br><div id="top"><a href="#feats">Features by alphabetical order</a>'
-                if sort: header += ' or see them <a href="#sorted">sorted by r-values</a>'
+                if sort: header += ' or see them <a href="#sorted">sorted by %s-values</a>' % metric
                 header += '<br><br></div>'
                 print(header, file=outputFilePtr)
                 self.outputCorrelMatrixHTML(dlac.reverseDictDict(correlMatrix), pValue, nValue, cInt, freq, outputFilePtr=outputFilePtr)
-                if sort: self.outputSortedCorrelHTML(correlMatrix, pValue, nValue, cInt, freq, outputFilePtr=outputFilePtr)
+                if sort: self.outputSortedCorrelHTML(correlMatrix, pValue, nValue, cInt, freq, outputFilePtr=outputFilePtr, metric=metric)
         else:
             dlac.warn("unknown output format: %s"% outputFormat)
 
@@ -2493,7 +2426,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 dlac.warn("Line contains unprintable unicode, skipped: %s" % row)
 
     @staticmethod
-    def outputSortedCorrelCSV(correlMatrix, pValue = True, nValue = True, cInt = True, freq=False, outputFilePtr = sys.stdout, topN=50):
+    def outputSortedCorrelCSV(correlMatrix, pValue = True, nValue = True, cInt = True, freq=False, outputFilePtr = sys.stdout, topN=50, metric='r'):
         """Ouputs a sorted correlation matrix (note correlmatrix is reversed from non-sorted) """
         #TODO: topN
         print("\nSORTED:", file=outputFilePtr)
@@ -2505,7 +2438,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             sortedData[key1] = sorted(list(correlMatrix[key1].items()), key=lambda k_v: (-1*float(k_v[1][OutcomeAnalyzer.r_idx]) if not isnan(float(k_v[1][OutcomeAnalyzer.r_idx])) else 0, k_v[0]))
             if len(sortedData[key1]) > maxLen: maxLen = len(sortedData[key1])
             titlerow.append(key1)
-            titlerow.append('r')
+            titlerow.append(metric)
             if pValue: titlerow.append('p')
             if nValue: titlerow.append('N')
             if cInt:
@@ -2538,7 +2471,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         titlerow = ['rank']
         for key1 in keys1:
             titlerow.append(key1)
-            titlerow.append('r')
+            titlerow.append(metric)
             if pValue: titlerow.append('p')
             if nValue: titlerow.append('N')
             if cInt:
@@ -2658,7 +2591,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         print(output, file=outputFilePtr)
 
     @staticmethod
-    def outputSortedCorrelHTML(correlMatrix, pValue = True, nValue = True, cInt = True, freq=False, outputFilePtr = sys.stdout):
+    def outputSortedCorrelHTML(correlMatrix, pValue = True, nValue = True, cInt = True, freq=False, outputFilePtr = sys.stdout, metric = 'r'):
         output="""<style media="screen" type="text/css">
                      table, th, td {border: 1px solid black;padding:2px;}
                      table {border-collapse:collapse;font:10pt verdana,arial,sans-serif;}
@@ -2680,7 +2613,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         for key1 in keys1:
             sortedData[key1] = sorted(iter(correlMatrix[key1].items()), key=lambda k_v2: (-1*float(k_v2[1][OutcomeAnalyzer.r_idx]) if not isnan(float(k_v2[1][OutcomeAnalyzer.r_idx])) else 0, k_v2[0]))
             if len(sortedData[key1]) > maxLen: maxLen = len(sortedData[key1])
-            output += "<td><b>%s<br/>r</b></td>"%dlac.tupleToStr(key1)
+            output += "<td><b>%s<br/>%s</b></td>" % (dlac.tupleToStr(key1), metric)
 
             pnf = []
             if pValue: pnf.append("<em>(p)</em>")
@@ -2742,7 +2675,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         output += "<tr><td><b>rank</b></td>"
         for key1 in keys1:
-            output += "<td><b>%s<br/>r</b></td>"%dlac.tupleToStr(key1)
+            output += "<td><b>%s<br/>%s</b></td>" % (dlac.tupleToStr(key1), metric)
             pnf = []
             if pValue: pnf.append("<em>(p)</em>")
             if nValue: pnf.append("<em>N</em>")

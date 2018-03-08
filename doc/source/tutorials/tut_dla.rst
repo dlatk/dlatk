@@ -44,16 +44,28 @@ We will group our data by user. You can see both the message table and the outco
 STEP 1 - Feature Extraction
 ===========================
 
-Generate 1-gram Features
-------------------------
+Generate 1 to 3-gram Features
+-----------------------------
 This step generates a quantitative summary of a body of text.  It basically does word/n-gram counts on a group by group basis.  It also normalizes by group, so at the end of this you can answer questions like “what proportion of words used by USER 234459 were the word ‘the’”.
 
 .. code-block:: bash
 
 	##EXPECTED OUTPUT TABLES 
 	#feat$1gram$msgs_xxx$user_id$16to16
-	#feat$1gram$msgs_xxx$user_id$16to16$0_001
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_ngrams -n 1 --feat_occ_filter --set_p_occ 0.001 --group_freq_thresh 500
+	#feat$2gram$msgs_xxx$user_id$16to16
+	#feat$3gram$msgs_xxx$user_id$16to16
+	#feat$1to3gram$msgs_xxx$user_id$16to16
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_ngrams -n 1 2 3 --combine_feat_tables 1to3gram
+
+The above command will produce four tables: one for each 'n' and then a table which combines everything (the 1gram, 2gram and 3gram tables). Next we will remove rare features from the combined table using the following:
+
+.. code-block:: bash
+
+	##EXPECTED OUTPUT TABLES 
+	#feat$1to3gram$msgs_xxx$user_id$16to16$0_05
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id -f 'feat$1to3gram$msgs_xxx$user_id$16to16' --feat_occ_filter --set_p_occ 0.05 --group_freq_thresh 500
+
+This command removes any feature used by less than 5% of groups. Note that we are using the :doc:`../fwinterface/fwflag_group_freq_thresh` flag as well which says we are only looking at groups with at least 500 words.
 
 Brief descriptions of the flags:
 
@@ -65,14 +77,6 @@ Brief descriptions of the flags:
 * :doc:`../fwinterface/fwflag_feat_occ_filter`: This tells us to ignore features which occur in a small percentage of groups
 * :doc:`../fwinterface/fwflag_set_p_occ`: The percentage value for the feature occurrence filter 
 * :doc:`../fwinterface/fwflag_group_freq_thresh`: Ignore groups which do not contain a certain number of words
- 
-.. code-block:: bash
-
-	##OTHER COMMAND OPTIONS
-	dlatkInterface.py -d <database> -t <message_table> -c <group_data_column> --add_ngrams -n 1 2 3 --combine_feat_tables 1to3gram
-	
-	##FOLLOWED BY
-	dlatkInterface.py -d <database> -t <message_table> -c <group_data_column> -f <feature table> --feat_occ_filter --set_p_occ <pocc> --group_freq_thresh <gft>
 
 To view the columns in your feature table use the following **mysql** command:
 
@@ -186,9 +190,9 @@ This step **uses the 1gram feature table** that was used in step 1a in addition 
 	| 10 | blow    | 344      |    0.0120238095238 |
 	+----+---------+----------+--------------------+
 
-Every lex table will have the columns: id, term, category and weight. In an unweighted lexica (for example `LIWC <http://www.liwc.net/>`_ (Linguistic Inquiry and Word Count)) the weight column is set to 1.
+Every lex table will have the columns: id, term, category and (optionally) weight. In an unweighted lexica (for example `LIWC <http://www.liwc.net/>`_ (Linguistic Inquiry and Word Count)) the weight column is set to 1 or we can remove the weight column completely.
 
-Since this lexica was produced using a data driven approach we make no attempt to label the categories and give them numerical ids. For example, in LIWC we see the category 'personal pronouns'. The Facebook lexica contains weight in the form of conditional probabilities. We now apply this to our message set:
+Since this lexica was produced using a data driven approach we make no attempt to label the categories and give them numerical ids. The Facebook lexica contains weights in the form of conditional probabilities. We now apply this to our message set:
 
 .. code-block:: bash
 
@@ -228,47 +232,85 @@ What should the group norms sum to for a single group in the lexicon tables? Wil
 STEP 2 - Insights (DLA): Correlate features with outcomes
 =========================================================
 
-This step takes the quantified/summarized text and examines/uses relationships with information about the group.  One basic output is a correlation matrix in html format. You may need to download a program such as WinSCP to transfer the output files from our server to your computer in order to view the output.  
+Before we take a look at language correlates we first look at our outcomes and their relationships. Here we correlate only the outcomes and output to a correlation matrix in html or csv format. 
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
-	-f 'feat$cat_LIWC2007$msgs_xxx$user_id$16to16' \ 
-	 --outcome_table blog_outcomes \ 
-	 --group_freq_thresh 500 \ 
-	 --outcomes age gender \ 
-	 --output_name xxx_output --rmatrix --sort --csv
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id \
+	--correlate --csv --rmatrix --sort --outcome_table blog_outcomes \
+	--outcomes age gender is_student is_education is_technology \
+	--outcome_with_outcome_only --output ~/correlations
 
 Brief descriptions of the flags:
 
-* :doc:`../fwinterface/fwflag_outcome_table`: 
-* :doc:`../fwinterface/fwflag_outcomes`: 
-* :doc:`../fwinterface/fwflag_rmatrix`: 
-* :doc:`../fwinterface/fwflag_sort`: 
-* :doc:`../fwinterface/fwflag_csv`:
+* :doc:`../fwinterface/fwflag_outcome_table`: MySQL table where out extra-linquistic data lives
+* :doc:`../fwinterface/fwflag_outcomes`: MySQL column names
+* :doc:`../fwinterface/fwflag_outcome_with_outcome_only`: says that we are ignoring language and are only looking at the outcomes
+* :doc:`../fwinterface/fwflag_rmatrix`: Produces a correlation matrix in HTML format
+* :doc:`../fwinterface/fwflag_csv`: Produces a correlation matrix in csv format
+* :doc:`../fwinterface/fwflag_sort`: Appends a table to the HTML or csv with correlations sorted by effect size
 
-Output will be written to the file **xxx_output.csv** and **xxx_output.html**. The csv output should look like 
+Output will be written to the file **correlations.csv** and **correlations.html**. The csv output should look like 
 
 .. code-block:: bash
 
-	feature,age,p,N,freq,gender,p,N,freq
-	ACHIEV,0.10453337969466858,1.2486251420175023,499,24061,-0.1327959917320303,0.18924871053777773,499,24061
-	ADVERBS,-0.097823107908957693,1.8490497097147072,499,77661,0.091427449910103736,2.6369379754861826,499,77661
-	AFFECT,-0.060118741047985133,11.519149773307243,499,133155,0.094864627490032188,2.1840596807077146,499,133155
+	feature,age,p,N,CI_l,CI_u,freq,gender,p,N,CI_l,CI_u,freq,is_education,p,N,CI_l,CI_u,freq,is_student,p,N,CI_l,CI_u,freq,is_technology,p,N,CI_l,CI_u,freq
+	outcome_age,1.0,0.0,1000,1.0,1.0,1000,0.013089769277,0.679288049345,1000,-0.048943029258,0.0750219732934,1000,0.172756193994,9.62582613937e-08,1000,0.111962191762,0.232261824573,1000,-0.45911352125,6.87199798082e-53,1000,-0.50668539378,-0.408754348795,1000,0.117238226305,0.000337894917181,1000,0.0556496028558,0.177938062241,1000
+	outcome_gender,0.013089769277,0.679288049345,1000,-0.048943029258,0.0750219732934,1000,1.0,0.0,1000,1.0,1.0,1000,-0.161206890368,4.95925394952e-07,1000,-0.220991447954,-0.100215331046,1000,-0.0221719208099,0.483710711985,1000,-0.0840494768068,0.0398759714239,1000,0.065154589658,0.0492504223304,1000,0.00317432871342,0.126636171693,1000
+	outcome_is_education,0.172756193994,6.41721742624e-08,1000,0.111962191762,0.232261824573,1000,-0.161206890368,7.43888092428e-07,1000,-0.220991447954,-0.100215331046,1000,1.0,0.0,1000,1.0,1.0,1000,-0.14424303335,7.7633413628e-06,1000,-0.204408282607,-0.0829920718038,1000,-0.0537304778134,0.0894683992084,1000,-0.115339374305,0.00829021870801,1000
+	outcome_is_student,-0.45911352125,6.87199798082e-53,1000,-0.50668539378,-0.408754348795,1000,-0.0221719208099,0.604638389981,1000,-0.0840494768068,0.0398759714239,1000,-0.14424303335,5.8225060221e-06,1000,-0.204408282607,-0.0829920718038,1000,1.0,0.0,1000,1.0,1.0,1000,-0.141292966419,1.82280081643e-05,1000,-0.20152088984,-0.0800006243256,1000
+	outcome_is_technology,0.117238226305,0.000253421187886,1000,0.0556496028558,0.177938062241,1000,0.065154589658,0.0656672297739,1000,0.00317432871342,0.126636171693,1000,-0.0537304778134,0.0894683992084,1000,-0.115339374305,0.00829021870801,1000,-0.141292966419,9.11400408216e-06,1000,-0.20152088984,-0.0800006243256,1000,1.0,0.0,1000,1.0,1.0,1000
+
+The :doc:`../fwinterface/fwflag_sort` will append the following to the bottom of the csv: 
+
+.. code-block:: bash
+
+	SORTED:
+	rank,age,r,p,N,CI_l,CI_u,freq,gender,r,p,N,CI_l,CI_u,freq,is_education,r,p,N,CI_l,CI_u,freq,is_student,r,p,N,CI_l,CI_u,freq,is_technology,r,p,N,CI_l,CI_u,freq
+	1,outcome_age,1.0,0.0,1000,1.0,1.0,1000,outcome_gender,1.0,0.0,1000,1.0,1.0,1000,outcome_is_education,1.0,0.0,1000,1.0,1.0,1000,outcome_is_student,1.0,0.0,1000,1.0,1.0,1000,outcome_is_technology,1.0,0.0,1000,1.0,1.0,1000
+	2,outcome_is_education,0.172756193994,6.41721742624e-08,1000,0.111962191762,0.232261824573,1000,outcome_is_technology,0.065154589658,0.0656672297739,1000,0.00317432871342,0.126636171693,1000,outcome_age,0.172756193994,9.62582613937e-08,1000,0.111962191762,0.232261824573,1000,outcome_gender,-0.0221719208099,0.483710711985,1000,-0.0840494768068,0.0398759714239,1000,outcome_age,0.117238226305,0.000337894917181,1000,0.0556496028558,0.177938062241,1000
+	3,outcome_is_technology,0.117238226305,0.000253421187886,1000,0.0556496028558,0.177938062241,1000,outcome_age,0.013089769277,0.679288049345,1000,-0.048943029258,0.0750219732934,1000,outcome_is_technology,-0.0537304778134,0.0894683992084,1000,-0.115339374305,0.00829021870801,1000,outcome_is_technology,-0.141292966419,9.11400408216e-06,1000,-0.20152088984,-0.0800006243256,1000,outcome_gender,0.065154589658,0.0492504223304,1000,0.00317432871342,0.126636171693,1000
+	4,outcome_gender,0.013089769277,0.679288049345,1000,-0.048943029258,0.0750219732934,1000,outcome_is_student,-0.0221719208099,0.604638389981,1000,-0.0840494768068,0.0398759714239,1000,outcome_is_student,-0.14424303335,5.8225060221e-06,1000,-0.204408282607,-0.0829920718038,1000,outcome_is_education,-0.14424303335,7.7633413628e-06,1000,-0.204408282607,-0.0829920718038,1000,outcome_is_education,-0.0537304778134,0.0894683992084,1000,-0.115339374305,0.00829021870801,1000
+	5,outcome_is_student,-0.45911352125,6.87199798082e-53,1000,-0.50668539378,-0.408754348795,1000,outcome_is_education,-0.161206890368,7.43888092428e-07,1000,-0.220991447954,-0.100215331046,1000,outcome_gender,-0.161206890368,4.95925394952e-07,1000,-0.220991447954,-0.100215331046,1000,outcome_age,-0.45911352125,6.87199798082e-53,1000,-0.50668539378,-0.408754348795,1000,outcome_is_student,-0.141292966419,1.82280081643e-05,1000,-0.20152088984,-0.0800006243256,1000
+	rank,age,r,p,N,CI_l,CI_u,freq,gender,r,p,N,CI_l,CI_u,freq,is_education,r,p,N,CI_l,CI_u,freq,is_student,r,p,N,CI_l,CI_u,freq,is_technology,r,p,N,CI_l,CI_u,freq
+
 
 The HTML file should look like this when opened in a browser:
 Attach:rmatrix_output.png
 
 In this example, positive value for age correlates with older age, and negative correlates with younger. Similarly, a positive value for gender indicates correlation with female, and a negative value correlates with male. 
-Or using the Facebook topics and creating topic tag clouds:
+
+Next we look at language correlates and begin with 1to3grams:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
+	-f 'feat$1to3gram$msgs_xxx$user_id$16to16$0_05' \ 
+	--outcome_table blog_outcomes  --group_freq_thresh 500 \ 
+	--outcomes age gender --output_name xxx_output \ 
+	--tagcloud --make_wordclouds
+
+.. |gender_1to3pos| image:: ../../_static/gender_1to3pos.png
+.. |gender_1to3neg| image:: ../../_static/gender_1to3neg.png
+.. |age_1to3pos| image:: ../../_static/age_1to3pos.png
+.. |age_1to3neg| image:: ../../_static/age_1to3neg.png
+
+============   ====================   ====================
+Outcome        Positive Correlation   Negative Correlation
+============   ====================   ====================
+Gender         |gender_1to3pos|       |gender_1to3neg|
+Age            |age_1to3pos|          |age_1to3neg|
+============   ====================   ====================
+
+Finally using the Facebook topics and creating topic tag clouds:
 
 .. code-block:: bash
 
 	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
 	-f 'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16' \ 
-	 --outcome_table blog_outcomes  --group_freq_thresh 500 \ 
-	 --outcomes age gender --output_name xxx_output \ 
-	 --topic_tagcloud --make_topic_wordcloud --topic_lexicon met_a30_2000_freq_t50ll \ 
+	--outcome_table blog_outcomes  --group_freq_thresh 500 \ 
+	--outcomes age gender --output_name fbtopic_output \ 
+	--topic_tagcloud --make_topic_wordcloud --topic_lexicon met_a30_2000_freq_t50ll \ 
 	--tagcloud_colorscheme bluered
 
 Brief descriptions of the flags:
@@ -282,9 +324,9 @@ The following line will be printed to the screen:
 
 .. code-block:: bash
 
-	Yielding norms with zeros (500 groups * 2000 feats).
+	Yielding norms with zeros (1000 groups * 2000 feats).
 
-This tells us that we have 500 users (since our -c field is user_id) each with 2000 features. The 2000 features comes from the fact that we are working with 2000 Facebook topics.  Looking in MySQL we see that we have 500 users total in our dataset:
+This tells us that we have 1000 users (since our -c field is user_id) each with 2000 features. The 2000 features comes from the fact that we are working with 2000 Facebook topics.  Looking in MySQL we see that we have 500 users total in our dataset:
 
 .. code-block:: mysql
 
@@ -292,7 +334,7 @@ This tells us that we have 500 users (since our -c field is user_id) each with 2
 	+-------------------------+
 	| count(distinct user_id) |
 	+-------------------------+
-	|                     500 |
+	|                    1000 |
 	+-------------------------+
 
 This means that every user in our dataset passes the group frequency threshold, i.e., each user has at least 500 words. If we were to set the group frequency threshold to 5000 we would see:
@@ -301,7 +343,7 @@ This means that every user in our dataset passes the group frequency threshold, 
 
 	Yielding norms with zeros (125 groups * 2000 feats).
 
-Output will be written to the file **xxx_output_topic_tagcloud.txt**. The topic tagcloud output will be in a directory called *xxx_output_topic_tagcloud_wordclouds*
+Output will be written to the file **fbtopic_output_topic_tagcloud.txt**. The topic tagcloud output will be in a directory called *fbtopic_output_topic_tagcloud_wordclouds*
 
 .. |gender_pos| image:: ../../_static/gender_pos.png
 .. |gender_neg| image:: ../../_static/gender_neg.png
@@ -316,29 +358,10 @@ Age            |age_pos|              |age_neg|
 ============   ====================   ====================
 
 
-Here is the general syntax for some other commands:
-
-.. code-block:: bash
-
-	####MAKE WORDCLOUDS
-	dlatkInterface.py -d <db> -t <msg_tbl> -c <grp_col> -f <feat_tbl>  \ 
-	 --outcome_table <table_with_group_info>  \ 
-	 --outcomes <list of outcomes separated by spaces>  \ 
-	 --output_name <desired_output_name> --tagcloud --make_wordclouds 
-
-.. code-block:: bash
-
-	####MAKE TOPIC WORDCLOUDS 
-	dlatkInterface.py -d <db> -t <msg_tbl> -c <grp_col> -f <feat_tbl>  \ 
-	 --outcome_table <table_with_group_info>  \ 
-	 --outcomes <list of outcomes separated by spaces>  \ 
-	 --output_name <desired_output_name> --topic_tagcloud --make_topic_wordcloud 
-	 --topic_lexicon <lex_table>
-
 
 Continuing on...
 ================
 More information about dlatk's interface can be found in the following places: 
 
-* :doc:`dlatkinterface_ordered`
+* :doc:`../dlatkinterface_ordered`
 * Next tutorial: :doc:`tut_pred`

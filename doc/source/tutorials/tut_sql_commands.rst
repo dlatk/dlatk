@@ -12,8 +12,8 @@ Since DLATK relies so heavily in MySQL we have created a few commands to help ke
 Viewing and Describing Tables
 =============================
 
-ls
---
+Show Feature Tables
+-------------------
 
 * :doc:`../fwinterface/fwflag_ls`
 
@@ -23,7 +23,7 @@ View all feature tables for a given message table and / or grouping
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --ls
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --show_feature_tables
 
 	SQL QUERY: SHOW TABLES FROM dla_tutorial LIKE 'feat$%$msgs$user_id$%' 
 	Found 4 available feature tables

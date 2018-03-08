@@ -183,7 +183,7 @@ def main(fn_args = None):
                        help='Table containing which groups run in various bins (for ttest).')
     
 
-    group.add_argument('--show_feat_tables', '--ls', '--show_feat_tables', action='store_true', dest='listfeattables', default=False,
+    group.add_argument('--show_feature_tables', '--show_feat_tables', '--ls', action='store_true', dest='listfeattables', default=False,
                        help='List all feature tables for given corpdb, corptable and correl_field')
     group.add_argument('--show_tables', nargs='?', dest='showtables', default=False, const=True,
                        help='List all non-feature tables. Optional argument for "like"-style SQL call')
@@ -223,13 +223,13 @@ def main(fn_args = None):
                        help="minimum WORD frequency per correl_field to include correl_field in results")
     group.add_argument('--output_name', '--output', '--output_file', type=str, dest='outputname', default=getInitVar('outputname', conf_parser, ''),
                        help='overrides the default filename for output')
-    group.add_argument('--max_tagcloud_words', type=int, metavar='N', dest='maxtcwords', default=dlac.DEF_MAX_TC_WORDS,
+    group.add_argument('--max_wordcloud_words', '--max_tagcloud_words', type=int, metavar='N', dest='maxtcwords', default=dlac.DEF_MAX_TC_WORDS,
                        help='Max words to appear in a tagcloud')
     group.add_argument('--show_feat_freqs', action='store_true', dest='showfeatfreqs', default=dlac.DEF_SHOW_FEAT_FREQS,)
     group.add_argument('--not_show_feat_freqs', action='store_false', dest='showfeatfreqs', default=dlac.DEF_SHOW_FEAT_FREQS,
                        help='show / dont show feature frequencies in output.')
-    group.add_argument('--tagcloud_filter', action='store_true', dest='tcfilter', default=dlac.DEF_TC_FILTER,)
-    group.add_argument('--no_tagcloud_filter', action='store_false', dest='tcfilter', default=dlac.DEF_TC_FILTER,
+    group.add_argument('--tagcloud_filter', '--wordcloud_filter', action='store_true', dest='tcfilter', default=dlac.DEF_TC_FILTER,)
+    group.add_argument('--no_tagcloud_filter', '--no_wordcloud_filter', action='store_false', dest='tcfilter', default=dlac.DEF_TC_FILTER,
                        help='filter / dont filter tag clouds for duplicate info in phrases.')
     group.add_argument('--feat_labelmap_table', type=str, dest='featlabelmaptable', default=getInitVar('featlabelmaptable', conf_parser, ''),
                        help='specifies an lda mapping tablename to be used for LDA topic mapping')
@@ -237,7 +237,7 @@ def main(fn_args = None):
                        help='specifies a lexicon tablename to be used for the LDA topic mapping')
     group.add_argument('--bracket_labels', action='store_true', dest='bracketlabels', default='',
                        help='use with: feat_labelmap_lex... if used, the labelmap features will be contained within brackets')
-    group.add_argument('--comparative_tagcloud', action='store_true', dest='compTagcloud', default=False,
+    group.add_argument('--comparative_tagcloud', '--comparative_wordcloud', action='store_true', dest='compTagcloud', default=False,
                        help='used with --sample1 and --sample2, this option uses IDP to compare feature usage')
     group.add_argument('--sample1', type=str, nargs='+', dest="compTCsample1", default=[],
                        help='first sample of group to use in comparison [use with --comparative_tagcloud]'+
@@ -278,7 +278,7 @@ def main(fn_args = None):
                        help='Report confidence intervals.')
     group.add_argument('--freq', type=bool, dest='freq', default=True,
                        help='Report freqs.')
-    group.add_argument('--tagcloud_colorscheme', type=str, dest='tagcloudcolorscheme', default=getInitVar('tagcloudcolorscheme', conf_parser, 'multi'),
+    group.add_argument('--tagcloud_colorscheme', '--wordcloud_colorscheme', type=str, dest='tagcloudcolorscheme', default=getInitVar('tagcloudcolorscheme', conf_parser, 'multi'),
                        help='specify a color scheme to use for tagcloud generation. Default: multi, also accepts red, blue, red-random, redblue, bluered')
     group.add_argument('--clean_cloud', action='store_true', dest='cleancloud', default=False,
                    help='Replaces characters in the middle of explatives/slurs with ***. ex: f**k')
@@ -502,17 +502,17 @@ def main(fn_args = None):
                        help='output a correlation matrix with all combinations of controls.')
     group.add_argument('--topic_dupe_filter', action='store_true', dest='topicdupefilter',
                        help='remove topics not passing a duplicate filter from the correlation matrix')
-    group.add_argument('--tagcloud', action='store_true', dest='tagcloud',
+    group.add_argument('--tagcloud', '--wordcloud', action='store_true', dest='tagcloud',
                        help='produce data for making wordle tag clouds (same variables as correlate).')
-    group.add_argument('--topic_tagcloud', action='store_true', dest='topictc',
+    group.add_argument('--topic_tagcloud', '--topic_wordloud', action='store_true', dest='topictc',
                        help='produce data for making topic wordles (must be used with a topic-based feature table and --topic_lexicon).')
-    group.add_argument('--corp_topic_tagcloud', action='store_true', dest='corptopictc',
+    group.add_argument('--corp_topic_tagcloud', '--corp_topic_wordcloud', action='store_true', dest='corptopictc',
                        help='produce data for making topic wordles (must be used with a topic-based feature table and --topic_lexicon).')
-    group.add_argument('--make_wordclouds', action='store_true', dest='makewordclouds',
+    group.add_argument('--make_wordclouds', '--make_tagclouds', action='store_true', dest='makewordclouds',
                        help="make wordclouds from the output tagcloud file.")
-    group.add_argument('--make_topic_wordclouds', action='store_true', dest='maketopicwordclouds',
+    group.add_argument('--make_topic_wordclouds', '--make_topic_tagclouds', action='store_true', dest='maketopicwordclouds',
                        help="make topic wordclouds, needs an output topic tagcloud file.")
-    group.add_argument('--make_all_topic_wordclouds', action='store_true', dest='makealltopicwordclouds',
+    group.add_argument('--make_all_topic_wordclouds', '--make_all_topic_tagclouds', action='store_true', dest='makealltopicwordclouds',
                        help="make all topic wordclouds for a given topic lexicon.")
     group.add_argument('--use_featuretable_feats', action='store_true', dest='useFeatTableFeats',
                        help='use 1gram table to be used as a whitelist when plotting')
@@ -529,7 +529,7 @@ def main(fn_args = None):
     group.add_argument('--interaction_ddla_pvalue', dest='ddlaSignificance', type=float,default=0.001,
                        help="Set level of significance to filter ddla features by")
     group.add_argument('--DDLA', dest='ddlaFiles', nargs=2, help="Compares two csv's that have come out of DLA. Requires --freq and --nvalue to have been used")
-    group.add_argument('--DDLATagcloud', dest='ddlaTagcloud', action='store_true',
+    group.add_argument('--DDLATagcloud', '--DDLAWordcloud', dest='ddlaTagcloud', action='store_true',
                        help="Makes a tagcloud file from the DDLA output. Uses deltaR as size, r_INDEX as color. ")
 
     group = parser.add_argument_group('Multiple Regression Actions', 'Find multiple relationships at once')
@@ -1346,7 +1346,8 @@ def main(fn_args = None):
             outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
             if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
             if args.spearman: outputFile += '.spearman'
-        oa.correlMatrix(correls, outputFile, outputFormat='html', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq)
+        metric = dlac.getMetric(args.logisticReg, args.IDP, args.spearman, args.outcomecontrols)
+        oa.correlMatrix(correls, outputFile, outputFormat='html', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq, metric=metric)
 
     if args.csv and not args.cca and correls:
         if args.outputname:
@@ -1355,29 +1356,32 @@ def main(fn_args = None):
             outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
             if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
             if args.spearman: outputFile += '.spearman'
-        oa.correlMatrix(correls, outputFile, outputFormat='csv', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq)
+        metric = dlac.getMetric(args.logisticReg, args.IDP, args.spearman, args.outcomecontrols)
+        oa.correlMatrix(correls, outputFile, outputFormat='csv', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq, metric=metric)
 
     if args.tagcloud:
+        metric = dlac.getMetric(args.logisticReg, args.IDP, args.spearman, args.outcomecontrols)
         outputFile = makeOutputFilename(args, fg, oa, suffix="_tagcloud")
         oa.printTagCloudData(correls, args.maxP, outputFile, str(args), maxWords = args.maxtcwords, duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, cleanCloud = args.cleancloud)
     if args.makewordclouds:
         if not args.tagcloud:
             print("ERROR, can't use --make_wordclouds without --tagcloud", file=sys.stderr)
             sys.exit()
-        wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True)
+        wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True, metric=metric)
 
     if args.topictc or args.corptopictc:
         if args.corptopictc: oa.lexicondb = oa.corpdb
+        metric = dlac.getMetric(args.logisticReg, args.IDP, args.spearman, args.outcomecontrols)
         outputFile = makeOutputFilename(args, fg, oa, suffix='_topic_tagcloud')
         # use plottingWhitelistPickle to link to a pickle file containing the words driving the categories
-        oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats, maxWords=args.numtopicwords, cleanCloud=args.cleancloud)
+        oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats, maxWords=args.numtopicwords, cleanCloud=args.cleancloud, metric=metric)
         # don't want to base on this: maxWords = args.maxtcwords)
     if args.maketopicwordclouds:
         if not args.topictc and not args.corptopictc:
             print("ERROR, can't use --make_topic_wordclouds without --topic_tagcloud or --corp_topic_tagcloud", file=sys.stderr)
             sys.exit()
         print(outputFile)
-        wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True)
+        wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True, metric=metric)
 
     comboCorrels = None
     if args.combormatrix:

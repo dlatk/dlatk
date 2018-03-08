@@ -185,7 +185,7 @@ Create a word clound png for every topic in a given topic lexicon.
 Ini files
 =========
 
-See the :doc:`../tutorials/tut_tut_init_files` tutorial for more info.
+See the :doc:`../tutorials/tut_ini_files` tutorial for more info.
 
 Pickles
 =======

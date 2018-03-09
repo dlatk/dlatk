@@ -255,31 +255,31 @@ class MessageTransformer(DLAWorker):
         new_rows = [(i[0], json.dumps(i[1].split(" "))) for i in new_rows[:]]
 
         # Now that we have the new rows, we should insert them. 1) Create table, 2) insert
+        tableName = self.corptable+"_seg"
         sql = "SELECT column_name, column_type FROM INFORMATION_SCHEMA.COLUMNS "
         sql += "WHERE table_name = '%s' AND COLUMN_NAME in ('%s', '%s') and table_schema = '%s'" % (
             self.corptable, self.message_field, self.messageid_field, self.corpdb)
         types = {k:v for k,v in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)}
         sql2 = "CREATE TABLE %s (" % (self.corptable+"_seg")
-        sql2 += "%s %s primary key, %s %s character set %s collate %s ENGINE=%s" % (self.messageid_field,
-                                                                                         types[self.messageid_field],
-                                                                                         self.message_field,
-                                                                                         types[self.message_field],
-                                                                                         self.encoding,
-                                                                                         dlac.DEF_COLLATIONS[self.encoding.lower()],
-                                                                                         dlac.DEF_MYSQL_ENGINE)
+        sql2 += "%s %s primary key, %s %s " % (self.messageid_field,
+                                                 types[self.messageid_field],
+                                                 self.message_field,
+                                                 types[self.message_field],
+                                                 )
         sql2 += ")"
-        mm.execute(self.corpdb, self.dbCursor, "drop table if exists "+self.corptable+"_seg", charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, "drop table if exists "+tableName, charset=self.encoding, use_unicode=self.use_unicode)
         mm.execute(self.corpdb, self.dbCursor, sql2, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+        alter = """ALTER TABLE %s MODIFY %s LONGTEXT""" % (tableName, self.message_field)
+        mm.execute(self.corpdb, self.dbCursor, alter, charset=self.encoding, use_unicode=self.use_unicode)
 
-        sql = "INSERT INTO %s " % (self.corptable+"_seg")
+        sql = "INSERT INTO %s " % (tableName)
         sql += " VALUES (%s, %s)"
         N = 50000
         totalLength = len(new_rows)
         for l in range(0, totalLength, N):
             print("Inserting rows (%5.2f%% done)" % (float(min(l+N,totalLength))*100/totalLength))
             mm.executeWriteMany(self.corpdb, self.dbCursor, sql, new_rows[l:l+N], writeCursor=self.dbConn.cursor(), charset=self.encoding)
-
-
 
     def addTweetPOSMessages(self):
         """Creates a POS tagged (by TweetNLP) version of the message table
@@ -428,9 +428,11 @@ class MessageTransformer(DLAWorker):
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-        if cleanMessages:
+        if sentPerRow:
             sql = """ALTER TABLE %s CHANGE `%s` `%s` VARCHAR(64)""" % (tableName, self.messageid_field, self.messageid_field)
             mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        
+        if cleanMessages:
 
             ### get lexical normalization dictionaries
             normalizeDict = {}

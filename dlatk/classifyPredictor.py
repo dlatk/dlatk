@@ -59,7 +59,7 @@ import math
 
 #infrastructure
 from .mysqlmethods import mysqlMethods as mm
-from .dlaConstants import warn
+from .dlaConstants import DEFAUL_RANDOM_SEED, warn
 
 #For ROC curves
 try:
@@ -268,7 +268,7 @@ class ClassifyPredictor:
         #     {}, 
         #     ],
         'gbc': [
-            {'n_estimators': [500], 'random_state': [42], 
+            {'n_estimators': [500], 'random_state': [DEFAUL_RANDOM_SEED], 
              'subsample':[0.4], 'max_depth': [5]  },
             ],
         'mnb': [
@@ -350,7 +350,7 @@ class ClassifyPredictor:
     #featureSelectPerc = 0.20 #only perform feature selection on a sample of training (set to 1 to perform on all)
 
     testPerc = .20 #percentage of sample to use as test set (the rest is training)
-    randomState = 42 #percentage of sample to use as test set (the rest is training)
+    randomState = DEFAUL_RANDOM_SEED #percentage of sample to use as test set (the rest is training)
     #randomState = 64 #percentage of sample to use as test set (the rest is training)
 
     trainingSize = 1000000 #if this is smaller than the training set, then it will be reduced to this. 
@@ -625,11 +625,11 @@ class ClassifyPredictor:
                     if stratifyFolds:
                         #even classes across the outcomes
                         print("Warning: Stratifying outcome classes across folds (thus, folds will differ across outcomes).")
-                        #groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = 42)
+                        groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = DEFAUL_RANDOM_SEED)
                         ##DEBUG: below is using random folds to do bootstrapping; should change back to above.
-                        print("Warning: using random folds for bootstrapping; classifyPredictor.py to fix")
-                        groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = np.random.randint(0, 10000))
-                        del groupFolds[np.random.randint(0, len(groupFolds))]
+                        # print("Warning: using random folds for bootstrapping; classifyPredictor.py to fix")
+                        # groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = np.random.randint(0, 10000))
+                        # del groupFolds[np.random.randint(0, len(groupFolds))]
 
 
                     #for warmStartControls or controlCombinedProbs
@@ -2378,7 +2378,7 @@ def xFoldN(l, folds):
 def foldN(l, folds):
     return [f for f in xFoldN(l, folds)]
 
-def stratifyGroups(groups, outcomes, folds, randomState = 42):
+def stratifyGroups(groups, outcomes, folds, randomState = DEFAUL_RANDOM_SEED):
     """breaks groups up into folds such that each fold has at most 1 more of a class than other folds """
     random.seed(randomState)
     xGroups = sorted(list(set(groups) & set(outcomes.keys())))

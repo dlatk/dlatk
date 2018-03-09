@@ -36,7 +36,7 @@ MAX_SQL_PRINT_CHARS = 256
 
 ##Corpus Settings:
 DEF_CORPDB = 'dla_tutorial'
-DEF_CORPTABLE = 'msgs'
+DEF_CORPTABLE = ''
 DEF_CORREL_FIELD = 'user_id'
 DEF_MESSAGE_FIELD = 'message'
 DEF_MESSAGEID_FIELD = 'message_id'
@@ -60,8 +60,8 @@ DEF_NUM_RAND_MESSAGES = 100
 MAX_WRITE_RECORDS = 1000 #maximum number of records to write at a time (for add_terms...)
 
 ##Outcome settings
-DEF_OUTCOME_TABLE = 'masterstats_r500'
-DEF_OUTCOME_FIELD = 'demog_age'
+DEF_OUTCOME_TABLE = ''
+DEF_OUTCOME_FIELD = ''
 DEF_OUTCOME_FIELDS = []
 DEF_OUTCOME_CONTROLS = []
 DEF_GROUP_FREQ_THRESHOLD = int(1000) #min. number of total feature values that the group has, to use it
@@ -130,6 +130,7 @@ DEF_CP_FEATURE_SELECTION_MAPPING = {
     'none': None,
 }
 DEFAULT_MAX_PREDICT_AT_A_TIME = 100000
+DEFAUL_RANDOM_SEED = 42
 
 ##Mediation Settings:
 DEF_MEDIATION_BOOTSTRAP = 1000

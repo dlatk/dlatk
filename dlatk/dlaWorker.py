@@ -240,12 +240,74 @@ class DLAWorker(object):
         wordGetter = self.getWordGetter(lexicon_count_table)
         return dict(wordGetter.getSumValuesByGroup(where))
 
-    def getFeatureTables(self, where = ''):
-        """Returns a list of available feature tables for a given corptable and correl_field.
+    def getTables(self, feat_table = False, like = None):
+        """Returns a list of available tables.
  
         Parameters
         ----------
-        where : :obj:`str`, optional
+        feat_table : :obj:`str`, optional
+            Indicator for listing feature tables
+
+        like : :obj:`boolean`, optional
+            Filter tables with sql-style call.
+     
+        Returns
+        -------
+        list
+            A list of tables names
+        """
+        if feat_table:
+            sql = """SHOW TABLES FROM %s LIKE 'feat$%%$%s$%s$%%' """ % (self.corpdb, self.corptable, self.correl_field)
+        else:
+            sql = """SHOW TABLES FROM %s where Tables_in_%s NOT LIKE 'feat%%' """ % (self.corpdb, self.corpdb)
+            if isinstance(like, str): sql += """ AND Tables_in_%s like '%s'""" % (self.corpdb, like)
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+
+    def describeTable(self, table_name):
+        """
+ 
+        Parameters
+        ----------
+        table_name : :obj:`str`
+            Name of table to describe
+     
+        Returns
+        -------
+        Description of table (list of lists)
+            
+        """
+        sql = """DESCRIBE %s""" % (table_name)
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+
+    def viewTable(self, table_name):
+        """
+ 
+        Parameters
+        ----------
+        table_name : :obj:`str`
+            Name of table to describe
+     
+        Returns
+        -------
+        First 5 rows of table (list of lists)
+            
+        """
+        col_sql = """select column_name from information_schema.columns 
+            where table_schema = '%s' and table_name='%s'""" % (self.corpdb, table_name)
+        col_names = [col[0] for col in mm.executeGetList(self.corpdb, self.dbCursor, col_sql, charset=self.encoding, use_unicode=self.use_unicode)]
+        sql = """SELECT * FROM %s LIMIT 5""" % (table_name)
+        return [col_names] + list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
+
+
+    def createRandomSample(self, percentage, random_seed = dlac.DEFAUL_RANDOM_SEED, where = ''):
+        """Creates a new table from a random subetset of rows.
+ 
+        Parameters
+        ----------
+        percentage : :obj:`float`, optional
+            Percentage of random rows to keep
+
+        random_seed : :obj:`int`, optional
             Filter groups with sql-style call.
      
         Returns
@@ -253,8 +315,30 @@ class DLAWorker(object):
         list
             A list of feature tables names
         """
-        sql = """SHOW TABLES FROM %s LIKE 'feat$%%$%s$%s$%%' """ % (self.corpdb, self.corptable, self.correl_field)
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        new_table = self.corptable + "_rand"
+
+        rows_sql = """SELECT count(*) from %s""" % (self.corptable)
+        n_old_rows = mm.executeGetList1(self.corpdb, self.dbCursor, rows_sql, charset=self.encoding, use_unicode=self.use_unicode)[0]
+        n_new_rows = round(percentage*n_old_rows)
+
+        drop_sql = """DROP TABLE IF EXISTS %s""" % (new_table)
+        mm.execute(self.corpdb, self.dbCursor, drop_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+
+        create_sql = """CREATE TABLE %s LIKE %s""" % (new_table, self.corptable)
+        mm.execute(self.corpdb, self.dbCursor, create_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+        
+        disable_sql = """ALTER TABLE %s DISABLE KEYS""" % (new_table)
+        mm.execute(self.corpdb, self.dbCursor, disable_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+        
+        insert_sql = """INSERT INTO %s SELECT * FROM %s where RAND(%s) < %s""" % (new_table, self.corptable, random_seed, percentage*1.1)
+        if where: insert_sql += " AND %s" % (where)
+        insert_sql += " LIMIT %s" % (n_new_rows)
+        mm.execute(self.corpdb, self.dbCursor, insert_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+        
+        enable_sql = """ALTER TABLE %s ENABLE KEYS""" % (new_table)
+        mm.execute(self.corpdb, self.dbCursor, enable_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+
+        return new_table
 
     @staticmethod
     def makeBlackWhiteList(args_featlist, args_lextable, args_categories, args_lexdb, args_use_unicode):

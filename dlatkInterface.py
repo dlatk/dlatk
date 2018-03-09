@@ -189,6 +189,8 @@ def main(fn_args = None):
                        help='List all non-feature tables. Optional argument for "like"-style SQL call')
     group.add_argument('--describe_tables', '--desc_tables', nargs='*', dest='describetables', default=False,
                        help='')
+    group.add_argument('--view_tables', '--view_data', nargs='*', dest='viewtables', default=False,
+                       help='')
     group.add_argument('--create_random_sample', '--create_rand_sample', dest='createrandsample', default=None,
                        nargs='+', help='')
     group.add_argument('--extension', metavar='EXTENSION', dest='extension', default=None,
@@ -776,12 +778,16 @@ def main(fn_args = None):
     # exit()
 
     # SQL interface methods
-    if args.listfeattables or args.showtables or args.describetables or args.createrandsample:
+    if args.listfeattables or args.showtables or args.describetables or args.createrandsample or args.viewtables:
         if not dlaw: dlaw = DLAW()
 
     if isinstance(args.describetables, list) and len(args.describetables) == 0: 
         if not dlaw: dlaw = DLAW()
         args.describetables = True
+
+    if isinstance(args.viewtables, list) and len(args.viewtables) == 0: 
+        if not dlaw: dlaw = DLAW()
+        args.viewtables = True
 
     if args.listfeattables or args.showtables:
         feat_table = True if args.listfeattables else False
@@ -794,7 +800,12 @@ def main(fn_args = None):
         row_format ="{:>25}{:>25}{:>10}{:>10}{:>10}{:>15}" 
         print(row_format.format(*header))
         for row in description:
-            print(row_format.format(*[r if r else '' for r in row]))
+            print(row_format.format(*[r if r or r == 0 else '' for r in row]))
+
+    def printTableData(data):
+        row_format = "{:>15}" * len(data[0]) 
+        for row in data:
+            print(row_format.format(*[' ' + str(r)[0:14] if r or r == 0 else '' for r in row]))
 
     if args.describetables:
         if args.corptable:
@@ -809,6 +820,20 @@ def main(fn_args = None):
         if isinstance(args.describetables, str): args.describetables = [args.describetables]
         if isinstance(args.describetables, list):
             for tbl in args.describetables: printTableDesc(dlaw.describeTable(table_name=tbl))
+
+    if args.viewtables:
+        if args.corptable:
+            printTableData(dlaw.viewTable(table_name=args.corptable))
+        if isinstance(args.feattable, str):
+            printTableData(dlaw.viewTable(table_name=args.feattable))
+        elif isinstance(args.feattable, list):
+            for ftable in args.feattable:
+                printTableData(dlaw.viewTable(table_name=ftable))
+        if args.outcometable:
+            printTableData(dlaw.viewTable(table_name=args.outcometable))
+        if isinstance(args.viewtables, str): args.viewtables = [args.viewtables]
+        if isinstance(args.viewtables, list):
+            for tbl in args.viewtables: printTableData(dlaw.viewTable(table_name=tbl))
 
     if args.createrandsample:
         if len(args.createrandsample) > 2: 

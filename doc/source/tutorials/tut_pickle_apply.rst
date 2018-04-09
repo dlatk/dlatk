@@ -26,6 +26,7 @@ Regression:
 Classification
 
 * :doc:`../fwinterface/fwflag_predict_classifiers_to_feats`
+* :doc:`../fwinterface/fwflag_predict_probabilities_to_feats`
 * :doc:`../fwinterface/fwflag_predict_classifiers_to_outcome_table`
 
 

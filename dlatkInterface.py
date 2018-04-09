@@ -506,7 +506,7 @@ def main(fn_args = None):
                        help='remove topics not passing a duplicate filter from the correlation matrix')
     group.add_argument('--tagcloud', '--wordcloud', action='store_true', dest='tagcloud',
                        help='produce data for making wordle tag clouds (same variables as correlate).')
-    group.add_argument('--topic_tagcloud', '--topic_wordloud', action='store_true', dest='topictc',
+    group.add_argument('--topic_tagcloud', '--topic_wordcloud', action='store_true', dest='topictc',
                        help='produce data for making topic wordles (must be used with a topic-based feature table and --topic_lexicon).')
     group.add_argument('--corp_topic_tagcloud', '--corp_topic_wordcloud', action='store_true', dest='corptopictc',
                        help='produce data for making topic wordles (must be used with a topic-based feature table and --topic_lexicon).')

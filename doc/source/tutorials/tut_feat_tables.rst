@@ -40,7 +40,7 @@ These tables are generally created with the :doc:`../fwinterface/fwflag_add_ngra
 
 Example 2: extracted lexicon/topic features
 -------------------------------------------
-These tables are generally created with the :doc:`../fwinterface/fwflag_add_lex_table` flag of fwInterface.
+These tables are generally created with the :doc:`../fwinterface/fwflag_add_lex_table` flag of dlatkInterface.
 
 .. code-block:: bash
 
@@ -49,7 +49,7 @@ These tables are generally created with the :doc:`../fwinterface/fwflag_add_lex_
 
 **Field 0** Specifies this as a feature table
 
-**Field 1** Specifies the source of features; these are extracted from the topic lexicon *met_a30_2000*, and the table was created via :doc:`../fwinterface/fwflag_add_lex_table`. The trailing "*_w*" indicates a weighted lexicon. "*_cp*" stands for "conditional probability", one of the two types of topic lexica normally created (see [[Tutorials/LDA|LDA_Tutorial]]).
+**Field 1** Specifies the source of features; these are extracted from the topic lexicon *met_a30_2000*, and the table was created via :doc:`../fwinterface/fwflag_add_lex_table`. The trailing "*_w*" indicates a weighted lexicon. "*_cp*" stands for "conditional probability", one of the two types of topic lexica normally created (see :doc:`../tutorials/tut_lda`).
 
 **Field 2** Gives the message table (:doc:`../fwinterface/fwflag_t`) that the features were derived from
 

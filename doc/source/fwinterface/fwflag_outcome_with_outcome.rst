@@ -29,14 +29,21 @@ Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`, :doc:`fwflag_f`, :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes` Optional Switches:
-anything from :doc:`fwflag_correlate` 
+
+* :doc:`fwflag_d`, :doc:`fwflag_t`, :doc:`fwflag_c` 
+* :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes` 
+* :doc:`fwflag_f`
+
+Optional Switches:
+
+* :doc:`fwflag_group_freq_thresh`
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+.. code-block:: bash
 
- # Correlates LIWC lexical features with age and gender for every user in masterstats_andy_r10k 
- # Also will correlate age and gender over those same users.
- ~/fwInterface.py :doc:`fwflag_d` fb20 :doc:`fwflag_t` messages_en :doc:`fwflag_c` user_id :doc:`fwflag_outcome_table` masterstats_andy_r10k :doc:`fwflag_outcomes` age gender
- :doc:`fwflag_outcome_with_outcome` :doc:`fwflag_f` 'feat$cat_LIWC2007$messages_en$user_id$16to16' :doc:`fwflag_correlate` 
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id  \
+	-f 'feat$1gram$msgs$16to16' --correlate --csv \
+	--outcome_table blog_outcomes --outcomes age gender is_student is_education is_technology \
+	--outcome_with_outcome 

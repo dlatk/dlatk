@@ -506,7 +506,7 @@ def main(fn_args = None):
                        help='remove topics not passing a duplicate filter from the correlation matrix')
     group.add_argument('--tagcloud', '--wordcloud', action='store_true', dest='tagcloud',
                        help='produce data for making wordle tag clouds (same variables as correlate).')
-    group.add_argument('--topic_tagcloud', '--topic_wordloud', action='store_true', dest='topictc',
+    group.add_argument('--topic_tagcloud', '--topic_wordcloud', action='store_true', dest='topictc',
                        help='produce data for making topic wordles (must be used with a topic-based feature table and --topic_lexicon).')
     group.add_argument('--corp_topic_tagcloud', '--corp_topic_wordcloud', action='store_true', dest='corptopictc',
                        help='produce data for making topic wordles (must be used with a topic-based feature table and --topic_lexicon).')
@@ -571,6 +571,8 @@ def main(fn_args = None):
                        help="Computes ROC curves and outputs to PDF")
     group.add_argument('--predict_classifiers_to_feats', type=str, dest='predictctofeats', default=None,
                        help='predict outcomes into a feature file (provide a name)')
+    group.add_argument('--predict_probabilities_to_feats', '--predict_probs_to_feats', type=str, dest='predictprobstofeats', default=None,
+                       help='predict probabilities into a feature file (provide a name)')
     group.add_argument('--predict_classifiers_to_outcome_table', type=str, dest='predictCtoOutcomeTable', default=None,
                        help='predict outcomes into an outcome table (provide a name)')
     group.add_argument('--regression_to_lexicon', dest='regrToLex', type=str, default=None,
@@ -1647,7 +1649,7 @@ def main(fn_args = None):
 
     ##CLASSIFICATION:
     cp = None
-    if args.trainclassifiers or args.testclassifiers or args.combotestclassifiers or args.predictclassifiers or args.predictctofeats or args.classToLex or args.roc or args.predictCtoOutcomeTable:
+    if args.trainclassifiers or args.testclassifiers or args.combotestclassifiers or args.predictclassifiers or args.predictctofeats or args.predictprobstofeats or args.classToLex or args.roc or args.predictCtoOutcomeTable:
         if args.model == dlac.DEF_MODEL:#if model wasnt changed form a regression model
             args.model = dlac.DEF_CLASS_MODEL
         if not og: og = OG()
@@ -1699,14 +1701,14 @@ def main(fn_args = None):
             outputStream.close()
 
     if args.predictclassifiers:
-        cp.predict(sparse = args.sparse, groupsWhere = args.groupswhere)
+        cp.predict(sparse = args.sparse, groupsWhere = args.groupswhere, probs = True)
 
     if args.roc:
         cp.roc(sparse = args.sparse, output_name = args.outputname if args.outputname else "ROC",  standardize = args.standardize, groupsWhere = args.groupswhere)
 
-    if args.predictctofeats and cp:
+    if (args.predictctofeats or args.predictprobstofeats) and cp:
         if not fe: fe = FE()
-        cp.predictToFeatureTable(sparse = args.sparse, fe = fe, name = args.predictctofeats, groupsWhere = args.groupswhere)
+        cp.predictToFeatureTable(sparse = args.sparse, fe = fe, name = args.predictctofeats or args.predictprobstofeats, groupsWhere = args.groupswhere, probs = args.predictprobstofeats)
 
     if args.predictCtoOutcomeTable:
         if not fgs: fgs = FGs()

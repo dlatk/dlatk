@@ -790,7 +790,7 @@ class ClassifyPredictor:
     #################################################
     #################################################
 
-    def predict(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
+    def predict(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', probs = False):
         
         if not self.multiXOn:
             print("model trained without multiX, reverting to old predict")
@@ -873,8 +873,15 @@ class ClassifyPredictor:
 
             #############
             #4) predict
-            ypred = self._multiXpredict(self.classificationModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
+            if probs:
+                ypredProbs, ypredClasses = self._multiXpredict(self.classificationModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
+                                            multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse, probs = probs)
+                ypred = ypredClasses[ypredProbs.argmax(axis=1)]
+                ypredProbsMaxClass = ypredProbs.T[ypredClasses.argmax()]
+            else:
+                ypred = self._multiXpredict(self.classificationModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
                                             multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
+                            
             print("[Done. Evaluation:]")
             acc = accuracy_score(ytest, ypred)
             f1 = f1_score(ytest, ypred, average='macro')
@@ -885,14 +892,20 @@ class ClassifyPredictor:
             print(" *precision and recall: \n%s" % classification_report(ytest, ypred))
             print(" *ACC: %.4f (mfclass_acc: %.4f); mfclass: %s\n" % (acc, mfclass_acc, str(mfclass)))
 
+            if probs:
+                auc = pos_neg_auc(ytest, ypredProbs[:,-1])
+                print(" *AUC: %.4f" % auc)            
+
             mse = metrics.mean_squared_error(ytest, ypred)
             print("*Mean Squared Error:                 %.4f"% mse)
             assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups" 
-            predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder,ypred)))
+            if probs:
+                predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder, ypredProbsMaxClass)))
+            else:
+                predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder, ypred)))
 
         print("[Prediction Complete]")
 
-        # print "Maarten \n", pd.DataFrame(predictions)
         return predictions
 
     def predictNoOutcomeGetter(self, groups, standardize = True, sparse = False, restrictToGroups = None):
@@ -975,7 +988,7 @@ class ClassifyPredictor:
         return predictions
 
 
-    def predictAllToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = ''):
+    def predictAllToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = '', probs = False):
         if not fe:
             print("Must provide a feature extractor object")
             sys.exit(0)
@@ -1012,7 +1025,7 @@ class ClassifyPredictor:
                 print("len(chunk) == len(groups): True")
                 # chunk = None
 
-            chunkPredictions = self.predict(standardize, sparse, chunk)
+            chunkPredictions = self.predict(standardize, sparse, chunk, probs = probs)
 
             # predictions is now outcomeName => group_id => value (outcomeName can become feat)
             # merge chunk predictions into predictions:
@@ -1211,7 +1224,7 @@ class ClassifyPredictor:
         # 4: use self.outcomeGetter.createOutcomeTable(tableName, dataFrame)
         self.outcomeGetter.createOutcomeTable(name, predDF, 'replace')
 
-    def predictToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = ''):
+    def predictToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = '', probs = False):
         if not fe:
             print("Must provide a feature extractor object")
             sys.exit(0)
@@ -1248,7 +1261,7 @@ class ClassifyPredictor:
                 print("len(chunk) == len(groups): True")
                 # chunk = None
 
-            chunkPredictions = self.predict(standardize, sparse, chunk)
+            chunkPredictions  = self.predict(standardize, sparse, chunk, probs = probs)
 
             # predictions is now outcomeName => group_id => value (outcomeName can become feat)
             # merge chunk predictions into predictions:
@@ -1274,7 +1287,7 @@ class ClassifyPredictor:
             rows = []
             for feat in featNames:
                 preds = chunkPredictions[feat]
-                pprint(preds)#DEBUG
+                #pprint(preds)#DEBUG
                 print("[Inserting Predictions as Feature values for feature: %s]" % feat)
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
                 
@@ -2043,6 +2056,7 @@ class ClassifyPredictor:
                     rowDict['w/ lang.'] = withLang
                     rowDict.update({(k,v) for (k,v) in list(sc.items()) if ((k is not 'predictions') and k is not 'predictionProbs')})
                     csvOut.writerow(rowDict)
+
     @staticmethod
     def printComboControlPredictionsToCSV(scores, outputstream, paramString = None, delimiter='|'):
         """prints predictions with all combinations of controls to csv)"""

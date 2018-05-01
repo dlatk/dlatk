@@ -1882,7 +1882,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             else:
                 OutcomeAnalyzer.printTopicListTagCloudFromTuples(posRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme=colorScheme, use_unicode=self.use_unicode, cleanCloud=cleanCloud, metric=metric)
 
-            print("\nNegative %ss:\n------------" % (metric))
+            print("\nNegative %ss:\n-------------" % (metric))
             if colorScheme == 'bluered':
                 OutcomeAnalyzer.printTopicListTagCloudFromTuples(negRs, topicWords, maxWords, maxTopics, duplicateFilter, wordFreqs = wordFreqs, colorScheme='red', use_unicode=self.use_unicode, cleanCloud=cleanCloud, metric=metric)
             elif colorScheme == 'redblue':

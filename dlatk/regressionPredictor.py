@@ -988,6 +988,7 @@ class RegressionPredictor:
 
                         if savePredictions: 
                             reportStats['predictions'] = predictions
+                            reportStats['trues'] = outcomes
                         if saveModels: 
                             print("!!SAVING MODELS NOT IMPLEMENTED FOR testControlCombos!!")
                         try:
@@ -1943,6 +1944,11 @@ class RegressionPredictor:
                     predictionData[str(i)+'_'+outcomeName+'_'+mc] = s['predictions']
                     for k,v in s['predictions'].items():
                         data[k].append(v)
+                    if 'trues' in s:
+                        columns.append(outcomeName+'_'+mc+'_trues')
+                        predictionData[str(i)+'_'+outcomeName+'_'+mc+'_trues'] = s['predictions']
+                        for k,v in s['trues'].items():
+                            data[k].append(v)
         
         writer = csv.writer(outputstream)
         writer.writerow(columns)

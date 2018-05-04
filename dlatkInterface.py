@@ -1609,7 +1609,8 @@ def main(fn_args = None):
                 outputStream = open(args.outputname+'.predicted_data.csv', 'w')
             RegressionPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
-            outputStream.close()
+            if args.outputname: 
+                outputStream.close()
         #TODO:
         # if args.pred_feat:
         #     RegressionPredictor.printComboControlPredictionsToFeats(comboScores, label=pred_feat, paramString=str(args), delimiter='|')
@@ -1619,7 +1620,8 @@ def main(fn_args = None):
                 outputStream = open(args.outputname+'.variance_data.csv', 'w')
             RegressionPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
             print("Wrote to: %s" % str(outputStream))
-            outputStream.close()
+            if args.outputname: 
+                outputStream.close()
         elif not args.pred_csv:
             pprint(comboScores)
 

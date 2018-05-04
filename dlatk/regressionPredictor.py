@@ -1913,7 +1913,8 @@ class RegressionPredictor:
             #csv:
             csvOut = csv.DictWriter(outputstream, fieldnames=columnNames, delimiter=delimiter)
             if set(columnNames) != set(previousColumnNames):
-                firstRow = dict([(str(k), str(k)) for k in columnNames if k is not 'predictions'])
+                ignoreKeys = set(['predictions','controls'])
+                firstRow = dict([(str(k), str(k)) for k in columnNames if not k in ignoreKeys])
                 csvOut.writerow(firstRow)
                 previousColumnNames = columnNames
             for rk in rowKeys:
@@ -1923,7 +1924,7 @@ class RegressionPredictor:
                     for cn in controlNames:
                         rowDict[cn] = 1 if cn in rk else 0
                     rowDict['w/ lang.'] = withLang
-                    rowDict.update({(k,v) for (k,v) in list(sc.items()) if k is not 'predictions'})
+                    rowDict.update({(k,v) for (k,v) in list(sc.items()) if not k in ignoreKeys})
                     csvOut.writerow(rowDict)
     @staticmethod
     def printComboControlPredictionsToCSV(scores, outputstream, paramString = None, delimiter='|'):

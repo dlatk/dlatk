@@ -1618,7 +1618,7 @@ def main(fn_args = None):
             outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.variance_data.csv', 'w')
-            RegressionPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
+            RegressionPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
             if args.outputname: 
                 outputStream.close()

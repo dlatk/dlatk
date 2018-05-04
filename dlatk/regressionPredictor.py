@@ -1893,7 +1893,7 @@ class RegressionPredictor:
 
     ########################
     @staticmethod 
-    def printComboControlScoresToCSV(scores, outputstream = sys.stdout, paramString = None, delimiter='|'):
+    def printComboControlScoresToCSV(scores, outputstream = sys.stdout, paramString = None, delimiter=','):
         """prints scores with all combinations of controls to csv)"""
         if paramString: 
             print(paramString+"\n", file=outputstream)
@@ -1928,7 +1928,7 @@ class RegressionPredictor:
                         rowDict.update({(k,v) for (k,v) in list(sc.items()) if not k in ignoreKeys})
                         csvOut.writerow(rowDict)
     @staticmethod
-    def printComboControlPredictionsToCSV(scores, outputstream, paramString = None, delimiter='|'):
+    def printComboControlPredictionsToCSV(scores, outputstream, paramString = None, delimiter=','):
         """prints predictions with all combinations of controls to csv)"""
         predictionData = {}
         data = defaultdict(list)

@@ -1900,19 +1900,19 @@ class RegressionPredictor:
         i = 0
         outcomeKeys = sorted(scores.keys())
         previousColumnNames = []
+        ignoreKeys = set(['predictions','controls','trues'])
         for outcomeName in outcomeKeys:
          
             outcomeScores = scores[outcomeName]
             #setup column and row names:
             controlNames = sorted(list(set([controlName for controlTuple in list(outcomeScores.keys()) for controlName in controlTuple])))
             rowKeys = sorted(list(outcomeScores.keys()), key = lambda k: len(k))
-            scoreNames = sorted(list(set(name for k in rowKeys for v in outcomeScores[k].values() for name in list(v.keys()))), key=str.lower)
+            scoreNames = [sn for sn in sorted(list(set(name for k in rowKeys for v in outcomeScores[k].values() for name in list(v.keys()) if not name in ignoreKeys and isinstance(v, dict))), key=str.lower) if not sn in ignoreKeys]
             #scoreNames = sorted(outcomeScores[rowKeys[0]].itervalues().next().keys(), key=str.lower)
             columnNames = ['row_id', 'outcome', 'model_controls'] + scoreNames + ['w/ lang.'] + controlNames
 
             #csv:
             csvOut = csv.DictWriter(outputstream, fieldnames=columnNames, delimiter=delimiter)
-            ignoreKeys = set(['predictions','controls','trues'])
             if set(columnNames) != set(previousColumnNames):
                 firstRow = dict([(str(k), str(k)) for k in columnNames if not k in ignoreKeys])
                 csvOut.writerow(firstRow)

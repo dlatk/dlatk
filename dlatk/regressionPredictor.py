@@ -708,6 +708,10 @@ class RegressionPredictor:
         #2b) setup control combinations:
         controlKeys = list(allControls.keys())
         scores = dict() #outcome => control_tuple => [0],[1] => scores= {R2, R, r, r-p, rho, rho-p, MSE, train_size, test_size, num_features,yhats}
+        savedTrues = set()#stores outcomeNames that have already been saved
+        if savePredictions: 
+            scores['controls'] = allControls
+
         if not comboSizes:
             comboSizes = range(len(controlKeys)+1)
             if allControlsOnly:
@@ -988,6 +992,9 @@ class RegressionPredictor:
 
                         if savePredictions: 
                             reportStats['predictions'] = predictions
+                            if not outcomeName in savedTrues: 
+                                reportStats['trues'] = outcomes
+                                savedTrues.add(outcomeName)
                         if saveModels: 
                             print("!!SAVING MODELS NOT IMPLEMENTED FOR testControlCombos!!")
                         try:
@@ -1886,7 +1893,7 @@ class RegressionPredictor:
 
     ########################
     @staticmethod 
-    def printComboControlScoresToCSV(scores, outputstream = sys.stdout, paramString = None, delimiter='|'):
+    def printComboControlScoresToCSV(scores, outputstream = sys.stdout, paramString = None, delimiter=','):
         """prints scores with all combinations of controls to csv)"""
         if paramString: 
             print(paramString+"\n", file=outputstream)
@@ -1905,21 +1912,23 @@ class RegressionPredictor:
 
             #csv:
             csvOut = csv.DictWriter(outputstream, fieldnames=columnNames, delimiter=delimiter)
+            ignoreKeys = set(['predictions','controls','trues'])
             if set(columnNames) != set(previousColumnNames):
-                firstRow = dict([(str(k), str(k)) for k in columnNames if k is not 'predictions'])
+                firstRow = dict([(str(k), str(k)) for k in columnNames if not k in ignoreKeys])
                 csvOut.writerow(firstRow)
                 previousColumnNames = columnNames
-            for rk in rowKeys:
-                for withLang, sc in outcomeScores[rk].items():
-                    i+=1
-                    rowDict = {'row_id': i, 'outcome': outcomeName, 'model_controls': str(rk)+str(withLang)}
-                    for cn in controlNames:
-                        rowDict[cn] = 1 if cn in rk else 0
-                    rowDict['w/ lang.'] = withLang
-                    rowDict.update({(k,v) for (k,v) in list(sc.items()) if k is not 'predictions'})
-                    csvOut.writerow(rowDict)
+            for rk in rowKeys: 
+                if not rk in ignoreKeys:
+                    for withLang, sc in outcomeScores[rk].items():
+                        i+=1
+                        rowDict = {'row_id': i, 'outcome': outcomeName, 'model_controls': str(rk)+str(withLang)}
+                        for cn in controlNames:
+                            rowDict[cn] = 1 if cn in rk else 0
+                        rowDict['w/ lang.'] = withLang
+                        rowDict.update({(k,v) for (k,v) in list(sc.items()) if not k in ignoreKeys})
+                        csvOut.writerow(rowDict)
     @staticmethod
-    def printComboControlPredictionsToCSV(scores, outputstream, paramString = None, delimiter='|'):
+    def printComboControlPredictionsToCSV(scores, outputstream, paramString = None, delimiter=','):
         """prints predictions with all combinations of controls to csv)"""
         predictionData = {}
         data = defaultdict(list)
@@ -1929,6 +1938,14 @@ class RegressionPredictor:
         i = 0
         outcomeKeys = sorted(scores.keys())
         previousColumnNames = []
+        if 'controls' in outcomeKeys:#print controls first
+            outcomeKeys.remove('controls')
+            for c, s in scores['controls'].items(): 
+                columns.append('control_'+str(c))
+                predictionData['control_'+str(c)] = s
+                for k,v in s.items():
+                    data[k].append(v )               
+
         for outcomeName in outcomeKeys:
             outcomeScores = scores[outcomeName]
             controlNames = sorted(list(set([controlName for controlTuple in list(outcomeScores.keys()) for controlName in controlTuple])))
@@ -1943,6 +1960,11 @@ class RegressionPredictor:
                     predictionData[str(i)+'_'+outcomeName+'_'+mc] = s['predictions']
                     for k,v in s['predictions'].items():
                         data[k].append(v)
+                    if 'trues' in s:
+                        columns.append(outcomeName+'_trues')
+                        predictionData[str(i)+'_'+outcomeName+'_trues'] = s['predictions']
+                        for k,v in s['trues'].items():
+                            data[k].append(v)
         
         writer = csv.writer(outputstream)
         writer.writerow(columns)

@@ -778,7 +778,7 @@ class FeatureRefiner(FeatureGetter):
 
             sql = """SELECT group_id, value, group_norm from %s WHERE feat = \'%s\'"""%(ngram_table, mm.MySQLdb.escape_string(feat.encode('utf-8')).decode('utf-8'))
 
-            group_id_freq = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+            group_id_freq = mm.executeGetList(self.corpdb, self.dbCursor, sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode)
 
             for (group_id, value, tf) in group_id_freq:
                 tf_idf = tf * idf

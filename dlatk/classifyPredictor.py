@@ -270,6 +270,8 @@ class ClassifyPredictor:
         'gbc': [
             {'n_estimators': [500], 'random_state': [DEFAUL_RANDOM_SEED], 
              'subsample':[0.4], 'max_depth': [5]  },
+             # {'n_estimators': [50], 'random_state': [DEFAUL_RANDOM_SEED], 'learning_rate': [0.2], 'min_samples_leaf': [50],
+             # 'subsample':[0.8], 'max_depth': list(range(5,16,2)), 'max_features': list(range(5,100,5)), },
             ],
         'mnb': [
             {'alpha': [1.0], 'fit_prior': [False], 'class_prior': [None]},
@@ -877,7 +879,7 @@ class ClassifyPredictor:
                 ypredProbs, ypredClasses = self._multiXpredict(self.classificationModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
                                             multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse, probs = probs)
                 ypred = ypredClasses[ypredProbs.argmax(axis=1)]
-                ypredProbsMaxClass = ypredProbs.T[ypredClasses.argmax()]
+                ypredProbsMaxClass = ypredProbs[:,ypredClasses.argmax()]
             else:
                 ypred = self._multiXpredict(self.classificationModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
                                             multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
@@ -988,7 +990,7 @@ class ClassifyPredictor:
         return predictions
 
 
-    def predictAllToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = '', probs = False):
+    def predictAllToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = ''):
         if not fe:
             print("Must provide a feature extractor object")
             sys.exit(0)
@@ -1025,7 +1027,7 @@ class ClassifyPredictor:
                 print("len(chunk) == len(groups): True")
                 # chunk = None
 
-            chunkPredictions = self.predict(standardize, sparse, chunk, probs = probs)
+            chunkPredictions = self.predict(standardize, sparse, chunk)
 
             # predictions is now outcomeName => group_id => value (outcomeName can become feat)
             # merge chunk predictions into predictions:
@@ -1792,7 +1794,8 @@ class ClassifyPredictor:
                 y_score[:,i] = y_score_slice
                 print("best estimator: %s (score: %.4f)\n" % (gs.best_estimator_, gs.best_score_))
             ret = (gs.best_estimator_,  multiScalers, multiFSelectors)
-            print(y_score)
+            print(set(y_score.flatten()))
+            print(modelName)
         else:
             print("[ROC - Using classification model: %s]" % modelName)
             classifier = eval(self.modelToClassName[modelName]+'()')
@@ -1902,7 +1905,12 @@ class ClassifyPredictor:
             #run transformations:
             if scaler:
                 print(("  predict: applying standard scaler to X[%d]: %s" % (i, str(scaler)))) #debug
-                X = scaler.fit_transform(X)
+                try:
+                    X = scaler.transform(X)
+                except NotFittedError as e:
+                    warn(e)
+                    warn("Fitting scaler")
+                    X = scaler.fit_transform(X)
             if fSelector:
                 print(("  predict: applying feature selection to X[%d]: %s" % (i, str(fSelector)))) #debug
                 newX = fSelector.transform(X)

@@ -1285,6 +1285,7 @@ class LexInterfaceParser(ArgumentParser):
                              help="category in lexicon to get random samples from")
         group.add_argument("--num_rand_messages", dest="num_messages", metavar="NUM", type=int, default = dlac.DEF_NUM_RAND_MESSAGES,
                              help="number of random messages to select when getting samples from lexicon category")
+        group.add_argument("--lex_interface", dest="lex_interface", action="store_true", help="Dummy arg for parsing from dlatkInterface.py") 
 
         ## Initialize any Objects ##
         self.lexicon = None 

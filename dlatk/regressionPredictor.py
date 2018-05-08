@@ -1907,7 +1907,7 @@ class RegressionPredictor:
             #setup column and row names:
             controlNames = sorted(list(set([controlName for controlTuple in list(outcomeScores.keys()) for controlName in controlTuple])))
             rowKeys = sorted(list(outcomeScores.keys()), key = lambda k: len(k))
-            scoreNames = [sn for sn in sorted(list(set(name for k in rowKeys for v in outcomeScores[k].values() for name in list(v.keys()) if not name in ignoreKeys and isinstance(v, dict))), key=str.lower) if not sn in ignoreKeys]
+            scoreNames = [sn for sn in sorted(list(set(name for k in rowKeys for v in outcomeScores[k].values() if isinstance(v, dict) for name in list(v.keys()) if not name in ignoreKeys)), key=str.lower) if not sn in ignoreKeys]
             #scoreNames = sorted(outcomeScores[rowKeys[0]].itervalues().next().keys(), key=str.lower)
             columnNames = ['row_id', 'outcome', 'model_controls'] + scoreNames + ['w/ lang.'] + controlNames
 

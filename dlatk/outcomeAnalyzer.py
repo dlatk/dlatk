@@ -583,8 +583,8 @@ class OutcomeAnalyzer(OutcomeGetter):
         spearman : :obj:`boolean`, optional
         p_correction_method : :obj:`str`, optional
             Specified method for p-value correction
-        iteraction : :obj:`list`, optional
-            list of iteraction terms
+        interaction : :obj:`list`, optional
+            list of interaction terms
         blacklist : :obj:`list`, optional
             list of feature table fields (str) to ignore
         whitelist : :obj:`list`, optional
@@ -666,27 +666,25 @@ class OutcomeAnalyzer(OutcomeGetter):
                     controlsValues = [values for control, values in controls.items() if control not in interaction] + [controls[i] for i in interaction]
                     controlsKeys = [control for control, values in controls.items() if control not in interaction] + interaction
 
-                    # controls.values() makes the labels go away, turns it into a list
                     (X, y) = dlac.alignDictsAsXy(controlsValues + [dataDict], outcomes)
+                    
+                    if spearman:
+                        if interaction: 
+                            dlac.warn("Interactions with Spearman not implemented.")
+                            sys.exit(1)
+                        X = dlac.switchColumnsAndRows([rankdata(x) for x in dlac.switchColumnsAndRows(X)])
+                        y = rankdata(y)
+
+                    if zscoreRegression: (X, y) = (zscore(X), zscore(y) if not logisticReg else y)
+
                     # X is a matrix, y is a column vector
                     # Each row of X is: [control1, control2, ..., interaction1, interaction2, ..., group_norm]
                     #                       0         1           len(controls) len(controls)+1    len(controls)+len(interaction)
-
                     for i in range(len(controls)-len(interaction), len(controls)):
-                        X = [x[:-1]+[float(x[i])*x[-1], x[-1]] for x in X]
-
+                        X = [list(x[:-1])+[float(x[i])*x[-1], x[-1]] for x in X]
                     # X is a matrix, y is a column vector
                     # Each row of X is: [control1, control2, ..., interaction1,       interaction2, ..., interaction1*group_norm, int2*gn, ..., group_norm]
                     #                       0         1        len(ctrls)-len(int)                              len(ctrls)                 len(controls)+len(interaction)
-
-                    #print "alignDict time: %f"% float(time.time() - t0)#debug
-                    if spearman:
-                        X = dlac.switchColumnsAndRows([rankdata(x) for x in dlac.switchColumnsAndRows(X)])
-                        y = rankdata(y)
-                    #X = np.array(X).astype(np.float)#debug: we should be able to avoid this by casting correctly originally
-                    #y = np.array(y).astype(np.float)#debug: we should be able to avoid this by casting correctly originally
-
-                    if zscoreRegression: (X, y) = (zscore(X), zscore(y) if not logisticReg else y)
 
                     results = None
                     try:
@@ -700,8 +698,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                         if outputInteraction:
                             interaction_tuples = {}
                             for i, inter in enumerate(interaction):
-                                interaction_tuples["%s with %s" % (inter, outcomeField)] = (results.params[i+len(controls)-len(interaction)], results.pvalues[i+len(controls)-len(interaction)], len(y))
-                                interaction_tuples["group_norm * %s from %s" % (inter, outcomeField)] = (results.params[i+len(controls)], results.pvalues[i+len(controls)], len(y))
+                                interaction_tuples["%s with %s" % (inter, outcomeField)] = (results.params[i+len(controls)-len(interaction)], results.pvalues[i+len(controls)-len(interaction)], len(y), dlac.conf_interval(results.params[i+len(controls)-len(interaction)], len(y)))
+                                interaction_tuples["group_norm * %s from %s" % (inter, outcomeField)] = (results.params[i+len(controls)], results.pvalues[i+len(controls)], len(y), dlac.conf_interval(results.params[i+len(controls)], len(y)))
 
                     except (ValueError,Exception) as err:
                         mode = 'Logistic regression' if logisticReg else 'OLS'
@@ -710,8 +708,8 @@ class OutcomeAnalyzer(OutcomeGetter):
 
                 else: #run pearson / spearman correlation (if not logitsic or not controls)
                     (dataList, outcomeList) = dlac.alignDictsAsLists(dataDict, outcomes)
-                    # pdb.set_trace()
-                    #LAD addition: added because pearsonr messes up when trying to regress between different types: Decimal and float
+
+                    # added because pearsonr messes up when trying to regress between different types: Decimal and float
                     outcomeList = list(map(float, outcomeList))
 
                     if spearman: tup = spearmanr(dataList, outcomeList) + (len(dataList),)
@@ -787,8 +785,8 @@ class OutcomeAnalyzer(OutcomeGetter):
         featGetter : featureGetter object
         p_correction_method : :obj:`str`, optional
             Specified method for p-value correction
-        iteraction : :obj:`list`, optional
-            list of iteraction terms
+        interaction : :obj:`list`, optional
+            list of interaction terms
         bootstrapP : :obj:`list`, optional
         blacklist : :obj:`list`, optional
             list of feature table fields (str) to ignore
@@ -1157,7 +1155,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             Adds the outcomes themselves to the list of variables to correlate with the outcomes if True
         zscoreRegression : :obj:`boolean`, optional
             standard both variables if True
-        iteractions : :obj:`boolean`, optional
+        interactions : :obj:`boolean`, optional
 
         Returns
         -------

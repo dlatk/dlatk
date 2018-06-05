@@ -320,17 +320,6 @@ class MessageAnnotator(DLAWorker):
             message = messageRow[messageIndex]
 
             try:
-                message = message.encode('utf-8', 'ignore').decode('windows-1252', 'ignore')
-            except UnicodeEncodeError as e:
-                raise ValueError("UnicodeEncodeError"+ str(e) + str([message]))
-            except UnicodeDecodeError as e:
-                print(type(message))
-                print([message.decode('utf-8')])
-                raise ValueError("UnicodeDecodeError"+ str(e) + str([message]))
-            except AttributeError as e:
-                print("Empty message, skipped")
-                continue
-            try:
                 message = html.unescape(message)
                 messageRow[messageIndex] = message
 

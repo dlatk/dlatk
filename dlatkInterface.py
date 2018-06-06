@@ -1227,13 +1227,14 @@ def main(fn_args = None):
         if not oa: oa = OA()
         correls = oa.IDPcomparison(fg, args.compTCsample1, args.compTCsample2, blacklist=blacklist, whitelist=whitelist)
 
-    if not args.compTagcloud and not args.cca and (args.correlate or args.rmatrix or args.tagcloud or args.topictc or args.corptopictc or args.barplot or args.featcorrelfilter or args.makewordclouds or args.maketopicwordclouds or args.outcomeWithOutcomeOnly):
+    if not args.compTagcloud and not args.cca and (args.correlate or args.rmatrix or args.tagcloud or args.topictc or args.corptopictc or args.barplot or args.featcorrelfilter or args.makewordclouds or args.maketopicwordclouds or args.outcomeWithOutcomeOnly or args.interactionDdla):
         if not oa: oa = OA()
         if not fg: fg = FG()
         if args.interactionDdla:
             # if len(args.outcomefieldsprint "There were no features with significant interactions") > 1: raise NotImplementedError("Multiple outcomes with DDLA not yet implemented")
             # Step 1 Interaction
-            args.outcomeinteraction = [args.interactionDdla]
+            if not args.outcomeinteraction:
+              args.outcomeinteraction = [args.interactionDdla]
             oa = OA()
             print("##### STEP 1: Finding features with significant interaction term")
             correls = oa.correlateWithFeatures(fg, args.spearman,
@@ -1245,7 +1246,6 @@ def main(fn_args = None):
 
             # whitelist should be different for multiple outcomes
             ddla_whitelists = {inter_key: [k for k, i in correls[inter_key].items() if i[1] < args.ddlaSignificance] for inter_key in inter_keys}
-            print("Maarten", ddla_whitelists)
 
             correls = {"INTER["+k+"]": v for k, v in correls.items()}
 
@@ -1253,7 +1253,6 @@ def main(fn_args = None):
                 if not ddla_whitelist:
                     continue
                 out = out_name.split(" from ")[-1]
-                print("Maarten", out_name, out)
 
                 whitelist = DLAWorker.makeBlackWhiteList(ddla_whitelist, '', [], args.lexicondb, args.useunicode)
 
@@ -1262,7 +1261,6 @@ def main(fn_args = None):
                 # Step 2: do correlations on both ends of the interaction variable
 
                 print("##### STEP 2: getting correlations within groups")
-                print("args.outcomecontrols", args)
                 args.outcomeinteraction = []
                 args.outcomefields = [out]
                 og = OG()
@@ -1270,6 +1268,7 @@ def main(fn_args = None):
                     where = args.interactionDdla + "=1 and WHERE " + args.groupswhere
                 else:
                     where = args.interactionDdla+"=1"
+                print("##### WHERE: %s" % where)
                 correls_1 = oa.correlateWithFeatures(fg, args.spearman,
                                                      args.p_correction_method, args.outcomeinteraction, blacklist,
                                                      whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly,
@@ -1281,6 +1280,7 @@ def main(fn_args = None):
                     where = args.interactionDdla + "=0 and WHERE " + args.groupswhere
                 else:
                     where = args.interactionDdla+"=0"
+                print("##### WHERE: %s" % where)
                 correls_0 = oa.correlateWithFeatures(fg, args.spearman,
                                                      args.p_correction_method, args.outcomeinteraction, blacklist,
                                                      whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly,

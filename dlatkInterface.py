@@ -1265,7 +1265,7 @@ def main(fn_args = None):
                 args.outcomefields = [out]
                 og = OG()
                 if args.groupswhere:
-                    where = args.interactionDdla + "=1 and WHERE " + args.groupswhere
+                    where = args.interactionDdla + "=1 and " + args.groupswhere
                 else:
                     where = args.interactionDdla+"=1"
                 print("##### WHERE: %s" % where)

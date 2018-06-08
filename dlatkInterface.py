@@ -1277,7 +1277,7 @@ def main(fn_args = None):
                 correls.update({"["+k+"]_1": v for k, v in correls_1.items()})
                 og = OG()
                 if args.groupswhere:
-                    where = args.interactionDdla + "=0 and WHERE " + args.groupswhere
+                    where = args.interactionDdla + "=0 and " + args.groupswhere
                 else:
                     where = args.interactionDdla+"=0"
                 print("##### WHERE: %s" % where)

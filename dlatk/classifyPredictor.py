@@ -537,8 +537,6 @@ class ClassifyPredictor:
             print("    ***explicit fold labels specified, not splitting or stratifying again***")
             stratifyFolds = False
             temp = {}
-            # for k,v in sorted(foldLabels.iteritems()): temp.setdefault(v, []).append(k)
-            # groupFolds = temp.values()
             for k,v in sorted(foldLabels.items()): temp.setdefault(v, []).append(k)
             groupFolds = list(temp.values())
             nFolds = len(groupFolds)
@@ -549,13 +547,8 @@ class ClassifyPredictor:
             random.shuffle(groupList)
             groupFolds = foldN(groupList, nFolds)
         else:
+            # stratification happens on an outcome by outcome basis
             print("    using stratified folds; different folds per outcome")
-
-        print("[number of groups: %d (%d Folds)]" % (len(groups), nFolds))
-        random.seed(self.randomState)
-        groupList = list(groups)
-        random.shuffle(groupList)
-        groupFolds =  [x for x in foldN(groupList, nFolds)]
 
         ####
         #1a: setup weightedEval
@@ -626,6 +619,7 @@ class ClassifyPredictor:
 
                     if stratifyFolds:
                         #even classes across the outcomes
+                        # stratification happens within outcomes unlike foldLabels
                         print("Warning: Stratifying outcome classes across folds (thus, folds will differ across outcomes).")
                         groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = DEFAUL_RANDOM_SEED)
                         ##DEBUG: below is using random folds to do bootstrapping; should change back to above.

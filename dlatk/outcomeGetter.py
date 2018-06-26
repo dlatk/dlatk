@@ -348,7 +348,7 @@ enabled, so the total word count for your groups might be off
                             sys.exit(1)
                         cat_labels = set([str(lbl).lower() for lbl in outcomes[moutcome].values()])
                         cat_label_str = "_".join([moutcome, "_multiclass"]).lower()
-                        cat_labels_dict[cat_label_str] = {i[1]:i[0] for i in enumerate(cat_labels)}
+                        cat_labels_dict[cat_label_str] = {i[1]:i[0] for i in enumerate(sorted(cat_labels))}
                         outcomes[cat_label_str] = {gid: cat_labels_dict[cat_label_str][l.lower()] for gid, l in outcomes[moutcome].items() }
                         cat_label_list.append(cat_label_str)
                     except:

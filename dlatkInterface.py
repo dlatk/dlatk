@@ -560,6 +560,21 @@ def main(fn_args = None):
     group.add_argument('--predict_cv_to_feats', '--predict_combo_to_feats', '--predict_regression_all_to_feats', type=str, dest='predictalltofeats', default=None,
                        help='predict outcomes into a feature file (provide a name)')
 
+    group = parser.add_argument_group('Factor Adaptation Actions', '')
+    group.add_argument('--fs_params', action='store_true', dest='fsparams', default=False, help = 'send values for feature selection parameters')    
+    group.add_argument('--k_best', type=str, dest='kbest', nargs='+', help='vaiables needed for feature selection .')
+    group.add_argument('--pca_comp', type=str, dest='pcacomp', nargs='+', help='vaiables needed for feature selection .')
+    group.add_argument('--adaptation_factors', '--factors', type=str, metavar='FIELD(S)', dest='adaptationfactors', nargs='+', help='Fields in outcome table to use as factors for adaptation in FA or RFA.')
+    group.add_argument('--factor_selection_type', type=str , dest = 'factorselectiontype', default='rfe', help='chooses the type of factor selection, either pca or rfe.')
+    group.add_argument('--num_of_factors', type=int, dest='numoffactors', nargs='+',
+                       help='specifies the number of factors for factor selection. 0 means all factor1. ') 
+    group.add_argument('--paired_factors',  action='store_true',  dest = 'pairedfactors', default=False , help='multiplying factors to themself, to make bigger pool of factors')
+    group.add_argument('--report', action='store_true', dest='report', default=False, help = 'Indicates if we want to store a report on outputfile+"_.report".')
+    group.add_argument('--factor_addition', action='store_true', dest='factoraddition', default=False, help = 'Indicates we want to append factors to language.')
+    group.add_argument('--factor_adaptation', '--fa',  action='store_true', dest='factoradaptation', default=False, help = 'Indicates we want to factor_adapt language features.')
+    group.add_argument('--res_factor_adaptation', '--rfa' , action='store_true', dest='residualizedfactoradaptation', default=False, help = 'Indicates we want to apply residualized factor adaptation.')    
+
+
     group = parser.add_argument_group('Classification Actions', '')
     group.add_argument('--train_classifiers', '--train_class', action='store_true', dest='trainclassifiers', default=False,
                        help='train classification models for each outcome field based on feature table')
@@ -708,6 +723,29 @@ def main(fn_args = None):
         args.groupfreqthresh = dlac.getGroupFreqThresh(args.correl_field)
     else:
         setGFTWarning = True
+
+    args.integrationmethod = ''
+    if args.factoradaptation:
+        args.integrationmethod = 'fa'  
+        if args.factoraddition:
+            args.integrationmethod += '_plus'
+    elif args.residualizedfactoradaptation:
+        args.integrationmethod = 'rfa'
+        if args.factoraddition:
+            args.integrationmethod += '_plus'
+    elif args.factoraddition:
+        args.integrationmethod = 'plus'
+
+    if args.adaptationfactors:
+        args.outcomefields = args.outcomefields + args.adaptationfactors
+    elif args.factoradaptation or args.residualizedfactoradaptation or args.factoraddition:
+        args.adaptationfactors = args.outcomecontrols
+        args.outcomefields = args.outcomefields + args.adaptationfactors
+
+    if args.fsparams:
+        args.featureselectionparams = { 'kbest': args.kbest , 'pca': args.pcacomp }
+    else:
+        args.featureselectionparams = None
 
     DLAWorker.lexicon_db = args.lexicondb
 
@@ -1600,7 +1638,7 @@ def main(fn_args = None):
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
                                            nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval,
                                            standardize = args.standardize, residualizedControls = args.res_controls, groupsWhere = args.groupswhere, 
-                                           weightedSample = args.weightedsample)
+                                           weightedSample = args.weightedsample, adaptationFactorsName = args.adaptationfactors, featureSelectionParameters=args.featureselectionparams , factorSelectionType=args.factorselectiontype, numOfFactors=args.numoffactors, pairedFactors=args.pairedfactors, outputName = args.outputname, report=args.report, integrationMethod = args.integrationmethod)
         elif args.controladjustreg:
             comboScores = rp.adjustOutcomesFromControls(standardize = args.standardize, sparse = args.sparse,
                                                         allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,

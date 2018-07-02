@@ -37,12 +37,10 @@ try:
     import jsonrpclib
     from simplejson import loads
 except ImportError:
-    dlac.warn("Cannot import jsonrpclib or simplejson (cannot use addPOSAndTimexDiffFeatTable)")
     pass
 try:
     from textstat.textstat import textstat
 except ImportError:
-    dlac.warn("Cannot import textstat (cannot use addFleschKincaidTable)")
     pass
 
 #feature extractor constants:
@@ -1191,7 +1189,12 @@ class FeatureExtractor(DLAWorker):
         """
 
         ##NOTE: correl_field should have an index for this to be quick
-        fk_score = textstat.flesch_kincaid_grade
+        
+        try:
+            fk_score = textstat.flesch_kincaid_grade
+        except NameError: 
+            dlac.warn("Cannot import textstat (cannot use addFleschKincaidTable)")
+            sys.exit(1)
 
         #CREATE TABLE:
         featureName = 'flkin'
@@ -2072,7 +2075,11 @@ class FeatureExtractor(DLAWorker):
         """
         ##NOTE: correl_field should have an index for this to be quick
 
-        corenlpServer = jsonrpclib.Server("http://localhost:%d"% serverPort)
+        try:
+            corenlpServer = jsonrpclib.Server("http://localhost:%d"% serverPort)
+        except NameError: 
+            dlac.warn("Cannot import jsonrpclib or simplejson")
+            sys.exit(1)
 
         #corenlpServer = getCoreNLPServer(pipeline = ['tokenizer', 'pos',] serverPort = serverPort)
 
@@ -2115,7 +2122,11 @@ class FeatureExtractor(DLAWorker):
                         message = tc.removeNonAscii(message)
                     message = tc.shrinkSpace(message)
 
-                    parseInfo = loads(corenlpServer.parse(message))
+                    try:
+                        parseInfo = loads(corenlpServer.parse(message))
+                    except NameError: 
+                        dlac.warn("Cannot import jsonrpclib or simplejson")
+                        sys.exit(1)
                     #print parseInfo #debug
                     newDiffs, thisNEtags, thisWords = self.parseCoreNLPForTimexDiffs(parseInfo, messageDT)
                     #print newDiffs #debug
@@ -2198,7 +2209,11 @@ class FeatureExtractor(DLAWorker):
 
         """
         ##NOTE: correl_field should have an index for this to be quick
-        corenlpServer = jsonrpclib.Server("http://localhost:%d"% serverPort)
+        try:
+            corenlpServer = jsonrpclib.Server("http://localhost:%d"% serverPort)
+        except NameError: 
+            dlac.warn("Cannot import jsonrpclib or simplejson")
+            sys.exit(1)
 
         #CREATE TABLES:
         featureName = 'timex'
@@ -2252,7 +2267,11 @@ class FeatureExtractor(DLAWorker):
                         message = tc.removeNonAscii(message)
                     message = tc.shrinkSpace(message)
 
-                    parseInfo = loads(corenlpServer.parse(message))
+                    try:
+                        parseInfo = loads(corenlpServer.parse(message))
+                    except NameError: 
+                        dlac.warn("Cannot import jsonrpclib or simplejson")
+                        sys.exit(1)
 
                     #TIMEX PROCESSING
                     newDiffs, thisNEtags, thisWords = self.parseCoreNLPForTimexDiffs(parseInfo, messageDT)

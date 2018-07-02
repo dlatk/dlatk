@@ -66,7 +66,6 @@ try:
     from matplotlib.backends.backend_pdf import PdfPages
     import matplotlib.pyplot as plt
 except:
-    warn("matplotlib PdfPages or plt cannot be imported")
     pass
 
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
@@ -1824,7 +1823,11 @@ class ClassifyPredictor:
 
     def roc_curves(self, y_test, y_score, output_name = None):
         output_name = "ROC" if not output_name else output_name
-        pp = PdfPages(output_name+'.pdf' if output_name[-4:] != '.pdf' else output_name)
+        try:
+            pp = PdfPages(output_name+'.pdf' if output_name[-4:] != '.pdf' else output_name)
+        except NameError:
+            warn("matplotlib PdfPages or plt cannot be imported")
+            sys.exit(1)
 
         # Compute ROC curve and ROC area for each class
         fpr = dict()

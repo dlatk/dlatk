@@ -889,7 +889,7 @@ class RegressionPredictor:
                                     assert len(ytest) == testSize, "ytest not the right size"
                                     if len(ytrain) > self.trainingSize:
                                         Xtrain, Xthrowaway, ytrain, ythrowaway = train_test_split(Xtrain, ytrain, test_size=len(ytrain) - self.trainingSize, random_state=self.randomState)
-                                    (res_regressor, res_multiScalers, res_multiFSelectors, res_factorScalers) = self._multiXtrain([Xtrain], ytrain, standardize, sparse = sparse, weightedSample=sampleWeights)
+                                    (res_regressor, res_multiScalers, res_multiFSelectors) = self._multiXtrain([Xtrain], ytrain, standardize, sparse = sparse, weightedSample=sampleWeights)
                                     res_ypred = self._multiXpredict(res_regressor, [Xtest], multiScalers = res_multiScalers, multiFSelectors = res_multiFSelectors, sparse = sparse)
                                     #DEBUG: random sort
                                     #random.shuffle(res_ypred)
@@ -999,7 +999,10 @@ class RegressionPredictor:
 
                                 ################################
                                 #4) fit model and test accuracy:
-                                (regressor, multiScalers, multiFSelectors, factorScalers) = self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample=sampleWeights, factorAdaptation = factor_adaptation, featureSelectionParameters = featureSelectionParameters, factorAddition = factor_addition, factors = factorTrain)
+                                if factor_adaptation:
+                                    (regressor, multiScalers, multiFSelectors, factorScalers) = self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample=sampleWeights, factorAdaptation = factor_adaptation, featureSelectionParameters = featureSelectionParameters, factorAddition = factor_addition, factors = factorTrain)
+                                else:
+                                    (regressor, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample=sampleWeights)
                                 ypred = self._multiXpredict(regressor, multiXtest, multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse, factorScalers = factorScalers, factorAddition = factor_addition, factorAdaptation = factor_adaptation, factors = factorTest)
                                 predictions.update(dict(zip(testGroupsOrder,ypred)))
                                 #pprint(ypred[:10])
@@ -1814,17 +1817,14 @@ class RegressionPredictor:
         return scaled
 
     def multiply(self, controls, language, output_filename=None,  all_df = None, inclusive = True):
-        if inclusive and  all_df is None:
+        if inclusive and all_df is None:
             all_df = language
-        print ('multiply: df1.shapes: ', controls.shape, ' , df2.shape' , language.shape ,' - ') 
         for col in controls.columns:
             languageMultiplyC = language.multiply(controls[col], axis="index")
             languageMultiplyC.columns = [ str(s)+'_'+str(col)  for s in language.columns]
             all_df = languageMultiplyC if all_df is None else pd.concat([all_df, languageMultiplyC] , axis=1, join='inner')
-            print ('column: ', col ,  ' shapes:  ' , controls[col].shape, '  ,  ', language.shape, '  , ' , all_df.shape)
         if  output_filename is not None:
             all_df.to_csv(output_filename)
-        print ('multiplied_df.shape: ' , all_df.shape)
         return all_df
 
     def factorAdapt(self, factors , X, inclusive = True ):
@@ -1901,7 +1901,7 @@ class RegressionPredictor:
         factorScalers = None
         scaledFactors = None
         if factorAdaptation:
-            multiX , scaledFactors, standardizedFactors, factorScalers = self.adaptMultiX(multiX, factors, sparse = sparse)
+            multiX, scaledFactors, standardizedFactors, factorScalers = self.adaptMultiX(multiX, factors, sparse = sparse)
         elif factorAddition:
             scaledFactors, standardizedFactors, factorScalers = self.scale(factors, sparse = sparse ) 
 
@@ -2002,8 +2002,10 @@ class RegressionPredictor:
             print("model: %s " % str(regressor))
             if modelName[-2:] == 'cv' and 'alphas' in regressor.get_params():
                 print("  selected alpha: %f" % regressor.alpha_)
-            return regressor, multiScalers, multiFSelectors, factorScalers
-
+            if factorAdaptation:
+                return regressor, multiScalers, multiFSelectors, factorScalers
+            else:
+                return regressor, multiScalers, multiFSelectors
     
     def _predict(self, regressor, X, scaler = None, fSelector = None, y = None):
         if scaler:

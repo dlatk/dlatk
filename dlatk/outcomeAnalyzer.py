@@ -646,7 +646,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                             if logisticReg:
                                 results = sm.Logit(y, X).fit(disp=False) #runs regression
                                 #add means for each group
-                                means = meanXperY(X[:,-1], y)
+                                means = dlac.meanXperY(X[:,-1], y)
                             else:
                                 results = sm.OLS(y, X).fit() #runs regression
                             conf = dlac.conf_interval(results.params[-1], len(y))

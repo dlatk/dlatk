@@ -59,7 +59,7 @@ import math
 #infrastructure
 from .classifyPredictor import ClassifyPredictor
 from .mysqlmethods import mysqlMethods as mm
-from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, warn
+from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, DEFAULT_RANDOM_SEED, warn
 
 
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
@@ -344,12 +344,12 @@ class RegressionPredictor:
             {'penalty':['l1'], 'fit_intercept':[True], 'alpha':np.array([10000,1000,100,10,1,.1,.01,.001,.0001]), 'verbose':[0], 'n_iter':[50]},
             ],
         'extratrees':[
-            #{'n_estimators': [20], 'n_jobs': [10], 'random_state': [42], 'compute_importances' : [True]},
-            {'n_estimators': [1000], 'n_jobs': [12], 'random_state': [42]},
+            #{'n_estimators': [20], 'n_jobs': [10], 'random_state': [DEFAULT_RANDOM_SEED], 'compute_importances' : [True]},
+            {'n_estimators': [1000], 'n_jobs': [12], 'random_state': [DEFAULT_RANDOM_SEED]},
             ],
         'par':[
-            #{'C': [.01], 'random_state': [42], 'verbose': [1], 'shuffle': [False], 'epsilon': [0.01], 'n_iter': [10]},
-            {'C': [.01, .1, .001], 'random_state': [42], 'verbose': [1], 'shuffle': [False], 'epsilon': [0.01, .1, 1], 'n_iter': [10]},
+            #{'C': [.01], 'random_state': [DEFAULT_RANDOM_SEED], 'verbose': [1], 'shuffle': [False], 'epsilon': [0.01], 'n_iter': [10]},
+            {'C': [.01, .1, .001], 'random_state': [DEFAULT_RANDOM_SEED], 'verbose': [1], 'shuffle': [False], 'epsilon': [0.01, .1, 1], 'n_iter': [10]},
             ],
         
        }
@@ -457,7 +457,7 @@ class RegressionPredictor:
     #featureSelectPerc = 0.20 #only perform feature selection on a sample of training (set to 1 to perform on all)
 
     testPerc = .20 #percentage of sample to use as test set (the rest is training)
-    randomState = 42 #percentage of sample to use as test set (the rest is training)
+    randomState = DEFAULT_RANDOM_SEED #percentage of sample to use as test set (the rest is training)
     #randomState = 64 #percentage of sample to use as test set (the rest is training)
 
     trainingSize = 1000000 #if this is smaller than the training set, then it will be reduced to this. 
@@ -1848,7 +1848,7 @@ class RegressionPredictor:
         n = fsparams['pca']
         self.featureSelectionString = []
         for i in range(0,dim):
-            self.featureSelectionString.append('Pipeline([("1_univariate_select",  SelectKBest(score_func=f_regression, k={0})) , ("2_rpca", RandomizedPCA(n_components=int({1}), random_state=42, whiten=False, iterated_power=3))])'.format(k[i], n[i]) )
+            self.featureSelectionString.append('Pipeline([("1_univariate_select",  SelectKBest(score_func=f_regression, k={0})) , ("2_rpca", RandomizedPCA(n_components=int({1}), random_state={2}, whiten=False, iterated_power=3))])'.format(k[i], n[i]), DEFAULT_RANDOM_SEED)
         print ('kbest: ' , k, '  , pca:  ' , n )
 
 
@@ -2354,7 +2354,7 @@ class CombinedRegressionPredictor(RegressionPredictor):
 
     testPerc = .20 #percentage of sample to use as test set (the rest is training)
     combinedTrainPerc = .15 #percentage of training data to hold out for the combined method
-    randomState = 42 #random state when seeding something
+    randomState = DEFAULT_RANDOM_SEED #random state when seeding something
 
     def __init__(self, og, fgs, modelNames = ['ridge'], combinedModelName = 'ridgecv'):
         #initialize combined regression predictor vars:
@@ -2483,7 +2483,7 @@ DEF_KEEP_CLASSES = set([1, -1])
 class ClassifyToRegressionPredictor:
 
     #Vars:
-    randomState = 42 #random state when seeding something
+    randomState = DEFAULT_RANDOM_SEED #random state when seeding something
     testPerc = .20 #percentage of sample to use as test set (the rest is training)
 
     classOutcomeLabel = 'bin_'

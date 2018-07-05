@@ -881,7 +881,7 @@ def main(fn_args = None):
         if len(args.createrandsample) > 2: 
             print("Error: Only two optional arguments for --create_random_sample")
             sys.exit(1)
-        percentage, random_seed = args.createrandsample if len(args.createrandsample) > 1 else (args.createrandsample[0], dlac.DEFAUL_RANDOM_SEED)
+        percentage, random_seed = args.createrandsample if len(args.createrandsample) > 1 else (args.createrandsample[0], dlac.DEFAULT_RANDOM_SEED)
         rand_table = dlaw.createRandomSample(float(percentage), random_seed, where=args.groupswhere)
 
     #Feature Extraction:

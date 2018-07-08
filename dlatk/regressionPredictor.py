@@ -1757,7 +1757,7 @@ class RegressionPredictor:
         scaler = None
         if standardize == True:
             scaler = StandardScaler(with_mean = not sparse)
-            print("[Applying StandardScaler to X: %s]" % str(scaler))
+            print(" [Applying StandardScaler to X: %s]" % str(scaler))
             X = scaler.fit_transform(X)
         y = np.array(y)
         print(" (N, features): %s" % str(X.shape))
@@ -1766,7 +1766,7 @@ class RegressionPredictor:
         if self.featureSelectionString and X.shape[1] >= self.featureSelectMin:
             fSelector = eval(self.featureSelectionString)
             if self.featureSelectPerc < 1.0:
-                print("[Applying Feature Selection to %d perc of X: %s]" % (int(self.featureSelectPerc*100), str(fSelector)))
+                print("  [Applying Feature Selection to %d perc of X: %s]" % (int(self.featureSelectPerc*100), str(fSelector)))
                 _, Xsub, _, ysub = train_test_split(X, y, test_size=self.featureSelectPerc, train_size=1, random_state=0)
                 fSelector.fit(Xsub, ysub)
                 newX = fSelector.transform(X)
@@ -1775,13 +1775,13 @@ class RegressionPredictor:
                 else:
                     print("No features selected, so using original full X")
             else:
-                print("[Applying Feature Selection to X: %s]" % str(fSelector))
+                print("  [Applying Feature Selection to X: %s]" % str(fSelector))
                 newX = fSelector.fit_transform(X, y)
                 if newX.shape[1]:
                     X = newX
                 else:
                     print("No features selected, so using original full X")
-            print(" after feature selection: (N, features): %s" % str(X.shape))
+            print("  >> after feature selection: (N, features): %s" % str(X.shape))
 
         modelName = self.modelName.lower()
         if (X.shape[1] / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
@@ -1792,7 +1792,7 @@ class RegressionPredictor:
             #grid search for classifier params:
             gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
                               self.cvParams[modelName], n_jobs = self.cvJobs)
-            print("[Performing grid search for parameters over training]")
+            print("  [Performing grid search for parameters over training]")
             gs.fit(X, y, cv=ShuffleSplit(len(y), n_iterations=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
 
             print("best estimator: %s (score: %.4f)\n" % (gs.best_estimator_, gs.best_score_))
@@ -1911,15 +1911,15 @@ class RegressionPredictor:
             X = multiX[i]
             if not sparse and not factorAdaptation:
                 X = X.todense()
+            print(" X[%d]: (N, features): %s" % (i, str(X.shape)))
 
             #Standardization:
             scaler = None
             if standardize == True:
                 scaler = StandardScaler(with_mean = not sparse)
-                print("[Applying StandardScaler to X[%d]: %s]" % (i, str(scaler)))
+                print("  [Applying StandardScaler to X[%d]: %s]" % (i, str(scaler)))
                 X = scaler.fit_transform(X)
                 y = np.array(y)
-            print(" X[%d]: (N, features): %s" % (i, str(X.shape)))
             if report: self.addToReport(filename=outputName+'_.result', Str = " X[%d]: (N, features): %s\n_" % (i, str(X.shape)))
 
             #Feature Selection
@@ -1930,22 +1930,22 @@ class RegressionPredictor:
                 else: 
                     fSelector = eval(self.featureSelectionString)
                 if self.featureSelectPerc < 1.0:
-                    print("[Applying Feature Selection to %d perc of X: %s]" % (int(self.featureSelectPerc*100), str(fSelector)))
+                    print("  [Applying Feature Selection to %d perc of X: %s]" % (int(self.featureSelectPerc*100), str(fSelector)))
                     _, Xsub, _, ysub = train_test_split(X, y, test_size=self.featureSelectPerc, train_size=1, random_state=0)
                     fSelector.fit(Xsub, ysub)
                     newX = fSelector.transform(X)
                     if newX.shape[1]:
                         X = newX
                     else:
-                        print("No features selected, so using original full X")
+                        print("  >> No features selected, so using original full X")
                 else:
-                    print("[Applying Feature Selection to X: %s]" % str(fSelector))
+                    print("  [Applying Feature Selection to X: %s]" % str(fSelector))
                     newX = fSelector.fit_transform(X, y)
                     if newX.shape[1]:
                         X = newX
                     else:
-                        print("No features selected, so using original full X")
-                print(" after feature selection: (N, features): %s" % str(X.shape))
+                        print("  >> No features selected, so using original full X")
+                print("  >> After feature selection: (N, features): %s" % str(X.shape))
                 if report: self.addToReport(outputName+'_.result', Str = " after feature selection: (N, features): %s\n_" % str(X.shape))
             multiX[i] = X
             multiScalers.append(scaler)
@@ -1966,7 +1966,7 @@ class RegressionPredictor:
         for Xi in multiX[0]:
             totalFeats += X.shape[1]
         if (totalFeats / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
-            print("number of features is small enough (feats: %d, observations: %d), backing off to: %s" %\
+            print("[COMBINED FEATS] number of features is small enough (feats: %d, observations: %d), backing off to: %s" %\
                   (totalFeats, X.shape[0], self.backOffModel))
             modelName = self.backOffModel.lower()
 
@@ -1974,20 +1974,20 @@ class RegressionPredictor:
             #grid search for classifier params:
             gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
                               self.cvParams[modelName], n_jobs = self.cvJobs)
-            print("[Performing grid search for parameters over training]")
+            print("[COMBINED FEATS: Performing grid search for parameters over training]")
             #gs.fit(X, y, cv=ShuffleSplit(len(y), n_iterations=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
             gs.fit(X, y)
 
-            print("best estimator: %s (score: %.4f)\n" % (gs.best_estimator_, gs.best_score_))
+            print("[COMBINED FEATS] best estimator: %s (score: %.4f)\n" % (gs.best_estimator_, gs.best_score_))
             return gs.best_estimator_,  multiScalers, multiFSelectors
         else:
             # no grid search
-            print("[Training regression model: %s]" % modelName)
+            print("[COMBINED FEATS: Training regression model: %s]" % modelName)
             regressor = eval(self.modelToClassName[modelName]+'()')
             try: 
                 regressor.set_params(**dict((k, v[0] if isinstance(v, list) else v) for k,v in self.cvParams[modelName][0].items()))
             except IndexError: 
-                print("No CV parameters available")
+                print(" >>No CV parameters available")
                 raise IndexError
             #print dict(self.cvParams[modelName][0])
 
@@ -1997,7 +1997,7 @@ class RegressionPredictor:
                 except TypeError:
                     regressor.fit(X, y)
             except LinAlgError:
-                print("Lin Algebra error, X:")
+                print("  >>Lin Algebra error, X:")
                 pprint(X)
                 
     
@@ -2049,7 +2049,7 @@ class RegressionPredictor:
 
             #run transformations:
             if scaler:
-                print("  predict: applying standard scaler to X[%d]: %s" % (i, str(scaler))) #debug
+                print("[PREDICT] applying standard scaler to X[%d]: %s" % (i, str(scaler))) #debug
                 try:
                     X = scaler.transform(X)
                 except NotFittedError as e:
@@ -2058,12 +2058,12 @@ class RegressionPredictor:
                     X = scaler.fit_transform(X)
 
             if fSelector:
-                print("  predict: applying feature selection to X[%d]: %s" % (i, str(fSelector))) #debug
+                print("[PREDICT] applying feature selection to X[%d]: %s" % (i, str(fSelector))) #debug
                 newX = fSelector.transform(X)
                 if newX.shape[1]:
                     X = newX
                 else:
-                    print("No features selected, so using original full X")
+                    print("[PREDICT] No features selected, so using original full X")
             multiX[i] = X
 
         #combine all multiX into one X:
@@ -2077,9 +2077,9 @@ class RegressionPredictor:
         for nextX in multiX[startIndex:]:
             X = np.append(X, nextX, 1)
 
-        print("  predict: combined X shape: %s" % str(X.shape)) #debu
+        print("[PREDICT] combined X shape: %s" % str(X.shape)) #debu
         if hasattr(regressor, 'intercept_'):
-            print("  predict: regression intercept: %f" % regressor.intercept_)
+            print("[PREDICT] regression intercept: %f" % regressor.intercept_)
 
         return regressor.predict(X)
 

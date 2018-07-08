@@ -130,7 +130,7 @@ DEF_CP_FEATURE_SELECTION_MAPPING = {
     'none': None,
 }
 DEFAULT_MAX_PREDICT_AT_A_TIME = 100000
-DEFAUL_RANDOM_SEED = 42
+DEFAULT_RANDOM_SEED = 42
 
 ##Mediation Settings:
 DEF_MEDIATION_BOOTSTRAP = 1000
@@ -300,12 +300,11 @@ def conf_interval(r, samp_size, percent=DEF_CONF_INT):
         tup = (np.nan, np.nan)
     return tup
 
-
 def meanXperY(x, y):
     """find the mean x for each label y"""
     sums = dict()
     counts = dict()
-    for i in xrange(len(x)):
+    for i in range(len(x)):
         try:
             sums[y[i]] += x[i]
             counts[y[i]] += 1
@@ -313,7 +312,7 @@ def meanXperY(x, y):
             sums[y[i]] = x
             counts[y[i]] = 1
     means = dict()
-    for yKey in sums.iterkeys():
+    for yKey in sums:
         means[yKey] = sums[yKey] / float(counts[yKey])
     return means
 
@@ -324,13 +323,7 @@ def fiftyChecks(args):
     if Xc is not None:
         r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [np.append(Xc, permutation(Xend), 1) for i in range(50)]])
     else:
-        # newX = permutation(Xend).reshape(len(Xend),1)
-        # print type(Xend)
-        # print dir(Xend)
-        # print y
-        # r = roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1])
         r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [permutation(Xend).reshape(len(Xend),1) for i in range(50)]])
-    #if r: print r
     return r
 
 def getGroupFreqThresh(correl_field=None):

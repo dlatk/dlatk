@@ -299,7 +299,7 @@ class DLAWorker(object):
         return [col_names] + list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
 
 
-    def createRandomSample(self, percentage, random_seed = dlac.DEFAUL_RANDOM_SEED, where = ''):
+    def createRandomSample(self, percentage, random_seed = dlac.DEFAULT_RANDOM_SEED, where = ''):
         """Creates a new table from a random subetset of rows.
  
         Parameters

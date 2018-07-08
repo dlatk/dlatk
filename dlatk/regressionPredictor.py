@@ -18,14 +18,12 @@ import copy
 import operator
 
 from pprint import pprint
-import collections
 import numbers
 
-from collections import defaultdict
+from collections import defaultdict, Iterable
 
 #scikit-learn imports
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.preprocessing import StandardScaler as Scaler
 from sklearn.linear_model import Ridge, RidgeCV, LinearRegression, Lasso, LassoCV, \
     ElasticNet, ElasticNetCV, Lars, LassoLars, LassoLarsCV, SGDRegressor, RandomizedLasso, \
     PassiveAggressiveRegressor
@@ -61,7 +59,7 @@ import math
 #infrastructure
 from .classifyPredictor import ClassifyPredictor
 from .mysqlmethods import mysqlMethods as mm
-from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, warn
+from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, DEFAULT_RANDOM_SEED, warn
 
 
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
@@ -346,12 +344,12 @@ class RegressionPredictor:
             {'penalty':['l1'], 'fit_intercept':[True], 'alpha':np.array([10000,1000,100,10,1,.1,.01,.001,.0001]), 'verbose':[0], 'n_iter':[50]},
             ],
         'extratrees':[
-            #{'n_estimators': [20], 'n_jobs': [10], 'random_state': [42], 'compute_importances' : [True]},
-            {'n_estimators': [1000], 'n_jobs': [12], 'random_state': [42]},
+            #{'n_estimators': [20], 'n_jobs': [10], 'random_state': [DEFAULT_RANDOM_SEED], 'compute_importances' : [True]},
+            {'n_estimators': [1000], 'n_jobs': [12], 'random_state': [DEFAULT_RANDOM_SEED]},
             ],
         'par':[
-            #{'C': [.01], 'random_state': [42], 'verbose': [1], 'shuffle': [False], 'epsilon': [0.01], 'n_iter': [10]},
-            {'C': [.01, .1, .001], 'random_state': [42], 'verbose': [1], 'shuffle': [False], 'epsilon': [0.01, .1, 1], 'n_iter': [10]},
+            #{'C': [.01], 'random_state': [DEFAULT_RANDOM_SEED], 'verbose': [1], 'shuffle': [False], 'epsilon': [0.01], 'n_iter': [10]},
+            {'C': [.01, .1, .001], 'random_state': [DEFAULT_RANDOM_SEED], 'verbose': [1], 'shuffle': [False], 'epsilon': [0.01, .1, 1], 'n_iter': [10]},
             ],
         
        }
@@ -459,7 +457,7 @@ class RegressionPredictor:
     #featureSelectPerc = 0.20 #only perform feature selection on a sample of training (set to 1 to perform on all)
 
     testPerc = .20 #percentage of sample to use as test set (the rest is training)
-    randomState = 42 #percentage of sample to use as test set (the rest is training)
+    randomState = DEFAULT_RANDOM_SEED #percentage of sample to use as test set (the rest is training)
     #randomState = 64 #percentage of sample to use as test set (the rest is training)
 
     trainingSize = 1000000 #if this is smaller than the training set, then it will be reduced to this. 
@@ -470,7 +468,7 @@ class RegressionPredictor:
 
         #setup feature getters:
 
-        if not isinstance(fgs, collections.Iterable):
+        if not isinstance(fgs, Iterable):
             fgs = [fgs]
         self.featureGetters = fgs
         self.featureGetter = fgs[0] #legacy support
@@ -640,15 +638,14 @@ class RegressionPredictor:
 
         print("\n[TEST COMPLETE]\n")
 
-    def addToReport(self, filename , Str= None, List = None, mode = 'a', report= False):
-        if report:
-            with open(filename, mode) as result_output_s:
-                if List is not None:
-                    for l in List:
-                        result_output_s.write(str(l)+'\n')
-                elif Str is not None:
-                    result_output_s.write(str(Str))
-                result_output_s.close()
+    def addToReport(self, filename , Str= None, List = None, mode = 'a'):
+        with open(filename, mode) as result_output_s:
+            if List is not None:
+                for l in List:
+                    result_output_s.write(str(l)+'\n')
+            elif Str is not None:
+                result_output_s.write(str(Str))
+            result_output_s.close()
 
     def selectAdaptationFactors(self, allFactors, groupsOrder, outcomes,  nFactors, factorSelectionType='rfe', pairedFactors='False', sparse = False, report = True, outputName=''):
         
@@ -683,10 +680,11 @@ class RegressionPredictor:
             fit = select_feats.fit(XAll, yAll)
             selected = [ factors_df.columns[i] for i in range(len(fit.ranking_)) if fit.ranking_[i]==1  ]
             print ( 'selected factors ' , selected)
-            self.addToReport(filename=outputName+'_.report', Str = "\n  Ranking:  \n%s \n_"%( str(selected)), report=report)
+            if report: self.addToReport(filename=outputName+'_.report', Str = "\n  Ranking:  \n%s \n_"%( str(selected)))
 
-        self.addToReport(filename=outputName+'_.result', Str = "\n  selection type , selection size:  \n%s , %s\n_"%( factorSelectionType, str(nFactors) ), report=report)
-        self.addToReport(filename=outputName+'_.report', Str = "\n  selection type , selection size:  \n%s , %s\n_"%( factorSelectionType , str(nFactors) ), report = report)
+        if report: 
+            self.addToReport(filename=outputName+'_.result', Str = "\n  selection type , selection size:  \n%s , %s\n_"%( factorSelectionType, str(nFactors) ))
+            self.addToReport(filename=outputName+'_.report', Str = "\n  selection type , selection size:  \n%s , %s\n_"%( factorSelectionType , str(nFactors) ))
         features = fit.transform(XAll)
         feats = []
         for g in range(nFactors):
@@ -840,12 +838,14 @@ class RegressionPredictor:
                                 if noLang or (allControlsOnly and (r > 1) and (r < len(controlKeys))):#skip to next
                                     continue
                                 print("\n= %s (w/ lang.)=\n%s"%(outcomeName, '-'*(len(outcomeName)+14)))
-                                self.addToReport(outputName+'_.result',  Str = "\n= %s (w/ lang.) (r: %d)=\n%s\n_"%(outcomeName, r, '-'*(len(outcomeName)+14)) , report = report)
-                                self.addToReport(outputName+'_.report',  Str = "\n= %s (w/ lang.) (r: %d)=\n%s\n_"%(outcomeName, r, '-'*(len(outcomeName)+14)) , report = report)
+                                if report:
+                                    self.addToReport(outputName+'_.result',  Str = "\n= %s (w/ lang.) (r: %d)=\n%s\n_"%(outcomeName, r, '-'*(len(outcomeName)+14)))
+                                    self.addToReport(outputName+'_.report',  Str = "\n= %s (w/ lang.) (r: %d)=\n%s\n_"%(outcomeName, r, '-'*(len(outcomeName)+14)))
                             elif controlValues: 
                                 print("\n= %s (NO lang.)=\n%s"%(outcomeName, '-'*(len(outcomeName)+14)))
-                                self.addToReport(outputName+'_.result' , Str = "\n= %s (NO lang.) (r: %d)=\n%s\n_"%(outcomeName, r, '-'*(len(outcomeName)+14)), report=report)
-                                self.addToReport(outputName+'_.report' , Str = "\n= %s (NO lang.) (r: %d)=\n%s\n_"%(outcomeName, r, '-'*(len(outcomeName)+14)), report=report)
+                                if report:
+                                    self.addToReport(outputName+'_.result' , Str = "\n= %s (NO lang.) (r: %d)=\n%s\n_"%(outcomeName, r, '-'*(len(outcomeName)+14)))
+                                    self.addToReport(outputName+'_.report' , Str = "\n= %s (NO lang.) (r: %d)=\n%s\n_"%(outcomeName, r, '-'*(len(outcomeName)+14)))
                             else: #no controls in this iteration
                                 continue
                             testStats = {'R2_folds': [], 'r_folds': [], 'r_p_folds': [], 'mse_folds': [], 'mae_folds': [], 'train_mean_mae_folds': []}
@@ -1018,7 +1018,7 @@ class RegressionPredictor:
                                 train_mean = mean(ytrain)
                                 train_mean_mae = metrics.mean_absolute_error(ytest, [train_mean]*len(ytest))
                                 print("  *FOLD R^2: %.4f (MSE: %.4f; MAE: %.4f; mean train mae: %.4f)"% (R2, mse, mae, train_mean_mae))
-                                self.addToReport(outputName+'_.result', Str = "  *FOLD: %d  R^2: %.4f (MSE: %.4f; MAE: %.4f; mean train mae: %.4f)\n_"% (testChunk, R2, mse, mae, train_mean_mae), report=report)
+                                if report: self.addToReport(outputName+'_.result', Str = "  *FOLD: %d  R^2: %.4f (MSE: %.4f; MAE: %.4f; mean train mae: %.4f)\n_"% (testChunk, R2, mse, mae, train_mean_mae))
                                 testStats['R2_folds'].append(R2)
                                 (pearsr, r_p) = pearsonr(ytest, ypred)
                                 testStats['r_folds'].append(pearsr)
@@ -1095,9 +1095,9 @@ class RegressionPredictor:
                                 ytrue, ypred = alignDictsAsy(outcomes, predictions)
                             reportStats.update(self.accuracyStats(ytrue, ypred))
                             reportStats['N'] = len(ytrue)
-
-                            self.addToReport( outputName+'_'+ outcomeName + '_r'+ str(r) + '_l'+ str(withLanguage) +'_.ytrue' , List = ytrue, mode = 'w', report = report)
-                            self.addToReport( outputName+'_'+ outcomeName + '_r'+ str(r) + '_l'+ str(withLanguage) +'_.ypred' , List = ypred, mode = 'w', report = report)
+                            if report:
+                                self.addToReport( outputName+'_'+ outcomeName + '_r'+ str(r) + '_l'+ str(withLanguage) +'_.ytrue' , List = ytrue, mode = 'w')
+                                self.addToReport( outputName+'_'+ outcomeName + '_r'+ str(r) + '_l'+ str(withLanguage) +'_.ypred' , List = ypred, mode = 'w')
 
                             ## 5c) print overall stats
                             print("*Overall R^2:          %.4f" % (reportStats['R2']))
@@ -1115,9 +1115,9 @@ class RegressionPredictor:
                                 print("*Paired T-test p:       %.5f (t: %.4f)"% (reportStats['paired_ttest_p1tail'], reportStats['paired_ttest_t']))
                                 print("*Fisher r-to-z p:       %.5f (z: %.4f)"% (reportStats['fisher_z_p1tail'], reportStats['fisher_z_z']))
 
-                            self.addToReport( outputName+'_.report' ,Str = "*Overall R^2:          %.4f\n_" % (reportStats['R2']) , report = report) 
+                            if report: self.addToReport(outputName+'_.report' ,Str = "*Overall R^2:          %.4f\n_" % (reportStats['R2'])) 
                             Str = "_*Overall R^2:          %.4f    \n_*Overall FOLDS R^2:    %.4f (+- %.4f)    \n_*R (sqrt R^2):         %.4f    \n_*Pearson r:            %.4f (p = %.5f)    \n_*Folds Pearson r:      %.4f (p = %.5f)    \n_*Spearman rho:         %.4f (p = %.5f)    \n_*Mean Squared Error:   %.4f    \n_*Mean Absolute Error:  %.4f    \n_*Train_Mean MAE:       %.4f\n\n" % (reportStats['R2'], reportStats['R2_folds'], reportStats['se_R2_folds'], reportStats['R'], reportStats['r'], reportStats['r_p'], reportStats['r_folds'], reportStats['r_p_folds'], reportStats['rho'], reportStats['rho_p'], reportStats['mse'], reportStats['mae'], reportStats['train_mean_mae'])
-                            self.addToReport( outputName+'_.result' ,Str = Str , report = report) 
+                            if report: self.addToReport(outputName+'_.result', Str = Str,) 
 
                             if savePredictions: 
                                 reportStats['predictions'] = predictions
@@ -1849,7 +1849,7 @@ class RegressionPredictor:
         n = fsparams['pca']
         self.featureSelectionString = []
         for i in range(0,dim):
-            self.featureSelectionString.append('Pipeline([("1_univariate_select",  SelectKBest(score_func=f_regression, k={0})) , ("2_rpca", RandomizedPCA(n_components=int({1}), random_state=42, whiten=False, iterated_power=3))])'.format(k[i], n[i]) )
+            self.featureSelectionString.append('Pipeline([("1_univariate_select",  SelectKBest(score_func=f_regression, k={0})) , ("2_rpca", RandomizedPCA(n_components=int({1}), random_state={2}, whiten=False, iterated_power=3))])'.format(k[i], n[i]), DEFAULT_RANDOM_SEED)
         print ('kbest: ' , k, '  , pca:  ' , n )
 
 
@@ -1920,7 +1920,7 @@ class RegressionPredictor:
                 X = scaler.fit_transform(X)
                 y = np.array(y)
             print(" X[%d]: (N, features): %s" % (i, str(X.shape)))
-            self.addToReport(filename=outputName+'_.result', Str = " X[%d]: (N, features): %s\n_" % (i, str(X.shape)), report = report)
+            if report: self.addToReport(filename=outputName+'_.result', Str = " X[%d]: (N, features): %s\n_" % (i, str(X.shape)))
 
             #Feature Selection
             fSelector = None
@@ -1946,7 +1946,7 @@ class RegressionPredictor:
                     else:
                         print("No features selected, so using original full X")
                 print(" after feature selection: (N, features): %s" % str(X.shape))
-                self.addToReport(outputName+'_.result', Str = " after feature selection: (N, features): %s\n_" % str(X.shape), report = report)
+                if report: self.addToReport(outputName+'_.result', Str = " after feature selection: (N, features): %s\n_" % str(X.shape))
             multiX[i] = X
             multiScalers.append(scaler)
             multiFSelectors.append(fSelector)
@@ -2355,7 +2355,7 @@ class CombinedRegressionPredictor(RegressionPredictor):
 
     testPerc = .20 #percentage of sample to use as test set (the rest is training)
     combinedTrainPerc = .15 #percentage of training data to hold out for the combined method
-    randomState = 42 #random state when seeding something
+    randomState = DEFAULT_RANDOM_SEED #random state when seeding something
 
     def __init__(self, og, fgs, modelNames = ['ridge'], combinedModelName = 'ridgecv'):
         #initialize combined regression predictor vars:
@@ -2484,7 +2484,7 @@ DEF_KEEP_CLASSES = set([1, -1])
 class ClassifyToRegressionPredictor:
 
     #Vars:
-    randomState = 42 #random state when seeding something
+    randomState = DEFAULT_RANDOM_SEED #random state when seeding something
     testPerc = .20 #percentage of sample to use as test set (the rest is training)
 
     classOutcomeLabel = 'bin_'

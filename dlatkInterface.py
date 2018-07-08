@@ -10,7 +10,7 @@ import pdb
 import argparse
 import time
 from pprint import pprint
-from numpy import isnan, sqrt, log2
+from numpy import isnan, sqrt, log
 from configparser import SafeConfigParser
 import gzip
 
@@ -141,7 +141,7 @@ def main(fn_args = None):
                        help='Only permit these features when correlating with outcomes (specify feature names or if feature table then read distinct features).')
     group.add_argument('--sqrt', action='store_const', dest='valuefunc', const=lambda d: sqrt(d),
                        help='square-roots normalized group_norm freq information.')
-    group.add_argument('--log', action='store_const', dest='valuefunc', const=lambda d: log2(d+1),
+    group.add_argument('--log', action='store_const', dest='valuefunc', const=lambda d: log(d+1),
                        help='logs the normalized group_norm freq information.')
     group.add_argument('--anscombe', action='store_const', dest='valuefunc', const=lambda d: 2*sqrt(d+3/float(8)),
                        help='anscombe transforms normalized group_norm freq information.')
@@ -149,7 +149,7 @@ def main(fn_args = None):
                        help='boolean transforms normalized group_norm freq information (1 if true).')
     group.add_argument('--lex_sqrt', action='store_const', dest='lexvaluefunc', const=lambda d: sqrt(d),
                        help='square-roots normalized group_norm lexicon freq information.')
-    group.add_argument('--lex_log', action='store_const', dest='lexvaluefunc', const=lambda d: log2(d+1),
+    group.add_argument('--lex_log', action='store_const', dest='lexvaluefunc', const=lambda d: log(d+1),
                        help='logs the normalized group_norm lexicon freq information.')
     group.add_argument('--lex_anscombe', action='store_const', dest='lexvaluefunc', const=lambda d: 2*sqrt(d+3/float(8)),
                        help='anscombe transforms normalized group_norm lexicon freq information.')
@@ -881,7 +881,7 @@ def main(fn_args = None):
         if len(args.createrandsample) > 2: 
             print("Error: Only two optional arguments for --create_random_sample")
             sys.exit(1)
-        percentage, random_seed = args.createrandsample if len(args.createrandsample) > 1 else (args.createrandsample[0], dlac.DEFAUL_RANDOM_SEED)
+        percentage, random_seed = args.createrandsample if len(args.createrandsample) > 1 else (args.createrandsample[0], dlac.DEFAULT_RANDOM_SEED)
         rand_table = dlaw.createRandomSample(float(percentage), random_seed, where=args.groupswhere)
 
     #Feature Extraction:

@@ -613,11 +613,11 @@ class RegressionPredictor:
         for outcomeName, outcomes in sorted(allOutcomes.items()):
             print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
             (X, y) = alignDictsAsXy(groupNormValues+controlValues, outcomes, sparse)
-            print("[Initial size: %d]" % len(y))
+            print(" [Initial size: %d]" % len(y))
             Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, test_size=self.testPerc, random_state=self.randomState)
             if len(ytrain) > self.trainingSize:
                 Xtrain, Xthrowaway, ytrain, ythrowaway = train_test_split(Xtrain, ytrain, test_size=len(ytrain) - self.trainingSize, random_state=self.randomState)
-            print("[Train size: %d    Test size: %d]" % (len(ytrain), len(ytest)))
+            print(" [Train size: %d    Test size: %d]" % (len(ytrain), len(ytest)))
 
             (regressor, scaler, fSelector) = self._train(Xtrain, ytrain, standardize)
             ypred = self._predict(regressor, Xtest, scaler = scaler, fSelector = fSelector)
@@ -995,7 +995,7 @@ class RegressionPredictor:
                                         num_feats += Xtrain.shape[1]
                                         multiXtrain.append(Xtrain)
                                         multiXtest.append(Xtest)
-                                print("[Train size: %d    Test size: %d]" % (len(ytrain), len(ytest)))
+                                print(" [Train size: %d    Test size: %d]" % (len(ytrain), len(ytest)))
 
                                 ################################
                                 #4) fit model and test accuracy:
@@ -1960,6 +1960,8 @@ class RegressionPredictor:
             startIndex = 1
         for nextX in multiX[startIndex:]:
             X = np.append(X, nextX, 1)
+        print("[COMBINED FEATS] Combined size: %s" % str(X.shape))
+
         
         modelName = self.modelName.lower()
         totalFeats = 0

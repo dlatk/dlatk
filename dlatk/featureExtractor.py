@@ -37,6 +37,7 @@ try:
     import jsonrpclib
     from simplejson import loads
 except ImportError:
+    print("warning from FeatureExtractor: unable to import jsonrpclib or simplejson")
     pass
 try:
     from textstat.textstat import textstat

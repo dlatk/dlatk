@@ -64,9 +64,9 @@ More Information
 ----------------
 
 * `DLATK GitHub page <http://www.github.com/dlatk/dlatk>`_
+* `DLATK at DockerHub <https://hub.docker.com/r/dlatk/dlatk/>`_
 * `World Well-Being Project <http://www.wwbp.org>`_
 * `HLAB at Stoney Brook <http://hlab.cs.stonybrook.edu/>`_
-* `dlatk-docker <https://github.com/pennsignals/dlatk-docker>`_
 * :doc:`modules`
 * :doc:`changelog`
 

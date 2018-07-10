@@ -9,7 +9,7 @@ Please see :doc:`install_faq` for common install issues.
 Recommended Install
 ===================
 
-The easiest way to install dlatk is through `docker <https://github.com/pennsignals/dlatk-docker>`_ or through pip (with sudo privileges):
+The easiest way to install dlatk is through Docker (follow the :doc:`tutorials/tut_docker` tutorial) or through pip (with sudo privileges):
 
 .. code-block:: bash
 

@@ -23,6 +23,8 @@ If you do not have sudo then you can use the --user flag
 
 This will install all of the required Python dependencies listed below. See `Full List of Dependencies`_.
 
+**Note**: some features in DLATK require other non-Python packages (besides MySQL). The Docker installation will install everything whereas `pip` will not. Please see notes below on installing other dependencies. 
+
 Full Install
 ============
 

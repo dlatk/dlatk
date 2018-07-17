@@ -1925,7 +1925,7 @@ class RegressionPredictor:
                         for cn in controlNames:
                             rowDict[cn] = 1 if cn in rk else 0
                         rowDict['w/ lang.'] = withLang
-                        rowDict.update({(k,v) for (k,v) in list(sc.items()) if not k in ignoreKeys})
+                        rowDict.update({(k,v) for (k,v) in list(sc.items()) if isinstance(sc, dict) and not k in ignoreKeys})
                         csvOut.writerow(rowDict)
     @staticmethod
     def printComboControlPredictionsToCSV(scores, outputstream, paramString = None, delimiter=','):

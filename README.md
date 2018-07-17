@@ -21,19 +21,38 @@ DLATK can utilize:
 
 ## Installation
 
-DLATK is available via [docker](https://github.com/pennsignals/dlatk-docker) or through conda, pip or github via:
+DLATK is available via any of four popular installation platforms: conda, pip, github, or Docker:
 
+#### New to installing Python packages?
+It is recommended that you see the [full installation instructions](http://dlatk.wwbp.org/install.html#dependencies). 
+
+### 1. conda
 ```sh
 conda install -c wwbp dlatk
 ```
 
+### 2. pip
 ```sh
 pip install dlatk
 ```
 
+### 3. GitHub
 ```sh
+git clone SEE_URL_ABOVE
+cd dlatk
 python setup.py install
 ```
+
+### 4. Docker
+Detailed Docker install instructions [here](http://dlatk.wwbp.org/tutorials/tut_docker.html).
+
+```sh
+docker run --name mysql_v5  --env MYSQL_ROOT_PASSWORD=my-secret-pw --detach mysql:5.5
+docker run -it --rm --name dlatk_docker --link mysql_v5:mysql dlatk/dlatk bash
+```
+
+- [DLATK at DockerHub](https://hub.docker.com/r/dlatk/dlatk/)
+- [DockerFile on GitHub](https://github.com/dlatk/dlatk-docker)
 
 ## Dependencies
 - [mysqlclient](https://github.com/PyMySQL/mysqlclient-python)
@@ -47,27 +66,27 @@ for recommended and optional dependencies.
 
 ## Documentation
 
-The documentation for the latest release is at [dlatk.wwbp.org](http://dlatk.wwbp.org).
+The documentation for the latest release is at [dlatk.wwbp.org](dlatk.wwbp.org).
 
 ## Citation
 
-If you use DLATK in your work please cite the following paper:
+If you use DLATK in your work please cite the following [paper](http://aclweb.org/anthology/D17-2010):
 
 ```
 @InProceedings{DLATKemnlp2017,
-  author = 	"Schwartz, H. Andrew
-		and Giorgi, Salvatore
-		and Sap, Maarten
-		and Crutchley, Patrick
-		and Eichstaedt, Johannes
-		and Ungar, Lyle",
-  title = 	"DLATK: Differential Language Analysis ToolKit",
-  booktitle = 	"Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing: System Demonstrations",
-  year = 	"2017",
-  publisher = 	"Association for Computational Linguistics",
-  pages = 	"55--60",
-  location = 	"Copenhagen, Denmark",
-  url = 	"http://aclweb.org/anthology/D17-2010"
+  author =  "Schwartz, H. Andrew
+    and Giorgi, Salvatore
+    and Sap, Maarten
+    and Crutchley, Patrick
+    and Eichstaedt, Johannes
+    and Ungar, Lyle",
+  title =   "DLATK: Differential Language Analysis ToolKit",
+  booktitle =   "Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing: System Demonstrations",
+  year =  "2017",
+  publisher =   "Association for Computational Linguistics",
+  pages =   "55--60",
+  location =  "Copenhagen, Denmark",
+  url =   "http://aclweb.org/anthology/D17-2010"
 }
 
 ```

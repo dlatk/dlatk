@@ -59,14 +59,13 @@ import math
 
 #infrastructure
 from .mysqlmethods import mysqlMethods as mm
-from .dlaConstants import DEFAUL_RANDOM_SEED, warn
+from .dlaConstants import DEFAULT_RANDOM_SEED, warn
 
 #For ROC curves
 try:
     from matplotlib.backends.backend_pdf import PdfPages
     import matplotlib.pyplot as plt
 except:
-    warn("matplotlib PdfPages or plt cannot be imported")
     pass
 
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
@@ -268,9 +267,9 @@ class ClassifyPredictor:
         #     {}, 
         #     ],
         'gbc': [
-            {'n_estimators': [500], 'random_state': [DEFAUL_RANDOM_SEED], 
+            {'n_estimators': [500], 'random_state': [DEFAULT_RANDOM_SEED], 
              'subsample':[0.4], 'max_depth': [5]  },
-             # {'n_estimators': [50], 'random_state': [DEFAUL_RANDOM_SEED], 'learning_rate': [0.2], 'min_samples_leaf': [50],
+             # {'n_estimators': [50], 'random_state': [DEFAULT_RANDOM_SEED], 'learning_rate': [0.2], 'min_samples_leaf': [50],
              # 'subsample':[0.8], 'max_depth': list(range(5,16,2)), 'max_features': list(range(5,100,5)), },
             ],
         'mnb': [
@@ -352,7 +351,7 @@ class ClassifyPredictor:
     #featureSelectPerc = 0.20 #only perform feature selection on a sample of training (set to 1 to perform on all)
 
     testPerc = .20 #percentage of sample to use as test set (the rest is training)
-    randomState = DEFAUL_RANDOM_SEED #percentage of sample to use as test set (the rest is training)
+    randomState = DEFAULT_RANDOM_SEED #percentage of sample to use as test set (the rest is training)
     #randomState = 64 #percentage of sample to use as test set (the rest is training)
 
     trainingSize = 1000000 #if this is smaller than the training set, then it will be reduced to this. 
@@ -621,7 +620,7 @@ class ClassifyPredictor:
                         #even classes across the outcomes
                         # stratification happens within outcomes unlike foldLabels
                         print("Warning: Stratifying outcome classes across folds (thus, folds will differ across outcomes).")
-                        groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = DEFAUL_RANDOM_SEED)
+                        groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = DEFAULT_RANDOM_SEED)
                         ##DEBUG: below is using random folds to do bootstrapping; should change back to above.
                         # print("Warning: using random folds for bootstrapping; classifyPredictor.py to fix")
                         # groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = np.random.randint(0, 10000))
@@ -1824,7 +1823,11 @@ class ClassifyPredictor:
 
     def roc_curves(self, y_test, y_score, output_name = None):
         output_name = "ROC" if not output_name else output_name
-        pp = PdfPages(output_name+'.pdf' if output_name[-4:] != '.pdf' else output_name)
+        try:
+            pp = PdfPages(output_name+'.pdf' if output_name[-4:] != '.pdf' else output_name)
+        except NameError:
+            warn("matplotlib PdfPages or plt cannot be imported")
+            sys.exit(1)
 
         # Compute ROC curve and ROC area for each class
         fpr = dict()
@@ -2394,7 +2397,7 @@ def xFoldN(l, folds):
 def foldN(l, folds):
     return [f for f in xFoldN(l, folds)]
 
-def stratifyGroups(groups, outcomes, folds, randomState = DEFAUL_RANDOM_SEED):
+def stratifyGroups(groups, outcomes, folds, randomState = DEFAULT_RANDOM_SEED):
     """breaks groups up into folds such that each fold has at most 1 more of a class than other folds """
     random.seed(randomState)
     xGroups = sorted(list(set(groups) & set(outcomes.keys())))

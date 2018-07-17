@@ -10,7 +10,8 @@ from configparser import SafeConfigParser
 
 #math / stats:
 from math import floor
-from numpy import array, tile, sqrt, fabs, multiply, mean, isnan
+from statistics import mean, stdev
+from numpy import array, tile, sqrt, fabs, multiply, mean, isnan, std
 from numpy import log as nplog, sort as npsort, append as npappend
 import numpy as np
 from scipy.stats import zscore, rankdata, norm
@@ -87,15 +88,16 @@ class OutcomeAnalyzer(OutcomeGetter):
         outcome_controls = [o.strip() for o in parser.get('constants','outcomecontrols').split(",")] if parser.has_option('constants','outcomecontrols') else dlac.DEF_OUTCOME_CONTROLS # possible list
         outcome_interaction = [o.strip() for o in parser.get('constants','outcome_interaction').split(",")] if parser.has_option('constants','outcome_interaction') else dlac.DEF_OUTCOME_CONTROLS # possible list
         outcome_categories = [o.strip() for o in parser.get('constants','outcomecategories').split(",")] if parser.has_option('constants','outcomecategories') else [] # possible list
+        multiclass_outcome = [o.strip() for o in parser.get('constants','multiclassoutcome').split(",")] if parser.has_option('constants','multiclassoutcome') else [] # possible list
         group_freq_thresh = parser.get('constants','groupfreqthresh') if parser.has_option('constants','groupfreqthresh') else dlac.getGroupFreqThresh(correl_field)
         featureMappingTable = parser.get('constants','featlabelmaptable') if parser.has_option('constants','featlabelmaptable') else ''
         featureMappingLex = parser.get('constants','featlabelmaplex') if parser.has_option('constants','featlabelmaplex') else ''
         output_name = parser.get('constants','output_name') if parser.has_option('constants','output_name') else ''
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
-        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, outcome_categories=outcome_categories, group_freq_thresh = group_freq_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable)
+        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, outcome_categories=outcome_categories, multiclass_outcome=multiclass_outcome, group_freq_thresh = group_freq_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable)
 
-    def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_host=dlac.MYSQL_HOST, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb=dlac.DEF_LEXICON_DB, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls=dlac.DEF_OUTCOME_CONTROLS, outcome_interaction=dlac.DEF_OUTCOME_CONTROLS, outcome_categories = [], group_freq_thresh = None, featureMappingTable='', featureMappingLex='',  output_name='', wordTable = None):
-        super(OutcomeAnalyzer, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, outcome_categories, group_freq_thresh, featureMappingTable, featureMappingLex,  wordTable)
+    def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_host=dlac.MYSQL_HOST, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb=dlac.DEF_LEXICON_DB, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls=dlac.DEF_OUTCOME_CONTROLS, outcome_interaction=dlac.DEF_OUTCOME_CONTROLS, outcome_categories = [], multiclass_outcome = [], group_freq_thresh = None, featureMappingTable='', featureMappingLex='',  output_name='', wordTable = None):
+        super(OutcomeAnalyzer, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, outcome_categories, multiclass_outcome, group_freq_thresh, featureMappingTable, featureMappingLex,  wordTable)
         self.output_name = output_name
 
     def printGroupsAndOutcomesToCSV(self, featGetter, outputfile, where = '', freqs = False):
@@ -573,7 +575,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     def correlateWithFeatures(self, featGetter, spearman = False, p_correction_method = 'BH', interaction = None,
                               blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False, outcomeWithOutcomeOnly = False,
-                              zscoreRegression = True, logisticReg = False, outputInteraction = False, 
+                              zscoreRegression = True, logisticReg = False, cohensD = False, outputInteraction = False, 
                               groupsWhere = ''):
         """Finds the correlations between features and outcomes
 
@@ -600,6 +602,8 @@ class OutcomeAnalyzer(OutcomeGetter):
             standard both variables if True
         logisticReg : :obj:`boolean`, optional
             True - use logistic regression, False - use default linear
+        cohensD : :obj:`boolean`, optional
+            True - use logistic regression for significance and Cohen's D for effect size, False - use default linear
         outputInteraction : :obj:`boolean`, optional
             True - append output interactions to results
         groupsWhere : :obj:`str`, optional
@@ -625,7 +629,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 interaction_tuples = {}
 
                 # find correlation or regression coef, p-value, and N (stored in tup)
-                if controls or logisticReg: #run OLS or logistic regression
+                if controls or logisticReg or cohensD: #run OLS or logistic regression
 
                     if firstLoop and controls:
                         # Do regression showing the effect of the controls only
@@ -642,17 +646,18 @@ class OutcomeAnalyzer(OutcomeGetter):
                         results = None
                         try:
                             means = None
-                            if logisticReg:
+                            if logisticReg or cohensD:
                                 results = sm.Logit(y, X).fit(disp=False) #runs regression
                                 #add means for each group
-                                means = meanXperY(X[:,-1], y)
+                                means = dlac.meanXperY(X[:,-1], y)
                             else:
                                 results = sm.OLS(y, X).fit() #runs regression
-                            conf = dlac.conf_interval(results.params[-1], len(y))
+                            effect_size = dlac.cohensD(X, y) if cohensD else results.params[-1]
+                            conf = dlac.conf_interval(effect_size, len(y))
                             if means: 
-                                tup = (results.params[-1], results.pvalues[-1], len(y), conf, means)
+                                tup = (effect_size, results.pvalues[-1], len(y), conf, means)
                             else: 
-                                tup = (results.params[-1], results.pvalues[-1], len(y), conf)
+                                tup = (effect_size, results.pvalues[-1], len(y), conf)
 
                             print(results.summary(outcomeField, sorted(controls.keys())))#debug
                         except (ValueError, Exception) as err:
@@ -688,12 +693,13 @@ class OutcomeAnalyzer(OutcomeGetter):
 
                     results = None
                     try:
-                        if logisticReg:
+                        if logisticReg or cohensD:
                             results = sm.Logit(y, X, missing='drop').fit(disp=False)
                         else:
                             results = sm.OLS(y, X).fit() #runs regression
-                        conf = dlac.conf_interval(results.params[-1], len(y))
-                        tup = (results.params[-1], results.pvalues[-1], len(y), conf)
+                        effect_size = dlac.cohensD(X, y) if cohensD else results.params[-1]
+                        conf = dlac.conf_interval(effect_size, len(y))
+                        tup = (effect_size, results.pvalues[-1], len(y), conf)
 
                         if outputInteraction:
                             interaction_tuples = {}

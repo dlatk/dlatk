@@ -19,7 +19,6 @@ except ImportError:
         import rpy2.robjects as ro
         from rpy2.rinterface import RNULLType
     except ImportError:
-        warn("rpy2 cannot be imported")
         pass
     pass
 
@@ -27,7 +26,6 @@ import pandas as pd
 try:
     import pandas.rpy.common as com
 except ImportError:
-    warn("pandas.rpy.common cannot be imported")
     pass
 
 from inspect import ismethod
@@ -462,10 +460,18 @@ class CCA:
             self.model = pickle.load(f)
         
     def RsoftImpute(self, X):
-        softImpute = importr("softImpute")
-        X = com.convert_to_r_dataframe(X)
-        X = softImpute.complete(X,softImpute.softImpute(softImpute.biScale(X, maxit = 100)))
-        X = com.convert_robj(X)
+        try:
+            softImpute = importr("softImpute")
+        except NameError:
+            warn("rpy2 cannot be imported")
+            sys.exit(1)
+        try:
+            X = com.convert_to_r_dataframe(X)
+            X = softImpute.complete(X,softImpute.softImpute(softImpute.biScale(X, maxit = 100)))
+            X = com.convert_robj(X)
+        except NameError:
+            warn("pandas.rpy.common cannot be imported")
+            sys.exit(1)
         return X
 
     def prepMatricesTogether(self, X, Z, NAthresh = 4):
@@ -632,11 +638,15 @@ class CCA:
         # kwParams['vneg'] = True
 
         cca = self._cca(X,Z, **kwParams)
-    
-        Xcomp = com.convert_robj(cca['u']) # Controls
-        Zcomp = com.convert_robj(cca['v']) # Outcomes
+        
+        try:
+            Xcomp = com.convert_robj(cca['u']) # Controls
+            Zcomp = com.convert_robj(cca['v']) # Outcomes
+            d = com.convert_robj(cca['d']) # Something
+        except NameError:
+            warn("pandas.rpy.common cannot be imported")
+            sys.exit(1)
 
-        d = com.convert_robj(cca['d']) # Something
         self.model = {
             'u': Xcomp,
             'v': Zcomp,
@@ -711,9 +721,14 @@ class CCA:
 
         cca = self._cca(X,Z, **kwParams)
 
-        Xcomp = com.convert_robj(cca['u']) # Features
-        Zcomp = com.convert_robj(cca['v']) # Outcomes
-        d = com.convert_robj(cca['d']) # Something
+        try:
+            Xcomp = com.convert_robj(cca['u']) # Features
+            Zcomp = com.convert_robj(cca['v']) # Outcomes
+            d = com.convert_robj(cca['d']) # Something
+        except NameError:
+            warn("pandas.rpy.common cannot be imported")
+            sys.exit(1)
+        
         self.model = {
             'u': Xcomp,
             'v': Zcomp,
@@ -798,10 +813,13 @@ class CCA:
         
         # X, Z, Xfreqs, Zfreqs = self.prepMatrices(pd.DataFrame(data=Xdict),pd.DataFrame(data=Zdict), softImputeXtoo=True)
         X, Z, Xfreqs, Zfreqs = self.prepMatricesTogether(pd.DataFrame(data=Xdict), pd.DataFrame(data=Zdict))
-        X = com.convert_to_r_dataframe(X)
-        Z = com.convert_to_r_dataframe(Z)
-
-        Ngroups = com.convert_robj(ro.r["nrow"](X)[0])
+        try:
+            X = com.convert_to_r_dataframe(X)
+            Z = com.convert_to_r_dataframe(Z)
+            Ngroups = com.convert_robj(ro.r["nrow"](X)[0])
+        except NameError:
+            warn("pandas.rpy.common cannot be imported")
+            sys.exit(1)
         
         kwParams = {"nperms": nPerms}
         kwParams['penaltyxs'] = penaltyXs if penaltyXs else ro.vectors.FloatVector(np.arange(.1,.91,.05))
@@ -834,11 +852,14 @@ class CCA:
 
         # X contains feature group_norms, Z contains outcome values
         X, Z, Xfreqs, Zfreqs = self.prepMatrices(pd.DataFrame(data=Xdict),pd.DataFrame(data=Zdict))
-        X = com.convert_to_r_dataframe(X)
-        Z = com.convert_to_r_dataframe(Z)
-
-
-        Ngroups = com.convert_robj(ro.r["nrow"](X)[0])
+        
+        try:
+            X = com.convert_to_r_dataframe(X)
+            Z = com.convert_to_r_dataframe(Z)
+            Ngroups = com.convert_robj(ro.r["nrow"](X)[0])
+        except NameError:
+            warn("pandas.rpy.common cannot be imported")
+            sys.exit(1)
         
         kwParams = {"nperms": nPerms}
         kwParams['penaltyxs'] = penaltyXs if penaltyXs else ro.vectors.FloatVector(np.arange(.1,.91,.05))

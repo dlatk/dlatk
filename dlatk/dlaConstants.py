@@ -31,7 +31,7 @@ MAX_SQL_SELECT = 1000000 # how many rows are selected at a time
 MYSQL_HOST = '127.0.0.1'
 VARCHAR_WORD_LENGTH = 36 #length to allocate var chars per words
 LOWERCASE_ONLY = True #if the db is case insensitive, set to True
-MAX_TO_DISABLE_KEYS = 50000 #number of groups * n must be less than this to disable keys
+MAX_TO_DISABLE_KEYS = 100000 #number of groups * n must be less than this to disable keys
 MAX_SQL_PRINT_CHARS = 256
 
 ##Corpus Settings:
@@ -117,6 +117,7 @@ DEF_COMB_MODELS = ['ridgecv']
 DEF_FOLDS = 5
 DEF_RP_FEATURE_SELECTION_MAPPING = {
     'magic_sauce': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.1)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+    'magic_sauce_light': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=100.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.3)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
     'topic_ngram_ms': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(2*(X.shape[0]*.20)/len(self.featureGetters) if X.shape[1] > 2000 else 2*(X.shape[0]*.75)/len(self.featureGetters)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
     'adh': 'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])', 
     'univariatefwe': 'SelectFwe(f_regression, alpha=60.0)',
@@ -130,7 +131,7 @@ DEF_CP_FEATURE_SELECTION_MAPPING = {
     'none': None,
 }
 DEFAULT_MAX_PREDICT_AT_A_TIME = 100000
-DEFAUL_RANDOM_SEED = 42
+DEFAULT_RANDOM_SEED = 42
 
 ##Mediation Settings:
 DEF_MEDIATION_BOOTSTRAP = 1000
@@ -283,6 +284,25 @@ def bonfPCorrection(tup, numFeats):
     """given tuple with second entry a p value, multiply by num of feats and return"""
     return (tup[0], tup[1]*numFeats) + tup[2:]
 
+def cohensD(x, y):
+    """Calculate Cohen's D effect size
+
+    Parameters
+    ----------
+    x : :obj:`list`
+        list of observations
+    y : :obj:`list`
+        list of class values for each observation
+    """
+    x0, x1 = list(), list()
+    for i, e in enumerate(y):
+        if e > 0:
+            x1.append(x[i])
+        else:
+            x0.append(x[i])
+    return (mean(x0) - mean(x1)) / (sqrt((std(x0, ddof=1) ** 2 + std(x1, ddof=1) ** 2) / 2))
+
+
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
@@ -300,12 +320,11 @@ def conf_interval(r, samp_size, percent=DEF_CONF_INT):
         tup = (np.nan, np.nan)
     return tup
 
-
 def meanXperY(x, y):
     """find the mean x for each label y"""
     sums = dict()
     counts = dict()
-    for i in xrange(len(x)):
+    for i in range(len(x)):
         try:
             sums[y[i]] += x[i]
             counts[y[i]] += 1
@@ -313,7 +332,7 @@ def meanXperY(x, y):
             sums[y[i]] = x
             counts[y[i]] = 1
     means = dict()
-    for yKey in sums.iterkeys():
+    for yKey in sums:
         means[yKey] = sums[yKey] / float(counts[yKey])
     return means
 
@@ -324,13 +343,7 @@ def fiftyChecks(args):
     if Xc is not None:
         r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [np.append(Xc, permutation(Xend), 1) for i in range(50)]])
     else:
-        # newX = permutation(Xend).reshape(len(Xend),1)
-        # print type(Xend)
-        # print dir(Xend)
-        # print y
-        # r = roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1])
         r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [permutation(Xend).reshape(len(Xend),1) for i in range(50)]])
-    #if r: print r
     return r
 
 def getGroupFreqThresh(correl_field=None):
@@ -345,10 +358,12 @@ def getGroupFreqThresh(correl_field=None):
             group_freq_thresh = 40000
     return group_freq_thresh
 
-def getMetric(logistic=False, idp=False, spearman=False, controls=False):
+def getMetric(logistic=False, cohensd=False, idp=False, spearman=False, controls=False):
     """Return a string which best represents the metric used in the analysis. String is used in output (csv, wordcloud, etc.)"""
     if logistic:
         metric = 'B'
+    elif cohensd:
+        metric = 'D'
     elif idp:
         metric = 'R'
     elif spearman:

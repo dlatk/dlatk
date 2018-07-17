@@ -9,6 +9,39 @@ This is how DLATK expects them to be named.
 
 Deviate at your own risk.
 
+Structure
+---------
+
+Every feature table has the same structure: `id`, `group_id`, `feat`, `value` and `group_norm`. Here is an example of a message level (`group_id` = `message_id`) 1gram table:
+
+.. code-block:: mysql 
+
+   	mysql> describe feat$1gram$msgs$message_id$16to16;
+	+------------+---------------------+------+-----+---------+----------------+
+	| Field      | Type                | Null | Key | Default | Extra          |
+	+------------+---------------------+------+-----+---------+----------------+
+	| id         | bigint(16) unsigned | NO   | PRI | NULL    | auto_increment |
+	| group_id   | int(11)             | YES  | MUL | NULL    |                |
+	| feat       | varchar(36)         | YES  | MUL | NULL    |                |
+	| value      | int(11)             | YES  |     | NULL    |                |
+	| group_norm | double              | YES  |     | NULL    |                |
+	+------------+---------------------+------+-----+---------+----------------+
+
+The column naming convention is identical across tables but the MySQL Type is not, though generally `feat` is a `varchar`, `value` is an `int` and `group_norm` is a `double`. The columns are defined as follows:
+
+* **group_id**: Identifier for each group as determined from the :doc:`../fwinterface/fwflag_c` flag. This is typically a message id (e.g. Tweet id), user id (e.g. Twitter user id), community id (e.g. U.S. County FIPS code or state code), etc.
+* **feat**: feature name such as an ngram, LDA topic id, etc.
+* **value**: The number of times the feature was used by the `group_id`.
+* **group_norm**: The relative frequency of the feature use for the `group_id`. This is usually `value` divided by the sum of all `value`s for the `group_id`.
+
+Things to keep in mind when creating your own feature tables:
+
+* The `id` column is technically not necessary but every other column is needed. 
+* Tables are sparse encoded: `group_id` / `feat` pairs are assumed to be zero if missing from the table.
+* Nulls and 0's in the `group_norm` column will throw an error.
+* Do not use `Decimal` types in feature tables.
+* Keep the `group_id` and `feat` columns indexed.
+
 Example 1: unigram, bigram, etc features
 ----------------------------------------
 These tables are generally created with the :doc:`../fwinterface/fwflag_add_ngrams` flag of fwInterface.
@@ -31,7 +64,7 @@ These tables are generally created with the :doc:`../fwinterface/fwflag_add_ngra
 * *16to16*: Unscaled
 * *16to8*: :doc:`../fwinterface/fwflag_anscombe`
 * *16to4*: :doc:`../fwinterface/fwflag_sqrt`
-* *16to2*: :doc:`../fwinterface/fwflag_log`
+* *16to3*: :doc:`../fwinterface/fwflag_log`
 * *16to1*: :doc:`../fwinterface/fwflag_boolean`
 
 **Field 5** Shows feature occurrence filter (:doc:`../fwinterface/fwflag_feat_occ_filter`) used on feature table (i.e., what %age of groups necessary to include feature in table)

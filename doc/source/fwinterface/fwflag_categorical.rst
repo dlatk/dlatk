@@ -22,7 +22,7 @@ Details
 
 MySQL column values must be intergers or varchars. For every distinct value it creates a new outcome named after the original outcome with the distinct value appended to the end. For example, if your outcome is "education" with values "highschool", "college" and "phd" then you will have three outcomes: education_highschool, education_college and education_phd. 
 
-If your outcome has two distinct values then only one will be used. For example, if you outcome is "gender" with values "male" and "female" you will get one outcome either "gender_male" or "gender_female". 
+If your outcome has two distinct values then only one will be used. For example, if you outcome is "gender" with values "male" and "female" you will get one outcome either "gender__male" or "gender__female". 
 
 The argument must also be listed after either :doc:`fwflag_outcomes` or :doc:`fwflag_outcome_controls`.
 

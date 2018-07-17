@@ -652,11 +652,11 @@ class OutcomeAnalyzer(OutcomeGetter):
                                 means = dlac.meanXperY(X[:,-1], y)
                             else:
                                 results = sm.OLS(y, X).fit() #runs regression
-                            conf = dlac.conf_interval(results.params[-1], len(y))
+                            effect_size = dlac.cohensD(X, y) if cohensD else results.params[-1]
+                            conf = dlac.conf_interval(effect_size, len(y))
                             if means: 
-                                tup = (results.params[-1], results.pvalues[-1], len(y), conf, means)
+                                tup = (effect_size, results.pvalues[-1], len(y), conf, means)
                             else: 
-                                effect_size = dlac.cohensD(X, y) if cohensD else results.params[-1]
                                 tup = (effect_size, results.pvalues[-1], len(y), conf)
 
                             print(results.summary(outcomeField, sorted(controls.keys())))#debug
@@ -697,12 +697,9 @@ class OutcomeAnalyzer(OutcomeGetter):
                             results = sm.Logit(y, X, missing='drop').fit(disp=False)
                         else:
                             results = sm.OLS(y, X).fit() #runs regression
-                        conf = dlac.conf_interval(results.params[-1], len(y))
-                        if cohensD:
-                            cohens_d = dlac.cohensD(X, y)
-                            tup = (cohens_d, results.pvalues[-1], len(y), conf)
-                        else:
-                            tup = (results.params[-1], results.pvalues[-1], len(y), conf)
+                        effect_size = dlac.cohensD(X, y) if cohensD else results.params[-1]
+                        conf = dlac.conf_interval(effect_size, len(y))
+                        tup = (effect_size, results.pvalues[-1], len(y), conf)
 
                         if outputInteraction:
                             interaction_tuples = {}

@@ -44,9 +44,15 @@ python setup.py install
 ```
 
 ### 4. Docker
-The Docker install is maintained by user, `pennsignals`. For the latest instructions, please see  
-[dlatk-docker](https://github.com/pennsignals/dlatk-docker).
+Detailed Docker install instructions [here](http://dlatk.wwbp.org/tutorials/tut_docker.html).
 
+```sh
+docker run --name mysql_v5  --env MYSQL_ROOT_PASSWORD=my-secret-pw --detach mysql:5.5
+docker run -it --rm --name dlatk_docker --link mysql_v5:mysql dlatk/dlatk bash
+```
+
+- [DLATK at DockerHub](https://hub.docker.com/r/dlatk/dlatk/)
+- [DockerFile on GitHub](https://github.com/dlatk/dlatk-docker)
 
 ## Dependencies
 - [mysqlclient](https://github.com/PyMySQL/mysqlclient-python)

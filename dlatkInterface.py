@@ -263,6 +263,8 @@ def main(fn_args = None):
                        help='Use Spearman R instead of Pearson.')
     group.add_argument('--logistic_reg', action='store_true', dest='logisticReg', default=False,
                        help='Use logistic regression instead of linear regression. This is better for binary outcomes.')
+    group.add_argument('--cohens_d', action='store_true', dest='cohensd', default=False,
+                       help='Report Cohen\'s D with logistic regression instead coefficients (B\'s).')
     group.add_argument('--IDP', '--idp', action='store_true', dest='IDP', default=False,
                        help='Use IDP instead of linear regression/correlation [only works with binary outcome values]')
     group.add_argument('--AUC', '--auc', action='store_true', dest='auc', default=False,
@@ -1334,7 +1336,7 @@ def main(fn_args = None):
         elif args.auc:
             correls = oa.aucWithFeatures(fg, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs, blacklist=blacklist, whitelist=whitelist, bootstrapP = args.bootstrapp, groupsWhere=args.groupswhere)
         else:
-            correls = oa.correlateWithFeatures(fg, args.spearman, args.p_correction_method, args.outcomeinteraction, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly, logisticReg=args.logisticReg, outputInteraction=args.outputInteractionTerms, groupsWhere=args.groupswhere)
+            correls = oa.correlateWithFeatures(fg, args.spearman, args.p_correction_method, args.outcomeinteraction, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly, logisticReg=(args.logisticReg or args.cohensd), cohensD=args.cohensd, outputInteraction=args.outputInteractionTerms, groupsWhere=args.groupswhere)
         if args.topicdupefilter:#remove duplicate topics (keeps those correlated more strongly)
             correls = oa.topicDupeFilterCorrels(correls, args.topiclexicon)
 
@@ -1413,7 +1415,7 @@ def main(fn_args = None):
             outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
             if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
             if args.spearman: outputFile += '.spearman'
-        metric = dlac.getMetric(args.logisticReg, args.IDP, args.spearman, args.outcomecontrols)
+        metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
         oa.correlMatrix(correls, outputFile, outputFormat='html', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq, metric=metric)
 
     if args.csv and not args.cca and correls:
@@ -1423,11 +1425,11 @@ def main(fn_args = None):
             outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
             if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
             if args.spearman: outputFile += '.spearman'
-        metric = dlac.getMetric(args.logisticReg, args.IDP, args.spearman, args.outcomecontrols)
+        metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
         oa.correlMatrix(correls, outputFile, outputFormat='csv', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq, metric=metric)
 
     if args.tagcloud:
-        metric = dlac.getMetric(args.logisticReg, args.IDP, args.spearman, args.outcomecontrols)
+        metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
         outputFile = makeOutputFilename(args, fg, oa, suffix="_tagcloud")
         oa.printTagCloudData(correls, args.maxP, outputFile, str(args), maxWords = args.maxtcwords, duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, cleanCloud = args.cleancloud)
     if args.makewordclouds:
@@ -1438,7 +1440,7 @@ def main(fn_args = None):
 
     if args.topictc or args.corptopictc:
         if args.corptopictc: oa.lexicondb = oa.corpdb
-        metric = dlac.getMetric(args.logisticReg, args.IDP, args.spearman, args.outcomecontrols)
+        metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
         outputFile = makeOutputFilename(args, fg, oa, suffix='_topic_tagcloud')
         # use plottingWhitelistPickle to link to a pickle file containing the words driving the categories
         oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats, maxWords=args.numtopicwords, cleanCloud=args.cleancloud, metric=metric)

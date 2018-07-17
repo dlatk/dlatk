@@ -1,16 +1,16 @@
-.. _fwflag_logistic_reg:
-==============
---logistic_reg
-==============
+.. _fwflag_cohens_d:
+==========
+--cohens_d
+==========
 Switch
 ======
 
---logistic_reg
+--cohens_d
 
 Description
 ===========
 
-Use logistic regression instead of linear regression. This is better for binary outcomes.
+Uses Cohen's D for effect size and logistic regression for significance. Best for binary outcomes. 
 
 Argument and Default Value
 ==========================
@@ -20,7 +20,7 @@ None
 Details
 =======
 
-Note: you cannot compare coefficients in Logistic regression. See this article for more info. You can compare p values, though. See :doc:`fwflag_correlate` for more info on correlation.
+Note: you cannot compare coefficients in Logistic regression so one alternative is to use Cohen's D. This automatically turns on the :doc:`fwflag_logistic_reg` flag so no need to use it. 
 
 
 Other Switches
@@ -34,7 +34,6 @@ Required Switches:
 
 Optional Switches:
 
-* :doc:`fwflag_cohens_d`
 * :doc:`fwflag_interaction_ddla`
 * :doc:`fwflag_correlate`
 * :doc:`fwflag_rmatrix`
@@ -51,7 +50,7 @@ Example Commands
 	dlatkInterface.py -d dla_tutorial -t msgs -c user_id \ 
 	-f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$1gra' \ 
 	--outcome_table blog_outcomes  --group_freq_thresh 500 \ 
-	--outcomes gender --output_name gender_correlates_logistic \ 
+	--outcomes gender --output_name gender_correlates_logistic_d \ 
 	--topic_tagcloud --make_topic_wordcloud --topic_lexicon met_a30_2000_freq_t50ll \ 
 	--tagcloud_colorscheme bluered \
-	--logistic_reg
+	--cohens_d

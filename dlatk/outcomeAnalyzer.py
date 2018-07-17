@@ -10,7 +10,8 @@ from configparser import SafeConfigParser
 
 #math / stats:
 from math import floor
-from numpy import array, tile, sqrt, fabs, multiply, mean, isnan
+from statistics import mean, stdev
+from numpy import array, tile, sqrt, fabs, multiply, mean, isnan, std
 from numpy import log as nplog, sort as npsort, append as npappend
 import numpy as np
 from scipy.stats import zscore, rankdata, norm
@@ -574,7 +575,7 @@ class OutcomeAnalyzer(OutcomeGetter):
 
     def correlateWithFeatures(self, featGetter, spearman = False, p_correction_method = 'BH', interaction = None,
                               blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False, outcomeWithOutcomeOnly = False,
-                              zscoreRegression = True, logisticReg = False, outputInteraction = False, 
+                              zscoreRegression = True, logisticReg = False, cohensD = False, outputInteraction = False, 
                               groupsWhere = ''):
         """Finds the correlations between features and outcomes
 
@@ -601,6 +602,8 @@ class OutcomeAnalyzer(OutcomeGetter):
             standard both variables if True
         logisticReg : :obj:`boolean`, optional
             True - use logistic regression, False - use default linear
+        cohensD : :obj:`boolean`, optional
+            True - use logistic regression for significance and Cohen's D for effect size, False - use default linear
         outputInteraction : :obj:`boolean`, optional
             True - append output interactions to results
         groupsWhere : :obj:`str`, optional
@@ -626,7 +629,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 interaction_tuples = {}
 
                 # find correlation or regression coef, p-value, and N (stored in tup)
-                if controls or logisticReg: #run OLS or logistic regression
+                if controls or logisticReg or cohensD: #run OLS or logistic regression
 
                     if firstLoop and controls:
                         # Do regression showing the effect of the controls only
@@ -643,17 +646,18 @@ class OutcomeAnalyzer(OutcomeGetter):
                         results = None
                         try:
                             means = None
-                            if logisticReg:
+                            if logisticReg or cohensD:
                                 results = sm.Logit(y, X).fit(disp=False) #runs regression
                                 #add means for each group
                                 means = dlac.meanXperY(X[:,-1], y)
                             else:
                                 results = sm.OLS(y, X).fit() #runs regression
-                            conf = dlac.conf_interval(results.params[-1], len(y))
+                            effect_size = dlac.cohensD(X, y) if cohensD else results.params[-1]
+                            conf = dlac.conf_interval(effect_size, len(y))
                             if means: 
-                                tup = (results.params[-1], results.pvalues[-1], len(y), conf, means)
+                                tup = (effect_size, results.pvalues[-1], len(y), conf, means)
                             else: 
-                                tup = (results.params[-1], results.pvalues[-1], len(y), conf)
+                                tup = (effect_size, results.pvalues[-1], len(y), conf)
 
                             print(results.summary(outcomeField, sorted(controls.keys())))#debug
                         except (ValueError, Exception) as err:
@@ -689,12 +693,13 @@ class OutcomeAnalyzer(OutcomeGetter):
 
                     results = None
                     try:
-                        if logisticReg:
+                        if logisticReg or cohensD:
                             results = sm.Logit(y, X, missing='drop').fit(disp=False)
                         else:
                             results = sm.OLS(y, X).fit() #runs regression
-                        conf = dlac.conf_interval(results.params[-1], len(y))
-                        tup = (results.params[-1], results.pvalues[-1], len(y), conf)
+                        effect_size = dlac.cohensD(X, y) if cohensD else results.params[-1]
+                        conf = dlac.conf_interval(effect_size, len(y))
+                        tup = (effect_size, results.pvalues[-1], len(y), conf)
 
                         if outputInteraction:
                             interaction_tuples = {}

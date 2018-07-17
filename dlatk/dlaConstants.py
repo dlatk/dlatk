@@ -284,6 +284,25 @@ def bonfPCorrection(tup, numFeats):
     """given tuple with second entry a p value, multiply by num of feats and return"""
     return (tup[0], tup[1]*numFeats) + tup[2:]
 
+def cohensD(x, y):
+    """Calculate Cohen's D effect size
+
+    Parameters
+    ----------
+    x : :obj:`list`
+        list of observations
+    y : :obj:`list`
+        list of class values for each observation
+    """
+    x0, x1 = list(), list()
+    for i, e in enumerate(y):
+        if e > 0:
+            x1.append(x[i])
+        else:
+            x0.append(x[i])
+    return (mean(x0) - mean(x1)) / (sqrt((std(x0, ddof=1) ** 2 + std(x1, ddof=1) ** 2) / 2))
+
+
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
@@ -339,10 +358,12 @@ def getGroupFreqThresh(correl_field=None):
             group_freq_thresh = 40000
     return group_freq_thresh
 
-def getMetric(logistic=False, idp=False, spearman=False, controls=False):
+def getMetric(logistic=False, cohensd=False, idp=False, spearman=False, controls=False):
     """Return a string which best represents the metric used in the analysis. String is used in output (csv, wordcloud, etc.)"""
     if logistic:
         metric = 'B'
+    elif cohensd:
+        metric = 'D'
     elif idp:
         metric = 'R'
     elif spearman:

@@ -35,7 +35,9 @@ Before installing DLATK you need to install the necessary system requirements (M
 
 Linux
 ^^^^^
-*WARNING*: This will install MySQL on your computer.
+
+.. warning::
+   This will install MySQL on your computer.
 
 Install the required Ubuntu libraries. The requirements.sys can be found on the `DLATK GitHub page <http://www.github.com/dlatk/dlatk>`_.   The ``r-base`` package might be difficult to install and can be removed from ``requirements.sys`` if needed though this will limit some minor functionality.
 
@@ -48,7 +50,9 @@ DLATK has been tested on Ubuntu 14.04.
 
 OSX (with brew)
 ^^^^^^^^^^^^^^^
-*WARNING*: This will install MySQL on your computer.
+
+.. warning::
+   This will install MySQL on your computer.
 
 Install dependencies with brew.
 
@@ -230,7 +234,8 @@ The path to DLATK can be found using the following:
 
 		python -c "import dlatk; print(dlatk.__file__)"
 
-*WARNING*: if these databases already exist the above commands will add tables to the db.
+.. warning::
+   If the above databases already exist then the above commands will add tables to the them.
 
 Next Steps
 ----------

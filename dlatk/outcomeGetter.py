@@ -294,7 +294,9 @@ class OutcomeGetter(DLAWorker):
             dlac.warn("""You specified a --word_table and --group_freq_thresh is
 enabled, so the total word count for your groups might be off
 (remove "--word_table WT" to solve this issue)""", attention=False)
-            
+        
+        self.checkIndices(self.outcome_table, correlField=self.correl_field)
+
         groups = set()
         outcomes = dict()
         outcomeFieldList = set(self.outcome_value_fields).union(set(self.outcome_controls)).union(set(self.outcome_interaction))

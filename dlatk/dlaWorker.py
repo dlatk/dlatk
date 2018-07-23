@@ -51,12 +51,17 @@ class DLAWorker(object):
 
     ##PUBLIC METHODS#
     def checkIndices(self, table, primary=False, correlField=False):
+        hasPrimary, hasCorrelIndex = True, True
+        warn_message = "The table %s does not have:"  % table
         if primary:
             hasPrimary = mm.primaryKeyExists(self.dbConn, self.dbCursor, table, self.messageid_field)
-            if not hasPrimary: dlac.warn("The table %s does not have a PRIMARY key on %s. Consider adding." % (table, self.message_field), attention=True)
+            if not hasPrimary: warn_message += " * a PRIMARY key on %s" % self.message_field
         if correlField:
             hasCorrelIndex = mm.indexExists(self.dbConn, self.dbCursor, table, correlField)
-            if not hasCorrelIndex: dlac.warn("The table %s does not have a INDEX on %s. Consider adding." % (table, correlField), attention=True)
+            if not hasCorrelIndex: warn_message += " * an index on %s" % correlField
+        warn_message += ". Consider adding."
+        if not hasPrimary or not hasCorrelIndex:
+            dlac.warn(warn_message, attention=True)
 
     def getMessages(self, messageTable = None, where = None):
         """?????
@@ -96,6 +101,7 @@ class DLAWorker(object):
             ?????
         """
         if not messageTable: messageTable = self.corptable
+        self.checkIndices(messageTable, primary=True, correlField=self.correl_field)
         msql = """SELECT %s, %s FROM %s WHERE %s = '%s'""" % (
             self.messageid_field, self.message_field, messageTable, self.correl_field, cf_id)
         #return self._executeGetSSCursor(msql, warnMsg, host=self.mysql_host)

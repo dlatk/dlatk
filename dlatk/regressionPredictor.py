@@ -499,7 +499,7 @@ class RegressionPredictor:
         """boolean: whether multiX was used for training."""
 
         self.outliersToMean = outliersToMean
-        """float: """
+        """float: Threshold for setting outliers to mean value."""
 
     def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = ''):
         """Train Regressors"""

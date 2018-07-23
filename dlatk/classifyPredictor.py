@@ -356,7 +356,7 @@ class ClassifyPredictor:
 
     trainingSize = 1000000 #if this is smaller than the training set, then it will be reduced to this. 
 
-    def __init__(self, og, fgs, modelName = 'svc'):
+    def __init__(self, og, fgs, modelName = 'svc', outliersToMean = None):
         #initialize classification predictor
         self.outcomeGetter = og
 
@@ -391,6 +391,9 @@ class ClassifyPredictor:
 
         self.multiXOn = False
         """boolean: whether multiX was used for training."""
+
+        self.outliersToMean = outliersToMean
+        """float: """
 
 
     def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
@@ -1497,7 +1500,11 @@ class ClassifyPredictor:
                 scaler = StandardScaler(with_mean = not sparse)
                 print(("[Applying StandardScaler to X[%d]: %s]" % (i, str(scaler))))
                 X = scaler.fit_transform(X)
+                if self.outliersToMean and not sparse:
+                    X[abs(X) > self.outliersToMean] = 0
                 y = np.array(y)
+            elif self.outliersToMean:
+                print(" Warning: Outliers to mean is not being run because standardize is off")
             print((" X[%d]: (N, features): %s" % (i, str(X.shape))))
 
             #Feature Selection
@@ -1904,10 +1911,17 @@ class ClassifyPredictor:
                 print(("  predict: applying standard scaler to X[%d]: %s" % (i, str(scaler)))) #debug
                 try:
                     X = scaler.transform(X)
+                    if self.outliersToMean and not sparse:
+                        X[abs(X) > self.outliersToMean] = 0
                 except NotFittedError as e:
                     warn(e)
                     warn("Fitting scaler")
                     X = scaler.fit_transform(X)
+                    if outliersToMean and not sparse:
+                        X[abs(X) > self.outliersToMean] = 0
+            elif self.outliersToMean:
+                print(" Warning: Outliers to mean is not being run because standardize is off")
+
             if fSelector:
                 print(("  predict: applying feature selection to X[%d]: %s" % (i, str(fSelector)))) #debug
                 newX = fSelector.transform(X)

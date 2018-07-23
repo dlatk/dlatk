@@ -342,7 +342,7 @@ def main(fn_args = None):
                        help='use sparse representation for X when training / testing')
     group.add_argument('--folds', type=int, metavar='NUM', dest='folds', default=dlac.DEF_FOLDS,
                        help='Number of folds for functions that run n-fold cross-validation')
-    group.add_argument('--outlier_to_mean', '--outliers_to_mean', nargs='?', default=False, const=dlac.DEF_OUTLIER_THRESHOLD,
+    group.add_argument('--outlier_to_mean', '--outliers_to_mean', nargs='?', type=float, default=False, const=dlac.DEF_OUTLIER_THRESHOLD,
                         help='')
     group.add_argument('--picklefile', type=str, metavar='filename', dest='picklefile', default='',
                        help='Name of file to save or load pickle of model')
@@ -1704,7 +1704,7 @@ def main(fn_args = None):
             ClassifyPredictor.featureSelectionString = args.featureselectionstring
         elif args.featureselection:
             ClassifyPredictor.featureSelectionString = dlac.DEF_CP_FEATURE_SELECTION_MAPPING[args.featureselection]
-        cp = ClassifyPredictor(og, fgs, args.model) #todo change to a method variables (like og...etc..)
+        cp = ClassifyPredictor(og, fgs, args.model, args.outlier_to_mean) #todo change to a method variables (like og...etc..)
 
 
     if args.loadmodels and cp:
@@ -1770,7 +1770,7 @@ def main(fn_args = None):
     if args.trainclasstoreg or args.testclasstoreg or args.predictclasstoreg:
         if not og: og = OG()
         if not fg: fg = FG()
-        c2rp = ClassifyToRegressionPredictor(og, fg, modelR = args.model) #todo change to a method variables (like og...etc..)
+        c2rp = ClassifyToRegressionPredictor(og, fg, modelR = args.model) #todo change to a method variables (like og...etc..
 
     if args.trainclasstoreg:
         c2rp.train(sparse = args.sparse, groupsWhere = args.groupswhere)

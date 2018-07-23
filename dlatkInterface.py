@@ -342,6 +342,8 @@ def main(fn_args = None):
                        help='use sparse representation for X when training / testing')
     group.add_argument('--folds', type=int, metavar='NUM', dest='folds', default=dlac.DEF_FOLDS,
                        help='Number of folds for functions that run n-fold cross-validation')
+    group.add_argument('--outlier_to_mean', '--outliers_to_mean', nargs='?', default=False, const=dlac.DEF_OUTLIER_THRESHOLD,
+                        help='')
     group.add_argument('--picklefile', type=str, metavar='filename', dest='picklefile', default='',
                        help='Name of file to save or load pickle of model')
     group.add_argument('--all_controls_only', action='store_true', dest='allcontrolsonly', default=False,
@@ -547,7 +549,7 @@ def main(fn_args = None):
                        help='train a regression model to predict outcomes based on feature table')
     group.add_argument('--test_regression', action='store_true', dest='testregression', default=False,
                        help='train/test a regression model to predict outcomes based on feature table')
-    group.add_argument('--combo_test_regression', '--combo_test_reg', action='store_true', dest='combotestregression', default=False,
+    group.add_argument('--combo_test_regression', '--combo_test_reg', '--nfold_test_regression', action='store_true', dest='combotestregression', default=False,
                        help='train/test a regression model with and without all combinations of controls')
     group.add_argument('--predict_regression', '--predict_reg', action='store_true', dest='predictregression', default=False,
                        help='predict outcomes based on loaded or trained regression model')
@@ -582,7 +584,7 @@ def main(fn_args = None):
                        help='train classification models for each outcome field based on feature table')
     group.add_argument('--test_classifiers', action='store_true', dest='testclassifiers', default=False,
                        help='trains and tests classification for each outcome')
-    group.add_argument('--combo_test_classifiers', action='store_true', dest='combotestclassifiers', default=False,
+    group.add_argument('--combo_test_classifiers', '--nfold_test_classifiers', action='store_true', dest='combotestclassifiers', default=False,
                        help='train/test a regression model with and without all combinations of controls')
     group.add_argument('--predict_classifiers', '--predict_class', action='store_true', dest='predictclassifiers', default=False,
                        help='predict outcomes bases on loaded training')
@@ -1597,7 +1599,7 @@ def main(fn_args = None):
             RegressionPredictor.featureSelectionString = args.featureselectionstring
         elif args.featureselection:
             RegressionPredictor.featureSelectionString = dlac.DEF_RP_FEATURE_SELECTION_MAPPING[args.featureselection]
-        rp = RegressionPredictor(og, fgs, args.model)
+        rp = RegressionPredictor(og, fgs, args.model, args.outlier_to_mean)
     if args.testcombregression:
         if not og: og = OG()
         if not fgs: fgs = FGs() #all feature getters
@@ -1632,7 +1634,7 @@ def main(fn_args = None):
     if args.combotestregression or args.controladjustreg:
         if not og: og = OG()
         if not fg: fg = FG()
-        if not rp: rp = RegressionPredictor(og, fgs, args.model)
+        if not rp: rp = RegressionPredictor(og, fgs, args.model, args.outlier_to_mean)
 
         comboScores = None
         if args.combotestregression:

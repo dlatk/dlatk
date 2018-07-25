@@ -1,11 +1,11 @@
 .. _fwflag_combo_test_classifiers:
 ========================
---combo_test_classifiers
+--nfold_test_classifiers
 ========================
 Switch
 ======
 
---combo_test_classifiers
+--nfold_test_classifiers or --comb_test_classifiers
 
 Description
 ===========
@@ -87,4 +87,5 @@ Example Commands
 
 	# Runs 10-fold cross validation on predicting the users' genders from 1grams.
 	# This essentially will tell you how well your model & features do at predicting gender.
-	dlatkInterface.py -d fb20 -t messages_en -c user_id -f 'feat$1gram$messages_en$user_id$16to16$0_01' --outcome_table masterstats_andy_r10k --outcomes gender --combo_test_classifiers --model linear-svc --folds 10
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$messages_en$user_id$16to16$0_01' \
+	--outcome_table blog_outcomes --outcomes gender --combo_test_classifiers --model linear-svc --folds 10

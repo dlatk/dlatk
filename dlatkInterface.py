@@ -290,6 +290,8 @@ def main(fn_args = None):
                    help='Replaces characters in the middle of explatives/slurs with ***. ex: f**k')
     group.add_argument('--weighted_sample', dest='weightedsample', default=dlac.DEF_WEIGHTS,
                         help='Field in outcome table to use as weights for correlation(regression).')
+    group.add_argument('--keep_low_variance_outcomes', '--keep_low_variance', dest='low_variance_thresh', action='store_false', default=dlac.DEF_LOW_VARIANCE_THRESHOLD,
+                        help='Does not remove low variance outcomes and controls from analysis')
 
 
 
@@ -342,6 +344,8 @@ def main(fn_args = None):
                        help='use sparse representation for X when training / testing')
     group.add_argument('--folds', type=int, metavar='NUM', dest='folds', default=dlac.DEF_FOLDS,
                        help='Number of folds for functions that run n-fold cross-validation')
+    group.add_argument('--outlier_to_mean', '--outliers_to_mean', dest='outlier_to_mean', nargs='?', type=float, default=False, const=dlac.DEF_OUTLIER_THRESHOLD,
+                        help='')
     group.add_argument('--picklefile', type=str, metavar='filename', dest='picklefile', default='',
                        help='Name of file to save or load pickle of model')
     group.add_argument('--all_controls_only', action='store_true', dest='allcontrolsonly', default=False,
@@ -547,7 +551,7 @@ def main(fn_args = None):
                        help='train a regression model to predict outcomes based on feature table')
     group.add_argument('--test_regression', action='store_true', dest='testregression', default=False,
                        help='train/test a regression model to predict outcomes based on feature table')
-    group.add_argument('--combo_test_regression', '--combo_test_reg', action='store_true', dest='combotestregression', default=False,
+    group.add_argument('--combo_test_regression', '--combo_test_reg', '--nfold_test_regression', action='store_true', dest='combotestregression', default=False,
                        help='train/test a regression model with and without all combinations of controls')
     group.add_argument('--predict_regression', '--predict_reg', action='store_true', dest='predictregression', default=False,
                        help='predict outcomes based on loaded or trained regression model')
@@ -582,7 +586,7 @@ def main(fn_args = None):
                        help='train classification models for each outcome field based on feature table')
     group.add_argument('--test_classifiers', action='store_true', dest='testclassifiers', default=False,
                        help='trains and tests classification for each outcome')
-    group.add_argument('--combo_test_classifiers', action='store_true', dest='combotestclassifiers', default=False,
+    group.add_argument('--combo_test_classifiers', '--nfold_test_classifiers', action='store_true', dest='combotestclassifiers', default=False,
                        help='train/test a regression model with and without all combinations of controls')
     group.add_argument('--predict_classifiers', '--predict_class', action='store_true', dest='predictclassifiers', default=False,
                        help='predict outcomes bases on loaded training')
@@ -768,10 +772,10 @@ def main(fn_args = None):
         return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.corpdir, wordTable = args.wordTable)
 
     def OG():
-        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, fold_column = args.fold_column)
+        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, fold_column = args.fold_column)
 
     def OA():
-        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
+        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
 
     def FR():
         return FeatureRefiner(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
@@ -1597,7 +1601,7 @@ def main(fn_args = None):
             RegressionPredictor.featureSelectionString = args.featureselectionstring
         elif args.featureselection:
             RegressionPredictor.featureSelectionString = dlac.DEF_RP_FEATURE_SELECTION_MAPPING[args.featureselection]
-        rp = RegressionPredictor(og, fgs, args.model)
+        rp = RegressionPredictor(og, fgs, args.model, args.outlier_to_mean)
     if args.testcombregression:
         if not og: og = OG()
         if not fgs: fgs = FGs() #all feature getters
@@ -1632,7 +1636,7 @@ def main(fn_args = None):
     if args.combotestregression or args.controladjustreg:
         if not og: og = OG()
         if not fg: fg = FG()
-        if not rp: rp = RegressionPredictor(og, fgs, args.model)
+        if not rp: rp = RegressionPredictor(og, fgs, args.model, args.outlier_to_mean)
 
         comboScores = None
         if args.combotestregression:
@@ -1702,7 +1706,7 @@ def main(fn_args = None):
             ClassifyPredictor.featureSelectionString = args.featureselectionstring
         elif args.featureselection:
             ClassifyPredictor.featureSelectionString = dlac.DEF_CP_FEATURE_SELECTION_MAPPING[args.featureselection]
-        cp = ClassifyPredictor(og, fgs, args.model) #todo change to a method variables (like og...etc..)
+        cp = ClassifyPredictor(og, fgs, args.model, args.outlier_to_mean) #todo change to a method variables (like og...etc..)
 
 
     if args.loadmodels and cp:
@@ -1768,7 +1772,7 @@ def main(fn_args = None):
     if args.trainclasstoreg or args.testclasstoreg or args.predictclasstoreg:
         if not og: og = OG()
         if not fg: fg = FG()
-        c2rp = ClassifyToRegressionPredictor(og, fg, modelR = args.model) #todo change to a method variables (like og...etc..)
+        c2rp = ClassifyToRegressionPredictor(og, fg, modelR = args.model) #todo change to a method variables (like og...etc..
 
     if args.trainclasstoreg:
         c2rp.train(sparse = args.sparse, groupsWhere = args.groupswhere)

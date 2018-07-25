@@ -346,6 +346,22 @@ def tableExists(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICO
     else:
         return False
 
+def primaryKeyExists(db, dbCursor, table, column_name='', charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+    sql = """show indexes from %s where Key_name='PRIMARY'""" % table
+    if column_name: sql += """ and Column_name='%s'""" % column_name
+    if executeGetList(db, dbCursor, sql, warnQuery=False, charset=charset, use_unicode=use_unicode):
+        return True
+    else:
+        return False
+
+def indexExists(db, dbCursor, table, column_name='', charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+    sql = """show indexes from %s where Key_name!='PRIMARY'""" % table
+    if column_name: sql += """ and Column_name='%s'""" % column_name
+    if executeGetList(db, dbCursor, sql, warnQuery=False, charset=charset, use_unicode=use_unicode):
+        return True
+    else:
+        return False
+
 def getTableDataLength(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
     """Returns the data length for the given table"""
     sql = """SELECT DATA_LENGTH FROM information_schema.tables where TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s'""" % (db, table)

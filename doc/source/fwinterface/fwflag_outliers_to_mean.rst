@@ -37,11 +37,11 @@ Example Commands
 	# Runs 10-fold cross validation on predicting the users ages from 1grams.
 	# Set outliers to the default value of 2.5
 	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' --outcome_table blog_outcomes \
-  --outcomes age --combo_test_regression --model ridgecv --folds 10 --outliers_to_mean
+	--outcomes age --combo_test_regression --model ridgecv --folds 10 --outliers_to_mean
 
 .. code-block:: bash
 
 	# Set the threshold to 3.5
 	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' --outcome_table blog_outcomes \
-  --outcomes age --combo_test_regression --model ridgecv --folds 10 --outliers_to_mean 3.5
+	--outcomes age --combo_test_regression --model ridgecv --folds 10 --outliers_to_mean 3.5
 

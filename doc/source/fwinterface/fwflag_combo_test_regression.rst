@@ -1,6 +1,6 @@
 .. _fwflag_combo_test_regression:
 =======================
---combo_test_regression
+--nfold_test_regression
 =======================
 Switch
 ======

@@ -64,12 +64,13 @@ DEF_OUTCOME_TABLE = ''
 DEF_OUTCOME_FIELD = ''
 DEF_OUTCOME_FIELDS = []
 DEF_OUTCOME_CONTROLS = []
-DEF_GROUP_FREQ_THRESHOLD = int(1000) #min. number of total feature values that the group has, to use it
+DEF_GROUP_FREQ_THRESHOLD = 1000 #min. number of total feature values that the group has, to use it
 DEF_SHOW_FEAT_FREQS = True
 DEF_MAX_TC_WORDS = 100
 DEF_MAX_TOP_TC_WORDS = 15
 DEF_TC_FILTER = True
 DEF_WEIGHTS = ''
+DEF_LOW_VARIANCE_THRESHOLD = 0.0
 
 ##Feature Settings:
 DEF_N = int(1)

@@ -290,6 +290,8 @@ def main(fn_args = None):
                    help='Replaces characters in the middle of explatives/slurs with ***. ex: f**k')
     group.add_argument('--weighted_sample', dest='weightedsample', default=dlac.DEF_WEIGHTS,
                         help='Field in outcome table to use as weights for correlation(regression).')
+    group.add_argument('--keep_low_variance_outcomes', '--keep_low_variance', dest='low_variance_thresh', action='store_false', default=dlac.DEF_LOW_VARIANCE_THRESHOLD,
+                        help='Does not remove low variance outcomes and controls from analysis')
 
 
 
@@ -342,7 +344,7 @@ def main(fn_args = None):
                        help='use sparse representation for X when training / testing')
     group.add_argument('--folds', type=int, metavar='NUM', dest='folds', default=dlac.DEF_FOLDS,
                        help='Number of folds for functions that run n-fold cross-validation')
-    group.add_argument('--outlier_to_mean', '--outliers_to_mean', nargs='?', type=float, default=False, const=dlac.DEF_OUTLIER_THRESHOLD,
+    group.add_argument('--outlier_to_mean', '--outliers_to_mean', dest='outlier_to_mean', nargs='?', type=float, default=False, const=dlac.DEF_OUTLIER_THRESHOLD,
                         help='')
     group.add_argument('--picklefile', type=str, metavar='filename', dest='picklefile', default='',
                        help='Name of file to save or load pickle of model')
@@ -770,10 +772,10 @@ def main(fn_args = None):
         return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.corpdir, wordTable = args.wordTable)
 
     def OG():
-        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, fold_column = args.fold_column)
+        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, fold_column = args.fold_column)
 
     def OA():
-        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
+        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
 
     def FR():
         return FeatureRefiner(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)

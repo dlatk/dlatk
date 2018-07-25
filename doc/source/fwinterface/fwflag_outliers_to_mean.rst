@@ -5,7 +5,7 @@
 Switch
 ======
 
---outliers_to_mean [OUTLIER_THRESHOLD]
+``--outliers_to_mean [OUTLIER_THRESHOLD]``
 
 Description
 ===========

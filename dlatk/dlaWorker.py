@@ -54,8 +54,8 @@ class DLAWorker(object):
         hasPrimary, hasCorrelIndex = True, True
         warn_message = "WARNING: The table %s does not have:"  % table
         if primary:
-            hasPrimary = mm.primaryKeyExists(self.dbConn, self.dbCursor, table, self.messageid_field)
-            if not hasPrimary: warn_message += " a PRIMARY key on %s" % self.message_field
+            hasPrimary = mm.primaryKeyExists(self.dbConn, self.dbCursor, table, correlField)
+            if not hasPrimary: warn_message += " a PRIMARY key on %s" % correlField
         if correlField:
             hasCorrelIndex = mm.indexExists(self.dbConn, self.dbCursor, table, correlField)
             if not hasCorrelIndex: 

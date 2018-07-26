@@ -304,7 +304,8 @@ class OutcomeGetter(DLAWorker):
 enabled, so the total word count for your groups might be off
 (remove "--word_table WT" to solve this issue)""", attention=False)
         
-        self.checkIndices(self.outcome_table, primary=self.correl_field, correlField=self.correl_field)
+        if self.outcome_table:
+            self.checkIndices(self.outcome_table, primary=self.correl_field, correlField=self.correl_field)
 
         groups = set()
         outcomes = dict()

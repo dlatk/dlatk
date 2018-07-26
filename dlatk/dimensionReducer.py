@@ -37,7 +37,7 @@ from itertools import combinations
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import RandomizedLasso
 from sklearn.cross_validation import StratifiedKFold, KFold, ShuffleSplit, train_test_split
-from sklearn.decomposition import RandomizedPCA, MiniBatchSparsePCA, PCA, KernelPCA, NMF, SparsePCA
+from sklearn.decomposition import RandomizedPCA, MiniBatchSparsePCA, PCA, KernelPCA, NMF, SparsePCA, FactorAnalysis
 from sklearn.grid_search import GridSearchCV 
 from sklearn import metrics
 from sklearn.feature_selection import f_regression, SelectPercentile, SelectKBest
@@ -132,7 +132,11 @@ class DimensionReducer:
 
             'rpca': {'n_components':15, 'random_state':42, 'whiten':False, 'iterated_power':3},
 
+            'fa': {'n_components': 10, 'random_state': 42}
+    
+
             }
+
     # maps the identifier of the algorithm used to the actual class name from the module
     modelToClassName = {
         'nmf' : 'NMF',
@@ -140,6 +144,7 @@ class DimensionReducer:
         'sparsepca': 'SparsePCA',
         'lda' : 'LDA',
         'rpca' : 'RandomizedPCA',
+        'fa' : 'FactorAnalysis'
         }
 
     def __init__(self, fg, modelName='nmf', og=None, n_components=None):
@@ -259,17 +264,7 @@ class DimensionReducer:
             X = fSelector.fit_transform(X, y)
             print(" after feature selection: (N, features): %s" % str(X.shape))
 
-           
-#        if hasMultValuesPerItem(self.cvParams[self.modelName.lower()]) and self.modelName.lower()[-2:] != 'cv':
-#            #grid search for classifier params:
-#            gs = GridSearchCV(eval(self.modelToClassName[self.modelName.lower()]+'()'), 
-#                              self.cvParams[self.modelName.lower()], n_jobs = self.cvJobs)
-#            print "[Performing grid search for parameters over training]"
-#            gs.fit(X, y, cv=ShuffleSplit(len(y), n_iterations=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
-#
-#            print "best estimator: %s (score: %.4f)\n" % (gs.best_estimator_, gs.best_score_)
-#            return gs.best_estimator_, scaler, fSelector
-#        else:
+
         # no grid search
         print("[Doing clustering using : %s]" % self.modelName.lower())
         cluster = eval(self.modelToClassName[self.modelName.lower()] + '()')
@@ -282,8 +277,8 @@ class DimensionReducer:
         else:
             cluster.fit(X)
             
-#        print "coefs"
-#        print cluster.coef_
+        # print("components:")
+        # print(cluster.components_)
         print("model: %s " % str(cluster))
 
         return cluster, scaler, fSelector
@@ -373,12 +368,13 @@ class DimensionReducer:
             (n,m) = component_mat.shape
             print('components shape : %s', str(component_mat.shape))
             for i in range(n):
-                reduction_dict['rfeat'+str(i)] = dict()
+                reduction_dict['component_'+str(i)] = dict()
                 for j in range(m):
-                     if component_mat[i][j] > 0:
+                     if abs(component_mat[i][j]) > 0:
                          #print "feature name: %s"% self.featureNames[j] 
-                         reduction_dict['rfeat'+str(i)][self.featureNames[j]] = component_mat[i][j]
+                         reduction_dict['component_'+str(i)][self.featureNames[j]] = component_mat[i][j]
             lexicons[outcomeName] = reduction_dict
+        #print(lexicons)#debug
         return lexicons
         
     ######################

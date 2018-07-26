@@ -234,7 +234,7 @@ class DimensionReducer:
             X = alignDictsAsX(groupNormValues + controlValues, sparse, returnKeyList= False)
             (self.clusterModels['noOutcome'], self.scalers['noOutcome'], self.fSelectors['noOutcome']) = self._fit(X, standardize)
 
-    def _fit(self, X, y=[], standardize=True):
+    def _fit(self, X, y=[], standardize=True, rotate=False):
         """does the actual regression training, can be used by both train and test"""
 
         sparse = True
@@ -281,6 +281,19 @@ class DimensionReducer:
         # print(cluster.components_)
         print("model: %s " % str(cluster))
 
+        if rotate:
+            XFCC = cluster.components_.T
+            R, T = rotate_promax(XFCC)
+            cluster.components_ = R
+#            XFAR = np.dot(XFCTI, XFA.T).T
+#            return XFAR
+#            XFCR, XFCT = rotate_promax(cluster.components_.T)
+#            XFCTI = np.linalg.inv(XFCT)
+#            XFAR = np.dot(XFCTI, XFA.T).T
+#            return XFAR, XFCR, m_fb
+        else:
+            return XFA, XFC, m_fb
+     
         return cluster, scaler, fSelector
     
     def transform(self, standardize=True, sparse=False, restrictToGroups=None):
@@ -426,6 +439,33 @@ def r2simple(ytrue, ypred):
     r2 = 1 - (ss_err / ss_tot)
     return r2
 
+
+
+###############################################
+## Matlab Static Methods:
+
+
+def rotate_promax(X):
+    import matlab.engine
+    eng = matlab.engine.start_matlab()
+
+    gamma = (X.shape[1]/2.0)
+    print(gamma, X.shape)
+    XM = matlab.double(X.tolist())
+    R, T = eng.rotatefactors(XM, 'Method', 'promax', 'Coeff',gamma, 'Maxit', 1000, nargout=2)
+    R = np.array(R)
+    T = np.array(T)
+    return R, T
+
+def rotate_varimax(X):
+    import matlab.engine
+    eng = matlab.engine.start_matlab()
+
+    XM = matlab.double(X.tolist())
+    R, T = eng.rotatefactors(XM, 'Maxit', 1000, nargout=2)
+    R = np.array(R)
+    T = np.array(T)
+    return R, T
 
 
 class CCA:

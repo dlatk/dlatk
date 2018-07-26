@@ -103,7 +103,6 @@ class DLAWorker(object):
             ?????
         """
         if not messageTable: messageTable = self.corptable
-        self.checkIndices(messageTable, primary=True, correlField=self.correl_field)
         msql = """SELECT %s, %s FROM %s WHERE %s = '%s'""" % (
             self.messageid_field, self.message_field, messageTable, self.correl_field, cf_id)
         #return self._executeGetSSCursor(msql, warnMsg, host=self.mysql_host)

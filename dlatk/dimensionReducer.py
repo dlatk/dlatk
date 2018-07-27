@@ -285,14 +285,6 @@ class DimensionReducer:
             XFCC = cluster.components_.T
             R, T = rotate_promax(XFCC)
             cluster.components_ = R
-#            XFAR = np.dot(XFCTI, XFA.T).T
-#            return XFAR
-#            XFCR, XFCT = rotate_promax(cluster.components_.T)
-#            XFCTI = np.linalg.inv(XFCT)
-#            XFAR = np.dot(XFCTI, XFA.T).T
-#            return XFAR, XFCR, m_fb
-        else:
-            return XFA, XFC, m_fb
      
         return cluster, scaler, fSelector
     

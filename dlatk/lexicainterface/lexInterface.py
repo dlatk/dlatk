@@ -281,7 +281,7 @@ def loadWeightedLexiconFromTopicFile(filename):
                     lexicon[category][term] = weight
     return lexicon
    
-def loadWeightedLexiconFromTopicCSV(filename, threshold=None):
+def loadWeightedLexiconFromTopicCSV(filename, threshold=None, keep_underscores=False):
     """Loads a weighted lexicon 
     returns a dictionary of dictionaries"""
     import csv
@@ -290,30 +290,32 @@ def loadWeightedLexiconFromTopicCSV(filename, threshold=None):
     print("Loading %s" % filename)
     lexicon = {}
     for row in csvReader:
-         topic = row[0]
-         wordScores = row[1:]
-         words = wordScores[::2]
-         weights = wordScores[1::2]
-         weights = list(map(float, weights))
+        topic = row[0]
+        wordScores = row[1:]
+        words = wordScores[::2]
+        weights = wordScores[1::2]
+        weights = list(map(float, weights))
 
-         if threshold:
-             new_words = []
-             new_weights = []
-             keep_pairs_with_weights_above_this_number = weights[0] * threshold
-             if threshold == float('-inf'):
-                 keep_pairs_with_weights_above_this_number = threshold
-             for ii in range(len(weights)):
-                 if weights[ii] > keep_pairs_with_weights_above_this_number:
-                     new_words.append(words[ii])
-                     new_weights.append(weights[ii])
-             words = new_words
-             weights = new_weights
+        if threshold:
+            new_words = []
+            new_weights = []
+            keep_pairs_with_weights_above_this_number = weights[0] * threshold
+            if threshold == float('-inf'):
+                keep_pairs_with_weights_above_this_number = threshold
+            for ii in range(len(weights)):
+                if weights[ii] > keep_pairs_with_weights_above_this_number:
+                    new_words.append(words[ii])
+                    new_weights.append(weights[ii])
+            words = new_words
+            weights = new_weights
 
-         #now the weight for word[i] is weight[i]
-         lexicon[topic] = {}
-         for ii in range(0, len(words)):
-             lexicon[topic][words[ii]] = weights[ii]
-             #print >> sys.stderr, "topic: %s, word: %s, weight: %2.2f"%(topic, words[ii], weights[ii])
+        #now the weight for word[i] is weight[i]
+        lexicon[topic] = {}
+        for ii in range(0, len(words)):
+            word = words[ii]
+            if not keep_underscores: word = word.replace('_', ' ')
+            lexicon[topic][word] = weights[ii]
+            #print >> sys.stderr, "topic: %s, word: %s, weight: %2.2f"%(topic, words[ii], weights[ii])
     print("Done, num_topics: %d" % len(lexicon))
     return lexicon
 
@@ -1221,6 +1223,8 @@ class LexInterfaceParser(ArgumentParser):
                               help="Lexicon Filename in topic format")
         group.add_argument("--topic_csv", "--weighted_file", action='store_true', dest="topiccsv", default=False,
                               help="tells interface to use the topic csv format to make a weighted lexicon")
+        group.add_argument("--keep_underscores", action='store_true', dest="keepunderscores", default=False,
+                              help="Keep underscores in features in lexicon. Used with --topic_csv")
         group.add_argument("--filter", action="store_true", dest="using_filter",
                               help="Allows lexicon filtering if True")
         group.add_argument("-n", "--name", dest="name",
@@ -1316,7 +1320,7 @@ class LexInterfaceParser(ArgumentParser):
         if args.topicfile:
             self.lexicon = WeightedLexicon(lexicon_db=args.lexicondb)
             if args.topiccsv:
-                self.lexicon = WeightedLexicon(loadWeightedLexiconFromTopicCSV(args.topicfile, args.topicthreshold), lexicon_db=args.lexicondb)
+                self.lexicon = WeightedLexicon(loadWeightedLexiconFromTopicCSV(args.topicfile, args.topicthreshold, keep_underscores=args.keepunderscores), lexicon_db=args.lexicondb)
             else:
                 self.lexicon.setLexicon(loadLexiconFromTopicFile(args.topicfile))
         if args.corpuslex:

@@ -462,7 +462,7 @@ class RegressionPredictor:
 
     trainingSize = 1000000 #if this is smaller than the training set, then it will be reduced to this. 
 
-    def __init__(self, og, fgs, modelName = 'ridge'):
+    def __init__(self, og, fgs, modelName = 'ridge', outliersToMean = None):
         #initialize regression predictor
         self.outcomeGetter = og
 
@@ -497,6 +497,9 @@ class RegressionPredictor:
 
         self.multiXOn = False
         """boolean: whether multiX was used for training."""
+
+        self.outliersToMean = outliersToMean
+        """float: Threshold for setting outliers to mean value."""
 
     def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = ''):
         """Train Regressors"""
@@ -1883,7 +1886,8 @@ class RegressionPredictor:
         return multiX, scaledFactors, standardizedFactors, factorScalers
 
 
-    def _multiXtrain(self, X, y, standardize = True, sparse = False, weightedSample = None, factorAdaptation=False, featureSelectionParameters=None, factorAddition=False, outputName = '', report= True, factors = None):
+    def _multiXtrain(self, X, y, standardize = True, sparse = False, weightedSample = None, factorAdaptation=False, featureSelectionParameters=None, factorAddition=False, 
+                     outputName = '', report=False, factors=None):
         """does the actual regression training, first feature selection: can be used by both train and test
            create multiple scalers and feature selectors
            and just one regression model (of combining the Xes into 1)
@@ -1919,7 +1923,12 @@ class RegressionPredictor:
                 scaler = StandardScaler(with_mean = not sparse)
                 print("  [Applying StandardScaler to X[%d]: %s]" % (i, str(scaler)))
                 X = scaler.fit_transform(X)
+                if self.outliersToMean and not sparse:
+                    X[abs(X) > self.outliersToMean] = 0
+                    print("  [Setting outliers (> %d) to mean for X[%d]]" % (self.outliersToMean, i))
                 y = np.array(y)
+            elif self.outliersToMean:
+                print(" Warning: Outliers to mean is not being run because standardize is off")
             if report: self.addToReport(filename=outputName+'_.result', Str = " X[%d]: (N, features): %s\n_" % (i, str(X.shape)))
 
             #Feature Selection
@@ -2023,7 +2032,8 @@ class RegressionPredictor:
 
         return regressor.predict(X)
 
-    def _multiXpredict(self, regressor, X, multiScalers = None, multiFSelectors = None, y = None, sparse = False, factorAdaptation = False, factorScalers = None, factorAddition = False, factors = None):
+    def _multiXpredict(self, regressor, X, multiScalers = None, multiFSelectors = None, y = None, sparse = False, 
+                        factorAdaptation = False, factorScalers = None, factorAddition = False, factors = None):
         if not isinstance(X, (list, tuple)):
             X = [X]
 
@@ -2054,10 +2064,18 @@ class RegressionPredictor:
                 print("[PREDICT] applying standard scaler to X[%d]: %s" % (i, str(scaler))) #debug
                 try:
                     X = scaler.transform(X)
+                    if self.outliersToMean and not sparse:
+                        X[abs(X) > self.outliersToMean] = 0
+                        print("[PREDICT] Setting outliers (> %d) to mean for X[%d]" % (self.outliersToMean, i))
                 except NotFittedError as e:
                     warn(e)
                     warn("Fitting scaler")
                     X = scaler.fit_transform(X)
+                    if outliersToMean and not sparse:
+                        X[abs(X) > self.outliersToMean] = 0
+                        print("[PREDICT] Setting outliers (> %d) to mean for X[%d]" % (self.outliersToMean, i))
+            elif self.outliersToMean:
+                print(" Warning: Outliers to mean is not being run because standardize is off")
 
             if fSelector:
                 print("[PREDICT] applying feature selection to X[%d]: %s" % (i, str(fSelector))) #debug

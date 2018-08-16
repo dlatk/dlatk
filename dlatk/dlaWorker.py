@@ -50,6 +50,21 @@ class DLAWorker(object):
         self.wordTable = wordTable if wordTable else "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
 
     ##PUBLIC METHODS#
+    def checkIndices(self, table, primary=False, correlField=False):
+        hasPrimary, hasCorrelIndex = True, True
+        warn_message = "WARNING: The table %s does not have:"  % table
+        if primary:
+            hasPrimary = mm.primaryKeyExists(self.dbConn, self.dbCursor, table, correlField)
+            if not hasPrimary: warn_message += " a PRIMARY key on %s" % correlField
+        if correlField:
+            hasCorrelIndex = mm.indexExists(self.dbConn, self.dbCursor, table, correlField)
+            if not hasCorrelIndex: 
+                if not hasPrimary: warn_message += " or"
+                warn_message += " an index on %s" % correlField
+        warn_message += ". Consider adding."
+        if not hasPrimary or not hasCorrelIndex:
+            dlac.warn(warn_message)
+
     def getMessages(self, messageTable = None, where = None):
         """?????
  

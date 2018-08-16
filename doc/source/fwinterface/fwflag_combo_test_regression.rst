@@ -1,11 +1,11 @@
 .. _fwflag_combo_test_regression:
 =======================
---combo_test_regression
+--nfold_test_regression
 =======================
 Switch
 ======
 
---combo_test_regression
+--nfold_test_regression or --combo_test_regression
 
 Description
 ===========
@@ -123,4 +123,5 @@ Example Commands
 
   # Runs 10-fold cross validation on predicting the users ages from 1grams.
   # This essentially will tell you how well your model & features do at predicting age.
-  dlatkInterface.py -d fb20 -t messages_en -c user_id -f 'feat$1gram$messages_en$user_id$16to16$0_01' --outcome_table masterstats_andy_r10k --outcomes age --combo_test_regression --model ridgecv --folds 10
+  dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' --outcome_table blog_outcomes \
+  --outcomes age --combo_test_regression --model ridgecv --folds 10

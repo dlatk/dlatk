@@ -64,12 +64,13 @@ DEF_OUTCOME_TABLE = ''
 DEF_OUTCOME_FIELD = ''
 DEF_OUTCOME_FIELDS = []
 DEF_OUTCOME_CONTROLS = []
-DEF_GROUP_FREQ_THRESHOLD = int(1000) #min. number of total feature values that the group has, to use it
+DEF_GROUP_FREQ_THRESHOLD = 1000 #min. number of total feature values that the group has, to use it
 DEF_SHOW_FEAT_FREQS = True
 DEF_MAX_TC_WORDS = 100
 DEF_MAX_TOP_TC_WORDS = 15
 DEF_TC_FILTER = True
 DEF_WEIGHTS = ''
+DEF_LOW_VARIANCE_THRESHOLD = 0.0
 
 ##Feature Settings:
 DEF_N = int(1)
@@ -115,6 +116,7 @@ DEF_MODEL = 'ridgecv'
 DEF_CLASS_MODEL = 'svc'
 DEF_COMB_MODELS = ['ridgecv']
 DEF_FOLDS = 5
+DEF_OUTLIER_THRESHOLD = 2.5
 DEF_RP_FEATURE_SELECTION_MAPPING = {
     'magic_sauce': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.1)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
     'magic_sauce_light': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=100.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.3)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
@@ -292,7 +294,7 @@ def cohensD(x, y):
     x : :obj:`list`
         list of observations
     y : :obj:`list`
-        list of class values for each observation
+        list of class (0 or 1) values for each observation
     """
     x0, x1 = list(), list()
     for i, e in enumerate(y):
@@ -300,7 +302,7 @@ def cohensD(x, y):
             x1.append(x[i])
         else:
             x0.append(x[i])
-    return (mean(x0) - mean(x1)) / (sqrt((std(x0, ddof=1) ** 2 + std(x1, ddof=1) ** 2) / 2))
+    return (mean(x1) - mean(x0)) / (sqrt((std(x0, ddof=1) ** 2 + std(x1, ddof=1) ** 2) / 2))
 
 
 def chunks(l, n):

@@ -320,7 +320,11 @@ enabled, so the total word count for your groups might be off
             for outcomeField in outcomeFieldList:
                 outcomes[outcomeField] = dict(self.getGroupAndOutcomeValues(outcomeField, where=groupsWhere))
                 if self.low_variance_thresh is not None and self.low_variance_thresh is not False:
-                    outcomeVariance = np.var(list(outcomes[outcomeField].values()))
+                    try:
+                        outcomeVariance = np.var(list(outcomes[outcomeField].values()))
+                    except TypeError:
+                        dlac.warn("TypeError during variance check for %s, skipping step." % (outcomeField))
+                        outcomeVariance = 1
                     if isclose(outcomeVariance, 0.0) or outcomeVariance < self.low_variance_thresh:
                         del outcomes[outcomeField]
                         dlac.warn("Removing %s from analysis: variance %s less than threshold %s. To keep use --keep_low_variance" % (outcomeField, outcomeVariance, self.low_variance_thresh))

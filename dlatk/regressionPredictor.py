@@ -2071,7 +2071,7 @@ class RegressionPredictor:
                     warn(e)
                     warn("Fitting scaler")
                     X = scaler.fit_transform(X)
-                    if outliersToMean and not sparse:
+                    if self.outliersToMean and not sparse:
                         X[abs(X) > self.outliersToMean] = 0
                         print("[PREDICT] Setting outliers (> %d) to mean for X[%d]" % (self.outliersToMean, i))
             elif self.outliersToMean:

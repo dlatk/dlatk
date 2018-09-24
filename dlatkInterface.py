@@ -1406,10 +1406,10 @@ def main(fn_args = None):
             cnt = 0
             for featR in featRs.items():
                 if featR[1][1] < args.maxP: cnt +=1
-            try:
-                pprint(sorted(list(featRs.items()), key= lambda f: f[1] if not isnan(f[1][0]) else 0),depth=3, compact=True)
-            except:
-                pass
+            #try:
+            pprint(sorted(list(featRs.items()), key= lambda f: f[1] if not isnan(f[1][0]) else 0),depth=3, compact=True)
+            #except:
+            #    pass
             print("\n%d features significant at p < %s" % (cnt, args.maxP))
 
     if args.rmatrix and not args.cca:

@@ -700,6 +700,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                             results = sm.OLS(y, X).fit() #runs regression
                         effect_size = dlac.cohensD(X, y) if cohensD else results.params[-1]
                         conf = dlac.conf_interval(effect_size, len(y))
+                        print("results.pvalues:"+str(results.pvalues)) #debug
                         tup = (effect_size, results.pvalues[-1], len(y), conf)
 
                         if outputInteraction:

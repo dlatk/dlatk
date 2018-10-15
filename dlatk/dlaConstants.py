@@ -420,7 +420,8 @@ def pCorrection(pDict, method=DEF_P_CORR, pLevelsSimes=[0.05, 0.01, 0.001], rDic
         new_pDict = dict(sortedPTuples)
     else:
         keys = list(pDict.keys())
-        reject, pvals_corrected, alphacSidak, alphacBonf  = mt.multipletests(pvals=list(pDict.values()), method=method)
+        reject, pvals_corrected, alphacSidak, alphacBonf  = mt.multipletests(
+            pvals=[1 if isnan(p) else p for p in [pDict[k] for k in keys]], method=method)
         i = 0
         for key in keys:
             new_pDict[key] = pvals_corrected[i]

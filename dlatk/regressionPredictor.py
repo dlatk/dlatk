@@ -411,7 +411,7 @@ class RegressionPredictor:
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 60000
-    backOffPerc = .01 #when the num_featrue / training_insts is less than this backoff to backoffmodel
+    backOffPerc = .05 #when the num_featrue / training_insts is less than this backoff to backoffmodel
     #backOffModel = 'ridgecv'
     backOffModel = 'linear'
 
@@ -501,7 +501,7 @@ class RegressionPredictor:
         self.outliersToMean = outliersToMean
         """float: Threshold for setting outliers to mean value."""
 
-    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = ''):
+    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', saveFeatures = True):
         """Train Regressors"""
 
         ################
@@ -580,8 +580,19 @@ class RegressionPredictor:
 
             #############
             #4) fit model
-            (self.regressionModels[outcomeName], self.multiScalers[outcomeName], self.multiFSelectors[outcomeName]) = \
-                self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights)
+            if saveFeatures: 
+                (self.regressionModels[outcomeName], self.multiScalers[outcomeName], self.multiFSelectors[outcomeName], featureX) = \
+                                                                                                                          self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights, saveFeatures=True)#DEBUG
+                ##DEBUG
+                csvFeatureFile = outcomeName+'.features.csv'
+                featureXwithGroups =  np.hstack((np.array([trainGroupsOrder]).T, featureX))
+                print(" saving features to: %s (shape: %s; %s)" % (csvFeatureFile, str(featureXwithGroups.shape), str(featureX.shape)))
+                np.savetxt(csvFeatureFile, featureXwithGroups, delimiter=",") #TO EXPORT FEATURE SELECTED FEATURES
+                featureX = None #allow to clear memory, just in case
+
+            else: 
+                (self.regressionModels[outcomeName], self.multiScalers[outcomeName], self.multiFSelectors[outcomeName]) = \
+                                                                                                                          self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights)
 
         print("\n[TRAINING COMPLETE]\n")
         self.featureNamesList = featureNamesList
@@ -1887,7 +1898,7 @@ class RegressionPredictor:
 
 
     def _multiXtrain(self, X, y, standardize = True, sparse = False, weightedSample = None, factorAdaptation=False, featureSelectionParameters=None, factorAddition=False, 
-                     outputName = '', report=False, factors=None):
+                     outputName = '', report=False, factors=None, saveFeatures=None):
         """does the actual regression training, first feature selection: can be used by both train and test
            create multiple scalers and feature selectors
            and just one regression model (of combining the Xes into 1)
@@ -1970,7 +1981,6 @@ class RegressionPredictor:
         for nextX in multiX[startIndex:]:
             X = np.append(X, nextX, 1)
         print("[COMBINED FEATS] Combined size: %s" % str(X.shape))
-
         
         modelName = self.modelName.lower()
         totalFeats = 0
@@ -2018,7 +2028,10 @@ class RegressionPredictor:
             if factorAdaptation:
                 return regressor, multiScalers, multiFSelectors, factorScalers
             else:
-                return regressor, multiScalers, multiFSelectors
+                if saveFeatures:
+                    return regressor, multiScalers, multiFSelectors, X
+                else: 
+                    return regressor, multiScalers, multiFSelectors
     
     def _predict(self, regressor, X, scaler = None, fSelector = None, y = None):
         if scaler:

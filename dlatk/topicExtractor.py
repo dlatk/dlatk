@@ -95,7 +95,7 @@ class TopicExtractor(FeatureExtractor):
         #print pTopicGivenWords to file
         self.printDistToCSV(pTopicGivenWords, filename+'.topicGivenWord.csv')
         #print likelihoods to file
-        self.printDistToCSV(likelihoods, filename+'.lik.csv')
+        #self.printDistToCSV(likelihoods, filename+'.lik.csv')
         #print log_likelihoods to file
         self.printDistToCSV(log_likelihoods, filename+'.loglik.csv')
         #print word given topic

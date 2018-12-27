@@ -338,7 +338,7 @@ class FeatureRefiner(FeatureGetter):
             
         return toKeep
 
-    def addFeatNorms(self, ReCompute = True, groupFreqThresh = 0):
+    def addFeatNorms(self, ReCompute = True, groupFreqThresh = 0, setGFTWarning=True):
         """Adds the mean normalization by feature (z-score) for each feature"""
         ##TODO: add feat_norm column if doesn't exist
         where = None

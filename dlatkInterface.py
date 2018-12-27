@@ -1173,7 +1173,7 @@ def main(fn_args = None):
 
     if args.addfeatnorms:
         if not fr: fr=FR()
-        fr.addFeatNorms()
+        fr.addFeatNorms(groupFreqThresh = args.groupfreqthresh, setGFTWarning = setGFTWarning)
 
     #create whitelist / blacklist
     if args.categories:

@@ -388,7 +388,7 @@ class FeatureRefiner(FeatureGetter):
         #turn into dict of lists:
         fNumDict = dict() 
         for (gid, feat, gn) in groupNorms:
-            if not groups or gid in groups: 
+            if (len(groups) < 1) or (gid in groups): 
                 if dlac.LOWERCASE_ONLY: feat = feat.lower()
                 if feat: 
                     try:
@@ -424,7 +424,7 @@ class FeatureRefiner(FeatureGetter):
         sql = """CREATE TABLE %s (feat %s, mean DOUBLE, std DOUBLE, zero_feat_norm DOUBLE, PRIMARY KEY (`feat`)) CHARACTER SET %s COLLATE %s ENGINE=%s""" % (meanTable, featType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()], dlac.DEF_MYSQL_ENGINE)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
-        fMeans = self.findMeans(field, True, groupNorms, groupFreqThresh)
+        fMeans = self.findMeans(field, True, groupNorms, groupFreqThresh = groupFreqThresh)
         fMeansList = [(k, v[0], v[1], v[2]) for k, v in fMeans.items()]
         #print fMeansList #debug
 

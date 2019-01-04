@@ -1233,6 +1233,9 @@ def main(fn_args = None):
       fg.getTopMessages(args.lextable, outputFile, args.top_messages, args.feat_whitelist)
 
     #Outcome Only options:
+    if args.p_correction_method == '':
+        args.bonferroni = False
+    
     if args.printcsv:
         pprint(args)
         if not oa: oa = OA()

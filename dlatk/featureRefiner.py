@@ -373,7 +373,7 @@ class FeatureRefiner(FeatureGetter):
         return True
 
         
-    def findMeans(self, field='group_norm', addZeros = True, groupNorms = None, groups = set(), groupFreqThresh = 0):
+    def findMeans(self, field='group_norm', addZeros = True, groupNorms = None, groups = set(), groupFreqThresh = 0, where = None):
         """Finds feature means from group norms"""
 
         if groupFreqThresh:

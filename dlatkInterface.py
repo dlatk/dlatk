@@ -1622,10 +1622,7 @@ def main(fn_args = None):
     if args.loadmodels and rp:
         rp.load(args.picklefile)
 
-    if (args.regrToLex or args.classToLex) and isinstance(args.feattable, list):
-        print("Multiple feature tables are not handled with option --prediction_to_lexicon")
-        exit(1)
-    elif (args.regrToLex or args.classToLex) and '16to' in args.feattable and '16to16' not in args.feattable:
+    if (args.regrToLex or args.classToLex) and '16to' in args.feattable and '16to16' not in args.feattable:
         print("WARNING: using an non 16to16 feature table")
 
     if args.trainregression:

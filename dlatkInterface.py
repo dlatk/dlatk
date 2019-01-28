@@ -1624,6 +1624,8 @@ def main(fn_args = None):
 
     if (args.regrToLex or args.classToLex) and '16to' in args.feattable and '16to16' not in args.feattable:
         print("WARNING: using an non 16to16 feature table")
+    if (args.regrToLex or args.classToLex) and args.standardize:
+        print("WARNING: You must use the --no_standardize flag when creating data driven lexica. ")
 
     if args.trainregression:
         rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample)

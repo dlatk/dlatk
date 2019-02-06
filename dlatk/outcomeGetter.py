@@ -319,13 +319,14 @@ enabled, so the total word count for your groups might be off
             to_remove = []
             for outcomeField in outcomeFieldList:
                 outcomes[outcomeField] = dict(self.getGroupAndOutcomeValues(outcomeField, where=groupsWhere))
-                if self.low_variance_thresh is not None and self.low_variance_thresh is not False:
-                    outcomeVariance = np.var(list(outcomes[outcomeField].values()))
-                    if isclose(outcomeVariance, 0.0) or outcomeVariance < self.low_variance_thresh:
-                        del outcomes[outcomeField]
-                        dlac.warn("Removing %s from analysis: variance %s less than threshold %s. To keep use --keep_low_variance" % (outcomeField, outcomeVariance, self.low_variance_thresh))
-                        to_remove.append(outcomeField)
-                        continue
+                if outcomeField not in self.outcome_categories and outcomeField not in self.multiclass_outcome:
+                    if self.low_variance_thresh is not None and self.low_variance_thresh is not False:
+                        outcomeVariance = np.var(list(outcomes[outcomeField].values()))
+                        if isclose(outcomeVariance, 0.0) or outcomeVariance < self.low_variance_thresh:
+                            del outcomes[outcomeField]
+                            dlac.warn("Removing %s from analysis: variance %s less than threshold %s. To keep use --keep_low_variance" % (outcomeField, outcomeVariance, self.low_variance_thresh))
+                            to_remove.append(outcomeField)
+                            continue
 
                 if outcomeField in self.outcome_value_fields:
                     groups.update(list(outcomes[outcomeField].keys()))

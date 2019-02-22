@@ -1173,7 +1173,7 @@ def main(fn_args = None):
 
     if args.addfeatnorms:
         if not fr: fr=FR()
-        fr.addFeatNorms()
+        fr.addFeatNorms(groupFreqThresh = args.groupfreqthresh, setGFTWarning = setGFTWarning)
 
     #create whitelist / blacklist
     if args.categories:
@@ -1233,6 +1233,9 @@ def main(fn_args = None):
       fg.getTopMessages(args.lextable, outputFile, args.top_messages, args.feat_whitelist)
 
     #Outcome Only options:
+    if args.p_correction_method == '':
+        args.bonferroni = False
+    
     if args.printcsv:
         pprint(args)
         if not oa: oa = OA()
@@ -1619,11 +1622,10 @@ def main(fn_args = None):
     if args.loadmodels and rp:
         rp.load(args.picklefile)
 
-    if (args.regrToLex or args.classToLex) and isinstance(args.feattable, list):
-        print("Multiple feature tables are not handled with option --prediction_to_lexicon")
-        exit(1)
-    elif (args.regrToLex or args.classToLex) and '16to' in args.feattable and '16to16' not in args.feattable:
+    if (args.regrToLex or args.classToLex) and '16to' in args.feattable and '16to16' not in args.feattable:
         print("WARNING: using an non 16to16 feature table")
+    if (args.regrToLex or args.classToLex) and args.standardize:
+        print("WARNING: You must use the --no_standardize flag when creating data driven lexica. ")
 
     if args.trainregression:
         rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample, outputName = args.outputname )

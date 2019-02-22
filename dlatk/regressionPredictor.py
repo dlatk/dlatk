@@ -1691,36 +1691,39 @@ class RegressionPredictor:
            #     rows = []
 
     def getWeightsForFeaturesAsADict(self): 
-        #returns dictionary of featureTable -> outcomes -> feature_name -> weight
-        #weights: self.regressionModels[outcome].coef_
-        # Scaler: self.multiScalers[outcome]
-        weights_dict = dict()
+        """Creates a lexicon from a topic file
 
+        Parameters
+        ----------
+        topicfile : str
+            Name of topic file to use to build the topic lexicon.
+        newtablename : str
+            New (topic) lexicon name.
+        topiclexmethod : str
+            must be one of: "csv_lik", "standard".
+        threshold : float
+            Default = float('-inf').
+
+        Returns
+        -------
+        weights_dict : dict
+            dictionary of featureTable -> outcomes -> feature_name -> weight
+        """
+
+        weights_dict = dict()
+        unpackTopicWeights = [] 
+        intercept_dict = dict()
         featTables = [fg.featureTable for fg in self.featureGetters]
-        # MAARTEN
-        # pprint(self.regressionModels)
-        # pprint([feat[:20] for feat in self.featureNamesList])
-        startIndex = 0 # for multiX regression
-        just_one_feat = None
         for i, featTableFeats in enumerate(self.featureNamesList):
+            if "cat_" in featTables[i]:
+                unpackTopicWeights.append(featTables[i])
 
             weights_dict[featTables[i]] = dict()
             for outcome, model in self.regressionModels.items():
-                weights_dict[featTables[i]][outcome] = dict()
                 coefficients = eval('self.regressionModels[outcome].%s' % self.modelToCoeffsName[self.modelName.lower()])
-                # print len(coefficients) # debug
-                intercept = self.regressionModels[outcome].intercept_
-                print("Intercept [" + str(intercept) + "]")
-                # print "coefficients size: %s " % str(coefficients.shape)
-
-                # Getting the right chunk if there are multiple feature tables (OLD)
-                # coefficients = coefficients[startIndex:(startIndex+len(featTableFeats))]
+                weights_dict[featTables[i]][outcome] = dict()
                 
-                
-                
-                coefficients.resize(1,len(coefficients))
                 # Inverting Feature Selection
-                
                 if self.multiFSelectors[outcome][i]:
                     print("Inverting the feature selection: %s" % self.multiFSelectors[outcome][i])
                     coefficients = self.multiFSelectors[outcome][i].inverse_transform(coefficients)#.flatten()
@@ -1728,53 +1731,124 @@ class RegressionPredictor:
                 if 'mean_' in dir(self.multiFSelectors[outcome][i]):
                     print("RPCA mean: ", self.multiFSelectors[outcome][i].mean_)
 
-                #if 'steps' in dir(self.multiFSelectors[outcome][i]):
-                #    if 'mean_' in dir(self.multiFSelectors[outcome][i].steps[1][1]):
-                #        print(self.multiFSelectors[outcome][i].steps[1][1].mean_, len(self.multiFSelectors[outcome][i].steps[1][1].mean_))
-                #        mean = self.multiFSelectors[outcome][i].steps[1][1].mean_.copy()
-                #        t = self.multiFSelectors[outcome][i].steps[0][1].inverse_transform(mean).flatten()
-                #        print(self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept), self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept).sum())
-                #        print(t, len(t))
-                #        print(coefficients)
-                #        # coefficients = coefficients + t
-                #        print(coefficients)
-                #        # INTERCEPT CORRECTION : dot product of coefficients.mean from PCA
-                #        print("Pipelines don't work with this option (predtolex)")
-                #        sys.exit()
-
-
-                # coefficients.resize(1,len(coefficients))
-                # print coefficients.shape
-                # Inverting the scaling 
-                #if self.multiScalers[outcome][i]:
-                #    print("Standardscaler doesn't work with Prediction To Lexicon")
-                #    print(self.multiScalers[outcome][i].mean_, self.multiScalers[outcome][i].std_)
-                #    coefficients = self.multiScalers[outcome][i].inverse_transform(coefficients).flatten()
-                #else: 
-                #    coefficients = coefficients.flatten() 
                 coefficients = coefficients.flatten()
                 # featTableFeats contains the list of features 
                 if len(coefficients) != len(featTableFeats):
                     print("length of coefficients (%d) does not match number of features (%d)" % (len(coefficients), len(featTableFeats)))
                     sys.exit(1)
-                # print len(featTableFeats), len(coefficients), coefficients.shape # debug
+
+                coeff_iter = iter(coefficients)
+                coefficients  = np.asarray([list(islice(coeff_iter, 0, j)) for j in self.featureLengthList][i])
+                intercept = self.regressionModels[outcome].intercept_
+                if outcome not in intercept_dict:
+                    intercept_dict[outcome] = intercept
+                    print("Intercept for {o} [{i}]".format(o=outcome, i=intercept))
+                print("coefficients size for {f}: {s}".format(f=featTables[i], s=coefficients.shape))
+                coefficients.resize(1,len(coefficients))
+                coefficients = coefficients.flatten()
 
                 weights_dict[featTables[i]][outcome] = {featTableFeats[j]: coefficients[j] for j in range(len(featTableFeats)) if coefficients[j] != 0}
-                weights_dict[featTables[i]][outcome]['_intercept'] = intercept
 
-                # just_one_feat = {featTableFeats[j]: coefficients[j] for j in xrange(len(featTableFeats))}
+        if unpackTopicWeights:
+            # only topic tables
+            if len(unpackTopicWeights) == len(weights_dict):
+                # single topic table
+                if len(unpackTopicWeights) == 1:
+                    topicFeatTable = unpackTopicWeights[0]
+                    print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
+                    weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[0], topicFeatTable, weights_dict)
+                # multiple topic tables
+                else:
+                    weights_dict['words'] = dict()
+                    for idx, topicFeatTable in enumerate(unpackTopicWeights):
+                        if idx == 0: weights_dict['words'] = {o: dict() for o in weights_dict[topicFeatTable].keys()}
+                        print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
+                        weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[idx], topicFeatTable, weights_dict)
+                        for outcome, wordDict in weights_dict[topicFeatTable].items():
+                            for word, weight in wordDict.items():
+                                if word in weights_dict['words'][outcome]:
+                                    weights_dict['words'][outcome][word] += weight
+                                else:
+                                    weights_dict['words'][outcome][word] = weight
+                        print("Combining %s with %s." % (topicFeatTable, '"words"'))
+                        del weights_dict[topicFeatTable]
+                        
+            # mixed tables
+            else:
+                for idx, topicFeatTable in enumerate(unpackTopicWeights):
+                    print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
+                    weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[idx], topicFeatTable, weights_dict)
+                    for featTable in weights_dict:
+                        if featTable.split("$")[1].startswith(buildTable):
+                            for outcome, wordDict in weights_dict[topicFeatTable].items():
+                                for word, weight in wordDict.items():
+                                    if word in weights_dict[featTable][outcome]:
+                                        weights_dict[featTable][outcome][word] += weight
+                                    else:
+                                        weights_dict[featTable][outcome][word] = weight
+                            print("Combining %s with %s." % (topicFeatTable, featTable))
+                            del weights_dict[topicFeatTable]
+                            break
 
-                #with open("ageLex.pickle",'w+') as a:
-                #    pickle.dump(just_one_feat, a)
-                #print len(weights_dict[featTables[i]][outcome])
-
-            startIndex += len(featTableFeats)
-
-        #pprint(weights_dict.items()[0][1].items()[0][1].items()[1])
-
+        # add in intercepts
+        for featTable in weights_dict:
+            for outcome in weights_dict[featTable]:
+                weights_dict[featTable][outcome]['_intercept'] = intercept_dict[outcome]
         return weights_dict
 
-        #return just_one_feat
+    def unpackTopicTables(self, featureGetter, topicFeatTable, weightsDict):
+        """Convert topics coefficients to single words with coefficients*topic_word_probabilities
+
+        Parameters
+        ----------
+        featureGetter : obj
+            
+        topicFeatTable : str
+            New (topic) lexicon name.
+        weights_dict : dict
+            dictionary of featureTable -> outcomes -> feature_name -> weight
+
+        Returns
+        -------
+        weights_dict : dict
+            updated dictionary of featureTable -> outcomes -> feature_name -> weight
+
+        buildTable : str
+            Abbriviation of word table used for topic extraction
+        """
+
+        try:
+            _, topicTable, msgTable, correlField, transform = topicFeatTable.split("$")
+            topicTable = topicTable.replace("cat_", "").replace("_w", "")
+        except:
+            print("Nonstandard feature table name: {f}".format(f=topicFeatTable))
+            sys.exit(1)
+
+        buildTable = '1gram'
+        if "16to" not in transform: 
+            buildTable = transform
+
+        lex_dict = dict()
+        sql = """SELECT term, category, weight from {lexDB}.{lexTable}""".format(lexDB=featureGetter.lexicondb, lexTable=topicTable)
+        rows = mm.executeGetList(featureGetter.corpdb, featureGetter.dbCursor, sql, charset=featureGetter.encoding, use_unicode=featureGetter.use_unicode)
+        for row in rows:
+            term, category, weight = str(row[0]).strip(), str(row[1]).strip(), float(row[2])
+            if term not in lex_dict:
+                lex_dict[term] = dict()
+            lex_dict[term][category] = weight
+
+        for outcome in weightsDict[topicFeatTable]:
+            summedWordWeights = dict()
+            for term in lex_dict:
+                this_sum = 0
+                for category in lex_dict[term]:
+                    if category in weightsDict[topicFeatTable][outcome]:
+                        this_sum += weightsDict[topicFeatTable][outcome][category]*lex_dict[term][category]
+                summedWordWeights[term] = this_sum
+            weightsDict[topicFeatTable][outcome] = summedWordWeights
+            
+
+        return weightsDict, buildTable
 
     def _train(self, X, y, standardize = True):
         """does the actual regression training, first feature selection: can be used by both train and test"""

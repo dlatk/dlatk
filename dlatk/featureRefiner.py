@@ -338,13 +338,16 @@ class FeatureRefiner(FeatureGetter):
             
         return toKeep
 
-    def addFeatNorms(self, ReCompute = False):
+    def addFeatNorms(self, ReCompute = True, groupFreqThresh = 0, setGFTWarning=True):
         """Adds the mean normalization by feature (z-score) for each feature"""
+        ##TODO: add feat_norm column if doesn't exist
         where = None
         if not ReCompute: where = 'feat_norm is null'
         groupNorms = self.getGroupNorms(where = where) #contains group_id, feat, group_norm
-        
-        fMeans = self.addFeatTableMeans(groupNorms = groupNorms) #mean, std, zero
+        if not setGFTWarning:
+            dlac.warn("""group_freq_thresh is set to %s. Be aware that groups might be removed during this process and your group norms will reflect this.""" % (groupFreqThresh), attention=True)
+
+        fMeans = self.addFeatTableMeans(groupNorms = groupNorms, groupFreqThresh=groupFreqThresh) #mean, std, zero
 
         wsql = """UPDATE """+self.featureTable+""" SET feat_norm = %s where group_id = %s AND feat = %s"""
         featNorms = []
@@ -370,24 +373,32 @@ class FeatureRefiner(FeatureGetter):
         return True
 
         
-    def findMeans(self, field='group_norm', addZeros = True, groupNorms = None):
+    def findMeans(self, field='group_norm', addZeros = True, groupNorms = None, groups = set(), groupFreqThresh = 0, where = None):
         """Finds feature means from group norms"""
+
+        if groupFreqThresh:
+            groupCnts = self.getGroupWordCounts(where)
+            for group, wordCount in groupCnts.items():
+                if (wordCount >= groupFreqThresh):
+                    groups.add(group)
+        
         if not groupNorms:
             groupNorms = self.getGroupNorms() #contains group_id, feat, group_norm
 
         #turn into dict of lists:
         fNumDict = dict() 
         for (gid, feat, gn) in groupNorms:
-            if dlac.LOWERCASE_ONLY: feat = feat.lower()
-            if feat: 
-                if not feat in fNumDict:
-                    fNumDict[feat] = [gn]
-                else:
-                    fNumDict[feat].append(gn)
+            if (len(groups) < 1) or (gid in groups): 
+                if dlac.LOWERCASE_ONLY: feat = feat.lower()
+                if feat: 
+                    try:
+                        fNumDict[feat].append(gn)
+                    except KeyError:
+                        fNumDict[feat] = [gn]                      
 
         #add zeros for groups missing featrues
         if addZeros:
-            totalGroups = self.countGroups()
+            totalGroups = self.countGroups(groupFreqThresh)
             for feat, nums in fNumDict.items():
                 difference = totalGroups - len(nums)
                 nums.extend([0]*difference)
@@ -403,9 +414,9 @@ class FeatureRefiner(FeatureGetter):
         return fMeans
 
 
-    def addFeatTableMeans(self, field='group_norm', groupNorms = None):
+    def addFeatTableMeans(self, field='group_norm', groupNorms = None, groupFreqThresh = 0, groups=set()):
         """Add to the feature mean table: mean, standard deviation, and zero_mean for the current feature table"""
-
+       
         #CREATE TABLE
         meanTable = 'mean$'+self.featureTable
         mm.execute(self.corpdb, self.dbCursor, "DROP TABLE IF EXISTS %s" % meanTable, charset=self.encoding, use_unicode=self.use_unicode)
@@ -413,7 +424,7 @@ class FeatureRefiner(FeatureGetter):
         sql = """CREATE TABLE %s (feat %s, mean DOUBLE, std DOUBLE, zero_feat_norm DOUBLE, PRIMARY KEY (`feat`)) CHARACTER SET %s COLLATE %s ENGINE=%s""" % (meanTable, featType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()], dlac.DEF_MYSQL_ENGINE)
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
-        fMeans = self.findMeans(field, True, groupNorms)
+        fMeans = self.findMeans(field, True, groupNorms, groupFreqThresh = groupFreqThresh)
         fMeansList = [(k, v[0], v[1], v[2]) for k, v in fMeans.items()]
         #print fMeansList #debug
 

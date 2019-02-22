@@ -501,7 +501,7 @@ class RegressionPredictor:
         self.outliersToMean = outliersToMean
         """float: Threshold for setting outliers to mean value."""
 
-    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', saveFeatures = True):
+    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', outputName = '', saveFeatures = True):
         """Train Regressors"""
 
         ################
@@ -582,9 +582,9 @@ class RegressionPredictor:
             #4) fit model
             if saveFeatures: 
                 (self.regressionModels[outcomeName], self.multiScalers[outcomeName], self.multiFSelectors[outcomeName], featureX) = \
-                                                                                                                          self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights, saveFeatures=True)#DEBUG
+                                                                                                                          self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights, returnX=True)#DEBUG
                 ##DEBUG
-                csvFeatureFile = outcomeName+'.features.csv'
+                csvFeatureFile = outputName+'.'+outcomeName+'.train.features.csv'
                 featureXwithGroups =  np.hstack((np.array([trainGroupsOrder]).T, featureX))
                 print(" saving features to: %s (shape: %s; %s)" % (csvFeatureFile, str(featureXwithGroups.shape), str(featureX.shape)))
                 np.savetxt(csvFeatureFile, featureXwithGroups, delimiter=",") #TO EXPORT FEATURE SELECTED FEATURES
@@ -1292,7 +1292,7 @@ class RegressionPredictor:
     #################################################
     #################################################
 
-    def predict(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
+    def predict(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', outputName = '', saveFeatures = True):
         if not self.multiXOn:
             print("\n!! model trained without multiX, reverting to old predict !!\n")
             return self.old_predict(standardize, sparse, restrictToGroups)
@@ -1372,7 +1372,22 @@ class RegressionPredictor:
 
             #############
             #4) predict
-            ypred = self._multiXpredict(self.regressionModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
+            ypred = None
+            if saveFeatures:
+                (ypred, featureX) = self._multiXpredict(self.regressionModels[outcomeName], multiXtest, \
+                                                        multiScalers = self.multiScalers[outcomeName], \
+                                                        multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse, \
+                                                        returnX = True)
+                ##DEBUG
+                csvFeatureFile = outputName+'.'+outcomeName+'.predict.features.csv'
+                featureXwithGroups =  np.hstack((np.array([thisTestGroupsOrder]).T, featureX))
+                print(" saving features to: %s (shape: %s; %s)" % (csvFeatureFile, str(featureXwithGroups.shape), str(featureX.shape)))
+                np.savetxt(csvFeatureFile, featureXwithGroups, delimiter=",") #TO EXPORT FEATURE SELECTED FEATURES
+                featureX = None #allow to clear memory, just in case
+
+            else: 
+                ypred = self._multiXpredict(self.regressionModels[outcomeName], multiXtest, \
+                                            multiScalers = self.multiScalers[outcomeName], \
                                             multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
             print("[Done. Evaluation:]")
             R2 = metrics.r2_score(ytest, ypred)
@@ -1898,7 +1913,7 @@ class RegressionPredictor:
 
 
     def _multiXtrain(self, X, y, standardize = True, sparse = False, weightedSample = None, factorAdaptation=False, featureSelectionParameters=None, factorAddition=False, 
-                     outputName = '', report=False, factors=None, saveFeatures=None):
+                     outputName = '', report=False, factors=None, returnX=False):
         """does the actual regression training, first feature selection: can be used by both train and test
            create multiple scalers and feature selectors
            and just one regression model (of combining the Xes into 1)
@@ -2028,7 +2043,7 @@ class RegressionPredictor:
             if factorAdaptation:
                 return regressor, multiScalers, multiFSelectors, factorScalers
             else:
-                if saveFeatures:
+                if returnX:
                     return regressor, multiScalers, multiFSelectors, X
                 else: 
                     return regressor, multiScalers, multiFSelectors
@@ -2046,7 +2061,7 @@ class RegressionPredictor:
         return regressor.predict(X)
 
     def _multiXpredict(self, regressor, X, multiScalers = None, multiFSelectors = None, y = None, sparse = False, 
-                        factorAdaptation = False, factorScalers = None, factorAddition = False, factors = None):
+                        factorAdaptation = False, factorScalers = None, factorAddition = False, factors = None, returnX=False):
         if not isinstance(X, (list, tuple)):
             X = [X]
 
@@ -2114,7 +2129,10 @@ class RegressionPredictor:
         if hasattr(regressor, 'intercept_'):
             print("[PREDICT] regression intercept: %f" % regressor.intercept_)
 
-        return regressor.predict(X)
+        if returnX:
+            return regressor.predict(X), X
+        else: 
+            return regressor.predict(X)
 
 
     ######################

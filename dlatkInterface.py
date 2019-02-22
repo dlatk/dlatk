@@ -1626,7 +1626,7 @@ def main(fn_args = None):
         print("WARNING: using an non 16to16 feature table")
 
     if args.trainregression:
-        rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample)
+        rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample, outputName = args.outputname )
 
     if args.testregression:
         rp.test(sparse = args.sparse, blacklist = blacklist,  standardize = args.standardize, groupsWhere = args.groupswhere)
@@ -1675,7 +1675,7 @@ def main(fn_args = None):
         crp.test(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere)
 
     if args.predictregression:
-        rp.predict(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere)
+        rp.predict(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere, outputName = args.outputname)
 
     if args.predictrtofeats and rp:
         if not fe: fe = FE()

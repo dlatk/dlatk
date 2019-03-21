@@ -126,7 +126,8 @@ class DimensionReducer:
             #'pca' : { 'n_components': 'mle', 'whiten': True},
 
             #'sparsepca': {'n_components':None, 'alpha':1, 'ridge_alpha':0.01, 'method': 'lars', 'n_jobs':4, 'random_state':42},
-            'sparsepca': {'n_components':5, 'alpha':1, 'ridge_alpha':0.01, 'method': 'cd', 'n_jobs':4, 'random_state':42},
+            'sparsepca': {'n_components':50, 'alpha':1, 'ridge_alpha':0.01, 'method': 'cd', 'n_jobs':8, 'random_state':42},
+            'mbsparsepca': {'n_components':50, 'alpha':1, 'batch_size':10, 'ridge_alpha':0.01, 'method': 'cd', 'n_jobs':8, 'random_state':42},
             
             'lda': { 'nb_topics':50, 'dictionary':None, 'alpha':None },
 
@@ -142,6 +143,7 @@ class DimensionReducer:
         'nmf' : 'NMF',
         'pca' : 'PCA',
         'sparsepca': 'SparsePCA',
+        'mbsparsepca': 'MiniBatchSparsePCA',
         'lda' : 'LDA',
         'rpca' : 'RandomizedPCA',
         'fa' : 'FactorAnalysis'

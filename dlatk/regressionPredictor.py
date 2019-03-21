@@ -501,7 +501,7 @@ class RegressionPredictor:
         self.outliersToMean = outliersToMean
         """float: Threshold for setting outliers to mean value."""
 
-    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', outputName = '', saveFeatures = True):
+    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', outputName = '', saveFeatures = False):
         """Train Regressors"""
 
         ################
@@ -711,9 +711,11 @@ class RegressionPredictor:
     #####################################################
     ####### Main Testing Method ########################
     def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
-                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None, 
-                          residualizedControls = False, groupsWhere = '', weightedSample = '', adaptationFactorsName=[], 
-                          featureSelectionParameters=None, numOfFactors = [] , factorSelectionType='rfe' , pairedFactors=False, outputName='', report=True, integrationMethod=''):
+                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False,\
+                          weightedEvalOutcome = None, residualizedControls = False, groupsWhere = '',\
+                          weightedSample = '', adaptationFactorsName=[], featureSelectionParameters=None,\
+                          numOfFactors = [] , factorSelectionType='rfe' , pairedFactors=False, outputName='',\
+                          report=True, integrationMethod=''):
         """Tests regressors, by cross-validating over folds with different combinations of controls"""
         
         ###################################
@@ -1292,7 +1294,7 @@ class RegressionPredictor:
     #################################################
     #################################################
 
-    def predict(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', outputName = '', saveFeatures = True):
+    def predict(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', outputName = '', saveFeatures = False):
         if not self.multiXOn:
             print("\n!! model trained without multiX, reverting to old predict !!\n")
             return self.old_predict(standardize, sparse, restrictToGroups)

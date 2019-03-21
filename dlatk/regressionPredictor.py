@@ -11,7 +11,7 @@ import pickle as pickle
 from inspect import ismethod
 import sys
 import random
-from itertools import combinations, zip_longest
+from itertools import combinations, zip_longest, islice
 import csv
 import pandas as pd
 import copy
@@ -491,6 +491,9 @@ class RegressionPredictor:
         self.featureNames = [] 
         """list: Holds the order the features are expected in."""
 
+        self.featureLengthList = []
+        """list: Holds the number of features in each featureGetter."""
+
         self.multiFSelectors = None
         """str: Docstring *after* attribute, with type specified."""
 
@@ -503,7 +506,7 @@ class RegressionPredictor:
         self.outliersToMean = outliersToMean
         """float: Threshold for setting outliers to mean value."""
 
-    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = ''):
+    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', outputName = '', saveFeatures = False):
         """Train Regressors"""
 
         ################
@@ -532,7 +535,7 @@ class RegressionPredictor:
 
         ####################
         #2. get data for Xs:
-        (groupNormsList, featureNamesList) = ([], [])
+        (groupNormsList, featureNamesList, featureLengthList) = ([], [], [])
         XGroups = None #holds the set of X groups across all feature spaces and folds (intersect with this to get consistent keys across everything
         for fg in self.featureGetters:
             (groupNorms, featureNames) = fg.getGroupNormsSparseFeatsFirst(groups)
@@ -540,6 +543,7 @@ class RegressionPredictor:
             groupNormsList.append(groupNormValues)
             # print featureNames[:10]#debug
             featureNamesList.append(featureNames)
+            featureLengthList.append(len(featureNames))
             if not XGroups:
                 XGroups = set(getGroupsFromGroupNormValues(groupNormValues))
             else:
@@ -582,11 +586,23 @@ class RegressionPredictor:
 
             #############
             #4) fit model
-            (self.regressionModels[outcomeName], self.multiScalers[outcomeName], self.multiFSelectors[outcomeName]) = \
-                self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights)
+            if saveFeatures: 
+                (self.regressionModels[outcomeName], self.multiScalers[outcomeName], self.multiFSelectors[outcomeName], featureX) = \
+                                                                                                                          self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights, returnX=True)#DEBUG
+                ##DEBUG
+                csvFeatureFile = outputName+'.'+outcomeName+'.train.features.csv'
+                featureXwithGroups =  np.hstack((np.array([trainGroupsOrder]).T, featureX))
+                print(" saving features to: %s (shape: %s; %s)" % (csvFeatureFile, str(featureXwithGroups.shape), str(featureX.shape)))
+                np.savetxt(csvFeatureFile, featureXwithGroups, delimiter=",") #TO EXPORT FEATURE SELECTED FEATURES
+                featureX = None #allow to clear memory, just in case
+
+            else: 
+                (self.regressionModels[outcomeName], self.multiScalers[outcomeName], self.multiFSelectors[outcomeName]) = \
+                                                                                                                          self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights)
 
         print("\n[TRAINING COMPLETE]\n")
         self.featureNamesList = featureNamesList
+        self.featureLengthList = featureLengthList
 
     ##################
     ## Old testing Method (random split rather than cross-val)
@@ -702,9 +718,11 @@ class RegressionPredictor:
     #####################################################
     ####### Main Testing Method ########################
     def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
-                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None, 
-                          residualizedControls = False, groupsWhere = '', weightedSample = '', adaptationFactorsName=[], 
-                          featureSelectionParameters=None, numOfFactors = [] , factorSelectionType='rfe' , pairedFactors=False, outputName='', report=True, integrationMethod=''):
+                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False,\
+                          weightedEvalOutcome = None, residualizedControls = False, groupsWhere = '',\
+                          weightedSample = '', adaptationFactorsName=[], featureSelectionParameters=None,\
+                          numOfFactors = [] , factorSelectionType='rfe' , pairedFactors=False, outputName='',\
+                          report=True, integrationMethod=''):
         """Tests regressors, by cross-validating over folds with different combinations of controls"""
         
         ###################################
@@ -1283,7 +1301,7 @@ class RegressionPredictor:
     #################################################
     #################################################
 
-    def predict(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
+    def predict(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', outputName = '', saveFeatures = False):
         if not self.multiXOn:
             print("\n!! model trained without multiX, reverting to old predict !!\n")
             return self.old_predict(standardize, sparse, restrictToGroups)
@@ -1363,7 +1381,22 @@ class RegressionPredictor:
 
             #############
             #4) predict
-            ypred = self._multiXpredict(self.regressionModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
+            ypred = None
+            if saveFeatures:
+                (ypred, featureX) = self._multiXpredict(self.regressionModels[outcomeName], multiXtest, \
+                                                        multiScalers = self.multiScalers[outcomeName], \
+                                                        multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse, \
+                                                        returnX = True)
+                ##DEBUG
+                csvFeatureFile = outputName+'.'+outcomeName+'.predict.features.csv'
+                featureXwithGroups =  np.hstack((np.array([thisTestGroupsOrder]).T, featureX))
+                print(" saving features to: %s (shape: %s; %s)" % (csvFeatureFile, str(featureXwithGroups.shape), str(featureX.shape)))
+                np.savetxt(csvFeatureFile, featureXwithGroups, delimiter=",") #TO EXPORT FEATURE SELECTED FEATURES
+                featureX = None #allow to clear memory, just in case
+
+            else: 
+                ypred = self._multiXpredict(self.regressionModels[outcomeName], multiXtest, \
+                                            multiScalers = self.multiScalers[outcomeName], \
                                             multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
             print("[Done. Evaluation:]")
             R2 = metrics.r2_score(ytest, ypred)
@@ -1667,36 +1700,39 @@ class RegressionPredictor:
            #     rows = []
 
     def getWeightsForFeaturesAsADict(self): 
-        #returns dictionary of featureTable -> outcomes -> feature_name -> weight
-        #weights: self.regressionModels[outcome].coef_
-        # Scaler: self.multiScalers[outcome]
-        weights_dict = dict()
+        """Creates a lexicon from a topic file
 
+        Parameters
+        ----------
+        topicfile : str
+            Name of topic file to use to build the topic lexicon.
+        newtablename : str
+            New (topic) lexicon name.
+        topiclexmethod : str
+            must be one of: "csv_lik", "standard".
+        threshold : float
+            Default = float('-inf').
+
+        Returns
+        -------
+        weights_dict : dict
+            dictionary of featureTable -> outcomes -> feature_name -> weight
+        """
+
+        weights_dict = dict()
+        unpackTopicWeights = [] 
+        intercept_dict = dict()
         featTables = [fg.featureTable for fg in self.featureGetters]
-        # MAARTEN
-        # pprint(self.regressionModels)
-        # pprint([feat[:20] for feat in self.featureNamesList])
-        startIndex = 0 # for multiX regression
-        just_one_feat = None
         for i, featTableFeats in enumerate(self.featureNamesList):
+            if "cat_" in featTables[i]:
+                unpackTopicWeights.append(featTables[i])
 
             weights_dict[featTables[i]] = dict()
             for outcome, model in self.regressionModels.items():
-                weights_dict[featTables[i]][outcome] = dict()
                 coefficients = eval('self.regressionModels[outcome].%s' % self.modelToCoeffsName[self.modelName.lower()])
-                # print len(coefficients) # debug
-                intercept = self.regressionModels[outcome].intercept_
-                print("Intercept [" + str(intercept) + "]")
-                # print "coefficients size: %s " % str(coefficients.shape)
-
-                # Getting the right chunk if there are multiple feature tables (OLD)
-                # coefficients = coefficients[startIndex:(startIndex+len(featTableFeats))]
+                weights_dict[featTables[i]][outcome] = dict()
                 
-                
-                
-                coefficients.resize(1,len(coefficients))
                 # Inverting Feature Selection
-                
                 if self.multiFSelectors[outcome][i]:
                     print("Inverting the feature selection: %s" % self.multiFSelectors[outcome][i])
                     coefficients = self.multiFSelectors[outcome][i].inverse_transform(coefficients)#.flatten()
@@ -1704,53 +1740,124 @@ class RegressionPredictor:
                 if 'mean_' in dir(self.multiFSelectors[outcome][i]):
                     print("RPCA mean: ", self.multiFSelectors[outcome][i].mean_)
 
-                #if 'steps' in dir(self.multiFSelectors[outcome][i]):
-                #    if 'mean_' in dir(self.multiFSelectors[outcome][i].steps[1][1]):
-                #        print(self.multiFSelectors[outcome][i].steps[1][1].mean_, len(self.multiFSelectors[outcome][i].steps[1][1].mean_))
-                #        mean = self.multiFSelectors[outcome][i].steps[1][1].mean_.copy()
-                #        t = self.multiFSelectors[outcome][i].steps[0][1].inverse_transform(mean).flatten()
-                #        print(self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept), self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept).sum())
-                #        print(t, len(t))
-                #        print(coefficients)
-                #        # coefficients = coefficients + t
-                #        print(coefficients)
-                #        # INTERCEPT CORRECTION : dot product of coefficients.mean from PCA
-                #        print("Pipelines don't work with this option (predtolex)")
-                #        sys.exit()
-
-
-                # coefficients.resize(1,len(coefficients))
-                # print coefficients.shape
-                # Inverting the scaling 
-                #if self.multiScalers[outcome][i]:
-                #    print("Standardscaler doesn't work with Prediction To Lexicon")
-                #    print(self.multiScalers[outcome][i].mean_, self.multiScalers[outcome][i].std_)
-                #    coefficients = self.multiScalers[outcome][i].inverse_transform(coefficients).flatten()
-                #else: 
-                #    coefficients = coefficients.flatten() 
                 coefficients = coefficients.flatten()
                 # featTableFeats contains the list of features 
                 if len(coefficients) != len(featTableFeats):
                     print("length of coefficients (%d) does not match number of features (%d)" % (len(coefficients), len(featTableFeats)))
                     sys.exit(1)
-                # print len(featTableFeats), len(coefficients), coefficients.shape # debug
+
+                coeff_iter = iter(coefficients)
+                coefficients  = np.asarray([list(islice(coeff_iter, 0, j)) for j in self.featureLengthList][i])
+                intercept = self.regressionModels[outcome].intercept_
+                if outcome not in intercept_dict:
+                    intercept_dict[outcome] = intercept
+                    print("Intercept for {o} [{i}]".format(o=outcome, i=intercept))
+                print("coefficients size for {f}: {s}".format(f=featTables[i], s=coefficients.shape))
+                coefficients.resize(1,len(coefficients))
+                coefficients = coefficients.flatten()
 
                 weights_dict[featTables[i]][outcome] = {featTableFeats[j]: coefficients[j] for j in range(len(featTableFeats)) if coefficients[j] != 0}
-                weights_dict[featTables[i]][outcome]['_intercept'] = intercept
 
-                # just_one_feat = {featTableFeats[j]: coefficients[j] for j in xrange(len(featTableFeats))}
+        if unpackTopicWeights:
+            # only topic tables
+            if len(unpackTopicWeights) == len(weights_dict):
+                # single topic table
+                if len(unpackTopicWeights) == 1:
+                    topicFeatTable = unpackTopicWeights[0]
+                    print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
+                    weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[0], topicFeatTable, weights_dict)
+                # multiple topic tables
+                else:
+                    weights_dict['words'] = dict()
+                    for idx, topicFeatTable in enumerate(unpackTopicWeights):
+                        if idx == 0: weights_dict['words'] = {o: dict() for o in weights_dict[topicFeatTable].keys()}
+                        print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
+                        weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[idx], topicFeatTable, weights_dict)
+                        for outcome, wordDict in weights_dict[topicFeatTable].items():
+                            for word, weight in wordDict.items():
+                                if word in weights_dict['words'][outcome]:
+                                    weights_dict['words'][outcome][word] += weight
+                                else:
+                                    weights_dict['words'][outcome][word] = weight
+                        print("Combining %s with %s." % (topicFeatTable, '"words"'))
+                        del weights_dict[topicFeatTable]
+                        
+            # mixed tables
+            else:
+                for idx, topicFeatTable in enumerate(unpackTopicWeights):
+                    print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
+                    weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[idx], topicFeatTable, weights_dict)
+                    for featTable in weights_dict:
+                        if featTable.split("$")[1].startswith(buildTable):
+                            for outcome, wordDict in weights_dict[topicFeatTable].items():
+                                for word, weight in wordDict.items():
+                                    if word in weights_dict[featTable][outcome]:
+                                        weights_dict[featTable][outcome][word] += weight
+                                    else:
+                                        weights_dict[featTable][outcome][word] = weight
+                            print("Combining %s with %s." % (topicFeatTable, featTable))
+                            del weights_dict[topicFeatTable]
+                            break
 
-                #with open("ageLex.pickle",'w+') as a:
-                #    pickle.dump(just_one_feat, a)
-                #print len(weights_dict[featTables[i]][outcome])
-
-            startIndex += len(featTableFeats)
-
-        #pprint(weights_dict.items()[0][1].items()[0][1].items()[1])
-
+        # add in intercepts
+        for featTable in weights_dict:
+            for outcome in weights_dict[featTable]:
+                weights_dict[featTable][outcome]['_intercept'] = intercept_dict[outcome]
         return weights_dict
 
-        #return just_one_feat
+    def unpackTopicTables(self, featureGetter, topicFeatTable, weightsDict):
+        """Convert topics coefficients to single words with coefficients*topic_word_probabilities
+
+        Parameters
+        ----------
+        featureGetter : obj
+            
+        topicFeatTable : str
+            New (topic) lexicon name.
+        weights_dict : dict
+            dictionary of featureTable -> outcomes -> feature_name -> weight
+
+        Returns
+        -------
+        weights_dict : dict
+            updated dictionary of featureTable -> outcomes -> feature_name -> weight
+
+        buildTable : str
+            Abbriviation of word table used for topic extraction
+        """
+
+        try:
+            _, topicTable, msgTable, correlField, transform = topicFeatTable.split("$")
+            topicTable = topicTable.replace("cat_", "").replace("_w", "")
+        except:
+            print("Nonstandard feature table name: {f}".format(f=topicFeatTable))
+            sys.exit(1)
+
+        buildTable = '1gram'
+        if "16to" not in transform: 
+            buildTable = transform
+
+        lex_dict = dict()
+        sql = """SELECT term, category, weight from {lexDB}.{lexTable}""".format(lexDB=featureGetter.lexicondb, lexTable=topicTable)
+        rows = mm.executeGetList(featureGetter.corpdb, featureGetter.dbCursor, sql, charset=featureGetter.encoding, use_unicode=featureGetter.use_unicode)
+        for row in rows:
+            term, category, weight = str(row[0]).strip(), str(row[1]).strip(), float(row[2])
+            if term not in lex_dict:
+                lex_dict[term] = dict()
+            lex_dict[term][category] = weight
+
+        for outcome in weightsDict[topicFeatTable]:
+            summedWordWeights = dict()
+            for term in lex_dict:
+                this_sum = 0
+                for category in lex_dict[term]:
+                    if category in weightsDict[topicFeatTable][outcome]:
+                        this_sum += weightsDict[topicFeatTable][outcome][category]*lex_dict[term][category]
+                summedWordWeights[term] = this_sum
+            weightsDict[topicFeatTable][outcome] = summedWordWeights
+            
+
+        return weightsDict, buildTable
 
     def _train(self, X, y, standardize = True):
         """does the actual regression training, first feature selection: can be used by both train and test"""
@@ -1889,7 +1996,7 @@ class RegressionPredictor:
 
 
     def _multiXtrain(self, X, y, standardize = True, sparse = False, weightedSample = None, factorAdaptation=False, featureSelectionParameters=None, factorAddition=False, 
-                     outputName = '', report=False, factors=None):
+                     outputName = '', report=False, factors=None, returnX=False):
         """does the actual regression training, first feature selection: can be used by both train and test
            create multiple scalers and feature selectors
            and just one regression model (of combining the Xes into 1)
@@ -1972,7 +2079,6 @@ class RegressionPredictor:
         for nextX in multiX[startIndex:]:
             X = np.append(X, nextX, 1)
         print("[COMBINED FEATS] Combined size: %s" % str(X.shape))
-
         
         modelName = self.modelName.lower()
         totalFeats = 0
@@ -2020,7 +2126,10 @@ class RegressionPredictor:
             if factorAdaptation:
                 return regressor, multiScalers, multiFSelectors, factorScalers
             else:
-                return regressor, multiScalers, multiFSelectors
+                if returnX:
+                    return regressor, multiScalers, multiFSelectors, X
+                else: 
+                    return regressor, multiScalers, multiFSelectors
     
     def _predict(self, regressor, X, scaler = None, fSelector = None, y = None):
         if scaler:
@@ -2035,7 +2144,7 @@ class RegressionPredictor:
         return regressor.predict(X)
 
     def _multiXpredict(self, regressor, X, multiScalers = None, multiFSelectors = None, y = None, sparse = False, 
-                        factorAdaptation = False, factorScalers = None, factorAddition = False, factors = None):
+                        factorAdaptation = False, factorScalers = None, factorAddition = False, factors = None, returnX=False):
         if not isinstance(X, (list, tuple)):
             X = [X]
 
@@ -2103,7 +2212,10 @@ class RegressionPredictor:
         if hasattr(regressor, 'intercept_'):
             print("[PREDICT] regression intercept: %f" % regressor.intercept_)
 
-        return regressor.predict(X)
+        if returnX:
+            return regressor.predict(X), X
+        else: 
+            return regressor.predict(X)
 
 
     ######################
@@ -2182,7 +2294,7 @@ class RegressionPredictor:
                         for cn in controlNames:
                             rowDict[cn] = 1 if cn in rk else 0
                         rowDict['w/ lang.'] = withLang
-                        rowDict.update({(k,v) for (k,v) in list(sc.items()) if not k in ignoreKeys})
+                        rowDict.update({(k,v) for (k,v) in list(sc.items()) if isinstance(sc, dict) and not k in ignoreKeys})
                         csvOut.writerow(rowDict)
     @staticmethod
     def printComboControlPredictionsToCSV(scores, outputstream, paramString = None, delimiter=','):

@@ -248,9 +248,9 @@ class RegressionPredictor:
         'ridge100000': [
             {'alpha': [100000]}, 
         ],
-        'ridge100': [
-            {'alpha': [100]}, 
-        ],
+        'ridge100': [{'alpha': [100]}],
+        'ridge10': [{'alpha': [10]}],
+        'ridge1': [{'alpha': [1]}],
         'ridgecv': [
             #{'alphas': np.array([100000, 500000, 250000, 25000, 10000, 2500, 1000, 100, 10])}, 
             #{'alphas': np.array([100000, 500000, 250000, 25000, 10000])},
@@ -367,6 +367,8 @@ class RegressionPredictor:
         'ridge100000' : 'Ridge',
         'ridge1000' : 'Ridge',
         'ridge100' : 'Ridge',
+        'ridge10' : 'Ridge',
+        'ridge1' : 'Ridge',
         'ridgecv' : 'RidgeCV',
         'ridgefirstpasscv' : 'RidgeCV',
         'ridgehighcv' : 'RidgeCV',
@@ -411,7 +413,7 @@ class RegressionPredictor:
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 60000
-    backOffPerc = .01 #when the num_featrue / training_insts is less than this backoff to backoffmodel
+    backOffPerc = .05 #when the num_featrue / training_insts is less than this backoff to backoffmodel
     #backOffModel = 'ridgecv'
     backOffModel = 'linear'
 

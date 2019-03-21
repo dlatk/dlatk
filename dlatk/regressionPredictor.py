@@ -11,7 +11,7 @@ import pickle as pickle
 from inspect import ismethod
 import sys
 import random
-from itertools import combinations, zip_longest
+from itertools import combinations, zip_longest, islice
 import csv
 import pandas as pd
 import copy
@@ -489,6 +489,9 @@ class RegressionPredictor:
         self.featureNames = [] 
         """list: Holds the order the features are expected in."""
 
+        self.featureLengthList = []
+        """list: Holds the number of features in each featureGetter."""
+
         self.multiFSelectors = None
         """str: Docstring *after* attribute, with type specified."""
 
@@ -530,7 +533,7 @@ class RegressionPredictor:
 
         ####################
         #2. get data for Xs:
-        (groupNormsList, featureNamesList) = ([], [])
+        (groupNormsList, featureNamesList, featureLengthList) = ([], [], [])
         XGroups = None #holds the set of X groups across all feature spaces and folds (intersect with this to get consistent keys across everything
         for fg in self.featureGetters:
             (groupNorms, featureNames) = fg.getGroupNormsSparseFeatsFirst(groups)
@@ -538,6 +541,7 @@ class RegressionPredictor:
             groupNormsList.append(groupNormValues)
             # print featureNames[:10]#debug
             featureNamesList.append(featureNames)
+            featureLengthList.append(len(featureNames))
             if not XGroups:
                 XGroups = set(getGroupsFromGroupNormValues(groupNormValues))
             else:
@@ -596,6 +600,7 @@ class RegressionPredictor:
 
         print("\n[TRAINING COMPLETE]\n")
         self.featureNamesList = featureNamesList
+        self.featureLengthList = featureLengthList
 
     ##################
     ## Old testing Method (random split rather than cross-val)

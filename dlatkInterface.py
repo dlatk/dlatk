@@ -1628,7 +1628,7 @@ def main(fn_args = None):
         print("WARNING: You must use the --no_standardize flag when creating data driven lexica. ")
 
     if args.trainregression:
-        rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample, outputName = args.outputname )
+        rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample, outputName = args.outputname, saveFeatures = True if args.outputname else False)
 
     if args.testregression:
         rp.test(sparse = args.sparse, blacklist = blacklist,  standardize = args.standardize, groupsWhere = args.groupswhere)

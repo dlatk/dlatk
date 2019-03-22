@@ -221,6 +221,8 @@ def main(fn_args = None):
                        help='Fields in outcome table to use as controls and interaction terms for correlation(regression).')
     group.add_argument('--fold_column', '--fold_labels', type=str, dest='fold_column', default=None,
                        help='Fields in outcome table to use as labels for prespecified folds in classification/regression cross-validation.')
+    group.add_argument('--test_folds', type=int, dest='test_folds', nargs='+', default=None,
+                       help='Limit tests of classification/regression cross-validation to these folds.')
     group.add_argument('--feat_names', type=str, metavar='FIELD(S)', dest='featnames', nargs='+', default=getInitVar('featnames', conf_parser, dlac.DEF_FEAT_NAMES, varList=True),
                        help='Limit outputs to the given set of features.')
     group.add_argument("--group_freq_thresh", type=int, metavar='N', dest="groupfreqthresh", default=getInitVar('groupfreqthresh', conf_parser, None),
@@ -1724,8 +1726,10 @@ def main(fn_args = None):
     if args.combotestclassifiers:
         comboScores = cp.testControlCombos(standardize = args.standardize, sparse = args.sparse, blacklist = blacklist,
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
-                                           nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval, stratifyFolds=args.stratifyfolds,
-                                           adaptTables = args.adapttable, adaptColumns = args.adaptcolumns, groupsWhere = args.groupswhere)
+                                           nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv),
+                                           weightedEvalOutcome = args.weightedeval, stratifyFolds=args.stratifyfolds,
+                                           adaptTables = args.adapttable, adaptColumns = args.adaptcolumns,
+                                           groupsWhere = args.groupswhere, testFolds = args.test_folds)
         if args.csv:
             outputStream = sys.stdout
             if args.outputname:

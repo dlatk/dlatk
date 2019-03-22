@@ -234,13 +234,13 @@ class ClassifyPredictor:
             #{'C':[1, 10, 0.1, 0.01, 0.05, 0.005], 'penalty':['l1'], 'dual':[False]} #swl/perma message-level
             ],
         'lr': [
-            #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l2'], 'dual':[False]}, 
+            {'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l2'], 'dual':[False]}, 
             #{'C':[0.01, 0.1, 0.001, 1, .0001], 'penalty':['l2'], 'dual':[False]}, 
             #{'C':[.01], 'penalty':['l2'], 'dual':[False]},#svd-d features small
             #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l1'], 'dual':[False]},
             #{'C':[0.1, 1, 0.01], 'penalty':['l1'], 'dual':[False]} #timex message-level
             #{'C':[10, 1, 100, 1000], 'penalty':['l1'], 'dual':[False]} 
-            {'C':[0.01, 0.1, 0.001, 0.0001, 0.00001], 'penalty':['l1'], 'dual':[False]} #timex l2 rpca....
+            #{'C':[0.01, 0.1, 0.001, 0.0001, 0.00001], 'penalty':['l1'], 'dual':[False]} #timex l2 rpca....
             #{'C':[0.1, 1, 10], 'penalty':['l1'], 'dual':[False]} #timex l2 rpca....
             #{'C':[0.00001], 'penalty':['l2']} # UnivVsMultiv choice Maarten 
             #{'C':[0.01], 'penalty':['l1']} # UnivVsMultiv choice Maarten
@@ -533,7 +533,7 @@ class ClassifyPredictor:
     ######## Main Testing Method ########################
     def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
                           allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None,  
-                          stratifyFolds = True, adaptTables=None, adaptColumns=None, groupsWhere = ''):
+                          stratifyFolds = True, adaptTables=None, adaptColumns=None, groupsWhere = '', testFolds = None):
         """Tests classifier, by pulling out random testPerc percentage as a test set""" # edited by Youngseo
         
         ###################################
@@ -658,7 +658,7 @@ class ClassifyPredictor:
                         
                         ###############################
                         #3a) iterate over nfold groups:
-                        for testChunk in range(0, len(groupFolds)):
+                        for testChunk in [i for i in range(0, len(groupFolds)) if not testFolds or i in testFolds]:
                             trainGroups = set()
                             for chunk in (groupFolds[:testChunk]+groupFolds[(testChunk+1):]):
                                 trainGroups.update(chunk)
@@ -667,7 +667,7 @@ class ClassifyPredictor:
                             trainGroupsOrder = list(thisOutcomeGroups & trainGroups)
                             testGroupsOrder = list(thisOutcomeGroups & testGroups)
                             testSize = len(testGroupsOrder)
-                            print("Fold %d " % (testChunk))
+                            print("\nFold %d " % (testChunk))
 
                             ###########################################################################
                             #3b)setup train and test data (different X for each set of groupNormValues)
@@ -685,7 +685,7 @@ class ClassifyPredictor:
                                 (Xtrain, ytrain) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = trainGroupsOrder)
                                 (Xtest, ytest) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = testGroupsOrder)
 
-                                assert len(ytest) == testSize, "ytest not the right size"
+                                assert len(ytest) == testSize, "ytest not the right size (%d versus %d)"%(len(ytest), testSize)
                                 if len(ytrain) > self.trainingSize:
                                     Xtrain, Xthrowaway, ytrain, ythrowaway = train_test_split(Xtrain, ytrain, test_size=len(ytrain) - self.trainingSize, random_state=self.randomState)
                                 num_feats += Xtrain.shape[1]

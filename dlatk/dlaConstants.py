@@ -130,7 +130,10 @@ DEF_RP_FEATURE_SELECTION_MAPPING = {
 }
 DEF_CP_FEATURE_SELECTION_MAPPING = {
     'magic_sauce': 'Pipeline([("1_univariate_select", SelectFwe(f_classif, alpha=30.0)), ("2_rpca", RandomizedPCA(n_components=min(max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), 50), X.shape[1]), random_state=42, whiten=False, iterated_power=3))])',
-    'univariatefwe': 'SelectFwe(f_classif, alpha=60.0)',
+    'univariatefwe': 'SelectFwe(f_classif, alpha=30.0)',
+    'univariatefwe30': 'SelectFwe(f_classif, alpha=30.0)',
+    'univariatefwe10': 'SelectFwe(f_classif, alpha=10.0)',
+    'univariatefwe60': 'SelectFwe(f_classif, alpha=60.0)',
     'pca': 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
     'none': None,
 }

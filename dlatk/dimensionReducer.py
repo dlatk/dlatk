@@ -135,7 +135,6 @@ class DimensionReducer:
 
             'fa': {'n_components': 10, 'random_state': 42}
     
-
             }
 
     # maps the identifier of the algorithm used to the actual class name from the module

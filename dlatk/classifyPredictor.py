@@ -474,7 +474,7 @@ class ClassifyPredictor:
         print("\n[TRAINING COMPLETE]\n")
         self.featureNamesList = featureNamesList
         self.featureLengthList = featureLengthList
-        coefficients = eval('self.classificationModels["page_edits_post_abs_a"].%s' % self.modelToCoeffsName[self.modelName.lower()])
+        #coefficients = eval('self.classificationModels["page_edits_post_abs_a"].%s' % self.modelToCoeffsName[self.modelName.lower()])
 
     def test(self, standardize = True, sparse = False, saveModels = False, blacklist = None, groupsWhere = ''):
         """Tests classifier, by pulling out random testPerc percentage as a test set"""

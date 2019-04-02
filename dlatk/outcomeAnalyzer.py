@@ -723,7 +723,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     else: tup = pearsonr(dataList, outcomeList) + (len(dataList),)
                     conf = dlac.conf_interval(tup[self.r_idx], tup[self.n_idx])
                     tup = tup + (conf,)
-                if not tup or not tup[self.r_idx]:
+                if not tup or (not tup[self.r_idx] and not isinstance(tup[self.r_idx], (int, float))):
                     dlac.warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
                     if includeFreqs: tup = (float('nan'), float('nan'), len(y), (float('nan'), float('nan')), 0)
                     else: tup = (float('nan'), float('nan'), len(y), (float('nan'), float('nan')))

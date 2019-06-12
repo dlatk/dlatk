@@ -24,8 +24,7 @@ from collections import defaultdict, Counter
 #scikit-learn imports
 from sklearn.svm import SVC, LinearSVC 
 from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.cross_validation import StratifiedKFold, KFold, ShuffleSplit, train_test_split
-from sklearn.grid_search import GridSearchCV 
+from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV 
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score, precision_score, recall_score, roc_curve, auc, roc_auc_score, matthews_corrcoef
 from sklearn.feature_selection import f_classif, SelectPercentile, SelectKBest, SelectFdr, SelectFpr, SelectFwe
 
@@ -35,10 +34,8 @@ from sklearn.svm import SVR
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB, BernoulliNB
 
-from sklearn.cross_validation import StratifiedKFold, KFold, ShuffleSplit, train_test_split
 from sklearn.decomposition import RandomizedPCA, MiniBatchSparsePCA, PCA, KernelPCA, NMF
 #from sklearn.lda import LDA #linear descriminant analysis
-from sklearn.grid_search import GridSearchCV 
 from sklearn import metrics
 
 from sklearn.utils import shuffle

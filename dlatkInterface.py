@@ -183,6 +183,7 @@ def main(fn_args = None):
                        help='Table containing which groups run in various bins (for ttest).')
     
 
+    group = parser.add_argument_group('MySQL Interactoins', '')
     group.add_argument('--show_feature_tables', '--show_feat_tables', '--ls', action='store_true', dest='listfeattables', default=False,
                        help='List all feature tables for given corpdb, corptable and correl_field')
     group.add_argument('--show_tables', nargs='?', dest='showtables', default=False, const=True,
@@ -192,15 +193,14 @@ def main(fn_args = None):
     group.add_argument('--view_tables', '--view_data', nargs='*', dest='viewtables', default=False,
                        help='')
     group.add_argument('--create_random_sample', '--create_rand_sample', dest='createrandsample', default=None,
-                       nargs='+', help='')
+                       nargs='+', help='Given percentage, creates random sample of messages')
+    group.add_argument('--copy_table', '--create_copied_table', dest='createcopiedtable', default=None,
+                       nargs=2, help='OLD_TABLE NEW_TABLE copies OLD_TABLE to NEW_TABLE')
     group.add_argument('--extension', metavar='EXTENSION', dest='extension', default=None,
                        help='String added to the end of the feature table name')
     
     group.add_argument('--top_messages', type=int, dest='top_messages', nargs='?', const=dlac.DEF_TOP_MESSAGES, default=False,
                        help='Print top messages with the largest score for a given topic.')
-
-    group.add_argument('--my_switch', nargs='*', dest='myswitch', default=False)
-
 
     group = parser.add_argument_group('Outcome Variables', '')
     group.add_argument('--outcome_table', type=str, metavar='TABLE', dest='outcometable', default=getInitVar('outcometable', conf_parser, dlac.DEF_OUTCOME_TABLE),
@@ -828,7 +828,7 @@ def main(fn_args = None):
     # exit()
 
     # SQL interface methods
-    if args.listfeattables or args.showtables or args.describetables or args.createrandsample or args.viewtables:
+    if args.listfeattables or args.showtables or args.describetables or args.createrandsample or args.viewtables or args.createcopiedtable:
         if not dlaw: dlaw = DLAW()
 
     if isinstance(args.describetables, list) and len(args.describetables) == 0: 
@@ -891,6 +891,13 @@ def main(fn_args = None):
             sys.exit(1)
         percentage, random_seed = args.createrandsample if len(args.createrandsample) > 1 else (args.createrandsample[0], dlac.DEFAULT_RANDOM_SEED)
         rand_table = dlaw.createRandomSample(float(percentage), random_seed, where=args.groupswhere)
+
+    if args.createcopiedtable:
+        if len(args.createcopiedtable) != 2: 
+            print("Error: Need two arguments for --create_copied_table")
+            sys.exit(1)
+        new_table = dlaw.createCopiedTable(args.createcopiedtable[0], args.createcopiedtable[1], where=args.groupswhere)
+        
 
     #Feature Extraction:
     if args.addngrams:

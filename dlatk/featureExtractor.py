@@ -1480,11 +1480,11 @@ class FeatureExtractor(DLAWorker):
         Parameters
         ----------
         lexiconTableName : str
-            ?????
+            Name of base lexicon table
         lowercase_only : boolean
             use only lowercase charngrams if True
         tableName : :obj:`str`, optional
-            ?????
+            Prespecified name of extracted lexicon feature table, use at own risk
         valueFunc : :obj:`lambda`, optional
             Scales the features by the function given
         isWeighted : :obj:`boolean`, optional
@@ -1571,6 +1571,7 @@ class FeatureExtractor(DLAWorker):
         reporting_int = max(floor(reporting_percent * len(groupIdRows)), 1)
         groupIdCounter = 0
         for groupIdRow in groupIdRows:
+
             groupId = groupIdRow[0]
 
             #i. create the group_id category counts & keep track of how many features they have total
@@ -1633,7 +1634,9 @@ class FeatureExtractor(DLAWorker):
                 rows = [(gid, k, cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+v)) for k, v in cat_to_function_summed_weight_gn.items()]
             else:
                 rows = [(gid, k.encode('utf-8'), cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+v)) for k, v in cat_to_function_summed_weight_gn.items()]
-
+            
+            # if lex has *no* intercept, add '_intercept' for each group_id
+            if not _intercepts: rows.append((gid, '_intercept', 1, 1.0))
 
             # iii. Insert data into new feautre table
             # Add new data to rows to be inserted into the database

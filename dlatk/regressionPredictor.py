@@ -234,7 +234,7 @@ class RegressionPredictor:
     cvParams = {
         'linear': [{'fit_intercept':[True]}],
         'ridge': [
-            {'alpha': [100]}, 
+            {'alpha': [1]}, 
         ],
         'ridge10000': [
             {'alpha': [10000]}, #topics age

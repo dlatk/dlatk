@@ -11,7 +11,6 @@ import traceback
 from xml.dom.minidom import parseString as xmlParseString
 from datetime import timedelta
 
-
 #math / stats:
 from math import floor, log10
 from numpy import mean, std
@@ -24,6 +23,13 @@ try:
 except ImportError:
     print("warning: unable to import nltk.tree or nltk.corpus or nltk.data")
 
+#hugging face's pretrained Google Bert
+try: 
+    import torch
+    from pytorch_pretrained_bert import BertTokenizer, BertModel, BertForMaskedLM
+except ImportError:
+    print("warning: unable to import torch or pytorch_pretrained_bert")
+    
 #infrastructure
 from .dlaWorker import DLAWorker
 from . import dlaConstants as dlac

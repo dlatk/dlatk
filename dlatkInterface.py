@@ -181,7 +181,9 @@ def main(fn_args = None):
                        help='range of group id\'s to include in binning.')
     group.add_argument('--mask_table', type=str, metavar='TABLE', dest='masktable', default=None,
                        help='Table containing which groups run in various bins (for ttest).')
-    
+    group.add_argument('--bert_model', type=str, metavar='NAME', dest='bertmodel', default=dlac.DEF_BERT_MODEL,
+                       help='BERT model to use if extracting bert features.')
+
 
     group = parser.add_argument_group('MySQL Interactoins', '')
     group.add_argument('--show_feature_tables', '--show_feat_tables', '--ls', action='store_true', dest='listfeattables', default=False,
@@ -395,7 +397,6 @@ def main(fn_args = None):
                        'can be used with or without --use_collocs')
     group.add_argument('--no_lower', action='store_false', dest='lowercaseonly', default=dlac.LOWERCASE_ONLY,
                        help='')
-
     group.add_argument('--add_lex_table', action='store_true', dest='addlextable',
                        help='add a lexicon-based feature table. (uses: l, weighted_lexicon, can flag: anscombe).')
     group.add_argument('--add_corp_lex_table', action='store_true', dest='addcorplextable',
@@ -408,6 +409,29 @@ def main(fn_args = None):
                        help='add pos with ngrams feature table. (can flag: sqrt, anscombe).')
     group.add_argument('--add_lda_table', metavar='LDA_MSG_TABLE', dest='addldafeattable',
                        help='add lda feature tables. (can flag: sqrt, anscombe).')
+    group.add_argument('--print_tokenized_lines', metavar="FILENAME", dest='printtokenizedlines', default = None,
+                       help='prints tokenized version of messages to lines.')
+    group.add_argument('--print_joined_feature_lines', metavar="FILENAME", dest='printjoinedfeaturelines', default = None,
+                       help='prints feature table with line per group joined by spaces (with MWEs joined by underscores) for import into Mallet.')
+    group.add_argument('--add_topiclex_from_topicfile', action='store_true', dest='addtopiclexfromtopicfile',
+                       help='creates a lexicon from a topic file, requires --topic_file --topic_lexicon --lex_thresh --topic_lex_method')
+    group.add_argument('--add_timexdiff', action='store_true', dest='addtimexdiff',
+                       help='extract timeex difference features (mean and std) per group.')
+    group.add_argument('--add_postimexdiff', action='store_true', dest='addpostimexdiff',
+                       help='extract timeex difference features and POS tags per group.')
+    group.add_argument('--add_wn_nopos', action='store_true', dest='addwnnopos',
+                       help='extract WordNet concept features (not considering POS) per group.')
+    group.add_argument('--add_wn_pos', action='store_true', dest='addwnpos',
+                       help='extract WordNet concept features (considering POS) per group.')
+    group.add_argument('--add_fleschkincaid', '--add_fkscore', action='store_true', dest='addfkscore',
+                       help='add flesch-kincaid scores, averaged per group.')
+    group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
+                       help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
+    group.add_argument('--add_bert', type=str, nargs='?', dest='addbert', default=None, const=dlac.DEF_BERT_AGGREGATION,
+                       help='add BERT mean features (optionally add min, max, --bert_model large)')
+
+
+    group = parser.add_argument_group('Messages Transformation Actions', '')
     group.add_argument('--add_tokenized', action='store_true', dest='addtokenized',
                        help='adds tokenized version of message table.')
     group.add_argument('--add_sent_tokenized', action='store_true', dest='addsenttokenized',
@@ -428,25 +452,7 @@ def main(fn_args = None):
                        help='add lda topic version of message table.')
     group.add_argument('--add_outcome_feats', action='store_true', dest='addoutcomefeats',
                        help='add a feature table from the specified outcome table.')
-    group.add_argument('--add_topiclex_from_topicfile', action='store_true', dest='addtopiclexfromtopicfile',
-                       help='creates a lexicon from a topic file, requires --topic_file --topic_lexicon --lex_thresh --topic_lex_method')
-    group.add_argument('--print_tokenized_lines', metavar="FILENAME", dest='printtokenizedlines', default = None,
-                       help='prints tokenized version of messages to lines.')
-    group.add_argument('--print_joined_feature_lines', metavar="FILENAME", dest='printjoinedfeaturelines', default = None,
-                       help='prints feature table with line per group joined by spaces (with MWEs joined by underscores) for import into Mallet.')
-    group.add_argument('--add_timexdiff', action='store_true', dest='addtimexdiff',
-                       help='extract timeex difference features (mean and std) per group.')
-    group.add_argument('--add_postimexdiff', action='store_true', dest='addpostimexdiff',
-                       help='extract timeex difference features and POS tags per group.')
-    group.add_argument('--add_wn_nopos', action='store_true', dest='addwnnopos',
-                       help='extract WordNet concept features (not considering POS) per group.')
-    group.add_argument('--add_wn_pos', action='store_true', dest='addwnpos',
-                       help='extract WordNet concept features (considering POS) per group.')
-    group.add_argument('--add_fleschkincaid', '--add_fkscore', action='store_true', dest='addfkscore',
-                       help='add flesch-kincaid scores, averaged per group.')
-    group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
-                       help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
-
+    
     group = parser.add_argument_group('Message Cleaning Actions', '')
     group.add_argument('--language_filter', '--lang_filter',  type=str, metavar='FIELD(S)', dest='langfilter', nargs='+', default=[],
                        help='Filter message table for list of languages.')
@@ -967,6 +973,15 @@ def main(fn_args = None):
         if not fe: fe = FE()
         args.feattable = fe.addPosTable(valueFunc = args.valuefunc, keep_words = args.pos_ngram)
 
+    if args.addbert:
+        print(args.addbert)#debug
+        print(args.bertmodel)#debug
+        if not fe: fe = FE()
+        aggregations = dlac.DEF_BERT_AGGREGATION
+        if len(args.addbert) > 1:
+            aggregations = args.addbert
+        args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=aggregations, valueFunc = args.valuefunc)
+
     if args.addldafeattable:
         if not fe: fe = FE()
         args.feattable = fe.addLDAFeatTable(args.addldafeattable, valueFunc = args.valuefunc)
@@ -978,7 +993,7 @@ def main(fn_args = None):
         langLex = lexInterface.Lexicon(mysql_host = args.mysql_host)
         langLex.loadLexicon(args.addpnames[1])
         args.feattable = fe.addPNamesTable(namesLex.getLexicon(), langLex.getLexicon(),  valueFunc = args.valuefunc)
-
+        
     if args.addwnnopos:
         if not fe: fe = FE()
         args.feattable = fe.addWNNoPosFeat(valueFunc = args.valuefunc, featValueFunc=args.lexvaluefunc)

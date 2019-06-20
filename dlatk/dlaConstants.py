@@ -110,6 +110,8 @@ DEF_P_MAPPING = { # maps old R method names to statsmodel names
     }
 DEF_CONF_INT = 0.95
 DEF_TOP_MESSAGES = 10
+DEF_BERT_AGGREGATION=['mean']
+DEF_BERT_MODEL='base-uncased'
 
 ##Prediction Settings:
 DEF_MODEL = 'ridgecv'
@@ -125,7 +127,7 @@ DEF_RP_FEATURE_SELECTION_MAPPING = {
     'topic_ngram_ms': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(2*(X.shape[0]*.20)/len(self.featureGetters) if X.shape[1] > 2000 else 2*(X.shape[0]*.75)/len(self.featureGetters)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
     'adh': 'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])', 
     'univariatefwe': 'SelectFwe(f_regression, alpha=60.0)',
-    'pca': 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
+    'pca': 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.5), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
     'none': None,
 }
 DEF_CP_FEATURE_SELECTION_MAPPING = {

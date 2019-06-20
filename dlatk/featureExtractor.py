@@ -14,6 +14,7 @@ from datetime import timedelta
 #math / stats:
 from math import floor, log10
 from numpy import mean, std
+import numpy as np
 #import imp
 
 #nltk
@@ -23,12 +24,6 @@ try:
 except ImportError:
     print("warning: unable to import nltk.tree or nltk.corpus or nltk.data")
 
-#hugging face's pretrained Google Bert
-try: 
-    import torch
-    from pytorch_pretrained_bert import BertTokenizer, BertModel, BertForMaskedLM
-except ImportError:
-    print("warning: unable to import torch or pytorch_pretrained_bert")
     
 #infrastructure
 from .dlaWorker import DLAWorker
@@ -1174,6 +1169,155 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
+    def addBERTTable(self, modelName = 'base-uncased', aggregations = ['mean'], layersToKeep = [9,10], tableName = None, valueFunc = lambda d: d):
+        """Creates feature tuples (correl_field, feature, values) table where features are parsed phrases
+
+        Parameters
+        ----------
+        modelName : :obj:`str`, optional
+            name of the bert model to use. 
+        aggregations : :obj:`lambda`, optional
+            Scales the features by the function given
+
+        Returns
+        -------
+        bertTableName : str
+            Name of the Bert Feature table
+        """
+        #hugging face's pretrained Google Bert
+        try: 
+            import torch
+            from pytorch_pretrained_bert import BertTokenizer, BertModel, BertForMaskedLM
+        except ImportError:
+            dlac.warn("warning: unable to import torch or pytorch_pretrained_bert")
+            dlac.warn("Please install pytorch and pretrained bert.")
+            sys.exit(1)
+
+        # Load pre-trained model tokenizer (vocabulary)
+        layersToKeep = np.array(layersToKeep, dtype='int')
+        dlac.warn("Loading BERT-%s..." % modelName)
+        bTokenizer = BertTokenizer.from_pretrained('bert-' + modelName)
+        bModel = BertModel.from_pretrained('bert-' + modelName)
+        bModel.eval()
+        cuda = True
+        try:
+            bModel.to('cuda')
+        except:
+            dlac.warn("  unable to use CUDA (GPU) for BERT")
+            cuda = False
+        dlac.warn("Done.")
+        
+        #CREATE TABLEs:
+        bertTableName = self.createFeatureTable('bert_'+modelName[:3], "INT(4)", 'DOUBLE', tableName, valueFunc)
+
+        #SELECT / LOOP ON CORREL FIELD FIRST:
+        sentTable = self.corptable+'_stoks'
+        assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with Bert featrue extraction (run --add_sent_tokenized" % sentTable
+        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
+        msgs = 0#keeps track of the number of messages read
+        cfRows = mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)#SSCursor woudl be better, but it loses connection
+
+        ##iterate through correl_ids (group id):
+        dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
+        mm.disableTableKeys(self.corpdb, self.dbCursor, bertTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        for cfRow in cfRows:
+            cf_id = cfRow[0]
+            mids = set() #currently seen message ids
+            BertMessageVectors = [] #holds the aggregated BERT features per message (to be aggregated further)
+
+            #grab sents by messages for that correl field:
+            for messageRow in self.getMessagesForCorrelField(cf_id, messageTable = sentTable):
+                message_id = messageRow[0]
+                if not message_id in mids:
+                    msgs+=1
+
+                    try:
+                        sents = loads(messageRow[1])
+                    except NameError: 
+                        dlac.warn("Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
+                        sys.exit(1)
+
+                    #Add tokens to BERT:
+                    sents[0] = '[CLS] ' + sents[0]
+                    sentsTok = [bTokenizer.tokenize(s+' [SEP]') for s in sents]
+                    print(sentsTok)#debug
+
+                    #calculate for all pairs:
+                    encsPerSent = [[]]*len(sentsTok)#holds multiple encodings per sententence (based on first/second)
+                    for i in range(len(sentsTok)):
+                        thisPair = sentsTok[i:i+2]
+                        thisPairFlat = [t for s in thisPair for t in s]
+                        
+                        # Convert token to vocabulary indices
+                        indexedToks = bTokenizer.convert_tokens_to_ids(thisPairFlat)
+                        # Define segs:
+                        segIds = [j for j in range(len(thisPair)) for x in thisPair[j]]
+                        print(segIds) #debug
+
+                        # Convert inputs to PyTorch tensors
+                        toksTens = torch.tensor([indexedToks])
+                        segsTens = torch.tensor([segIds])
+                        if cuda: 
+                            try:
+                                toksTens = toksTens.to('cuda')
+                                segsTens = segsTens.to('cuda')
+                            except:
+                                dlac.warn("! unable to use CUDA (gpus) for tensors even though it worked for model.")
+                        print (toksTens, segsTens) #debug
+
+                        # Combine vectors of each select layers; store as first sent and second sent:
+                        with torch.no_grad():
+                            encAllLayers, _ = bModel(toksTens, segsTens)
+                            #save layers:
+                            encSelectLayers = []
+                            for lyr in layersToKeep:
+                                encSelectLayers.append(encAllLayers[int(lyr)].detach().cpu().numpy())
+                            print(encSelectLayers)#debug
+                            twoSentEnc = np.mean(encSelectLayers, axis=0)
+                            if i < (len(sentsTok) - 2) or len(sentsTok) == 1:
+                                sent1enc = twoSentEnc[:,:len(thisPair[0])]
+                                encsPerSent[i].append(sent1enc)
+                            if (i+1) < len(sentsTok):
+                                sent2enc = twoSentEnc[:,len(thisPair[0]):]
+                                print(sent1enc.shape,sent2enc.shape)
+                                encsPerSent[i+1].append(sent2enc)
+
+                    #aggregate the (up to 2; one as first; one as second) vectors per sentence
+                    sentEnc = []
+                    print(encsPerSent)#debug
+                    print(sentsTok)#debug
+                    for i in range(len(sentsTok)):
+                        print([e.shape for e in encsPerSent[i]])
+                        sentEnc.append(np.mean(encsPerSent[i], axis=0))
+                    print(zip(sentsTok, sentEnc))#debug
+
+                    #Aggregate across sentences:
+                    sys.exit(1)
+                   
+                    if msgs % dlac.PROGRESS_AFTER_ROWS/5 == 0: #progress update
+                        dlac.warn("Parsed Messages Read: %.2fk" % msgs/1000.0)
+                    mids.add(message_id)
+
+
+            #write phrases to database (no need for "REPLACE" because we are creating the table)
+
+            wsql = """INSERT INTO """+phraseTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+            phraseRows = [(k, v, valueFunc((v / totalPhrases))) for k, v in freqsPhrases.items()] #adds group_norm and applies freq filter
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, phraseRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+
+            wsql = """INSERT INTO """+taggedTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+            taggedRows = [(k, v, valueFunc((v / totalPhrases))) for k, v in freqsTagged.items()] #adds group_norm and applies freq filter
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, taggedRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+
+        dlac.warn("Done Reading / Inserting.")
+
+        dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
+        mm.enableTableKeys(self.corpdb, self.dbCursor, taggedTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        mm.enableTableKeys(self.corpdb, self.dbCursor, phraseTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        dlac.warn("Done\n")
+        return phraseTableName;
+
+    
     def addFleschKincaidTable(self, tableName = None, valueFunc = lambda d: d, removeXML = True, removeURL = True):
         """Creates feature tuples (correl_field, feature, values) table where features are flesch-kincaid scores.
 
@@ -1319,12 +1463,16 @@ class FeatureExtractor(DLAWorker):
             dlac.warn("Your message table '%s' (or the group field, '%s') probably doesn't exist (or the group field)!" %(self.corptable, self.correl_field))
             raise IndexError("Your message table '%s' probably doesn't exist!" % self.corptable)
 
+        featureTypeAndEncoding = featureType
+        if featureType[0].lower() == 't' or featureType[0].lower() == 'v':
+            #string type; add unicode: 
+            featureTypeAndEncoding = "%s CHARACTER SET %s COLLATE %s" % (featureType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()])
         #create sql
         drop = """DROP TABLE IF EXISTS %s""" % tableName
         sql = """CREATE TABLE %s (id BIGINT(16) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                 group_id %s, feat %s CHARACTER SET %s COLLATE %s, value %s, group_norm DOUBLE,
+                 group_id %s, feat %s, value %s, group_norm DOUBLE,
                  KEY `correl_field` (`group_id`), KEY `feature` (`feat`))
-                 CHARACTER SET %s COLLATE %s ENGINE=%s""" %(tableName, correl_fieldType, featureType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()], valueType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()], dlac.DEF_MYSQL_ENGINE)
+                 CHARACTER SET %s COLLATE %s ENGINE=%s""" %(tableName, correl_fieldType, featureTypeAndEncoding, valueType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()], dlac.DEF_MYSQL_ENGINE)
 
         #run sql
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)

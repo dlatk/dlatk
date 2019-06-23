@@ -1272,7 +1272,7 @@ class FeatureExtractor(DLAWorker):
                             encSelectLayers = []
                             for lyr in layersToKeep:
                                 encSelectLayers.append(encAllLayers[int(lyr)].detach().cpu().numpy())
-                            twoSentEnc = np.mean(encSelectLayers, axis=0)
+                            twoSentEnc = np.mean(encSelectLayers, axis=0) #TODO: consider not averaging across layers
                             if (i < (len(sentsTok) - 1)) or (len(sentsTok) == 1):
                                 sent1enc = twoSentEnc[:,:len(thisPair[0])]
                                 encsPerSent[i].append(sent1enc)
@@ -1280,14 +1280,20 @@ class FeatureExtractor(DLAWorker):
                                 sent2enc = twoSentEnc[:,len(thisPair[0]):]
                                 encsPerSent[i+1].append(sent2enc)
 
-                    #aggregate the (up to 2; one as first; one as second) vectors per sentence
-                    sentEnc = []
+                    #Aggregate the (up to 2; one as first; one as second) vectors per sentence
+                    sentEncPerWord = []
                     #print(encsPerSent)#debug
                     for i in range(len(sentsTok)):
-                        sentEnc.append(np.mean(encsPerSent[i], axis=0))
-                    print([(p[0], p[1].shape) for p in zip(sentsTok, sentEnc)])#debug
+                        sentEncPerWord.append(np.mean(encsPerSent[i], axis=0))
+                    print([(p[0], p[1].shape) for p in zip(sentsTok, sentEncPerWord)])#debug
+
+                    #Aggregate words within sentences:
+                    sentEnc = []
+                    sentEnc = np.mean(sentEncPerWord, axis=1) #TODO: consider more than mean? 
+                    print("sentence encodings:" sentEnc.shape)#debug
 
                     #Aggregate across sentences:
+                    messageEncs = np.mean(encsPerSent, axis=0) #TODO: consider more than mean?
                     sys.exit(1)
                    
                     if msgs % dlac.PROGRESS_AFTER_ROWS/5 == 0: #progress update

@@ -1208,14 +1208,15 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done.")
         
         #CREATE TABLEs:
-        bertTableName = self.createFeatureTable('bert_'+modelName[:3], "INT(4)", 'DOUBLE', tableName, valueFunc)
+        bertTableName = self.createFeatureTable('BERT_'+modelName[:3]+'_'+''.join([str(ag[:2]) for ag in aggregations]),
+                                                                                  "VARCHAR(8)", 'DOUBLE', tableName, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
         sentTable = self.corptable+'_stoks'
         assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with Bert featrue extraction (run --add_sent_tokenized" % sentTable
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
         msgs = 0#keeps track of the number of messages read
-        cfRows = mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)#SSCursor woudl be better, but it loses connection
+        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
 
         ##iterate through correl_ids (group id):
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
@@ -1223,24 +1224,25 @@ class FeatureExtractor(DLAWorker):
         for cfRow in cfRows:
             cf_id = cfRow[0]
             mids = set() #currently seen message ids
-            BertMessageVectors = [] #holds the aggregated BERT features per message (to be aggregated further)
+            bertMessageVectors = [] #holds the aggregated BERT features per message (to be aggregated further)
 
             #grab sents by messages for that correl field:
-            for messageRow in self.getMessagesForCorrelField(cf_id, messageTable = sentTable):
+            for messageRow in self.getMessagesForCorrelField(cf_id, messageTable = sentTable, warnMsg=True):
                 message_id = messageRow[0]
-                if not message_id in mids:
+                try:
+                    sents = loads(messageRow[1])
+                except NameError: 
+                    dlac.warn("Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
+                    sys.exit(1)
+
+                if not message_id in mids and len(sents) > 0:
                     msgs+=1
 
-                    try:
-                        sents = loads(messageRow[1])
-                    except NameError: 
-                        dlac.warn("Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
-                        sys.exit(1)
 
                     #Add tokens to BERT:
                     sents[0] = '[CLS] ' + sents[0]
                     sentsTok = [bTokenizer.tokenize(s+' [SEP]') for s in sents]
-                    print(sentsTok)#debug
+                    #print(sentsTok)#debug
 
                     #calculate for all pairs:
                     encsPerSent = [[] for i in range(len(sentsTok))]#holds multiple encodings per sentence (based on first/second)
@@ -1252,7 +1254,7 @@ class FeatureExtractor(DLAWorker):
                         indexedToks = bTokenizer.convert_tokens_to_ids(thisPairFlat)
                         # Define segs:
                         segIds = [j for j in range(len(thisPair)) for x in thisPair[j]]
-                        print(segIds) #debug
+                        #print(segIds) #debug
 
                         # Convert inputs to PyTorch tensors
                         toksTens = torch.tensor([indexedToks])
@@ -1263,7 +1265,7 @@ class FeatureExtractor(DLAWorker):
                                 segsTens = segsTens.to('cuda')
                             except:
                                 dlac.warn("! unable to use CUDA (gpus) for tensors even though it worked for model.")
-                        print (toksTens, segsTens) #debug
+                        #print (toksTens, segsTens) #debug
 
                         # Combine vectors of each select layers; store as first sent and second sent:
                         with torch.no_grad():
@@ -1281,43 +1283,42 @@ class FeatureExtractor(DLAWorker):
                                 encsPerSent[i+1].append(sent2enc)
 
                     #Aggregate the (up to 2; one as first; one as second) vectors per sentence
-                    sentEncPerWord = []
+                    sentEncs = []
                     #print(encsPerSent)#debug
                     for i in range(len(sentsTok)):
-                        sentEncPerWord.append(np.mean(encsPerSent[i], axis=0))
-                    print([(p[0], p[1].shape) for p in zip(sentsTok, sentEncPerWord)])#debug
-
-                    #Aggregate words within sentences:
-                    sentEnc = []
-                    sentEnc = np.mean(sentEncPerWord, axis=1) #TODO: consider more than mean? 
-                    print("sentence encodings:" sentEnc.shape)#debug
+                        sentEncPerWord = np.mean(encsPerSent[i], axis=0)[0]
+                        #aggregate words into setence:
+                        #print(sentEncPerWord.shape)#debug
+                        sentEncs.append(np.mean(sentEncPerWord, axis=0)) #TODO: consider more than mean? 
+                    #print([(p[0], p[1].shape) for p in zip(sentsTok, sentEncs)])#debug
 
                     #Aggregate across sentences:
-                    messageEncs = np.mean(encsPerSent, axis=0) #TODO: consider more than mean?
-                    sys.exit(1)
+                    bertMessageVectors.append(np.mean(sentEncs, axis=0)) #TODO: consider more than mean?
                    
                     if msgs % dlac.PROGRESS_AFTER_ROWS/5 == 0: #progress update
                         dlac.warn("Parsed Messages Read: %.2fk" % msgs/1000.0)
                     mids.add(message_id)
 
 
-            #write phrases to database (no need for "REPLACE" because we are creating the table)
+            #Aggregate message vectors:
+            if len(bertMessageVectors) > 0:
+                bertFeats = dict()
+                for ag in aggregations:
+                    thisAg = eval("np."+ag+"(bertMessageVectors, axis=0)")
+                    bertFeats.update([(str(k)+ag[:2], v) for (k, v) in enumerate(thisAg)])
 
-            wsql = """INSERT INTO """+phraseTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
-            phraseRows = [(k, v, valueFunc((v / totalPhrases))) for k, v in freqsPhrases.items()] #adds group_norm and applies freq filter
-            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, phraseRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-
-            wsql = """INSERT INTO """+taggedTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
-            taggedRows = [(k, v, valueFunc((v / totalPhrases))) for k, v in freqsTagged.items()] #adds group_norm and applies freq filter
-            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, taggedRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                #print(bertFeats)#debug            
+                #write phrases to database (no need for "REPLACE" because we are creating the table)
+                wsql = """INSERT INTO """+bertTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                bertRows = [(k, v, valueFunc(v)) for k, v in bertFeats.items()] #adds group_norm and applies freq filter
+                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, bertRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
         dlac.warn("Done Reading / Inserting.")
 
         dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-        mm.enableTableKeys(self.corpdb, self.dbCursor, taggedTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
-        mm.enableTableKeys(self.corpdb, self.dbCursor, phraseTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        mm.enableTableKeys(self.corpdb, self.dbCursor, bertTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
         dlac.warn("Done\n")
-        return phraseTableName;
+        return bertTableName;
 
     
     def addFleschKincaidTable(self, tableName = None, valueFunc = lambda d: d, removeXML = True, removeURL = True):

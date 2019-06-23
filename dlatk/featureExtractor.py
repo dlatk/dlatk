@@ -1243,7 +1243,7 @@ class FeatureExtractor(DLAWorker):
                     print(sentsTok)#debug
 
                     #calculate for all pairs:
-                    encsPerSent = [[]]*len(sentsTok)#holds multiple encodings per sententence (based on first/second)
+                    encsPerSent = [[] for i in range(len(sentsTok))]#holds multiple encodings per sentence (based on first/second)
                     for i in range(len(sentsTok)):
                         thisPair = sentsTok[i:i+2]
                         thisPairFlat = [t for s in thisPair for t in s]
@@ -1272,24 +1272,20 @@ class FeatureExtractor(DLAWorker):
                             encSelectLayers = []
                             for lyr in layersToKeep:
                                 encSelectLayers.append(encAllLayers[int(lyr)].detach().cpu().numpy())
-                            print(encSelectLayers)#debug
                             twoSentEnc = np.mean(encSelectLayers, axis=0)
-                            if i < (len(sentsTok) - 2) or len(sentsTok) == 1:
+                            if (i < (len(sentsTok) - 1)) or (len(sentsTok) == 1):
                                 sent1enc = twoSentEnc[:,:len(thisPair[0])]
                                 encsPerSent[i].append(sent1enc)
                             if (i+1) < len(sentsTok):
                                 sent2enc = twoSentEnc[:,len(thisPair[0]):]
-                                print(sent1enc.shape,sent2enc.shape)
                                 encsPerSent[i+1].append(sent2enc)
 
                     #aggregate the (up to 2; one as first; one as second) vectors per sentence
                     sentEnc = []
-                    print(encsPerSent)#debug
-                    print(sentsTok)#debug
+                    #print(encsPerSent)#debug
                     for i in range(len(sentsTok)):
-                        print([e.shape for e in encsPerSent[i]])
                         sentEnc.append(np.mean(encsPerSent[i], axis=0))
-                    print(zip(sentsTok, sentEnc))#debug
+                    print([(p[0], p[1].shape) for p in zip(sentsTok, sentEnc)])#debug
 
                     #Aggregate across sentences:
                     sys.exit(1)

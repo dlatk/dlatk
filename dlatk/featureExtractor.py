@@ -1169,7 +1169,7 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
-    def addBERTTable(self, modelName = 'base-uncased', aggregations = ['mean'], layersToKeep = [9,10], tableName = None, valueFunc = lambda d: d):
+    def addBERTTable(self, modelName = 'base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], tableName = None, valueFunc = lambda d: d):
         """Creates feature tuples (correl_field, feature, values) table where features are parsed phrases
 
         Parameters
@@ -1208,12 +1208,11 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done.")
         
         #CREATE TABLEs:
-        bertTableName = self.createFeatureTable('BERT_'+modelName[:3]+'_'+''.join([str(ag[:2]) for ag in aggregations]),
-                                                                                  "VARCHAR(8)", 'DOUBLE', tableName, valueFunc)
+        bertTableName = self.createFeatureTable('BERT_'+modelName[:3]+'_'+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep]), "VARCHAR(8)", 'DOUBLE', tableName, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
         sentTable = self.corptable+'_stoks'
-        assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with Bert featrue extraction (run --add_sent_tokenized" % sentTable
+        assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with Bert featrue extraction (run --add_sent_tokenized)" % sentTable
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
         msgs = 0#keeps track of the number of messages read
         cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
@@ -1274,6 +1273,10 @@ class FeatureExtractor(DLAWorker):
                             encSelectLayers = []
                             for lyr in layersToKeep:
                                 encSelectLayers.append(encAllLayers[int(lyr)].detach().cpu().numpy())
+                            #aggregate layers:
+                            #concatenate (this doesn't seem to work right):
+                            #twoSentEnc = np.concatenate(encSelectLayers, axis=0) #TODO: consider not averaging across layers
+                            #mean
                             twoSentEnc = np.mean(encSelectLayers, axis=0) #TODO: consider not averaging across layers
                             if (i < (len(sentsTok) - 1)) or (len(sentsTok) == 1):
                                 sent1enc = twoSentEnc[:,:len(thisPair[0])]

@@ -1208,7 +1208,7 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done.")
         
         #CREATE TABLEs:
-        bertTableName = self.createFeatureTable('BERT_'+modelName[:3]+'_'+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep]), "VARCHAR(8)", 'DOUBLE', tableName, valueFunc)
+        bertTableName = self.createFeatureTable('BERTc_'+modelName[:3]+'_'+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep]), "VARCHAR(8)", 'DOUBLE', tableName, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
         sentTable = self.corptable+'_stoks'
@@ -1275,9 +1275,9 @@ class FeatureExtractor(DLAWorker):
                                 encSelectLayers.append(encAllLayers[int(lyr)].detach().cpu().numpy())
                             #aggregate layers:
                             #concatenate (this doesn't seem to work right):
-                            #twoSentEnc = np.concatenate(encSelectLayers, axis=0) #TODO: consider not averaging across layers
+                            twoSentEnc = np.concatenate(encSelectLayers, axis=2) 
                             #mean
-                            twoSentEnc = np.mean(encSelectLayers, axis=0) #TODO: consider not averaging across layers
+                            #twoSentEnc = np.mean(encSelectLayers, axis=0) #TODO: consider not averaging across layers
                             if (i < (len(sentsTok) - 1)) or (len(sentsTok) == 1):
                                 sent1enc = twoSentEnc[:,:len(thisPair[0])]
                                 encsPerSent[i].append(sent1enc)
@@ -1298,8 +1298,8 @@ class FeatureExtractor(DLAWorker):
                     #Aggregate across sentences:
                     bertMessageVectors.append(np.mean(sentEncs, axis=0)) #TODO: consider more than mean?
                    
-                    if msgs % dlac.PROGRESS_AFTER_ROWS/5 == 0: #progress update
-                        dlac.warn("Parsed Messages Read: %.2fk" % msgs/1000.0)
+                    if msgs % int(dlac.PROGRESS_AFTER_ROWS/5) == 0: #progress update
+                        dlac.warn("Messages Read: %.2f k" % (msgs/1000.0))
                     mids.add(message_id)
 
 

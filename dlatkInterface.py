@@ -183,6 +183,11 @@ def main(fn_args = None):
                        help='Table containing which groups run in various bins (for ttest).')
     group.add_argument('--bert_model', type=str, metavar='NAME', dest='bertmodel', default=dlac.DEF_BERT_MODEL,
                        help='BERT model to use if extracting bert features.')
+    group.add_argument('--bert_aggregations', type=str, metavar='AGG', nargs='+', dest='bertaggs', default=dlac.DEF_BERT_AGGREGATION,
+                       help='Aggregations to use with Bert.')
+    group.add_argument('--bert_layers', type=int, metavar='LAYER', nargs='+', dest='bertlayers', default=dlac.DEF_BERT_LAYERS,
+                       help='layers from Bert to keep.')
+
 
 
     group = parser.add_argument_group('MySQL Interactoins', '')
@@ -427,7 +432,7 @@ def main(fn_args = None):
                        help='add flesch-kincaid scores, averaged per group.')
     group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
-    group.add_argument('--add_bert', type=str, nargs='?', dest='addbert', default=None, const=dlac.DEF_BERT_AGGREGATION,
+    group.add_argument('--add_bert', action='store_true', dest='addbert', 
                        help='add BERT mean features (optionally add min, max, --bert_model large)')
 
 
@@ -559,7 +564,7 @@ def main(fn_args = None):
                        help='train a regression model to predict outcomes based on feature table')
     group.add_argument('--test_regression', action='store_true', dest='testregression', default=False,
                        help='train/test a regression model to predict outcomes based on feature table')
-    group.add_argument('--combo_test_regression', '--combo_test_reg', '--nfold_test_regression', action='store_true', dest='combotestregression', default=False,
+    group.add_argument('--nfold_regression', '--combo_test_regression', '--combo_test_reg', '--nfold_test_regression', action='store_true', dest='combotestregression', default=False,
                        help='train/test a regression model with and without all combinations of controls')
     group.add_argument('--predict_regression', '--predict_reg', action='store_true', dest='predictregression', default=False,
                        help='predict outcomes based on loaded or trained regression model')
@@ -594,7 +599,7 @@ def main(fn_args = None):
                        help='train classification models for each outcome field based on feature table')
     group.add_argument('--test_classifiers', action='store_true', dest='testclassifiers', default=False,
                        help='trains and tests classification for each outcome')
-    group.add_argument('--combo_test_classifiers', '--nfold_test_classifiers', action='store_true', dest='combotestclassifiers', default=False,
+    group.add_argument('--nfold_classifiers', '--combo_test_classifiers', '--nfold_test_classifiers', action='store_true', dest='combotestclassifiers', default=False,
                        help='train/test a regression model with and without all combinations of controls')
     group.add_argument('--predict_classifiers', '--predict_class', action='store_true', dest='predictclassifiers', default=False,
                        help='predict outcomes bases on loaded training')
@@ -974,13 +979,8 @@ def main(fn_args = None):
         args.feattable = fe.addPosTable(valueFunc = args.valuefunc, keep_words = args.pos_ngram)
 
     if args.addbert:
-        print(args.addbert)#debug
-        print(args.bertmodel)#debug
         if not fe: fe = FE()
-        aggregations = dlac.DEF_BERT_AGGREGATION
-        if len(args.addbert) > 1:
-            aggregations = args.addbert
-        args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=aggregations, valueFunc = args.valuefunc)
+        args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=args.bertaggs, layersToKeep=args.bertlayers, valueFunc = args.valuefunc)
 
     if args.addldafeattable:
         if not fe: fe = FE()

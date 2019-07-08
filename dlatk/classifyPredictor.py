@@ -2519,7 +2519,6 @@ def stratifyGroups(groups, outcomes, folds, randomState = DEFAULT_RANDOM_SEED):
 
     return list(groupsPerFold.values())
 
-
 def hasMultValuesPerItem(listOfD):
     """returns true if the dictionary has a list with more than one element"""
     if len(listOfD) > 1:
@@ -2531,8 +2530,6 @@ def hasMultValuesPerItem(listOfD):
 
 def getGroupsFromGroupNormValues(gnvs):
     return set([k for gns in gnvs for k in gns.keys()])
-
-
 
 def matrixAppendHoriz(A, B):
     if isinstance(A, spmatrix) and isinstance(B, spmatrix):
@@ -2546,9 +2543,6 @@ def matrixAppendHoriz(A, B):
     else:
         raise ValueError('matrix append types not supported: %s and %s' % (type(A).__name__, type(B).__name__))
 
-
-#def mean(l):
-#    return sum(l)/float(len(l))
 
 def r2simple(ytrue, ypred):
     y_mean = sum(ytrue)/float(len(ytrue))

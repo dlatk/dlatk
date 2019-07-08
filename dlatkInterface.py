@@ -58,6 +58,9 @@ def main(fn_args = None):
     """
     :param fn_args: string - ex "-d testing -t msgs -c user_id --add_ngrams -n 1 "
     """
+
+    dlac.warn("\n\n--\nDLATK Interface Initiated\n--")
+
     start_time = time.time()
 
     ##Argument Parser:

@@ -1508,7 +1508,7 @@ class ClassifyPredictor:
             #grid search for classifier params:
             gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
                               self.cvParams[modelName], n_jobs = self.cvJobs,
-                              cv=ShuffleSplit(len(y), n_splits=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
+                              cv=ShuffleSplit(n_splits=self.cvFolds+1, test_size=1/float(self.cvFolds), random_state=DEFAULT_RANDOM_SEED))
             print("[Performing grid search for parameters over training]")
             gs.fit(X, y)
 
@@ -1663,7 +1663,7 @@ class ClassifyPredictor:
             #grid search for classifier params:
             gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
                               self.cvParams[modelName], n_jobs = self.cvJobs,
-                              cv=ShuffleSplit(len(y), n_splits=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
+                              cv=ShuffleSplit(n_splits=self.cvFolds+1, test_size=1/float(self.cvFolds), random_state=DEFAULT_RANDOM_SEED))
             print("[Performing grid search for parameters over training]")
             gs.fit(X, y)
 
@@ -1862,7 +1862,7 @@ class ClassifyPredictor:
                 # grid search for classifier params:
                 gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
                                   self.cvParams[modelName], n_jobs = self.cvJobs,
-                                  cv=ShuffleSplit(len(y_train_slice), n_splits=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
+                                  cv=ShuffleSplit(n_splits=self.cvFolds+1, test_size=1/float(self.cvFolds), random_state=DEFAULT_RANDOM_SEED))
                 print("[Performing grid search for parameters over training for class: %d]" % i)
                 gs.fit(X_train, y_train_slice)
                 fitted_model = gs.best_estimator_

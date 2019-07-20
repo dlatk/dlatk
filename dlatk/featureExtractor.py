@@ -2434,7 +2434,7 @@ class FeatureExtractor(DLAWorker):
                         dlac.warn("Cannot import jsonrpclib or simplejson")
                         sys.exit(1)
                     except ConnectionRefusedError as cre:
-                        dlac.warn("Add Timex POS: Can not connect to timex parser server on port:\n"%serverPort+str(cre))
+                        dlac.warn("Add Timex POS: Can not connect to timex parser server on port: %d\n"%serverPort+str(cre))
                         sys.exit(1)
 
                     #TIMEX PROCESSING

@@ -1169,7 +1169,7 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
-    def addBERTTable(self, modelName = 'base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], tableName = None, valueFunc = lambda d: d):
+    def addBERTTable(self, modelName = 'base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=400, tableName = None, valueFunc = lambda d: d):
         """Creates feature tuples (correl_field, feature, values) table where features are parsed phrases
 
         Parameters
@@ -1220,6 +1220,7 @@ class FeatureExtractor(DLAWorker):
         ##iterate through correl_ids (group id):
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
         mm.disableTableKeys(self.corpdb, self.dbCursor, bertTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        lengthWarned = False #whether the length warning has been printed yet
         for cfRow in cfRows:
             cf_id = cfRow[0]
             mids = set() #currently seen message ids
@@ -1241,7 +1242,14 @@ class FeatureExtractor(DLAWorker):
                     #Add tokens to BERT:
                     sents[0] = '[CLS] ' + sents[0]
                     sentsTok = [bTokenizer.tokenize(s+' [SEP]') for s in sents]
-                    #print(sentsTok)#debug
+                    #check for overlength:
+                    for i in range(len(sentsTok)):
+                        if len(sentsTok[i]) > maxTokensPerSeg:
+                            newSegs = [sentsTok[i][j:j+maxTokensPerSeg]+['[SEP]'] for j in range(0, len(sentsTok[i]), maxTokensPerSeg)]
+                            if not lengthWarned:
+                                dlac.warn("AddBert: Some segment are too long; splitting up; first example: %s" % str(newSegs))
+                                #lengthWarned = True
+                            sentsTok[i] = sentsTok[:i] + newSegs + sentsTok[i+1:]
 
                     #calculate for all pairs:
                     encsPerSent = [[] for i in range(len(sentsTok))]#holds multiple encodings per sentence (based on first/second)

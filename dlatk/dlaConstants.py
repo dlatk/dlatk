@@ -124,12 +124,23 @@ DEF_FOLDS = 5
 DEF_OUTLIER_THRESHOLD = 2.5
 DEF_RP_FEATURE_SELECTION_MAPPING = {
     'magic_sauce': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.1)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+
     'magic_sauce_light': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=100.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.3)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+
+    'magic200': 'Pipeline([("1_univariate_select", SelectFwe(alpha=60.0, score_func=f_regression)), ("2_rpca", RandomizedPCA(copy=True, iterated_power=3, n_components=200, random_state=42, whiten=False))])',
+
     'topic_ngram_ms': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(2*(X.shape[0]*.20)/len(self.featureGetters) if X.shape[1] > 2000 else 2*(X.shape[0]*.75)/len(self.featureGetters)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+
     'magic_sauce_1pct': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=min(int((X.shape[0]/(len(self.featureGetters)+0.1))*.001), int(X.shape[1]*0.2)), random_state=42, whiten=False, iterated_power=3))])',
+
     'topic_ngram_ms': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(2*(X.shape[0]*.20)/len(self.featureGetters) if X.shape[1] > 2000 else 2*(X.shape[0]*.75)/len(self.featureGetters)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
-    'adh': 'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])', 
+
+    'ms_old1':'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=0.60)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+
+    'ms_old2': 'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])', 
+
     'univariatefwe': 'SelectFwe(f_regression, alpha=60.0)',
+
     'pca': 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.5), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
     'none': None,
 }

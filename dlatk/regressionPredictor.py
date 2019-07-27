@@ -254,7 +254,8 @@ class RegressionPredictor:
             #{'alphas': np.array([100000, 500000, 250000, 25000, 10000, 2500, 1000, 100, 10])}, 
             #{'alphas': np.array([100000, 500000, 250000, 25000, 10000])},
             #{'alphas': np.array([250000, 100000, 1000000, 2500000, 10000000, 25000000, 100000000])}, #personality, n-grams + 2000 topics
-            {'alphas': np.array([1, .01, .0001, 100, 10000, 1000000])}, #first-pass
+            #{'alphas': np.array([1, .01, .0001, 100, 10000, 1000000])}, #first-pass
+            {'alphas': np.array([1.00000e+03, 1.00000e-01, 1.00000e+00, 1.00000e+01, 1.00000e+02, 1.00000e+04, 1.00000e+05])}, #psych_sci ridge
             #{'alphas': np.array([1000, 1, .1, 10, 100, 10000, 100000])}, #user-level low num users (~5k) or counties
             #{'alphas': np.array([1000, 10000, 100000, 1000000])}, #user-level low num users (~5k) or counties
             #{'alphas': np.array([1000, 100, 10000, 10, 1])}, #county achd (need low for controls)
@@ -2293,8 +2294,10 @@ class RegressionPredictor:
                         for cn in controlNames:
                             rowDict[cn] = 1 if cn in rk else 0
                         rowDict['w/ lang.'] = withLang
-                        rowDict.update({(k,v) for (k,v) in list(sc.items()) if isinstance(sc, dict) and not k in ignoreKeys})
+                        if isinstance(sc, dict):
+                            rowDict.update({(k,v) for (k,v) in list(sc.items()) if not k in ignoreKeys})
                         csvOut.writerow(rowDict)
+
     @staticmethod
     def printComboControlPredictionsToCSV(scores, outputstream, paramString = None, delimiter=','):
         """prints predictions with all combinations of controls to csv)"""

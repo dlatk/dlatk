@@ -46,7 +46,7 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.base import ClassifierMixin
 
 #scipy
-from scipy.stats import zscore
+from scipy.stats import zscore, t
 from scipy.stats.stats import pearsonr, spearmanr
 from scipy.sparse import csr_matrix, vstack, hstack, spmatrix
 import numpy as np
@@ -529,8 +529,9 @@ class ClassifyPredictor:
     #####################################################
     ######## Main Testing Method ########################
     def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
-                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None,  
-                          stratifyFolds = True, adaptTables=None, adaptColumns=None, groupsWhere = '', testFolds = None):
+                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, 
+                          weightedEvalOutcome = None, stratifyFolds = True, adaptTables=None, adaptColumns=None, 
+                          controlCombineProbs = True, groupsWhere = '', testFolds = None):
         """Tests classifier, by pulling out random testPerc percentage as a test set""" # edited by Youngseo
         
         ###################################
@@ -768,6 +769,21 @@ class ClassifyPredictor:
                             reportStats['matt_ccoef'] = 'multiclass'
                         testCounter = Counter(ytrue)
                         reportStats['mfclass_acc'] = testCounter[mfclass] / float(len(ytrue))
+
+                        if controlCombineProbs:#ensemble with controls (AUC weighted)
+                            reportStats['auc_cntl_comb2'] = 0.0#add columns so csv always has same
+                            reportStats['auc_cntl_comb2_t'] = 0.0
+                            reportStats['auc_cntl_comb2_p'] = 1.0
+                            if withLanguage and savedControlYpp is not None and len(testCounter.keys()) == 2:
+                                #newprobs = np.array(easyNFoldLR( np.array([ypredProbs[:,-1], savedControlYpp]).T, ytrue, len(groupFolds)))[:,-1]
+                                newprobs2 = np.array(easyNFoldAUCWeight( np.array([ypredProbs[:,-1], savedControlYpp]).T, ytrue, len(groupFolds)))[:,-1]
+                                #reportStats['auc_cntl_comb'] = pos_neg_auc(ytrue, newprobs)
+                                #reportStats['auc_cntl_comb_t'], reportStats['auc_cntl_comb_p'] = paired_t_1tail_on_errors(newprobs, savedControlYpp, ytrue)
+                                reportStats['auc_cntl_comb2'] = pos_neg_auc(ytrue, newprobs2)
+                                reportStats['auc_cntl_comb2_t'], reportStats['auc_cntl_comb2_p'] = paired_t_1tail_on_errors(newprobs2, savedControlYpp, ytrue)
+                            else: #save probs for next round
+                                savedControlYpp = ypredProbs[:,-1]
+
 
                         if savePredictions: 
                             reportStats['predictions'] = predictions
@@ -1508,7 +1524,7 @@ class ClassifyPredictor:
             #grid search for classifier params:
             gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
                               self.cvParams[modelName], n_jobs = self.cvJobs,
-                              cv=ShuffleSplit(len(y), n_iterations=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
+                              cv=ShuffleSplit(n_splits=self.cvFolds+1, test_size=1/float(self.cvFolds), random_state=DEFAULT_RANDOM_SEED))
             print("[Performing grid search for parameters over training]")
             gs.fit(X, y)
 
@@ -1663,7 +1679,7 @@ class ClassifyPredictor:
             #grid search for classifier params:
             gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
                               self.cvParams[modelName], n_jobs = self.cvJobs,
-                              cv=ShuffleSplit(len(y), n_iter=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
+                              cv=ShuffleSplit(n_splits=self.cvFolds+1, test_size=1/float(self.cvFolds), random_state=DEFAULT_RANDOM_SEED))
             print("[Performing grid search for parameters over training]")
             gs.fit(X, y)
 
@@ -1862,7 +1878,7 @@ class ClassifyPredictor:
                 # grid search for classifier params:
                 gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
                                   self.cvParams[modelName], n_jobs = self.cvJobs,
-                                  cv=ShuffleSplit(len(y_train_slice), n_iter=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
+                                  cv=ShuffleSplit(n_splits=self.cvFolds+1, test_size=1/float(self.cvFolds), random_state=DEFAULT_RANDOM_SEED))
                 print("[Performing grid search for parameters over training for class: %d]" % i)
                 gs.fit(X_train, y_train_slice)
                 fitted_model = gs.best_estimator_
@@ -2519,7 +2535,6 @@ def stratifyGroups(groups, outcomes, folds, randomState = DEFAULT_RANDOM_SEED):
 
     return list(groupsPerFold.values())
 
-
 def hasMultValuesPerItem(listOfD):
     """returns true if the dictionary has a list with more than one element"""
     if len(listOfD) > 1:
@@ -2531,8 +2546,6 @@ def hasMultValuesPerItem(listOfD):
 
 def getGroupsFromGroupNormValues(gnvs):
     return set([k for gns in gnvs for k in gns.keys()])
-
-
 
 def matrixAppendHoriz(A, B):
     if isinstance(A, spmatrix) and isinstance(B, spmatrix):
@@ -2546,13 +2559,57 @@ def matrixAppendHoriz(A, B):
     else:
         raise ValueError('matrix append types not supported: %s and %s' % (type(A).__name__, type(B).__name__))
 
-
-#def mean(l):
-#    return sum(l)/float(len(l))
-
 def r2simple(ytrue, ypred):
     y_mean = sum(ytrue)/float(len(ytrue))
     ss_tot = sum((yi-y_mean)**2 for yi in ytrue)
     ss_err = sum((yi-fi)**2 for yi,fi in zip(ytrue,ypred))
     r2 = 1 - (ss_err/ss_tot)
     return r2
+
+def easyNFoldAUCWeight(X, y, folds):
+    """build logistic regressor given two sets of decision function outputs, return new probs """
+    yscores = []
+    X = zscore(X)
+    y = np.array(y)
+    warn(" [NFOLD TRAIN TESTING Easy LR]")
+    groups = range(len(y))
+    outcomes = dict(zip(groups, y))
+    groupFolds = stratifyGroups(groups, outcomes, folds, randomState = 42)
+    ymap = []
+    for testgs in groupFolds:
+        testgs = np.array(testgs)
+        setgs = set(testgs)
+        traings = [i for i in groups if i not in setgs]
+        ytest = y[testgs]
+        Xtest = X[testgs]
+        ytrain = y[traings]
+        Xtrain = X[traings]
+
+        weights = np.array([0.0]*Xtest.shape[1])
+        sumWeights = 0.0
+        for c in range(Xtrain.shape[1]):
+            weights[c] = ((np.absolute(pos_neg_auc(ytrain, Xtrain[:,c])) - 0.5) / 0.5)**2
+            sumWeights += weights[c]
+        weights = np.array([weights / sumWeights])
+        warn(weights) #debug
+        ypred_probs = np.dot(Xtest, weights.T)
+        warn("   EASY LR AUC: %.4f" %  pos_neg_auc(ytest, ypred_probs[:,-1]))
+        yscores.extend(ypred_probs)
+        ymap.extend(testgs)
+    newyscores = [0]*len(y)
+    for i in groups:
+        newyscores[ymap[i]] = yscores[i]
+    warn(" [Done]")
+    warn(" FINAL EASY LR AUC: %.4f" %  pos_neg_auc(y, np.array(newyscores)[:,-1]))
+    return newyscores
+
+def paired_t_1tail_on_errors(newprobs, oldprobs, ytrue):
+    #checks if
+    n = len(ytrue)
+    newprobs_res_abs = np.absolute(array(ytrue) - array(newprobs))
+    oldprobs_res_abs = np.absolute(array(ytrue) - array(oldprobs))
+    ypp_diff = newprobs_res_abs - oldprobs_res_abs #old should be smaller
+    ypp_diff_mean, ypp_sd = np.mean(ypp_diff), np.std(ypp_diff)
+    ypp_diff_t = ypp_diff_mean / (ypp_sd / sqrt(n))
+    ypp_diff_p = t.sf(np.absolute(ypp_diff_t), n-1)
+    return ypp_diff_t, ypp_diff_p

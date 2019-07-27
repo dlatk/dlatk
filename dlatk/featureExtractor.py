@@ -2444,6 +2444,9 @@ class FeatureExtractor(DLAWorker):
                     except NameError: 
                         dlac.warn("Cannot import jsonrpclib or simplejson")
                         sys.exit(1)
+                    except ConnectionRefusedError as cre:
+                        dlac.warn("Add Timex POS: Can not connect to timex parser server on port: %d\n"%serverPort+str(cre))
+                        sys.exit(1)
 
                     #TIMEX PROCESSING
                     newDiffs, thisNEtags, thisWords = self.parseCoreNLPForTimexDiffs(parseInfo, messageDT)

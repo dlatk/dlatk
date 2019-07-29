@@ -47,5 +47,5 @@ Example Commands
 .. code-block:: bash
 
 
-	dlatkInterface.py -d fb22 -t messagesEn -c user_id -f 'feat$2to3gram$messagesEn$user_id$16to16$0_02' --colloc_filter --set_pmi_threshold 6.0
+	dlatkInterface.py -d fb22 -t messagesEn -c user_id -f 'feat$2to3gram$messagesEn$user_id$16to16$0_02' --feat_colloc_filter --set_pmi_threshold 6.0
 

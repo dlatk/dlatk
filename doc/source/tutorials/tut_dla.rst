@@ -197,7 +197,7 @@ Since this lexica was produced using a data driven approach we make no attempt t
 .. code-block:: bash
 
 	# EXPECTED OUTPUT TABLE
-	# feat$cat_met_a30_2000_cp$msgs_xxx$user_id$16to16
+	# feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra
 	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_lex_table -l met_a30_2000_cp --weighted_lexicon
 
 Brief descriptions of the flags:
@@ -220,13 +220,13 @@ Again, you can view the tables with the following **mysql** commands:
 
 .. code-block:: mysql
 
-	select * from dla_tutorial.feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16 limit 10;
+	select * from dla_tutorial.feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra limit 10;
 
 What should the group norms sum to for a single group in the lexicon tables? Will this be the same as above? Why or why not?
 
 .. code-block:: mysql
 
-	select group_id, sum(group_norm) from dla_tutorial.feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16 group by group_id limit 10;
+	select group_id, sum(group_norm) from dla_tutorial.feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra group by group_id limit 10;
 
 
 STEP 2 - Insights (DLA): Correlate features with outcomes
@@ -307,7 +307,7 @@ Finally using the Facebook topics and creating topic tag clouds:
 .. code-block:: bash
 
 	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
-	-f 'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16' \ 
+	-f 'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra' \ 
 	--outcome_table blog_outcomes  --group_freq_thresh 500 \ 
 	--outcomes age gender --output_name fbtopic_output \ 
 	--topic_tagcloud --make_topic_wordcloud --topic_lexicon met_a30_2000_freq_t50ll \ 

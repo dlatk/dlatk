@@ -398,7 +398,7 @@ def coerceToValidFileName(filename):
     valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
     return ''.join(c for c in filename if c in valid_chars)
 
-def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="Helvetica-Narrow", fontStyle=None, toFolders=False, useTopicWords=True, metric='R'):
+def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="Helvetica-Narrow", fontStyle=None, toFolders=False, useTopicWords=True, metric='R', keepDuplicates=False):
     processedFiles = {}
 
     if not directory:
@@ -528,6 +528,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
             pass
 
     for filename, tags in processedFiles.items():
+        if not keepDuplicates and '.df-' in filename: continue
         ngrams, freqs, colors = list(zip(*tags))
         colors = ['#'+x for x in colors]
         filename = coerceToValidFileName(filename)

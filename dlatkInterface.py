@@ -535,6 +535,8 @@ def main(fn_args = None):
                        help="make topic wordclouds, needs an output topic tagcloud file.")
     group.add_argument('--make_all_topic_wordclouds', '--make_all_topic_tagclouds', action='store_true', dest='makealltopicwordclouds',
                        help="make all topic wordclouds for a given topic lexicon.")
+    group.add_argument('--keep_duplicates', action='store_true', dest='keepduplicates',
+                       help="Create topic wordclouds for duplicate filtered topics.")
     group.add_argument('--use_featuretable_feats', action='store_true', dest='useFeatTableFeats',
                        help='use 1gram table to be used as a whitelist when plotting')
     group.add_argument('--outcome_with_outcome', action='store_true', dest='outcomeWithOutcome',
@@ -1482,7 +1484,7 @@ def main(fn_args = None):
             print("ERROR, can't use --make_topic_wordclouds without --topic_tagcloud or --corp_topic_tagcloud", file=sys.stderr)
             sys.exit()
         print(outputFile)
-        wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True, metric=metric)
+        wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True, metric=metric, keepDuplicates=args.keepduplicates)
 
     comboCorrels = None
     if args.combormatrix:

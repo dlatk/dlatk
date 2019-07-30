@@ -1999,7 +1999,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             # if using 1gram words and frequencies
             # (r, p, n, freq) belong to the category only
             tw = [(w_f[0], (w_f[1], p, n, ci, w_f[1])) for w_f in tw] if not wordFreqs else [(w_f1[0], (w_f1[1]*float(wordFreqs[w_f1[0]]), p, n, ci, wordFreqs[w_f1[0]])) for w_f1 in tw]
-            OutcomeAnalyzer.printTagCloudFromTuples(tw, maxWords, rankOrderR = True, colorScheme=colorScheme, use_unicode=use_unicode, cleanCloud = cleanCloud)
+            OutcomeAnalyzer.printTagCloudFromTuples(tw, maxWords, rankOrderR = True, colorScheme=colorScheme, use_unicode=use_unicode, cleanCloud = cleanCloud, topic_cloud=True)
 
         return topicWords
 
@@ -2156,7 +2156,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
     @staticmethod
-    def printTagCloudFromTuples(rList, maxWords, rankOrderFreq = True, rankOrderR = False, colorScheme='multi', use_unicode=True, cleanCloud=False, censor_dict=dlac.DEF_CENSOR_DICT, metric='R'):
+    def printTagCloudFromTuples(rList, maxWords, rankOrderFreq = True, rankOrderR = False, colorScheme='multi', use_unicode=True, cleanCloud=False, censor_dict=dlac.DEF_CENSOR_DICT, metric='R', topic_cloud=False):
         """
         Prints a tag cloud from a set of tuples
 
@@ -2206,7 +2206,8 @@ class OutcomeAnalyzer(OutcomeGetter):
         maxFreq = 0
         if rList[0][2]:
             maxFreq = max([v[2] for v in rList])
-        print(("[Max %s: %.3f, Min %s: %.3f]" % (metric, maxR, metric, minR)))
+        if not topic_cloud:
+            print(("[Max %s: %.3f, Min %s: %.3f]" % (metric, maxR, metric, minR)))
                 
         for (w, occ, freq) in rList:
             if freq:

@@ -216,17 +216,17 @@ Any calls to dlatkInterface.py will open MySQL. We assume any table with text da
 * message: text data
 * message_id: unique numeric identifier for each message
 
-All lexicon tables are assumed to be in a database called dlatk_lexicon (a sample database with this name is distributed with the release). To change this you must edit dlaConstants.py: ``DEF_LEXICON_DB = 'dlatk_lexicon'``
+All lexicon tables are assumed to be in a database called dlatk_lexica (a sample database with this name is distributed with the release). To change this you must edit dlaConstants.py: ``DEF_LEXICON_DB = 'dlatk_lexica'``
 
 Sample Datasets
 ---------------
 
-DLATK comes packaged with two sample databases: dla_tutorial and dlatk_lexicon. See :doc:`datasets` for more information on the databases. To install them use the following:
+DLATK comes packaged with two sample databases: dla_tutorial and dlatk_lexica. See :doc:`datasets` for more information on the databases. To install them use the following:
 
 .. code-block:: bash
 
 		mysql -u username -p  < /path/to/dlatk/data/dla_tutorial.sql
-		mysql -u username -p  < /path/to/dlatk/data/dlatk_lexicon.sql
+		mysql -u username -p  < /path/to/dlatk/data/dlatk_lexica.sql
 
 The path to DLATK can be found using the following:
 

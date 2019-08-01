@@ -136,7 +136,7 @@ The full list of available flags in lexInterface:
 Example Commands
 ================
 
-Upload the topic given word probability distributions generated during LDA. This creates a table in `dlatk_lexicon` called `msgs_lda_cp`.
+Upload the topic given word probability distributions generated during LDA. This creates a table in `dlatk_lexica` called `msgs_lda_cp`.
 
 .. code-block:: bash
 

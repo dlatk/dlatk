@@ -1465,7 +1465,6 @@ def main(fn_args = None):
     if args.tagcloud:
         metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
         outputFile = makeOutputFilename(args, fg, oa, suffix="_tagcloud")
-        print("METRIC", metric)
         oa.printTagCloudData(correls, args.maxP, outputFile, str(args), maxWords = args.maxtcwords, duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, cleanCloud = args.cleancloud, metric=metric)
     if args.makewordclouds:
         if not args.tagcloud:

@@ -28,22 +28,30 @@ Other Switches
 
 Required Switches:
 
-* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_d`, :doc:`fwflag_t`, :doc:`fwflag_c`
 * :doc:`fwflag_f`
 * :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes`
 
 Optional Switches:
 
+* :doc:`fwflag_cohens_d`
 * :doc:`fwflag_interaction_ddla`
 * :doc:`fwflag_correlate`
 * :doc:`fwflag_rmatrix`
 * :doc:`fwflag_tagcloud`
 * :doc:`fwflag_topic_tagcloud`
-* :doc:`fwflag_barplot`
-* :doc:`fwflag_feat_correl_filter`
 * :doc:`fwflag_make_wordclouds`
 * :doc:`fwflag_make_topic_wordclouds`
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id \ 
+	-f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$1gra' \ 
+	--outcome_table blog_outcomes  --group_freq_thresh 500 \ 
+	--outcomes gender --output_name gender_correlates_logistic \ 
+	--topic_tagcloud --make_topic_wordcloud --topic_lexicon met_a30_2000_freq_t50ll \ 
+	--tagcloud_colorscheme bluered \
+	--logistic_reg

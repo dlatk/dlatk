@@ -218,7 +218,7 @@ These switches transform the feature table during feature extraction and therefo
    # produces the table feat$1gram$msgs$user_id$16to4
    ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1 --sqrt
 
-   # produces the table feat$1gram$msgs$user_id$16to2
+   # produces the table feat$1gram$msgs$user_id$16to3
    ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1 --log
 
    # produces the table feat$1gram$msgs$user_id$16to1
@@ -248,16 +248,16 @@ These switches transform the feature table during feature extraction and therefo
    |  45 |    28451 | ,    |    53 |  0.224776130551 |
    +-----+----------+------+-------+-----------------+
 
-   mysql> select * from feat$1gram$msgs$user_id$16to2 limit 5;
-   +-----+----------+------+-------+------------------+
-   | id  | group_id | feat | value | group_norm       |
-   +-----+----------+------+-------+------------------+
-   |  70 |    28451 | !    |     8 |  0.0109606988054 |
-   | 139 |    28451 | $    |     1 | 0.00137464997622 |
-   |  98 |    28451 | '    |     2 | 0.00274799138491 |
-   | 103 |    28451 | *    |     4 | 0.00549075844845 |
-   |  20 |    28451 | ,    |    53 |  0.0711095459939 |
-   +-----+----------+------+-------+------------------+
+   mysql> select * from feat$1gram$msgs$user_id$16to3 limit 5;
+   +-----+----------+------+-------+-------------------+
+   | id  | group_id | feat | value | group_norm        |
+   +-----+----------+------+-------+-------------------+
+   | 278 |    28451 | !    |     8 |  0.00759737747394 |
+   | 244 |    28451 | $    |     1 | 0.000952834755272 |
+   | 265 |    28451 | '    |     2 |  0.00190476248065 |
+   | 171 |    28451 | *    |     4 |  0.00380590373768 |
+   | 283 |    28451 | ,    |    53 |   0.0492893813166 |
+   +-----+----------+------+-------+-------------------+
 
 
    mysql> select * from feat$1gram$msgs$user_id$16to1 limit 5;
@@ -302,7 +302,7 @@ DLATK supports both unweighted and weighted lexica. Here is an example of an unw
 
 .. code-block:: mysql
 
-   mysql> select * from permaLexicon.LIWC2015 limit 5;
+   mysql> select * from dlatk_lexica.LIWC2015 limit 5;
    +----+------+----------+--------+
    | id | term | category | weight |
    +----+------+----------+--------+
@@ -337,7 +337,7 @@ Here is an example of a weighted lexicon. Note the use of the --weighted_lexicon
 
 .. code-block:: mysql
 
-   mysql> select * from permaLexicon.met_a30_2000_cp limit 5;
+   mysql> select * from dlatk_lexica.met_a30_2000_cp limit 5;
    +----+---------+----------+--------------------+
    | id | term    | category | weight             |
    +----+---------+----------+--------------------+

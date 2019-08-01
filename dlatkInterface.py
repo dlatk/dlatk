@@ -10,32 +10,35 @@ import pdb
 import argparse
 import time
 from pprint import pprint
-from numpy import isnan, sqrt, log2
+from numpy import isnan, sqrt, log
 from configparser import SafeConfigParser
 import gzip
 
-
-try:
-    from dlatk.lib import wordcloud
-except ImportError:
-    print('warning: wordcloud not found.')
-from dlatk.semanticsExtractor import SemanticsExtractor
 import dlatk.dlaWorker as dlaWorker
-from dlatk.regressionPredictor import RegressionPredictor, CombinedRegressionPredictor, ClassifyToRegressionPredictor
+import dlatk.dlaConstants as dlac
+
+from dlatk import DDLA
 from dlatk.classifyPredictor import ClassifyPredictor
 from dlatk.dimensionReducer import DimensionReducer, CCA
-from dlatk.mediation import MediationAnalysis
-from dlatk import DDLA
-from dlatk.LexicaInterface import lexInterface
 from dlatk.dlaWorker import DLAWorker
 from dlatk.featureExtractor import FeatureExtractor
 from dlatk.featureGetter import FeatureGetter
 from dlatk.featureRefiner import FeatureRefiner
+from dlatk.lexicainterface import lexInterface
+from dlatk.mediation import MediationAnalysis
 from dlatk.messageAnnotator import MessageAnnotator
 from dlatk.messageTransformer import MessageTransformer
 from dlatk.outcomeGetter import OutcomeGetter
 from dlatk.outcomeAnalyzer import OutcomeAnalyzer
-import dlatk.dlaConstants as dlac
+from dlatk.regressionPredictor import RegressionPredictor, CombinedRegressionPredictor, ClassifyToRegressionPredictor
+from dlatk.semanticsExtractor import SemanticsExtractor
+from dlatk.topicExtractor import TopicExtractor
+try:
+    from dlatk.lib import wordcloud
+except ImportError:
+    print('warning: wordcloud not found.')
+
+from dlatk.lexicainterface.lexInterface import LexInterfaceParser
 
 def getInitVar(variable, parser, default, varList=False):
     if parser:
@@ -55,6 +58,9 @@ def main(fn_args = None):
     """
     :param fn_args: string - ex "-d testing -t msgs -c user_id --add_ngrams -n 1 "
     """
+
+    dlac.warn("\n\n--\nDLATK Interface Initiated\n--")
+
     start_time = time.time()
 
     ##Argument Parser:
@@ -62,6 +68,8 @@ def main(fn_args = None):
 
     # Meta variables
     group = init_parser.add_argument_group('Meta Variables', '')
+    group.add_argument('--lex_interface', dest='lexinterface', action='store_true', default=False,
+                      help='Send arguments to lexInterface.py')
     group.add_argument('--to_file', dest='toinitfile', nargs='?', const=dlac.DEF_INIT_FILE, default=None,
                       help='write flag values to text file')
     group.add_argument('--from_file', type=str, dest='frominitfile', default='',
@@ -69,7 +77,11 @@ def main(fn_args = None):
 
     init_args, remaining_argv = init_parser.parse_known_args()
 
-    if init_args.frominitfile:
+    if init_args.lexinterface:
+        lex_parser = LexInterfaceParser(parents=[init_parser])
+        lex_parser.processArgs(args=remaining_argv, parents=True)
+        sys.exit()
+    elif init_args.frominitfile:
         conf_parser = SafeConfigParser()
         conf_parser.read(init_args.frominitfile)
     else:
@@ -132,7 +144,7 @@ def main(fn_args = None):
                        help='Only permit these features when correlating with outcomes (specify feature names or if feature table then read distinct features).')
     group.add_argument('--sqrt', action='store_const', dest='valuefunc', const=lambda d: sqrt(d),
                        help='square-roots normalized group_norm freq information.')
-    group.add_argument('--log', action='store_const', dest='valuefunc', const=lambda d: log2(d+1),
+    group.add_argument('--log', action='store_const', dest='valuefunc', const=lambda d: log(d+1),
                        help='logs the normalized group_norm freq information.')
     group.add_argument('--anscombe', action='store_const', dest='valuefunc', const=lambda d: 2*sqrt(d+3/float(8)),
                        help='anscombe transforms normalized group_norm freq information.')
@@ -140,7 +152,7 @@ def main(fn_args = None):
                        help='boolean transforms normalized group_norm freq information (1 if true).')
     group.add_argument('--lex_sqrt', action='store_const', dest='lexvaluefunc', const=lambda d: sqrt(d),
                        help='square-roots normalized group_norm lexicon freq information.')
-    group.add_argument('--lex_log', action='store_const', dest='lexvaluefunc', const=lambda d: log2(d+1),
+    group.add_argument('--lex_log', action='store_const', dest='lexvaluefunc', const=lambda d: log(d+1),
                        help='logs the normalized group_norm lexicon freq information.')
     group.add_argument('--lex_anscombe', action='store_const', dest='lexvaluefunc', const=lambda d: 2*sqrt(d+3/float(8)),
                        help='anscombe transforms normalized group_norm lexicon freq information.')
@@ -172,24 +184,28 @@ def main(fn_args = None):
                        help='range of group id\'s to include in binning.')
     group.add_argument('--mask_table', type=str, metavar='TABLE', dest='masktable', default=None,
                        help='Table containing which groups run in various bins (for ttest).')
-    
+    group.add_argument('--bert_model', type=str, metavar='NAME', dest='bertmodel', default=dlac.DEF_BERT_MODEL,
+                       help='BERT model to use if extracting bert features.')
 
-    group.add_argument('--show_feat_tables', '--ls', '--show_feat_tables', action='store_true', dest='listfeattables', default=False,
+
+    group = parser.add_argument_group('MySQL Interactoins', '')
+    group.add_argument('--show_feature_tables', '--show_feat_tables', '--ls', action='store_true', dest='listfeattables', default=False,
                        help='List all feature tables for given corpdb, corptable and correl_field')
     group.add_argument('--show_tables', nargs='?', dest='showtables', default=False, const=True,
                        help='List all non-feature tables. Optional argument for "like"-style SQL call')
     group.add_argument('--describe_tables', '--desc_tables', nargs='*', dest='describetables', default=False,
                        help='')
+    group.add_argument('--view_tables', '--view_data', nargs='*', dest='viewtables', default=False,
+                       help='')
     group.add_argument('--create_random_sample', '--create_rand_sample', dest='createrandsample', default=None,
-                       nargs='+', help='')
+                       nargs='+', help='Given percentage, creates random sample of messages')
+    group.add_argument('--copy_table', '--create_copied_table', dest='createcopiedtable', default=None,
+                       nargs=2, help='OLD_TABLE NEW_TABLE copies OLD_TABLE to NEW_TABLE')
     group.add_argument('--extension', metavar='EXTENSION', dest='extension', default=None,
                        help='String added to the end of the feature table name')
     
     group.add_argument('--top_messages', type=int, dest='top_messages', nargs='?', const=dlac.DEF_TOP_MESSAGES, default=False,
                        help='Print top messages with the largest score for a given topic.')
-
-    group.add_argument('--my_switch', nargs='*', dest='myswitch', default=False)
-
 
     group = parser.add_argument_group('Outcome Variables', '')
     group.add_argument('--outcome_table', type=str, metavar='TABLE', dest='outcometable', default=getInitVar('outcometable', conf_parser, dlac.DEF_OUTCOME_TABLE),
@@ -202,25 +218,29 @@ def main(fn_args = None):
                        help='Fields in outcome table to use as controls for correlation(regression).')
     group.add_argument('--no_controls', action='store_const', const=[], dest='outcomecontrols',
                        help='Switch to override controls listed in init file.')
-    group.add_argument('--categories_to_binary', '--cat_to_bin', type=str, metavar='FIELD(S)', dest='cattobinfields', nargs='+', default=[],
+    group.add_argument('--categorical', '--categories_to_binary', '--cat_to_bin', type=str, metavar='FIELD(S)', dest='cattobinfields', nargs='+', default=[],
                        help='Fields with categorical variables to be transformed into a one hot representation')
+    group.add_argument('--multiclass', '--categories_to_integer', '--cat_to_int', type=str, metavar='FIELD(S)', dest='cattointfields', nargs='+', default=[],
+                       help='Fields with categorical variables to be transformed into a multiclass representation')
     group.add_argument('--outcome_interaction', '--interaction', type=str, metavar='TERM(S)', dest='outcomeinteraction', nargs='+', default=getInitVar('outcomeinteraction', conf_parser, dlac.DEF_OUTCOME_CONTROLS, varList=True),
                        help='Fields in outcome table to use as controls and interaction terms for correlation(regression).')
     group.add_argument('--fold_column', '--fold_labels', type=str, dest='fold_column', default=None,
                        help='Fields in outcome table to use as labels for prespecified folds in classification/regression cross-validation.')
+    group.add_argument('--test_folds', type=int, dest='test_folds', nargs='+', default=None,
+                       help='Limit tests of classification/regression cross-validation to these folds.')
     group.add_argument('--feat_names', type=str, metavar='FIELD(S)', dest='featnames', nargs='+', default=getInitVar('featnames', conf_parser, dlac.DEF_FEAT_NAMES, varList=True),
                        help='Limit outputs to the given set of features.')
     group.add_argument("--group_freq_thresh", type=int, metavar='N', dest="groupfreqthresh", default=getInitVar('groupfreqthresh', conf_parser, None),
                        help="minimum WORD frequency per correl_field to include correl_field in results")
     group.add_argument('--output_name', '--output', '--output_file', type=str, dest='outputname', default=getInitVar('outputname', conf_parser, ''),
                        help='overrides the default filename for output')
-    group.add_argument('--max_tagcloud_words', type=int, metavar='N', dest='maxtcwords', default=dlac.DEF_MAX_TC_WORDS,
+    group.add_argument('--max_wordcloud_words', '--max_tagcloud_words', type=int, metavar='N', dest='maxtcwords', default=dlac.DEF_MAX_TC_WORDS,
                        help='Max words to appear in a tagcloud')
     group.add_argument('--show_feat_freqs', action='store_true', dest='showfeatfreqs', default=dlac.DEF_SHOW_FEAT_FREQS,)
     group.add_argument('--not_show_feat_freqs', action='store_false', dest='showfeatfreqs', default=dlac.DEF_SHOW_FEAT_FREQS,
                        help='show / dont show feature frequencies in output.')
-    group.add_argument('--tagcloud_filter', action='store_true', dest='tcfilter', default=dlac.DEF_TC_FILTER,)
-    group.add_argument('--no_tagcloud_filter', action='store_false', dest='tcfilter', default=dlac.DEF_TC_FILTER,
+    group.add_argument('--tagcloud_filter', '--wordcloud_filter', action='store_true', dest='tcfilter', default=dlac.DEF_TC_FILTER,)
+    group.add_argument('--no_tagcloud_filter', '--no_wordcloud_filter', action='store_false', dest='tcfilter', default=dlac.DEF_TC_FILTER,
                        help='filter / dont filter tag clouds for duplicate info in phrases.')
     group.add_argument('--feat_labelmap_table', type=str, dest='featlabelmaptable', default=getInitVar('featlabelmaptable', conf_parser, ''),
                        help='specifies an lda mapping tablename to be used for LDA topic mapping')
@@ -228,7 +248,7 @@ def main(fn_args = None):
                        help='specifies a lexicon tablename to be used for the LDA topic mapping')
     group.add_argument('--bracket_labels', action='store_true', dest='bracketlabels', default='',
                        help='use with: feat_labelmap_lex... if used, the labelmap features will be contained within brackets')
-    group.add_argument('--comparative_tagcloud', action='store_true', dest='compTagcloud', default=False,
+    group.add_argument('--comparative_tagcloud', '--comparative_wordcloud', action='store_true', dest='compTagcloud', default=False,
                        help='used with --sample1 and --sample2, this option uses IDP to compare feature usage')
     group.add_argument('--sample1', type=str, nargs='+', dest="compTCsample1", default=[],
                        help='first sample of group to use in comparison [use with --comparative_tagcloud]'+
@@ -250,6 +270,8 @@ def main(fn_args = None):
                        help='Use Spearman R instead of Pearson.')
     group.add_argument('--logistic_reg', action='store_true', dest='logisticReg', default=False,
                        help='Use logistic regression instead of linear regression. This is better for binary outcomes.')
+    group.add_argument('--cohens_d', action='store_true', dest='cohensd', default=False,
+                       help='Report Cohen\'s D with logistic regression instead coefficients (B\'s).')
     group.add_argument('--IDP', '--idp', action='store_true', dest='IDP', default=False,
                        help='Use IDP instead of linear regression/correlation [only works with binary outcome values]')
     group.add_argument('--AUC', '--auc', action='store_true', dest='auc', default=False,
@@ -269,12 +291,14 @@ def main(fn_args = None):
                        help='Report confidence intervals.')
     group.add_argument('--freq', type=bool, dest='freq', default=True,
                        help='Report freqs.')
-    group.add_argument('--tagcloud_colorscheme', type=str, dest='tagcloudcolorscheme', default=getInitVar('tagcloudcolorscheme', conf_parser, 'multi'),
+    group.add_argument('--tagcloud_colorscheme', '--wordcloud_colorscheme', type=str, dest='tagcloudcolorscheme', default=getInitVar('tagcloudcolorscheme', conf_parser, 'multi'),
                        help='specify a color scheme to use for tagcloud generation. Default: multi, also accepts red, blue, red-random, redblue, bluered')
     group.add_argument('--clean_cloud', action='store_true', dest='cleancloud', default=False,
                    help='Replaces characters in the middle of explatives/slurs with ***. ex: f**k')
     group.add_argument('--weighted_sample', dest='weightedsample', default=dlac.DEF_WEIGHTS,
                         help='Field in outcome table to use as weights for correlation(regression).')
+    group.add_argument('--keep_low_variance_outcomes', '--keep_low_variance', dest='low_variance_thresh', action='store_false', default=dlac.DEF_LOW_VARIANCE_THRESHOLD,
+                        help='Does not remove low variance outcomes and controls from analysis')
 
 
 
@@ -327,6 +351,8 @@ def main(fn_args = None):
                        help='use sparse representation for X when training / testing')
     group.add_argument('--folds', type=int, metavar='NUM', dest='folds', default=dlac.DEF_FOLDS,
                        help='Number of folds for functions that run n-fold cross-validation')
+    group.add_argument('--outlier_to_mean', '--outliers_to_mean', dest='outlier_to_mean', nargs='?', type=float, default=False, const=dlac.DEF_OUTLIER_THRESHOLD,
+                        help='')
     group.add_argument('--picklefile', type=str, metavar='filename', dest='picklefile', default='',
                        help='Name of file to save or load pickle of model')
     group.add_argument('--all_controls_only', action='store_true', dest='allcontrolsonly', default=False,
@@ -374,7 +400,6 @@ def main(fn_args = None):
                        'can be used with or without --use_collocs')
     group.add_argument('--no_lower', action='store_false', dest='lowercaseonly', default=dlac.LOWERCASE_ONLY,
                        help='')
-
     group.add_argument('--add_lex_table', action='store_true', dest='addlextable',
                        help='add a lexicon-based feature table. (uses: l, weighted_lexicon, can flag: anscombe).')
     group.add_argument('--add_corp_lex_table', action='store_true', dest='addcorplextable',
@@ -387,6 +412,29 @@ def main(fn_args = None):
                        help='add pos with ngrams feature table. (can flag: sqrt, anscombe).')
     group.add_argument('--add_lda_table', metavar='LDA_MSG_TABLE', dest='addldafeattable',
                        help='add lda feature tables. (can flag: sqrt, anscombe).')
+    group.add_argument('--print_tokenized_lines', metavar="FILENAME", dest='printtokenizedlines', default = None,
+                       help='prints tokenized version of messages to lines.')
+    group.add_argument('--print_joined_feature_lines', metavar="FILENAME", dest='printjoinedfeaturelines', default = None,
+                       help='prints feature table with line per group joined by spaces (with MWEs joined by underscores) for import into Mallet.')
+    group.add_argument('--add_topiclex_from_topicfile', action='store_true', dest='addtopiclexfromtopicfile',
+                       help='creates a lexicon from a topic file, requires --topic_file --topic_lexicon --lex_thresh --topic_lex_method')
+    group.add_argument('--add_timexdiff', action='store_true', dest='addtimexdiff',
+                       help='extract timeex difference features (mean and std) per group.')
+    group.add_argument('--add_postimexdiff', action='store_true', dest='addpostimexdiff',
+                       help='extract timeex difference features and POS tags per group.')
+    group.add_argument('--add_wn_nopos', action='store_true', dest='addwnnopos',
+                       help='extract WordNet concept features (not considering POS) per group.')
+    group.add_argument('--add_wn_pos', action='store_true', dest='addwnpos',
+                       help='extract WordNet concept features (considering POS) per group.')
+    group.add_argument('--add_fleschkincaid', '--add_fkscore', action='store_true', dest='addfkscore',
+                       help='add flesch-kincaid scores, averaged per group.')
+    group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
+                       help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
+    group.add_argument('--add_bert', type=str, nargs='?', dest='addbert', default=None, const=dlac.DEF_BERT_AGGREGATION,
+                       help='add BERT mean features (optionally add min, max, --bert_model large)')
+
+
+    group = parser.add_argument_group('Messages Transformation Actions', '')
     group.add_argument('--add_tokenized', action='store_true', dest='addtokenized',
                        help='adds tokenized version of message table.')
     group.add_argument('--add_sent_tokenized', action='store_true', dest='addsenttokenized',
@@ -407,25 +455,7 @@ def main(fn_args = None):
                        help='add lda topic version of message table.')
     group.add_argument('--add_outcome_feats', action='store_true', dest='addoutcomefeats',
                        help='add a feature table from the specified outcome table.')
-    group.add_argument('--add_topiclex_from_topicfile', action='store_true', dest='addtopiclexfromtopicfile',
-                       help='creates a lexicon from a topic file, requires --topic_file --topic_lexicon --lex_thresh --topic_lex_method')
-    group.add_argument('--print_tokenized_lines', metavar="FILENAME", dest='printtokenizedlines', default = None,
-                       help='prints tokenized version of messages to lines.')
-    group.add_argument('--print_joined_feature_lines', metavar="FILENAME", dest='printjoinedfeaturelines', default = None,
-                       help='prints feature table with line per group joined by spaces (with MWEs joined by underscores) for import into Mallet.')
-    group.add_argument('--add_timexdiff', action='store_true', dest='addtimexdiff',
-                       help='extract timeex difference features (mean and std) per group.')
-    group.add_argument('--add_postimexdiff', action='store_true', dest='addpostimexdiff',
-                       help='extract timeex difference features and POS tags per group.')
-    group.add_argument('--add_wn_nopos', action='store_true', dest='addwnnopos',
-                       help='extract WordNet concept features (not considering POS) per group.')
-    group.add_argument('--add_wn_pos', action='store_true', dest='addwnpos',
-                       help='extract WordNet concept features (considering POS) per group.')
-    group.add_argument('--add_fleschkincaid', '--add_fkscore', action='store_true', dest='addfkscore',
-                       help='add flesch-kincaid scores, averaged per group.')
-    group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
-                       help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
-
+    
     group = parser.add_argument_group('Message Cleaning Actions', '')
     group.add_argument('--language_filter', '--lang_filter',  type=str, metavar='FIELD(S)', dest='langfilter', nargs='+', default=[],
                        help='Filter message table for list of languages.')
@@ -436,10 +466,13 @@ def main(fn_args = None):
                        help='Removes users (by correl_field grouping) with percentage of spam messages > threshold, writes to new table corptable_nospam '
                        'with new column is_spam. Defaul threshold = %s'%dlac.DEF_SPAM_FILTER)
 
-    group = parser.add_argument_group('LDA Helper Actions', '')
+    group = parser.add_argument_group('LDA Actions', '')
     group.add_argument('--add_message_id', type=str, nargs=2, dest='addmessageid',
                        help='Adds the message IDs to the topic distributions and stores the result in --output_name. Previously addMessageID.py (two agrs: MESSAGE_FILE, STATE_FILE)')
-
+    group.add_argument('-m', '--lda_msg_tbl', metavar='TABLE', dest='ldamsgtbl', type=str, default=dlac.DEF_LDA_MSG_TABLE,
+                           help='LDA Message Table')
+    group.add_argument('--create_dists', action='store_true', dest='createdists', 
+                           help='Create conditional prob, and likelihood distributions.')
 
     group = parser.add_argument_group('Semantic Extraction Actions', '')
     group.add_argument('--add_ner', action='store_true', dest='addner',
@@ -490,18 +523,20 @@ def main(fn_args = None):
                        help='output a correlation matrix with all combinations of controls.')
     group.add_argument('--topic_dupe_filter', action='store_true', dest='topicdupefilter',
                        help='remove topics not passing a duplicate filter from the correlation matrix')
-    group.add_argument('--tagcloud', action='store_true', dest='tagcloud',
+    group.add_argument('--tagcloud', '--wordcloud', action='store_true', dest='tagcloud',
                        help='produce data for making wordle tag clouds (same variables as correlate).')
-    group.add_argument('--topic_tagcloud', action='store_true', dest='topictc',
+    group.add_argument('--topic_tagcloud', '--topic_wordcloud', action='store_true', dest='topictc',
                        help='produce data for making topic wordles (must be used with a topic-based feature table and --topic_lexicon).')
-    group.add_argument('--corp_topic_tagcloud', action='store_true', dest='corptopictc',
+    group.add_argument('--corp_topic_tagcloud', '--corp_topic_wordcloud', action='store_true', dest='corptopictc',
                        help='produce data for making topic wordles (must be used with a topic-based feature table and --topic_lexicon).')
-    group.add_argument('--make_wordclouds', action='store_true', dest='makewordclouds',
+    group.add_argument('--make_wordclouds', '--make_tagclouds', action='store_true', dest='makewordclouds',
                        help="make wordclouds from the output tagcloud file.")
-    group.add_argument('--make_topic_wordclouds', action='store_true', dest='maketopicwordclouds',
+    group.add_argument('--make_topic_wordclouds', '--make_topic_tagclouds', action='store_true', dest='maketopicwordclouds',
                        help="make topic wordclouds, needs an output topic tagcloud file.")
-    group.add_argument('--make_all_topic_wordclouds', action='store_true', dest='makealltopicwordclouds',
+    group.add_argument('--make_all_topic_wordclouds', '--make_all_topic_tagclouds', action='store_true', dest='makealltopicwordclouds',
                        help="make all topic wordclouds for a given topic lexicon.")
+    group.add_argument('--keep_duplicates', action='store_true', dest='keepduplicates',
+                       help="Create topic wordclouds for duplicate filtered topics.")
     group.add_argument('--use_featuretable_feats', action='store_true', dest='useFeatTableFeats',
                        help='use 1gram table to be used as a whitelist when plotting')
     group.add_argument('--outcome_with_outcome', action='store_true', dest='outcomeWithOutcome',
@@ -517,7 +552,7 @@ def main(fn_args = None):
     group.add_argument('--interaction_ddla_pvalue', dest='ddlaSignificance', type=float,default=0.001,
                        help="Set level of significance to filter ddla features by")
     group.add_argument('--DDLA', dest='ddlaFiles', nargs=2, help="Compares two csv's that have come out of DLA. Requires --freq and --nvalue to have been used")
-    group.add_argument('--DDLATagcloud', dest='ddlaTagcloud', action='store_true',
+    group.add_argument('--DDLATagcloud', '--DDLAWordcloud', dest='ddlaTagcloud', action='store_true',
                        help="Makes a tagcloud file from the DDLA output. Uses deltaR as size, r_INDEX as color. ")
 
     group = parser.add_argument_group('Multiple Regression Actions', 'Find multiple relationships at once')
@@ -529,7 +564,7 @@ def main(fn_args = None):
                        help='train a regression model to predict outcomes based on feature table')
     group.add_argument('--test_regression', action='store_true', dest='testregression', default=False,
                        help='train/test a regression model to predict outcomes based on feature table')
-    group.add_argument('--combo_test_regression', '--combo_test_reg', action='store_true', dest='combotestregression', default=False,
+    group.add_argument('--combo_test_regression', '--combo_test_reg', '--nfold_test_regression', action='store_true', dest='combotestregression', default=False,
                        help='train/test a regression model with and without all combinations of controls')
     group.add_argument('--predict_regression', '--predict_reg', action='store_true', dest='predictregression', default=False,
                        help='predict outcomes based on loaded or trained regression model')
@@ -544,12 +579,27 @@ def main(fn_args = None):
     group.add_argument('--predict_cv_to_feats', '--predict_combo_to_feats', '--predict_regression_all_to_feats', type=str, dest='predictalltofeats', default=None,
                        help='predict outcomes into a feature file (provide a name)')
 
+    group = parser.add_argument_group('Factor Adaptation Actions', '')
+    group.add_argument('--fs_params', action='store_true', dest='fsparams', default=False, help = 'send values for feature selection parameters')    
+    group.add_argument('--k_best', type=str, dest='kbest', nargs='+', help='vaiables needed for feature selection .')
+    group.add_argument('--pca_comp', type=str, dest='pcacomp', nargs='+', help='vaiables needed for feature selection .')
+    group.add_argument('--adaptation_factors', '--factors', type=str, metavar='FIELD(S)', dest='adaptationfactors', nargs='+', help='Fields in outcome table to use as factors for adaptation in FA or RFA.')
+    group.add_argument('--factor_selection_type', type=str , dest = 'factorselectiontype', default='rfe', help='chooses the type of factor selection, either pca or rfe.')
+    group.add_argument('--num_of_factors', type=int, dest='numoffactors', nargs='+',
+                       help='specifies the number of factors for factor selection. 0 means all factor1. ') 
+    group.add_argument('--paired_factors',  action='store_true',  dest = 'pairedfactors', default=False , help='multiplying factors to themself, to make bigger pool of factors')
+    group.add_argument('--report', action='store_true', dest='report', default=False, help = 'Indicates if we want to store a report on outputfile+"_.report".')
+    group.add_argument('--factor_addition', action='store_true', dest='factoraddition', default=False, help = 'Indicates we want to append factors to language.')
+    group.add_argument('--factor_adaptation', '--fa',  action='store_true', dest='factoradaptation', default=False, help = 'Indicates we want to factor_adapt language features.')
+    group.add_argument('--res_factor_adaptation', '--rfa' , action='store_true', dest='residualizedfactoradaptation', default=False, help = 'Indicates we want to apply residualized factor adaptation.')    
+
+
     group = parser.add_argument_group('Classification Actions', '')
     group.add_argument('--train_classifiers', '--train_class', action='store_true', dest='trainclassifiers', default=False,
                        help='train classification models for each outcome field based on feature table')
     group.add_argument('--test_classifiers', action='store_true', dest='testclassifiers', default=False,
                        help='trains and tests classification for each outcome')
-    group.add_argument('--combo_test_classifiers', action='store_true', dest='combotestclassifiers', default=False,
+    group.add_argument('--combo_test_classifiers', '--nfold_test_classifiers', action='store_true', dest='combotestclassifiers', default=False,
                        help='train/test a regression model with and without all combinations of controls')
     group.add_argument('--predict_classifiers', '--predict_class', action='store_true', dest='predictclassifiers', default=False,
                        help='predict outcomes bases on loaded training')
@@ -557,6 +607,8 @@ def main(fn_args = None):
                        help="Computes ROC curves and outputs to PDF")
     group.add_argument('--predict_classifiers_to_feats', type=str, dest='predictctofeats', default=None,
                        help='predict outcomes into a feature file (provide a name)')
+    group.add_argument('--predict_probabilities_to_feats', '--predict_probs_to_feats', type=str, dest='predictprobstofeats', default=None,
+                       help='predict probabilities into a feature file (provide a name)')
     group.add_argument('--predict_classifiers_to_outcome_table', type=str, dest='predictCtoOutcomeTable', default=None,
                        help='predict outcomes into an outcome table (provide a name)')
     group.add_argument('--regression_to_lexicon', dest='regrToLex', type=str, default=None,
@@ -691,6 +743,29 @@ def main(fn_args = None):
     else:
         setGFTWarning = True
 
+    args.integrationmethod = ''
+    if args.factoradaptation:
+        args.integrationmethod = 'fa'  
+        if args.factoraddition:
+            args.integrationmethod += '_plus'
+    elif args.residualizedfactoradaptation:
+        args.integrationmethod = 'rfa'
+        if args.factoraddition:
+            args.integrationmethod += '_plus'
+    elif args.factoraddition:
+        args.integrationmethod = 'plus'
+
+    if args.adaptationfactors:
+        args.outcomefields = args.outcomefields + args.adaptationfactors
+    elif args.factoradaptation or args.residualizedfactoradaptation or args.factoraddition:
+        args.adaptationfactors = args.outcomecontrols
+        args.outcomefields = args.outcomefields + args.adaptationfactors
+
+    if args.fsparams:
+        args.featureselectionparams = { 'kbest': args.kbest , 'pca': args.pcacomp }
+    else:
+        args.featureselectionparams = None
+
     DLAWorker.lexicon_db = args.lexicondb
 
     ##Process Arguments
@@ -710,10 +785,10 @@ def main(fn_args = None):
         return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.corpdir, wordTable = args.wordTable)
 
     def OG():
-        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.groupfreqthresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, fold_column = args.fold_column)
+        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, fold_column = args.fold_column)
 
     def OA():
-        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.groupfreqthresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
+        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
 
     def FR():
         return FeatureRefiner(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
@@ -743,6 +818,8 @@ def main(fn_args = None):
                               args.featnames,
                               wordTable = args.wordTable)
                 for featTable in featTable]
+    def TE():
+        return TopicExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, dlac.DEF_ENCODING, dlac.DEF_UNICODE_SWITCH, args.ldamsgtbl)
 
     dlaw = None
     ma = None
@@ -754,6 +831,7 @@ def main(fn_args = None):
     oa = None
     fg = None
     fgs = None #feature getters
+    te = None
 
     # if not fe:
     #  fe = FE()
@@ -761,12 +839,16 @@ def main(fn_args = None):
     # exit()
 
     # SQL interface methods
-    if args.listfeattables or args.showtables or args.describetables or args.createrandsample:
+    if args.listfeattables or args.showtables or args.describetables or args.createrandsample or args.viewtables or args.createcopiedtable:
         if not dlaw: dlaw = DLAW()
 
     if isinstance(args.describetables, list) and len(args.describetables) == 0: 
         if not dlaw: dlaw = DLAW()
         args.describetables = True
+
+    if isinstance(args.viewtables, list) and len(args.viewtables) == 0: 
+        if not dlaw: dlaw = DLAW()
+        args.viewtables = True
 
     if args.listfeattables or args.showtables:
         feat_table = True if args.listfeattables else False
@@ -779,7 +861,12 @@ def main(fn_args = None):
         row_format ="{:>25}{:>25}{:>10}{:>10}{:>10}{:>15}" 
         print(row_format.format(*header))
         for row in description:
-            print(row_format.format(*[r if r else '' for r in row]))
+            print(row_format.format(*[r if r or r == 0 else '' for r in row]))
+
+    def printTableData(data):
+        row_format = "{:>15}" * len(data[0]) 
+        for row in data:
+            print(row_format.format(*[' ' + str(r)[0:14] if r or r == 0 else '' for r in row]))
 
     if args.describetables:
         if args.corptable:
@@ -795,12 +882,33 @@ def main(fn_args = None):
         if isinstance(args.describetables, list):
             for tbl in args.describetables: printTableDesc(dlaw.describeTable(table_name=tbl))
 
+    if args.viewtables:
+        if args.corptable:
+            printTableData(dlaw.viewTable(table_name=args.corptable))
+        if isinstance(args.feattable, str):
+            printTableData(dlaw.viewTable(table_name=args.feattable))
+        elif isinstance(args.feattable, list):
+            for ftable in args.feattable:
+                printTableData(dlaw.viewTable(table_name=ftable))
+        if args.outcometable:
+            printTableData(dlaw.viewTable(table_name=args.outcometable))
+        if isinstance(args.viewtables, str): args.viewtables = [args.viewtables]
+        if isinstance(args.viewtables, list):
+            for tbl in args.viewtables: printTableData(dlaw.viewTable(table_name=tbl))
+
     if args.createrandsample:
         if len(args.createrandsample) > 2: 
             print("Error: Only two optional arguments for --create_random_sample")
             sys.exit(1)
-        percentage, random_seed = args.createrandsample if len(args.createrandsample) > 1 else (args.createrandsample[0], dlac.DEFAUL_RANDOM_SEED)
+        percentage, random_seed = args.createrandsample if len(args.createrandsample) > 1 else (args.createrandsample[0], dlac.DEFAULT_RANDOM_SEED)
         rand_table = dlaw.createRandomSample(float(percentage), random_seed, where=args.groupswhere)
+
+    if args.createcopiedtable:
+        if len(args.createcopiedtable) != 2: 
+            print("Error: Need two arguments for --create_copied_table")
+            sys.exit(1)
+        new_table = dlaw.createCopiedTable(args.createcopiedtable[0], args.createcopiedtable[1], where=args.groupswhere)
+        
 
     #Feature Extraction:
     if args.addngrams:
@@ -870,6 +978,15 @@ def main(fn_args = None):
         if not fe: fe = FE()
         args.feattable = fe.addPosTable(valueFunc = args.valuefunc, keep_words = args.pos_ngram)
 
+    if args.addbert:
+        print(args.addbert)#debug
+        print(args.bertmodel)#debug
+        if not fe: fe = FE()
+        aggregations = dlac.DEF_BERT_AGGREGATION
+        if len(args.addbert) > 1:
+            aggregations = args.addbert
+        args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=aggregations, valueFunc = args.valuefunc)
+
     if args.addldafeattable:
         if not fe: fe = FE()
         args.feattable = fe.addLDAFeatTable(args.addldafeattable, valueFunc = args.valuefunc)
@@ -881,7 +998,7 @@ def main(fn_args = None):
         langLex = lexInterface.Lexicon(mysql_host = args.mysql_host)
         langLex.loadLexicon(args.addpnames[1])
         args.feattable = fe.addPNamesTable(namesLex.getLexicon(), langLex.getLexicon(),  valueFunc = args.valuefunc)
-
+        
     if args.addwnnopos:
         if not fe: fe = FE()
         args.feattable = fe.addWNNoPosFeat(valueFunc = args.valuefunc, featValueFunc=args.lexvaluefunc)
@@ -986,6 +1103,12 @@ def main(fn_args = None):
         stateFile.close()
         writeFile.close()
 
+    if args.createdists:
+        if not te:
+            te = TE()
+        te.createDistributions()
+
+
     if args.addtopiclexfromtopicfile:
         if not fe: fe = FE()
         if not args.topicfile or not args.topiclexicon or not args.topiclexmethod:
@@ -1079,7 +1202,7 @@ def main(fn_args = None):
 
     if args.addfeatnorms:
         if not fr: fr=FR()
-        fr.addFeatNorms()
+        fr.addFeatNorms(groupFreqThresh = args.groupfreqthresh, setGFTWarning = setGFTWarning)
 
     #create whitelist / blacklist
     if args.categories:
@@ -1139,6 +1262,9 @@ def main(fn_args = None):
       fg.getTopMessages(args.lextable, outputFile, args.top_messages, args.feat_whitelist)
 
     #Outcome Only options:
+    if args.p_correction_method == '':
+        args.bonferroni = False
+    
     if args.printcsv:
         pprint(args)
         if not oa: oa = OA()
@@ -1179,13 +1305,14 @@ def main(fn_args = None):
         if not oa: oa = OA()
         correls = oa.IDPcomparison(fg, args.compTCsample1, args.compTCsample2, blacklist=blacklist, whitelist=whitelist)
 
-    if not args.compTagcloud and not args.cca and (args.correlate or args.rmatrix or args.tagcloud or args.topictc or args.corptopictc or args.barplot or args.featcorrelfilter or args.makewordclouds or args.maketopicwordclouds or args.outcomeWithOutcomeOnly):
+    if not args.compTagcloud and not args.cca and (args.correlate or args.rmatrix or args.tagcloud or args.topictc or args.corptopictc or args.barplot or args.featcorrelfilter or args.makewordclouds or args.maketopicwordclouds or args.outcomeWithOutcomeOnly or args.interactionDdla):
         if not oa: oa = OA()
         if not fg: fg = FG()
         if args.interactionDdla:
             # if len(args.outcomefieldsprint "There were no features with significant interactions") > 1: raise NotImplementedError("Multiple outcomes with DDLA not yet implemented")
             # Step 1 Interaction
-            args.outcomeinteraction = [args.interactionDdla]
+            if not args.outcomeinteraction:
+              args.outcomeinteraction = [args.interactionDdla]
             oa = OA()
             print("##### STEP 1: Finding features with significant interaction term")
             correls = oa.correlateWithFeatures(fg, args.spearman,
@@ -1197,7 +1324,6 @@ def main(fn_args = None):
 
             # whitelist should be different for multiple outcomes
             ddla_whitelists = {inter_key: [k for k, i in correls[inter_key].items() if i[1] < args.ddlaSignificance] for inter_key in inter_keys}
-            print("Maarten", ddla_whitelists)
 
             correls = {"INTER["+k+"]": v for k, v in correls.items()}
 
@@ -1205,7 +1331,6 @@ def main(fn_args = None):
                 if not ddla_whitelist:
                     continue
                 out = out_name.split(" from ")[-1]
-                print("Maarten", out_name, out)
 
                 whitelist = DLAWorker.makeBlackWhiteList(ddla_whitelist, '', [], args.lexicondb, args.useunicode)
 
@@ -1214,14 +1339,14 @@ def main(fn_args = None):
                 # Step 2: do correlations on both ends of the interaction variable
 
                 print("##### STEP 2: getting correlations within groups")
-                print("args.outcomecontrols", args)
                 args.outcomeinteraction = []
                 args.outcomefields = [out]
                 og = OG()
                 if args.groupswhere:
-                    where = args.interactionDdla + "=1 and WHERE " + args.groupswhere
+                    where = args.interactionDdla + "=1 and " + args.groupswhere
                 else:
                     where = args.interactionDdla+"=1"
+                print("##### WHERE: %s" % where)
                 correls_1 = oa.correlateWithFeatures(fg, args.spearman,
                                                      args.p_correction_method, args.outcomeinteraction, blacklist,
                                                      whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly,
@@ -1230,9 +1355,10 @@ def main(fn_args = None):
                 correls.update({"["+k+"]_1": v for k, v in correls_1.items()})
                 og = OG()
                 if args.groupswhere:
-                    where = args.interactionDdla + "=0 and WHERE " + args.groupswhere
+                    where = args.interactionDdla + "=0 and " + args.groupswhere
                 else:
                     where = args.interactionDdla+"=0"
+                print("##### WHERE: %s" % where)
                 correls_0 = oa.correlateWithFeatures(fg, args.spearman,
                                                      args.p_correction_method, args.outcomeinteraction, blacklist,
                                                      whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly,
@@ -1246,7 +1372,7 @@ def main(fn_args = None):
         elif args.auc:
             correls = oa.aucWithFeatures(fg, outcomeWithOutcome=args.outcomeWithOutcome, includeFreqs=args.showfeatfreqs, blacklist=blacklist, whitelist=whitelist, bootstrapP = args.bootstrapp, groupsWhere=args.groupswhere)
         else:
-            correls = oa.correlateWithFeatures(fg, args.spearman, args.p_correction_method, args.outcomeinteraction, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly, logisticReg=args.logisticReg, outputInteraction=args.outputInteractionTerms, groupsWhere=args.groupswhere)
+            correls = oa.correlateWithFeatures(fg, args.spearman, args.p_correction_method, args.outcomeinteraction, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, args.outcomeWithOutcomeOnly, logisticReg=(args.logisticReg or args.cohensd), cohensD=args.cohensd, outputInteraction=args.outputInteractionTerms, groupsWhere=args.groupswhere)
         if args.topicdupefilter:#remove duplicate topics (keeps those correlated more strongly)
             correls = oa.topicDupeFilterCorrels(correls, args.topiclexicon)
 
@@ -1312,10 +1438,8 @@ def main(fn_args = None):
             cnt = 0
             for featR in featRs.items():
                 if featR[1][1] < args.maxP: cnt +=1
-            try:
-                pprint(sorted(list(featRs.items()), key= lambda f: f[1] if not isnan(f[1][0]) else 0),depth=3, compact=True)
-            except:
-                pass
+            #pprint(featRs)#debug
+            pprint(sorted(list(featRs.items()), key= lambda f: f[1][0] if not isnan(f[1][0]) else 0),depth=3, compact=True)
             print("\n%d features significant at p < %s" % (cnt, args.maxP))
 
     if args.rmatrix and not args.cca:
@@ -1325,7 +1449,8 @@ def main(fn_args = None):
             outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
             if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
             if args.spearman: outputFile += '.spearman'
-        oa.correlMatrix(correls, outputFile, outputFormat='html', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq)
+        metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
+        oa.correlMatrix(correls, outputFile, outputFormat='html', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq, metric=metric)
 
     if args.csv and not args.cca and correls:
         if args.outputname:
@@ -1334,29 +1459,32 @@ def main(fn_args = None):
             outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
             if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
             if args.spearman: outputFile += '.spearman'
-        oa.correlMatrix(correls, outputFile, outputFormat='csv', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq)
+        metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
+        oa.correlMatrix(correls, outputFile, outputFormat='csv', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq, metric=metric)
 
     if args.tagcloud:
+        metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
         outputFile = makeOutputFilename(args, fg, oa, suffix="_tagcloud")
-        oa.printTagCloudData(correls, args.maxP, outputFile, str(args), maxWords = args.maxtcwords, duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, cleanCloud = args.cleancloud)
+        oa.printTagCloudData(correls, args.maxP, outputFile, str(args), maxWords = args.maxtcwords, duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, cleanCloud = args.cleancloud, metric=metric)
     if args.makewordclouds:
         if not args.tagcloud:
             print("ERROR, can't use --make_wordclouds without --tagcloud", file=sys.stderr)
             sys.exit()
-        wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True)
+        wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True, metric=metric)
 
     if args.topictc or args.corptopictc:
         if args.corptopictc: oa.lexicondb = oa.corpdb
+        metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
         outputFile = makeOutputFilename(args, fg, oa, suffix='_topic_tagcloud')
         # use plottingWhitelistPickle to link to a pickle file containing the words driving the categories
-        oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats, maxWords=args.numtopicwords, cleanCloud=args.cleancloud)
+        oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats, maxWords=args.numtopicwords, cleanCloud=args.cleancloud, metric=metric)
         # don't want to base on this: maxWords = args.maxtcwords)
     if args.maketopicwordclouds:
         if not args.topictc and not args.corptopictc:
             print("ERROR, can't use --make_topic_wordclouds without --topic_tagcloud or --corp_topic_tagcloud", file=sys.stderr)
             sys.exit()
         print(outputFile)
-        wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True)
+        wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True, metric=metric, keepDuplicates=args.keepduplicates)
 
     comboCorrels = None
     if args.combormatrix:
@@ -1497,13 +1625,14 @@ def main(fn_args = None):
     dr = None #Dimension Reducer
 
     if args.trainregression or args.testregression or args.combotestregression or args.predictregression or args.predictrtofeats or args.predictalltofeats or args.regrToLex or args.predictRtoOutcomeTable:
+        if args.predictrtofeats and isinstance(args.low_variance_thresh, (int, float)): args.low_variance_thresh = False
         if not og: og = OG()
         if not fgs: fgs = FGs()
         if args.featureselectionstring:
             RegressionPredictor.featureSelectionString = args.featureselectionstring
         elif args.featureselection:
             RegressionPredictor.featureSelectionString = dlac.DEF_RP_FEATURE_SELECTION_MAPPING[args.featureselection]
-        rp = RegressionPredictor(og, fgs, args.model)
+        rp = RegressionPredictor(og, fgs, args.model, args.outlier_to_mean)
     if args.testcombregression:
         if not og: og = OG()
         if not fgs: fgs = FGs() #all feature getters
@@ -1522,14 +1651,13 @@ def main(fn_args = None):
     if args.loadmodels and rp:
         rp.load(args.picklefile)
 
-    if (args.regrToLex or args.classToLex) and isinstance(args.feattable, list):
-        print("Multiple feature tables are not handled with option --prediction_to_lexicon")
-        exit(1)
-    elif (args.regrToLex or args.classToLex) and '16to' in args.feattable and '16to16' not in args.feattable:
+    if (args.regrToLex or args.classToLex) and '16to' in args.feattable and '16to16' not in args.feattable:
         print("WARNING: using an non 16to16 feature table")
+    if (args.regrToLex or args.classToLex) and args.standardize:
+        print("WARNING: You must use the --no_standardize flag when creating data driven lexica. ")
 
     if args.trainregression:
-        rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample)
+        rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample, outputName = args.outputname, saveFeatures = True if args.outputname else False)
 
     if args.testregression:
         rp.test(sparse = args.sparse, blacklist = blacklist,  standardize = args.standardize, groupsWhere = args.groupswhere)
@@ -1538,7 +1666,7 @@ def main(fn_args = None):
     if args.combotestregression or args.controladjustreg:
         if not og: og = OG()
         if not fg: fg = FG()
-        if not rp: rp = RegressionPredictor(og, fgs, args.model)
+        if not rp: rp = RegressionPredictor(og, fgs, args.model, args.outlier_to_mean)
 
         comboScores = None
         if args.combotestregression:
@@ -1546,7 +1674,7 @@ def main(fn_args = None):
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
                                            nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval,
                                            standardize = args.standardize, residualizedControls = args.res_controls, groupsWhere = args.groupswhere, 
-                                           weightedSample = args.weightedsample)
+                                           weightedSample = args.weightedsample, adaptationFactorsName = args.adaptationfactors, featureSelectionParameters=args.featureselectionparams , factorSelectionType=args.factorselectiontype, numOfFactors=args.numoffactors, pairedFactors=args.pairedfactors, outputName = args.outputname, report=args.report, integrationMethod = args.integrationmethod)
         elif args.controladjustreg:
             comboScores = rp.adjustOutcomesFromControls(standardize = args.standardize, sparse = args.sparse,
                                                         allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
@@ -1555,9 +1683,10 @@ def main(fn_args = None):
             outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.predicted_data.csv', 'w')
-            RegressionPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
+            RegressionPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
-            outputStream.close()
+            if args.outputname: 
+                outputStream.close()
         #TODO:
         # if args.pred_feat:
         #     RegressionPredictor.printComboControlPredictionsToFeats(comboScores, label=pred_feat, paramString=str(args), delimiter='|')
@@ -1565,9 +1694,10 @@ def main(fn_args = None):
             outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.variance_data.csv', 'w')
-            RegressionPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
+            RegressionPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
-            outputStream.close()
+            if args.outputname: 
+                outputStream.close()
         elif not args.pred_csv:
             pprint(comboScores)
 
@@ -1576,7 +1706,7 @@ def main(fn_args = None):
         crp.test(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere)
 
     if args.predictregression:
-        rp.predict(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere)
+        rp.predict(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere, outputName = args.outputname)
 
     if args.predictrtofeats and rp:
         if not fe: fe = FE()
@@ -1597,7 +1727,8 @@ def main(fn_args = None):
 
     ##CLASSIFICATION:
     cp = None
-    if args.trainclassifiers or args.testclassifiers or args.combotestclassifiers or args.predictclassifiers or args.predictctofeats or args.classToLex or args.roc or args.predictCtoOutcomeTable:
+    if args.trainclassifiers or args.testclassifiers or args.combotestclassifiers or args.predictclassifiers or args.predictctofeats or args.predictprobstofeats or args.classToLex or args.roc or args.predictCtoOutcomeTable:
+        if args.predictctofeats and isinstance(args.low_variance_thresh, (int, float)): args.low_variance_thresh = False
         if args.model == dlac.DEF_MODEL:#if model wasnt changed form a regression model
             args.model = dlac.DEF_CLASS_MODEL
         if not og: og = OG()
@@ -1606,7 +1737,7 @@ def main(fn_args = None):
             ClassifyPredictor.featureSelectionString = args.featureselectionstring
         elif args.featureselection:
             ClassifyPredictor.featureSelectionString = dlac.DEF_CP_FEATURE_SELECTION_MAPPING[args.featureselection]
-        cp = ClassifyPredictor(og, fgs, args.model) #todo change to a method variables (like og...etc..)
+        cp = ClassifyPredictor(og, fgs, args.model, args.outlier_to_mean) #todo change to a method variables (like og...etc..)
 
 
     if args.loadmodels and cp:
@@ -1622,8 +1753,10 @@ def main(fn_args = None):
     if args.combotestclassifiers:
         comboScores = cp.testControlCombos(standardize = args.standardize, sparse = args.sparse, blacklist = blacklist,
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
-                                           nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval, stratifyFolds=args.stratifyfolds,
-                                           adaptTables = args.adapttable, adaptColumns = args.adaptcolumns, groupsWhere = args.groupswhere)
+                                           nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv),
+                                           weightedEvalOutcome = args.weightedeval, stratifyFolds=args.stratifyfolds,
+                                           adaptTables = args.adapttable, adaptColumns = args.adaptcolumns,
+                                           groupsWhere = args.groupswhere, testFolds = args.test_folds)
         if args.csv:
             outputStream = sys.stdout
             if args.outputname:
@@ -1641,6 +1774,7 @@ def main(fn_args = None):
             print("Wrote to: %s" % str(outputStream))
             outputStream.close()
         if args.prob_csv:
+            outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.prediction_probabilities.csv', 'w')
             ClassifyPredictor.printComboControlPredictionProbsToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
@@ -1648,14 +1782,14 @@ def main(fn_args = None):
             outputStream.close()
 
     if args.predictclassifiers:
-        cp.predict(sparse = args.sparse, groupsWhere = args.groupswhere)
+        cp.predict(sparse = args.sparse, groupsWhere = args.groupswhere, probs = True)
 
     if args.roc:
         cp.roc(sparse = args.sparse, output_name = args.outputname if args.outputname else "ROC",  standardize = args.standardize, groupsWhere = args.groupswhere)
 
-    if args.predictctofeats and cp:
+    if (args.predictctofeats or args.predictprobstofeats) and cp:
         if not fe: fe = FE()
-        cp.predictToFeatureTable(sparse = args.sparse, fe = fe, name = args.predictctofeats, groupsWhere = args.groupswhere)
+        cp.predictToFeatureTable(sparse = args.sparse, fe = fe, name = args.predictctofeats or args.predictprobstofeats, groupsWhere = args.groupswhere, probs = args.predictprobstofeats)
 
     if args.predictCtoOutcomeTable:
         if not fgs: fgs = FGs()
@@ -1671,7 +1805,7 @@ def main(fn_args = None):
     if args.trainclasstoreg or args.testclasstoreg or args.predictclasstoreg:
         if not og: og = OG()
         if not fg: fg = FG()
-        c2rp = ClassifyToRegressionPredictor(og, fg, modelR = args.model) #todo change to a method variables (like og...etc..)
+        c2rp = ClassifyToRegressionPredictor(og, fg, modelR = args.model) #todo change to a method variables (like og...etc..
 
     if args.trainclasstoreg:
         c2rp.train(sparse = args.sparse, groupsWhere = args.groupswhere)

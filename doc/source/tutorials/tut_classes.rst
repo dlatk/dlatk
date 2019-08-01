@@ -12,7 +12,7 @@ With the exception of *FeatureWorker* all classes can be created as follows:
 .. code-block:: python
 
 	from dlatk.featureExtractor import FeatureExtractor
-	fe = FeatureExtractor() # use default values set in fwConstants
+	fe = FeatureExtractor() # use default values set in dlaConstants
 	fe = FeatureExtractor(corpdb="someDB", corptable="someTB", correl_field="someField", ...) # specify values
 
 *FeatureWorker* does not allow you to use default values so you must do the following:
@@ -54,7 +54,7 @@ Initialize a FeatureStar object:
 	from dlatk.featureStar import FeatureStar
 
 	# get instances of all classes
-	fs = FeatureStar() # defaults specified in fwConstants
+	fs = FeatureStar() # defaults specified in dlaConstants
 	fs = FeatureStar(corpdb="someDB", corptable="someTB", correl_field="someField", ...) # specify values
 	fs = FeatureStar.fromFile('/path/to/init/file') # pass values from file
 

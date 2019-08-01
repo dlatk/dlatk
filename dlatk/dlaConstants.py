@@ -31,12 +31,12 @@ MAX_SQL_SELECT = 1000000 # how many rows are selected at a time
 MYSQL_HOST = '127.0.0.1'
 VARCHAR_WORD_LENGTH = 36 #length to allocate var chars per words
 LOWERCASE_ONLY = True #if the db is case insensitive, set to True
-MAX_TO_DISABLE_KEYS = 50000 #number of groups * n must be less than this to disable keys
+MAX_TO_DISABLE_KEYS = 100000 #number of groups * n must be less than this to disable keys
 MAX_SQL_PRINT_CHARS = 256
 
 ##Corpus Settings:
 DEF_CORPDB = 'dla_tutorial'
-DEF_CORPTABLE = 'msgs'
+DEF_CORPTABLE = ''
 DEF_CORREL_FIELD = 'user_id'
 DEF_MESSAGE_FIELD = 'message'
 DEF_MESSAGEID_FIELD = 'message_id'
@@ -55,7 +55,7 @@ DEF_MYSQL_ENGINE = 'MYISAM'
 
 ##lexInterface settings
 DEF_TERM_FIELD = 'term'
-DEF_MIN_WORD_FREQ = 1000;
+DEF_MIN_WORD_FREQ = 1000
 DEF_NUM_RAND_MESSAGES = 100
 MAX_WRITE_RECORDS = 1000 #maximum number of records to write at a time (for add_terms...)
 
@@ -64,12 +64,13 @@ DEF_OUTCOME_TABLE = ''
 DEF_OUTCOME_FIELD = ''
 DEF_OUTCOME_FIELDS = []
 DEF_OUTCOME_CONTROLS = []
-DEF_GROUP_FREQ_THRESHOLD = int(1000) #min. number of total feature values that the group has, to use it
+DEF_GROUP_FREQ_THRESHOLD = 1000 #min. number of total feature values that the group has, to use it
 DEF_SHOW_FEAT_FREQS = True
 DEF_MAX_TC_WORDS = 100
 DEF_MAX_TOP_TC_WORDS = 15
 DEF_TC_FILTER = True
 DEF_WEIGHTS = ''
+DEF_LOW_VARIANCE_THRESHOLD = 0.0
 
 ##Feature Settings:
 DEF_N = int(1)
@@ -78,9 +79,9 @@ DEF_MIN_FREQ = int(1) #min frequency per group to keep (don't advise above 1)
 DEF_P_OCC = float(.01) #percentage of groups a feature must appear in, to keep it
 DEF_PMI = 3.0
 DEF_MIN_FEAT_SUM = 0 #minimum sum of feature total to keep
-DEF_STANFORD_SEGMENTER = '../Tools/StanfordSegmenter/stanford-segmenter-2014-08-27/segment.sh'
-DEF_STANFORD_POS_MODEL = '../Tools/StanfordTagger/stanford-postagger-2012-01-06/models/english-bidirectional-distsim.tagger' # for code release
-DEF_LEXICON_DB = 'permaLexicon'
+DEF_STANFORD_SEGMENTER = '../tools/StanfordSegmenter/stanford-segmenter-2014-08-27/segment.sh'
+DEF_STANFORD_POS_MODEL = '../tools/StanfordTagger/stanford-postagger-2012-01-06/models/english-bidirectional-distsim.tagger' # for code release
+DEF_LEXICON_DB = 'dlatk_lexica'
 DEF_FEAT_TABLE = 'feat$1gram$messages_en$user_id$16to16$0_01'
 DEF_COLLOCTABLE = 'test_collocs'
 DEF_COLUMN_COLLOC = "feat"
@@ -107,33 +108,57 @@ DEF_P_MAPPING = { # maps old R method names to statsmodel names
     }
 DEF_CONF_INT = 0.95
 DEF_TOP_MESSAGES = 10
+DEF_BERT_AGGREGATION=['mean']
+DEF_BERT_MODEL='base-uncased'
 
 ##Prediction Settings:
 DEF_MODEL = 'ridgecv'
 DEF_CLASS_MODEL = 'svc'
 DEF_COMB_MODELS = ['ridgecv']
 DEF_FOLDS = 5
+DEF_OUTLIER_THRESHOLD = 2.5
 DEF_RP_FEATURE_SELECTION_MAPPING = {
     'magic_sauce': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.1)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+
+    'magic_sauce_light': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=100.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.3)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+
+    'magic200': 'Pipeline([("1_univariate_select", SelectFwe(alpha=60.0, score_func=f_regression)), ("2_rpca", RandomizedPCA(copy=True, iterated_power=3, n_components=200, random_state=42, whiten=False))])',
+
     'topic_ngram_ms': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(2*(X.shape[0]*.20)/len(self.featureGetters) if X.shape[1] > 2000 else 2*(X.shape[0]*.75)/len(self.featureGetters)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+
+    'magic_sauce_1pct': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=min(int((X.shape[0]/(len(self.featureGetters)+0.1))*.001), int(X.shape[1]*0.2)), random_state=42, whiten=False, iterated_power=3))])',
+
+    'topic_ngram_ms': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(2*(X.shape[0]*.20)/len(self.featureGetters) if X.shape[1] > 2000 else 2*(X.shape[0]*.75)/len(self.featureGetters)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+
+    'ms_old1':'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=0.60)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+
+    'ms_old2': 'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])', 
+
     'univariatefwe': 'SelectFwe(f_regression, alpha=60.0)',
-    'pca': 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
+
+    'pca': 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.5), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
     'none': None,
 }
 DEF_CP_FEATURE_SELECTION_MAPPING = {
-    'magic_sauce': 'Pipeline([("1_univariate_select", SelectFwe(f_classif, alpha=30.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
-    'univariatefwe': 'SelectFwe(f_classif, alpha=60.0)',
+    'magic_sauce': 'Pipeline([("1_univariate_select", SelectFwe(f_classif, alpha=30.0)), ("2_rpca", RandomizedPCA(n_components=min(max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), 50), X.shape[1]), random_state=42, whiten=False, iterated_power=3))])',
+    'univariatefwe': 'SelectFwe(f_classif, alpha=30.0)',
+    'univariatefwe30': 'SelectFwe(f_classif, alpha=30.0)',
+    'univariatefwe10': 'SelectFwe(f_classif, alpha=10.0)',
+    'univariatefwe60': 'SelectFwe(f_classif, alpha=60.0)',
     'pca': 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
     'none': None,
 }
 DEFAULT_MAX_PREDICT_AT_A_TIME = 100000
-DEFAUL_RANDOM_SEED = 42
+DEFAULT_RANDOM_SEED = 42
 
 ##Mediation Settings:
 DEF_MEDIATION_BOOTSTRAP = 1000
 DEF_OUTCOME_PATH_STARTS = []
 DEF_OUTCOME_MEDIATORS = []
 DEF_MAX_MED_SUMMARY_SIZE = 10 # maximum number of results to print in summary for each path start / outcome pair
+
+##LDA settings
+DEF_LDA_MSG_TABLE = 'messages_en_lda$msgs_en_tok_a30'
 
 ##Language filtering settings
 AVAILABLE_LANGUAGES = """
@@ -149,7 +174,7 @@ ug, uk, ur, vi, vo, wa, xh, zh, zu"""
 DEF_SPAM_FILTER = 0.2 # threshold for removing spam users
 
 ##CoreNLP settings
-DEF_CORENLP_DIR = '../Tools/corenlp-python' # for code release
+DEF_CORENLP_DIR = '../tools/corenlp-python' # for code release
 DEF_CORENLP_SERVER_COMMAND = './corenlp/corenlp.py'
 DEF_CORENLP_PORT = 20202   #default: 20202
 #CORE NLP PYTHON SERVER COMMAND (must be running): ./corenlp/corenlp.py -p 20202 -q
@@ -276,6 +301,25 @@ def bonfPCorrection(tup, numFeats):
     """given tuple with second entry a p value, multiply by num of feats and return"""
     return (tup[0], tup[1]*numFeats) + tup[2:]
 
+def cohensD(x, y):
+    """Calculate Cohen's D effect size
+
+    Parameters
+    ----------
+    x : :obj:`list`
+        list of observations
+    y : :obj:`list`
+        list of class (0 or 1) values for each observation
+    """
+    x0, x1 = list(), list()
+    for i, e in enumerate(y):
+        if e > 0:
+            x1.append(x[i])
+        else:
+            x0.append(x[i])
+    return (mean(x1) - mean(x0)) / (sqrt((std(x0, ddof=1) ** 2 + std(x1, ddof=1) ** 2) / 2))
+
+
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
@@ -293,12 +337,11 @@ def conf_interval(r, samp_size, percent=DEF_CONF_INT):
         tup = (np.nan, np.nan)
     return tup
 
-
 def meanXperY(x, y):
     """find the mean x for each label y"""
     sums = dict()
     counts = dict()
-    for i in xrange(len(x)):
+    for i in range(len(x)):
         try:
             sums[y[i]] += x[i]
             counts[y[i]] += 1
@@ -306,7 +349,7 @@ def meanXperY(x, y):
             sums[y[i]] = x
             counts[y[i]] = 1
     means = dict()
-    for yKey in sums.iterkeys():
+    for yKey in sums:
         means[yKey] = sums[yKey] / float(counts[yKey])
     return means
 
@@ -317,13 +360,7 @@ def fiftyChecks(args):
     if Xc is not None:
         r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [np.append(Xc, permutation(Xend), 1) for i in range(50)]])
     else:
-        # newX = permutation(Xend).reshape(len(Xend),1)
-        # print type(Xend)
-        # print dir(Xend)
-        # print y
-        # r = roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1])
         r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [permutation(Xend).reshape(len(Xend),1) for i in range(50)]])
-    #if r: print r
     return r
 
 def getGroupFreqThresh(correl_field=None):
@@ -337,6 +374,22 @@ def getGroupFreqThresh(correl_field=None):
         elif any(field in correl_field.lower() for field in ["county", "cnty", "cty", "fips"]):
             group_freq_thresh = 40000
     return group_freq_thresh
+
+def getMetric(logistic=False, cohensd=False, idp=False, spearman=False, controls=False):
+    """Return a string which best represents the metric used in the analysis. String is used in output (csv, wordcloud, etc.)"""
+    if logistic:
+        metric = 'B'
+    elif cohensd:
+        metric = 'D'
+    elif idp:
+        metric = 'R'
+    elif spearman:
+        metric = 'rho'
+    elif controls:
+        metric = 'beta'
+    else:
+        metric = 'r'
+    return metric
 
 def permaSortedKey(s):
     if isinstance(s, (list, tuple)):
@@ -382,7 +435,8 @@ def pCorrection(pDict, method=DEF_P_CORR, pLevelsSimes=[0.05, 0.01, 0.001], rDic
         new_pDict = dict(sortedPTuples)
     else:
         keys = list(pDict.keys())
-        reject, pvals_corrected, alphacSidak, alphacBonf  = mt.multipletests(pvals=list(pDict.values()), method=method)
+        reject, pvals_corrected, alphacSidak, alphacBonf  = mt.multipletests(
+            pvals=[1 if isnan(p) else p for p in [pDict[k] for k in keys]], method=method)
         i = 0
         for key in keys:
             new_pDict[key] = pvals_corrected[i]

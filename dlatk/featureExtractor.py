@@ -11,10 +11,10 @@ import traceback
 from xml.dom.minidom import parseString as xmlParseString
 from datetime import timedelta
 
-
 #math / stats:
 from math import floor, log10
 from numpy import mean, std
+import numpy as np
 #import imp
 
 #nltk
@@ -24,11 +24,12 @@ try:
 except ImportError:
     print("warning: unable to import nltk.tree or nltk.corpus or nltk.data")
 
+    
 #infrastructure
 from .dlaWorker import DLAWorker
 from . import dlaConstants as dlac
 from . import textCleaner as tc
-from .mysqlMethods import mysqlMethods as mm
+from .mysqlmethods import mysqlMethods as mm
 
 #local / nlp
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
@@ -37,12 +38,11 @@ try:
     import jsonrpclib
     from simplejson import loads
 except ImportError:
-    dlac.warn("Cannot import jsonrpclib or simplejson (cannot use addPOSAndTimexDiffFeatTable)")
+    print("warning from FeatureExtractor: unable to import jsonrpclib or simplejson")
     pass
 try:
     from textstat.textstat import textstat
 except ImportError:
-    dlac.warn("Cannot import textstat (cannot use addFleschKincaidTable)")
     pass
 
 #feature extractor constants:
@@ -1169,6 +1169,158 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
+    def addBERTTable(self, modelName = 'base-uncased', aggregations = ['mean'], layersToKeep = [9,10], tableName = None, valueFunc = lambda d: d):
+        """Creates feature tuples (correl_field, feature, values) table where features are parsed phrases
+
+        Parameters
+        ----------
+        modelName : :obj:`str`, optional
+            name of the bert model to use. 
+        aggregations : :obj:`lambda`, optional
+            Scales the features by the function given
+
+        Returns
+        -------
+        bertTableName : str
+            Name of the Bert Feature table
+        """
+        #hugging face's pretrained Google Bert
+        try: 
+            import torch
+            from pytorch_pretrained_bert import BertTokenizer, BertModel, BertForMaskedLM
+        except ImportError:
+            dlac.warn("warning: unable to import torch or pytorch_pretrained_bert")
+            dlac.warn("Please install pytorch and pretrained bert.")
+            sys.exit(1)
+
+        # Load pre-trained model tokenizer (vocabulary)
+        layersToKeep = np.array(layersToKeep, dtype='int')
+        dlac.warn("Loading BERT-%s..." % modelName)
+        bTokenizer = BertTokenizer.from_pretrained('bert-' + modelName)
+        bModel = BertModel.from_pretrained('bert-' + modelName)
+        bModel.eval()
+        cuda = True
+        try:
+            bModel.to('cuda')
+        except:
+            dlac.warn("  unable to use CUDA (GPU) for BERT")
+            cuda = False
+        dlac.warn("Done.")
+        
+        #CREATE TABLEs:
+        bertTableName = self.createFeatureTable('BERT_'+modelName[:3]+'_'+''.join([str(ag[:2]) for ag in aggregations]),
+                                                                                  "VARCHAR(8)", 'DOUBLE', tableName, valueFunc)
+
+        #SELECT / LOOP ON CORREL FIELD FIRST:
+        sentTable = self.corptable+'_stoks'
+        assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with Bert featrue extraction (run --add_sent_tokenized" % sentTable
+        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
+        msgs = 0#keeps track of the number of messages read
+        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
+
+        ##iterate through correl_ids (group id):
+        dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
+        mm.disableTableKeys(self.corpdb, self.dbCursor, bertTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        for cfRow in cfRows:
+            cf_id = cfRow[0]
+            mids = set() #currently seen message ids
+            bertMessageVectors = [] #holds the aggregated BERT features per message (to be aggregated further)
+
+            #grab sents by messages for that correl field:
+            for messageRow in self.getMessagesForCorrelField(cf_id, messageTable = sentTable, warnMsg=True):
+                message_id = messageRow[0]
+                try:
+                    sents = loads(messageRow[1])
+                except NameError: 
+                    dlac.warn("Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
+                    sys.exit(1)
+
+                if not message_id in mids and len(sents) > 0:
+                    msgs+=1
+
+
+                    #Add tokens to BERT:
+                    sents[0] = '[CLS] ' + sents[0]
+                    sentsTok = [bTokenizer.tokenize(s+' [SEP]') for s in sents]
+                    #print(sentsTok)#debug
+
+                    #calculate for all pairs:
+                    encsPerSent = [[] for i in range(len(sentsTok))]#holds multiple encodings per sentence (based on first/second)
+                    for i in range(len(sentsTok)):
+                        thisPair = sentsTok[i:i+2]
+                        thisPairFlat = [t for s in thisPair for t in s]
+                        
+                        # Convert token to vocabulary indices
+                        indexedToks = bTokenizer.convert_tokens_to_ids(thisPairFlat)
+                        # Define segs:
+                        segIds = [j for j in range(len(thisPair)) for x in thisPair[j]]
+                        #print(segIds) #debug
+
+                        # Convert inputs to PyTorch tensors
+                        toksTens = torch.tensor([indexedToks])
+                        segsTens = torch.tensor([segIds])
+                        if cuda: 
+                            try:
+                                toksTens = toksTens.to('cuda')
+                                segsTens = segsTens.to('cuda')
+                            except:
+                                dlac.warn("! unable to use CUDA (gpus) for tensors even though it worked for model.")
+                        #print (toksTens, segsTens) #debug
+
+                        # Combine vectors of each select layers; store as first sent and second sent:
+                        with torch.no_grad():
+                            encAllLayers, _ = bModel(toksTens, segsTens)
+                            #save layers:
+                            encSelectLayers = []
+                            for lyr in layersToKeep:
+                                encSelectLayers.append(encAllLayers[int(lyr)].detach().cpu().numpy())
+                            twoSentEnc = np.mean(encSelectLayers, axis=0) #TODO: consider not averaging across layers
+                            if (i < (len(sentsTok) - 1)) or (len(sentsTok) == 1):
+                                sent1enc = twoSentEnc[:,:len(thisPair[0])]
+                                encsPerSent[i].append(sent1enc)
+                            if (i+1) < len(sentsTok):
+                                sent2enc = twoSentEnc[:,len(thisPair[0]):]
+                                encsPerSent[i+1].append(sent2enc)
+
+                    #Aggregate the (up to 2; one as first; one as second) vectors per sentence
+                    sentEncs = []
+                    #print(encsPerSent)#debug
+                    for i in range(len(sentsTok)):
+                        sentEncPerWord = np.mean(encsPerSent[i], axis=0)[0]
+                        #aggregate words into setence:
+                        #print(sentEncPerWord.shape)#debug
+                        sentEncs.append(np.mean(sentEncPerWord, axis=0)) #TODO: consider more than mean? 
+                    #print([(p[0], p[1].shape) for p in zip(sentsTok, sentEncs)])#debug
+
+                    #Aggregate across sentences:
+                    bertMessageVectors.append(np.mean(sentEncs, axis=0)) #TODO: consider more than mean?
+                   
+                    if msgs % dlac.PROGRESS_AFTER_ROWS/5 == 0: #progress update
+                        dlac.warn("Parsed Messages Read: %.2fk" % msgs/1000.0)
+                    mids.add(message_id)
+
+
+            #Aggregate message vectors:
+            if len(bertMessageVectors) > 0:
+                bertFeats = dict()
+                for ag in aggregations:
+                    thisAg = eval("np."+ag+"(bertMessageVectors, axis=0)")
+                    bertFeats.update([(str(k)+ag[:2], v) for (k, v) in enumerate(thisAg)])
+
+                #print(bertFeats)#debug            
+                #write phrases to database (no need for "REPLACE" because we are creating the table)
+                wsql = """INSERT INTO """+bertTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                bertRows = [(k, v, valueFunc(v)) for k, v in bertFeats.items()] #adds group_norm and applies freq filter
+                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, bertRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+
+        dlac.warn("Done Reading / Inserting.")
+
+        dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
+        mm.enableTableKeys(self.corpdb, self.dbCursor, bertTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        dlac.warn("Done\n")
+        return bertTableName;
+
+    
     def addFleschKincaidTable(self, tableName = None, valueFunc = lambda d: d, removeXML = True, removeURL = True):
         """Creates feature tuples (correl_field, feature, values) table where features are flesch-kincaid scores.
 
@@ -1191,7 +1343,12 @@ class FeatureExtractor(DLAWorker):
         """
 
         ##NOTE: correl_field should have an index for this to be quick
-        fk_score = textstat.flesch_kincaid_grade
+        
+        try:
+            fk_score = textstat.flesch_kincaid_grade
+        except NameError: 
+            dlac.warn("Cannot import textstat (cannot use addFleschKincaidTable)")
+            sys.exit(1)
 
         #CREATE TABLE:
         featureName = 'flkin'
@@ -1288,8 +1445,14 @@ class FeatureExtractor(DLAWorker):
         #create table name
         if not tableName:
             tableName = 'feat$'+featureName+'$'+self.corptable+'$'+self.correl_field
-            if valueFunc:
-                tableName += '$' + str(16)+'to'+"%d"%round(valueFunc(16))
+            if 'cat_' in featureName:
+                if valueFunc and round(valueFunc(16)) != 16:
+                    tableName += '$' + str(16)+'to'+"%d"%round(valueFunc(16))
+                wt_abbrv = self.wordTable.split('$')[1][:4]
+                tableName += '$' + wt_abbrv
+            else:
+                if valueFunc:
+                    tableName += '$' + str(16)+'to'+"%d"%round(valueFunc(16))
             if extension:
                 tableName += '$' + extension
 
@@ -1303,12 +1466,16 @@ class FeatureExtractor(DLAWorker):
             dlac.warn("Your message table '%s' (or the group field, '%s') probably doesn't exist (or the group field)!" %(self.corptable, self.correl_field))
             raise IndexError("Your message table '%s' probably doesn't exist!" % self.corptable)
 
+        featureTypeAndEncoding = featureType
+        if featureType[0].lower() == 't' or featureType[0].lower() == 'v':
+            #string type; add unicode: 
+            featureTypeAndEncoding = "%s CHARACTER SET %s COLLATE %s" % (featureType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()])
         #create sql
         drop = """DROP TABLE IF EXISTS %s""" % tableName
         sql = """CREATE TABLE %s (id BIGINT(16) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                 group_id %s, feat %s CHARACTER SET %s COLLATE %s, value %s, group_norm DOUBLE,
+                 group_id %s, feat %s, value %s, group_norm DOUBLE,
                  KEY `correl_field` (`group_id`), KEY `feature` (`feat`))
-                 CHARACTER SET %s COLLATE %s ENGINE=%s""" %(tableName, correl_fieldType, featureType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()], valueType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()], dlac.DEF_MYSQL_ENGINE)
+                 CHARACTER SET %s COLLATE %s ENGINE=%s""" %(tableName, correl_fieldType, featureTypeAndEncoding, valueType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()], dlac.DEF_MYSQL_ENGINE)
 
         #run sql
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
@@ -1470,11 +1637,11 @@ class FeatureExtractor(DLAWorker):
         Parameters
         ----------
         lexiconTableName : str
-            ?????
+            Name of base lexicon table
         lowercase_only : boolean
             use only lowercase charngrams if True
         tableName : :obj:`str`, optional
-            ?????
+            Prespecified name of extracted lexicon feature table, use at own risk
         valueFunc : :obj:`lambda`, optional
             Scales the features by the function given
         isWeighted : :obj:`boolean`, optional
@@ -1561,6 +1728,7 @@ class FeatureExtractor(DLAWorker):
         reporting_int = max(floor(reporting_percent * len(groupIdRows)), 1)
         groupIdCounter = 0
         for groupIdRow in groupIdRows:
+
             groupId = groupIdRow[0]
 
             #i. create the group_id category counts & keep track of how many features they have total
@@ -1623,7 +1791,9 @@ class FeatureExtractor(DLAWorker):
                 rows = [(gid, k, cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+v)) for k, v in cat_to_function_summed_weight_gn.items()]
             else:
                 rows = [(gid, k.encode('utf-8'), cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+v)) for k, v in cat_to_function_summed_weight_gn.items()]
-
+            
+            # if lex has *no* intercept, add '_intercept' for each group_id
+            if not _intercepts: rows.append((gid, '_intercept', 1, 1.0))
 
             # iii. Insert data into new feautre table
             # Add new data to rows to be inserted into the database
@@ -2066,7 +2236,11 @@ class FeatureExtractor(DLAWorker):
         """
         ##NOTE: correl_field should have an index for this to be quick
 
-        corenlpServer = jsonrpclib.Server("http://localhost:%d"% serverPort)
+        try:
+            corenlpServer = jsonrpclib.Server("http://localhost:%d"% serverPort)
+        except NameError: 
+            dlac.warn("Cannot import jsonrpclib or simplejson")
+            sys.exit(1)
 
         #corenlpServer = getCoreNLPServer(pipeline = ['tokenizer', 'pos',] serverPort = serverPort)
 
@@ -2109,7 +2283,11 @@ class FeatureExtractor(DLAWorker):
                         message = tc.removeNonAscii(message)
                     message = tc.shrinkSpace(message)
 
-                    parseInfo = loads(corenlpServer.parse(message))
+                    try:
+                        parseInfo = loads(corenlpServer.parse(message))
+                    except NameError: 
+                        dlac.warn("Cannot import jsonrpclib or simplejson")
+                        sys.exit(1)
                     #print parseInfo #debug
                     newDiffs, thisNEtags, thisWords = self.parseCoreNLPForTimexDiffs(parseInfo, messageDT)
                     #print newDiffs #debug
@@ -2192,7 +2370,11 @@ class FeatureExtractor(DLAWorker):
 
         """
         ##NOTE: correl_field should have an index for this to be quick
-        corenlpServer = jsonrpclib.Server("http://localhost:%d"% serverPort)
+        try:
+            corenlpServer = jsonrpclib.Server("http://localhost:%d"% serverPort)
+        except NameError: 
+            dlac.warn("Cannot import jsonrpclib or simplejson")
+            sys.exit(1)
 
         #CREATE TABLES:
         featureName = 'timex'
@@ -2246,7 +2428,14 @@ class FeatureExtractor(DLAWorker):
                         message = tc.removeNonAscii(message)
                     message = tc.shrinkSpace(message)
 
-                    parseInfo = loads(corenlpServer.parse(message))
+                    try:
+                        parseInfo = loads(corenlpServer.parse(message))
+                    except NameError: 
+                        dlac.warn("Cannot import jsonrpclib or simplejson")
+                        sys.exit(1)
+                    except ConnectionRefusedError as cre:
+                        dlac.warn("Add Timex POS: Can not connect to timex parser server on port: %d\n"%serverPort+str(cre))
+                        sys.exit(1)
 
                     #TIMEX PROCESSING
                     newDiffs, thisNEtags, thisWords = self.parseCoreNLPForTimexDiffs(parseInfo, messageDT)

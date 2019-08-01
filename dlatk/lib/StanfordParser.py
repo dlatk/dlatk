@@ -19,15 +19,16 @@ import re
 from pprint import pprint
 import glob
 
-##DEFAULTS FOR RELEASED VERSION
+#DEFAULTS FOR RELEASED VERSION
 from ..dlaConstants import warn
 try: 
-    _InstallPath = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '/Tools/StanfordParser/' # folder
+    _InstallPath = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '/tools/StanfordParser/' # folder
     _InstallDir = glob.glob(_InstallPath + "stanford-parser-full*")[0]
 except:
     _InstallPath = ""
     _InstallDir = ""
     pass
+
 
 _DefaultParams ={
     'save_file' : 'parsed.data',

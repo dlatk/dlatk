@@ -1,18 +1,20 @@
 .. _fwflag_ls:
-====
---ls
-====
+=====================
+--show_feature_tables
+=====================
 Switch
 ======
 
---ls
+--show_feature_tables
 
 Description
 ===========
 
 See all available feature tables in given database, message table and correl field.
 
-SQL style wildcards ('%') will work with both :doc:`fwflag_t` and :doc:`fwflag_c` to see feature tables across message table or groupings
+SQL style wildcards ('%') will work with both :doc:`fwflag_t` and :doc:`fwflag_c` to see feature tables across message table or groupings.
+
+Aliases: --show_feat_tables and --ls
 
 Other Switches
 ==============
@@ -28,7 +30,7 @@ See user level features for the message table *msgs*:
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --ls
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --show_feature_tables
 
 	SQL QUERY: SHOW TABLES FROM dla_tutorial LIKE 'feat$%$msgs$user_id$%' 
 	Found 13 available feature tables
@@ -50,7 +52,7 @@ See features extracted at any level for the message table *msgs*:
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs -c '%' --ls
+	dlatkInterface.py -d dla_tutorial -t msgs -c '%' --show_feature_tables
 
 	SQL QUERY: SHOW TABLES FROM dla_tutorial LIKE 'feat$%$msgs$user_id$%' 
 	Found 13 available feature tables

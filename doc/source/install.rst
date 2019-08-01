@@ -9,7 +9,7 @@ Please see :doc:`install_faq` for common install issues.
 Recommended Install
 ===================
 
-The easiest way to install dlatk is through `docker <https://github.com/pennsignals/dlatk-docker>`_ or through pip (with sudo privileges):
+The easiest way to install dlatk is through Docker (follow the :doc:`tutorials/tut_docker` tutorial) or through pip (with sudo privileges):
 
 .. code-block:: bash
 
@@ -23,6 +23,8 @@ If you do not have sudo then you can use the --user flag
 
 This will install all of the required Python dependencies listed below. See `Full List of Dependencies`_.
 
+**Note**: some features in DLATK require other non-Python packages (besides MySQL). The Docker installation will install everything whereas `pip` will not. Please see notes below on installing other dependencies. 
+
 Full Install
 ============
 
@@ -33,7 +35,9 @@ Before installing DLATK you need to install the necessary system requirements (M
 
 Linux
 ^^^^^
-*WARNING*: This will install MySQL on your computer.
+
+.. warning::
+   This will install MySQL on your computer.
 
 Install the required Ubuntu libraries. The requirements.sys can be found on the `DLATK GitHub page <http://www.github.com/dlatk/dlatk>`_.   The ``r-base`` package might be difficult to install and can be removed from ``requirements.sys`` if needed though this will limit some minor functionality.
 
@@ -46,7 +50,9 @@ DLATK has been tested on Ubuntu 14.04.
 
 OSX (with brew)
 ^^^^^^^^^^^^^^^
-*WARNING*: This will install MySQL on your computer.
+
+.. warning::
+   This will install MySQL on your computer.
 
 Install dependencies with brew.
 
@@ -210,17 +216,17 @@ Any calls to dlatkInterface.py will open MySQL. We assume any table with text da
 * message: text data
 * message_id: unique numeric identifier for each message
 
-All lexicon tables are assumed to be in a database called permaLexicon (a sample database with this name is distributed with the release). To change this you must edit fwConstants.py: ``DEF_LEXICON_DB = 'permaLexicon'``
+All lexicon tables are assumed to be in a database called dlatk_lexica (a sample database with this name is distributed with the release). To change this you must edit dlaConstants.py: ``DEF_LEXICON_DB = 'dlatk_lexica'``
 
 Sample Datasets
 ---------------
 
-DLATK comes packaged with two sample databases: dla_tutorial and permaLexicon. See :doc:`datasets` for more information on the databases. To install them use the following:
+DLATK comes packaged with two sample databases: dla_tutorial and dlatk_lexica. See :doc:`datasets` for more information on the databases. To install them use the following:
 
 .. code-block:: bash
 
 		mysql -u username -p  < /path/to/dlatk/data/dla_tutorial.sql
-		mysql -u username -p  < /path/to/dlatk/data/permaLexicon.sql
+		mysql -u username -p  < /path/to/dlatk/data/dlatk_lexica.sql
 
 The path to DLATK can be found using the following:
 
@@ -228,7 +234,8 @@ The path to DLATK can be found using the following:
 
 		python -c "import dlatk; print(dlatk.__file__)"
 
-*WARNING*: if these databases already exist the above commands will add tables to the db.
+.. warning::
+   If the above databases already exist then the above commands will add tables to the them.
 
 Next Steps
 ----------

@@ -19,7 +19,6 @@ except ImportError:
         import rpy2.robjects as ro
         from rpy2.rinterface import RNULLType
     except ImportError:
-        warn("rpy2 cannot be imported")
         pass
     pass
 
@@ -27,7 +26,6 @@ import pandas as pd
 try:
     import pandas.rpy.common as com
 except ImportError:
-    warn("pandas.rpy.common cannot be imported")
     pass
 
 from inspect import ismethod
@@ -39,7 +37,7 @@ from itertools import combinations
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import RandomizedLasso
 from sklearn.cross_validation import StratifiedKFold, KFold, ShuffleSplit, train_test_split
-from sklearn.decomposition import RandomizedPCA, MiniBatchSparsePCA, PCA, KernelPCA, NMF, SparsePCA
+from sklearn.decomposition import RandomizedPCA, MiniBatchSparsePCA, PCA, KernelPCA, NMF, SparsePCA, FactorAnalysis
 from sklearn.grid_search import GridSearchCV 
 from sklearn import metrics
 from sklearn.feature_selection import f_regression, SelectPercentile, SelectKBest
@@ -121,26 +119,33 @@ class DimensionReducer:
     
     params = {
             #'nmf' : { 'n_components': 15, 'init': 'nndsvd', 'sparseness': None, 'beta': 1, 'eta' : 0.1, 'tol': .0001, 'max_iter' : 200, 'nls_max_iter': 2000, 'random_state' :42 },
-            'nmf' : { 'n_components': 30, 'init': 'nndsvd', 'solver':'cd', 'l1_ratio': 0.95, 'alpha': 10, 'max_iter' : 200, 'nls_max_iter': 2000, 'random_state' :42 },
+            #'nmf' : { 'n_components': 30, 'init': 'nndsvd', 'solver':'cd', 'l1_ratio': 0.95, 'alpha': 10, 'max_iter' : 200, 'random_state' :42 },
+            'nmf' : { 'n_components': 30, 'init': 'nndsvd', 'random_state' :42 },
 
             'pca' : { 'n_components': 'mle', 'whiten': False},
             #'pca' : { 'n_components': 'mle', 'whiten': True},
 
             #'sparsepca': {'n_components':None, 'alpha':1, 'ridge_alpha':0.01, 'method': 'lars', 'n_jobs':4, 'random_state':42},
-            'sparsepca': {'n_components':5, 'alpha':1, 'ridge_alpha':0.01, 'method': 'cd', 'n_jobs':4, 'random_state':42},
+            'sparsepca': {'n_components':50, 'alpha':1, 'ridge_alpha':0.01, 'method': 'cd', 'n_jobs':8, 'random_state':42},
+            'mbsparsepca': {'n_components':50, 'alpha':1, 'batch_size':10, 'ridge_alpha':0.01, 'method': 'cd', 'n_jobs':8, 'random_state':42},
             
             'lda': { 'nb_topics':50, 'dictionary':None, 'alpha':None },
 
             'rpca': {'n_components':15, 'random_state':42, 'whiten':False, 'iterated_power':3},
 
+            'fa': {'n_components': 10, 'random_state': 42}
+    
             }
+
     # maps the identifier of the algorithm used to the actual class name from the module
     modelToClassName = {
         'nmf' : 'NMF',
         'pca' : 'PCA',
         'sparsepca': 'SparsePCA',
+        'mbsparsepca': 'MiniBatchSparsePCA',
         'lda' : 'LDA',
         'rpca' : 'RandomizedPCA',
+        'fa' : 'FactorAnalysis'
         }
 
     def __init__(self, fg, modelName='nmf', og=None, n_components=None):
@@ -230,7 +235,7 @@ class DimensionReducer:
             X = alignDictsAsX(groupNormValues + controlValues, sparse, returnKeyList= False)
             (self.clusterModels['noOutcome'], self.scalers['noOutcome'], self.fSelectors['noOutcome']) = self._fit(X, standardize)
 
-    def _fit(self, X, y=[], standardize=True):
+    def _fit(self, X, y=[], standardize=True, rotate=False):
         """does the actual regression training, can be used by both train and test"""
 
         sparse = True
@@ -260,17 +265,7 @@ class DimensionReducer:
             X = fSelector.fit_transform(X, y)
             print(" after feature selection: (N, features): %s" % str(X.shape))
 
-           
-#        if hasMultValuesPerItem(self.cvParams[self.modelName.lower()]) and self.modelName.lower()[-2:] != 'cv':
-#            #grid search for classifier params:
-#            gs = GridSearchCV(eval(self.modelToClassName[self.modelName.lower()]+'()'), 
-#                              self.cvParams[self.modelName.lower()], n_jobs = self.cvJobs)
-#            print "[Performing grid search for parameters over training]"
-#            gs.fit(X, y, cv=ShuffleSplit(len(y), n_iterations=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
-#
-#            print "best estimator: %s (score: %.4f)\n" % (gs.best_estimator_, gs.best_score_)
-#            return gs.best_estimator_, scaler, fSelector
-#        else:
+
         # no grid search
         print("[Doing clustering using : %s]" % self.modelName.lower())
         cluster = eval(self.modelToClassName[self.modelName.lower()] + '()')
@@ -283,10 +278,15 @@ class DimensionReducer:
         else:
             cluster.fit(X)
             
-#        print "coefs"
-#        print cluster.coef_
+        # print("components:")
+        # print(cluster.components_)
         print("model: %s " % str(cluster))
 
+        if rotate:
+            XFCC = cluster.components_.T
+            R, T = rotate_promax(XFCC)
+            cluster.components_ = R
+     
         return cluster, scaler, fSelector
     
     def transform(self, standardize=True, sparse=False, restrictToGroups=None):
@@ -374,12 +374,13 @@ class DimensionReducer:
             (n,m) = component_mat.shape
             print('components shape : %s', str(component_mat.shape))
             for i in range(n):
-                reduction_dict['rfeat'+str(i)] = dict()
+                reduction_dict['component_'+str(i)] = dict()
                 for j in range(m):
-                     if component_mat[i][j] > 0:
+                     if abs(component_mat[i][j]) > 0:
                          #print "feature name: %s"% self.featureNames[j] 
-                         reduction_dict['rfeat'+str(i)][self.featureNames[j]] = component_mat[i][j]
+                         reduction_dict['component_'+str(i)][self.featureNames[j]] = component_mat[i][j]
             lexicons[outcomeName] = reduction_dict
+        #print(lexicons)#debug
         return lexicons
         
     ######################
@@ -433,6 +434,33 @@ def r2simple(ytrue, ypred):
 
 
 
+###############################################
+## Matlab Static Methods:
+
+
+def rotate_promax(X):
+    import matlab.engine
+    eng = matlab.engine.start_matlab()
+
+    gamma = (X.shape[1]/2.0)
+    print(gamma, X.shape)
+    XM = matlab.double(X.tolist())
+    R, T = eng.rotatefactors(XM, 'Method', 'promax', 'Coeff',gamma, 'Maxit', 1000, nargout=2)
+    R = np.array(R)
+    T = np.array(T)
+    return R, T
+
+def rotate_varimax(X):
+    import matlab.engine
+    eng = matlab.engine.start_matlab()
+
+    XM = matlab.double(X.tolist())
+    R, T = eng.rotatefactors(XM, 'Maxit', 1000, nargout=2)
+    R = np.array(R)
+    T = np.array(T)
+    return R, T
+
+
 class CCA:
     """Handles CCA analyses of language and outcomes"""
     
@@ -462,10 +490,18 @@ class CCA:
             self.model = pickle.load(f)
         
     def RsoftImpute(self, X):
-        softImpute = importr("softImpute")
-        X = com.convert_to_r_dataframe(X)
-        X = softImpute.complete(X,softImpute.softImpute(softImpute.biScale(X, maxit = 100)))
-        X = com.convert_robj(X)
+        try:
+            softImpute = importr("softImpute")
+        except NameError:
+            warn("rpy2 cannot be imported")
+            sys.exit(1)
+        try:
+            X = com.convert_to_r_dataframe(X)
+            X = softImpute.complete(X,softImpute.softImpute(softImpute.biScale(X, maxit = 100)))
+            X = com.convert_robj(X)
+        except NameError:
+            warn("pandas.rpy.common cannot be imported")
+            sys.exit(1)
         return X
 
     def prepMatricesTogether(self, X, Z, NAthresh = 4):
@@ -632,11 +668,15 @@ class CCA:
         # kwParams['vneg'] = True
 
         cca = self._cca(X,Z, **kwParams)
-    
-        Xcomp = com.convert_robj(cca['u']) # Controls
-        Zcomp = com.convert_robj(cca['v']) # Outcomes
+        
+        try:
+            Xcomp = com.convert_robj(cca['u']) # Controls
+            Zcomp = com.convert_robj(cca['v']) # Outcomes
+            d = com.convert_robj(cca['d']) # Something
+        except NameError:
+            warn("pandas.rpy.common cannot be imported")
+            sys.exit(1)
 
-        d = com.convert_robj(cca['d']) # Something
         self.model = {
             'u': Xcomp,
             'v': Zcomp,
@@ -711,9 +751,14 @@ class CCA:
 
         cca = self._cca(X,Z, **kwParams)
 
-        Xcomp = com.convert_robj(cca['u']) # Features
-        Zcomp = com.convert_robj(cca['v']) # Outcomes
-        d = com.convert_robj(cca['d']) # Something
+        try:
+            Xcomp = com.convert_robj(cca['u']) # Features
+            Zcomp = com.convert_robj(cca['v']) # Outcomes
+            d = com.convert_robj(cca['d']) # Something
+        except NameError:
+            warn("pandas.rpy.common cannot be imported")
+            sys.exit(1)
+        
         self.model = {
             'u': Xcomp,
             'v': Zcomp,
@@ -798,10 +843,13 @@ class CCA:
         
         # X, Z, Xfreqs, Zfreqs = self.prepMatrices(pd.DataFrame(data=Xdict),pd.DataFrame(data=Zdict), softImputeXtoo=True)
         X, Z, Xfreqs, Zfreqs = self.prepMatricesTogether(pd.DataFrame(data=Xdict), pd.DataFrame(data=Zdict))
-        X = com.convert_to_r_dataframe(X)
-        Z = com.convert_to_r_dataframe(Z)
-
-        Ngroups = com.convert_robj(ro.r["nrow"](X)[0])
+        try:
+            X = com.convert_to_r_dataframe(X)
+            Z = com.convert_to_r_dataframe(Z)
+            Ngroups = com.convert_robj(ro.r["nrow"](X)[0])
+        except NameError:
+            warn("pandas.rpy.common cannot be imported")
+            sys.exit(1)
         
         kwParams = {"nperms": nPerms}
         kwParams['penaltyxs'] = penaltyXs if penaltyXs else ro.vectors.FloatVector(np.arange(.1,.91,.05))
@@ -834,11 +882,14 @@ class CCA:
 
         # X contains feature group_norms, Z contains outcome values
         X, Z, Xfreqs, Zfreqs = self.prepMatrices(pd.DataFrame(data=Xdict),pd.DataFrame(data=Zdict))
-        X = com.convert_to_r_dataframe(X)
-        Z = com.convert_to_r_dataframe(Z)
-
-
-        Ngroups = com.convert_robj(ro.r["nrow"](X)[0])
+        
+        try:
+            X = com.convert_to_r_dataframe(X)
+            Z = com.convert_to_r_dataframe(Z)
+            Ngroups = com.convert_robj(ro.r["nrow"](X)[0])
+        except NameError:
+            warn("pandas.rpy.common cannot be imported")
+            sys.exit(1)
         
         kwParams = {"nperms": nPerms}
         kwParams['penaltyxs'] = penaltyXs if penaltyXs else ro.vectors.FloatVector(np.arange(.1,.91,.05))

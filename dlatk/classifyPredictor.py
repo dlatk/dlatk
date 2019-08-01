@@ -10,7 +10,7 @@ import pickle as pickle
 from inspect import ismethod
 import sys
 import random
-from itertools import combinations, zip_longest
+from itertools import combinations, zip_longest, islice
 import csv
 import time
 
@@ -24,8 +24,7 @@ from collections import defaultdict, Counter
 #scikit-learn imports
 from sklearn.svm import SVC, LinearSVC 
 from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.cross_validation import StratifiedKFold, KFold, ShuffleSplit, train_test_split
-from sklearn.grid_search import GridSearchCV 
+from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV 
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score, precision_score, recall_score, roc_curve, auc, roc_auc_score, matthews_corrcoef
 from sklearn.feature_selection import f_classif, SelectPercentile, SelectKBest, SelectFdr, SelectFpr, SelectFwe
 
@@ -35,10 +34,8 @@ from sklearn.svm import SVR
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB, BernoulliNB
 
-from sklearn.cross_validation import StratifiedKFold, KFold, ShuffleSplit, train_test_split
 from sklearn.decomposition import RandomizedPCA, MiniBatchSparsePCA, PCA, KernelPCA, NMF
 #from sklearn.lda import LDA #linear descriminant analysis
-from sklearn.grid_search import GridSearchCV 
 from sklearn import metrics
 
 from sklearn.utils import shuffle
@@ -49,7 +46,7 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.base import ClassifierMixin
 
 #scipy
-from scipy.stats import zscore
+from scipy.stats import zscore, t
 from scipy.stats.stats import pearsonr, spearmanr
 from scipy.sparse import csr_matrix, vstack, hstack, spmatrix
 import numpy as np
@@ -58,15 +55,14 @@ from numpy import sqrt, array, std, mean, bincount, int64, ceil, absolute, appen
 import math
 
 #infrastructure
-from .mysqlMethods import mysqlMethods as mm
-from .dlaConstants import warn
+from .mysqlmethods import mysqlMethods as mm
+from .dlaConstants import DEFAULT_RANDOM_SEED, warn
 
 #For ROC curves
 try:
     from matplotlib.backends.backend_pdf import PdfPages
     import matplotlib.pyplot as plt
 except:
-    warn("matplotlib PdfPages or plt cannot be imported")
     pass
 
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
@@ -235,7 +231,7 @@ class ClassifyPredictor:
             #{'C':[1, 10, 0.1, 0.01, 0.05, 0.005], 'penalty':['l1'], 'dual':[False]} #swl/perma message-level
             ],
         'lr': [
-            #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l2'], 'dual':[False]}, 
+            {'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l2'], 'dual':[False]}, 
             #{'C':[0.01, 0.1, 0.001, 1, .0001], 'penalty':['l2'], 'dual':[False]}, 
             #{'C':[.01], 'penalty':['l2'], 'dual':[False]},#svd-d features small
             #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l1'], 'dual':[False]},
@@ -246,7 +242,7 @@ class ClassifyPredictor:
             #{'C':[0.00001], 'penalty':['l2']} # UnivVsMultiv choice Maarten 
             #{'C':[0.01], 'penalty':['l1']} # UnivVsMultiv choice Maarten
             #{'C':[1000000], 'penalty':['l2'], 'dual':[False]} # for a l0 penalty approximation
-            {'C':[1000000000000], 'penalty':['l2'], 'dual':[False], 'fit_intercept': [False]} # for a l0 penalty approximation
+            #{'C':[1000000000000], 'penalty':['l2'], 'dual':[False]} # for a l0 penalty approximation
             #{'C':[100], 'penalty':['l1'], 'dual':[False]} # gender prediction
             ],
 
@@ -255,8 +251,8 @@ class ClassifyPredictor:
             #{'n_jobs': [10], 'n_estimators': [1000], 'criterion':['gini']}, 
             #{'n_jobs': [10], 'n_estimators': [100], 'criterion':['entropy']}, 
             #{'n_jobs': [12], 'n_estimators': [50], 'max_features': ["sqrt", "log2", None], 'criterion':['gini'], 'min_samples_split': [1]}, 
-            {'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2]}, 
-            #{'n_jobs': [12], 'n_estimators': [200], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2]}, 
+            {'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced_subsample'], 'min_impurity_split': [1e-06]}, 
+            #{'n_jobs': [12], 'n_estimators': [200], 'max_features': ["sqrt"], 'critearion':['gini'], 'min_samples_split': [2]}, 
             ],
         'rfc': [
             {'n_jobs': [10], 'n_estimators': [1000]}, 
@@ -268,8 +264,10 @@ class ClassifyPredictor:
         #     {}, 
         #     ],
         'gbc': [
-            {'n_estimators': [500], 'random_state': [42], 
+            {'n_estimators': [500], 'random_state': [DEFAULT_RANDOM_SEED], 
              'subsample':[0.4], 'max_depth': [5]  },
+             # {'n_estimators': [50], 'random_state': [DEFAULT_RANDOM_SEED], 'learning_rate': [0.2], 'min_samples_leaf': [50],
+             # 'subsample':[0.8], 'max_depth': list(range(5,16,2)), 'max_features': list(range(5,100,5)), },
             ],
         'mnb': [
             {'alpha': [1.0], 'fit_prior': [False], 'class_prior': [None]},
@@ -350,12 +348,12 @@ class ClassifyPredictor:
     #featureSelectPerc = 0.20 #only perform feature selection on a sample of training (set to 1 to perform on all)
 
     testPerc = .20 #percentage of sample to use as test set (the rest is training)
-    randomState = 42 #percentage of sample to use as test set (the rest is training)
+    randomState = DEFAULT_RANDOM_SEED #percentage of sample to use as test set (the rest is training)
     #randomState = 64 #percentage of sample to use as test set (the rest is training)
 
     trainingSize = 1000000 #if this is smaller than the training set, then it will be reduced to this. 
 
-    def __init__(self, og, fgs, modelName = 'svc'):
+    def __init__(self, og, fgs, modelName = 'svc', outliersToMean = None):
         #initialize classification predictor
         self.outcomeGetter = og
 
@@ -381,6 +379,9 @@ class ClassifyPredictor:
 
         self.featureNames = [] 
         """list: Holds the order the features are expected in."""
+
+        self.featureLengthList = []
+        """list: Holds the number of features in each featureGetter."""
         
         self.multiFSelectors = None
         """str: Docstring *after* attribute, with type specified."""
@@ -390,6 +391,9 @@ class ClassifyPredictor:
 
         self.multiXOn = False
         """boolean: whether multiX was used for training."""
+
+        self.outliersToMean = outliersToMean
+        """float: Threshold for setting outliers to mean value."""
 
 
     def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
@@ -411,7 +415,7 @@ class ClassifyPredictor:
 
         ####################
         #2. get data for Xs:
-        (groupNormsList, featureNamesList) = ([], [])
+        (groupNormsList, featureNamesList, featureLengthList) = ([], [], [])
         XGroups = None #holds the set of X groups across all feature spaces and folds (intersect with this to get consistent keys across everything
         UGroups = None
         for fg in self.featureGetters:
@@ -420,6 +424,7 @@ class ClassifyPredictor:
             groupNormsList.append(groupNormValues)
             #print featureNames[:10]#debug
             featureNamesList.append(featureNames)
+            featureLengthList.append(len(featureNames))
             fgGroups = getGroupsFromGroupNormValues(groupNormValues)
             if not XGroups:
                 XGroups = set(fgGroups)
@@ -465,6 +470,8 @@ class ClassifyPredictor:
 
         print("\n[TRAINING COMPLETE]\n")
         self.featureNamesList = featureNamesList
+        self.featureLengthList = featureLengthList
+        #coefficients = eval('self.classificationModels["page_edits_post_abs_a"].%s' % self.modelToCoeffsName[self.modelName.lower()])
 
     def test(self, standardize = True, sparse = False, saveModels = False, blacklist = None, groupsWhere = ''):
         """Tests classifier, by pulling out random testPerc percentage as a test set"""
@@ -522,8 +529,9 @@ class ClassifyPredictor:
     #####################################################
     ######## Main Testing Method ########################
     def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
-                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, weightedEvalOutcome = None,  
-                          stratifyFolds = True, adaptTables=None, adaptColumns=None, groupsWhere = ''):
+                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False, 
+                          weightedEvalOutcome = None, stratifyFolds = True, adaptTables=None, adaptColumns=None, 
+                          controlCombineProbs = True, groupsWhere = '', testFolds = None):
         """Tests classifier, by pulling out random testPerc percentage as a test set""" # edited by Youngseo
         
         ###################################
@@ -535,8 +543,6 @@ class ClassifyPredictor:
             print("    ***explicit fold labels specified, not splitting or stratifying again***")
             stratifyFolds = False
             temp = {}
-            # for k,v in sorted(foldLabels.iteritems()): temp.setdefault(v, []).append(k)
-            # groupFolds = temp.values()
             for k,v in sorted(foldLabels.items()): temp.setdefault(v, []).append(k)
             groupFolds = list(temp.values())
             nFolds = len(groupFolds)
@@ -547,13 +553,8 @@ class ClassifyPredictor:
             random.shuffle(groupList)
             groupFolds = foldN(groupList, nFolds)
         else:
+            # stratification happens on an outcome by outcome basis
             print("    using stratified folds; different folds per outcome")
-
-        print("[number of groups: %d (%d Folds)]" % (len(groups), nFolds))
-        random.seed(self.randomState)
-        groupList = list(groups)
-        random.shuffle(groupList)
-        groupFolds =  [x for x in foldN(groupList, nFolds)]
 
         ####
         #1a: setup weightedEval
@@ -624,12 +625,13 @@ class ClassifyPredictor:
 
                     if stratifyFolds:
                         #even classes across the outcomes
+                        # stratification happens within outcomes unlike foldLabels
                         print("Warning: Stratifying outcome classes across folds (thus, folds will differ across outcomes).")
-                        #groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = 42)
+                        groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = DEFAULT_RANDOM_SEED)
                         ##DEBUG: below is using random folds to do bootstrapping; should change back to above.
-                        print("Warning: using random folds for bootstrapping; classifyPredictor.py to fix")
-                        groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = np.random.randint(0, 10000))
-                        del groupFolds[np.random.randint(0, len(groupFolds))]
+                        # print("Warning: using random folds for bootstrapping; classifyPredictor.py to fix")
+                        # groupFolds = stratifyGroups(thisOutcomeGroups, outcomes, nFolds, randomState = np.random.randint(0, 10000))
+                        # del groupFolds[np.random.randint(0, len(groupFolds))]
 
 
                     #for warmStartControls or controlCombinedProbs
@@ -654,7 +656,7 @@ class ClassifyPredictor:
                         
                         ###############################
                         #3a) iterate over nfold groups:
-                        for testChunk in range(0, len(groupFolds)):
+                        for testChunk in [i for i in range(0, len(groupFolds)) if not testFolds or i in testFolds]:
                             trainGroups = set()
                             for chunk in (groupFolds[:testChunk]+groupFolds[(testChunk+1):]):
                                 trainGroups.update(chunk)
@@ -663,7 +665,7 @@ class ClassifyPredictor:
                             trainGroupsOrder = list(thisOutcomeGroups & trainGroups)
                             testGroupsOrder = list(thisOutcomeGroups & testGroups)
                             testSize = len(testGroupsOrder)
-                            print("Fold %d " % (testChunk))
+                            print("\nFold %d " % (testChunk))
 
                             ###########################################################################
                             #3b)setup train and test data (different X for each set of groupNormValues)
@@ -681,7 +683,7 @@ class ClassifyPredictor:
                                 (Xtrain, ytrain) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = trainGroupsOrder)
                                 (Xtest, ytest) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = testGroupsOrder)
 
-                                assert len(ytest) == testSize, "ytest not the right size"
+                                assert len(ytest) == testSize, "ytest not the right size (%d versus %d)"%(len(ytest), testSize)
                                 if len(ytrain) > self.trainingSize:
                                     Xtrain, Xthrowaway, ytrain, ythrowaway = train_test_split(Xtrain, ytrain, test_size=len(ytrain) - self.trainingSize, random_state=self.randomState)
                                 num_feats += Xtrain.shape[1]
@@ -768,6 +770,21 @@ class ClassifyPredictor:
                         testCounter = Counter(ytrue)
                         reportStats['mfclass_acc'] = testCounter[mfclass] / float(len(ytrue))
 
+                        if controlCombineProbs:#ensemble with controls (AUC weighted)
+                            reportStats['auc_cntl_comb2'] = 0.0#add columns so csv always has same
+                            reportStats['auc_cntl_comb2_t'] = 0.0
+                            reportStats['auc_cntl_comb2_p'] = 1.0
+                            if withLanguage and savedControlYpp is not None and len(testCounter.keys()) == 2:
+                                #newprobs = np.array(easyNFoldLR( np.array([ypredProbs[:,-1], savedControlYpp]).T, ytrue, len(groupFolds)))[:,-1]
+                                newprobs2 = np.array(easyNFoldAUCWeight( np.array([ypredProbs[:,-1], savedControlYpp]).T, ytrue, len(groupFolds)))[:,-1]
+                                #reportStats['auc_cntl_comb'] = pos_neg_auc(ytrue, newprobs)
+                                #reportStats['auc_cntl_comb_t'], reportStats['auc_cntl_comb_p'] = paired_t_1tail_on_errors(newprobs, savedControlYpp, ytrue)
+                                reportStats['auc_cntl_comb2'] = pos_neg_auc(ytrue, newprobs2)
+                                reportStats['auc_cntl_comb2_t'], reportStats['auc_cntl_comb2_p'] = paired_t_1tail_on_errors(newprobs2, savedControlYpp, ytrue)
+                            else: #save probs for next round
+                                savedControlYpp = ypredProbs[:,-1]
+
+
                         if savePredictions: 
                             reportStats['predictions'] = predictions
                             reportStats['predictionProbs'] = {k:v[-1] for k,v in predictionProbs.items()}
@@ -790,7 +807,7 @@ class ClassifyPredictor:
     #################################################
     #################################################
 
-    def predict(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
+    def predict(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', probs = False):
         
         if not self.multiXOn:
             print("model trained without multiX, reverting to old predict")
@@ -873,8 +890,15 @@ class ClassifyPredictor:
 
             #############
             #4) predict
-            ypred = self._multiXpredict(self.classificationModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
+            if probs:
+                ypredProbs, ypredClasses = self._multiXpredict(self.classificationModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
+                                            multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse, probs = probs)
+                ypred = ypredClasses[ypredProbs.argmax(axis=1)]
+                ypredProbsMaxClass = ypredProbs[:,ypredClasses.argmax()]
+            else:
+                ypred = self._multiXpredict(self.classificationModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
                                             multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
+                            
             print("[Done. Evaluation:]")
             acc = accuracy_score(ytest, ypred)
             f1 = f1_score(ytest, ypred, average='macro')
@@ -885,14 +909,20 @@ class ClassifyPredictor:
             print(" *precision and recall: \n%s" % classification_report(ytest, ypred))
             print(" *ACC: %.4f (mfclass_acc: %.4f); mfclass: %s\n" % (acc, mfclass_acc, str(mfclass)))
 
+            if probs:
+                auc = pos_neg_auc(ytest, ypredProbs[:,-1])
+                print(" *AUC: %.4f" % auc)            
+
             mse = metrics.mean_squared_error(ytest, ypred)
             print("*Mean Squared Error:                 %.4f"% mse)
             assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups" 
-            predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder,ypred)))
+            if probs:
+                predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder, ypredProbsMaxClass)))
+            else:
+                predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder, ypred)))
 
         print("[Prediction Complete]")
 
-        # print "Maarten \n", pd.DataFrame(predictions)
         return predictions
 
     def predictNoOutcomeGetter(self, groups, standardize = True, sparse = False, restrictToGroups = None):
@@ -1211,7 +1241,7 @@ class ClassifyPredictor:
         # 4: use self.outcomeGetter.createOutcomeTable(tableName, dataFrame)
         self.outcomeGetter.createOutcomeTable(name, predDF, 'replace')
 
-    def predictToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = ''):
+    def predictToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = '', probs = False):
         if not fe:
             print("Must provide a feature extractor object")
             sys.exit(0)
@@ -1248,7 +1278,7 @@ class ClassifyPredictor:
                 print("len(chunk) == len(groups): True")
                 # chunk = None
 
-            chunkPredictions = self.predict(standardize, sparse, chunk)
+            chunkPredictions  = self.predict(standardize, sparse, chunk, probs = probs)
 
             # predictions is now outcomeName => group_id => value (outcomeName can become feat)
             # merge chunk predictions into predictions:
@@ -1274,7 +1304,7 @@ class ClassifyPredictor:
             rows = []
             for feat in featNames:
                 preds = chunkPredictions[feat]
-                pprint(preds)#DEBUG
+                #pprint(preds)#DEBUG
                 print("[Inserting Predictions as Feature values for feature: %s]" % feat)
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
                 
@@ -1294,85 +1324,157 @@ class ClassifyPredictor:
 
 
     def getWeightsForFeaturesAsADict(self): 
-        #returns dictionary of featureTable -> outcomes -> feature_name -> weight
-        #weights: self.classificationModels[outcome].coef_
-        # Scaler: self.multiScalers[outcome]
+        """Creates a lexicon from a topic file
+
+        Returns
+        -------
+        weights_dict : dict
+            dictionary of featureTable -> outcomes -> feature_name -> weight
+        """
 
         weights_dict = dict()
-
+        unpackTopicWeights = [] 
+        intercept_dict = dict()
         featTables = [fg.featureTable for fg in self.featureGetters]
-        # MAARTEN
-        # pprint(self.classificationModels)
-        # pprint([feat[:20] for feat in self.featureNamesList])
-        startIndex = 0 # for multiX classification
         for i, featTableFeats in enumerate(self.featureNamesList):
+            if "cat_" in featTables[i]:
+                unpackTopicWeights.append(featTables[i])
+
             weights_dict[featTables[i]] = dict()
             for outcome, model in self.classificationModels.items():
-                weights_dict[featTables[i]][outcome] = dict()
                 coefficients = eval('self.classificationModels[outcome].%s' % self.modelToCoeffsName[self.modelName.lower()])
-                #pprint(coefficients) #debug
-                
-                intercept = self.classificationModels[outcome].intercept_ if 'intercept_' in dir(self.classificationModels[outcome]) else None
-                if isinstance(intercept, np.ndarray) or isinstance(intercept, list):
-                    if len(intercept) == 1:
-                        intercept = intercept[0]
-                    else:
-                        raise ValueError("Intercept is not an array of lenght 1 or a float...")
-                    
-                print("Intercept[%s]: %10.8f" % (outcome, intercept))
-                #print dir( self.classificationModels[outcome])
-                #print dir(self.multiFSelectors[outcome][i]) # debug
-                
-                # Getting the right chunk if there are multiple feature tables (OLD)
-                # coefficients = coefficients[startIndex:(startIndex+len(featTableFeats))]
-                
-                if coefficients.shape[0] != 1:
-                    coefficients.resize(1,len(coefficients))
+                if np.all(coefficients==0):
+                    warn("WARNING: All coefficients equal to zero for outcome %s" % outcome)
+                    continue
+                weights_dict[featTables[i]][outcome] = dict()
+
                 # Inverting Feature Selection
-                
                 if self.multiFSelectors[outcome][i]:
                     print("Inverting the feature selection: %s" % self.multiFSelectors[outcome][i])
-                    coefficients = self.multiFSelectors[outcome][i].inverse_transform(coefficients)#.flatten()
+                    coefficients = self.multiFSelectors[outcome][i].inverse_transform(coefficients)
 
-                    if 'mean_' in dir(self.multiFSelectors[outcome][i]): # PCA, RPCA
-                        print("RPCA mean: ", self.multiFSelectors[outcome][i].mean_)
+                if 'mean_' in dir(self.multiFSelectors[outcome][i]): # PCA, RPCA
+                    print("RPCA mean: ", self.multiFSelectors[outcome][i].mean_)
 
-                    if 'steps' in dir(self.multiFSelectors[outcome][i]): # Pipeline(1_UFS, 2_PCA)
-                        if 'mean_' in dir(self.multiFSelectors[outcome][i].steps[1][1]):
-                            print(self.multiFSelectors[outcome][i].steps[1][1].mean_, len(self.multiFSelectors[outcome][i].steps[1][1].mean_))
-                            mean = self.multiFSelectors[outcome][i].steps[1][1].mean_.copy()
-                            t = self.multiFSelectors[outcome][i].steps[0][1].inverse_transform(mean).flatten()
-                            print(self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept), self.multiFSelectors[outcome][i].steps[1][1].transform(mean-intercept).sum())
-                            print(t, len(t))
-                            print(coefficients)
-                            # coefficients = coefficients + t
-                            print(coefficients)
-                            print("Pipelines don't work with this option (predtolex)")
-                            sys.exit()
-
-
-                # coefficients.resize(1,len(coefficients))
-                # print coefficients.shape
-                # Inverting the scaling
-                if self.multiScalers[outcome][i]:
-                    print("Standardscaler doesn't work with Prediction To Lexicon")
-                    # print self.multiScalers[outcome][i].mean_, self.multiScalers[outcome][i].std_
-                    # coefficients = self.multiScalers[outcome][i].inverse_transform(coefficients).flatten()
-                    coefficients = coefficients.flatten()
-                else:
-                    coefficients = coefficients.flatten()
-                
-                # featTableFeats contains the list of features
+                coefficients = coefficients.flatten()
+                # featTableFeats contains the list of features 
                 if len(coefficients) != len(featTableFeats):
                     print("length of coefficients (%d) does not match number of features (%d)" % (len(coefficients), len(featTableFeats)))
                     sys.exit(1)
 
+                coeff_iter = iter(coefficients)
+                coefficients  = np.asarray([list(islice(coeff_iter, 0, j)) for j in self.featureLengthList][i])
+                intercept = self.classificationModels[outcome].intercept_
+                if outcome not in intercept_dict:
+                    intercept_dict[outcome] = intercept
+                    print("Intercept for {o} [{i}]".format(o=outcome, i=intercept))
+                print("coefficients size for {f}: {s}".format(f=featTables[i], s=coefficients.shape))
+                coefficients.resize(1,len(coefficients))
+                coefficients = coefficients.flatten()
+            
                 weights_dict[featTables[i]][outcome] = {featTableFeats[j]: coefficients[j] for j in range(len(featTableFeats))}
-                weights_dict[featTables[i]][outcome]['_intercept'] = intercept
 
-            startIndex += len(featTableFeats)
-        #pprint(weights_dict)
+        if unpackTopicWeights:
+            # only topic tables
+            if len(unpackTopicWeights) == len(weights_dict):
+                # single topic table
+                if len(unpackTopicWeights) == 1:
+                    topicFeatTable = unpackTopicWeights[0]
+                    print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
+                    weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[0], topicFeatTable, weights_dict)
+                # multiple topic tables
+                else:
+                    weights_dict['words'] = dict()
+                    for idx, topicFeatTable in enumerate(unpackTopicWeights):
+                        if idx == 0: weights_dict['words'] = {o: dict() for o in weights_dict[topicFeatTable].keys()}
+                        print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
+                        weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[idx], topicFeatTable, weights_dict)
+                        for outcome, wordDict in weights_dict[topicFeatTable].items():
+                            for word, weight in wordDict.items():
+                                if word in weights_dict['words'][outcome]:
+                                    weights_dict['words'][outcome][word] += weight
+                                else:
+                                    weights_dict['words'][outcome][word] = weight
+                        print("Combining %s with %s." % (topicFeatTable, '"words"'))
+                        del weights_dict[topicFeatTable]
+                        
+            # mixed tables
+            else:
+                for idx, topicFeatTable in enumerate(unpackTopicWeights):
+                    print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
+                    weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[idx], topicFeatTable, weights_dict)
+                    for featTable in weights_dict:
+                        if featTable.split("$")[1].startswith(buildTable):
+                            for outcome, wordDict in weights_dict[topicFeatTable].items():
+                                for word, weight in wordDict.items():
+                                    if word in weights_dict[featTable][outcome]:
+                                        weights_dict[featTable][outcome][word] += weight
+                                    else:
+                                        weights_dict[featTable][outcome][word] = weight
+                            print("Combining %s with %s." % (topicFeatTable, featTable))
+                            del weights_dict[topicFeatTable]
+                            break
+
+        # add in intercepts
+        for featTable in weights_dict:
+            for outcome in weights_dict[featTable]:
+                weights_dict[featTable][outcome]['_intercept'] = intercept_dict[outcome]
+        
         return weights_dict
+
+    def unpackTopicTables(self, featureGetter, topicFeatTable, weightsDict):
+        """Convert topics coefficients to single words with coefficients*topic_word_probabilities
+
+        Parameters
+        ----------
+        featureGetter : obj
+            
+        topicFeatTable : str
+            New (topic) lexicon name.
+        weights_dict : dict
+            dictionary of featureTable -> outcomes -> feature_name -> weight
+
+        Returns
+        -------
+        weights_dict : dict
+            updated dictionary of featureTable -> outcomes -> feature_name -> weight
+
+        buildTable : str
+            Abbriviation of word table used for topic extraction
+        """
+
+        try:
+            _, topicTable, msgTable, correlField, transform = topicFeatTable.split("$")
+            topicTable = topicTable.replace("cat_", "").replace("_w", "")
+        except:
+            print("Nonstandard feature table name: {f}".format(f=topicFeatTable))
+            sys.exit(1)
+
+        buildTable = '1gram'
+        if "16to" not in transform: 
+            buildTable = transform
+
+        lex_dict = dict()
+        sql = """SELECT term, category, weight from {lexDB}.{lexTable}""".format(lexDB=featureGetter.lexicondb, lexTable=topicTable)
+        rows = mm.executeGetList(featureGetter.corpdb, featureGetter.dbCursor, sql, charset=featureGetter.encoding, use_unicode=featureGetter.use_unicode)
+        for row in rows:
+            term, category, weight = str(row[0]).strip(), str(row[1]).strip(), float(row[2])
+            if term not in lex_dict:
+                lex_dict[term] = dict()
+            lex_dict[term][category] = weight
+
+        for outcome in weightsDict[topicFeatTable]:
+            summedWordWeights = dict()
+            for term in lex_dict:
+                this_sum = 0
+                for category in lex_dict[term]:
+                    if category in weightsDict[topicFeatTable][outcome]:
+                        this_sum += weightsDict[topicFeatTable][outcome][category]*lex_dict[term][category]
+                summedWordWeights[term] = this_sum
+            weightsDict[topicFeatTable][outcome] = summedWordWeights
+            
+
+        return weightsDict, buildTable
 
 
     def _train(self, X, y, standardize = True):
@@ -1422,7 +1524,7 @@ class ClassifyPredictor:
             #grid search for classifier params:
             gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
                               self.cvParams[modelName], n_jobs = self.cvJobs,
-                              cv=ShuffleSplit(len(y), n_iterations=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
+                              cv=ShuffleSplit(n_splits=self.cvFolds+1, test_size=1/float(self.cvFolds), random_state=DEFAULT_RANDOM_SEED))
             print("[Performing grid search for parameters over training]")
             gs.fit(X, y)
 
@@ -1489,7 +1591,12 @@ class ClassifyPredictor:
                 scaler = StandardScaler(with_mean = not sparse)
                 print(("[Applying StandardScaler to X[%d]: %s]" % (i, str(scaler))))
                 X = scaler.fit_transform(X)
+                if self.outliersToMean and not sparse:
+                    X[abs(X) > self.outliersToMean] = 0
+                    print("  [Setting outliers (> %d) to mean for X[%d]]" % (self.outliersToMean, i))
                 y = np.array(y)
+            elif self.outliersToMean:
+                print(" Warning: Outliers to mean is not being run because standardize is off")
             print((" X[%d]: (N, features): %s" % (i, str(X.shape))))
 
             #Feature Selection
@@ -1572,7 +1679,7 @@ class ClassifyPredictor:
             #grid search for classifier params:
             gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
                               self.cvParams[modelName], n_jobs = self.cvJobs,
-                              cv=ShuffleSplit(len(y), n_iter=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
+                              cv=ShuffleSplit(n_splits=self.cvFolds+1, test_size=1/float(self.cvFolds), random_state=DEFAULT_RANDOM_SEED))
             print("[Performing grid search for parameters over training]")
             gs.fit(X, y)
 
@@ -1771,7 +1878,7 @@ class ClassifyPredictor:
                 # grid search for classifier params:
                 gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
                                   self.cvParams[modelName], n_jobs = self.cvJobs,
-                                  cv=ShuffleSplit(len(y_train_slice), n_iter=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
+                                  cv=ShuffleSplit(n_splits=self.cvFolds+1, test_size=1/float(self.cvFolds), random_state=DEFAULT_RANDOM_SEED))
                 print("[Performing grid search for parameters over training for class: %d]" % i)
                 gs.fit(X_train, y_train_slice)
                 fitted_model = gs.best_estimator_
@@ -1779,7 +1886,8 @@ class ClassifyPredictor:
                 y_score[:,i] = y_score_slice
                 print("best estimator: %s (score: %.4f)\n" % (gs.best_estimator_, gs.best_score_))
             ret = (gs.best_estimator_,  multiScalers, multiFSelectors)
-            print(y_score)
+            print(set(y_score.flatten()))
+            print(modelName)
         else:
             print("[ROC - Using classification model: %s]" % modelName)
             classifier = eval(self.modelToClassName[modelName]+'()')
@@ -1814,7 +1922,11 @@ class ClassifyPredictor:
 
     def roc_curves(self, y_test, y_score, output_name = None):
         output_name = "ROC" if not output_name else output_name
-        pp = PdfPages(output_name+'.pdf' if output_name[-4:] != '.pdf' else output_name)
+        try:
+            pp = PdfPages(output_name+'.pdf' if output_name[-4:] != '.pdf' else output_name)
+        except NameError:
+            warn("matplotlib PdfPages or plt cannot be imported")
+            sys.exit(1)
 
         # Compute ROC curve and ROC area for each class
         fpr = dict()
@@ -1889,7 +2001,21 @@ class ClassifyPredictor:
             #run transformations:
             if scaler:
                 print(("  predict: applying standard scaler to X[%d]: %s" % (i, str(scaler)))) #debug
-                X = scaler.fit_transform(X)
+                try:
+                    X = scaler.transform(X)
+                    if self.outliersToMean and not sparse:
+                        X[abs(X) > self.outliersToMean] = 0
+                        print(("  predict: setting outliers (> %d) to mean for X[%d]" % (self.outliersToMean, i))) #debug
+                except NotFittedError as e:
+                    warn(e)
+                    warn("Fitting scaler")
+                    X = scaler.fit_transform(X)
+                    if outliersToMean and not sparse:
+                        X[abs(X) > self.outliersToMean] = 0
+                        print(("  predict: setting outliers (> %d) to mean for X[%d]" % (self.outliersToMean, i))) #debug
+            elif self.outliersToMean:
+                print(" Warning: Outliers to mean is not being run because standardize is off")
+
             if fSelector:
                 print(("  predict: applying feature selection to X[%d]: %s" % (i, str(fSelector)))) #debug
                 newX = fSelector.transform(X)
@@ -2043,6 +2169,7 @@ class ClassifyPredictor:
                     rowDict['w/ lang.'] = withLang
                     rowDict.update({(k,v) for (k,v) in list(sc.items()) if ((k is not 'predictions') and k is not 'predictionProbs')})
                     csvOut.writerow(rowDict)
+
     @staticmethod
     def printComboControlPredictionsToCSV(scores, outputstream, paramString = None, delimiter='|'):
         """prints predictions with all combinations of controls to csv)"""
@@ -2378,7 +2505,7 @@ def xFoldN(l, folds):
 def foldN(l, folds):
     return [f for f in xFoldN(l, folds)]
 
-def stratifyGroups(groups, outcomes, folds, randomState = 42):
+def stratifyGroups(groups, outcomes, folds, randomState = DEFAULT_RANDOM_SEED):
     """breaks groups up into folds such that each fold has at most 1 more of a class than other folds """
     random.seed(randomState)
     xGroups = sorted(list(set(groups) & set(outcomes.keys())))
@@ -2408,7 +2535,6 @@ def stratifyGroups(groups, outcomes, folds, randomState = 42):
 
     return list(groupsPerFold.values())
 
-
 def hasMultValuesPerItem(listOfD):
     """returns true if the dictionary has a list with more than one element"""
     if len(listOfD) > 1:
@@ -2420,8 +2546,6 @@ def hasMultValuesPerItem(listOfD):
 
 def getGroupsFromGroupNormValues(gnvs):
     return set([k for gns in gnvs for k in gns.keys()])
-
-
 
 def matrixAppendHoriz(A, B):
     if isinstance(A, spmatrix) and isinstance(B, spmatrix):
@@ -2435,13 +2559,57 @@ def matrixAppendHoriz(A, B):
     else:
         raise ValueError('matrix append types not supported: %s and %s' % (type(A).__name__, type(B).__name__))
 
-
-#def mean(l):
-#    return sum(l)/float(len(l))
-
 def r2simple(ytrue, ypred):
     y_mean = sum(ytrue)/float(len(ytrue))
     ss_tot = sum((yi-y_mean)**2 for yi in ytrue)
     ss_err = sum((yi-fi)**2 for yi,fi in zip(ytrue,ypred))
     r2 = 1 - (ss_err/ss_tot)
     return r2
+
+def easyNFoldAUCWeight(X, y, folds):
+    """build logistic regressor given two sets of decision function outputs, return new probs """
+    yscores = []
+    X = zscore(X)
+    y = np.array(y)
+    warn(" [NFOLD TRAIN TESTING Easy LR]")
+    groups = range(len(y))
+    outcomes = dict(zip(groups, y))
+    groupFolds = stratifyGroups(groups, outcomes, folds, randomState = 42)
+    ymap = []
+    for testgs in groupFolds:
+        testgs = np.array(testgs)
+        setgs = set(testgs)
+        traings = [i for i in groups if i not in setgs]
+        ytest = y[testgs]
+        Xtest = X[testgs]
+        ytrain = y[traings]
+        Xtrain = X[traings]
+
+        weights = np.array([0.0]*Xtest.shape[1])
+        sumWeights = 0.0
+        for c in range(Xtrain.shape[1]):
+            weights[c] = ((np.absolute(pos_neg_auc(ytrain, Xtrain[:,c])) - 0.5) / 0.5)**2
+            sumWeights += weights[c]
+        weights = np.array([weights / sumWeights])
+        warn(weights) #debug
+        ypred_probs = np.dot(Xtest, weights.T)
+        warn("   EASY LR AUC: %.4f" %  pos_neg_auc(ytest, ypred_probs[:,-1]))
+        yscores.extend(ypred_probs)
+        ymap.extend(testgs)
+    newyscores = [0]*len(y)
+    for i in groups:
+        newyscores[ymap[i]] = yscores[i]
+    warn(" [Done]")
+    warn(" FINAL EASY LR AUC: %.4f" %  pos_neg_auc(y, np.array(newyscores)[:,-1]))
+    return newyscores
+
+def paired_t_1tail_on_errors(newprobs, oldprobs, ytrue):
+    #checks if
+    n = len(ytrue)
+    newprobs_res_abs = np.absolute(array(ytrue) - array(newprobs))
+    oldprobs_res_abs = np.absolute(array(ytrue) - array(oldprobs))
+    ypp_diff = newprobs_res_abs - oldprobs_res_abs #old should be smaller
+    ypp_diff_mean, ypp_sd = np.mean(ypp_diff), np.std(ypp_diff)
+    ypp_diff_t = ypp_diff_mean / (ypp_sd / sqrt(n))
+    ypp_diff_p = t.sf(np.absolute(ypp_diff_t), n-1)
+    return ypp_diff_t, ypp_diff_p

@@ -10,7 +10,7 @@ Switch
 Description
 ===========
 
-Writes the reduction model to a specified lexicon. The lexicon MySQL table will be written to the *permaLexicon* database by default.
+Writes the reduction model to a specified lexicon. The lexicon MySQL table will be written to the *dlatk_lexica* database by default.
 
 Argument and Default Value
 ==========================

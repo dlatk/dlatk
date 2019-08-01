@@ -10,7 +10,7 @@ Switch
 Description
 ===========
 
-Text file where fwInterface flags can be set. See also: --to_file
+Text file where dlatkInterface flags can be set. See also: :doc:`fwflag_to_file`. See :doc:`../tutorials/tut_init_files` for more info. 
 
 Argument and Default Value
 ==========================
@@ -55,38 +55,34 @@ This is a list of all of the variables that can be read from the file:
 Note: when using an init file outside of dlatkInterface, i.e., when using the classes explicitly, most of these values will be ignored. 
 
 
-Other Switches
-==============
-
 Example Commands
 ================
 
-Give the init file myInit.txt:
+Given the file *someFile.ini*:
 
 .. code-block:: bash
 
-	[constants] 
-	corpdb = county_addiction
-	corptable = msgs_2011to13
-	correl_field = cnty
-	feattable = feat$cat_met_a30_2000_cp_w$msgs_2011to13$cnty$16to16
-	outcome_table = main_interest_vars_controls
-	outcome_value_fields = ExcessDrink_Percent, AlcDrivingDeaths_Percent
-	outcome_controls = age_lt1, age_1to4
-	wordTable = feat$1gram$msgs_2011to13$cnty$16to16$0_1
-	output_name = /home/sgiorgi/xxx_output
-	maxP = 0.05
+	[constants]
+	correl_field = user_id
+	feattable = feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16
+	outcometable = blog_outcomes
+	outcomefields = is_student
+	outcomecontrols = age, gender
+	outputname = /home/username/my_output
+	groupfreqthresh = 500
 	p_correction_method = bonferroni
-	groupfreqthresh = 40000
 
-the command
+the command: 
 
 .. code-block:: bash
 
-	dlatkInterface.py --from_file myInit.txt  --correlate 
+	dlatkInterface.py --from_file ~/someFile.ini --correlate
 
 is equivalent to:
 
 .. code-block:: bash
 
-	dlatkInterface.py -d county_addiction -t msgs_2011to13 -c cnty --word_table	'feat$1gram$msgs_2011to13$cnty$16to16$0_1' --group_freq_thresh 40000 -f 'feat$cat_met_a30_2000_cp_w$msgs_2011to13$cnty$16to16' --outcome_table main_interest_vars_controls --outcomes ExcessDrink_Percent AlcDrivingDeaths_Percent --controls age_lt1 age_1to4 --correlate --output_name ~/xxx_output --p_value 0.05 --p_correction 'bonferroni'
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --group_freq_thresh 500 \ 
+	-f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' --outcome_table blog_outcomes \ 
+	--outcomes is_student --controls age gender --correlate  \ 
+	--output_name ~/my_output --p_value 0.05 --p_correction 'bonferroni' --to_file ~/someFile.ini

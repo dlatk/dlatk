@@ -12,7 +12,7 @@ import re
 from .dlaWorker import DLAWorker
 from . import dlaConstants as dlac
 from . import textCleaner as tc
-from .mysqlMethods import mysqlMethods as mm
+from .mysqlmethods import mysqlMethods as mm
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 try:
     from .lib.StanfordParser import StanfordParser
@@ -281,8 +281,6 @@ class MessageTransformer(DLAWorker):
             print("Inserting rows (%5.2f%% done)" % (float(min(l+N,totalLength))*100/totalLength))
             mm.executeWriteMany(self.corpdb, self.dbCursor, sql, new_rows[l:l+N], writeCursor=self.dbConn.cursor(), charset=self.encoding)
 
-
-
     def addTweetPOSMessages(self):
         """Creates a POS tagged (by TweetNLP) version of the message table
 
@@ -434,7 +432,6 @@ class MessageTransformer(DLAWorker):
             sql = """ALTER TABLE %s CHANGE `%s` `%s` VARCHAR(64)""" % (tableName, self.messageid_field, self.messageid_field)
             mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
         
-
         if cleanMessages:
 
             ### get lexical normalization dictionaries

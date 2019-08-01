@@ -3,7 +3,7 @@ import time
 import MySQLdb
 
 from . import dlaConstants as dlac
-from .mysqlMethods import mysqlMethods as mm 
+from .mysqlmethods import mysqlMethods as mm 
 
 class DLAWorker(object):
     """Generic class for functions working with features
@@ -50,6 +50,21 @@ class DLAWorker(object):
         self.wordTable = wordTable if wordTable else "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
 
     ##PUBLIC METHODS#
+    def checkIndices(self, table, primary=False, correlField=False):
+        hasPrimary, hasCorrelIndex = True, True
+        warn_message = "WARNING: The table %s does not have:"  % table
+        if primary:
+            hasPrimary = mm.primaryKeyExists(self.dbConn, self.dbCursor, table, correlField)
+            if not hasPrimary: warn_message += " a PRIMARY key on %s" % correlField
+        if correlField:
+            hasCorrelIndex = mm.indexExists(self.dbConn, self.dbCursor, table, correlField)
+            if not hasCorrelIndex: 
+                if not hasPrimary: warn_message += " or"
+                warn_message += " an index on %s" % correlField
+        warn_message += ". Consider adding."
+        if not hasPrimary or not hasCorrelIndex:
+            dlac.warn(warn_message)
+
     def getMessages(self, messageTable = None, where = None):
         """?????
  
@@ -240,7 +255,6 @@ class DLAWorker(object):
         wordGetter = self.getWordGetter(lexicon_count_table)
         return dict(wordGetter.getSumValuesByGroup(where))
 
-
     def getTables(self, feat_table = False, like = None):
         """Returns a list of available tables.
  
@@ -280,8 +294,27 @@ class DLAWorker(object):
         sql = """DESCRIBE %s""" % (table_name)
         return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
+    def viewTable(self, table_name):
+        """
+ 
+        Parameters
+        ----------
+        table_name : :obj:`str`
+            Name of table to describe
+     
+        Returns
+        -------
+        First 5 rows of table (list of lists)
+            
+        """
+        col_sql = """select column_name from information_schema.columns 
+            where table_schema = '%s' and table_name='%s'""" % (self.corpdb, table_name)
+        col_names = [col[0] for col in mm.executeGetList(self.corpdb, self.dbCursor, col_sql, charset=self.encoding, use_unicode=self.use_unicode)]
+        sql = """SELECT * FROM %s LIMIT 10""" % (table_name)
+        return [col_names] + list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
 
-    def createRandomSample(self, percentage, random_seed = dlac.DEFAUL_RANDOM_SEED, where = ''):
+
+    def createRandomSample(self, percentage, random_seed = dlac.DEFAULT_RANDOM_SEED, where = ''):
         """Creates a new table from a random subetset of rows.
  
         Parameters
@@ -322,6 +355,40 @@ class DLAWorker(object):
 
         return new_table
 
+    def createCopiedTable(self, old_table, new_table, where = ''):
+        """Creates a new table as a copy of an old table.
+ 
+        Parameters
+        ----------
+        old_table: :obj:`string`, 
+            name of the table to be copied
+
+        new_table: :obj:`string`, 
+            name of the new table
+
+        Returns
+        -------
+        string
+            new table name
+        """
+        #drop_sql = """DROP TABLE IF EXISTS %s""" % (new_table)
+        #mm.execute(self.corpdb, self.dbCursor, drop_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+
+        create_sql = """CREATE TABLE %s LIKE %s""" % (new_table, old_table)
+        mm.execute(self.corpdb, self.dbCursor, create_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+        
+        disable_sql = """ALTER TABLE %s DISABLE KEYS""" % (new_table)
+        mm.execute(self.corpdb, self.dbCursor, disable_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+        
+        insert_sql = """INSERT INTO %s SELECT * FROM %s""" % (new_table, old_table)
+        if where: insert_sql += " WHERE %s" % (where)
+        mm.execute(self.corpdb, self.dbCursor, insert_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+        
+        enable_sql = """ALTER TABLE %s ENABLE KEYS""" % (new_table)
+        mm.execute(self.corpdb, self.dbCursor, enable_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+
+        return new_table
+
     @staticmethod
     def makeBlackWhiteList(args_featlist, args_lextable, args_categories, args_lexdb, args_use_unicode):
         """?????
@@ -349,7 +416,7 @@ class DLAWorker(object):
             print("making black or white list: [%s] [%s] [%s]" %([feat if isinstance(feat, str) else feat for feat in args_featlist], args_lextable, args_categories))
         else:
             print("making black or white list: [%s] [%s] [%s]" %([feat if isinstance(feat, str) else feat for feat in args_featlist], args_lextable, args_categories))
-        if args_lextable and args_categories:
+        if args_lextable:
             (conn, cur, dcur) = mm.dbConnect(args_lexdb, charset=dlac.DEF_ENCODING, use_unicode=args_use_unicode)
             sql = 'SELECT term FROM %s' % (args_lextable)
             if (len(args_categories) > 0) and args_categories[0] != '*':

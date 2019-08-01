@@ -56,8 +56,8 @@ Please send bug reports, patches, and other feedback to
 DISTNAME = 'dlatk'
 PACKAGES = ['dlatk',
   'dlatk.lib',
-  'dlatk.LexicaInterface',
-  'dlatk.mysqlMethods',
+  'dlatk.Lexicainterface',
+  'dlatk.mysqlmethods',
   'dlatk.Tools',
 ]
 LICENSE = 'GNU General Public License v3 (GPLv3)'
@@ -78,7 +78,7 @@ CLASSIFIERS = [
   'Programming Language :: Python :: 3.5',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '1.1.4'
+VERSION = '1.1.6'
 PACKAGE_DATA = {
   'dlatk': ['data/*.sql'],
   'dlatk.lib': ['lib/meloche_bd.ttf', 'lib/oval_big_mask.png', 'lib/oval_mask.png'],
@@ -107,7 +107,7 @@ EXTRAS_REQUIRE = {
   'rpy2': ['rpy2'],
   'simplejson': ['simplejson>=3.3.1'],
   'textstat': ['textstat>=0.6.1'],
-  'wordcloud':  ['wordcloud>1.1.3'],
+  'wordcloud':  ['wordcloud==1.1.3'],
 }
 
 SCRIPTS = ['dlatkInterface.py']

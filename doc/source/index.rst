@@ -6,7 +6,7 @@
 Differential Language Analysis ToolKit
 --------------------------------------
 
-DLATK is an end to end human text analysis package, specifically suited for social media and social scientific applications. It is written in Python 3 and developed by the World Well-Being Project at the University of Pennsylvania  and Stony Brook University. It contains:
+DLATK is an end to end human text analysis package, specifically suited for social media and social scientific applications. It is written in Python 3 and developed by the World Well-Being Project at the University of Pennsylvania and Stony Brook University. It contains:
 
 * feature extraction
 * part-of-speech tagging
@@ -23,7 +23,6 @@ DLATK can utilize:
 - `CMU's TweetNLP <http://www.cs.cmu.edu/~ark/TweetNLP/>`_ 
 - `pandas <http://pandas.pydata.org/>`_ dataframe output
 
-DLATK is licensed under a `GNU General Public License v3 (GPLv3) <https://www.gnu.org/licenses/gpl-3.0.en.html>`_.
 
 Getting Started
 ---------------
@@ -32,16 +31,15 @@ Getting Started
    :maxdepth: 1
 
    install
-   install_faq
-   tutorials/tut_dla
+   tutorials
    datasets
    dlatkinterface_ordered
-   modules
+   papers
 
 Citations
 ---------
 
-If you use DLATK in your work please cite the following `paper <http://aclweb.org/anthology/D17-2010>`_:
+If you use DLATK in your work please cite the following `paper <https://wwbp.org/papers/DLATK_Differential_Language_Analysis_ToolKit.pdf>`_:
 
 .. code-block:: bash
 
@@ -66,8 +64,11 @@ More Information
 ----------------
 
 * `DLATK GitHub page <http://www.github.com/dlatk/dlatk>`_
+* `DLATK at DockerHub <https://hub.docker.com/r/dlatk/dlatk/>`_
 * `World Well-Being Project <http://www.wwbp.org>`_
+* `HLAB at Stoney Brook <http://hlab.cs.stonybrook.edu/>`_
+* :doc:`modules`
 * :doc:`changelog`
 
-
+DLATK is licensed under a `GNU General Public License v3 (GPLv3) <https://www.gnu.org/licenses/gpl-3.0.en.html>`_.
 

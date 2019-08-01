@@ -78,7 +78,7 @@ EXTRAS_REQUIRE = {
   'image': ['image'],
   'langid': ['langid>=1.1.4'],
   'rpy2': ['rpy2'],
-  'wordcloud':  ['wordcloud>1.1.3'],
+  'wordcloud':  ['wordcloud==1.1.3'],
 }
 
 SCRIPTS = ['dlatkInterface.py']

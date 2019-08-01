@@ -70,7 +70,7 @@ INSTALL_REQUIRES = [
   'python-dateutil>=2.5.0', 
   'scikit-learn>=0.17.1', 
   'scipy>=0.13.3', 
-  'SQLAlchemy>=0.9.9', 
+  'SQLAlchemy>=1.3.0', 
   'statsmodels>=0.5.0', 
   'unicodecsv>=0.11.0',
 ]

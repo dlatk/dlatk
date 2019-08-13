@@ -3,6 +3,35 @@
 Changelog
 =========
 
+1.1.6 (2019-07-31)
+------------------
+  - New feature: bert feature extraction v1 ready
+  - New feature: added --keep_low_variance_outcomes
+  - New feature: added --outliers_to_mean to classifyPredictor
+  - New feature: added --cohens_d flag
+  - New feature: added factor adaptation code
+  - New feature: added --multiclass flag
+  - New feature: added new flag --predict_probabilities_to_feats
+  - Improving feature: added effect size ranges to ngram wordcloud filenames
+  - Improving feature: new default is to *not* print duplicate topic wordclouds, use --keep_duplicates to turn this off
+  - Improving feature: beta classification auc ensembling
+  - Improving feature: add _intercept=1 to all groups in lex feature tables
+  - Improving feature: --classification_to_lexicon works with topic level features and multiple feature tables
+  - Improving feature: remove underscores when uploading multiword lexica, use --keep_underscores to turn off
+  - Improving feature: added mysql methods for checking indices
+  - Improving feature: docker documentation
+  - Improving feature: cleaned up regression predictor output
+  - Improving feature: using default random seed throughout classes
+  - Improving feature: fixed bug in interactions and language filtering
+  - Improving feature: added printing of true values to pred_csv
+  - Improving feature: teal colorscheme, aliases for 'tagcloud' and 'wordcloud'
+  - Improving feature: metric names in wordcloud output
+  - Bug: fixed n_iter shufflesplit outdated param
+  - Bug: fixed nan pvalue issue in control corrections
+  - Bug: fixed --log transform table naming convention
+  - Bug: fixed bug in dlatk/classifyPredictor.py, scaler fit_transform was called during _multiXpredict, changed to transform
+  - Bug: correct version of wordcloud python module is 1.1.3
+
 1.1.5 (2018-03-02)
 ------------------
   - Improving feature: changes to LDA process: topicExtractor now accessible inside dlatkInterface

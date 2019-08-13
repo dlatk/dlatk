@@ -182,7 +182,7 @@ Generates the lexicons based on different probability distribution types
 	--topicfile=/home/user/lda_tutorial/msgs_lda_tok_lda.lda_topics.topicGivenWord.csv  \ 
 	-c msgs_lda_cp
 
-This will create the table `msgs_lda_cp` in the database `dlatk_lexicon`. You can change the database with the flag :doc:`../fwinterface/fwflag_lexicondb`:
+This will create the table `msgs_lda_cp` in the database `dlatk_lexica`. You can change the database with the flag :doc:`../fwinterface/fwflag_lexicondb`:
 
 .. code-block:: bash
 
@@ -206,7 +206,7 @@ This will create the table `msgs_lda_cp` in the database `dlatk_lexicon`. You ca
 	--topicfile=~/lda_tutorial/msgs_lda_tok_lda.lda_topics.freq.threshed50.loglik.csv \ 
 	-c msgs_lda_freq_t50ll 
 
-This will create the table `msgs_lda_freq_t50ll` in the database `dlatk_lexicon`. You can change the database with the flag :doc:`../fwinterface/fwflag_lexicondb`:
+This will create the table `msgs_lda_freq_t50ll` in the database `dlatk_lexica`. You can change the database with the flag :doc:`../fwinterface/fwflag_lexicondb`:
 
 .. code-block:: bash
 

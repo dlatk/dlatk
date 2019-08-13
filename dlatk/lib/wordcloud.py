@@ -390,6 +390,12 @@ def processTopicLine(line, metric):
     splitLine = line.split(' ')
     return 'tid-'+splitLine[2][0:-1], metric + '-'+splitLine[4][0:-1][0:5], '' #'tFq'+splitLine[6][0:-1]
 
+def processWordCloudLine(line, metric):
+    splitLine = line.split(' ')
+    maxr_idx, minr_idx = 2, 5
+    maxR, minR = splitLine[maxr_idx][0:-1], splitLine[minr_idx][0:-1]
+    return maxR, minR
+
 def duplicateFilterLineIntoInformativeString(line):
     splitLine = line.split(' ')
     return 'df-%s-of-%s'%(splitLine[1], splitLine[5])
@@ -398,7 +404,7 @@ def coerceToValidFileName(filename):
     valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
     return ''.join(c for c in filename if c in valid_chars)
 
-def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="Helvetica-Narrow", fontStyle=None, toFolders=False, useTopicWords=True, metric='R'):
+def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="Helvetica-Narrow", fontStyle=None, toFolders=False, useTopicWords=True, metric='R', keepDuplicates=False):
     processedFiles = {}
 
     if not directory:
@@ -417,6 +423,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
         outcome = ''; topicId = None; topicR = None; topicFreq = None;
         topicDup = '';
         topicFiles = False
+        maxR, minR = None, None
 
         for line in f.readlines():
             line = line.strip().decode("utf-8")
@@ -474,9 +481,13 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
             if line and len(line)>=6 and line[0:3]=='**[' and line[-3:]==']**':
                 topicDup = duplicateFilterLineIntoInformativeString(line)
             if line and len(line)==12 and line == '------------':
-                posneg = 'pos'; getwords = True;
+                posneg = 'pos'; 
             if line and len(line)==13 and line == '-------------':
-                posneg = 'neg'; getwords = True;
+                posneg = 'neg';
+            if line and line.startswith('[Max %s: ' % metric):
+                maxR, minR = processWordCloudLine(line, metric)
+                topicR = metric + '_' + minR + '-' + maxR
+                getwords = True;
             if line and len(line)==27 and line[0:27] == '---------------------------':
                 outcome = lastline[19:];
             if line and len(line)==32  and line[0:32] == '--------------------------------':
@@ -528,6 +539,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
             pass
 
     for filename, tags in processedFiles.items():
+        if not keepDuplicates and '.df-' in filename: continue
         ngrams, freqs, colors = list(zip(*tags))
         colors = ['#'+x for x in colors]
         filename = coerceToValidFileName(filename)

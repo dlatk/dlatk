@@ -494,6 +494,9 @@ class RegressionPredictor:
         self.featureLengthList = []
         """list: Holds the number of features in each featureGetter."""
 
+        self.featureNamesList = []
+        """list: Holds the names of features in each featureGetter."""
+
         self.multiFSelectors = None
         """str: Docstring *after* attribute, with type specified."""
 
@@ -505,6 +508,9 @@ class RegressionPredictor:
 
         self.outliersToMean = outliersToMean
         """float: Threshold for setting outliers to mean value."""
+
+        self.controlsOrder = []
+        """list: Holds the ordered control names"""
 
     def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', outputName = '', saveFeatures = False):
         """Train Regressors"""
@@ -1731,23 +1737,23 @@ class RegressionPredictor:
             for outcome, model in self.regressionModels.items():
                 coefficients = eval('self.regressionModels[outcome].%s' % self.modelToCoeffsName[self.modelName.lower()])
                 weights_dict[featTables[i]][outcome] = dict()
+
+                coeff_iter = iter(coefficients.flatten())
+                coefficients  = np.asarray([list(islice(coeff_iter, 0, j)) for j in self.featureLengthList][i])
                 
                 # Inverting Feature Selection
                 if self.multiFSelectors[outcome][i]:
                     print("Inverting the feature selection: %s" % self.multiFSelectors[outcome][i])
-                    coefficients = self.multiFSelectors[outcome][i].inverse_transform(coefficients)#.flatten()
-                
+                    coefficients = self.multiFSelectors[outcome][i].inverse_transform(coefficients).flatten()
+
                 if 'mean_' in dir(self.multiFSelectors[outcome][i]):
                     print("RPCA mean: ", self.multiFSelectors[outcome][i].mean_)
 
-                coefficients = coefficients.flatten()
                 # featTableFeats contains the list of features 
                 if len(coefficients) != len(featTableFeats):
                     print("length of coefficients (%d) does not match number of features (%d)" % (len(coefficients), len(featTableFeats)))
                     sys.exit(1)
 
-                coeff_iter = iter(coefficients)
-                coefficients  = np.asarray([list(islice(coeff_iter, 0, j)) for j in self.featureLengthList][i])
                 intercept = self.regressionModels[outcome].intercept_
                 if outcome not in intercept_dict:
                     intercept_dict[outcome] = intercept

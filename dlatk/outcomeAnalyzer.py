@@ -1730,7 +1730,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         return keptTopics
 
 
-    def printTagCloudData(self, correls, maxP = dlac.DEF_P, outputFile='', paramString = None, maxWords = 100, duplicateFilter = False, colorScheme='multi', cleanCloud = False):
+    def printTagCloudData(self, correls, maxP = dlac.DEF_P, outputFile='', paramString = None, maxWords = 100, duplicateFilter = False, colorScheme='multi', cleanCloud = False, metric='R'):
         """
         Prints data that can be inputted into tag cloud software
 
@@ -1790,20 +1790,20 @@ class OutcomeAnalyzer(OutcomeGetter):
 
             print("PositiveRs:\n------------")
             if colorScheme == 'bluered':
-                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme='blue', use_unicode=self.use_unicode, cleanCloud = cleanCloud)
+                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme='blue', use_unicode=self.use_unicode, cleanCloud = cleanCloud, metric=metric)
             elif colorScheme == 'redblue':
-                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme='red', use_unicode=self.use_unicode, cleanCloud = cleanCloud)
+                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme='red', use_unicode=self.use_unicode, cleanCloud = cleanCloud, metric=metric)
             else:
-                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme=colorScheme, use_unicode=self.use_unicode, cleanCloud = cleanCloud)
+                OutcomeAnalyzer.printTagCloudFromTuples(posRs, maxWords, colorScheme=colorScheme, use_unicode=self.use_unicode, cleanCloud = cleanCloud, metric=metric)
             # OutcomeAnalyzer.plotWordcloudFromTuples(posRs, maxWords, outputFile + ".%s.%s"%(outcomeField, "posR"), wordcloud )
 
             print("\nNegative Rs:\n-------------")
             if colorScheme == 'bluered':
-                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme='red', use_unicode=self.use_unicode, cleanCloud = cleanCloud)
+                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme='red', use_unicode=self.use_unicode, cleanCloud = cleanCloud, metric=metric)
             elif colorScheme == 'redblue':
-                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme='blue', use_unicode=self.use_unicode, cleanCloud = cleanCloud)
+                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme='blue', use_unicode=self.use_unicode, cleanCloud = cleanCloud, metric=metric)
             else:
-                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme=colorScheme, use_unicode=self.use_unicode, cleanCloud = cleanCloud)
+                OutcomeAnalyzer.printTagCloudFromTuples(negRs, maxWords, colorScheme=colorScheme, use_unicode=self.use_unicode, cleanCloud = cleanCloud, metric=metric)
             # OutcomeAnalyzer.plotWordcloudFromTuples(negRs, maxWords, outputFile + ".%s.%s"%(outcomeField, "negR"), wordcloud )
 
         if outputFile:
@@ -1999,7 +1999,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             # if using 1gram words and frequencies
             # (r, p, n, freq) belong to the category only
             tw = [(w_f[0], (w_f[1], p, n, ci, w_f[1])) for w_f in tw] if not wordFreqs else [(w_f1[0], (w_f1[1]*float(wordFreqs[w_f1[0]]), p, n, ci, wordFreqs[w_f1[0]])) for w_f1 in tw]
-            OutcomeAnalyzer.printTagCloudFromTuples(tw, maxWords, rankOrderR = True, colorScheme=colorScheme, use_unicode=use_unicode, cleanCloud = cleanCloud)
+            OutcomeAnalyzer.printTagCloudFromTuples(tw, maxWords, rankOrderR = True, colorScheme=colorScheme, use_unicode=use_unicode, cleanCloud = cleanCloud, topic_cloud=True)
 
         return topicWords
 
@@ -2156,7 +2156,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
     @staticmethod
-    def printTagCloudFromTuples(rList, maxWords, rankOrderFreq = True, rankOrderR = False, colorScheme='multi', use_unicode=True, cleanCloud=False, censor_dict=dlac.DEF_CENSOR_DICT):
+    def printTagCloudFromTuples(rList, maxWords, rankOrderFreq = True, rankOrderR = False, colorScheme='multi', use_unicode=True, cleanCloud=False, censor_dict=dlac.DEF_CENSOR_DICT, metric='R', topic_cloud=False):
         """
         Prints a tag cloud from a set of tuples
 
@@ -2176,7 +2176,6 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         """
         #rlist is a list of (word, correl) tuples
-
         if len(rList) < 1:
             print("rList has less than no items\n")
             return False
@@ -2207,7 +2206,9 @@ class OutcomeAnalyzer(OutcomeGetter):
         maxFreq = 0
         if rList[0][2]:
             maxFreq = max([v[2] for v in rList])
-
+        if not topic_cloud:
+            print(("[Max %s: %.3f, Min %s: %.3f]" % (metric, maxR, metric, minR)))
+                
         for (w, occ, freq) in rList:
             if freq:
                 color = freqToColor(freq, maxFreq, colorScheme=colorScheme)

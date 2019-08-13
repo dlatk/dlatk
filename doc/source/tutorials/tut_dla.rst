@@ -170,11 +170,11 @@ The argument to the :doc:`../fwinterface/fwflag_combine_feat_tables` flag is use
 
 Generate Lexicon (topic) Features
 ---------------------------------
-This step **uses the 1gram feature table** that was used in step 1a in addition to some topic definitions.  It calculates a value that characterizes how strongly each topic was present in the text of a given group.  Sometimes this is as simple as aggregating counts.  Sometimes there is a weighting factor involved.  We will use a weighted, data driven lexicon like our 2000 Facebook topics (topics are distributed with this release). These topics were created from Facebook data using Latent Dirichlet allocation (LDA). `Go here <https://en.wikipedia.org/wiki/Latent_Dirichlet_allocation>`_ for more info on LDA. Also see our :doc:`tut_lda`. The Facebook topic table in dlatk_lexicon looks like
+This step **uses the 1gram feature table** that was used in step 1a in addition to some topic definitions.  It calculates a value that characterizes how strongly each topic was present in the text of a given group.  Sometimes this is as simple as aggregating counts.  Sometimes there is a weighting factor involved.  We will use a weighted, data driven lexicon like our 2000 Facebook topics (topics are distributed with this release). These topics were created from Facebook data using Latent Dirichlet allocation (LDA). `Go here <https://en.wikipedia.org/wiki/Latent_Dirichlet_allocation>`_ for more info on LDA. Also see our :doc:`tut_lda`. The Facebook topic table in dlatk_lexica looks like
 
 .. code-block:: mysql
 
-	mysql> select * from dlatk_lexicon.met_a30_2000_cp limit 10;
+	mysql> select * from dlatk_lexica.met_a30_2000_cp limit 10;
 	+----+---------+----------+--------------------+
 	| id | term    | category | weight             |
 	+----+---------+----------+--------------------+
@@ -197,7 +197,7 @@ Since this lexica was produced using a data driven approach we make no attempt t
 .. code-block:: bash
 
 	# EXPECTED OUTPUT TABLE
-	# feat$cat_met_a30_2000_cp$msgs_xxx$user_id$16to16
+	# feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra
 	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_lex_table -l met_a30_2000_cp --weighted_lexicon
 
 Brief descriptions of the flags:
@@ -209,24 +209,24 @@ Brief descriptions of the flags:
 Note - dlatk pieces together the expected name of the 1gram table using the information you give it in the -d, -t, and -c options 
 Note - in the table name *met_a30_2000_cp*, met stands for messages english tokenizen, a30 stands for alpha = 30 (a tuning parameter in the LDA process) and 2000 means there are 2000 topics.
 
-In general use the following syntax (*dlatk_lexicon* is a database where all of our lexica are stored):
+In general use the following syntax (*dlatk_lexica* is a database where all of our lexica are stored):
 
 .. code-block:: bash
 
 	## GENERAL SYNTAX FOR CREATING LEXICON FEATURE TABLES
-	dlatkInterface.py -d <db> -t <msg_tbl> -c <grp_col> --add_lex_table -l <topic_tbl_from_dlatk_lexicon> [--weighted_lexicon]
+	dlatkInterface.py -d <db> -t <msg_tbl> -c <grp_col> --add_lex_table -l <topic_tbl_from_dlatk_lexica> [--weighted_lexicon]
 
 Again, you can view the tables with the following **mysql** commands:
 
 .. code-block:: mysql
 
-	select * from dla_tutorial.feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16 limit 10;
+	select * from dla_tutorial.feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra limit 10;
 
 What should the group norms sum to for a single group in the lexicon tables? Will this be the same as above? Why or why not?
 
 .. code-block:: mysql
 
-	select group_id, sum(group_norm) from dla_tutorial.feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16 group by group_id limit 10;
+	select group_id, sum(group_norm) from dla_tutorial.feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra group by group_id limit 10;
 
 
 STEP 2 - Insights (DLA): Correlate features with outcomes
@@ -307,7 +307,7 @@ Finally using the Facebook topics and creating topic tag clouds:
 .. code-block:: bash
 
 	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
-	-f 'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16' \ 
+	-f 'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra' \ 
 	--outcome_table blog_outcomes  --group_freq_thresh 500 \ 
 	--outcomes age gender --output_name fbtopic_output \ 
 	--topic_tagcloud --make_topic_wordcloud --topic_lexicon met_a30_2000_freq_t50ll \ 

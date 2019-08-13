@@ -1169,7 +1169,7 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
-    def addBERTTable(self, modelName = 'base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=400, tableName = None, valueFunc = lambda d: d):
+    def addBERTTable(self, modelName = 'base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=400, noContext=True, tableName = None, valueFunc = lambda d: d):
         """Creates feature tuples (correl_field, feature, values) table where features are parsed phrases
 
         Parameters
@@ -1208,7 +1208,9 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done.")
         
         #CREATE TABLEs:
-        bertTableName = self.createFeatureTable('BERTc_'+modelName[:3]+'_'+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep]), "VARCHAR(8)", 'DOUBLE', tableName, valueFunc)
+        noc = ''
+        if noContext: noc = 'noc_'#adds noc to name if no context
+        bertTableName = self.createFeatureTable('BERTc_'+modelName[:3]+'_'+noc+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep]), "VARCHAR(8)", 'DOUBLE', tableName, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
         sentTable = self.corptable+'_stoks'
@@ -1230,85 +1232,92 @@ class FeatureExtractor(DLAWorker):
             for messageRow in self.getMessagesForCorrelField(cf_id, messageTable = sentTable, warnMsg=True):
                 message_id = messageRow[0]
                 try:
-                    sents = loads(messageRow[1])
+                    messageSents = loads(messageRow[1])
                 except NameError: 
                     dlac.warn("Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
                     sys.exit(1)
 
-                if not message_id in mids and len(sents) > 0:
+                if not message_id in mids and len(messageSents) > 0:
                     msgs+=1
+                    subMessages = []
+                    if noContext:#break up to run on one word at a time:               
+                        for s in messageSents:
+                            subMessages.extend([[word] for word in bTokenizer.tokenize(s)])
+                    else: #keep context; one submessage
+                        subMessages=[messageSents]
 
+                    for sents in subMessages: #only matters for noContext)
 
-                    #Add tokens to BERT:
-                    sents[0] = '[CLS] ' + sents[0]
-                    sentsTok = [bTokenizer.tokenize(s+' [SEP]') for s in sents]
-                    #check for overlength:
-                    for i in range(len(sentsTok)):
-                        if len(sentsTok[i]) > maxTokensPerSeg:
-                            newSegs = [sentsTok[i][j:j+maxTokensPerSeg]+['[SEP]'] for j in range(0, len(sentsTok[i]), maxTokensPerSeg)]
-                            if not lengthWarned:
-                                dlac.warn("AddBert: Some segment are too long; splitting up; first example: %s" % str(newSegs))
-                                #lengthWarned = True
-                            sentsTok[i] = sentsTok[:i] + newSegs + sentsTok[i+1:]
+                        #Add tokens to BERT:
+                        sents[0] = '[CLS] ' + sents[0]
+                        sentsTok = [bTokenizer.tokenize(s+' [SEP]') for s in sents]
+                        #check for overlength:
+                        for i in range(len(sentsTok)):
+                            if len(sentsTok[i]) > maxTokensPerSeg:
+                                newSegs = [sentsTok[i][j:j+maxTokensPerSeg]+['[SEP]'] for j in range(0, len(sentsTok[i]), maxTokensPerSeg)]
+                                if not lengthWarned:
+                                    dlac.warn("AddBert: Some segment are too long; splitting up; first example: %s" % str(newSegs))
+                                    #lengthWarned = True
+                                sentsTok[i] = sentsTok[:i] + newSegs + sentsTok[i+1:]
 
-                    #calculate for all pairs:
-                    encsPerSent = [[] for i in range(len(sentsTok))]#holds multiple encodings per sentence (based on first/second)
-                    for i in range(len(sentsTok)):
-                        thisPair = sentsTok[i:i+2]
-                        thisPairFlat = [t for s in thisPair for t in s]
-                        
-                        # Convert token to vocabulary indices
-                        indexedToks = bTokenizer.convert_tokens_to_ids(thisPairFlat)
-                        # Define segs:
-                        segIds = [j for j in range(len(thisPair)) for x in thisPair[j]]
-                        #print(segIds) #debug
+                        #calculate for all pairs:
+                        encsPerSent = [[] for i in range(len(sentsTok))]#holds multiple encodings per sentence (based on first/second)
+                        for i in range(len(sentsTok)):
+                            thisPair = sentsTok[i:i+2]
+                            thisPairFlat = [t for s in thisPair for t in s]
 
-                        # Convert inputs to PyTorch tensors
-                        toksTens = torch.tensor([indexedToks])
-                        segsTens = torch.tensor([segIds])
-                        if cuda: 
-                            try:
-                                toksTens = toksTens.to('cuda')
-                                segsTens = segsTens.to('cuda')
-                            except:
-                                dlac.warn("! unable to use CUDA (gpus) for tensors even though it worked for model.")
-                        #print (toksTens, segsTens) #debug
+                            # Convert token to vocabulary indices
+                            indexedToks = bTokenizer.convert_tokens_to_ids(thisPairFlat)
+                            # Define segs:
+                            segIds = [j for j in range(len(thisPair)) for x in thisPair[j]]
+                            #print(segIds) #debug
 
-                        # Combine vectors of each select layers; store as first sent and second sent:
-                        with torch.no_grad():
-                            encAllLayers, _ = bModel(toksTens, segsTens)
-                            #save layers:
-                            encSelectLayers = []
-                            for lyr in layersToKeep:
-                                encSelectLayers.append(encAllLayers[int(lyr)].detach().cpu().numpy())
-                            #aggregate layers:
-                            #concatenate (this doesn't seem to work right):
-                            twoSentEnc = np.concatenate(encSelectLayers, axis=2) 
-                            #mean
-                            #twoSentEnc = np.mean(encSelectLayers, axis=0) #TODO: consider not averaging across layers
-                            if (i < (len(sentsTok) - 1)) or (len(sentsTok) == 1):
-                                sent1enc = twoSentEnc[:,:len(thisPair[0])]
-                                encsPerSent[i].append(sent1enc)
-                            if (i+1) < len(sentsTok):
-                                sent2enc = twoSentEnc[:,len(thisPair[0]):]
-                                encsPerSent[i+1].append(sent2enc)
+                            # Convert inputs to PyTorch tensors
+                            toksTens = torch.tensor([indexedToks])
+                            segsTens = torch.tensor([segIds])
+                            if cuda: 
+                                try:
+                                    toksTens = toksTens.to('cuda')
+                                    segsTens = segsTens.to('cuda')
+                                except:
+                                    dlac.warn("! unable to use CUDA (gpus) for tensors even though it worked for model.")
+                            #print (toksTens, segsTens) #debug
 
-                    #Aggregate the (up to 2; one as first; one as second) vectors per sentence
-                    sentEncs = []
-                    #print(encsPerSent)#debug
-                    for i in range(len(sentsTok)):
-                        sentEncPerWord = np.mean(encsPerSent[i], axis=0)[0]
-                        #aggregate words into setence:
-                        #print(sentEncPerWord.shape)#debug
-                        sentEncs.append(np.mean(sentEncPerWord, axis=0)) #TODO: consider more than mean? 
-                    #print([(p[0], p[1].shape) for p in zip(sentsTok, sentEncs)])#debug
+                            # Combine vectors of each select layers; store as first sent and second sent:
+                            with torch.no_grad():
+                                encAllLayers, _ = bModel(toksTens, segsTens)
+                                #save layers:
+                                encSelectLayers = []
+                                for lyr in layersToKeep:
+                                    encSelectLayers.append(encAllLayers[int(lyr)].detach().cpu().numpy())
+                                #aggregate layers:
+                                #concatenate (this doesn't seem to work right):
+                                twoSentEnc = np.concatenate(encSelectLayers, axis=2) 
+                                #mean
+                                #twoSentEnc = np.mean(encSelectLayers, axis=0) #TODO: consider not averaging across layers
+                                if (i < (len(sentsTok) - 1)) or (len(sentsTok) == 1):
+                                    sent1enc = twoSentEnc[:,:len(thisPair[0])]
+                                    encsPerSent[i].append(sent1enc)
+                                if (i+1) < len(sentsTok):
+                                    sent2enc = twoSentEnc[:,len(thisPair[0]):]
+                                    encsPerSent[i+1].append(sent2enc)
 
-                    #Aggregate across sentences:
-                    bertMessageVectors.append(np.mean(sentEncs, axis=0)) #TODO: consider more than mean?
-                   
-                    if msgs % int(dlac.PROGRESS_AFTER_ROWS/5) == 0: #progress update
-                        dlac.warn("Messages Read: %.2f k" % (msgs/1000.0))
-                    mids.add(message_id)
+                        #Aggregate the (up to 2; one as first; one as second) vectors per sentence
+                        sentEncs = []
+                        #print(encsPerSent)#debug
+                        for i in range(len(sentsTok)):
+                            sentEncPerWord = np.mean(encsPerSent[i], axis=0)[0]
+                            #aggregate words into setence:
+                            #print(sentEncPerWord.shape)#debug
+                            sentEncs.append(np.mean(sentEncPerWord, axis=0)) #TODO: consider more than mean? 
+                        #print([(p[0], p[1].shape) for p in zip(sentsTok, sentEncs)])#debug
+
+                        #Aggregate across sentences:
+                        bertMessageVectors.append(np.mean(sentEncs, axis=0)) #TODO: consider more than mean?
+
+                        if msgs % int(dlac.PROGRESS_AFTER_ROWS/5) == 0: #progress update
+                            dlac.warn("Messages Read: %.2f k" % (msgs/1000.0))
+                        mids.add(message_id)
 
 
             #Aggregate message vectors:

@@ -115,7 +115,6 @@ DEF_BERT_MODEL='base-uncased'
 DEF_BERT_AGGREGATION=['mean']
 DEF_BERT_LAYERS=[10]
 
-
 ##Prediction Settings:
 DEF_MODEL = 'ridgecv'
 DEF_CLASS_MODEL = 'svc'

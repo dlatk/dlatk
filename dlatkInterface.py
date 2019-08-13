@@ -190,6 +190,8 @@ def main(fn_args = None):
                        help='Aggregations to use with Bert.')
     group.add_argument('--bert_layers', type=int, metavar='LAYER', nargs='+', dest='bertlayers', default=dlac.DEF_BERT_LAYERS,
                        help='layers from Bert to keep.')
+    group.add_argument('--bert_no_context', action='store_true', dest='bertnocontext', default=False,
+                       help='encoded without considering context.')
 
 
 
@@ -983,7 +985,7 @@ def main(fn_args = None):
 
     if args.addbert:
         if not fe: fe = FE()
-        args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=args.bertaggs, layersToKeep=args.bertlayers, valueFunc = args.valuefunc)
+        args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=args.bertaggs, layersToKeep=args.bertlayers, noContext=args.bertnocontext, valueFunc = args.valuefunc)
 
     if args.addldafeattable:
         if not fe: fe = FE()

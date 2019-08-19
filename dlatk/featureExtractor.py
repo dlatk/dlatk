@@ -1264,7 +1264,6 @@ class FeatureExtractor(DLAWorker):
                                 sentsTok = sentsTok[:i] + newSegs + sentsTok[i+1:]
                                 i+=(len(newSegs) - 1)#skip ahead new segments
                             i+=1
-                            print("sentstok", sentsTok) #debug
 
                         #calculate for all pairs:
                         encsPerSent = [[] for i in range(len(sentsTok))]#holds multiple encodings per sentence (based on first/second)
@@ -1273,8 +1272,6 @@ class FeatureExtractor(DLAWorker):
                             thisPairFlat = [t for s in thisPair for t in s]
 
                             # Convert token to vocabulary indices
-                            print("this pair", thisPair)#debug
-                            print("this pair flat", thisPairFlat)#debug
                             indexedToks = bTokenizer.convert_tokens_to_ids(thisPairFlat)
                             # Define segs:
                             segIds = [j for j in range(len(thisPair)) for x in thisPair[j]]

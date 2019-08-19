@@ -475,9 +475,11 @@ class MessageTransformer(DLAWorker):
                 if cleanMessages:
                     parses = [json.dumps(sentDetector.tokenize((tc.sentenceNormalization(m.strip(), normalizeDict, self.use_unicode)))) for m in messages]
                 else:
-                    parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(m.strip())))) for m in messages]
+                    #parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(m.strip())))) for m in messages]
+                    parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(m.strip()))) for m in messages]
             else:
-                parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(m.strip())))) for m in messages]
+                #parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(m.strip())))) for m in messages]
+                parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(m.strip()))) for m in messages]
                 #parses = [json.dumps(sentDetector.tokenize(tc.removeNonAscii(tc.treatNewlines(m.strip())))) for m in messages]
             
             #add msgs into new tables

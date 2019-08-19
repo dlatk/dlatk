@@ -1250,15 +1250,21 @@ class FeatureExtractor(DLAWorker):
 
                         #Add tokens to BERT:
                         sents[0] = '[CLS] ' + sents[0]
+                        #TODO: preprocess to remove newlines
                         sentsTok = [bTokenizer.tokenize(s+' [SEP]') for s in sents]
                         #check for overlength:
-                        for i in range(len(sentsTok)):
+                        i = 0
+                        while (i < len(sentsTok)):#while instead of for since array may change size
                             if len(sentsTok[i]) > maxTokensPerSeg:
                                 newSegs = [sentsTok[i][j:j+maxTokensPerSeg]+['[SEP]'] for j in range(0, len(sentsTok[i]), maxTokensPerSeg)]
+                                newSegs[-1] = newSegs[-1][:-1] #remove last seperator
                                 if not lengthWarned:
-                                    dlac.warn("AddBert: Some segment are too long; splitting up; first example: %s" % str(newSegs))
+                                    dlac.warn("AddBert: Some segments are too long; splitting up; first example: %s" % str(newSegs))
                                     #lengthWarned = True
-                                sentsTok[i] = sentsTok[:i] + newSegs + sentsTok[i+1:]
+                                sentsTok = sentsTok[:i] + newSegs + sentsTok[i+1:]
+                                i+=(len(newSegs) - 1)#skip ahead new segments
+                            i+=1
+                            print("sentstok", sentsTok) #debug
 
                         #calculate for all pairs:
                         encsPerSent = [[] for i in range(len(sentsTok))]#holds multiple encodings per sentence (based on first/second)
@@ -1267,6 +1273,8 @@ class FeatureExtractor(DLAWorker):
                             thisPairFlat = [t for s in thisPair for t in s]
 
                             # Convert token to vocabulary indices
+                            print("this pair", thisPair)#debug
+                            print("this pair flat", thisPairFlat)#debug
                             indexedToks = bTokenizer.convert_tokens_to_ids(thisPairFlat)
                             # Define segs:
                             segIds = [j for j in range(len(thisPair)) for x in thisPair[j]]

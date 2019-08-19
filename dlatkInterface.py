@@ -58,11 +58,12 @@ def main(fn_args = None):
     """
     :param fn_args: string - ex "-d testing -t msgs -c user_id --add_ngrams -n 1 "
     """
-
-    dlac.warn("\n\n--\nDLATK Interface Initiated\n--")
-
+    
+    strTime = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())    
+    dlac.warn("\n%s\n--\nDLATK Interface Initiated\n--" % strTime)
     start_time = time.time()
 
+    
     ##Argument Parser:
     init_parser = argparse.ArgumentParser(prefix_chars='-+', formatter_class=argparse.ArgumentDefaultsHelpFormatter, add_help=False)
 
@@ -187,7 +188,7 @@ def main(fn_args = None):
     group.add_argument('--bert_model', type=str, metavar='NAME', dest='bertmodel', default=dlac.DEF_BERT_MODEL,
                        help='BERT model to use if extracting bert features.')
     group.add_argument('--bert_aggregations', type=str, metavar='AGG', nargs='+', dest='bertaggs', default=dlac.DEF_BERT_AGGREGATION,
-                       help='Aggregations to use with Bert.')
+                       help='Aggregations to use with Bert (e.g. mean, min, max).')
     group.add_argument('--bert_layers', type=int, metavar='LAYER', nargs='+', dest='bertlayers', default=dlac.DEF_BERT_LAYERS,
                        help='layers from Bert to keep.')
     group.add_argument('--bert_no_context', action='store_true', dest='bertnocontext', default=False,

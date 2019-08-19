@@ -1169,7 +1169,7 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
-    def addBERTTable(self, modelName = 'base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=400, noContext=True, tableName = None, valueFunc = lambda d: d):
+    def addBERTTable(self, modelName = 'base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, tableName = None, valueFunc = lambda d: d):
         """Creates feature tuples (correl_field, feature, values) table where features are parsed phrases
 
         Parameters

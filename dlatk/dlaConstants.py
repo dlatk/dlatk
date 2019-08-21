@@ -113,6 +113,7 @@ DEF_TOP_MESSAGES = 10
 
 DEF_BERT_MODEL='base-uncased'
 DEF_BERT_AGGREGATION=['mean']
+DEF_BERT_LAYER_AGGREGATION=['concatenate']
 DEF_BERT_LAYERS=[10]
 
 ##Prediction Settings:

@@ -4,6 +4,7 @@
 Interface Module to DLATK
 """
 
+print("\n")#clear some lines to make command more obvious
 import os, getpass
 import sys
 import pdb
@@ -60,7 +61,7 @@ def main(fn_args = None):
     """
     
     strTime = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())    
-    dlac.warn("\n%s\n--\nDLATK Interface Initiated\n--" % strTime)
+    dlac.warn("\n\n-----\nDLATK Interface Initiated: %s\n-----" % strTime)
     start_time = time.time()
 
     
@@ -159,7 +160,7 @@ def main(fn_args = None):
                        help='anscombe transforms normalized group_norm lexicon freq information.')
     group.add_argument('--lex_boolean', action='store_const', dest='lexvaluefunc', const=lambda d: float(1.0),
                        help='boolean transforms normalized group_norm freq information (1 if true).')
-    group.add_argument('--set_p_occ', metavar='P', dest='pocc', type=float, default=dlac.DEF_P_OCC,
+    group.add_argument('--set_p_occ', '--set_pocc', metavar='P', dest='pocc', type=float, default=dlac.DEF_P_OCC,
                        help='The probability of occurence of either a feature or group (altnernatively if > 1, then limits to top p_occ features instead).')
     group.add_argument('--set_pmi_threshold', metavar='PMI', dest='pmi', type=float, default=dlac.DEF_PMI,
                        help='The threshold for the feat_colloc_filter.')
@@ -1768,8 +1769,28 @@ def main(fn_args = None):
             ClassifyPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
             print("Wrote to: %s" % str(outputStream))
             outputStream.close()
-        else:
-            pprint(comboScores)
+        #else:
+        pprint(comboScores, compact=True)
+        for outcome, cData in sorted(comboScores.items()):
+            print("\n"+outcome)
+            mfc = 0.0
+            for controls, wLangData in sorted(cData.items()):
+                print("  CONTROLS: "+str(controls)) if len(controls) > 0 else print("  NO CONTROLS")
+                if 0 in wLangData:
+                    print("   - LANG: acc: %.3f, f1: %.3f, auc: %.3f" %\
+                        tuple([wLangData[0][k] for k in ['acc', 'f1', 'auc']]))
+                    mfc = wLangData[0]['mfclass_acc']
+                if 1 in wLangData:
+                    if len(controls) > 0: 
+                        print("   + LANG: acc: %.3f, f1: %.3f, auc: %.3f, auc ensemble: %.3f (p = %.4f)" %\
+                              tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc', 'auc_cntl_comb2', 'auc_cntl_comb2_p']]))
+                    else:
+                        print("   + LANG: acc: %.3f, f1: %.3f, auc: %.3f" %\
+                              tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc']]))
+                        mfc = wLangData[1]['mfclass_acc']
+            print("      (mfc_acc: %.3f)"%mfc)
+
+                
         if args.pred_csv:
             outputStream = sys.stdout
             if args.outputname:

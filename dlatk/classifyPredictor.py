@@ -231,7 +231,7 @@ class ClassifyPredictor:
             #{'C':[1, 10, 0.1, 0.01, 0.05, 0.005], 'penalty':['l1'], 'dual':[False]} #swl/perma message-level
             ],
         'lr': [
-            {'C':[.01], 'penalty':['l2'], 'dual':[False]},#DEFAULT
+            {'C':[.01], 'penalty':['l2'], 'dual':[False], 'random_state': [42]},#DEFAULT
             #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l2'], 'dual':[False]}, 
             #{'C':[0.01, 0.1, 0.001, 1, .0001], 'penalty':['l2'], 'dual':[False]}, 
             #{'C':[0.00001], 'penalty':['l2']} # UnivVsMultiv choice Maarten
@@ -314,7 +314,6 @@ class ClassifyPredictor:
     maxPredictAtTime = 30000
     backOffPerc = .00 #when the num_featrue / training_insts is less than this backoff to backoffmodel
     backOffModel = 'linear-svc'
-    #backOffModel = 'linear'
 
     # feature selection:
     featureSelectionString = None
@@ -554,7 +553,7 @@ class ClassifyPredictor:
             random.shuffle(groupList)
             groupFolds = foldN(groupList, nFolds)
         else:
-            # stratification happens on an outcome by outcome basis
+            # stratification happens on an outcome by outcome basis (lower in the code)
             print("    using stratified folds; different folds per outcome")
 
         ####
@@ -638,6 +637,7 @@ class ClassifyPredictor:
                     #for warmStartControls or controlCombinedProbs
                     lastClassifiers= [None]*nFolds
                     savedControlYpp = None
+                    savedControlPProbs = None
 
                     for withLanguage in range(2):
                         if withLanguage: 
@@ -777,13 +777,16 @@ class ClassifyPredictor:
                             reportStats['auc_cntl_comb2_p'] = 1.0
                             if withLanguage and savedControlYpp is not None and len(testCounter.keys()) == 2:
                                 #newprobs = np.array(easyNFoldLR( np.array([ypredProbs[:,-1], savedControlYpp]).T, ytrue, len(groupFolds)))[:,-1]
-                                newprobs2 = np.array(easyNFoldAUCWeight( np.array([ypredProbs[:,-1], savedControlYpp]).T, ytrue, len(groupFolds)))[:,-1]
+                                #newprobs2 = np.array(easyNFoldAUCWeight( np.array([ypredProbs[:,-1], savedControlYpp]).T, ytrue, len(groupFolds)))[:,-1]
+                                newprobs2 = np.array(ensembleNFoldAUCWeight(outcomes, [predictionProbs, savedControlPProbs], groupFolds))[:,-1]
+                                
                                 #reportStats['auc_cntl_comb'] = pos_neg_auc(ytrue, newprobs)
                                 #reportStats['auc_cntl_comb_t'], reportStats['auc_cntl_comb_p'] = paired_t_1tail_on_errors(newprobs, savedControlYpp, ytrue)
                                 reportStats['auc_cntl_comb2'] = pos_neg_auc(ytrue, newprobs2)
                                 reportStats['auc_cntl_comb2_t'], reportStats['auc_cntl_comb2_p'] = paired_t_1tail_on_errors(newprobs2, savedControlYpp, ytrue)
                             else: #save probs for next round
                                 savedControlYpp = ypredProbs[:,-1]
+                                savedControlPProbs = predictionProbs
 
 
                         if savePredictions: 
@@ -2514,7 +2517,7 @@ def stratifyGroups(groups, outcomes, folds, randomState = DEFAULT_RANDOM_SEED):
     for g in xGroups:
         try:
             outcomesByClass[outcomes[g]].append(g)
-        except:
+        except KeyError:
             outcomesByClass[outcomes[g]] = [g]
 
     groupsPerFold = {f: [] for f in range(folds)}
@@ -2567,16 +2570,48 @@ def r2simple(ytrue, ypred):
     r2 = 1 - (ss_err/ss_tot)
     return r2
 
+
+def ensembleNFoldAUCWeight(outcomes, probsListOfDicts, groupFolds):
+    """produce average of two probabilities, weighted by training AUC; return new probs"""
+    newProbs = dict()
+    for testChunk in [i for i in range(0, len(groupFolds))]:
+        trainGroups = set()
+        for chunk in (groupFolds[:testChunk]+groupFolds[(testChunk+1):]):
+            trainGroups.update(chunk)
+        testGroups = set(groupFolds[testChunk])
+        trainGroupsOrder = list(trainGroups)
+        testGroupsOrder = list(testGroups)
+        (Xtrain, ytrain) = alignDictsAsXy(probsListOfDicts, outcomes, keys = trainGroupsOrder)
+        (Xtest, ytest) = alignDictsAsXy(probsListOfDicts, outcomes, keys = testGroupsOrder)
+        weights = np.array([0.0]*Xtest.shape[1])
+        sumWeights = 0.0
+        for c in range(Xtrain.shape[1]):
+            weights[c] = ((np.absolute(pos_neg_auc(ytrain, Xtrain[:,c])) - 0.5) / 0.5)**2
+            sumWeights += weights[c]
+        weights = np.array([weights / sumWeights])
+        warn(weights) #debug
+        ypred_probs = np.dot(Xtest, weights.T)
+        warn("   EASY LR AUC: %.4f" %  pos_neg_auc(ytest, ypred_probs[:,-1]))
+        newProbs.update(dict(zip(testGroupsOrder, ypred_probs)))
+
+    return newProbs
+        
+
 def easyNFoldAUCWeight(X, y, folds):
     """build logistic regressor given two sets of decision function outputs, return new probs """
     yscores = []
-    X = zscore(X)
+    #X, y = zip(*sorted(zip(X.tolist(), y)))#make sure always in the same order for consistency of results
+    #X = zscore(X)
+    X = np.array(X)
     y = np.array(y)
+    print(X)
+    print(y)
     warn(" [NFOLD TRAIN TESTING Easy LR]")
     groups = range(len(y))
     outcomes = dict(zip(groups, y))
-    groupFolds = stratifyGroups(groups, outcomes, folds, randomState = 42)
+    groupFolds = stratifyGroups(groups, outcomes, folds, randomState = DEFAULT_RANDOM_SEED)
     ymap = []
+    print(groupFolds)#debug
     for testgs in groupFolds:
         testgs = np.array(testgs)
         setgs = set(testgs)

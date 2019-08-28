@@ -776,14 +776,10 @@ class ClassifyPredictor:
                             reportStats['auc_cntl_comb2_t'] = 0.0
                             reportStats['auc_cntl_comb2_p'] = 1.0
                             if withLanguage and savedControlYpp is not None and len(testCounter.keys()) == 2:
-                                #newprobs = np.array(easyNFoldLR( np.array([ypredProbs[:,-1], savedControlYpp]).T, ytrue, len(groupFolds)))[:,-1]
-                                #newprobs2 = np.array(easyNFoldAUCWeight( np.array([ypredProbs[:,-1], savedControlYpp]).T, ytrue, len(groupFolds)))[:,-1]
-                                newprobs2 = np.array(ensembleNFoldAUCWeight(outcomes, [predictionProbs, savedControlPProbs], groupFolds))[:,-1]
-                                
-                                #reportStats['auc_cntl_comb'] = pos_neg_auc(ytrue, newprobs)
-                                #reportStats['auc_cntl_comb_t'], reportStats['auc_cntl_comb_p'] = paired_t_1tail_on_errors(newprobs, savedControlYpp, ytrue)
-                                reportStats['auc_cntl_comb2'] = pos_neg_auc(ytrue, newprobs2)
-                                reportStats['auc_cntl_comb2_t'], reportStats['auc_cntl_comb2_p'] = paired_t_1tail_on_errors(newprobs2, savedControlYpp, ytrue)
+                                newProbsDict = ensembleNFoldAUCWeight(outcomes, [predictionProbs, savedControlPProbs], groupFolds)
+                                ensYtrue, ensYPredProbs, ensYCntrlProbs = alignDictsAsy(outcomes, newProbsDict, savedControlPProbs)
+                                reportStats['auc_cntl_comb2'] = pos_neg_auc(ensYtrue, np.array(ensYPredProbs)[:,-1])
+                                reportStats['auc_cntl_comb2_t'], reportStats['auc_cntl_comb2_p'] = paired_t_1tail_on_errors(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue)
                             else: #save probs for next round
                                 savedControlYpp = ypredProbs[:,-1]
                                 savedControlPProbs = predictionProbs
@@ -2585,17 +2581,16 @@ def ensembleNFoldAUCWeight(outcomes, probsListOfDicts, groupFolds):
         (Xtest, ytest) = alignDictsAsXy(probsListOfDicts, outcomes, keys = testGroupsOrder)
         weights = np.array([0.0]*Xtest.shape[1])
         sumWeights = 0.0
-        warn(">>>>")#debug
-        warn(Xtrain.shape)#debug
         for c in range(Xtrain.shape[1]):
-            weights[c] = ((np.absolute(pos_neg_auc(ytrain, Xtrain[:,c])) - 0.5) / 0.5)**2
+            #print(c, Xtrain[:,-1,c])#debug
+            weights[c] = ((np.absolute(pos_neg_auc(ytrain, Xtrain[:,c,-1])) - 0.5) / 0.5)**2
             sumWeights += weights[c]
         weights = np.array([weights / sumWeights])
         warn(weights) #debug
-        ypred_probs = np.dot(Xtest, weights.T)
-        warn("   EASY LR AUC: %.4f" %  pos_neg_auc(ytest, ypred_probs[:,-1]))
+        ypred_probs = np.dot(Xtest[:,:,-1], weights.T)
+        warn("   ENSEMBLE FOLD AUC: %.4f" %  pos_neg_auc(ytest, ypred_probs[:,-1]))
         newProbs.update(dict(zip(testGroupsOrder, ypred_probs)))
-
+    #warn(newProbs)#debug
     return newProbs
         
 

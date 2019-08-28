@@ -2585,6 +2585,8 @@ def ensembleNFoldAUCWeight(outcomes, probsListOfDicts, groupFolds):
         (Xtest, ytest) = alignDictsAsXy(probsListOfDicts, outcomes, keys = testGroupsOrder)
         weights = np.array([0.0]*Xtest.shape[1])
         sumWeights = 0.0
+        warn(">>>>")#debug
+        warn(Xtrain.shape)#debug
         for c in range(Xtrain.shape[1]):
             weights[c] = ((np.absolute(pos_neg_auc(ytrain, Xtrain[:,c])) - 0.5) / 0.5)**2
             sumWeights += weights[c]

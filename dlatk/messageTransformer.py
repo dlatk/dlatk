@@ -467,43 +467,50 @@ class MessageTransformer(DLAWorker):
             #get msgs for groups:
             sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
             rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))#, False)
-            messages = [r[messageIndex] for r in rows]
+            messages = [r[messageIndex] for r in rows if r[messageIndex]]
 
-            #tokenize msgs:
-            # parses = map(lambda m: json.dumps(sentDetector.tokenize(tc.removeNonAscii(tc.treatNewlines(m.strip())))), messages)
-            if self.use_unicode:
-                if cleanMessages:
-                    parses = [json.dumps(sentDetector.tokenize((tc.sentenceNormalization(m.strip(), normalizeDict, self.use_unicode)))) for m in messages]
+            if messages:
+
+                #tokenize msgs:
+                # parses = map(lambda m: json.dumps(sentDetector.tokenize(tc.removeNonAscii(tc.treatNewlines(m.strip())))), messages)
+                parses = None
+                if self.use_unicode:
+                    if cleanMessages:
+                        parses = [json.dumps(sentDetector.tokenize((tc.sentenceNormalization(m.strip(), normalizeDict, self.use_unicode)))) for m in messages]
+                    else:
+                        parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(m.strip())))) for m in messages]
+                        #parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(m.strip()))) for m in messages]
                 else:
-                    #parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(m.strip())))) for m in messages]
-                    parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(m.strip()))) for m in messages]
-            else:
-                #parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(m.strip())))) for m in messages]
-                parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(m.strip()))) for m in messages]
-                #parses = [json.dumps(sentDetector.tokenize(tc.removeNonAscii(tc.treatNewlines(m.strip())))) for m in messages]
-            
-            #add msgs into new tables
-            sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
-                    """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-            for i in range(len(rows)):
-                rows[i] = list(rows[i])
+                    parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(m.strip())))) for m in messages]
+                    #parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(m.strip()))) for m in messages]
+                    #parses = [json.dumps(sentDetector.tokenize(tc.removeNonAscii(tc.treatNewlines(m.strip())))) for m in messages]
+
+                #add msgs into new tables
+                sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
+                        """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
+                for i in range(len(rows)):
+                    rows[i] = list(rows[i])
+                    if sentPerRow:
+                        for j, parse in enumerate(ast.literal_eval(parses[i]), 1):
+                            sentRows.append(list(rows[i]))
+                            sentRows[-1][messageIDIndex] = str(rows[i][messageIDIndex]) + "_" + str(j).zfill(2)
+                            sentRows[-1][messageIndex] = parse
+                    elif i < len(parses):
+                        rows[i][messageIndex] = str(parses[i])
+                    else:
+                        dlac.warn("   warning: row: %s has no parse" % str(rows[i]))
+
                 if sentPerRow:
-                    for j, parse in enumerate(ast.literal_eval(parses[i]), 1):
-                        sentRows.append(list(rows[i]))
-                        sentRows[-1][messageIDIndex] = str(rows[i][messageIDIndex]) + "_" + str(j).zfill(2)
-                        sentRows[-1][messageIndex] = parse
+                    dataToWrite = sentRows
                 else:
-                    rows[i][messageIndex] = str(parses[i])
+                    dataToWrite = rows
+                mm.executeWriteMany(self.corpdb, self.dbCursor, sql, dataToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
-            if sentPerRow:
-                dataToWrite = sentRows
+                groupsWritten += groupsAtTime
+                if groupsWritten % 10000 == 0:
+                    dlac.warn("  %.1fk %ss' messages sent tokenized and written" % (groupsWritten/float(1000), self.correl_field))
             else:
-                dataToWrite = rows
-            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, dataToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-
-            groupsWritten += groupsAtTime
-            if groupsWritten % 10000 == 0:
-                dlac.warn("  %.1fk %ss' messages sent tokenized and written" % (groupsWritten/float(1000), self.correl_field))
+                dlac.warn("   Warning: No messages for:" + str(groups))
 
         #re-enable keys:
         mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)

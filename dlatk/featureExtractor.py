@@ -1330,6 +1330,7 @@ class FeatureExtractor(DLAWorker):
                             sentEncPerWord = np.mean(encsPerSent[i], axis=0)[0]
                             #aggregate words into setence:
                             #print(sentEncPerWord.shape)#debug
+                            #TODO: ADD option to use CLS token instead (first token)
                             sentEncs.append(np.mean(sentEncPerWord, axis=0)) #TODO: consider more than mean? 
                         #print([(p[0], p[1].shape) for p in zip(sentsTok, sentEncs)])#debug
 

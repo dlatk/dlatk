@@ -136,6 +136,26 @@ def pos_neg_auc(y1, y2):
         auc = auc - 1
     return auc
 
+def computeAUC(ytrue, ypredProbs, multiclass=False):
+    if multiclass:
+        classes = list(set(ytrue))
+        n_classes = len(classes)
+        ytrue = label_binarize(ytrue, classes=sorted(classes))
+
+        fpr = dict()
+        tpr = dict()
+        roc_auc = dict()
+        for i in range(n_classes):
+            fpr[i], tpr[i], _ = roc_curve(ytrue[:, i], ypredProbs[:, i])
+            roc_auc[i] = auc(fpr[i], tpr[i])
+
+        # Compute micro-average ROC curve and ROC area
+        fpr["micro"], tpr["micro"], _ = roc_curve(ytrue.ravel(), ypredProbs.ravel())
+        return auc(fpr["micro"], tpr["micro"])
+    else:
+        return pos_neg_auc(ytrue, ypredProbs[:,-1])
+        
+
 class ClassifyPredictor:
     """Interfaces with scikit-learn to perform prediction of outcomes for lanaguage features.
 
@@ -618,6 +638,7 @@ class ClassifyPredictor:
                 #########################################
                 #3. test classifiers for each possible y:
                 for outcomeName, outcomes in sorted(allOutcomes.items()):
+                    multiclass = False
                     #thisOutcomeGroups = set(outcomes.keys()) & XGroups #this intersects with XGroups maybe use UGroups?
                     thisOutcomeGroups = set(outcomes.keys()) & UGroups #this intersects with UGroups
                     if not outcomeName in scores:
@@ -696,13 +717,15 @@ class ClassifyPredictor:
                             #4) fit model and test accuracy:
                             
                             mfclass = Counter(ytrain).most_common(1)[0][0]
+                            classes = list(set(ytrain))
+                            if len(classes) > 2: multiclass = True
                             # Check if the classifier is using controls - Youngseo
                             if len(controls) > 0:
-                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize = standardize, sparse = sparse, adaptTables=adaptTables, adaptColumns=adaptColumns)
+                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize = standardize, sparse = sparse, adaptTables=adaptTables, adaptColumns=adaptColumns, classes=classes)
                                 ypredProbs, ypredClasses = self._multiXpredict(classifier, multiXtest, \
                                                                                multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse, probs=True, adaptTables=adaptTables, adaptColumns=adaptColumns)
                             else:
-                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize = standardize, sparse = sparse, adaptTables=None, adaptColumns=None)
+                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize = standardize, sparse = sparse, adaptTables=None, adaptColumns=None, classes=classes)
                                 ypredProbs, ypredClasses = self._multiXpredict(classifier, multiXtest, \
                                                                                multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse, probs=True, adaptTables=None, adaptColumns=None)
 
@@ -712,7 +735,8 @@ class ClassifyPredictor:
 
                             acc = accuracy_score(ytest, ypred)
                             f1 = f1_score(ytest, ypred, average='macro')
-                            auc = pos_neg_auc(ytest, ypredProbs[:,-1])
+                            #auc = pos_neg_auc(ytest, ypredProbs[:,-1])
+                            auc = computeAUC(ytest, ypredProbs, multiclass)
                             # classes = list(set(ytest))
                             # ytest_binary = label_binarize(ytest,classes=classes)
                             # ypred_binary = label_binarize(ypred,classes=classes)
@@ -762,7 +786,11 @@ class ClassifyPredictor:
                         ypredProbs = array(ypredProbs)
                         reportStats['acc'] = accuracy_score(ytrue, ypred)
                         reportStats['f1'] = f1_score(ytrue, ypred, average='macro')
-                        reportStats['auc'] = pos_neg_auc(ytrue, ypredProbs[:,-1])
+                        reportStats['auc']= computeAUC(ytrue, ypredProbs, multiclass)
+                        # try:
+                        #     reportStats['auc'] = pos_neg_auc(ytrue, ypredProbs[:,-1])
+                        # except ValueError as e:
+                        #     reportStats['auc'] = dlac.multiclassAUC(ytrue, ypredProbs[:,-1])
                         try:
                             reportStats['matt_ccoef'] = matthews_corrcoef(ytrue, ypred)
                         except ValueError as e:
@@ -778,7 +806,8 @@ class ClassifyPredictor:
                             if withLanguage and savedControlYpp is not None and len(testCounter.keys()) == 2:
                                 newProbsDict = ensembleNFoldAUCWeight(outcomes, [predictionProbs, savedControlPProbs], groupFolds)
                                 ensYtrue, ensYPredProbs, ensYCntrlProbs = alignDictsAsy(outcomes, newProbsDict, savedControlPProbs)
-                                reportStats['auc_cntl_comb2'] = pos_neg_auc(ensYtrue, np.array(ensYPredProbs)[:,-1])
+                                #reportStats['auc_cntl_comb2'] = pos_neg_auc(ensYtrue, np.array(ensYPredProbs)[:,-1])
+                                reportStats['auc_cntl_comb2'] = computeAUC(ensYtrue, np.array(ensYPredProbs), multiclass)
                                 reportStats['auc_cntl_comb2_t'], reportStats['auc_cntl_comb2_p'] = paired_t_1tail_on_errors(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue)
                             else: #save probs for next round
                                 savedControlYpp = ypredProbs[:,-1]
@@ -801,7 +830,8 @@ class ClassifyPredictor:
                         except KeyError:
                             scores[outcomeName][controlKeyCombo] = {withLanguage: reportStats}
 
-
+        print("A"*200)
+        print(reportStats['auc_cntl_comb2'])
         print("\n[TEST COMPLETE]\n")
         return scores
     #################################################
@@ -1546,14 +1576,14 @@ class ClassifyPredictor:
             return classifier, scaler, fSelector
 
 
-    def _multiXtrain(self, X, y, standardize = True, sparse = False, adaptTables=None, adaptColumns=None):
+    def _multiXtrain(self, X, y, standardize = True, sparse = False, adaptTables=None, adaptColumns=None, classes=[]):
         """does the actual classification training, first feature selection: can be used by both train and test
            create multiple scalers and feature selectors
            and just one classification model (of combining the Xes into 1)
            adapt tables: specifies which table (i.e. index of X) to adapt
            adapt cols: specifies which columns of the last table (X) to use for adapting the adaptTables 
         """
-
+        
         if not isinstance(X, (list, tuple)):
             X = [X]
         multiX = X
@@ -1663,6 +1693,8 @@ class ClassifyPredictor:
 
         #combine all multiX into one X:
         X = multiX[0]
+        if len(classes) > 2:
+            y = label_binarize(y, classes=sorted(classes))
         for nextX in multiX[1:]:
             try:
                 X = matrixAppendHoriz(X, nextX)
@@ -1677,9 +1709,16 @@ class ClassifyPredictor:
 
         if hasMultValuesPerItem(self.cvParams[modelName]) and modelName[-2:] != 'cv':
             #grid search for classifier params:
-            gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
-                              self.cvParams[modelName], n_jobs = self.cvJobs,
-                              cv=ShuffleSplit(n_splits=self.cvFolds+1, test_size=1/float(self.cvFolds), random_state=DEFAULT_RANDOM_SEED))
+            if len(classes) > 2:
+                parameters = {'estimator__' + k: v for k,v in self.cvParams[modelName][0].items()}
+            
+                gs = GridSearchCV(OneVsRestClassifier(eval(self.modelToClassName[modelName]+'()')), 
+                                  param_grid=parameters, n_jobs = self.cvJobs,
+                                  cv=ShuffleSplit(len(y), n_iter=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
+            else:
+                gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
+                                  self.cvParams[modelName], n_jobs = self.cvJobs,
+                                  cv=ShuffleSplit(n_splits=self.cvFolds+1, test_size=1/float(self.cvFolds), random_state=DEFAULT_RANDOM_SEED))
             print("[Performing grid search for parameters over training]")
             gs.fit(X, y)
 
@@ -1695,6 +1734,8 @@ class ClassifyPredictor:
                 print("No CV parameters available")
                 raise IndexError
             #print dict(self.cvParams[modelName][0])
+            if len(classes) > 2:
+                classifier = OneVsRestClassifier(classifier)
             try:
                 classifier.fit(X, y)
             except ValueError as e:

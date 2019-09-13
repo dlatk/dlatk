@@ -14,51 +14,50 @@ except ImportError:
 
 DESCRIPTION = "DLATK is an end to end human text analysis package, specifically suited for social media and social scientific applications. It is written in Python 3 and developed by the World Well-Being Project at the University of Pennsylvania and Stony Brook University. "
 LONG_DESCRIPTION = """
-DLATK v1.1
-----------
+# DLATK v1.1
 
 This package offers end to end text analysis: feature extraction, part-of-speech tagging, correlation, 
 mediation, prediction / classification, dimensionality reduction and clustering, and wordcloud visualization. For more information please visit:
 
-  * http://dlatk.wwbp.org
-  * https://www.github.com/dlatk/dlatk
-  * http://wwbp.org
+- http://dlatk.wwbp.org
+- https://www.github.com/dlatk/dlatk
+- http://wwbp.org
 
-CITATION
---------
+## Citation
 
 If you use DLATK in your work please cite the following paper:
 
-  @InProceedings{DLATKemnlp2017,
-    author =  "Schwartz, H. Andrew
-        and Giorgi, Salvatore
-        and Sap, Maarten
-        and Crutchley, Patrick
-        and Eichstaedt, Johannes
-        and Ungar, Lyle",
-    title =   "DLATK: Differential Language Analysis ToolKit",
-    booktitle =  "Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing: System Demonstrations",
-    year =    "2017",
-    publisher =  "Association for Computational Linguistics",
-    pages =   "55--60",
-    location =   "Copenhagen, Denmark",
-    url =  "http://aclweb.org/anthology/D17-2010"
-  }
+```
+@InProceedings{DLATKemnlp2017,
+  author =  "Schwartz, H. Andrew
+      and Giorgi, Salvatore
+      and Sap, Maarten
+      and Crutchley, Patrick
+      and Eichstaedt, Johannes
+      and Ungar, Lyle",
+  title =   "DLATK: Differential Language Analysis ToolKit",
+  booktitle =  "Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing: System Demonstrations",
+  year =    "2017",
+  publisher =  "Association for Computational Linguistics",
+  pages =   "55--60",
+  location =   "Copenhagen, Denmark",
+  url =  "http://aclweb.org/anthology/D17-2010"
+}
+```
 
-CONTACT
--------
+## Contact
 
-Please send bug reports, patches, and other feedback to
+Please send bug reports, patches, and other feedback to:
 
-  Salvatore Giorgi (sgiorgi@sas.upenn.edu) or H. Andrew Schwartz (has@cs.stonybrook.edu)
+Salvatore Giorgi (sgiorgi@sas.upenn.edu) or H. Andrew Schwartz (has@cs.stonybrook.edu)
 
 """
 DISTNAME = 'dlatk'
 PACKAGES = ['dlatk',
   'dlatk.lib',
-  'dlatk.Lexicainterface',
+  'dlatk.lexicainterface',
   'dlatk.mysqlmethods',
-  'dlatk.Tools',
+  'dlatk.tools',
 ]
 LICENSE = 'GNU General Public License v3 (GPLv3)'
 AUTHOR = "H. Andrew Schwartz, Salvatore Giorgi, Maarten Sap, Patrick Crutchley, Lukasz Dziurzynski and Megha Agrawal"

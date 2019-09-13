@@ -35,9 +35,8 @@ from itertools import combinations
 
 # scikit-learn imports
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import RandomizedLasso
 from sklearn.cross_validation import StratifiedKFold, KFold, ShuffleSplit, train_test_split
-from sklearn.decomposition import RandomizedPCA, MiniBatchSparsePCA, PCA, KernelPCA, NMF, SparsePCA, FactorAnalysis
+from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF, SparsePCA, FactorAnalysis
 from sklearn.grid_search import GridSearchCV 
 from sklearn import metrics
 from sklearn.feature_selection import f_regression, SelectPercentile, SelectKBest
@@ -104,7 +103,7 @@ class DimensionReducer:
     #    'Pipeline([("univariate_select", SelectPercentile(f_regression, 33)), ("L1_select", RandomizedLasso(random_state=42, n_jobs=self.cvJobs))])
 
     # dimensionality reduction (TODO: make a separate step than feature selection)
-    # featureSelectionString = 'RandomizedPCA(n_components=min(int(X.shape[1]*.10), int(X.shape[0]/2)), random_state=42, whiten=False, iterated_power=3)'
+    # featureSelectionString = 'PCA(n_components=min(int(X.shape[1]*.10), int(X.shape[0]/2)), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")'
     # featureSelectionString = 'PCA(n_components=min(int(X.shape[1]*.02), X.shape[0]), whiten=False)'
     # featureSelectionString = 'PCA(n_components=None, whiten=False)'
     # featureSelectionString = 'KernelPCA(n_components=int(X.shape[1]*.02), kernel="rbf", degree=3, eigen_solver="auto")'  
@@ -144,7 +143,7 @@ class DimensionReducer:
         'sparsepca': 'SparsePCA',
         'mbsparsepca': 'MiniBatchSparsePCA',
         'lda' : 'LDA',
-        'rpca' : 'RandomizedPCA',
+        'rpca' : 'PCA',#TODO: somehow update to use rpca
         'fa' : 'FactorAnalysis'
         }
 

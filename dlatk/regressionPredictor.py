@@ -25,7 +25,7 @@ from collections import defaultdict, Iterable
 #scikit-learn imports
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.linear_model import Ridge, RidgeCV, LinearRegression, Lasso, LassoCV, \
-    ElasticNet, ElasticNetCV, Lars, LassoLars, LassoLarsCV, SGDRegressor, RandomizedLasso, \
+    ElasticNet, ElasticNetCV, Lars, LassoLars, LassoLarsCV, SGDRegressor,  \
     PassiveAggressiveRegressor
 from sklearn.svm import SVR
 from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV 
@@ -42,7 +42,7 @@ from sklearn.exceptions import NotFittedError
 
 #modified sklearns: 
 from .occurrenceSelection import OccurrenceThreshold
-from .pca_mod import RandomizedPCA #allows percentage input
+#from .pca_mod import RandomizedPCA #allows percentage input
 
 #scipy
 from scipy.stats import zscore, ttest_rel, ttest_1samp
@@ -433,7 +433,7 @@ class RegressionPredictor:
     #featureSelectionString = 'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
     
 
-    #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/max(1.5,len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
+    #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/max(1.5,len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])'
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=(X.shape[0]/4), random_state=42, whiten=False, iterated_power=3))])'
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=100.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/(5.0*len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=70.0)), ("3_rpca", RandomizedPCA(n_components=.4/len(self.featureGetters), random_state=42, whiten=False, iterated_power=3, max_components=X.shape[0]/max(1.5, len(self.featureGetters))))])'
@@ -2922,7 +2922,7 @@ class RPCRidgeCV(LinearModel, RegressorMixin):
 ####################################################################
 ##
 #
-class VERPCA(RandomizedPCA):
+class VERPCA(PCA):
     """Randomized PCA that sets number of components by variance explained
 
     Parameters

@@ -34,7 +34,7 @@ from sklearn.svm import SVR
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB, BernoulliNB
 
-from sklearn.decomposition import RandomizedPCA, MiniBatchSparsePCA, PCA, KernelPCA, NMF
+from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF
 #from sklearn.lda import LDA #linear descriminant analysis
 from sklearn import metrics
 
@@ -350,8 +350,8 @@ class ClassifyPredictor:
 
 
     #dimensionality reduction (TODO: make a separate step than feature selection)
-    #featureSelectionString = 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)' ### TRY THIS ###
-    #featureSelectionString = 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)'#smaller among 10% or number of rows / number of feature tables
+    #featureSelectionString = 'PCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")' ### TRY THIS ###
+    #featureSelectionString = 'PCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")'#smaller among 10% or number of rows / number of feature tables
     #featureSelectionString = 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/2)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)'#smaller among 10% or number of rows / 2
     # featureSelectionString = 'RandomizedPCA(n_components=min(X.shape[1], int(X.shape[0]/4)), random_state=42, whiten=False, iterated_power=3)'
     #featureSelectionString = 'RandomizedPCA(n_components=min(X.shape[1], 2000), random_state=42, whiten=False, iterated_power=3)'
@@ -359,7 +359,6 @@ class ClassifyPredictor:
     #featureSelectionString = 'RandomizedPCA(n_components=min(int(X.shape[0]*1.5), X.shape[1]), random_state=42, whiten=False, iterated_power=3)'
     #featureSelectionString = 'PCA(n_components=min(int(X.shape[1]*.10), X.shape[0]), whiten=False)'
     #featureSelectionString = 'PCA(n_components=0.99, whiten=False)'
-    #featureSelectionString = 'VERPCA(n_components=0.999, whiten=False, max_components_ratio = min(1, X.shape[0]/float(X.shape[1])))'
     #featureSelectionString = 'KernelPCA(n_components=int(X.shape[1]*.02), kernel="rbf", degree=3, eigen_solver="auto")'  
 
 
@@ -2424,89 +2423,6 @@ class ClassifyPredictor:
 ####################################################################
 ##
 #
-class VERPCA(RandomizedPCA):
-    """Randomized PCA that sets number of components by variance explained
-
-    Parameters
-    ----------
-    n_components : int
-        Maximum number of components to keep: default is 50.
-
-    copy : bool
-        If False, data passed to fit are overwritten
-
-    iterated_power : int, optional
-        Number of iteration for the power method. 3 by default.
-
-    whiten : bool, optional
-        When True (False by default) the `components_` vectors are divided
-        by the singular values to ensure uncorrelated outputs with unit
-        component-wise variances.
-
-        Whitening will remove some information from the transformed signal
-        (the relative variance scales of the components) but can sometime
-        improve the predictive accuracy of the downstream estimators by
-        making their data respect some hard-wired assumptions.
-
-    random_state : int or RandomState instance or None (default)
-        Pseudo Random Number generator seed control. If None, use the
-        numpy.random singleton.
-
-    max_components_ratio : float
-        Maximum number of components in terms of their ratio to the number 
-        of features. Default is 0.25 (1/4). 
-    """
-
-    #Vars
-
-
-    def __init__(self, n_components=None, copy=True, iterated_power=3,
-                 whiten=False, random_state=None, max_components_ratio = 0.25):
-        if n_components > 0 and n_components < 1:
-            self.variance_explained = n_components
-            n_components = None
-        else:
-            self.variance_explained = None 
-        self.max_components_ratio = max_components_ratio
-        super(VERPCA, self).__init__(n_components, copy, iterated_power, whiten, random_state)
-
-    def fit(self, X, y=None):
-        """Fit the model to the data X.
-
-        Parameters
-        ----------
-        X: array-like or scipy.sparse matrix, shape (n_samples, n_features)
-            Training vector, where n_samples in the number of samples and
-            n_features is the number of features.
-
-        Returns
-        -------
-        self : object
-            Returns the instance itself.
-        """
-        if self.n_components is None:
-            self.n_components = min(int(X.shape[1]*self.max_components_ratio), X.shape[1])
-
-        super(VERPCA, self).fit(X, y)
-
-        #reduce to variance explained:
-        if self.variance_explained:
-            totalV = 0
-            i = 0
-            for i in range(len(self.explained_variance_ratio_)):
-                totalV += self.explained_variance_ratio_[i]
-                if (i%10 == 0) or (i < 10):
-                    # print "%d: %f" % (i, totalV) #debug
-                    pass
-                if totalV >= self.variance_explained:
-                    i += 1
-                    break
-            self.n_components = i
-
-            #change components matrix (X)
-            self.components_ = self.components_[:i]
-
-        return self
 
 
 

@@ -136,7 +136,7 @@ def pos_neg_auc(y1, y2):
         auc = auc - 1
     return auc
 
-def computeAUC(ytrue, ypredProbs, multiclass=False):
+def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True):
     if multiclass:
         classes = list(set(ytrue))
         n_classes = len(classes)
@@ -153,7 +153,10 @@ def computeAUC(ytrue, ypredProbs, multiclass=False):
         fpr["micro"], tpr["micro"], _ = roc_curve(ytrue.ravel(), ypredProbs.ravel())
         return auc(fpr["micro"], tpr["micro"])
     else:
-        return pos_neg_auc(ytrue, ypredProbs[:,-1])
+        if negatives:#convert to negative
+            return pos_neg_auc(ytrue, ypredProbs[:,-1])
+        else:
+            return roc_auc_score(ytrue, ypredProbs[:,-1])
         
 
 class ClassifyPredictor:
@@ -735,7 +738,7 @@ class ClassifyPredictor:
                             acc = accuracy_score(ytest, ypred)
                             f1 = f1_score(ytest, ypred, average='macro')
                             #auc = pos_neg_auc(ytest, ypredProbs[:,-1])
-                            auc = computeAUC(ytest, ypredProbs, multiclass)
+                            auc = computeAUC(ytest, ypredProbs, multiclass, negatives=False)
                             # classes = list(set(ytest))
                             # ytest_binary = label_binarize(ytest,classes=classes)
                             # ypred_binary = label_binarize(ypred,classes=classes)
@@ -2525,7 +2528,7 @@ def r2simple(ytrue, ypred):
 
 
 def ensembleNFoldAUCWeight(outcomes, probsListOfDicts, groupFolds):
-    """produce average of two probabilities, weighted by training AUC; return new probs"""
+    """produce average two probability sets (one for each class), weighted by training AUC; return new probs"""
     newProbs = dict()
     for testChunk in [i for i in range(0, len(groupFolds))]:
         trainGroups = set()
@@ -2540,11 +2543,13 @@ def ensembleNFoldAUCWeight(outcomes, probsListOfDicts, groupFolds):
         sumWeights = 0.0
         for c in range(Xtrain.shape[1]):
             #print(c, Xtrain[:,-1,c])#debug
+            #TODO: fix to handle negative
             weights[c] = ((np.absolute(pos_neg_auc(ytrain, Xtrain[:,c,-1])) - 0.5) / 0.5)**2
             sumWeights += weights[c]
         weights = np.array([weights / sumWeights])
         warn(weights) #debug
         ypred_probs = np.dot(Xtest[:,:,-1], weights.T)
+        ##TODO: change above to :,:,: to handle multiclass; 
         warn("   ENSEMBLE FOLD AUC: %.4f" %  pos_neg_auc(ytest, ypred_probs[:,-1]))
         newProbs.update(dict(zip(testGroupsOrder, ypred_probs)))
     #warn(newProbs)#debug

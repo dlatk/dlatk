@@ -1772,23 +1772,23 @@ def main(fn_args = None):
         #else:
         pprint(comboScores, compact=True)
         for outcome, cData in sorted(comboScores.items()):
-            print("\n"+outcome)
+            print("\n["+outcome+"]")
             mfc = 0.0
             for controls, wLangData in sorted(cData.items()):
-                print("  CONTROLS: "+str(controls)) if len(controls) > 0 else print("  NO CONTROLS")
+                print("   CONTROLS -- "+' '.join(sorted(controls))) if len(controls) > 0 else print("   NO CONTROLS")
                 if 0 in wLangData:
-                    print("   - LANG: acc: %.3f, f1: %.3f, auc: %.3f" %\
+                    print("     - LANG: acc: %.3f, f1: %.3f, auc: %.3f" %\
                         tuple([wLangData[0][k] for k in ['acc', 'f1', 'auc']]))
                     mfc = wLangData[0]['mfclass_acc']
                 if 1 in wLangData:
                     if len(controls) > 0: 
-                        print("   + LANG: acc: %.3f, f1: %.3f, auc: %.3f, auc ensemble: %.3f (p = %.4f)" %\
+                        print("     + LANG: acc: %.3f, f1: %.3f, auc: %.3f, auc ensemble: %.3f (p = %.4f)" %\
                               tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc', 'auc_cntl_comb2', 'auc_cntl_comb2_p']]))
                     else:
-                        print("   + LANG: acc: %.3f, f1: %.3f, auc: %.3f" %\
+                        print("     + LANG: acc: %.3f, f1: %.3f, auc: %.3f" %\
                               tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc']]))
                         mfc = wLangData[1]['mfclass_acc']
-            print("      (mfc_acc: %.3f)"%mfc)
+            print("   (mfc_acc: %.3f)"%mfc)
 
                 
         if args.pred_csv:

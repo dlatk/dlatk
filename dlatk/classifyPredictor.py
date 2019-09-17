@@ -137,8 +137,8 @@ def pos_neg_auc(y1, y2):
     return auc
 
 def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True):
-    if multiclass:
-        classes = list(set(ytrue))
+    classes = list(set(ytrue))
+    if multiclass or len(classes) > 2:
         n_classes = len(classes)
         ytrue = label_binarize(ytrue, classes=sorted(classes))
 
@@ -811,6 +811,9 @@ class ClassifyPredictor:
                                 #reportStats['auc_cntl_comb2'] = pos_neg_auc(ensYtrue, np.array(ensYPredProbs)[:,-1])
                                 reportStats['auc_cntl_comb2'] = computeAUC(ensYtrue, np.array(ensYPredProbs), multiclass)
                                 reportStats['auc_cntl_comb2_t'], reportStats['auc_cntl_comb2_p'] = paired_t_1tail_on_errors(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue)
+                                ## TODO: finish this and add flag: --ensemble_controls
+                                # predictions = #todo:dictionary
+                                # predictionProbs = newProbsDict
                             else: #save probs for next round
                                 savedControlYpp = ypredProbs[:,-1]
                                 savedControlPProbs = predictionProbs
@@ -818,7 +821,8 @@ class ClassifyPredictor:
 
                         if savePredictions: 
                             reportStats['predictions'] = predictions
-                            reportStats['predictionProbs'] = {k:v[-1] for k,v in predictionProbs.items()}
+                            #reportStats['predictionProbs'] = {k:v[-1] for k,v in predictionProbs.items()}
+                            reportStats['predictionProbs'] = predictionProbs
                         #pprint(reportStats) #debug
                         mfclass = Counter(ytest).most_common(1)[0][0]
                         print("* Overall Fold Acc: %.4f (+- %.4f) vs. MFC Accuracy: %.4f (based on test rather than train)"% (reportStats['folds_acc'], reportStats['folds_se_acc'], reportStats['folds_mfclass_acc']))
@@ -2543,16 +2547,16 @@ def ensembleNFoldAUCWeight(outcomes, probsListOfDicts, groupFolds):
         sumWeights = 0.0
         for c in range(Xtrain.shape[1]):
             #print(c, Xtrain[:,-1,c])#debug
-            #TODO: fix to handle negative
-            weights[c] = ((np.absolute(pos_neg_auc(ytrain, Xtrain[:,c,-1])) - 0.5) / 0.5)**2
+            weights[c] = ((max(computeAUC(ytrain, Xtrain[:,c,-1], negatives=False), 0.5) - 0.5) / 0.5)**2
             sumWeights += weights[c]
         weights = np.array([weights / sumWeights])
         warn(weights) #debug
-        ypred_probs = np.dot(Xtest[:,:,-1], weights.T)
+        #ypred_probs = np.dot(Xtest[:,:,-1], weights.T)
+        ypred_probs = np.dot(Xtest, weights.T)
         ##TODO: change above to :,:,: to handle multiclass; 
-        warn("   ENSEMBLE FOLD AUC: %.4f" %  pos_neg_auc(ytest, ypred_probs[:,-1]))
+        warn("   ENSEMBLE FOLD AUC: %.4f" %  computeAUC(ytest, ypred_probs[:,:], negatives=False))
         newProbs.update(dict(zip(testGroupsOrder, ypred_probs)))
-    #warn(newProbs)#debug
+    warn(newProbs)#debug
     return newProbs
         
 

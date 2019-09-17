@@ -138,6 +138,7 @@ def pos_neg_auc(y1, y2):
 
 def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True):
     classes = list(set(ytrue))
+    this_auc = 0.0
     if multiclass or len(classes) > 2:
         n_classes = len(classes)
         ytrue = label_binarize(ytrue, classes=sorted(classes))
@@ -151,13 +152,12 @@ def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True):
 
         # Compute micro-average ROC curve and ROC area
         fpr["micro"], tpr["micro"], _ = roc_curve(ytrue.ravel(), ypredProbs.ravel())
-        return auc(fpr["micro"], tpr["micro"])
+        this_auc = auc(fpr["micro"], tpr["micro"])
     else:
-        if negatives:#convert to negative
-            return pos_neg_auc(ytrue, ypredProbs[:,-1])
-        else:
-            return roc_auc_score(ytrue, ypredProbs[:,-1])
-        
+        this_auc = roc_auc_score(ytrue, ypredProbs[:,-1])
+    if negatives and this_auc < 0.5:
+        this_auc = this_auc - 1
+    return this_auc
 
 class ClassifyPredictor:
     """Interfaces with scikit-learn to perform prediction of outcomes for lanaguage features.
@@ -805,7 +805,7 @@ class ClassifyPredictor:
                             reportStats['auc_cntl_comb2'] = 0.0#add columns so csv always has same
                             reportStats['auc_cntl_comb2_t'] = 0.0
                             reportStats['auc_cntl_comb2_p'] = 1.0
-                            if withLanguage and savedControlYpp is not None and len(testCounter.keys()) == 2:
+                            if withLanguage and savedControlYpp is not None:
                                 newProbsDict = ensembleNFoldAUCWeight(outcomes, [predictionProbs, savedControlPProbs], groupFolds)
                                 ensYtrue, ensYPredProbs, ensYCntrlProbs = alignDictsAsy(outcomes, newProbsDict, savedControlPProbs)
                                 #reportStats['auc_cntl_comb2'] = pos_neg_auc(ensYtrue, np.array(ensYPredProbs)[:,-1])
@@ -2552,11 +2552,12 @@ def ensembleNFoldAUCWeight(outcomes, probsListOfDicts, groupFolds):
         weights = np.array([weights / sumWeights])
         warn(weights) #debug
         #ypred_probs = np.dot(Xtest[:,:,-1], weights.T)
-        ypred_probs = np.dot(Xtest, weights.T)
+        #print(Xtest)#debug
+        ypred_probs = np.dot(np.transpose(Xtest,(0,2,1)), weights.T)
         ##TODO: change above to :,:,: to handle multiclass; 
-        warn("   ENSEMBLE FOLD AUC: %.4f" %  computeAUC(ytest, ypred_probs[:,:], negatives=False))
+        warn("   ENSEMBLE FOLD AUC: %.4f" %  computeAUC(ytest, ypred_probs[:,:]))
         newProbs.update(dict(zip(testGroupsOrder, ypred_probs)))
-    warn(newProbs)#debug
+    #warn(newProbs)#debug
     return newProbs
         
 

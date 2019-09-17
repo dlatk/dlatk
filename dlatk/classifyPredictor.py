@@ -2547,7 +2547,7 @@ def ensembleNFoldAUCWeight(outcomes, probsListOfDicts, groupFolds):
         sumWeights = 0.0
         for c in range(Xtrain.shape[1]):
             #print(c, Xtrain[:,-1,c])#debug
-            weights[c] = ((max(computeAUC(ytrain, Xtrain[:,c,-1], negatives=False), 0.5) - 0.5) / 0.5)**2
+            weights[c] = ((max(computeAUC(ytrain, Xtrain[:,c,:], negatives=False), 0.5) - 0.5) / 0.5)**2
             sumWeights += weights[c]
         weights = np.array([weights / sumWeights])
         warn(weights) #debug

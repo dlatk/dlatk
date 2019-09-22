@@ -883,6 +883,7 @@ class ClassifyPredictor:
             groupNormsList.append(groupNormValues)
             print("  Features Aligned: %d" % len(groupNormValues))
             fgGroups = getGroupsFromGroupNormValues(groupNormValues)
+            print("  Groups Aligned: %d" % len(fgGroups))
             if not XGroups:
                 XGroups = set(fgGroups)
                 UGroups = set(fgGroups)

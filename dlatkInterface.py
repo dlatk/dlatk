@@ -1733,7 +1733,7 @@ def main(fn_args = None):
     ##CLASSIFICATION:
     cp = None
     if args.trainclassifiers or args.testclassifiers or args.combotestclassifiers or args.predictclassifiers or args.predictctofeats or args.predictprobstofeats or args.classToLex or args.roc or args.predictCtoOutcomeTable:
-        if args.predictctofeats and isinstance(args.low_variance_thresh, (int, float)): args.low_variance_thresh = False
+        if (args.predictctofeats or args.predictprobstofeats) and isinstance(args.low_variance_thresh, (int, float)): args.low_variance_thresh = False
         if args.model == dlac.DEF_MODEL:#if model wasnt changed form a regression model
             args.model = dlac.DEF_CLASS_MODEL
         if not og: og = OG()

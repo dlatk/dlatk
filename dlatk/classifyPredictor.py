@@ -836,8 +836,6 @@ class ClassifyPredictor:
                         except KeyError:
                             scores[outcomeName][controlKeyCombo] = {withLanguage: reportStats}
 
-        print("A"*200)
-        print(reportStats['auc_cntl_comb2'])
         print("\n[TEST COMPLETE]\n")
         return scores
     #################################################

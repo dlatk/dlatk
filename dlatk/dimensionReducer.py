@@ -35,9 +35,11 @@ from itertools import combinations
 
 # scikit-learn imports
 from sklearn.preprocessing import StandardScaler
-from sklearn.cross_validation import StratifiedKFold, KFold, ShuffleSplit, train_test_split
+#from sklearn.cross_validation import StratifiedKFold, KFold, ShuffleSplit, train_test_split
+from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split
 from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF, SparsePCA, FactorAnalysis
-from sklearn.grid_search import GridSearchCV 
+#from sklearn.grid_search import GridSearchCV
+from sklearn.model_selection import GridSearchCV
 from sklearn import metrics
 from sklearn.feature_selection import f_regression, SelectPercentile, SelectKBest
 from sklearn.utils import shuffle

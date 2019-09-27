@@ -111,6 +111,7 @@ DEF_P_MAPPING = { # maps old R method names to statsmodel names
 DEF_CONF_INT = 0.95
 DEF_TOP_MESSAGES = 10
 
+DEF_MODEL_TYPE='bert'
 DEF_BERT_MODEL='base-uncased'
 DEF_BERT_AGGREGATION=['mean']
 DEF_BERT_LAYER_AGGREGATION=['concatenate']

@@ -180,7 +180,9 @@ class MessageTransformer(DLAWorker):
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
 
         #iterate through groups in chunks
-        groupsAtTime = 1000;
+        groupsAtTime = 100;
+        if self.correl_field == 'message_id':#more at a time when messages:
+            groupsAtTime = 2000
         groupsWritten = 0
         for groups in dlac.chunks(cfRows, groupsAtTime):
 
@@ -459,7 +461,7 @@ class MessageTransformer(DLAWorker):
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
 
         #iterate through groups in chunks
-        groupsAtTime = 10000;
+        groupsAtTime = 100;
         groupsWritten = 0
         for groups in dlac.chunks(cfRows, groupsAtTime):
             if sentPerRow: sentRows = list()
@@ -498,7 +500,7 @@ class MessageTransformer(DLAWorker):
                     elif i < len(parses):
                         rows[i][messageIndex] = str(parses[i])
                     else:
-                        dlac.warn("   warning: row: %s has no parse" % str(rows[i]))
+                        dlac.warn("   warning: row %d: %s has no parse; last parse %d: %s" % (i, str(rows[i]), len(parses) - 1, str(parses[-1])))
 
                 if sentPerRow:
                     dataToWrite = sentRows

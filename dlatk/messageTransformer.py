@@ -452,7 +452,7 @@ class MessageTransformer(DLAWorker):
         #Find column names:
         columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
         messageIndex = columnNames.index(self.message_field)
-        if sentPerRow: messageIDIndex = columnNames.index(self.messageid_field)
+        messageIDIndex = columnNames.index(self.messageid_field)
 
         #find all groups
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
@@ -464,12 +464,13 @@ class MessageTransformer(DLAWorker):
         groupsAtTime = 100;
         groupsWritten = 0
         for groups in dlac.chunks(cfRows, groupsAtTime):
-            if sentPerRow: sentRows = list()
+            sentRows = list()
             
             #get msgs for groups:
             sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
             rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))#, False)
-            messages = [r[messageIndex] for r in rows if r[messageIndex]]
+            rows = [r for r in rows if r[messageIndex]]
+            messages = [r[messageIndex] for r in rows]
 
             if messages:
 
@@ -498,14 +499,24 @@ class MessageTransformer(DLAWorker):
                             sentRows[-1][messageIDIndex] = str(rows[i][messageIDIndex]) + "_" + str(j).zfill(2)
                             sentRows[-1][messageIndex] = parse
                     elif i < len(parses):
-                        rows[i][messageIndex] = str(parses[i])
+                        sentRows.append(rows[i])#debug: take out copy if eveyrthing ok to run faster
+                        sentRows[i][messageIndex] = str(parses[i])
                     else:
                         dlac.warn("   warning: row %d: %s has no parse; last parse %d: %s" % (i, str(rows[i]), len(parses) - 1, str(parses[-1])))
 
-                if sentPerRow:
-                    dataToWrite = sentRows
-                else:
-                    dataToWrite = rows
+                        # for s in range(len(rows)):#DEBUG: add back in "copy" row above to see differences in original versus parse
+                        #     print("\n%d; mid: %s"%(s, str(rows[s][messageIDIndex])))
+                        #     print(rows[s][messageIndex])
+                        #     try: 
+                        #         print(parses[s])
+                        #     except IndexError:
+                        #         print("!NO PARSE!")
+                        # sys.exit(1)
+
+                #if sentPerRow:
+                #    dataToWrite = sentRows
+                # else:
+                dataToWrite = sentRows
                 mm.executeWriteMany(self.corpdb, self.dbCursor, sql, dataToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
                 groupsWritten += groupsAtTime

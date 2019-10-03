@@ -836,8 +836,6 @@ class ClassifyPredictor:
                         except KeyError:
                             scores[outcomeName][controlKeyCombo] = {withLanguage: reportStats}
 
-        #print("A"*200)
-        #print(reportStats['auc_cntl_comb2'])
         print("\n[TEST COMPLETE]\n")
         return scores
     #################################################
@@ -883,6 +881,7 @@ class ClassifyPredictor:
             groupNormsList.append(groupNormValues)
             print("  Features Aligned: %d" % len(groupNormValues))
             fgGroups = getGroupsFromGroupNormValues(groupNormValues)
+            print("  Groups Aligned: %d" % len(fgGroups))
             if not XGroups:
                 XGroups = set(fgGroups)
                 UGroups = set(fgGroups)

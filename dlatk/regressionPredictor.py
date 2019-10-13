@@ -724,7 +724,7 @@ class RegressionPredictor:
     #####################################################
     ####### Main Testing Method ########################
     def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
-                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False,\
+                          allControlsOnly = False, comboSizes = None, nFolds = 3, savePredictions = False,\
                           weightedEvalOutcome = None, residualizedControls = False, groupsWhere = '',\
                           weightedSample = '', adaptationFactorsName=[], featureSelectionParameters=None,\
                           numOfFactors = [] , factorSelectionType='rfe' , pairedFactors=False, outputName='',\
@@ -1423,6 +1423,7 @@ class RegressionPredictor:
 
     def predictToOutcomeTable(self, standardize = True, sparse = False, name = None, nFolds = 10, groupsWhere = ''):
 
+        warn("WARNING! Predict to outcome table sometimes excludes groups if not in a feature table.")
         # step1: get groups from feature table
         groups = self.featureGetter.getDistinctGroupsFromFeatTable(where=groupsWhere)
         groups = list(groups)

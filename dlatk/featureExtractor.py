@@ -35,8 +35,8 @@ from .mysqlmethods import mysqlMethods as mm
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 
 try:
-    import jsonrpclib
     from simplejson import loads
+    import jsonrpclib
 except ImportError:
     print("warning from FeatureExtractor: unable to import jsonrpclib or simplejson")
     pass
@@ -1492,6 +1492,14 @@ class FeatureExtractor(DLAWorker):
                     tableName += '$' + str(16)+'to'+"%d"%round(valueFunc(16))
                 wt_abbrv = self.wordTable.split('$')[1][:4]
                 tableName += '$' + wt_abbrv
+                try:#make sure it can support "_intercept"
+                    if int(re.findall(r'\((\d+)\)', featureType)[0]) < 10:
+                        #print(featureType)#debug
+                        featureType = re.sub(r'\(\d+\)', '(10)', featureType)
+                        #print(featureType)#debug
+                except IndexError:
+                    warn("feature extractor: unable to check if category name can support _intercept")
+
             else:
                 if valueFunc:
                     tableName += '$' + str(16)+'to'+"%d"%round(valueFunc(16))
@@ -1512,6 +1520,9 @@ class FeatureExtractor(DLAWorker):
         if featureType[0].lower() == 't' or featureType[0].lower() == 'v':
             #string type; add unicode: 
             featureTypeAndEncoding = "%s CHARACTER SET %s COLLATE %s" % (featureType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()])
+
+                    
+            
         #create sql
         drop = """DROP TABLE IF EXISTS %s""" % tableName
         sql = """CREATE TABLE %s (id BIGINT(16) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,

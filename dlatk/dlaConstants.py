@@ -19,6 +19,9 @@ from sklearn.metrics import roc_auc_score
 from sklearn.linear_model import LogisticRegression
 import statsmodels.stats.multitest as mt
 
+#DB_TYPE
+DB_TYPE = "sqlite"
+
 #DB INFO:
 USER = getpass.getuser()
 
@@ -26,6 +29,7 @@ MAX_ATTEMPTS = 5 #max number of times to try a query before exiting
 PROGRESS_AFTER_ROWS = 5000 #the number of rows to process between each progress updated
 FEATURE_TABLE_PREFIX = 'feats_'
 MYSQL_ERROR_SLEEP = 4 #number of seconds to wait before trying a query again (incase there was a server restart
+SQLITE_ERROR_SLEEP = 4
 MYSQL_BATCH_INSERT_SIZE = 10000 # how many rows are inserted into mysql at a time
 MAX_SQL_SELECT = 1000000 # how many rows are selected at a time
 MYSQL_HOST = '127.0.0.1'

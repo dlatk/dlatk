@@ -2,6 +2,9 @@ import sys
 import time
 import MySQLdb
 
+from .database.dataEngine import DataEngine
+from .database.query import QueryBuilder
+
 from . import dlaConstants as dlac
 from .mysqlmethods import mysqlMethods as mm 
 
@@ -45,7 +48,14 @@ class DLAWorker(object):
         self.messageid_field = messageid_field
         self.encoding = encoding
         self.use_unicode = use_unicode
-        (self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(corpdb, host=mysql_host, charset=encoding)
+
+        self.db_type = dlac.DB_TYPE
+        self.data_engine = DataEngine(corpdb, mysql_host, encoding, use_unicode, self.db_type)
+        (self.dbConn, self.dbCursor, self.dictCursor) = self.data_engine.connect()
+
+        self.qb = QueryBuilder(self.data_engine)
+
+        #(self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(corpdb, host=mysql_host, charset=encoding)
         self.lexicondb = lexicondb
         self.wordTable = wordTable if wordTable else "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
 
@@ -103,10 +113,13 @@ class DLAWorker(object):
             ?????
         """
         if not messageTable: messageTable = self.corptable
-        msql = """SELECT %s, %s FROM %s WHERE %s = '%s'""" % (
-            self.messageid_field, self.message_field, messageTable, self.correl_field, cf_id)
+        #msql = """SELECT %s, %s FROM %s WHERE %s = '%s'""" % (
+        #    self.messageid_field, self.message_field, messageTable, self.correl_field, cf_id)
+
         #return self._executeGetSSCursor(msql, warnMsg, host=self.mysql_host)
-        return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding)
+        selectQuery = self.qb.create_select_query(messageTable).set_fields([self.messageid_field, self.message_field]).where([(self.correl_field, cf_id)])
+        #return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding)
+        return selectQuery.execute_query()
 
     def getMessagesWithFieldForCorrelField(self, cf_id, extraField, messageTable = None, warnMsg = True):
         """?????

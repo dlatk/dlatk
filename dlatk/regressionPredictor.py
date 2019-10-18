@@ -2179,19 +2179,16 @@ class RegressionPredictor:
 
             #run transformations:
             if scaler:
-                print("[PREDICT] applying standard scaler to X[%d]: %s" % (i, str(scaler))) #debug
+                print("[PREDICT] applying *existing* standard scaler to X[%d]: %s" % (i, str(scaler))) #debug
                 try:
                     X = scaler.transform(X)
-                    if self.outliersToMean and not sparse:
-                        X[abs(X) > self.outliersToMean] = 0
-                        print("[PREDICT] Setting outliers (> %d) to mean for X[%d]" % (self.outliersToMean, i))
                 except NotFittedError as e:
                     warn(e)
-                    warn("Fitting scaler")
+                    warn("[PREDICT] WARN: Fitting new standard scaler on data")
                     X = scaler.fit_transform(X)
-                    if self.outliersToMean and not sparse:
-                        X[abs(X) > self.outliersToMean] = 0
-                        print("[PREDICT] Setting outliers (> %d) to mean for X[%d]" % (self.outliersToMean, i))
+                if self.outliersToMean and not sparse:
+                    X[abs(X) > self.outliersToMean] = 0
+                    print("[PREDICT] Setting outliers (> %d) to mean for X[%d]" % (self.outliersToMean, i))
             elif self.outliersToMean:
                 print(" Warning: Outliers to mean is not being run because standardize is off")
 

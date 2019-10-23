@@ -1170,7 +1170,7 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
-    def addFeatureTable(self, modelType = 'bert', modelName = 'bert-base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], tableName = None, valueFunc = lambda d: d):
+    def addFeatureTable(self, modelName = 'bert-base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], tableName = None, valueFunc = lambda d: d):
         """Creates feature tuples (correl_field, feature, values) table where features are parsed phrases
 
         Parameters
@@ -1202,20 +1202,26 @@ class FeatureExtractor(DLAWorker):
             dlac.warn("Please install pytorch and pytorch_transformers.")
             sys.exit(1)
 
+        MODEL_CLASSES = {
+            'bert': (BertTokenizer, BertModel, BertConfig),
+            'xlnet': (XLNetTokenizer, XLNetModel, XLNetConfig)
+        }
+
+        # Extracting model type from model name
+        modelType = modelName.split('-')[0]
+        if MODEL_CLASSES.get(modelType) == None:
+            dlac.warn("Please select a valid model name")
+            sys.exit(1)
+
         # Load pre-trained model tokenizer (vocabulary)
         if modelName[:3] == 'bas' or modelName[:3] == 'lar':
             modelName = 'bert-'+modelName
         layersToKeep = np.array(layersToKeep, dtype='int')
         dlac.warn("Loading %s..." % modelName)
 
-        MODEL_CLASSES = {
-            'bert': (BertTokenizer, BertModel, BertConfig),
-            'xlnet': (XLNetTokenizer, XLNetModel, XLNetConfig)
-        }
-
         tokenizer_class, model_class, config_class = MODEL_CLASSES[modelType]
         tokenizer = tokenizer_class.from_pretrained(modelName)
-        dlac.warn("model name.." + modelName)
+
         model = model_class.from_pretrained(modelName, output_hidden_states=True)
         model.eval()
         cuda = True
@@ -1311,14 +1317,9 @@ class FeatureExtractor(DLAWorker):
 
                             # Combine vectors of each select layers; store as first sent and second sent:
                             with torch.no_grad():
-                                #output = model(toksTens, segsTens)
                                 output = model(toksTens, token_type_ids=segsTens)
                                 encAllLayers = output[2]
-                                #print(output[2])
-                                #encAllLayers, _ = bModel(toksTens, segsTens)
-                                #print(len(encAllLayers))
-                                #print(encAllLayers[0].shape)
-                                #print(len(encAllLayers))
+                                
                                 #save layers:
                                 encSelectLayers = []
                                 for lyr in layersToKeep:

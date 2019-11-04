@@ -305,6 +305,20 @@ class CreateTableQuery(Query):
 		self.engine = engine
 		return self
 
+	def execute_query(self):
+		self.sql = self.build_query()	
+		success = self.data_engine.execute(self.sql)
+		print("\nSUCCESSFULL QUERY: %s\n"%self.sql)
+		print("\nSuccess: '{0}', Database Type: '{1}'\n".format(success,self.data_engine.db_type))
+		if success==True and self.data_engine.db_type == "sqlite":
+			print("\nINSIDE success and yes this is sqlite\n")
+			if len(self.mul_keys)>0:
+				for key in self.mul_keys:
+					print("""\n\nCreating index {0} on table:{1}, column:{2} \n\n""".format(key[0], self.table, key[1]))
+					createIndex = """CREATE INDEX %s ON %s (%s)""" % (key[0], self.table, key[1])
+					if "meta" not in self.table:
+						self.data_engine.execute(createIndex)
+
 	def build_query(self):
 		if self.data_engine.db_type == "mysql":
 			createTable = """CREATE TABLE %s (""" % self.table
@@ -348,14 +362,15 @@ class CreateTableQuery(Query):
 					datatype += "UNSIGNED "
 				datatype += col.get_datatype().split()[0]
 				createTable  += """ %s""" % col.get_name()
+				if col.get_name() == "id" and "BIGINT" in datatype:
+					datatype = "INTEGER"
 				createTable += """ %s""" % datatype
 				if col.is_primary_key()!=True and col.is_nullable()!=True:
 					createTable += """ NOT NULL"""
-				if col.is_auto_increment():
-					pass
-					#createTable += """ AUTOINCREMENT"""
 				if col.is_primary_key():
 					createTable += """ PRIMARY KEY"""			
+				#if col.is_auto_increment():
+				#	createTable += """ AUTOINCREMENT"""
 				createTable += ""","""
 				
 	
@@ -370,17 +385,6 @@ class CreateTableQuery(Query):
 	
 			return createTable	
 
-	def execute_query(self):
-		self.sql = self.build_query()	
-		success = self.data_engine.execute(self.sql)
-		print("\nSUCCESSFULL QUERY: %s\n"%self.sql)
-		if success and self.data_engine.db_type == "sqlite":
-			print("\nINSIDE success and yes this is sqlite\n")
-			if len(self.mul_keys)>0:
-				for key in self.mul_keys:
-					print("\n\nCreating index %s on table:%s, column:%s \n\n"%key[0], self.table, key[1])
-					createIndex = """CREATE INDEX %s ON %s (%s)""" % (key[0], self.table, key[1])
-					self.data_engine.execute(createIndex)
 
 
 class Column():

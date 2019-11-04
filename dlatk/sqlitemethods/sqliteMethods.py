@@ -83,3 +83,12 @@ def execute(db, dbCursor, sql, warnQuery=True):
 				sys.exit(1)
 	return True
 
+def tableExists(db, dbCursor, table_name):
+	sql = """SELECT count(name) FROM sqlite_master WHERE type='table' AND name='%s'"""% table_name
+	count = executeGetList(db, dbCursor, sql)
+	import pdb; pdb.set_trace()
+	if count[0][0] > 0:
+		return True
+	else:
+		return False
+		

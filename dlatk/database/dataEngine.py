@@ -83,8 +83,13 @@ class DataEngine(object):
 		"""
 		Executes a given query
 		"""
-		self.dataEngine.execute(sql)
+		return self.dataEngine.execute(sql)
 
+	def tableExists(self, table_name):
+		"""
+		Checks whether a table exists
+		"""
+		return self.dataEngine.tableExists(table_name)
 
 class MySqlDataEngine(DataEngine):
 	"""
@@ -133,7 +138,10 @@ class MySqlDataEngine(DataEngine):
 		mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, insert_rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
 	def execute(self, sql):
-		mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+		return mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+
+	def tableExists(self, table_name):
+		return mm.tableExists(self.corpdb, self.dbCursor, table_name, charset=self.encoding, use_unicode=self.use_unicode)
 
 
 class SqliteDataEngine(DataEngine):
@@ -159,4 +167,7 @@ class SqliteDataEngine(DataEngine):
 		sm.executeWriteMany(self.corpdb, self.dbConn, sql, rows, writeCursor=self.dbConn.cursor())
 
 	def execute(self, sql):
-		return sm.execute(self.corpdb, self.dbConn, sql)	
+		return sm.execute(self.corpdb, self.dbConn, sql)
+
+	def tableExists(self, table_name):
+		return sm.tableExists(self.corpdb, self.dbCursor, table_name)

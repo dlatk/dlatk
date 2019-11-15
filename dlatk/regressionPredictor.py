@@ -335,8 +335,8 @@ class RegressionPredictor:
 
         'svr': [
             #{'kernel':['linear'], 'C':[.01, .25, .001, .025, .0001, .0025, .00001], 'epsilon': [1, 0.1, 0.01, 0.001]}#swl
-            {'kernel':['linear'], 'C':[.01, .001, .0001, .00001, .000001, .0000001], 'epsilon': [0.25]}#personality
-            #{'kernel':['rbf'], 'gamma': [0.1, 1, 0.001, .0001], 'C':[.1, .01, 1, .001, 10]}#swl
+            #{'kernel':['linear'], 'C':[.01, .001, .0001, .00001, .000001, .0000001], 'epsilon': [0.25]}#personality
+            {'kernel':['rbf'], 'gamma': [0.1, 1, 0.001, .0001], 'C':[.1, .01, 1, .001, 10]}
             ],
         'sgdregressor': [
             # {'alpha':[250000, 25000, 250, 25, 1, 0.1, .01, .001, .0001, .00001, .000001], 'penalty':['l1']}#testing for personality

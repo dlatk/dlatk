@@ -1246,8 +1246,11 @@ class FeatureExtractor(DLAWorker):
                 try:
                     messageSents = loads(messageRow[1])
                 except NameError: 
-                    dlac.warn("Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
+                    dlac.warn("Eror: Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
                     sys.exit(1)
+                except JSONDecodeError:
+                    dlac.warn("WARNING: JSONDecodeError on %s. Skipping Message"%str(messageRow))
+                    next
 
                 if not message_id in mids and len(messageSents) > 0:
                     msgs+=1

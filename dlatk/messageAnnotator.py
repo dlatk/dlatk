@@ -343,7 +343,7 @@ class MessageAnnotator(DLAWorker):
             except TypeError as e:
                 print(("         Error, ignoring row %s" % str(messageRow)))
 
-            if lang in langs and conf > .80 :
+            if lang in langs and conf > dlac.DEF_LANG_FILTER_CONF:
                 messageDataToAdd[lang].append(messageRow)
                 messageDataCounts[lang] += 1
 

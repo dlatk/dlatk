@@ -175,7 +175,7 @@ lb, lo, lt, lv, mg, mk, ml, mn, mr, ms, mt, nb, ne,
 nl, nn, no, oc, or, pa, pl, ps, pt, qu, ro, ru, rw,
 se, si, sk, sl, sq, sr, sv, sw, ta, te, th, tl, tr,
 ug, uk, ur, vi, vo, wa, xh, zh, zu"""
-
+DEF_LANG_FILTER_CONF = .80
 DEF_SPAM_FILTER = 0.2 # threshold for removing spam users
 
 ##CoreNLP settings

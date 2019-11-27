@@ -1339,9 +1339,9 @@ class FeatureExtractor(DLAWorker):
                             #sentEncs.append(np.mean(sentEncPerWord, axis=0)) #TODO: consider more than mean?
                             singleSentEnc = np.array([[]])
                             for wAgg in wordAggregations:
-                                print(wAgg, "  sentEncPerWord", sentEncPerWord.shape)#debug
+                                #print(wAgg, "  sentEncPerWord", sentEncPerWord.shape)#debug
                                 if wAgg == 'concatenate':
-                                    assert(len(wordAggregations)<2, "can't use multiple word aggs with concat") 
+                                    assert (len(wordAggregations)<2), "can't use multiple word aggs with concat"
                                     singleSentEnc = np.append(singleSentEnc, np.concatenate(sentEncPerWord))
                                 else:
                                     #print("BEFORE singleSentEnc", singleSentEnc.shape)#debug
@@ -1351,9 +1351,9 @@ class FeatureExtractor(DLAWorker):
                         #print([(p[0], p[1].shape) for p in zip(sentsTok, sentEncs)])#debug
 
                         #Aggregate across sentences:
-                        print(sentEncs.shape)#debug
+                        #print(sentEncs)#debug
                         if wordAggregations == ['concatenate']:
-                            bertMessageVectors.append(np.concatenate(sentEncs, axis=1)) 
+                            bertMessageVectors.append(np.concatenate(sentEncs, axis=0)) 
                         else:
                             bertMessageVectors.append(np.mean(sentEncs, axis=0)) #TODO: consider more than mean?
 

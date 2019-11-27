@@ -1351,10 +1351,12 @@ class FeatureExtractor(DLAWorker):
                         #print([(p[0], p[1].shape) for p in zip(sentsTok, sentEncs)])#debug
 
                         #Aggregate across sentences:
+                        print(sentEncs.shape)#debug
                         if wordAggregations == ['concatenate']:
-                            bertMessageVectors.append(np.concatenate(sentEncs, axis=2)) 
+                            bertMessageVectors.append(np.concatenate(sentEncs, axis=1)) 
                         else:
                             bertMessageVectors.append(np.mean(sentEncs, axis=0)) #TODO: consider more than mean?
+
 
                         if msgs % int(dlac.PROGRESS_AFTER_ROWS/5) == 0: #progress update
                             dlac.warn("Messages Read: %.2f k" % (msgs/1000.0))

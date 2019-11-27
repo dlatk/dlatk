@@ -1169,7 +1169,7 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
-    def addBERTTable(self, modelName = 'bert-base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], tableName = None, valueFunc = lambda d: d):
+    def addBERTTable(self, modelName = 'bert-base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], tableName = None, valueFunc = lambda d: d):
         """Creates feature tuples (correl_field, feature, values) table where features are parsed phrases
 
         Parameters
@@ -1331,10 +1331,19 @@ class FeatureExtractor(DLAWorker):
                         #print(encsPerSent)#debug
                         for i in range(len(sentsTok)):
                             sentEncPerWord = np.mean(encsPerSent[i], axis=0)[0]
+                            #if saveWordEnc:
+                            #    pass
                             #aggregate words into setence:
                             #print(sentEncPerWord.shape)#debug
                             #TODO: ADD option to use CLS token instead (first token)
-                            sentEncs.append(np.mean(sentEncPerWord, axis=0)) #TODO: consider more than mean? 
+                            #sentEncs.append(np.mean(sentEncPerWord, axis=0)) #TODO: consider more than mean?
+                            for wAgg in wordAggregations:
+                                singleSentEnc = np.array([[[]]])
+                                if wAgg == 'concatenate':
+                                    singleSentEnc = singleSentEnc.concatenate(np.concatenate(sentEncPerWord, axis=2), axis=2)
+                                else:
+                                    singleSentEnc = singleSentEnc.concatenate(eval("np."+wAgg+"(sentEncPerWord, axis=0)"), axis=2)
+                            sentEncs.append(singleSentEnc)
                         #print([(p[0], p[1].shape) for p in zip(sentsTok, sentEncs)])#debug
 
                         #Aggregate across sentences:

@@ -190,8 +190,10 @@ def main(fn_args = None):
                        help='BERT model to use if extracting bert features.')
     group.add_argument('--bert_msg_aggregation', '--bert_aggregations', type=str, metavar='AGG', nargs='+', dest='bertaggs', default=dlac.DEF_BERT_AGGREGATION,
                        help='Aggregations to use with Bert (e.g. mean, min, max).')
-    group.add_argument('--bert_layer_aggregation', type=str, metavar='AGG', nargs='+', dest='bertlayeraggs', default=dlac.DEF_BERT_LAYER_AGGREGATION,
+    group.add_argument('--bert_layer_aggregation', '--layer_aggregation', type=str, metavar='AGG', nargs='+', dest='bertlayeraggs', default=dlac.DEF_BERT_LAYER_AGGREGATION,
                        help='Aggregations to use with Bert (e.g. mean, min, max).')
+    group.add_argument('--bert_word_aggregation', '--word_aggregation', type=str, metavar='AGG', nargs='+', dest='transwordaggs', default=dlac.DEF_TRANS_WORD_AGGREGATION,
+                       help='Aggregations to use for words (e.g. mean or concatenate).')
     group.add_argument('--bert_layers', type=int, metavar='LAYER', nargs='+', dest='bertlayers', default=dlac.DEF_BERT_LAYERS,
                        help='layers from Bert to keep.')
     group.add_argument('--bert_no_context', action='store_true', dest='bertnocontext', default=False,
@@ -990,7 +992,7 @@ def main(fn_args = None):
 
     if args.addbert:
         if not fe: fe = FE()
-        args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=args.bertaggs, layersToKeep=args.bertlayers, noContext=args.bertnocontext, layerAggregations = args.bertlayeraggs, valueFunc = args.valuefunc)
+        args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=args.bertaggs, layersToKeep=args.bertlayers, noContext=args.bertnocontext, layerAggregations = args.bertlayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc)
 
     if args.addldafeattable:
         if not fe: fe = FE()

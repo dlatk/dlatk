@@ -86,9 +86,30 @@ def execute(db, dbCursor, sql, warnQuery=True):
 def tableExists(db, dbCursor, table_name):
 	sql = """SELECT count(name) FROM sqlite_master WHERE type='table' AND name='%s'"""% table_name
 	count = executeGetList(db, dbCursor, sql)
-	import pdb; pdb.set_trace()
+	#import pdb; pdb.set_trace()
 	if count[0][0] > 0:
 		return True
 	else:
 		return False
-		
+
+def primaryKeyExists(db, dbCursor, table_name, column_name):
+	sql = "PRAGMA table_info("+table_name+")"
+	data = executeGetList(db, dbCursor, sql)
+	for row in data:
+		if row[1] == column_name and row[len(row)-1] == 1:
+			print(row)
+			print(row[1])
+			print(column_name)
+			print(row[len(row)-1])
+			return True
+	return False
+	
+def indexExists(db, dbCursor, table_name, column_name):
+	sql = "SELECT name, tbl_name, sql FROM sqlite_master WHERE type='index'"
+	data = executeGetList(db, dbCursor, sql)
+	for row in data:
+		db_sql = row[len(row)-1].split(" ")
+		db_col_name = db_sql[len(db_sql)-1][1:-1]
+		if row[1] == table_name and db_col_name == column_name:
+			return True
+	return False

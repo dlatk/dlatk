@@ -91,6 +91,18 @@ class DataEngine(object):
 		"""
 		return self.dataEngine.tableExists(table_name)
 
+	def primaryKeyExists(self, table_name, column_name):
+		"""
+		Checks whether a primary key exists in table_name on column_name
+		"""
+		return self.dataEngine.primaryKeyExists(table_name, column_name)
+
+	def indexExists(self, table_name, column_name):
+		"""
+		Checks whther an index (which is not a primary key) exists
+		"""
+		return self.dataEngine.indexExists(table_name, column_name)
+
 class MySqlDataEngine(DataEngine):
 	"""
 	Class for interacting with the MYSQL database engine.
@@ -143,6 +155,12 @@ class MySqlDataEngine(DataEngine):
 	def tableExists(self, table_name):
 		return mm.tableExists(self.corpdb, self.dbCursor, table_name, charset=self.encoding, use_unicode=self.use_unicode)
 
+	def primaryKeyExists(self, table_name, column_name):
+		return mm.primaryKeyExists(self.corpdb, self.dbCursor, table_name, column_name)
+
+	def indexExists(self, table_name, column_name):
+		return mm.indexExists(self.corpdb, self.dbCursor, table_name, column_name)
+
 
 class SqliteDataEngine(DataEngine):
 	# will contain methods similar to MySqlWrapper class
@@ -171,3 +189,10 @@ class SqliteDataEngine(DataEngine):
 
 	def tableExists(self, table_name):
 		return sm.tableExists(self.corpdb, self.dbCursor, table_name)
+
+	def primaryKeyExists(self, table_name, column_name):
+		return sm.primaryKeyExists(self.corpdb, self.dbCursor, table_name, column_name)
+
+	def indexExists(self, table_name, column_name):
+		return sm.indexExists(self.corpdb, self.dbCursor, table_name, column_name)
+

@@ -14,6 +14,10 @@ from .dlaWorker import DLAWorker
 from .mysqlmethods import mysqlMethods as mm
 from .mysqlmethods import mysql_iter_funcs as mif
 
+#data engine
+from .database.query import QueryBuilder
+
+
 class FeatureGetter(DLAWorker):
     """General class for reading from feature tables.
 
@@ -155,9 +159,12 @@ class FeatureGetter(DLAWorker):
 
     def getDistinctFeatures(self, where=''):
         """returns a distinct list of (feature) tuples given the name of the feature value field (either value, group_norm, or feat_norm)"""
-        sql = "select distinct feat from %s"%(self.featureTable)
-        if (where): sql += ' WHERE ' + where
-        return [l[0] for l in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)]
+        dlac.warn("\n**This is FeatureGetter.getDistinceFeatures method**\n")
+        sql = QueryBuilder(self.data_engine).create_select_query(self.featureTable).set_fields(["distinct feat"])
+        #sql = "select distinct feat from %s"%(self.featureTable)
+        if (where): sql.where(where) #sql += ' WHERE ' + where
+        #return [l[0] for l in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)]
+        return [l[0] for l in sql.execute_query()]
 
     def getFeatureZeros(self, where=''):
         """returns a distinct list of (feature) tuples given the name of the feature value field (either value, group_norm, or feat_norm)"""
@@ -179,64 +186,93 @@ class FeatureGetter(DLAWorker):
 
     def getSumValuesByGroup(self, where = ''):
         """ """
-        sql = """SELECT group_id, sum(value) FROM %s """ % self.featureTable
-        if (where): sql += ' WHERE ' + where  
-        sql += """ GROUP BY group_id """
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        dlac.warn("\n**This is FeatureGetter.getSumValuesByGroup method**\n")
+        query = QueryBuilder(self.data_engine).create_select_query(self.featureTable).set_fields(["group_id", "sum(value)"])
+        #sql = """SELECT group_id, sum(value) FROM %s """ % self.featureTable
+        if (where): query.where(where) #sql += ' WHERE ' + where  
+        query.group_by(["group_id"])
+        #sql += """ GROUP BY group_id """
+        return query.execute_query()
+        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
     def getSumValuesByFeat(self, where = ''):
         """ """
-        sql = """SELECT feat, sum(value) FROM %s """ % self.featureTable
-        if (where): sql += ' WHERE ' + where  
-        sql += """ GROUP BY feat """
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        dlac.warn("\n**This is getSumValuesByFeat method**\n")
+        sql =  QueryBuilder(self.data_engine).create_select_query(self.featureTable).set_fields(["feat", "sum(value)"])
+        #sql = """SELECT feat, sum(value) FROM %s """ % self.featureTable
+        if (where): sql.where(where) #sql += ' WHERE ' + where  
+        #sql += """ GROUP BY feat """
+        sql.group_by(["feat"])
+        return sql.execute_query()
+        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
     def getGroupNorms(self, where = ''):
         """returns a list of (group_id, feature, group_norm) triples"""
-        sql = """SELECT group_id, feat, group_norm from %s"""%(self.featureTable)
-        if (where): sql += ' WHERE ' + where
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode) 
+        dlac.warn("\n**This is getGroupNorms method**\n")
+        sql = QueryBuilder(self.data_engine).create_select_query(self.featureTable).set_fields(["group_id", "feat", "group_norm"])
+        #sql = """SELECT group_id, feat, group_norm from %s"""%(self.featureTable)
+        if (where): sql.where(where) #sql += ' WHERE ' + where
+        return sql.execute_query()
+        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode) 
 
     def getValuesAndGroupNorms(self, where = ''):
         """returns a list of (group_id, feature, value, group_norm) triples"""
-        sql = """SELECT group_id, feat, value, group_norm from %s"""%(self.featureTable)
-        if (where): sql += ' WHERE ' + where
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode) 
+        dlac.warn("\n**This is FeatureGetter.getValuesAndGroupNorms**\n")
+        sql = QueryBuilder(self.data_engine).create_select_query(self.featureTable).set_fields(["group_id", "feat", "value", "group_norm"])
+        #sql = """SELECT group_id, feat, value, group_norm from %s"""%(self.featureTable)
+        if (where): sql.where(where) #sql += ' WHERE ' + where
+        return sql.execute_query()
+        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode) 
 
     def getGroupNormsForFeat(self, feat, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
-        sql = """SELECT group_id, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, feat)
-        if (where): sql += ' AND ' + where
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg, charset=self.encoding, use_unicode=self.use_unicode) 
+        dlac.warn("\n**This is FeatureGetter.getGroupNormsForFeat method**\n")
+        sql = QueryBuilder(self.data_engine).create_select_query(self.featureTable).set_fields(["group_id", "group_norm"]).where("feat = %s"%feat)
+        #sql = """SELECT group_id, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, feat)
+        if (where): sql.where(" AND "+ where) #sql += ' AND ' + where
+        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg, charset=self.encoding, use_unicode=self.use_unicode)
+        sql.execute_query()
 
     def getGroupNormsForFeats(self, feats, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
+        dlac.warn("\n**This is FeatureGetter.getGroupNormsForFeats method**\n")
         if self.use_unicode:
             fCond = " feat in ('%s')" % "','".join(MySQLdb.escape_string(str(f)) for f in feats)
         else:
             fCond = " feat in ('%s')" % "','".join(MySQLdb.escape_string(f) for f in feats)
-        sql = """SELECT group_id, group_norm FROM %s WHERE %s"""%(self.featureTable, fCond)
-        if (where): sql += ' AND ' + where
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg, charset=self.encoding, use_unicode=self.use_unicode) 
+        sql = QueryBuilder(self.data_engine).create_select_query(self.featureTable).set_fields(["group_id", "group_norm"]).where(fCond)
+        #sql = """SELECT group_id, group_norm FROM %s WHERE %s"""%(self.featureTable, fCond)
+        if (where): sql.where(" AND "+ where) #sql += ' AND ' + where
+        return sql.execute_query()
+        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg, charset=self.encoding, use_unicode=self.use_unicode) 
 
     def getValuesAndGroupNormsForFeats(self, feats, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
+        dlac.warn("\n**This is FeatureGetter.getValuesAndGroupNormsForFeats method**\n")
         if self.use_unicode:
             fCond = " feat in ('%s')" % "','".join(MySQLdb.escape_string(str(f)) for f in feats)
         else:
             fCond = " feat in ('%s')" % "','".join(MySQLdb.escape_string(f) for f in feats)
-        sql = """SELECT group_id, value, group_norm FROM %s WHERE %s"""%(self.featureTable, fCond)
-        if (where): sql += ' AND ' + where
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg, charset=self.encoding, use_unicode=self.use_unicode) 
+        sql = QueryBuilder(self.data_engine).create_select_query(self.featureTable).set_fields(["group_id", "value", "group_norm"]).where(fCond)
+        #sql = """SELECT group_id, value, group_norm FROM %s WHERE %s"""%(self.featureTable, fCond)
+        if (where): sql.where(' AND '+ where) #sql += ' AND ' + where
+        return sql.execute_query()
+        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg, charset=self.encoding, use_unicode=self.use_unicode) 
 
     def getValuesAndGroupNormsForFeat(self, feat, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
+        dlac.warn("\n**This is FeatureGetter.getValuesAndGroupNormsForFeat method**\n")
         if self.use_unicode:
-            sql = """SELECT group_id, value, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, MySQLdb.escape_string(str(feat, 'utf8')))
+            sql = QueryBuilder(self.data_engine).create_select_query(self.featureTable).set_fields(["group_id", "value", "group_norn"])
+            sql.where("""feat = '%s'"""% MySQLdb.escape_string(str(feat, 'utf-8')))
+            #sql = """SELECT group_id, value, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, MySQLdb.escape_string(str(feat, 'utf8')))
         else:
-            sql = """SELECT group_id, value, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, MySQLdb.escape_string(feat))
-        if (where): sql += ' AND ' + where
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg, charset=self.encoding, use_unicode=self.use_unicode) 
+            sql = QueryBuilder(self.data_engine).create_select_query(self.featureTable).set_fields(["group_id", "value", "group_norm"])
+            sql.where("""feat = '%s'"""%MySQLdb.escape_string(feat))
+            #sql = """SELECT group_id, value, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, MySQLdb.escape_string(feat))
+        if (where): sql.where(' AND ' + where) #sql += ' AND ' + where
+        return sql.execute_query()
+        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg, charset=self.encoding, use_unicode=self.use_unicode) 
 
 
     def getGroupAndFeatureValues(self, featName=None, where=''):
@@ -647,9 +683,12 @@ class FeatureGetter(DLAWorker):
 
     def getDistinctGroups(self, where=''):
         """returns the distinct distinct groups (note that this runs on the corptable to be accurate)"""
-        sql = """select DISTINCT %s from %s""" %(self.correl_field, self.corptable)
-        if (where): sql += ' WHERE ' + where
-        return [l[0] for l in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)]
+        dlac.warn("\n**This is FeatureGetter.getDistinctGroups method**\n")
+        sql = QueryBuilder(self.data_engine).create_select_query(self.corptable).set_fields(["DISTINCT " +self.correl_field])
+        #sql = """select DISTINCT %s from %s""" %(self.correl_field, self.corptable)
+        if (where): sql.where(where) #sql += ' WHERE ' + where
+        #return [l[0] for l in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)]
+        return [l[0] for l in sql.execute_query()]
     
     def ttestWithOtherFG(self, other, maskTable= None, groupFreqThresh = 0):
         """Performs PAIRED ttest on differences between group norms for 2 tables, within features"""

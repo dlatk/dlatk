@@ -1513,7 +1513,9 @@ class FeatureExtractor(DLAWorker):
         #find correl_field type:
         #sql = """SELECT column_type FROM information_schema.columns WHERE table_schema='%s' AND table_name='%s' AND column_name='%s'""" % (
             #self.corpdb, self.corptable, self.correl_field)
-        query = QueryBuilder(self.data_engine).create_select_query("information_schema.columns").set_fields(["column_type"]).where([("table_schema",self.corpdb),("table_name", self.corptable),("column_name", self.correl_field)])
+        where_conditions = """table_schema='%s' AND table_name='%s' AND column_name='%s'"""%(self.corpdb, self.corptable, self.correl_field)
+        #query = QueryBuilder(self.data_engine).create_select_query("information_schema.columns").set_fields(["column_type"]).where([("table_schema",self.corpdb),("table_name", self.corptable),("column_name", self.correl_field)])
+        query = QueryBuilder(self.data_engine).create_select_query("information_schema.columns").set_fields(["column_type"]).where(where_conditions)
         try:
             correlField = self.getCorrelFieldType(self.correl_field) if not correlField else correlField
             #correl_fieldType = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)[0][0] if not correlField else correlField

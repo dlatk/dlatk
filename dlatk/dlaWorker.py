@@ -64,16 +64,18 @@ class DLAWorker(object):
         hasPrimary, hasCorrelIndex = True, True
         warn_message = "WARNING: The table %s does not have:"  % table
         if primary:
-            hasPrimary = mm.primaryKeyExists(self.dbConn, self.dbCursor, table, correlField)
+            #import pdb; pdb.set_trace()
+            hasPrimary = self.data_engine.primaryKeyExists(table, correlField) #mm.primaryKeyExists(self.dbConn, self.dbCursor, table, correlField)
             if not hasPrimary: warn_message += " a PRIMARY key on %s" % correlField
         if correlField:
-            hasCorrelIndex = mm.indexExists(self.dbConn, self.dbCursor, table, correlField)
+            hasCorrelIndex = self.data_engine.indexExists(table, correlField) #mm.indexExists(self.dbConn, self.dbCursor, table, correlField)
             if not hasCorrelIndex: 
                 if not hasPrimary: warn_message += " or"
                 warn_message += " an index on %s" % correlField
         warn_message += ". Consider adding."
         if not hasPrimary or not hasCorrelIndex:
             dlac.warn(warn_message)
+        #sys.exit(1)
 
     def getMessages(self, messageTable = None, where = None):
         """?????
@@ -117,7 +119,8 @@ class DLAWorker(object):
         #    self.messageid_field, self.message_field, messageTable, self.correl_field, cf_id)
 
         #return self._executeGetSSCursor(msql, warnMsg, host=self.mysql_host)
-        selectQuery = self.qb.create_select_query(messageTable).set_fields([self.messageid_field, self.message_field]).where([(self.correl_field, cf_id)])
+        where_conditions = """%s='%s'"""%(self.correl_field, cf_id)
+        selectQuery = self.qb.create_select_query(messageTable).set_fields([self.messageid_field, self.message_field]).where(where_conditions)
         #return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding)
         return selectQuery.execute_query()
 
@@ -226,7 +229,8 @@ class DLAWorker(object):
         if lexicon_count_table: dlac.warn(lexicon_count_table)
         wordTable = self.getWordTable() if not lexicon_count_table else lexicon_count_table
 
-        assert mm.tableExists(self.corpdb, self.dbCursor, wordTable), "Need to create word table to use current functionality: %s" % wordTable
+        assert self.data_engine.tableExists(wordTable), "Need to create word table to use current functionality: %s" % wordTable
+        #assert mm.tableExists(self.corpdb, self.dbCursor, wordTable), "Need to create word table to use current functionality: %s" % wordTable
         return FeatureGetter(self.corpdb, self.corptable, self.correl_field, self.mysql_host,
                              self.message_field, self.messageid_field, self.encoding, self.use_unicode, 
                              self.lexicondb, featureTable=wordTable, wordTable = wordTable)

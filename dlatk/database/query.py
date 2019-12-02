@@ -92,7 +92,7 @@ class SelectQuery(Query):
 		super().__init__()
 		self.sql = None
 		self.fields = None
-		self.where_conditions = None
+		self.where_conditions = "" 
 		self.group_by_fields = None
 		self.from_table = from_table
 		self.data_engine = data_engine
@@ -112,7 +112,7 @@ class SelectQuery(Query):
 		return self
 
 	def where(self, where_conditions):
-		self.where_conditions = where_conditions
+		self.where_conditions += where_conditions
 		return self
 
 	def group_by(self, group_by_fields):
@@ -161,20 +161,34 @@ class SelectQuery(Query):
 				selectQuery += """ GROUP BY %s"""%(', '.join(self.group_by_fields))
 			if self.where_conditions:
 				if len(self.where_conditions)>0:
-					selectQuery += """ WHERE """
-					for f in self.where_conditions:
-						selectQuery += str(f[0]) +"""='"""+ str(f[1])  +"""' AND """
-					selectQuery = selectQuery[:-4]
+					if not self.where_conditions.lower().startswith("where"):
+						selectQuery += """ WHERE """ + self.where_conditions
+					else:
+						selectQuery += " " + self.where_conditions
+					#for f in self.where_conditions:
+					#	selectQuery += str(f[0]) +"""='"""+ str(f[1])  +"""' AND """
+					#selectQuery = selectQuery[:-4]
 			return selectQuery
 			#return """SELECT %s FROM %s GROUP BY %s""" %(','.join(self.fields), self.from_table, ','.join(self.group_by_fields))
 
 		if self.data_engine.db_type == "sqlite":
 			if self.from_table == "information_schema.columns":
-				for f in self.where_conditions:
-					if f[0] == "table_name":
-						table_name =  f[1]
-					if f[0] == "column_name":
-						self.column_name = f[1]					
+				for f in self.where_conditions.split(" "):
+					# extract table name from the where condition
+					if f.startswith("table_name"):
+						table_name = f.split("=")[1]
+						# strip quotes from the table name
+						table_name = table_name[1:-1]
+					# extract column name from the where condition
+					if f.startswith("column_name"):
+						self.column_name = f.split("=")[1]
+						# strip quotes from the column name
+						self.column_name = self.column_name[1:-1]
+				#for f in self.where_conditions:
+				#	if f[0] == "table_name":
+				#		table_name =  f[1]
+				#	if f[0] == "column_name":
+				#		self.column_name = f[1]					
 				selectQuery = "PRAGMA table_info("+table_name+")"
 				return selectQuery
 				
@@ -184,10 +198,14 @@ class SelectQuery(Query):
 					selectQuery += """ GROUP BY %s"""%(', '.join(self.group_by_fields))
 				if self.where_conditions:
 					if len(self.where_conditions)>0:
-						selectQuery += """ WHERE """
-						for f in self.where_conditions:
-							selectQuery += str(f[0]) +"""='"""+ str(f[1])  +"""' AND """
-						selectQuery = selectQuery[:-4]
+						if not self.where_conditions.lower().startswith("where"):
+							selectQuery += """ WHERE """ + self.where_conditions
+						else:
+							selectQuery += " " + self.where_conditions
+						#selectQuery += """ WHERE """
+						#for f in self.where_conditions:
+						#	selectQuery += str(f[0]) +"""='"""+ str(f[1])  +"""' AND """
+						#selectQuery = selectQuery[:-4]
 				return selectQuery
 			#return """SELECT ? FROM ? GROUP BY ?""" %(','.join(self.fields), self.from_table, ','.join(self.group_by_fields))
 

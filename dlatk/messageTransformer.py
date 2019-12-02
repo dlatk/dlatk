@@ -277,7 +277,7 @@ class MessageTransformer(DLAWorker):
 
         sql = "INSERT INTO %s " % (tableName)
         sql += " VALUES (%s, %s)"
-        N = 50000
+        N = dlac.MYSQL_BATCH_INSERT_SIZE
         totalLength = len(new_rows)
         for l in range(0, totalLength, N):
             print("Inserting rows (%5.2f%% done)" % (float(min(l+N,totalLength))*100/totalLength))

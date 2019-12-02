@@ -335,8 +335,8 @@ class RegressionPredictor:
 
         'svr': [
             #{'kernel':['linear'], 'C':[.01, .25, .001, .025, .0001, .0025, .00001], 'epsilon': [1, 0.1, 0.01, 0.001]}#swl
-            {'kernel':['linear'], 'C':[.01, .001, .0001, .00001, .000001, .0000001], 'epsilon': [0.25]}#personality
-            #{'kernel':['rbf'], 'gamma': [0.1, 1, 0.001, .0001], 'C':[.1, .01, 1, .001, 10]}#swl
+            #{'kernel':['linear'], 'C':[.01, .001, .0001, .00001, .000001, .0000001], 'epsilon': [0.25]}#personality
+            {'kernel':['rbf'], 'gamma': [0.1, 1, 0.001, .0001], 'C':[.1, .01, 1, .001, 10]}
             ],
         'sgdregressor': [
             # {'alpha':[250000, 25000, 250, 25, 1, 0.1, .01, .001, .0001, .00001, .000001], 'penalty':['l1']}#testing for personality
@@ -2179,19 +2179,16 @@ class RegressionPredictor:
 
             #run transformations:
             if scaler:
-                print("[PREDICT] applying standard scaler to X[%d]: %s" % (i, str(scaler))) #debug
+                print("[PREDICT] applying *existing* standard scaler to X[%d]: %s" % (i, str(scaler))) #debug
                 try:
                     X = scaler.transform(X)
-                    if self.outliersToMean and not sparse:
-                        X[abs(X) > self.outliersToMean] = 0
-                        print("[PREDICT] Setting outliers (> %d) to mean for X[%d]" % (self.outliersToMean, i))
                 except NotFittedError as e:
                     warn(e)
-                    warn("Fitting scaler")
+                    warn("[PREDICT] WARN: Fitting new standard scaler on data")
                     X = scaler.fit_transform(X)
-                    if self.outliersToMean and not sparse:
-                        X[abs(X) > self.outliersToMean] = 0
-                        print("[PREDICT] Setting outliers (> %d) to mean for X[%d]" % (self.outliersToMean, i))
+                if self.outliersToMean and not sparse:
+                    X[abs(X) > self.outliersToMean] = 0
+                    print("[PREDICT] Setting outliers (> %d) to mean for X[%d]" % (self.outliersToMean, i))
             elif self.outliersToMean:
                 print(" Warning: Outliers to mean is not being run because standardize is off")
 

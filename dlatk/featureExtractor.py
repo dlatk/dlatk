@@ -1169,7 +1169,7 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
-    def addBERTTable(self, modelName = 'bert-base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], tableName = None, valueFunc = lambda d: d):
+    def addBERTTable(self, modelName = 'bert-base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], tableName = None, valueFunc = lambda d: d):
         """Creates feature tuples (correl_field, feature, values) table where features are parsed phrases
 
         Parameters
@@ -1246,8 +1246,11 @@ class FeatureExtractor(DLAWorker):
                 try:
                     messageSents = loads(messageRow[1])
                 except NameError: 
-                    dlac.warn("Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
+                    dlac.warn("Eror: Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
                     sys.exit(1)
+                except JSONDecodeError:
+                    dlac.warn("WARNING: JSONDecodeError on %s. Skipping Message"%str(messageRow))
+                    next
 
                 if not message_id in mids and len(messageSents) > 0:
                     msgs+=1
@@ -1264,6 +1267,7 @@ class FeatureExtractor(DLAWorker):
                         sents[0] = '[CLS] ' + sents[0]
                         #TODO: preprocess to remove newlines
                         sentsTok = [bTokenizer.tokenize(s+' [SEP]') for s in sents]
+                        #print(sentsTok)#debug
                         #check for overlength:
                         i = 0
                         while (i < len(sentsTok)):#while instead of for since array may change size
@@ -1328,14 +1332,31 @@ class FeatureExtractor(DLAWorker):
                         #print(encsPerSent)#debug
                         for i in range(len(sentsTok)):
                             sentEncPerWord = np.mean(encsPerSent[i], axis=0)[0]
+
+
                             #aggregate words into setence:
-                            #print(sentEncPerWord.shape)#debug
                             #TODO: ADD option to use CLS token instead (first token)
-                            sentEncs.append(np.mean(sentEncPerWord, axis=0)) #TODO: consider more than mean? 
+                            #sentEncs.append(np.mean(sentEncPerWord, axis=0)) #TODO: consider more than mean?
+                            singleSentEnc = np.array([[]])
+                            for wAgg in wordAggregations:
+                                #print(wAgg, "  sentEncPerWord", sentEncPerWord.shape)#debug
+                                if wAgg == 'concatenate':
+                                    assert (len(wordAggregations)<2), "can't use multiple word aggs with concat"
+                                    singleSentEnc = np.append(singleSentEnc, np.concatenate(sentEncPerWord))
+                                else:
+                                    #print("BEFORE singleSentEnc", singleSentEnc.shape)#debug
+                                    singleSentEnc = np.append(singleSentEnc, eval("np."+wAgg+"(sentEncPerWord, axis=0)"))
+                                    #print("AFTER singleSentEnc", singleSentEnc.shape)#debug
+                            sentEncs.append(singleSentEnc)
                         #print([(p[0], p[1].shape) for p in zip(sentsTok, sentEncs)])#debug
 
                         #Aggregate across sentences:
-                        bertMessageVectors.append(np.mean(sentEncs, axis=0)) #TODO: consider more than mean?
+                        #print(sentEncs)#debug
+                        if wordAggregations == ['concatenate']:
+                            bertMessageVectors.append(np.concatenate(sentEncs, axis=0)) 
+                        else:
+                            bertMessageVectors.append(np.mean(sentEncs, axis=0)) #TODO: consider more than mean?
+
 
                         if msgs % int(dlac.PROGRESS_AFTER_ROWS/5) == 0: #progress update
                             dlac.warn("Messages Read: %.2f k" % (msgs/1000.0))

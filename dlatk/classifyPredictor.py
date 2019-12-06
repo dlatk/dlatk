@@ -940,14 +940,28 @@ class ClassifyPredictor:
             testCounter = Counter(ytest)
             mfclass = Counter(ytest).most_common(1)[0][0]
             mfclass_acc = testCounter[mfclass] / float(len(ytest))
+            matt_ccoef = matthews_corrcoef(ytest, ypred)
+            precision = precision_score(ytest, ypred, average='macro')
+            recall = recall_score(ytest, ypred, average='macro')
+            tn, fp, fn, tp = confusion_matrix(ytest, ypred).ravel()
+            specificity = tn / (tn+fp)
+
             print(" *confusion matrix: \n%s"% str(confusion_matrix(ytest, ypred)))
             print(" *precision and recall: \n%s" % classification_report(ytest, ypred))
-            print(" *ACC: %.4f (mfclass_acc: %.4f); mfclass: %s\n" % (acc, mfclass_acc, str(mfclass)))
+            print(" *ACC: %.4f (mfclass_acc: %.4f); mfclass: %s" % (acc, mfclass_acc, str(mfclass)))
 
+            classes = list(set(ytest))
+            multiclass = True if len(classes) > 2 else False
             if probs:
-                auc = pos_neg_auc(ytest, ypredProbs[:,-1])
-                print(" *AUC: %.4f" % auc)            
+                auc = computeAUC(ytest, ypredProbs, multiclass, negatives=False)
+                print(" *AUC: %.4f" % auc)
 
+            print(" *f1: %.4f " % (f1))
+            print(" *matt_ccoef: %.4f " % (matt_ccoef))
+            print(" *precision: %.4f " % (precision))
+            print(" *recall: %.4f " % (recall))
+            print(" *specificity: %.4f " % (specificity))
+            
             mse = metrics.mean_squared_error(ytest, ypred)
             print("*Mean Squared Error:                 %.4f"% mse)
             assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups" 

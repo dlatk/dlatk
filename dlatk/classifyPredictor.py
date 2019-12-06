@@ -943,10 +943,11 @@ class ClassifyPredictor:
             matt_ccoef = matthews_corrcoef(ytest, ypred)
             precision = precision_score(ytest, ypred, average='macro')
             recall = recall_score(ytest, ypred, average='macro')
-            tn, fp, fn, tp = confusion_matrix(ytest, ypred).ravel()
+            conf_matrix = confusion_matrix(ytest, ypred)
+            tn, fp, fn, tp = conf_matrix.ravel()
             specificity = tn / (tn+fp)
 
-            print(" *confusion matrix: \n%s"% str(confusion_matrix(ytest, ypred)))
+            print(" *confusion matrix: \n%s"% str(conf_matrix))
             print(" *precision and recall: \n%s" % classification_report(ytest, ypred))
             print(" *ACC: %.4f (mfclass_acc: %.4f); mfclass: %s" % (acc, mfclass_acc, str(mfclass)))
 

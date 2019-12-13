@@ -45,18 +45,33 @@ class DataEngine(object):
 	def disable_table_keys(self, featureTableName):
 		"""
 		Disable keys: good before doing a lot of inserts.
+
+		Parameters
+		------------
+		featureTableName: str
+			Name of the feature table
 		"""
 		self.dataEngine.disable_table_keys(featureTableName)
 
 	def enable_table_keys(self, featureTableName):
 		"""
 		Enables the keys, for use after inserting (and with keys disabled)
+
+		Parameters
+		------------
+		featureTableName: str
+			Name of the feature table
 		"""
 		self.dataEngine.enable_table_keys(featureTableName)
 
 	def execute_get_list(self, usql):
 		"""
 		Executes the given select query
+
+		Parameters
+		------------
+		usql: str
+			SELECT sql statement to execute		
 
 		Returns
 		------------
@@ -70,7 +85,7 @@ class DataEngine(object):
 		Executes the given insert query
 		
 		Parameters
-		---------
+		------------
 		usql: string
 			Insert statement
 		insert_rows: list
@@ -82,24 +97,60 @@ class DataEngine(object):
 	def execute(self, sql):
 		"""
 		Executes a given query
+		
+		Parameters
+		------------
+		sql: string
+
+		Returns
+		------------
+		True or False
 		"""
 		return self.dataEngine.execute(sql)
 
 	def tableExists(self, table_name):
 		"""
 		Checks whether a table exists
+		
+		Parameters
+		------------
+		table_name: str
+
+		Returns
+		------------
+		True or False
 		"""
 		return self.dataEngine.tableExists(table_name)
 
 	def primaryKeyExists(self, table_name, column_name):
 		"""
 		Checks whether a primary key exists in table_name on column_name
+
+		Parameters
+		------------
+		table_name: str
+		
+		column_name: str
+
+		Returns
+		------------
+		True or False
 		"""
 		return self.dataEngine.primaryKeyExists(table_name, column_name)
 
 	def indexExists(self, table_name, column_name):
 		"""
-		Checks whther an index (which is not a primary key) exists
+		Checks whether an index (which is not a primary key) exists
+		
+		Parameters
+		------------
+		table_name: str
+		
+		column_name: str
+
+		Returns
+		------------
+		True or False
 		"""
 		return self.dataEngine.indexExists(table_name, column_name)
 
@@ -130,7 +181,17 @@ class MySqlDataEngine(DataEngine):
 
 	def execute_get_list(self, usql):
 		"""
-		Executes a given query, returns results as a list of lists
+		Executes the given select query
+
+		Parameters
+		------------
+		usql: str
+			SELECT sql statement to execute		
+
+		Returns
+		------------
+		Results as list of lists
+
 		"""
 		return mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)
 
@@ -143,56 +204,200 @@ class MySqlDataEngine(DataEngine):
 	def enable_table_keys(self, featureTableName):
 		"""
 		Enables the keys, for use after inserting (and with keys disabled)
+
+		Parameters
+		------------
+		featureTableName: str
+			Name of the feature table
 		"""
 		mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)
 
 	def execute_write_many(self, wsql, insert_rows):
+		"""
+		Executes the given insert query
+		
+		Parameters
+		------------
+		usql: string
+			Insert statement
+		insert_rows: list
+			List of rows to insert into table 
+		
+		"""
 		mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, insert_rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
 	def execute(self, sql):
+		"""
+		Executes a given query
+
+		Parameters
+		------------
+		sql: str
+			
+		Returns
+		------------
+		True or False depending on the success of query execution
+		"""
 		return mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
 	def tableExists(self, table_name):
+		"""
+		Checks whether a table exists
+		
+		Parameters
+		------------
+		table_name: str
+
+		Returns
+		------------
+		True or False
+		"""
 		return mm.tableExists(self.corpdb, self.dbCursor, table_name, charset=self.encoding, use_unicode=self.use_unicode)
 
 	def primaryKeyExists(self, table_name, column_name):
+		"""
+		Checks whether a primary key exists in table_name on column_name
+
+		Parameters
+		------------
+		table_name: str
+		
+		column_name: str
+
+		Returns
+		------------
+		True or False
+		"""
 		return mm.primaryKeyExists(self.corpdb, self.dbCursor, table_name, column_name)
 
 	def indexExists(self, table_name, column_name):
+		"""
+		Checks whether an index (which is not a primary key) exists
+		
+		Parameters
+		------------
+		table_name: str
+		
+		column_name: str
+
+		Returns
+		------------
+		True or False
+		"""
 		return mm.indexExists(self.corpdb, self.dbCursor, table_name, column_name)
 
 
 class SqliteDataEngine(DataEngine):
-	# will contain methods similar to MySqlWrapper class
-	# these methods will call methods in mysqliteMethods.py (yet to be created) which will be similar to mysqlMethods.py
 	def __init__(self, corpdb):
 		super().__init__()
 		(self.dbConn, self.dbCursor) = sm.dbConnect(corpdb)
 
 	def get_db_connection(self):
+		"""
+		Returns
+		------------
+		Database connection objects
+		"""
 		return self.dbConn, self.dbCursor, None
 
 	def enable_table_keys(self, table):
+		"""
+		No such feature for enabling keys in sqlite
+		"""
 		pass
 
 	def disable_table_keys(self, table):
+		"""
+		No such feature for disabling keys in sqlite
+		"""
 		pass
 
 	def execute_get_list(self, usql):
+		"""
+		Executes a given query, returns results as a list of lists
+
+		Parameters
+		------------
+		usql: str
+			SELECT sql statement to execute
+
+		Returns
+		------------
+		List of list
+		"""
 		return sm.executeGetList(self.corpdb, self.dbCursor, usql)
 
 	def execute_write_many(self, sql, rows):
+		"""
+		Executes the given insert query
+		
+		Parameters
+		---------
+		sql: string
+			Insert statement
+		rows: list
+			List of rows to insert into table 
+		
+		"""
 		sm.executeWriteMany(self.corpdb, self.dbConn, sql, rows, writeCursor=self.dbConn.cursor())
 
 	def execute(self, sql):
+		"""
+		Executes a given query
+
+		Parameters
+		------------
+		sql: str
+			
+		Returns
+		------------
+		True or False depending on the success of query execution
+		"""
 		return sm.execute(self.corpdb, self.dbConn, sql)
 
 	def tableExists(self, table_name):
-		return sm.tableExists(self.corpdb, self.dbCursor, table_name)
+		"""
+		Checks whether a table exists
+		
+		Parameters
+		------------
+		table_name: str
 
+		Returns
+		------------
+		True or False
+		"""
+		return sm.tableExists(self.corpdb, self.dbCursor, table_name)
+		
 	def primaryKeyExists(self, table_name, column_name):
+		"""
+		Checks whether a primary key exists in table_name on column_name
+
+		Parameters
+		------------
+		table_name: str
+		
+		column_name: str
+
+		Returns
+		------------
+		True or False
+		"""
 		return sm.primaryKeyExists(self.corpdb, self.dbCursor, table_name, column_name)
 
 	def indexExists(self, table_name, column_name):
+		"""
+		Checks whether an index (which is not a primary key) exists
+		
+		Parameters
+		------------
+		table_name: str
+		
+		column_name: str
+
+		Returns
+		------------
+		True or False
+		"""
 		return sm.indexExists(self.corpdb, self.dbCursor, table_name, column_name)
 

@@ -7,6 +7,9 @@ import sqlite3
 from dlatk.dlaConstants import MAX_ATTEMPTS, SQLITE_ERROR_SLEEP, MAX_SQL_PRINT_CHARS, warn
 
 def dbConnect(db):
+	"""
+	Creates connection with the database
+	"""
 	db = db + ".db"
 	dbConn = None
 	attempts = 0
@@ -46,6 +49,7 @@ def executeWriteMany(db, dbConn, sql, rows, writeCursor=None, warnQuery=False):
 	return writeCursor
 
 def executeGetList(db, dbCursor, sql, warnQuery=False):
+	"""Executes a SELECT query"""
 	if warnQuery:
 		warn("SQL Query: %s"% sql[:MAX_SQL_PRINT_CHARS])
 	attempts = 0
@@ -84,6 +88,7 @@ def execute(db, dbCursor, sql, warnQuery=True):
 	return True
 
 def tableExists(db, dbCursor, table_name):
+	"""Checks if table exists"""
 	sql = """SELECT count(name) FROM sqlite_master WHERE type='table' AND name='%s'"""% table_name
 	count = executeGetList(db, dbCursor, sql)
 	#import pdb; pdb.set_trace()
@@ -93,6 +98,7 @@ def tableExists(db, dbCursor, table_name):
 		return False
 
 def primaryKeyExists(db, dbCursor, table_name, column_name):
+	"""Checks if primary key exists on a table's column"""
 	sql = "PRAGMA table_info("+table_name+")"
 	data = executeGetList(db, dbCursor, sql)
 	for row in data:
@@ -105,6 +111,7 @@ def primaryKeyExists(db, dbCursor, table_name, column_name):
 	return False
 	
 def indexExists(db, dbCursor, table_name, column_name):
+	"""Checks if index exists on a table's column"""
 	sql = "SELECT name, tbl_name, sql FROM sqlite_master WHERE type='index'"
 	data = executeGetList(db, dbCursor, sql)
 	for row in data:

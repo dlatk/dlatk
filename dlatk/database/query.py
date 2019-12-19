@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from .dataEngine import DataEngine
-from .. import dlaConstants as dlac
 import sys
 
 class Query(ABC):

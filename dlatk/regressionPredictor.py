@@ -413,7 +413,7 @@ class RegressionPredictor:
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 60000
-    backOffPerc = .05 #when the num_featrue / training_insts is less than this backoff to backoffmodel
+    backOffPerc = .10 #when the num_featrue / training_insts is less than this backoff to backoffmodel
     #backOffModel = 'ridgecv'
     backOffModel = 'linear'
 
@@ -2085,15 +2085,15 @@ class RegressionPredictor:
             startIndex = 1
         for nextX in multiX[startIndex:]:
             X = np.append(X, nextX, 1)
-        print("[COMBINED FEATS] Combined size: %s" % str(X.shape))
+        print("[COMBINED FEATS (from multiX)] Combined size: %s" % str(X.shape))
         
         modelName = self.modelName.lower()
-        totalFeats = 0
-        for Xi in multiX[0]:
-            totalFeats += X.shape[1]
-        if (totalFeats / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
+        #totalFeats = 0
+        #for Xi in multiX[0]:
+        #    totalFeats += X.shape[1]
+        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
             print("[COMBINED FEATS] number of features is small enough (feats: %d, observations: %d), backing off to: %s" %\
-                  (totalFeats, X.shape[0], self.backOffModel))
+                  (X.shape[1], X.shape[0], self.backOffModel))
             modelName = self.backOffModel.lower()
 
         if hasMultValuesPerItem(self.cvParams[modelName]) and modelName[-2:] != 'cv':

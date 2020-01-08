@@ -657,7 +657,12 @@ class OutcomeAnalyzer(OutcomeGetter):
                                 means = dlac.meanXperY(X[:,-1], y)
                             else:
                                 results = sm.OLS(y, X).fit() #runs regression
-                            effect_size = dlac.cohensD(X, y) if cohensD else results.params[-1]
+                            if cohensD:
+                                effect_size = dlac.cohensD(X, y)
+                                if controls: 
+                                    dlac.warn("  !WARNING: Using cohensD with controls is uninterpretable!")
+                            else:
+                                effect_size = results.params[-1]
                             conf = dlac.conf_interval(effect_size, len(y))
                             if means: 
                                 tup = (effect_size, results.pvalues[-1], len(y), conf, means)

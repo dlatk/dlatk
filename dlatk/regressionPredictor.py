@@ -1747,6 +1747,21 @@ class RegressionPredictor:
                     print("Inverting the feature selection: %s" % self.multiFSelectors[outcome][i])
                     coefficients = self.multiFSelectors[outcome][i].inverse_transform(coefficients).flatten()
 
+                # Inverting Feature Selection
+                scaler_intercept = 0
+                if self.multiScalers[outcome][i]:
+                    print("Inverting the scaling: %s" % self.multiScalers[outcome][i])
+                    if self.multiScalers[outcome][i].mean_ is not None:
+                        means = self.multiScalers[outcome][i].mean_
+                    else:
+                        means = [0 for ii, coeff in enumerate(coefficients)]
+                    if self.multiScalers[outcome][i].scale_ is not None:
+                        scales = self.multiScalers[outcome][i].scale_
+                    else:
+                        scales = [1 for ii, coeff in enumerate(coefficients)]
+                    scaler_intercept = sum([coeff*means[ii]/scales[ii] for ii, coeff in enumerate(coefficients)])
+                    coefficients = np.asarray([coeff/scales[ii] for ii, coeff in enumerate(coefficients)])
+
                 if 'mean_' in dir(self.multiFSelectors[outcome][i]):
                     print("RPCA mean: ", self.multiFSelectors[outcome][i].mean_)
 
@@ -1757,8 +1772,8 @@ class RegressionPredictor:
 
                 intercept = self.regressionModels[outcome].intercept_
                 if outcome not in intercept_dict:
-                    intercept_dict[outcome] = intercept
-                    print("Intercept for {o} [{i}]".format(o=outcome, i=intercept))
+                    intercept_dict[outcome] = intercept - scaler_intercept
+                    print("Intercept for {o} [{i}]".format(o=outcome, i=intercept_dict[outcome]))
                 print("coefficients size for {f}: {s}".format(f=featTables[i], s=coefficients.shape))
                 coefficients.resize(1,len(coefficients))
                 coefficients = coefficients.flatten()

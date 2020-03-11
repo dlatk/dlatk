@@ -502,6 +502,10 @@ def main(fn_args = None):
                        help='Given multiple feature table, combines them (provide feature name) ')
     group.add_argument('--add_feat_norms', action='store_true', dest='addfeatnorms',
                        help='calculates and adds the mean normalized (feat_norm) value for each row (uses variable feat_table).')
+    group.add_argument('--add_standardized_feats', '--add_std_feats', action='store_true', dest='addstdfeats',
+                       help='Adds a copy of the feature table where group_norms have been standardized (new table appended with "z").')
+
+    
     group.add_argument('--feat_colloc_filter', action='store_true', dest='featcollocfilter',
                        help='removes featrues that do not pass as collocations. (uses feat_table).')
     group.add_argument('--feat_correl_filter', action='store_true', dest='featcorrelfilter',
@@ -1211,6 +1215,10 @@ def main(fn_args = None):
         if not fr: fr=FR()
         fr.addFeatNorms(groupFreqThresh = args.groupfreqthresh, setGFTWarning = setGFTWarning)
 
+    if args.addstdfeats:
+        if not fr: fr=FR()
+        fr.createStandardizedFeatTable(groupFreqThresh = args.groupfreqthresh, setGFTWarning = setGFTWarning)
+        
     #create whitelist / blacklist
     if args.categories:
         if isinstance(args.categories, str):

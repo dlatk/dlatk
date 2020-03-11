@@ -37,3 +37,15 @@ ehthumbs.db
 Icon?
 Thumbs.db
 
+# DLATK output files #
+######################
+*.png
+!dlatk/lib/oval_big_mask.png
+!dlatk/lib/oval_mask.png
+!doc/source/_static/*png
+*.sql
+!data/dla_tutorial.sql
+!data/dlatk_lexica.sql
+*.html
+!doc/source/_templates/*html
+*.csv

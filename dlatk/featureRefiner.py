@@ -17,6 +17,9 @@ from . import dlaConstants as dlac
 from .mysqlmethods import mysqlMethods as mm
 from .mysqlmethods import mysql_iter_funcs as mif
 
+from .database.query import QueryBuilder
+from .database.dataEngine import DataEngine
+
 class FeatureRefiner(FeatureGetter):
     """Deals with the refinement of feature information already in a table (outputs to new table)
 
@@ -242,6 +245,7 @@ class FeatureRefiner(FeatureGetter):
 
     def createTableWithRemovedFeats(self, p, minimumFeatSum = 0, groupFreqThresh = 0, setGFTWarning = False):
         """creates a new table with features that appear in more than p*|correl_field| rows, only considering groups above groupfreqthresh"""
+        import pdb;pdb.set_trace()
         if not setGFTWarning:
             dlac.warn("""group_freq_thresh is set to %s. Be aware that groups might be removed during this process and your group norms will reflect this.""" % (groupFreqThresh), attention=True)
         toKeep = self._getKeepSet(p, minimumFeatSum, groupFreqThresh)
@@ -254,24 +258,30 @@ class FeatureRefiner(FeatureGetter):
 
     def createNewTableWithGivenFeats(self, toKeep, label, featNorm=False):
         """Creates a new table only containing the given features"""
-
         featureTable = self.featureTable
         numToKeep = len(toKeep)
         newTable = featureTable+'$'+label
-        mm.execute(self.corpdb, self.dbCursor, "DROP TABLE IF EXISTS %s" % newTable, charset=self.encoding, use_unicode=self.use_unicode)
+        dropTable = self.qb.create_drop_query(newTable)
+        dropTable.execute_query()
+        #mm.execute(self.corpdb, self.dbCursor, "DROP TABLE IF EXISTS %s" % newTable, charset=self.encoding, use_unicode=self.use_unicode)
         dlac.warn(" %s <new table %s will have %d distinct features.>" %(featureTable, newTable, numToKeep))
-        sql = """CREATE TABLE %s like %s""" % (newTable, featureTable)
-        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, newTable, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.disableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
+        createTable = self.qb.create_createTable_query(newTable).like(featureTable)
+        #sql = """CREATE TABLE %s like %s""" % (newTable, featureTable)
+        #mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        createTable.execute_query()
+        self.data_engine.standardizeTable(newTable, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+        self.data_engine.disable_table_keys(newTable)
+        #mm.standardizeTable(self.corpdb, self.dbCursor, newTable, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+        #mm.disableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
   
         num_at_time = 2000
         total = 0
         toWrite = []
         
-        wsql = """INSERT INTO """+newTable+""" (group_id, feat, value, group_norm, feat_norm) values (%s, %s, %s, %s, %s)""" if featNorm else """INSERT INTO """+newTable+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
+        wsql = self.qb.create_insert_query(newTable).set_values([("group_id", ""), ("feat", ""), ("value", ""), ("group_norm", ""), ("feat_norm", "")]) if featNorm else self.qb.create_insert_query(newTable).set_value([("group_id", ""), ("feat", ""), ("value", ""), ("group_norm", "")])
+        #wsql = """INSERT INTO """+newTable+""" (group_id, feat, value, group_norm, feat_norm) values (%s, %s, %s, %s, %s)""" if featNorm else """INSERT INTO """+newTable+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
 
-        #iterate through each row, deciding whetehr to keep or not
+        #iterate through each row, deciding whether to keep or not
         for featRow in self.getFeatAllSS(featNorm=featNorm):
             #print "%d %d" % (len(featRow), len(toWrite))
             if self.use_unicode and str(featRow[1]).lower() in toKeep:
@@ -280,7 +290,8 @@ class FeatureRefiner(FeatureGetter):
                 toWrite.append(featRow)
             if len(toWrite) > num_at_time:
             #write those past the filter to the table
-                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                wsql.execute_query(toWrite)
+                #mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
                 total+= num_at_time
                 if total % 100000 == 0: dlac.warn("%.1fm feature instances written" % (total/float(1000000)))
                 toWrite = []
@@ -288,18 +299,21 @@ class FeatureRefiner(FeatureGetter):
         #catch rest:
         if len(toWrite) > 0:
             #write those past the filter to the table
-            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+            wsql.execute_query(toWrite)
+            #mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
         dlac.warn("Done inserting.\nEnabling keys.")
-        mm.enableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
+        self.data_engine.enable_table_keys(newTable)
+        #mm.enableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
         dlac.warn("done.")
-
+        import pdb;pdb.set_trace()
         self.featureTable = newTable
         return newTable
 
     def _getKeepSet(self, p, minimumFeatSum = 0, groupFreqThresh = 0):
         """creates a set of features occuring in less than p*|correl_field| rows"""
         #acquire the number of groups (need to base on corp table):
+        import pdb;pdb.set_trace()
         featureTable = self.featureTable
         totalGroups = self.countGroups(groupFreqThresh)
         assert totalGroups > 0, 'NO GROUPS TO FILTER BASED ON (LIKELY group_freq_thresh IS TOO HIGH)'
@@ -745,7 +759,7 @@ class FeatureRefiner(FeatureGetter):
         dlac.warn("Done inserting.\nEnabling keys.")
         mm.enableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
         dlac.warn("done.")
-
+        import pdb;pdb.set_trace()
         self.featureTable = newTable
         return newTable
 

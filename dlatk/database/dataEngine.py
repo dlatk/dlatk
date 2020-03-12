@@ -80,13 +80,30 @@ class DataEngine(object):
 		"""
 		return self.dataEngine.execute_get_list(usql)
 
+
+	def execute_get_SSCursor(self, usql):
+		"""
+		Executes the given select query
+
+		Parameters
+		------------
+		usql: str
+			SELECT sql statement to execute		
+
+		Returns
+		------------
+		Results as list of lists
+
+		"""
+		return self.dataEngine.execute_get_SSCursor(usql)
+
 	def execute_write_many(self, usql, insert_rows):
 		"""
 		Executes the given insert query
 		
 		Parameters
 		------------
-		usql: string
+		usql: str
 			Insert statement
 		insert_rows: list
 			List of rows to insert into table 
@@ -100,13 +117,25 @@ class DataEngine(object):
 		
 		Parameters
 		------------
-		sql: string
+		sql: str
 
 		Returns
 		------------
-		True or False
+		True, if the query execution is successful
 		"""
 		return self.dataEngine.execute(sql)
+
+	def standardizeTable(self, table, collate, engine, charset, use_unicode):
+		"""
+		Parameters
+		------------
+		table: str
+		
+		Returns
+		------------
+		True, if the query execution is successful
+		"""
+		return self.dataEngine.standardizeTable(table, collate, engine, charset, use_unicode)
 
 	def tableExists(self, table_name):
 		"""
@@ -195,6 +224,23 @@ class MySqlDataEngine(DataEngine):
 		"""
 		return mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)
 
+
+	def execute_get_SSCursor(self, usql):
+		"""
+		Executes the given select query
+
+		Parameters
+		------------
+		usql: str
+			SELECT sql statement to execute		
+
+		Returns
+		------------
+		Results as list of lists
+
+		"""
+		return mm.executeGetSSCursor(self.corpdb, usql, charset=self.encoding, use_unicode=self.use_unicode, host=self.mysql_host)
+
 	def disable_table_keys(self, featureTableName):
 		"""
 		Disable keys: good before doing a lot of inserts.
@@ -239,6 +285,20 @@ class MySqlDataEngine(DataEngine):
 		True or False depending on the success of query execution
 		"""
 		return mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+
+	def standardizeTable(self, table, collate, engine, charset, use_unicode):
+		"""
+		Sets character set, collate and engine
+
+		Parameers
+		------------
+		table: str
+
+		Returns
+		------------
+		True if the query execution is successful 
+		"""
+		return mm.standardizeTable(self.corpdb, self.dbCursor, newTable, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
 
 	def tableExists(self, table_name):
 		"""
@@ -327,6 +387,13 @@ class SqliteDataEngine(DataEngine):
 		"""
 		return sm.executeGetList(self.corpdb, self.dbCursor, usql)
 
+
+	def execute_get_SSCursor(self, usql):
+		"""
+		No such feautre as using SSCursor for iterating over large returns. execute_get_list will be called in this case.
+		"""
+		return execute_get_list(usql) 
+
 	def execute_write_many(self, sql, rows):
 		"""
 		Executes the given insert query
@@ -354,6 +421,13 @@ class SqliteDataEngine(DataEngine):
 		True or False depending on the success of query execution
 		"""
 		return sm.execute(self.corpdb, self.dbConn, sql)
+
+
+	def standardizeTable(self, table, collate, engine, charset, use_unicode):
+		"""
+		All of these (collation sequence, charset and unicode) are assigned when creating the sqlite database. No such thing as 'engine' in sqlite.
+		"""
+		pass
 
 	def tableExists(self, table_name):
 		"""

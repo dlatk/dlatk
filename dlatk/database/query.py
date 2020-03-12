@@ -24,6 +24,7 @@ class QueryBuilder():
 
 	Parameters
 	------------
+	#correct this
 	data_engine: str
 		Name of the data engine eg. mysql, sqlite
 	"""
@@ -175,17 +176,20 @@ class SelectQuery(Query):
 		"""
 		if self.data_engine.db_type == "mysql":
 			selectQuery = """SELECT %s FROM %s""" %(', '.join(self.fields), self.from_table)
-			if self.group_by_fields:
-				selectQuery += """ GROUP BY %s"""%(', '.join(self.group_by_fields))
 			if self.where_conditions:
 				if len(self.where_conditions)>0:
-					if not self.where_conditions.lower().startswith("where"):
+					if not self.where_conditions.lstrip().lower().startswith("where"):
 						selectQuery += """ WHERE """ + self.where_conditions
 					else:
 						selectQuery += " " + self.where_conditions
 					#for f in self.where_conditions:
 					#	selectQuery += str(f[0]) +"""='"""+ str(f[1])  +"""' AND """
 					#selectQuery = selectQuery[:-4]
+			if self.group_by_fields:
+				selectQuery += """ GROUP BY %s"""%(', '.join(self.group_by_fields))
+			print("***************************************")
+			print(selectQuery[:120])
+			print("***************************************")
 			return selectQuery
 
 		if self.data_engine.db_type == "sqlite":
@@ -211,11 +215,9 @@ class SelectQuery(Query):
 				
 			else:
 				selectQuery = """SELECT %s FROM %s""" %(', '.join(self.fields), self.from_table)
-				if self.group_by_fields:
-					selectQuery += """ GROUP BY %s"""%(', '.join(self.group_by_fields))
 				if self.where_conditions:
 					if len(self.where_conditions)>0:
-						if not self.where_conditions.lower().startswith("where"):
+						if not self.where_conditions.lstrip().lower().startswith("where"):
 							selectQuery += """ WHERE """ + self.where_conditions
 						else:
 							selectQuery += " " + self.where_conditions
@@ -223,6 +225,8 @@ class SelectQuery(Query):
 						#for f in self.where_conditions:
 						#	selectQuery += str(f[0]) +"""='"""+ str(f[1])  +"""' AND """
 						#selectQuery = selectQuery[:-4]
+				if self.group_by_fields:
+					selectQuery += """ GROUP BY %s"""%(', '.join(self.group_by_fields))
 				return selectQuery
 
 
@@ -365,6 +369,7 @@ class CreateTableQuery(Query):
 		super().__init__()
 		self.sql = None
 		self.table = table
+		self.likeTable = None
 		self.data_engine = data_engine
 		self.cols = None
 		self.mul_keys = None
@@ -442,6 +447,13 @@ class CreateTableQuery(Query):
 		self.engine = engine
 		return self
 
+	def like(self, oldTable):
+		"""
+		Create a table similar to the oldTable
+		"""
+		self.likeTable = oldTable;
+		return self
+
 	def execute_query(self):
 		"""
 		Executes a CREATE table query and also creates indexs on the table after the table has been created (for sqlite)
@@ -468,6 +480,8 @@ class CreateTableQuery(Query):
 		str: a built select query
 		"""
 		if self.data_engine.db_type == "mysql":
+			if self.likeTable != None:
+				return """CREATE TABLE %s LIKE %s"""%(self.table, self.likeTable)
 			createTable = """CREATE TABLE %s (""" % self.table
 			for col in self.cols:
 				datatype = col.get_datatype()
@@ -502,6 +516,13 @@ class CreateTableQuery(Query):
 			return createTable
 
 		if self.data_engine.db_type == "sqlite":
+			if self.likeTable != None:
+				"""write code to extract the sql statement used to create the likeTable and change the name of the table to self.table"""
+				sql = """SELECT sql FROM sqlite_master WHERE type='table' AND name=%s""" % likeTable
+				sql = self.data_engine.execute_get_list(sql)
+				import pdb; pdb.set_trace()
+				print(sql)
+	
 			createTable = """CREATE TABLE %s (""" % self.table 
 			for col in self.cols:
 				datatype = ""

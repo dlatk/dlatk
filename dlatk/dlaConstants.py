@@ -20,8 +20,8 @@ from sklearn.linear_model import LogisticRegression
 import statsmodels.stats.multitest as mt
 
 #DB_TYPE
-DB_TYPE = "sqlite"
-#DB_TYPE = "mysql"
+#DB_TYPE = "sqlite"
+DB_TYPE = "mysql"
 
 #DB INFO:
 USER = getpass.getuser()

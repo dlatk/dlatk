@@ -57,13 +57,13 @@ class DLAWorker(object):
         if primary:
             hasPrimary = mm.primaryKeyExists(self.dbConn, self.dbCursor, table, correlField)
             if not hasPrimary: warn_message += " a PRIMARY key on %s" % correlField
-        if correlField:
+        elif correlField:
             hasCorrelIndex = mm.indexExists(self.dbConn, self.dbCursor, table, correlField)
             if not hasCorrelIndex: 
                 if not hasPrimary: warn_message += " or"
                 warn_message += " an index on %s" % correlField
         warn_message += ". Consider adding."
-        if self.messageid_field == correlField and primary:
+        if self.messageid_field == correlField and not hasPrimary:
             warn_message += "\n         Please check that all messages have a unique %s, this can significantly impact all downstream analysis" % (self.messageid_field)
         if not hasPrimary or not hasCorrelIndex:
             dlac.warn(warn_message)
@@ -110,7 +110,7 @@ class DLAWorker(object):
         if self.messageIdUniqueChecked == False:
             self.checkIndices(messageTable, primary=True, correlField=self.messageid_field)
             if self.correl_field != self.messageid_field:
-                self.checkIndices(messageTable, primary=True, correlField=self.correl_field)
+                self.checkIndices(messageTable, primary=False, correlField=self.correl_field)
             self.messageIdUniqueChecked = True
         msql = """SELECT %s, %s FROM %s WHERE %s = '%s'""" % (
             self.messageid_field, self.message_field, messageTable, self.correl_field, cf_id)

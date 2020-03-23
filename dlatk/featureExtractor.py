@@ -229,10 +229,12 @@ class FeatureExtractor(DLAWorker):
                     mfRows = []
                     mfwsql = """INSERT INTO """+mfTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                     avgGramLength = totalChars / totalGrams
-                    avgGramsPerMsg = totalGrams / len(mids)
+                    lenmids=len(mids)
+                    avgGramsPerMsg = totalGrams / lenmids
                     mfRows.append( ('_avg'+str(n)+'gramLength', avgGramLength, valueFunc(avgGramLength)) )
                     mfRows.append( ('_avg'+str(n)+'gramsPerMsg', avgGramsPerMsg, valueFunc(avgGramsPerMsg)) )
                     mfRows.append( ('_total'+str(n)+'grams', totalGrams, valueFunc(totalGrams)) )
+                    mfRows.append( ('_totalMsgs', lenmids, valueFunc(lenmids)) )
                     mm.executeWriteMany(self.corpdb, self.dbCursor, mfwsql, mfRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
                 # mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)

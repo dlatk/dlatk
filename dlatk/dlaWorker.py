@@ -162,7 +162,7 @@ class DLAWorker(object):
             A list of messages for a given correl field id.
         """
         if not messageTable: messageTable = self.corptable
-        msql = """SELECT %s, %s, %s FROM %s WHERE %s = '%s'""" % (
+        msql = """SELECT %s, %s FROM %s WHERE %s = '%s'""" % (
             self.messageid_field, extraField, messageTable, self.correl_field, cf_id)
         #return self._executeGetSSCursor(msql, showQuery)
         return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding)

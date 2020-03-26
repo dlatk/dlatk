@@ -512,12 +512,15 @@ def main(fn_args = None):
                        help='removes features that do not pass correlation sig tests with given outcomes (uses -f --outcome_table --outcomes).')
     group.add_argument('--make_topic_labelmap_lex', action='store_true', dest='maketopiclabelmap', default=False,
                        help='Makes labelmap lexicon from topics. Requires --topic_lexicon, --num_topic_words. Optional: --weighted_lexicon')
+    group.add_argument('--tf_idf', action='store_true', dest='tfidf', default=False,
+                       help='Given an ngram feature table, creates a new feature table with tf-idf (uses -f).')
     group.add_argument('--feat_group_by_outcomes', action='store_true', dest='featgroupoutcomes', default=False,
                        help='Creates a feature table grouped by a given outcome (requires outcome field, can use controls)')
     group.add_argument('--aggregate_feats_by_new_group', action='store_true', dest='aggregategroup', default=False,
                        help='Aggregate feature table by group field (i.e. message_id features by user_ids).')
-    group.add_argument('--tf_idf', action='store_true', dest='tfidf', default=False,
-                       help='Given an ngram feature table, creates a new feature table with tf-idf (uses -f).')
+    group.add_argument('--interpolate_aggregated_feats', '--interpolate_feats', type=float, dest='interpolategroup', default=None,
+                       help='Aggregates features from a lower level to new group by field, interpolating across specified amount of days.')
+
 
 
     group = parser.add_argument_group('Outcome Actions', '')
@@ -1167,6 +1170,11 @@ def main(fn_args = None):
         if not fr: fr=FR()
         args.feattable = fr.createAggregateFeatTableByGroup(valueFunc = args.valuefunc)
 
+    if args.interpolategroup:
+        if not fr: fr=FR()
+        args.feattable = fr.createInterpolatedFeatTable(days = args.interpolategroup, dateField = args.date_field, groupFreqThresh = args.groupfreqthresh, where = args.groupswhere)
+
+        
     if args.featoccfilter:
         if args.use_collocs and not args.wordTable:
             args.wordTable = args.feattable

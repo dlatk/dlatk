@@ -2,6 +2,7 @@ import re
 from collections import OrderedDict
 from pprint import pprint
 import pandas as pd
+import sys
 
 #math / stats:
 from numpy import sqrt, array, std, mean, log2, log
@@ -430,6 +431,125 @@ class FeatureRefiner(FeatureGetter):
 
         return tableName
 
+    def createInterpolatedFeatTable(self, days = 1.0, dateField = 'created_at', groupFreqThresh = 0, setGFTWarning = False, where=None):
+        #creates a new feature table at a higher level of aggregation
+        #days: what units of time to interpolate into
+
+        featureTable = self.featureTable
+
+        (_, name, corpTable, oldGroupField) = featureTable.split('$')[:4]
+        theRest = featureTable.split('$')[4:]
+
+        feature_name = name[:12]+'_'+oldGroupField[:4]+'_'.join([i[:3] for i in theRest])
+
+        newTable = 'feat$interp'+ str(days)+ '_'+feature_name+'$'+corpTable+'$'+self.correl_field
+        drop = """DROP TABLE IF EXISTS %s""" % (newTable)
+        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
+
+        dlac.warn("""Interpolating %s to the %s level.""" % (str(featureTable), self.correl_field))
+
+        #1. apply GFT to get users we care about: 
+        groups = []
+        if not setGFTWarning:
+            dlac.warn("""group_freq_thresh is set to %s. Only %s s meeting this will have interpolated features""" % (groupFreqThresh, self.correl_field), attention=True)
+        if groupFreqThresh:
+            groupCnts = self.getGroupWordCounts(where)
+            for group, wordCount in groupCnts.items():
+                if (wordCount >= groupFreqThresh):
+                    groups.append(group)
+        else:
+            groups = self.getDistinctGroups(where)
+        dlac.warn("""  Interpolating for %d %s s.""" % (len(groups), self.correl_field))
+
+        #2. Get Features x SubIds (in Sparse X form):
+        oldFeatures = FeatureGetter(self.corpdb, self.corptable, oldGroupField, self.mysql_host, self.message_field, self.messageid_field, self.encoding, True, self.lexicondb, featureTable)
+        (groupNormsBySubId, featureNames) = oldFeatures.getGroupNormsSparseGroupsFirst(groups)
+
+        #3. Get the minimum date:
+        minDate = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT MIN(%s) FROM %s" % (dateField, self.corptable))[0][0]
+        print(minDate)
+        
+        #4. get date x subId
+        for group in groups: 
+            for dateRow in self.getMidAndExtraForCorrelField(group, dateField, warnMsg = True):
+                mid = dateRow[0]
+                if mid in groupNormsBySubId:
+                    date = dateRow[1]
+                    
+                
+        
+        #5. turn date into X vector
+
+        #6. align X with features by subId, store by superGroup
+        for subId, feats in groupNormsBySubId.items():
+            pass
+
+
+        #6. interpolate by superGroups (group)
+
+        sys.exit()
+        groupToIndex = dict([(groups[i], i) for i in range(len(groups))])
+        row = []
+        col = []
+        data = []
+        # columns: features.
+        for featIndex in range(len(gnList)):
+            colData = gnList[featIndex]
+            for groupid, value in colData.items():
+                    row.append(groupToIndex[groupid])
+                    col.append(featIndex)
+                    data.append(value)
+        assert all([isinstance(x,numbers.Number) for x in data]), "Data is corrupt, there are non float elements in the group norms (some might be NULL?)"
+        X = csr_matrix((data,(row,col)), shape = (len(groups), len(featureNames)), dtype=np.float)
+        if use_mean: 
+            X = X.todense()
+        dlac.warn("\n X.shape: %s]" % str(X.shape))
+
+        #3. Apply STandardization: 
+        scaler = StandardScaler(with_mean = use_mean, with_std=use_std)
+        dlac.warn("\n [Applying StandardScaler to X: %s]" % str(scaler))
+        X = scaler.fit_transform(X)
+        dlac.warn(" [Done]\n")
+        
+        #4. Create new table:
+        featTable = self.featureTable
+        if isinstance(featTable,list):
+            dlac.warn("Multiple  feature tables; only running on first: %s"%str(featTable))
+            featTable = featTable[0]
+        tableName = featTable+'$z'
+        if not use_mean: tableName+='NoMe'
+        if not use_std: tableName+='NoStd'
+        columns = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, featTable)
+        if not columns: raise ValueError("One of your feature tables probably doesn't exist")
+        currentType = columns['feat']
+        intGrabber = re.compile(r'\d+')
+        featNameSize = int(intGrabber.search(currentType).group())
+        featNameGrabber = re.compile(r'^feat\$([^\$]+)\$')
+        featureType = featNameGrabber.match(featTable).group(1)
+        
+        tableName = self.createFeatureTable(featureType, "VARCHAR(%d)"%featNameSize, 'DOUBLE', tableName)
+
+
+        #5. Insert into table
+        if X.shape[0]*X.shape[1] < dlac.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        for row in range(X.shape[0]):
+            cf_id = groups[row]
+
+            wsql = """INSERT INTO """+tableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+            if self.use_unicode:
+                rows = [(featureNames[col], X[row][col], X[row][col]) for col in range(X.shape[1])]
+            else:
+                rows = [(featureNames[col].encode('utf-8'), X[row][col], X[row][col]) for col in range(X.shape[1])]
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
+
+        dlac.warn("Done Reading / Inserting.")
+
+        if X.shape[0]*X.shape[1] < dlac.MAX_TO_DISABLE_KEYS:
+            dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
+            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        dlac.warn("Done\n")
+
+        return tableName
 
 
     
@@ -835,8 +955,6 @@ class FeatureRefiner(FeatureGetter):
         
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
   
-        # patrick changed this to be all SQL 7/21/15. Values and group norms were being calculated wrong before
-
         dlac.warn("Done inserting.\nEnabling keys.")
         mm.enableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
         dlac.warn("done.")

@@ -142,6 +142,32 @@ class DLAWorker(object):
         #return self._executeGetSSCursor(msql, showQuery)
         return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding)
 
+    def getMidAndExtraForCorrelField(self, cf_id, extraField, messageTable = None, warnMsg = True):
+        """?????
+ 
+        Parameters
+        ----------
+        cf_id : str
+            Correl field id.
+        extraField : str
+            ?????
+        messageTable : :obj:`str`, optional
+            name of message table.
+        warnMsg : :obj:`boolean`, optional
+            ?????
+     
+        Returns
+        -------
+        describe : list
+            A list of messages for a given correl field id.
+        """
+        if not messageTable: messageTable = self.corptable
+        msql = """SELECT %s, %s, %s FROM %s WHERE %s = '%s'""" % (
+            self.messageid_field, extraField, messageTable, self.correl_field, cf_id)
+        #return self._executeGetSSCursor(msql, showQuery)
+        return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding)
+
+    
     def getNumWordsByCorrelField(self, where = ''):
         """?????
  

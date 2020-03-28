@@ -530,7 +530,7 @@ class FeatureRefiner(FeatureGetter):
 
 
             #7. Interpolate (note: this and 8 could be parallelized)
-            minX, maxX = min(uniqueDTInts), max(uniqueDtInts)
+            minX, maxX = min(uniqueDtInts), max(uniqueDtInts)
             if maxX - minX < maxDiffPerUnit:#left and/or right will be left out
                 dlac.warn(" !Warning, %s %s has smaller range (%d to %d) than max (0 to %d)."% \
                           (self.correl_field, str(group), minX, maxX, maxDiffPerUnit))

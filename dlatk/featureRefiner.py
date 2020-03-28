@@ -488,9 +488,10 @@ class FeatureRefiner(FeatureGetter):
         
         #4. Create X and Y per group: 
         lengroups = len(groups)
-        dlac.warn("\nInterpolating %s %ss over %d %ddays: 0 = %s; max = %s"%(lengroups, self.correl_field, maxDiffPerUnit, days, str(minDT.date()), str(maxDT.date())))
+        dlac.warn("\nInterpolating %d %ss over %ddays: 0 = %s through %d = %s"% \
+                  (lengroups, self.correl_field, days, str(minDT.date()), maxDiffPerUnit, str(maxDT.date())))
         gnum = 0
-        wsql = """INSERT INTO """+newTable+""" (group_id, feat, value, group_norm) values %s, %s, %s, %s)"""
+        wsql = """INSERT INTO """+newTable+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
         for group in groups:
 
             #status tracker:
@@ -534,12 +535,12 @@ class FeatureRefiner(FeatureGetter):
             if maxX - minX < maxDiffPerUnit:#left and/or right will be left out
                 dlac.warn(" !Warning, %s %s has smaller range (%d to %d) than max (0 to %d)."% \
                           (self.correl_field, str(group), minX, maxX, maxDiffPerUnit))
-            newX = range() #i.e. range to interpolate over
+            newX = list(range(minX, maxX)) #i.e. range to interpolate over
             newYs = dict()
             #fit:
             for feat in featureNames:
                 x, y = zip(*groupXYs[feat])
-                print(x, y)
+                #print(x, y)
                 try: 
                     f = interp1d(x, y, 'slinear')
                     newYs[feat] = f(newX)
@@ -550,14 +551,17 @@ class FeatureRefiner(FeatureGetter):
                     break
 
             #8. Write to DB:
+            #print(newX, newYs)#debug
             rows = []
             if not self.use_unicode:
-                rows = [(group+'_'+str(time), feat, time, Ys[time]) for time in newX for feat, Ys in newYs.items()]
+                rows = [(group+'_'+str(newX[i]), feat, newX[i], Ys[i]) for i in range(len(newX)) for feat, Ys in newYs.items()]
             else:
-                rows = [((group+'_'+str(time)).encode('utf-8'), feat.encode('utf-8'), time, \
-                         Ys[time]) for time in newX for feat, Ys in newYs.items()]
+                rows = [((group+'_'+str(newX[i])).encode('utf-8'), feat.encode('utf-8'), newX[i], \
+                         Ys[i]) for i in range(len(newX)) for feat, Ys in newYs.items()]
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
 
+            ##ADD USER_ID and DAYS so that can be used. 
+            
         dlac.warn("Done Reading, Interpolating, and Inserting into '%s'."% tableName )
 
         return tableName

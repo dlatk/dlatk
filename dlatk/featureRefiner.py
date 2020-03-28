@@ -434,7 +434,7 @@ class FeatureRefiner(FeatureGetter):
 
         return tableName
 
-    def createInterpolatedFeatTable(self, days = 1.0, dateField = 'created_at', groupFreqThresh = 0, setGFTWarning = False, where=None):
+    def createInterpolatedFeatTable(self, days = 1, dateField = 'created_at', minToImpute = 2, groupFreqThresh = 0, setGFTWarning = False, where=None):
         #creates a new feature table at a higher level of aggregation
         #days: what units of time to interpolate into
 
@@ -442,9 +442,13 @@ class FeatureRefiner(FeatureGetter):
 
         #0. Create new interpolated table:
         (_, name, corpTable, oldGroupField) = featureTable.split('$')[:4]
+        assert oldGroupField == self.messageid_field, "Interpolate currently only works if interpolating message-level features"
         theRest = featureTable.split('$')[4:]
-        feature_name = name[:12]+'_'+oldGroupField[:4]+'_'.join([i[:3] for i in theRest])
-        newTable = 'feat$interp'+ str(int(days*10)/10).replace('.', '_')\
+        feature_name = name[:11]+'_'+'_'.join([i[:3] for i in theRest])
+        dayName = days
+        if dayName%1.0 > 0: dayName = str(int(days*10)/10).replace('.', '_')
+        else: dayName = str(int(dayName))
+        newTable = 'feat$intrp'+ dayName \
                    + '_'+feature_name+'$'+corpTable+'$'+self.correl_field
         columns = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, featureTable)
         if not columns: raise ValueError("One of your feature tables probably doesn't exist")
@@ -454,6 +458,7 @@ class FeatureRefiner(FeatureGetter):
 
         dlac.warn("""Interpolating %s to the %s level.""" % (str(featureTable), self.correl_field))
 
+        
         #1. apply GFT to get users we care about: 
         groups = []
         if not setGFTWarning:
@@ -467,69 +472,93 @@ class FeatureRefiner(FeatureGetter):
             groups = self.getDistinctGroups(where)
         dlac.warn("""  Interpolating for up to %d %s s.""" % (len(groups), self.correl_field))
 
+
         #2. Get Features x SubIds (in Sparse X form):
         oldFeatures = FeatureGetter(self.corpdb, self.corptable, oldGroupField, self.mysql_host, self.message_field, self.messageid_field, self.encoding, True, self.lexicondb, featureTable)
         (groupNormsByMid, featureNames) = oldFeatures.getGroupNormsSparseGroupsFirst()
 
         #3. Get the minimum date:
         minDT, maxDT = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT MIN(%s), MAX(%s) FROM %s" % (dateField, dateField, self.corptable))[0]
-        if not isinstance(minDate, datetime.datetime):
+        if not isinstance(minDT, datetime.datetime):
             minDT = dtParse(minDT, ignoretz = True)
             maxDT = dtParse(maxDT, ignoretz = True)
-        dayDiff = (maxDT - minDT).seconds / 86400.0 #seconds in a day
+        dayDiff = (maxDT - minDT).days
         maxDiffPerUnit = int(dayDiff/days)
 
-        #print(minDate)
         
         #4. Create X and Y per group: 
         lengroups = len(groups)
-        dlac.warn("Getting messages %d %s s" %(lengroups, self.correl_field))
+        dlac.warn("\nInterpolating %s %ss over %d %ddays: 0 = %s; max = %s"%(lengroups, self.correl_field, maxDiffPerUnit, days, str(minDT.date()), str(maxDT.date())))
         gnum = 0
         wsql = """INSERT INTO """+newTable+""" (group_id, feat, value, group_norm) values %s, %s, %s, %s)"""
         for group in groups:
 
             #status tracker:
-            if gnum%100:
-                dlac.warn("   Read %d (%.2f\%) %s s"% (gnum, 100*(gnum/lengroups), self.correl_field))
+            if gnum%100==0:
+                dlac.warn("   Read %d (%.2f complete) "%(gnum, gnum/lengroups))
             gnum +=1
 
             #5. go throgh current users messages and align with feature table data:
             groupXYs = {f: [] for f in featureNames} #feat->[(X, y)...] where X is datediff from min and y is group_norm; adds zeros here
-            for dateRow in self.getMidAndExtraForCorrelField(group, dateField, warnMsg = False):
+            midsAndDates = self.getMidAndExtraForCorrelField(group, dateField, warnMsg = False)
+            if len(midsAndDates) < minToImpute:#make total messages is at least enough before bothering:
+                dlac.warn(" !Only %d messages to impute for %s %s. Not enough. SKIPPING" % \
+                          (len(midsAndDates), self.correl_field, str(group)))
+                continue
+            uniqueDtInts = set() #tracks total unique dts
+            for dateRow in midsAndDates:
                 mid = dateRow[0]
                 if mid in groupNormsByMid:
+
                     #6. get difference in dates by number of days parameter:
                     dt = dateRow[1]
                     if not isinstance(dt, datetime.datetime):
                         dt = dtParse(dt, ignoretz = True)
-                    dayDiff = (dt - minDT).seconds / 86400.0 #seconds in a day
+                    dayDiff = (dt - minDT).days
                     diffPerUnit = int(dayDiff/days)
+                    uniqueDtInts.add(diffPerUnit)
 
                     for feat in featureNames:
                         try:
-                            groupXYs[feat].append(diffPerUnit, groupNormsByMid[mid][feat])
-                        except KeyError: #feat must be missing = 0
-                            groupXYs[feat].append(diffPerUnit, 0)
+                            groupXYs[feat].append((diffPerUnit, groupNormsByMid[mid][feat]))
+                        except KeyError: #feat must be missing in group Norms = 0
+                            groupXYs[feat].append((diffPerUnit, 0))
+            if len(uniqueDtInts) < minToImpute:#check that there are enough unique dates: 
+                dlac.warn(" !Only %d unique dates to impute for %s %s. Not enough. SKIPPING"% \
+                          (len(uniqueDts), self.correl_field, str(group)))
+                continue
+
 
             #7. Interpolate (note: this and 8 could be parallelized)
-            newX = range(maxDiffPerUnit) #i.e. range to interpolate over
+            minX, maxX = min(uniqueDTInts), max(uniqueDtInts)
+            if maxX - minX < maxDiffPerUnit:#left and/or right will be left out
+                dlac.warn(" !Warning, %s %s has smaller range (%d to %d) than max (0 to %d)."% \
+                          (self.correl_field, str(group), minX, maxX, maxDiffPerUnit))
+            newX = range() #i.e. range to interpolate over
             newYs = dict()
             #fit:
             for feat in featureNames:
                 x, y = zip(*groupXYs[feat])
-                f = interp1d(x, y, 'slinear')
-                newYs[feat] = f(newX)
+                print(x, y)
+                try: 
+                    f = interp1d(x, y, 'slinear')
+                    newYs[feat] = f(newX)
+                except ValueError:
+                    dlac.warn("THIS SHOULD HAVE BEEN CAUGHT EARLIER.\n Not enough values to impute for %s %s. SKIPPING"%\
+                              (self.correl_field, str(group), feat))
+                    #NOTE: this should only happen on the first feat; because zeros have been added
+                    break
 
             #8. Write to DB:
             rows = []
-            if self.use_unicode:
-                rows = [(group+_+str(time), feat, time, newYs[feat][time]) for time in newX for feat in featureNames]
+            if not self.use_unicode:
+                rows = [(group+'_'+str(time), feat, time, Ys[time]) for time in newX for feat, Ys in newYs.items()]
             else:
-                rows = [((group+_+str(time)).encode('utf-8'), feat.encode('utf-8'), time, \
-                         newYs[feat][time]) for time in newX for feat in featureNames]
+                rows = [((group+'_'+str(time)).encode('utf-8'), feat.encode('utf-8'), time, \
+                         Ys[time]) for time in newX for feat, Ys in newYs.items()]
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
 
-        dlac.warn("Done Reading / Inserting.")
+        dlac.warn("Done Reading, Interpolating, and Inserting into '%s'."% tableName )
 
         return tableName
 

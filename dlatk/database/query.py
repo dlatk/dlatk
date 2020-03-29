@@ -160,7 +160,6 @@ class SelectQuery(Query):
 		data = self.data_engine.execute_get_list(self.sql)
 		if self.sql.lower().startswith("pragma"):
 			for row in data:
-				print(row)
 				if row[1] == self.column_name:
 					return [[row[2]]]					
 
@@ -187,9 +186,6 @@ class SelectQuery(Query):
 					#selectQuery = selectQuery[:-4]
 			if self.group_by_fields:
 				selectQuery += """ GROUP BY %s"""%(', '.join(self.group_by_fields))
-			print("***************************************")
-			print(selectQuery[:120])
-			print("***************************************")
 			return selectQuery
 
 		if self.data_engine.db_type == "sqlite":
@@ -463,11 +459,10 @@ class CreateTableQuery(Query):
 		print("\nSUCCESSFULL QUERY: %s\n"%self.sql)
 		print("\nSuccess: '{0}', Database Type: '{1}'\n".format(success,self.data_engine.db_type))
 		if success==True and self.data_engine.db_type == "sqlite":
-			print("\nINSIDE success and yes this is sqlite\n")
-			if len(self.mul_keys)>0:
+			if self.mul_keys:
 				for key in self.mul_keys:
 					print("""\n\nCreating index {0} on table:{1}, column:{2} \n\n""".format(key[0], self.table, key[1]))
-					createIndex = """CREATE INDEX %s ON %s (%s)""" % (key[0], self.table, key[1])
+					createIndex = """CREATE INDEX %s ON %s (%s)""" % (key[0]+self.table[4:], self.table, key[1])
 					if "meta" not in self.table:
 						self.data_engine.execute(createIndex)
 
@@ -518,10 +513,9 @@ class CreateTableQuery(Query):
 		if self.data_engine.db_type == "sqlite":
 			if self.likeTable != None:
 				"""write code to extract the sql statement used to create the likeTable and change the name of the table to self.table"""
-				sql = """SELECT sql FROM sqlite_master WHERE type='table' AND name=%s""" % likeTable
-				sql = self.data_engine.execute_get_list(sql)
-				import pdb; pdb.set_trace()
-				print(sql)
+				sql = """SELECT sql FROM sqlite_master WHERE type='table' AND name='%s'""" % self.likeTable
+				originalCreateQuery = self.data_engine.execute_get_list(sql)[0][0]
+				return originalCreateQuery.replace(self.likeTable, self.table)
 	
 			createTable = """CREATE TABLE %s (""" % self.table 
 			for col in self.cols:

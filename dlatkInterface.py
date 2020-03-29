@@ -715,16 +715,13 @@ def main(fn_args = None):
     if not args.lexvaluefunc: args.lexvaluefunc = lambda d: d
 
     if args.outcomeWithOutcomeOnly and not args.feattable:
-        import pdb;pdb.set_trace()
         args.groupfreqthresh = 0
 
 
     if args.feattable and len(args.feattable) == 1:
-        import pdb;pdb.set_trace()
         args.feattable = args.feattable[0]
 
     if not args.feattable and args.aggregategroup:
-        import pdb;pdb.set_trace()
         args.feattable = aggregategroup[0]
 
     if args.weightedeval:
@@ -803,7 +800,6 @@ def main(fn_args = None):
         return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
 
     def FR():
-        import pdb;pdb.set_trace()
         return FeatureRefiner(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
 
     def FG(featTable = None):
@@ -1165,7 +1161,6 @@ def main(fn_args = None):
         args.feattable = fr.createAggregateFeatTableByGroup(valueFunc = args.valuefunc)
 
     if args.featoccfilter:
-        import pdb;pdb.set_trace()
         if args.use_collocs and not args.wordTable:
             args.wordTable = args.feattable
         if not fr: fr=FR()

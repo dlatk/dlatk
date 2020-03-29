@@ -70,7 +70,8 @@ class FeatureRefiner(FeatureGetter):
         longestType = "VARCHAR(12)"
         valueType = 'INTEGER'
         for table in featureTables:
-            columns = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, table)
+            #columns = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, table)
+            columns = self.data_engine.getTableColumnNameTypes(table)
             if not columns: raise ValueError("One of your feature tables probably doesn't exist")
             currentType = columns['feat']
             valueType = columns['value']
@@ -245,7 +246,7 @@ class FeatureRefiner(FeatureGetter):
 
     def createTableWithRemovedFeats(self, p, minimumFeatSum = 0, groupFreqThresh = 0, setGFTWarning = False):
         """creates a new table with features that appear in more than p*|correl_field| rows, only considering groups above groupfreqthresh"""
-        import pdb;pdb.set_trace()
+        #import pdb;pdb.set_trace()
         if not setGFTWarning:
             dlac.warn("""group_freq_thresh is set to %s. Be aware that groups might be removed during this process and your group norms will reflect this.""" % (groupFreqThresh), attention=True)
         toKeep = self._getKeepSet(p, minimumFeatSum, groupFreqThresh)
@@ -278,7 +279,7 @@ class FeatureRefiner(FeatureGetter):
         total = 0
         toWrite = []
         
-        wsql = self.qb.create_insert_query(newTable).set_values([("group_id", ""), ("feat", ""), ("value", ""), ("group_norm", ""), ("feat_norm", "")]) if featNorm else self.qb.create_insert_query(newTable).set_value([("group_id", ""), ("feat", ""), ("value", ""), ("group_norm", "")])
+        wsql = self.qb.create_insert_query(newTable).set_values([("group_id", ""), ("feat", ""), ("value", ""), ("group_norm", ""), ("feat_norm", "")]) if featNorm else self.qb.create_insert_query(newTable).set_values([("group_id", ""), ("feat", ""), ("value", ""), ("group_norm", "")])
         #wsql = """INSERT INTO """+newTable+""" (group_id, feat, value, group_norm, feat_norm) values (%s, %s, %s, %s, %s)""" if featNorm else """INSERT INTO """+newTable+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
 
         #iterate through each row, deciding whether to keep or not
@@ -306,14 +307,14 @@ class FeatureRefiner(FeatureGetter):
         self.data_engine.enable_table_keys(newTable)
         #mm.enableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
         dlac.warn("done.")
-        import pdb;pdb.set_trace()
+        #import pdb;pdb.set_trace()
         self.featureTable = newTable
         return newTable
 
     def _getKeepSet(self, p, minimumFeatSum = 0, groupFreqThresh = 0):
         """creates a set of features occuring in less than p*|correl_field| rows"""
         #acquire the number of groups (need to base on corp table):
-        import pdb;pdb.set_trace()
+        #import pdb;pdb.set_trace()
         featureTable = self.featureTable
         totalGroups = self.countGroups(groupFreqThresh)
         assert totalGroups > 0, 'NO GROUPS TO FILTER BASED ON (LIKELY group_freq_thresh IS TOO HIGH)'
@@ -558,22 +559,32 @@ class FeatureRefiner(FeatureGetter):
                 tableName += '$' + extension
 
         #find correl_field type:
-        sql = """SELECT column_type FROM information_schema.columns WHERE table_schema='%s' AND table_name='%s' AND column_name='%s'""" % (
-            self.corpdb, self.corptable, self.correl_field)
+        #sql = """SELECT column_type FROM information_schema.columns WHERE table_schema='%s' AND table_name='%s' AND column_name='%s'""" % (
+        #    self.corpdb, self.corptable, self.correl_field)
+
+        where_conditions = """table_schema='%s' AND table_name='%s' AND column_name='%s'"""%(self.corpdb, self.corptable, self.correl_field)
+        query = self.qb.create_select_query("information_schema.columns").set_fields(["column_type"]).where(where_conditions)
 
         correlField = self.getCorrelFieldType(self.correl_field) if not correlField else correlField
-        correl_fieldType = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)[0][0] if not correlField else correlField
+        #correl_fieldType = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)[0][0] if not correlField else correlField
+        correl_fieldType = query.execute_query()[0][0] if not correlField else correlField
 
         #create sql
-        drop = """DROP TABLE IF EXISTS %s""" % tableName
+        #drop = """DROP TABLE IF EXISTS %s""" % tableName
+        dropTable = self.qb.create_drop_query(tableName)
         # featureType = "VARCHAR(30)" # MAARTEN
         #CREATE TABLE feat_3gram_messages_rand1000_user_id (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, user_id ('bigint(20) unsigned',), 3gram VARCHAR(64), VALUE INTEGER
         #sql = """CREATE TABLE %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, group_id %s, feat %s, value %s, group_norm DOUBLE, feat_norm DOUBLE, KEY `correl_field` (`group_id`), KEY `feature` (`feat`)) CHARACTER SET utf8 COLLATE utf8_general_ci""" %(tableName, correl_fieldType, featureType, valueType)
-        sql = """CREATE TABLE %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, group_id %s, feat %s, value %s, group_norm DOUBLE, KEY `correl_field` (`group_id`), KEY `feature` (`feat`)) CHARACTER SET %s COLLATE %s ENGINE=%s""" %(tableName, correl_fieldType, featureType, valueType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()], dlac.DEF_MYSQL_ENGINE)
+
+        #sql = """CREATE TABLE %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, group_id %s, feat %s, value %s, group_norm DOUBLE, KEY `correl_field` (`group_id`), KEY `feature` (`feat`)) CHARACTER SET %s COLLATE %s ENGINE=%s""" %(tableName, correl_fieldType, featureType, valueType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()], dlac.DEF_MYSQL_ENGINE)
+
+        createTable = self.qb.create_createTable_query(tableName).add_columns([Column("id", "INT", unsigned=True, primary_key=True, nullable=False, auto_increment=True), Column("group_id", correl_fieldType), Column("feat", featureType), Column("value", valueType), Column("group_norm", "DOUBLE")]).add_mul_keys([("correl_field", "group_id"), ("feature", "feat")]).set_character_set(self.encoding).set_collation(dlac.DEF_COLLATIONS[self.encoding.lower()]).set_engine(dlac.DEF_MYSQL_ENGINE)
 
         #run sql
-        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        #mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
+        #mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        drop.execute_query()
+        createTable.execute_query()
 
         return  tableName;
 
@@ -759,7 +770,7 @@ class FeatureRefiner(FeatureGetter):
         dlac.warn("Done inserting.\nEnabling keys.")
         mm.enableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
         dlac.warn("done.")
-        import pdb;pdb.set_trace()
+        #import pdb;pdb.set_trace()
         self.featureTable = newTable
         return newTable
 

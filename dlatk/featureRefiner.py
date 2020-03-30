@@ -465,7 +465,7 @@ class FeatureRefiner(FeatureGetter):
         dlac.warn("""Interpolating %s to the %s level.""" % (str(featureTable), self.correl_field))
 
         
-        #1. apply GFT to get users we care about: 
+        ## 1. apply GFT to get users we care about: 
         groups = []
         if not setGFTWarning:
             dlac.warn("""group_freq_thresh is set to %s. Only %s s meeting this will have interpolated features""" % (groupFreqThresh, self.correl_field), attention=True)
@@ -480,7 +480,7 @@ class FeatureRefiner(FeatureGetter):
         gList = "','".join([str(g) for g in groups])
 
 
-        #2. Get the minimum date:
+        ## 2. Get the minimum date:
 #       minDT, maxDT = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT MIN(%s), MAX(%s) FROM %s" % (dateField, dateField, self.corptable))[0]
         minDT, maxDT = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT max(min_date), min(max_date) FROM (SELECT %s, MIN(%s) as min_date, MAX(%s) as max_date FROM %s where %s in ('%s') group by user_id) as a " % \
                                          (self.correl_field, dateField, dateField, self.corptable, self.correl_field, gList))[0]
@@ -491,10 +491,9 @@ class FeatureRefiner(FeatureGetter):
         maxDiffPerUnit = int(dayDiff/days)
         dlac.warn
 
-
-        ##TODO: drop or alter the date range -- needs less than the min and greater than max mostly but only produces those
+        ##TODO: alter the date range to extend past boundaries for training even if newX(i.e. interpolated version) uses these boundaries
         
-        #3. Get Features x SubIds (in Sparse X form):
+        ## 3. Get Features x SubIds (in Sparse X form):
         oldFeatures = FeatureGetter(self.corpdb, self.corptable, oldGroupField, self.mysql_host, self.message_field, self.messageid_field, self.encoding, True, self.lexicondb, featureTable)
         dateWhere = "%s >= DATE('%s') AND %s <= DATE('%s')" % (dateField, minDT.date(), dateField, maxDT.date()) #used when querying mids + dates
         groupsWhere = "group_id in (SELECT %s FROM %s WHERE "%(oldGroupField, self.corptable) +dateWhere+" AND %s in ('%s'))" %(self.correl_field, gList)
@@ -502,7 +501,7 @@ class FeatureRefiner(FeatureGetter):
         (groupNormsByMid, featureNames) = oldFeatures.getGroupNormsSparseGroupsFirst(where = groupsWhere)
         
         
-        #4. Create X and Y per group: 
+        ## 4. Create X and Y per group: 
         lengroups = len(groups)
         dlac.warn("\nInterpolating %d %ss over %ddays: 0 = %s through %d = %s"% \
                   (lengroups, self.correl_field, days, str(minDT.date()), maxDiffPerUnit, str(maxDT.date())))
@@ -515,7 +514,7 @@ class FeatureRefiner(FeatureGetter):
                 dlac.warn("   Read %d (%.2f complete) "%(gnum, gnum/lengroups))
             gnum +=1
 
-            #5. go throgh current users messages and align with feature table data:
+            ## 5. go throgh current users messages and align with feature table data:
             groupXYs = {f: [] for f in featureNames} #feat->[(X, y)...] where X is datediff from min and y is group_norm; adds zeros here
             midsAndDates = self.getMidAndExtraForCorrelField(group, dateField, where=dateWhere, warnMsg = False)
             if len(midsAndDates) < minToImpute:#make total messages is at least enough before bothering:
@@ -527,7 +526,7 @@ class FeatureRefiner(FeatureGetter):
                 #print("dateRow", dateRow)#debug
                 mid = dateRow[0]
                 if mid in groupNormsByMid:
-                    #6. get difference in dates by number of days parameter:
+                    ## 6. get difference in dates by number of days parameter:
                     #print("checking", mid)
                     dt = dateRow[1]
                     if not isinstance(dt, datetime.datetime):
@@ -547,7 +546,7 @@ class FeatureRefiner(FeatureGetter):
                 continue
 
 
-            #7. Interpolate (note: this and 8 could be parallelized)
+            ## 7. Interpolate (note: this and 8 could be parallelized)
             minX, maxX = min(uniqueDtInts), max(uniqueDtInts)
             if maxX - minX < maxDiffPerUnit:#left and/or right will be left out
                 dlac.warn(" !Warning, %s %s has smaller range (%d to %d) than max (0 to %d)."% \
@@ -567,7 +566,7 @@ class FeatureRefiner(FeatureGetter):
                     #NOTE: this should only happen on the first feat; because zeros have been added
                     break
 
-            #8. Write to DB:
+            ## 8. Write to DB:
             #print(newX, newYs)#debug
             rows = []
             if not self.use_unicode:

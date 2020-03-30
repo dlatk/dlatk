@@ -491,6 +491,8 @@ class FeatureRefiner(FeatureGetter):
         maxDiffPerUnit = int(dayDiff/days)
         dlac.warn
 
+
+        ##TODO: drop or alter the date range -- needs less than the min and greater than max mostly but only produces those
         
         #3. Get Features x SubIds (in Sparse X form):
         oldFeatures = FeatureGetter(self.corpdb, self.corptable, oldGroupField, self.mysql_host, self.message_field, self.messageid_field, self.encoding, True, self.lexicondb, featureTable)

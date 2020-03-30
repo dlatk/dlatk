@@ -496,7 +496,7 @@ class FeatureRefiner(FeatureGetter):
         oldFeatures = FeatureGetter(self.corpdb, self.corptable, oldGroupField, self.mysql_host, self.message_field, self.messageid_field, self.encoding, True, self.lexicondb, featureTable)
         dateWhere = "%s >= DATE('%s') AND %s <= DATE('%s')" % (dateField, minDT.date(), dateField, maxDT.date()) #used when querying mids + dates
         groupsWhere = "group_id in (SELECT %s FROM %s WHERE "%(oldGroupField, self.corptable) +dateWhere+" AND %s in ('%s'))" %(self.correl_field, gList)
-        print("groupsWhere", groupsWhere)#debug
+        #print("groupsWhere", groupsWhere)#debug
         (groupNormsByMid, featureNames) = oldFeatures.getGroupNormsSparseGroupsFirst(where = groupsWhere)
         
         
@@ -522,11 +522,11 @@ class FeatureRefiner(FeatureGetter):
                 continue
             uniqueDtInts = set() #tracks total unique dts
             for dateRow in midsAndDates:
-                print("dateRow", dateRow)#debug
+                #print("dateRow", dateRow)#debug
                 mid = dateRow[0]
                 if mid in groupNormsByMid:
                     #6. get difference in dates by number of days parameter:
-                    print("checking", mid)
+                    #print("checking", mid)
                     dt = dateRow[1]
                     if not isinstance(dt, datetime.datetime):
                         dt = dtParse(dt, ignoretz = True)
@@ -550,7 +550,7 @@ class FeatureRefiner(FeatureGetter):
             if maxX - minX < maxDiffPerUnit:#left and/or right will be left out
                 dlac.warn(" !Warning, %s %s has smaller range (%d to %d) than max (0 to %d)."% \
                           (self.correl_field, str(group), minX, maxX, maxDiffPerUnit))
-            newX = list(range(minX, maxX)) #i.e. range to interpolate over
+            newX = list(range(minX, maxX+1)) #i.e. range to interpolate over
             newYs = dict()
             #fit:
             for feat in featureNames:

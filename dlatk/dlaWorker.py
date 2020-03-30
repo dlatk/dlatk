@@ -142,7 +142,7 @@ class DLAWorker(object):
         #return self._executeGetSSCursor(msql, showQuery)
         return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding)
 
-    def getMidAndExtraForCorrelField(self, cf_id, extraField, messageTable = None, warnMsg = True):
+    def getMidAndExtraForCorrelField(self, cf_id, extraField, messageTable = None, where = None, warnMsg = True):
         """?????
  
         Parameters
@@ -164,6 +164,8 @@ class DLAWorker(object):
         if not messageTable: messageTable = self.corptable
         msql = """SELECT %s, %s FROM %s WHERE %s = '%s'""" % (
             self.messageid_field, extraField, messageTable, self.correl_field, cf_id)
+        if where:
+            msql += ' AND '+where
         #return self._executeGetSSCursor(msql, showQuery)
         return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding)
 

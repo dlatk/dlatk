@@ -453,6 +453,8 @@ class FeatureRefiner(FeatureGetter):
         columns = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, featureTable)
         if not columns: raise ValueError("One of your feature tables probably doesn't exist")
         currentType = columns['feat']
+        columns = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable)
+        if not columns: raise ValueError("One of your feature tables probably doesn't exist")
         groupidType = columns[self.correl_field]
         tableName = self.createFeatureTable(feature_name, currentType, 'DOUBLE', newTable)
         ##add extra columns:
@@ -475,20 +477,28 @@ class FeatureRefiner(FeatureGetter):
         else:
             groups = self.getDistinctGroups(where)
         dlac.warn("""  Interpolating for up to %d %s s.""" % (len(groups), self.correl_field))
+        gList = "','".join([str(g) for g in groups])
 
 
-        #2. Get Features x SubIds (in Sparse X form):
-        oldFeatures = FeatureGetter(self.corpdb, self.corptable, oldGroupField, self.mysql_host, self.message_field, self.messageid_field, self.encoding, True, self.lexicondb, featureTable)
-        (groupNormsByMid, featureNames) = oldFeatures.getGroupNormsSparseGroupsFirst()
-
-        #3. Get the minimum date:
-        minDT, maxDT = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT MIN(%s), MAX(%s) FROM %s" % (dateField, dateField, self.corptable))[0]
+        #2. Get the minimum date:
+#       minDT, maxDT = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT MIN(%s), MAX(%s) FROM %s" % (dateField, dateField, self.corptable))[0]
+        minDT, maxDT = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT max(min_date), min(max_date) FROM (SELECT %s, MIN(%s) as min_date, MAX(%s) as max_date FROM %s where %s in ('%s') group by user_id) as a " % \
+                                         (self.correl_field, dateField, dateField, self.corptable, self.correl_field, gList))[0]
         if not isinstance(minDT, datetime.datetime):
             minDT = dtParse(minDT, ignoretz = True)
             maxDT = dtParse(maxDT, ignoretz = True)
         dayDiff = (maxDT - minDT).days
         maxDiffPerUnit = int(dayDiff/days)
+        dlac.warn
 
+        
+        #3. Get Features x SubIds (in Sparse X form):
+        oldFeatures = FeatureGetter(self.corpdb, self.corptable, oldGroupField, self.mysql_host, self.message_field, self.messageid_field, self.encoding, True, self.lexicondb, featureTable)
+        dateWhere = "%s >= DATE('%s') AND %s <= DATE('%s')" % (dateField, minDT.date(), dateField, maxDT.date()) #used when querying mids + dates
+        groupsWhere = "group_id in (SELECT %s FROM %s WHERE "%(oldGroupField, self.corptable) +dateWhere+" AND %s in ('%s'))" %(self.correl_field, gList)
+        print("groupsWhere", groupsWhere)#debug
+        (groupNormsByMid, featureNames) = oldFeatures.getGroupNormsSparseGroupsFirst(where = groupsWhere)
+        
         
         #4. Create X and Y per group: 
         lengroups = len(groups)
@@ -505,17 +515,18 @@ class FeatureRefiner(FeatureGetter):
 
             #5. go throgh current users messages and align with feature table data:
             groupXYs = {f: [] for f in featureNames} #feat->[(X, y)...] where X is datediff from min and y is group_norm; adds zeros here
-            midsAndDates = self.getMidAndExtraForCorrelField(group, dateField, warnMsg = False)
+            midsAndDates = self.getMidAndExtraForCorrelField(group, dateField, where=dateWhere, warnMsg = False)
             if len(midsAndDates) < minToImpute:#make total messages is at least enough before bothering:
                 dlac.warn(" !Only %d messages to impute for %s %s. Not enough. SKIPPING" % \
                           (len(midsAndDates), self.correl_field, str(group)))
                 continue
             uniqueDtInts = set() #tracks total unique dts
             for dateRow in midsAndDates:
+                print("dateRow", dateRow)#debug
                 mid = dateRow[0]
                 if mid in groupNormsByMid:
-
                     #6. get difference in dates by number of days parameter:
+                    print("checking", mid)
                     dt = dateRow[1]
                     if not isinstance(dt, datetime.datetime):
                         dt = dtParse(dt, ignoretz = True)
@@ -530,7 +541,7 @@ class FeatureRefiner(FeatureGetter):
                             groupXYs[feat].append((diffPerUnit, 0))
             if len(uniqueDtInts) < minToImpute:#check that there are enough unique dates: 
                 dlac.warn(" !Only %d unique dates to impute for %s %s. Not enough. SKIPPING"% \
-                          (len(uniqueDts), self.correl_field, str(group)))
+                          (len(uniqueDtInts), self.correl_field, str(group)))
                 continue
 
 
@@ -567,7 +578,7 @@ class FeatureRefiner(FeatureGetter):
             ##ADD USER_ID and DAYS so that can be used. 
             
         dlac.warn("Done Reading, Interpolating, and Inserting into '%s'."% tableName )
-        mm.execute(self.corpdb, self.dbCursor, "ALTER TABLE %s ADD INDEX time, ADD INDEX %s" % (tableName, self.correl_field), charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, "ALTER TABLE %s ADD INDEX (time), ADD INDEX (%s)" % (tableName, self.correl_field), charset=self.encoding, use_unicode=self.use_unicode)
 
         return tableName
 

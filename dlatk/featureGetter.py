@@ -321,23 +321,30 @@ class FeatureGetter(DLAWorker):
         """returns a dict of (feature => group_id => group_norm)"""
         #This functino gets killed on large feature sets
         gnlist = []
+        allFeats = {}
         if groups: 
             gCond = " group_id in ('%s')" % "','".join(str(g) for g in groups)
-            if where: gnlist = self.getGroupNorms(where+" AND "+gCond)
-            else: gnlist = self.getGroupNorms(gCond)
-        else: 
-            gnlist = self.getGroupNorms()
+            if where:
+                gnlist = self.getGroupNorms(where+" AND "+gCond)
+                allFeats = self.getDistinctFeatures(where+" AND "+gCond)
+            else:
+                gnlist = self.getGroupNorms(gCond)
+                allFeats = self.getDistinctFeatures(gCond)
+        else:
+            if where:
+                gnlist = self.getGroupNorms(where)
+                allFeats = self.getDistinctFeatures(where)
+            else:
+                gnlist = self.getGroupNorms()
+                allFeats = self.getDistinctFeatures()
+
         gns = dict()
-        groups = set()
+        #groups = set()
         for tup in gnlist:
             (gid, feat, gn) = tup
             if not feat in gns: gns[feat] = dict()
             gns[feat][gid] = gn
-            groups.add(gid)
-
-        gCond = " group_id in ('%s')" % "','".join(str(g) for g in groups)
-        if where: gCond = where+" AND "+gCond
-        allFeats = self.getDistinctFeatures(gCond)
+        #    groups.add(gid)
 
         return gns, allFeats
 
@@ -345,23 +352,30 @@ class FeatureGetter(DLAWorker):
         """returns a dict of (feature => group_id => group_norm)"""
         #This functino gets killed on large feature sets
         gnlist = []
+        allFeats = {}
         if groups: 
             gCond = " group_id in ('%s')" % "','".join(str(g) for g in groups)
-            if where: gnlist = self.getGroupNorms(where+" AND "+gCond)
-            else: gnlist = self.getGroupNorms(gCond)
-        else: 
-            gnlist = self.getGroupNorms()
+            if where:
+                gnlist = self.getGroupNorms(where+" AND "+gCond)
+                allFeats = self.getDistinctFeatures(where+" AND "+gCond)
+            else:
+                gnlist = self.getGroupNorms(gCond)
+                allFeats = self.getDistinctFeatures(gCond)
+        else:
+            if where:
+                gnlist = self.getGroupNorms(where)
+                allFeats = self.getDistinctFeatures(where)
+            else:
+                gnlist = self.getGroupNorms()
+                allFeats = self.getDistinctFeatures()
         gns = dict()
-        groups = set()
+        #groups = set()
         for tup in gnlist:
             (gid, feat, gn) = tup
             if not gid in gns: gns[gid] = dict()
             gns[gid][feat] = gn
-            groups.add(gid)
+        #    groups.add(gid)
 
-        gCond = " group_id in ('%s')" % "','".join(str(g) for g in groups)
-        if where: gCond = where+" AND "+gCond
-        allFeats = self.getDistinctFeatures(gCond)
 
         return gns, allFeats
 

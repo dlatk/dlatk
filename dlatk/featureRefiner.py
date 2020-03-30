@@ -453,7 +453,11 @@ class FeatureRefiner(FeatureGetter):
         columns = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, featureTable)
         if not columns: raise ValueError("One of your feature tables probably doesn't exist")
         currentType = columns['feat']
+        groupidType = columns[self.correl_field]
         tableName = self.createFeatureTable(feature_name, currentType, 'DOUBLE', newTable)
+        ##add extra columns:
+        mm.execute(self.corpdb, self.dbCursor, "ALTER TABLE %s ADD time INT, ADD %s %s" % (tableName, self.correl_field, groupidType), charset=self.encoding, use_unicode=self.use_unicode)
+     
 
 
         dlac.warn("""Interpolating %s to the %s level.""" % (str(featureTable), self.correl_field))
@@ -491,7 +495,7 @@ class FeatureRefiner(FeatureGetter):
         dlac.warn("\nInterpolating %d %ss over %ddays: 0 = %s through %d = %s"% \
                   (lengroups, self.correl_field, days, str(minDT.date()), maxDiffPerUnit, str(maxDT.date())))
         gnum = 0
-        wsql = """INSERT INTO """+newTable+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
+        wsql = """INSERT INTO """+newTable+""" (group_id, feat, value, group_norm, time, """+self.correl_field+""") values (%s, %s, %s, %s, %s, %s)"""
         for group in groups:
 
             #status tracker:
@@ -554,15 +558,16 @@ class FeatureRefiner(FeatureGetter):
             #print(newX, newYs)#debug
             rows = []
             if not self.use_unicode:
-                rows = [(group+'_'+str(newX[i]), feat, newX[i], Ys[i]) for i in range(len(newX)) for feat, Ys in newYs.items()]
+                rows = [(group+'_'+str(newX[i]), feat, newX[i], Ys[i], newX[i], group) for i in range(len(newX)) for feat, Ys in newYs.items()]
             else:
                 rows = [((group+'_'+str(newX[i])).encode('utf-8'), feat.encode('utf-8'), newX[i], \
-                         Ys[i]) for i in range(len(newX)) for feat, Ys in newYs.items()]
+                         Ys[i], newX[i], group) for i in range(len(newX)) for feat, Ys in newYs.items()]
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
 
             ##ADD USER_ID and DAYS so that can be used. 
             
         dlac.warn("Done Reading, Interpolating, and Inserting into '%s'."% tableName )
+        mm.execute(self.corpdb, self.dbCursor, "ALTER TABLE %s ADD INDEX time, ADD INDEX %s" % (tableName, self.correl_field), charset=self.encoding, use_unicode=self.use_unicode)
 
         return tableName
 

@@ -489,7 +489,8 @@ class FeatureRefiner(FeatureGetter):
             maxDT = dtParse(maxDT, ignoretz = True)
         dayDiff = (maxDT - minDT).days
         maxDiffPerUnit = int(dayDiff/days)
-        dlac.warn
+        assert dayDiff > 0, "\nDayDiff (%d) was negative or zero. Increase GFT. Interpolating %ss over %ddays: 0 = %s through %d = %s"% \
+                  (dayDiff, self.correl_field, days, str(minDT.date()), maxDiffPerUnit, str(maxDT.date()))
 
         ##TODO: alter the date range to extend past boundaries for training even if newX(i.e. interpolated version) uses these boundaries
         

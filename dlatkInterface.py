@@ -724,6 +724,13 @@ def main(fn_args = None):
     if not args.valuefunc: args.valuefunc = lambda d: d
     if not args.lexvaluefunc: args.lexvaluefunc = lambda d: d
 
+    if args.feattable:
+        if isinstance(args.feattable,list):
+            args.feattable = [s.strip() for s in args.feattable]
+        else: 
+            args.feattable = arg.feattable.strip()
+
+
     if args.outcomeWithOutcomeOnly and not args.feattable:
         args.groupfreqthresh = 0
 

@@ -31,6 +31,7 @@ from . import dlaConstants as dlac
 from . import textCleaner as tc
 from .mysqlmethods import mysqlMethods as mm
 
+#dataEngine / query
 from .database.query import QueryBuilder
 from .database.query import Column
 from .database.dataEngine import DataEngine
@@ -1524,7 +1525,6 @@ class FeatureExtractor(DLAWorker):
             raise IndexError("Your message table '%s' probably doesn't exist!" % self.corptable)
 
         featureTypeAndEncoding = featureType
-        print(featureTypeAndEncoding)
         if featureType[0].lower() == 't' or featureType[0].lower() == 'v':
             #string type; add unicode: 
             featureTypeAndEncoding = "%s CHARACTER SET %s COLLATE %s" % (featureType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()])            

@@ -1,7 +1,7 @@
 from ..mysqlmethods import mysqlMethods as mm
 from ..sqlitemethods import sqliteMethods as sm
 from .. import dlaConstants as dlac
-
+import sys
 
 class DataEngine(object):
 	"""
@@ -183,6 +183,20 @@ class DataEngine(object):
 		"""
 		return self.dataEngine.indexExists(table_name, column_name)
 
+	def getTableColumnNameTypes(self, table_name):
+		"""
+		return a dict of column names mapped to types
+
+		Parameters
+		-------------
+		table_name: str
+
+		Returns
+		-------------
+		Dict
+		"""
+		return self.dataEngine.getTableColumnNameTypes(table_name)
+
 class MySqlDataEngine(DataEngine):
 	"""
 	Class for interacting with the MYSQL database engine.
@@ -197,7 +211,7 @@ class MySqlDataEngine(DataEngine):
 	"""
 
 	def __init__(self, corpdb, mysql_host, encoding):
-		super().__init__()
+		super().__init__(corpdb)
 		(self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(corpdb, host=mysql_host, charset=encoding)
 
 	def get_db_connection(self):
@@ -346,10 +360,23 @@ class MySqlDataEngine(DataEngine):
 		"""
 		return mm.indexExists(self.corpdb, self.dbCursor, table_name, column_name)
 
+	def getTableColumnNameTypes(self, table_name):
+		"""
+		return a dict of column names mapped to types
+
+		Parameters
+		-------------
+		table_name: str
+
+		Returns
+		-------------
+		Dict
+		"""
+		return mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, table_name)
 
 class SqliteDataEngine(DataEngine):
 	def __init__(self, corpdb):
-		super().__init__()
+		super().__init__(corpdb)
 		(self.dbConn, self.dbCursor) = sm.dbConnect(corpdb)
 
 	def get_db_connection(self):
@@ -475,3 +502,21 @@ class SqliteDataEngine(DataEngine):
 		"""
 		return sm.indexExists(self.corpdb, self.dbCursor, table_name, column_name)
 
+	def getTableColumnNameTypes(self, table_name):
+		"""
+		return a dict of column names mapped to types
+
+		Parameters
+		-------------
+		table_name: str
+
+		Returns
+		-------------
+		Dict
+		"""
+		sql = "PRAGMA table_info("+table_name+")"
+		data = sm.executeGetList(self.corpdb, self.dbCursor, sql)
+		dictionary = {}
+		for row in data:
+			dictionary[row[1]] = row[2]
+		return dictionary	

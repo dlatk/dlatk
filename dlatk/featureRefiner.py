@@ -18,6 +18,7 @@ from .mysqlmethods import mysqlMethods as mm
 from .mysqlmethods import mysql_iter_funcs as mif
 
 from .database.query import QueryBuilder
+from .database.query import Column
 from .database.dataEngine import DataEngine
 
 class FeatureRefiner(FeatureGetter):
@@ -105,12 +106,24 @@ class FeatureRefiner(FeatureGetter):
             featureName = '_'.join(names)
         featureTableName = self.createFeatureTable(featureName, "VARCHAR(%d)"%longestInt, valueType, tableName, valueFunc, extension=pocc)
         # Maarten: todo: test if too long and don't disable keys
-        mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
-
-        for fTable in featureTables:
-            mm.execute(self.corpdb, self.dbCursor, "INSERT INTO %s (group_id, feat, value, group_norm) SELECT group_id, feat, value, group_norm from %s;" % (featureTableName, fTable), charset=self.encoding, use_unicode=self.use_unicode)
+        self.data_engine.disable_table_keys(featureTableName)
+        #mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
         
-        mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        insert_idx_start = 0
+        insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
+        for fTable in featureTables:
+            if self.db_type == "sqlite":
+                insertQuery = self.qb.create_insert_query(featureTableName).set_values([("group_id", ""),("feat", ""),("value", ""),("group_norm", "")])
+                selectQuery = self.qb.create_select_query(fTable).set_fields(["group_id", "feat", "value", "group_norm"])
+                rows = selectQuery.execute_query()
+                insertQuery.execute_query(rows)
+            elif self.db_type == "mysql":
+                sql = "INSERT INTO %s (group_id, feat, value, group_norm) SELECT group_id, feat, value, group_norm from %s;"%(featureTableName, fTable)
+                self.data_engine.execute(sql)
+            #mm.execute(self.corpdb, self.dbCursor, "INSERT INTO %s (group_id, feat, value, group_norm) SELECT group_id, feat, value, group_norm from %s;" % (featureTableName, fTable), charset=self.encoding, use_unicode=self.use_unicode)
+        
+        self.data_engine.enable_table_keys(featureTableName)
+        #mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
 
         return featureTableName
 
@@ -583,7 +596,7 @@ class FeatureRefiner(FeatureGetter):
         #run sql
         #mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
         #mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        drop.execute_query()
+        dropTable.execute_query()
         createTable.execute_query()
 
         return  tableName;

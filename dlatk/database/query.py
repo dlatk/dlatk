@@ -158,7 +158,7 @@ class SelectQuery(Query):
 		"""
 		self.sql = self.build_query()
 		data = self.data_engine.execute_get_list(self.sql)
-		if self.sql.lower().startswith("pragma"):
+		if self.sql.lower().startswith("pragma") and self.fields[0] == "column_type" and len(self.fields) == 1:
 			for row in data:
 				if row[1] == self.column_name:
 					return [[row[2]]]					
@@ -524,7 +524,7 @@ class CreateTableQuery(Query):
 					datatype += "UNSIGNED "
 				datatype += col.get_datatype().split()[0]
 				createTable  += """ %s""" % col.get_name()
-				if col.get_name() == "id" and "BIGINT" in datatype:
+				if col.get_name() == "id" and "BIGINT" or "INT" in datatype:
 					datatype = "INTEGER"
 				createTable += """ %s""" % datatype
 				if col.is_primary_key()!=True and col.is_nullable()!=True:

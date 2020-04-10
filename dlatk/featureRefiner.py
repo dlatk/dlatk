@@ -434,7 +434,7 @@ class FeatureRefiner(FeatureGetter):
 
         return tableName
 
-    def createInterpolatedFeatTable(self, daysPerUnit = 1, dateField = 'created_at', minToImpute = 2, maxDaysUnitsEmpty = 4, groupFreqThresh = 0, setGFTWarning = False, where=None):
+    def createInterpolatedFeatTable(self, days = 1, dateField = 'created_at', minToImpute = 2, maxDaysUnitsEmpty = 4, groupFreqThresh = 0, setGFTWarning = False, where=None):
         #creates a new feature table at a higher level of aggregation
         #days: what units of time to interpolate into
         #maxDayUnitsEmpty: maximum number of days missed to keep a user.

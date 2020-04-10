@@ -481,14 +481,20 @@ class FeatureRefiner(FeatureGetter):
 
 
         ## 2. Get the minimum date:
-#       minIntersectDT, maxIntersectDT = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT MIN(%s), MAX(%s) FROM %s" % (dateField, dateField, self.corptable))[0]
-        minIntersectDT, maxIntersectDT, minUnionDT, maxUnionDT  = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT max(min_date), min(max_date), min(min_date), max(max_date) FROM (SELECT %s, MIN(%s) as min_date, MAX(%s) as max_date FROM %s where %s in ('%s') group by user_id) as a " % \
-                                         (self.correl_field, dateField, dateField, self.corptable, self.correl_field, gList))[0]
+        minIntersectDT, maxIntersectDT, minUnionDT, maxUnionDT  = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT max(min_date), min(max_date), min(min_date), max(max_date) FROM (SELECT %s, MIN(%s) as min_date, MAX(%s) as max_date FROM %s where %s in ('%s') group by %s) as a " % \
+                                         (self.correl_field, dateField, dateField, self.corptable, self.correl_field, gList, self.correl_field))[0]
+        dtClosestToMin = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT min(max_date) FROM (SELECT %s, MAX(%s) as max_date FROM %s where %s in ('%s') AND %s <= '%s' group by %s) as a " % \
+                                         (self.correl_field, dateField, self.corptable, self.correl_field, gList, dateField, minIntersectDT, self.correl_field))[0][0]
+        dtClosestToMax = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT max(min_date) FROM (SELECT %s, MIN(%s) as min_date FROM %s where %s in ('%s') AND %s >= '%s' group by %s) as a " % \
+                                         (self.correl_field, dateField, self.corptable, self.correl_field, gList, dateField, maxIntersectDT, self.correl_field))[0][0]
         if not isinstance(minIntersectDT, datetime.datetime):
             minIntersectDT = dtParse(minIntersectDT, ignoretz = True)
             maxIntersectDT = dtParse(maxIntersectDT, ignoretz = True)
             minUnionDT = dtParse(minUnionDT, ignoretz = True)
             maxUnionDT = dtParse(maxUnionDT, ignoretz = True)
+            dtClosestToMin = dtParse(maxUnionDT, ignoretz = True)
+            dtClosestToMax = dtParse(maxUnionDT, ignoretz = True)
+            
             
         dayDiff = (maxIntersectDT - minIntersectDT).days
         maxDiffPerUnit = int(dayDiff/days)
@@ -497,7 +503,7 @@ class FeatureRefiner(FeatureGetter):
 
         ## 3. Get Features x SubIds (in Sparse X form):
         oldFeatures = FeatureGetter(self.corpdb, self.corptable, oldGroupField, self.mysql_host, self.message_field, self.messageid_field, self.encoding, True, self.lexicondb, featureTable)
-        dateWhere = "%s >= DATE('%s') AND %s <= DATE('%s')" % (dateField, minUnionDT.date(), dateField, maxUnionDT.date()) #used when querying mids + dates
+        dateWhere = "%s >= DATE('%s') AND %s <= DATE('%s')" % (dateField, dtClosestToMin.date(), dateField, dtClosestToMax.date()) #used when querying mids + dates
         groupsWhere = "group_id in (SELECT %s FROM %s WHERE "%(oldGroupField, self.corptable) +dateWhere+" AND %s in ('%s'))" %(self.correl_field, gList)
         #print("groupsWhere", groupsWhere)#debug
         (groupNormsByMid, featureNames) = oldFeatures.getGroupNormsSparseGroupsFirst(where = groupsWhere)
@@ -507,7 +513,7 @@ class FeatureRefiner(FeatureGetter):
         lengroups = len(groups)
         dlac.warn("\nInterpolating %d %ss over %ddays: 0 = %s through %d = %s (full range: %s through %s)"% \
                   (lengroups, self.correl_field, days, str(minIntersectDT.date()), maxDiffPerUnit, \
-                   str(maxIntersectDT.date()), str(minUnionDT.date()), str(maxUnionDT.date())))
+                   str(maxIntersectDT.date()), str(dtClosestToMin.date()), str(dtClosestToMax.date())))
         gnum = 0
         wsql = """INSERT INTO """+newTable+""" (group_id, feat, value, group_norm, time, """+self.correl_field+""") values (%s, %s, %s, %s, %s, %s)"""
         for group in groups:

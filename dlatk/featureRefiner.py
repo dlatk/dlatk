@@ -462,6 +462,10 @@ class FeatureRefiner(FeatureGetter):
         ##add extra columns:
         mm.execute(self.corpdb, self.dbCursor, "ALTER TABLE %s ADD time INT, ADD %s %s" % (tableName, self.correl_field, groupidType), charset=self.encoding, use_unicode=self.use_unicode)
      
+        ## we are appending a date to the correl_field so group_id in feat table must be varchar
+        if 'int' in groupidType:
+            mm.execute(self.corpdb, self.dbCursor, "ALTER TABLE %s MODIFY group_id VARCHAR(64)" % (tableName), charset=self.encoding, use_unicode=self.use_unicode)
+ 
         dlac.warn("""Interpolating %s to the %s level.""" % (str(featureTable), self.correl_field))
         
         ## 1. apply GFT to get users we care about: 
@@ -583,9 +587,9 @@ class FeatureRefiner(FeatureGetter):
             #print(newX, newYs)#debug
             rows = []
             if not self.use_unicode:
-                rows = [(group+'_'+str(newX[i]), feat, newX[i], Ys[i], newX[i], group) for i in range(len(newX)) for feat, Ys in newYs.items()]
+                rows = [(str(group)+'_'+str(newX[i]), feat, newX[i], Ys[i], newX[i], group) for i in range(len(newX)) for feat, Ys in newYs.items()]
             else:
-                rows = [((group+'_'+str(newX[i])).encode('utf-8'), feat.encode('utf-8'), newX[i], \
+                rows = [((str(group)+'_'+str(newX[i])).encode('utf-8'), feat.encode('utf-8'), newX[i], \
                          Ys[i], newX[i], group) for i in range(len(newX)) for feat, Ys in newYs.items()]
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
 

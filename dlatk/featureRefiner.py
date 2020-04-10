@@ -479,7 +479,6 @@ class FeatureRefiner(FeatureGetter):
         dlac.warn("""  Interpolating for up to %d %s s.""" % (len(groups), self.correl_field))
         gList = "','".join([str(g) for g in groups])
 
-
         ## 2. Get the minimum date:
         minIntersectDT, maxIntersectDT, minUnionDT, maxUnionDT  = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT max(min_date), min(max_date), min(min_date), max(max_date) FROM (SELECT %s, MIN(%s) as min_date, MAX(%s) as max_date FROM %s where %s in ('%s') group by %s) as a " % \
                                          (self.correl_field, dateField, dateField, self.corptable, self.correl_field, gList, self.correl_field))[0]

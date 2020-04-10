@@ -434,7 +434,7 @@ class FeatureRefiner(FeatureGetter):
 
         return tableName
 
-    def createInterpolatedFeatTable(self, days = 1, dateField = 'created_at', minToImpute = 2, maxDaysUnitsEmpty = 4 groupFreqThresh = 0, setGFTWarning = False, where=None):
+    def createInterpolatedFeatTable(self, daysPerUnit = 1, dateField = 'created_at', minToImpute = 2, maxDaysUnitsEmpty = 4, groupFreqThresh = 0, setGFTWarning = False, where=None):
         #creates a new feature table at a higher level of aggregation
         #days: what units of time to interpolate into
         #maxDayUnitsEmpty: maximum number of days missed to keep a user.
@@ -462,10 +462,7 @@ class FeatureRefiner(FeatureGetter):
         ##add extra columns:
         mm.execute(self.corpdb, self.dbCursor, "ALTER TABLE %s ADD time INT, ADD %s %s" % (tableName, self.correl_field, groupidType), charset=self.encoding, use_unicode=self.use_unicode)
      
-
-
         dlac.warn("""Interpolating %s to the %s level.""" % (str(featureTable), self.correl_field))
-
         
         ## 1. apply GFT to get users we care about: 
         groups = []

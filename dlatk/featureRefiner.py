@@ -481,22 +481,23 @@ class FeatureRefiner(FeatureGetter):
 
 
         ## 2. Get the minimum date:
-#       minDT, maxDT = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT MIN(%s), MAX(%s) FROM %s" % (dateField, dateField, self.corptable))[0]
-        minDT, maxDT = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT max(min_date), min(max_date) FROM (SELECT %s, MIN(%s) as min_date, MAX(%s) as max_date FROM %s where %s in ('%s') group by user_id) as a " % \
+#       minIntersectDT, maxIntersectDT = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT MIN(%s), MAX(%s) FROM %s" % (dateField, dateField, self.corptable))[0]
+        minIntersectDT, maxIntersectDT, minUnionDT, maxUnionDT  = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT max(min_date), min(max_date), min(min_date), max(max_date) FROM (SELECT %s, MIN(%s) as min_date, MAX(%s) as max_date FROM %s where %s in ('%s') group by user_id) as a " % \
                                          (self.correl_field, dateField, dateField, self.corptable, self.correl_field, gList))[0]
-        if not isinstance(minDT, datetime.datetime):
-            minDT = dtParse(minDT, ignoretz = True)
-            maxDT = dtParse(maxDT, ignoretz = True)
-        dayDiff = (maxDT - minDT).days
+        if not isinstance(minIntersectDT, datetime.datetime):
+            minIntersectDT = dtParse(minIntersectDT, ignoretz = True)
+            maxIntersectDT = dtParse(maxIntersectDT, ignoretz = True)
+            minUnionDT = dtParse(minUnionDT, ignoretz = True)
+            maxUnionDT = dtParse(maxUnionDT, ignoretz = True)
+            
+        dayDiff = (maxIntersectDT - minIntersectDT).days
         maxDiffPerUnit = int(dayDiff/days)
         assert dayDiff > 0, "\nDayDiff (%d) was negative or zero. Increase GFT. Interpolating %ss over %ddays: 0 = %s through %d = %s"% \
-                  (dayDiff, self.correl_field, days, str(minDT.date()), maxDiffPerUnit, str(maxDT.date()))
+                  (dayDiff, self.correl_field, days, str(minIntersectDT.date()), maxDiffPerUnit, str(maxIntersectDT.date()))
 
-        ##TODO: alter the date range to extend past boundaries for training even if newX(i.e. interpolated version) uses these boundaries
-        
         ## 3. Get Features x SubIds (in Sparse X form):
         oldFeatures = FeatureGetter(self.corpdb, self.corptable, oldGroupField, self.mysql_host, self.message_field, self.messageid_field, self.encoding, True, self.lexicondb, featureTable)
-        dateWhere = "%s >= DATE('%s') AND %s <= DATE('%s')" % (dateField, minDT.date(), dateField, maxDT.date()) #used when querying mids + dates
+        dateWhere = "%s >= DATE('%s') AND %s <= DATE('%s')" % (dateField, minUnionDT.date(), dateField, maxUnionDT.date()) #used when querying mids + dates
         groupsWhere = "group_id in (SELECT %s FROM %s WHERE "%(oldGroupField, self.corptable) +dateWhere+" AND %s in ('%s'))" %(self.correl_field, gList)
         #print("groupsWhere", groupsWhere)#debug
         (groupNormsByMid, featureNames) = oldFeatures.getGroupNormsSparseGroupsFirst(where = groupsWhere)
@@ -504,8 +505,9 @@ class FeatureRefiner(FeatureGetter):
         
         ## 4. Create X and Y per group: 
         lengroups = len(groups)
-        dlac.warn("\nInterpolating %d %ss over %ddays: 0 = %s through %d = %s"% \
-                  (lengroups, self.correl_field, days, str(minDT.date()), maxDiffPerUnit, str(maxDT.date())))
+        dlac.warn("\nInterpolating %d %ss over %ddays: 0 = %s through %d = %s (full range: %s through %s)"% \
+                  (lengroups, self.correl_field, days, str(minIntersectDT.date()), maxDiffPerUnit, \
+                   str(maxIntersectDT.date()), str(minUnionDT.date()), str(maxUnionDT.date())))
         gnum = 0
         wsql = """INSERT INTO """+newTable+""" (group_id, feat, value, group_norm, time, """+self.correl_field+""") values (%s, %s, %s, %s, %s, %s)"""
         for group in groups:
@@ -523,6 +525,7 @@ class FeatureRefiner(FeatureGetter):
                           (len(midsAndDates), self.correl_field, str(group)))
                 continue
             uniqueDtInts = set() #tracks total unique dts
+            uniqueDtIntsInRange = set() #tracks total unique dts in the range
             for dateRow in midsAndDates:
                 #print("dateRow", dateRow)#debug
                 mid = dateRow[0]
@@ -532,9 +535,11 @@ class FeatureRefiner(FeatureGetter):
                     dt = dateRow[1]
                     if not isinstance(dt, datetime.datetime):
                         dt = dtParse(dt, ignoretz = True)
-                    dayDiff = (dt - minDT).days
+                    dayDiff = (dt - minIntersectDT).days
                     diffPerUnit = int(dayDiff/days)
                     uniqueDtInts.add(diffPerUnit)
+                    if diffPerUnit >= 0:
+                        uniqueDtIntsInRange.add(diffPerUnit)
 
                     for feat in featureNames:
                         try:
@@ -542,10 +547,13 @@ class FeatureRefiner(FeatureGetter):
                         except KeyError: #feat must be missing in group Norms = 0
                             groupXYs[feat].append((diffPerUnit, 0))
             if len(uniqueDtInts) < minToImpute:#check that there are enough unique dates: 
-                dlac.warn(" !Only %d unique dates to impute for %s %s. Not enough. SKIPPING"% \
-                          (len(uniqueDtInts), self.correl_field, str(group)))
+                dlac.warn(" !Only %d unique dates to impute for %s %s (need at least %d). SKIPPING"% \
+                          (len(uniqueDtInts), self.correl_field, str(group), minToImpute))
                 continue
-
+            elif len(uniqueDtIntsInRange) < minToImpute-1:#check that there are enough unique dates: 
+                dlac.warn(" !Only %d unique dates i the range %s %s (need at least %d). SKIPPING"% \
+                          (len(uniqueDtIntsInRange), self.correl_field, str(group), minToImpute-1))
+                continue
 
             ## 7. Interpolate (note: this and 8 could be parallelized)
             minX, maxX = min(uniqueDtInts), max(uniqueDtInts)

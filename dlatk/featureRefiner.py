@@ -483,6 +483,7 @@ class FeatureRefiner(FeatureGetter):
         gList = "','".join([str(g) for g in groups])
 
         ## 2. Get the minimum date:
+        dlac.warn("""  [Finding good date range]""" )
         minIntersectDT, maxIntersectDT, minUnionDT, maxUnionDT  = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT max(min_date), min(max_date), min(min_date), max(max_date) FROM (SELECT %s, MIN(%s) as min_date, MAX(%s) as max_date FROM %s where %s in ('%s') group by %s) as a " % \
                                          (self.correl_field, dateField, dateField, self.corptable, self.correl_field, gList, self.correl_field))[0]
         dtClosestToMin = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT min(max_date) FROM (SELECT %s, MAX(%s) as max_date FROM %s where %s in ('%s') AND %s <= '%s' group by %s) as a " % \
@@ -496,6 +497,7 @@ class FeatureRefiner(FeatureGetter):
             maxUnionDT = dtParse(maxUnionDT, ignoretz = True)
             dtClosestToMin = dtParse(maxUnionDT, ignoretz = True)
             dtClosestToMax = dtParse(maxUnionDT, ignoretz = True)
+
             
             
         dayDiff = (maxIntersectDT - minIntersectDT).days
@@ -509,7 +511,7 @@ class FeatureRefiner(FeatureGetter):
         groupsWhere = "group_id in (SELECT %s FROM %s WHERE "%(oldGroupField, self.corptable) +dateWhere+" AND %s in ('%s'))" %(self.correl_field, gList)
         #print("groupsWhere", groupsWhere)#debug
         (groupNormsByMid, featureNames) = oldFeatures.getGroupNormsSparseGroupsFirst(where = groupsWhere)
-        
+        dlac.warn("""  [done]""")
         
         ## 4. Create X and Y per group: 
         lengroups = len(groups)
@@ -522,7 +524,7 @@ class FeatureRefiner(FeatureGetter):
 
             #status tracker:
             if gnum%100==0:
-                dlac.warn("   Read %d (%.2f complete) "%(gnum, gnum/lengroups))
+                dlac.warn("   Read and considered interpolating %d %ss (%.2f complete) "%(gnum, self.correl_field, gnum/lengroups))
             gnum +=1
 
             ## 5. go throgh current users messages and align with feature table data:
@@ -570,6 +572,7 @@ class FeatureRefiner(FeatureGetter):
                           (self.correl_field, str(group), minX, maxX, maxDiffPerUnit))
             newX = list(range(minX, maxX+1)) #i.e. range to interpolate over
             newYs = dict()
+            newYs["_%ddIntercept"%days] = [1.0]*len(newX) #intercept to make sure day counts even if zero
             #fit:
             for feat in featureNames:
                 x, y = zip(*groupXYs[feat])
@@ -587,10 +590,10 @@ class FeatureRefiner(FeatureGetter):
             #print(newX, newYs)#debug
             rows = []
             if not self.use_unicode:
-                rows = [(str(group)+'_'+str(newX[i]), feat, newX[i], Ys[i], newX[i], group) for i in range(len(newX)) for feat, Ys in newYs.items()]
+                rows = [(str(group)+'_'+str(newX[i]), feat, newX[i], Ys[i], newX[i], group) for i in range(len(newX)) for feat, Ys in newYs.items() if Ys[i] != 0]
             else:
                 rows = [((str(group)+'_'+str(newX[i])).encode('utf-8'), feat.encode('utf-8'), newX[i], \
-                         Ys[i], newX[i], group) for i in range(len(newX)) for feat, Ys in newYs.items()]
+                         Ys[i], newX[i], group) for i in range(len(newX)) for feat, Ys in newYs.items() if Ys[i] != 0]
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
 
             ##ADD USER_ID and DAYS so that can be used. 

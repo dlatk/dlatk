@@ -513,12 +513,13 @@ class MessageTransformer(DLAWorker):
                         #         print("!NO PARSE!")
                         # sys.exit(1)
 
-                #if sentPerRow:
-                #    dataToWrite = sentRows
-                # else:
-                dataToWrite = sentRows
-                mm.executeWriteMany(self.corpdb, self.dbCursor, sql, dataToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-
+                while insert_idx_start < len(rows):
+                    dataToWrite = sentRows[insert_idx_start:min(insert_idx_end, len(rows))]
+                    #_warn("Inserting rows %d to %d... " % (insert_idx_start, insert_idx_end))
+                    mm.executeWriteMany(self.corpdb, self.dbCursor, sql, dataToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                    insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
+                    insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
+                
                 groupsWritten += groupsAtTime
                 if groupsWritten % 10000 == 0:
                     dlac.warn("  %.1fk %ss' messages sent tokenized and written" % (groupsWritten/float(1000), self.correl_field))

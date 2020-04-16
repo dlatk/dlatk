@@ -572,7 +572,7 @@ class FeatureRefiner(FeatureGetter):
                           (self.correl_field, str(group), minX, maxX, maxDiffPerUnit))
             newX = list(range(minX, maxX+1)) #i.e. range to interpolate over
             newYs = dict()
-            newYs["_%ddIntercept"%days] = [1.0]*len(newX) #intercept to make sure day counts even if zero
+            newYs["_%ddInter"%days] = [1.0]*len(newX) #intercept to make sure day counts even if zero
             #fit:
             for feat in featureNames:
                 x, y = zip(*groupXYs[feat])

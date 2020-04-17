@@ -790,10 +790,9 @@ class ClassifyPredictor:
                         reportStats['acc'] = accuracy_score(ytrue, ypred)
                         reportStats['f1'] = f1_score(ytrue, ypred, average='macro')
                         reportStats['auc']= computeAUC(ytrue, ypredProbs, multiclass)
-                        # try:
-                        #     reportStats['auc'] = pos_neg_auc(ytrue, ypredProbs[:,-1])
-                        # except ValueError as e:
-                        #     reportStats['auc'] = dlac.multiclassAUC(ytrue, ypredProbs[:,-1])
+                        reportStats['precision'] = precision_score(ytrue, ypred, average='macro')
+                        reportStats['recall'] = recall_score(ytrue, ypred, average='macro')
+                        
                         try:
                             reportStats['matt_ccoef'] = matthews_corrcoef(ytrue, ypred)
                         except ValueError as e:

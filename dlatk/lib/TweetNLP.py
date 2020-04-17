@@ -13,11 +13,10 @@ from subprocess import check_call, Popen, PIPE
 from pprint import pprint
 import os
 
-##DEFAULTS:
-#_DefaultDir = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) # for code release
-_DefaultDir = '/home/hansens'
+from ..dlaConstants import DEF_TOOLS_PATH
+
 _DefaultParams ={
-    'tagger_dir' : _DefaultDir + '/Tools/TwitterTagger/ark-tweet-nlp-0.3',
+    'tagger_dir' : DEF_TOOLS_PATH + '/twittertagger/ark-tweet-nlp',
     'tagger_command' : './runTagger.sh',
     'tagger_args' : ['--input-format', 'text', '--output-format', 'pretsv'],
     'tokenizer_command' : './twokenize.sh',

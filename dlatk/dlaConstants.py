@@ -5,6 +5,7 @@ Module for defining constants and helper methods
 import sys, os, getpass
 import re
 from random import randint
+from pathlib import Path
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -79,10 +80,6 @@ DEF_MIN_FREQ = int(1) #min frequency per group to keep (don't advise above 1)
 DEF_P_OCC = float(.01) #percentage of groups a feature must appear in, to keep it
 DEF_PMI = 3.0
 DEF_MIN_FEAT_SUM = 0 #minimum sum of feature total to keep
-# DEF_STANFORD_SEGMENTER = '../tools/StanfordSegmenter/stanford-segmenter-2014-08-27/segment.sh'
-DEF_STANFORD_SEGMENTER = '/home/maarten/research/tools/stanford-segmenter-2014-08-27/segment.sh'
-# DEF_STANFORD_POS_MODEL = '../tools/StanfordTagger/stanford-postagger-2012-01-06/models/english-bidirectional-distsim.tagger' # for code release
-DEF_STANFORD_POS_MODEL = '/home/hansens/Tools/StanfordTagger/stanford-postagger-2012-01-06/models/english-bidirectional-distsim.tagger'
 DEF_LEXICON_DB = 'dlatk_lexica'
 DEF_FEAT_TABLE = 'feat$1gram$messages_en$user_id$16to16$0_01'
 DEF_COLLOCTABLE = 'test_collocs'
@@ -180,12 +177,20 @@ ug, uk, ur, vi, vo, wa, xh, zh, zu"""
 DEF_LANG_FILTER_CONF = .80
 DEF_SPAM_FILTER = 0.2 # threshold for removing spam users
 
+## Other tools
+DEF_TOOLS_PATH = str(Path.home()) + '/dlatk_tools'
+
+DEF_STANFORD_SEGMENTER = DEF_TOOLS_PATH + '/stanford-segmenter/segment.sh'
+DEF_STANFORD_POS_MODEL = DEF_TOOLS_PATH + '/stanford-postagger/models/english-bidirectional-distsim.tagger'
+DEF_STANFORD_PARSER = DEF_TOOLS_PATH + '/stanford-parser'
+
 ##CoreNLP settings
-#DEF_CORENLP_DIR = '../tools/corenlp-python' # for code release
-DEF_CORENLP_DIR = '/home/hansens/Tools/corenlp-python'
+DEF_CORENLP_DIR = DEF_TOOLS_PATH + '/corenlp-python'
 DEF_CORENLP_SERVER_COMMAND = './corenlp/corenlp.py'
 DEF_CORENLP_PORT = 20202   #default: 20202
 #CORE NLP PYTHON SERVER COMMAND (must be running): ./corenlp/corenlp.py -p 20202 -q
+
+DEF_WORDCLOUD_JAR = DEF_TOOLS_PATH + "/wordcloud/ibm-word-cloud.jar"
 
 TAG_RE = re.compile(r'<[^>]+>')
 URL_RE = re.compile(r'(?:http[s]?\:\/\/)?(?:[\w\_\-]+\.)+(?:com|net|gov|edu|info|org|ly|be|gl|co|gs|pr|me|cc|us|uk|gd|nl|ws|am|im|fm|kr|to|jp|sg|int|mil|arpa|ac|ad|ae|af|ag|ai|al|am|an|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|bq|br|bs|bt|bv|bw|by|bz|bzh|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cs|cu|cv|cw|cx|cy|cz|dd|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|yu|za|zm|zr|zw)+(?:\/[^\s ]+)?')

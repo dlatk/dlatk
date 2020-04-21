@@ -17,9 +17,9 @@ from ..dlaConstants import DEF_TOOLS_PATH
 
 _DefaultParams ={
     'tagger_dir' : DEF_TOOLS_PATH + '/twittertagger/ark-tweet-nlp',
-    'tagger_command' : './runTagger.sh',
+    'tagger_command' : 'runTagger.sh',
     'tagger_args' : ['--input-format', 'text', '--output-format', 'pretsv'],
-    'tokenizer_command' : './twokenize.sh',
+    'tokenizer_command' : 'twokenize.sh',
     'tokenizer_args' : ['--input-format', 'text', '--output-format', 'pretsv'],
     };
 

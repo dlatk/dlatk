@@ -46,6 +46,53 @@ class MessageTransformer(DLAWorker):
 
     groupsAtTime = 100
 
+    def __createTable(self, tableName, modify=''):
+        drop = """DROP TABLE IF EXISTS %s""" % (tableName)
+        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
+
+        sql = """CREATE TABLE %s like %s""" % (tableName, self.corptable)
+        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+
+        if modify:
+            alter = """ALTER TABLE %s MODIFY %s %s""" % (tableName, self.message_field, modify)
+            mm.execute(self.corpdb, self.dbCursor, alter, charset=self.encoding, use_unicode=self.use_unicode)
+        
+        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
+    
+        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
+        messageIndex = columnNames.index(self.message_field)
+        messageIdIndex = columnNames.index(self.messageid_field)
+        return columnNames, messageIndex, messageIdIndex
+
+    def __findAllGroups(self):
+        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
+        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
+        dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
+        return cfRows
+
+    def __getMsgsForGroups(self, groups, columnNames, messageIndex):
+        sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
+        rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))#, False)
+        return rows
+
+    def __writeMsgsForGroups(self, rows, parses, messageIndex, tableName, columnNames):
+        insert_idx_start = 0
+        insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
+
+        #add msgs into new tables
+        sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
+                """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
+        for i in range(len(rows)):
+            rows[i] = list(rows[i])
+            rows[i][messageIndex] = str(parses[i])
+
+        while insert_idx_start < len(rows):
+            dataToWrite = rows[insert_idx_start:min(insert_idx_end, len(rows))]
+            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, dataToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+            insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
+            insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
+
     def insertLDARows(self, ldas, tableName, columnNames, messageIndex, messageIdIndex):
         """?????
 
@@ -83,33 +130,6 @@ class MessageTransformer(DLAWorker):
             """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
         mm.executeWriteMany(self.corpdb, self.dbCursor, sql, newRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
-    def __createTable(self, tableName, modify=''):
-        drop = """DROP TABLE IF EXISTS %s""" % (tableName)
-        sql = """CREATE TABLE %s like %s""" % (tableName, self.corptable)
-        if modify:
-            alter = """ALTER TABLE %s MODIFY %s %s""" % (tableName, self.message_field, modify)
-            mm.execute(self.corpdb, self.dbCursor, alter, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-    
-        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
-        messageIndex = columnNames.index(self.message_field)
-        messageIdIndex = columnNames.index(self.messageid_field)
-        return columnNames, messageIndex, messageIdIndex
-
-    def __findAllGroups(self):
-        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
-        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
-        dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        return cfRows
-
-    def __getMsgsForGroups(self, groups, columnNames):
-        sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
-        rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))#, False)
-        messages = [r[messageIndex] for r in rows]
-        return messages
 
     def addLDAMessages(self, ldaStatesFile):
         """Creates a LDA topic version of message table
@@ -189,30 +209,16 @@ class MessageTransformer(DLAWorker):
         for groups in dlac.chunks(cfRows, self.groupsAtTime):
 
             #get msgs for groups:
-            messages = self.__getMsgsForGroups(groups, columnNames)
+            rows = self.__getMsgsForGroups(groups, columnNames, messageIndex)
+            messages = [r[messageIndex] for r in rows]
 
             if messages:
-                insert_idx_start = 0
-                insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
-                
                 #tokenize msgs:
                 parses = [json.dumps(tokenizer.tokenize(m)) for m in messages]
+                self.__writeMsgsForGroups(rows, parses, messageIndex, tableName, columnNames)
 
-                #add msgs into new tables
-                sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
-                        """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-                for i in range(len(rows)):
-                    rows[i] = list(rows[i])
-                    rows[i][messageIndex] = str(parses[i])
-
-                while insert_idx_start < len(rows):
-                    dataToWrite = sentRows[insert_idx_start:min(insert_idx_end, len(rows))]
-                    mm.executeWriteMany(self.corpdb, self.dbCursor, sql, dataToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-                    insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
-                    insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
-                
                 groupsWritten += self.groupsAtTime
-                if groupsWritten % 10 == 0:
+                if groupsWritten % 100 == 0:
                     dlac.warn("  %.1fk %ss' messages tagged and written" % (groupsWritten/float(1000), self.correl_field))
             else:
                 dlac.warn("   Warning: No messages for:" + str(groups))
@@ -320,28 +326,14 @@ class MessageTransformer(DLAWorker):
         for groups in dlac.chunks(cfRows, self.groupsAtTime):
 
             #get msgs for groups:
-            messages = self.__getMsgsForGroups(groups, columnNames)
+            rows = self.__getMsgsForGroups(groups, columnNames, messageIndex)
+            messages = [r[messageIndex] for r in rows]
 
             if messages:
-                insert_idx_start = 0
-                insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
-                
                 #tokenize msgs:
                 parses = [json.dumps(tagger.tag(m)) for m in messages]
+                self.__writeMsgsForGroups(rows, parses, messageIndex, tableName, columnNames)
 
-                #add msgs into new tables
-                sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
-                        """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-                for i in range(len(rows)):
-                    rows[i] = list(rows[i])
-                    rows[i][messageIndex] = str(parses[i])
-
-                while insert_idx_start < len(rows):
-                    dataToWrite = sentRows[insert_idx_start:min(insert_idx_end, len(rows))]
-                    mm.executeWriteMany(self.corpdb, self.dbCursor, sql, dataToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-                    insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
-                    insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
-                
                 groupsWritten += self.groupsAtTime
                 if groupsWritten % 100 == 0:
                     dlac.warn("  %.1fk %ss' messages tagged and written" % (groupsWritten/float(1000), self.correl_field))
@@ -379,30 +371,16 @@ class MessageTransformer(DLAWorker):
         for groups in dlac.chunks(cfRows, self.groupsAtTime):
 
             #get msgs for groups:
-            messages = self.__getMsgsForGroups(groups, columnNames)
+            rows = self.__getMsgsForGroups(groups, columnNames, messageIndex)
+            messages = [r[messageIndex] for r in rows]
 
             if messages:
-                insert_idx_start = 0
-                insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
-                
                 #tokenize msgs:
                 parses = [json.dumps(tokenizer.tokenize(m)) for m in messages]
+                self.__writeMsgsForGroups(rows, parses, messageIndex, tableName, columnNames)
 
-                #add msgs into new tables
-                sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
-                        """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-                for i in range(len(rows)):
-                    rows[i] = list(rows[i])
-                    rows[i][messageIndex] = str(parses[i])
-
-                while insert_idx_start < len(rows):
-                    dataToWrite = sentRows[insert_idx_start:min(insert_idx_end, len(rows))]
-                    mm.executeWriteMany(self.corpdb, self.dbCursor, sql, dataToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-                    insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
-                    insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
-                
                 groupsWritten += self.groupsAtTime
-                if groupsWritten % 200 == 0:
+                if groupsWritten % 100 == 0:
                     dlac.warn("  %.1fk %ss' messages tagged and written" % (groupsWritten/float(1000), self.correl_field))
             else:
                 dlac.warn("   Warning: No messages for:" + str(groups))

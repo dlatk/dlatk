@@ -24,8 +24,7 @@ class QueryBuilder():
 
 	Parameters
 	------------
-	#correct this
-	data_engine: str
+	data_engine: object of MySqlDataEngine/SqliteDataEngine 
 		Name of the data engine eg. mysql, sqlite
 	"""
 	def __init__(self, data_engine):
@@ -147,6 +146,9 @@ class SelectQuery(Query):
 		"""
 		self.group_by_fields = group_by_fields
 		return self
+
+	def toString(self):
+		return self.build_query()
 
 	def execute_query(self):
 		"""

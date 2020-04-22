@@ -132,7 +132,7 @@ class FeatureGetter(DLAWorker):
         sql = self.qb.create_select_query(self.featureTable).set_fields(["feat", "count(*)"]).where(where).group_by(["feat"])
         #sql = """select feat, count(*) from %s %s group by feat"""%(self.featureTable, where)
         if SS:
-            self.data_engine.execute_get_SSCursor(sql)
+            self.data_engine.execute_get_SSCursor(sql.toString())
             #mm.executeGetSSCursor(self.corpdb, sql, charset=self.encoding, use_unicode=self.use_unicode, host=self.mysql_host)
         return sql.execute_query() #mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode) 
 
@@ -184,23 +184,25 @@ class FeatureGetter(DLAWorker):
 
     def getSumValue(self, where = ''):
         """returns the sum of all values"""
-        sql = """select sum(value) from %s"""%(self.featureTable)
-        if (where): sql += ' WHERE ' + where
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)[0][0]
+        #sql = """select sum(value) from %s"""%(self.featureTable)
+        sql = self.qb.create_select_query(self.featureTable).set_fields(["sum(value)"])
+        #if (where): sql += ' WHERE ' + where
+        if (where): sql.where(where)
+        return sql.execute_query()[0][0]
+        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)[0][0]
 
     def getSumValuesByGroup(self, where = ''):
         """ """
-        query = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "sum(value)"])
+        sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "sum(value)"])
         #sql = """SELECT group_id, sum(value) FROM %s """ % self.featureTable
-        if (where): query.where(where) #sql += ' WHERE ' + where  
-        query.group_by(["group_id"])
+        if (where): sql.where(where) #sql += ' WHERE ' + where  
+        sql.group_by(["group_id"])
         #sql += """ GROUP BY group_id """
-        return query.execute_query()
+        return sql.execute_query()
         #return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
     def getSumValuesByFeat(self, where = ''):
         """ """
-        dlac.warn("\n**This is getSumValuesByFeat method**\n")
         sql =  self.qb.create_select_query(self.featureTable).set_fields(["feat", "sum(value)"])
         #sql = """SELECT feat, sum(value) FROM %s """ % self.featureTable
         if (where): sql.where(where) #sql += ' WHERE ' + where  
@@ -659,9 +661,12 @@ class FeatureGetter(DLAWorker):
 
     def getFeatAllSS(self, where = '', featNorm=True):
         """returns a list of (group_id, feature, value, group_norm) tuples"""
-        sql = """select group_id, feat, value, group_norm from %s"""%(self.featureTable) if featNorm else """select group_id, feat, value, group_norm from %s"""%(self.featureTable)
-        if (where): sql += ' WHERE ' + where
-        return mm.executeGetSSCursor(self.corpdb, sql, charset=self.encoding, use_unicode=self.use_unicode, host=self.mysql_host) 
+        sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "feat", "value", "group_norm"]) if featNorm else self.qb.create_select_query(self.featureTable).set_fields(["group_id", "feat", "value", "group_norm"])
+        #sql = """select group_id, feat, value, group_norm from %s"""%(self.featureTable) if featNorm else """select group_id, feat, value, group_norm from %s"""%(self.featureTable)
+        #if (where): sql += ' WHERE ' + where
+        if (where): sql.where(where)
+        return self.data_engine.execute_get_SSCursor(sql.toString())
+        #return mm.executeGetSSCursor(self.corpdb, sql, charset=self.encoding, use_unicode=self.use_unicode, host=self.mysql_host) 
 
     def countGroups(self, groupThresh = 0, where=''):
         """returns the number of distinct groups (note that this runs on the corptable to be accurate)"""

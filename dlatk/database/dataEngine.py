@@ -419,7 +419,7 @@ class SqliteDataEngine(DataEngine):
 		"""
 		No such feautre as using SSCursor for iterating over large returns. execute_get_list will be called in this case.
 		"""
-		return execute_get_list(usql) 
+		return sm.executeGetList(self.corpdb, self.dbCursor, usql) 
 
 	def execute_write_many(self, sql, rows):
 		"""

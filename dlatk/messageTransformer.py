@@ -513,6 +513,8 @@ class MessageTransformer(DLAWorker):
                         #         print("!NO PARSE!")
                         # sys.exit(1)
 
+                insert_idx_start = 0
+                insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
                 while insert_idx_start < len(rows):
                     dataToWrite = sentRows[insert_idx_start:min(insert_idx_end, len(rows))]
                     #_warn("Inserting rows %d to %d... " % (insert_idx_start, insert_idx_end))

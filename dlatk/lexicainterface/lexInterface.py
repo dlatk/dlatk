@@ -22,7 +22,7 @@ try:
 except ImportError:
     print('LexInterface:warning: nltk.corpus module not imported.')
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/dlatk/LexicaInterface",""))
+sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/dlatk/lexicainterface",""))
 import dlatk.dlaConstants as dlac
 from dlatk.mysqlmethods.mysqlMethods import abstractDBConnect, dbConnect
 

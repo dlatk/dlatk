@@ -471,6 +471,7 @@ def main(fn_args = None):
     group = parser.add_argument_group('Message Cleaning Actions', '')
     group.add_argument('--language_filter', '--lang_filter',  type=str, metavar='FIELD(S)', dest='langfilter', nargs='+', default=[],
                        help='Filter message table for list of languages.')
+    group.add_argument('--light_english_filter', dest='lightenglishfilter', action = 'store_true', help="Apply a less stringent English filter than --language_filter")
     group.add_argument('--clean_messages', dest='cleanmessages', action = 'store_true', help="Remove URLs, hashtags and @ mentions from messages")
     group.add_argument('--deduplicate', action='store_true', dest='deduplicate',
                        help='Removes duplicate messages within correl_field grouping, writes to new table corptable_dedup Not to be run at the message level.')
@@ -1074,9 +1075,9 @@ def main(fn_args = None):
         mt.addParsedMessages()
 
     # annotate message tables
-    if args.langfilter:
+    if args.langfilter or args.lightenglishfilter:
         if not ma: ma = MA()
-        ma.addLanguageFilterTable(args.langfilter, args.cleanmessages, args.lowercaseonly)
+        ma.addLanguageFilterTable(args.langfilter, args.cleanmessages, args.lowercaseonly, args.lightenglishfilter)
 
     if args.deduplicate:
         if not ma: ma = MA()

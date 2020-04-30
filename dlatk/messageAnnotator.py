@@ -272,7 +272,7 @@ class MessageAnnotator(DLAWorker):
             for m in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode):
                 yield m
 
-    def addLanguageFilterTable(self, langs, cleanMessages, lowercase):
+    def addLanguageFilterTable(self, langs, cleanMessages, lowercase, lightEnglishFilter=False):
         """Filters all messages in corptable for a given language. Keeps messages if
         confidence is greater than 80%. Uses the langid library.
 
@@ -286,6 +286,9 @@ class MessageAnnotator(DLAWorker):
             convert message to all lowercase before running langid
         """
         identifier = LanguageIdentifier.from_modelstring(model, norm_probs=True)
+        if lightEnglishFilter: 
+            identifier.set_languages(['en', 'es'])
+            langs = ['en']
 
         new_table = self.corptable + "_%s"
 
@@ -320,6 +323,7 @@ class MessageAnnotator(DLAWorker):
             message = messageRow[messageIndex]
 
             try:
+                message = tc.removeNonAscii(message)
                 message = html.unescape(message)
                 messageRow[messageIndex] = message
 
@@ -343,11 +347,19 @@ class MessageAnnotator(DLAWorker):
             except TypeError as e:
                 print(("         Error, ignoring row %s" % str(messageRow)))
 
-            if lang in langs and conf > dlac.DEF_LANG_FILTER_CONF:
+            if lightEnglishFilter and ((lang == 'es' and conf < .95) or (lang == 'en' and conf > .60)):
+                lang = 'en'
                 messageDataToAdd[lang].append(messageRow)
                 messageDataCounts[lang] += 1
 
                 totalMessagesKept+=1
+
+            elif lang in langs and conf > dlac.DEF_LANG_FILTER_CONF:
+                messageDataToAdd[lang].append(messageRow)
+                messageDataCounts[lang] += 1
+
+                totalMessagesKept+=1
+
             else:
                 continue
 

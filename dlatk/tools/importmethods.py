@@ -4,6 +4,7 @@ import os, sys
 import argparse
 from MySQLdb import Warning
 from MySQLdb.cursors import SSCursor
+from pathlib import Path
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/dlatk/tools",""))
 from dlatk.mysqlmethods import mysqlMethods as mm
@@ -73,22 +74,27 @@ def mySQLToCSV(database, table, csvFile, csvQuoting=csv.QUOTE_ALL):
 def main():
 
     parser = argparse.ArgumentParser(description='Import / export methods for DLATK')
+    # MySQL flags
     parser.add_argument('-d', '--database', dest='db', default=DEFAULT_DB, help='MySQL database where tweets will be stored.')
     parser.add_argument('-t', '--table', dest='table', default=DEFAULT_TABLE, help='MySQL table name. If monthly tables then M_Y will be appended to end of this string. Default: %s' % (DEFAULT_TABLE))
     
+    # file flags
     parser.add_argument('--csv_file', dest='csv_file', default=DEFAULT_CSV_FILE, help='Name and path to CSV file')
     parser.add_argument('--json_file', dest='json_file', default=DEFAULT_JSON_FILE, help='Name and path to JSON file')
-    
-    parser.add_argument('--column_description', dest='column_description', default=DEFAULT_CSV_FILE, help='Description of MySQL table.')
-    parser.add_argument('--ignore_lines', type=int, dest='ignore_lines', default=0, help='Number of lines to ignore when uploading CSV.')
 
+    # action flags
     parser.add_argument('--csv_to_mysql', action='store_true', dest='csv_to_mysql', default=False, help='Import CSV to MySQL')
     parser.add_argument('--append_csv_to_mysql', action='store_true', dest='append_csv_to_mysql', default=False, help='Append CSV to MySQL table')
     parser.add_argument('--json_to_mysql', action='store_true', dest='json_to_mysql', default=False, help='Import JSON to MySQL')
     parser.add_argument('--mysql_to_csv', action='store_true', dest='mysql_to_csv', default=False, help='Export MySQL table to CSV')
+    
+    # other flags
+    parser.add_argument('--column_description', dest='column_description', default=DEFAULT_CSV_FILE, help='Description of MySQL table.')
+    parser.add_argument('--ignore_lines', type=int, dest='ignore_lines', default=0, help='Number of lines to ignore when uploading CSV.')
 
     args = parser.parse_args()
 
+    # check that flags are properly set
     if not args.db:
         print("You must choose a database -d")
         sys.exit(1)
@@ -98,31 +104,34 @@ def main():
         sys.exit(1)
 
     if not (args.csv_to_mysql or args.json_to_mysql or args.mysql_to_csv or args.append_csv_to_mysql):
-        print("You must choose some action: --csv_to_mysql, --json_to_mysql or --mysql_to_csv")
+        print("You must choose some action: --csv_to_mysql, --append_csv_to_mysql, --json_to_mysql or --mysql_to_csv")
         sys.exit() 
 
-    if args.csv_to_mysql:
+    ### perform actions
+    # export actions
+    if args.csv_to_mysql or args.append_csv_to_mysql:
         if not args.csv_file:
             print("You must specify a csv file --csv_file")
             sys.exit(1)
-        if not args.column_description:
-            print("You must specify a column description --column_description")
+        if not Path(args.csv_file).is_file():
+            print("Your CSV file does not exist.")
             sys.exit(1)
+        if args.csv_to_mysql:
+            if not args.column_description:
+                print("You must specify a column description --column_description")
+                sys.exit(1)
 
-        print("Importing {csv} to {db}.{table}".format(db=args.db, table=args.table, csv=args.csv_file))
-        csvToMySQL(args.csv_file, args.db, args.table, args.column_description, ignoreLines=args.ignore_lines)
-
-    elif args.append_csv_to_mysql:
-        if not args.csv_file:
-            print("You must specify a csv file --csv_file")
-            sys.exit(1)
-        print("Appending {csv} to {db}.{table}".format(db=args.db, table=args.table, csv=args.csv_file))
-        appendCSVtoMySQL(args.csv_file, args.db, args.table, ignoreLines=args.ignore_lines)
+            print("Importing {csv} to {db}.{table}".format(db=args.db, table=args.table, csv=args.csv_file))
+            csvToMySQL(args.csv_file, args.db, args.table, args.column_description, ignoreLines=args.ignore_lines)
+        else:
+            print("Appending {csv} to {db}.{table}".format(db=args.db, table=args.table, csv=args.csv_file))
+            appendCSVtoMySQL(args.csv_file, args.db, args.table, ignoreLines=args.ignore_lines)        
 
     elif args.json_to_mysql:
         print("--json_to_mysql is not implemented")
         jsonToMySQL(args.json_file, args.db, args.table, args.column_description)
 
+    # import actions
     elif args.mysql_to_csv:
         if not args.csv_file:
             print("You must specify a csv file --csv_file")

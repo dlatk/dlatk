@@ -23,8 +23,7 @@ from sklearn.utils import check_random_state, as_float_array
 from sklearn.utils import check_array
 from sklearn.utils import deprecated
 #from sklearn.utils.sparsefuncs import mean_variance_axis0
-from sklearn.utils.extmath import (fast_logdet, safe_sparse_dot, randomized_svd,
-                             fast_dot)
+from sklearn.utils.extmath import fast_logdet, randomized_svd, svd_flip, safe_sparse_dot
 
 
 def _assess_dimension_(spectrum, rank, n_samples, n_features):

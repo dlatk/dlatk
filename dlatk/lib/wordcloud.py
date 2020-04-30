@@ -8,6 +8,7 @@ import string
 from glob import glob
 from random import uniform as runif
 import imp, sys
+from pathlib import Path
 
 import subprocess
 from subprocess import check_call, CalledProcessError
@@ -93,6 +94,9 @@ def wordcloud(word_list, freq_list, output_prefix='test',
     """given a list of words and a list of their frequencies, builds a wordle"""
 
     PERMA_path = os.path.dirname(os.path.realpath(__file__))
+    
+    ibm_jar = Path(dlac.DEF_WORDCLOUD_JAR)
+    if not ibm_jar.is_file(): wordcloud_algorithm = 'amueller'
 
     if font_path == "":
         font_path = PERMA_path + "/meloche_bd.ttf"
@@ -336,7 +340,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
                     print(tup)
                 #str is necessary in case the words are numbers
 
-        command = ['java','-jar', PERMA_path + '/ibm-word-cloud.jar', '-c',
+        command = ['java','-jar', str(ibm_jar), '-c',
                     config_loc, '-w', str(width), '-h', str(height), '-i',
                     words_loc, '-o', pngFile]
         print('Generating wordcloud at ' + pngFile)
@@ -347,7 +351,6 @@ def wordcloud(word_list, freq_list, output_prefix='test',
 
     else:
         print("Wordcloud algorithm not recognized.")
-        print("Change line 122 of PERMA/code/ml/wwbp/wordcloud.py to valid algorithm.")
 
 def _tagcloudToWordcloud(filename='', directory=os.getcwd()):
     f = open(os.path.join(directory, filename), 'rb')
@@ -562,6 +565,7 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
 
         else:
             output_filez = os.path.join(directory, filename)
+        wordcloud(ngrams, freqs,output_file, colors, rgb=False, title=title, fontFamily=fontFamily, fontStyle=fontStyle)
         try:
             wordcloud(ngrams, freqs,output_file, colors, rgb=False, title=title, fontFamily=fontFamily, fontStyle=fontStyle)
         except Exception as e:

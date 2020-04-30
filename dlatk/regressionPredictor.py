@@ -25,7 +25,7 @@ from collections import defaultdict, Iterable
 #scikit-learn imports
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.linear_model import Ridge, RidgeCV, LinearRegression, Lasso, LassoCV, \
-    ElasticNet, ElasticNetCV, Lars, LassoLars, LassoLarsCV, SGDRegressor, RandomizedLasso, \
+    ElasticNet, ElasticNetCV, Lars, LassoLars, LassoLarsCV, SGDRegressor,  \
     PassiveAggressiveRegressor
 from sklearn.svm import SVR
 from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV 
@@ -42,7 +42,7 @@ from sklearn.exceptions import NotFittedError
 
 #modified sklearns: 
 from .occurrenceSelection import OccurrenceThreshold
-from .pca_mod import RandomizedPCA #allows percentage input
+#from .pca_mod import RandomizedPCA #allows percentage input
 
 #scipy
 from scipy.stats import zscore, ttest_rel, ttest_1samp
@@ -335,8 +335,8 @@ class RegressionPredictor:
 
         'svr': [
             #{'kernel':['linear'], 'C':[.01, .25, .001, .025, .0001, .0025, .00001], 'epsilon': [1, 0.1, 0.01, 0.001]}#swl
-            {'kernel':['linear'], 'C':[.01, .001, .0001, .00001, .000001, .0000001], 'epsilon': [0.25]}#personality
-            #{'kernel':['rbf'], 'gamma': [0.1, 1, 0.001, .0001], 'C':[.1, .01, 1, .001, 10]}#swl
+            #{'kernel':['linear'], 'C':[.01, .001, .0001, .00001, .000001, .0000001], 'epsilon': [0.25]}#personality
+            {'kernel':['rbf'], 'gamma': [0.1, 1, 0.001, .0001], 'C':[.1, .01, 1, .001, 10]}
             ],
         'sgdregressor': [
             # {'alpha':[250000, 25000, 250, 25, 1, 0.1, .01, .001, .0001, .00001, .000001], 'penalty':['l1']}#testing for personality
@@ -413,9 +413,9 @@ class RegressionPredictor:
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 60000
-    backOffPerc = .05 #when the num_featrue / training_insts is less than this backoff to backoffmodel
-    #backOffModel = 'ridgecv'
-    backOffModel = 'linear'
+    backOffPerc = .10 #when the num_featrue / training_insts is less than this backoff to backoffmodel
+    backOffModel = 'ridge10'
+    #backOffModel = 'linear'
 
     # feature selection:
     featureSelectionString = None
@@ -433,7 +433,7 @@ class RegressionPredictor:
     #featureSelectionString = 'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
     
 
-    #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/max(1.5,len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
+    #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/max(1.5,len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])'
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=(X.shape[0]/4), random_state=42, whiten=False, iterated_power=3))])'
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=100.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/(5.0*len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=70.0)), ("3_rpca", RandomizedPCA(n_components=.4/len(self.featureGetters), random_state=42, whiten=False, iterated_power=3, max_components=X.shape[0]/max(1.5, len(self.featureGetters))))])'
@@ -724,7 +724,7 @@ class RegressionPredictor:
     #####################################################
     ####### Main Testing Method ########################
     def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
-                          allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = False,\
+                          allControlsOnly = False, comboSizes = None, nFolds = 3, savePredictions = False,\
                           weightedEvalOutcome = None, residualizedControls = False, groupsWhere = '',\
                           weightedSample = '', adaptationFactorsName=[], featureSelectionParameters=None,\
                           numOfFactors = [] , factorSelectionType='rfe' , pairedFactors=False, outputName='',\
@@ -1423,6 +1423,7 @@ class RegressionPredictor:
 
     def predictToOutcomeTable(self, standardize = True, sparse = False, name = None, nFolds = 10, groupsWhere = ''):
 
+        warn("WARNING! Predict to outcome table sometimes excludes groups if not in a feature table.")
         # step1: get groups from feature table
         groups = self.featureGetter.getDistinctGroupsFromFeatTable(where=groupsWhere)
         groups = list(groups)
@@ -1746,6 +1747,21 @@ class RegressionPredictor:
                     print("Inverting the feature selection: %s" % self.multiFSelectors[outcome][i])
                     coefficients = self.multiFSelectors[outcome][i].inverse_transform(coefficients).flatten()
 
+                # Inverting Feature Selection
+                scaler_intercept = 0
+                if self.multiScalers[outcome][i]:
+                    print("Inverting the scaling: %s" % self.multiScalers[outcome][i])
+                    if self.multiScalers[outcome][i].mean_ is not None:
+                        means = self.multiScalers[outcome][i].mean_
+                    else:
+                        means = [0 for ii, coeff in enumerate(coefficients)]
+                    if self.multiScalers[outcome][i].scale_ is not None:
+                        scales = self.multiScalers[outcome][i].scale_
+                    else:
+                        scales = [1 for ii, coeff in enumerate(coefficients)]
+                    scaler_intercept = sum([coeff*means[ii]/scales[ii] for ii, coeff in enumerate(coefficients)])
+                    coefficients = np.asarray([coeff/scales[ii] for ii, coeff in enumerate(coefficients)])
+
                 if 'mean_' in dir(self.multiFSelectors[outcome][i]):
                     print("RPCA mean: ", self.multiFSelectors[outcome][i].mean_)
 
@@ -1756,8 +1772,8 @@ class RegressionPredictor:
 
                 intercept = self.regressionModels[outcome].intercept_
                 if outcome not in intercept_dict:
-                    intercept_dict[outcome] = intercept
-                    print("Intercept for {o} [{i}]".format(o=outcome, i=intercept))
+                    intercept_dict[outcome] = intercept - scaler_intercept
+                    print("Intercept for {o} [{i}]".format(o=outcome, i=intercept_dict[outcome]))
                 print("coefficients size for {f}: {s}".format(f=featTables[i], s=coefficients.shape))
                 coefficients.resize(1,len(coefficients))
                 coefficients = coefficients.flatten()
@@ -2084,15 +2100,15 @@ class RegressionPredictor:
             startIndex = 1
         for nextX in multiX[startIndex:]:
             X = np.append(X, nextX, 1)
-        print("[COMBINED FEATS] Combined size: %s" % str(X.shape))
+        print("[COMBINED FEATS (from multiX)] Combined size: %s" % str(X.shape))
         
         modelName = self.modelName.lower()
-        totalFeats = 0
-        for Xi in multiX[0]:
-            totalFeats += X.shape[1]
-        if (totalFeats / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
+        #totalFeats = 0
+        #for Xi in multiX[0]:
+        #    totalFeats += X.shape[1]
+        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
             print("[COMBINED FEATS] number of features is small enough (feats: %d, observations: %d), backing off to: %s" %\
-                  (totalFeats, X.shape[0], self.backOffModel))
+                  (X.shape[1], X.shape[0], self.backOffModel))
             modelName = self.backOffModel.lower()
 
         if hasMultValuesPerItem(self.cvParams[modelName]) and modelName[-2:] != 'cv':
@@ -2178,19 +2194,16 @@ class RegressionPredictor:
 
             #run transformations:
             if scaler:
-                print("[PREDICT] applying standard scaler to X[%d]: %s" % (i, str(scaler))) #debug
+                print("[PREDICT] applying *existing* standard scaler to X[%d]: %s" % (i, str(scaler))) #debug
                 try:
                     X = scaler.transform(X)
-                    if self.outliersToMean and not sparse:
-                        X[abs(X) > self.outliersToMean] = 0
-                        print("[PREDICT] Setting outliers (> %d) to mean for X[%d]" % (self.outliersToMean, i))
                 except NotFittedError as e:
                     warn(e)
-                    warn("Fitting scaler")
+                    warn("[PREDICT] WARN: Fitting new standard scaler on data")
                     X = scaler.fit_transform(X)
-                    if self.outliersToMean and not sparse:
-                        X[abs(X) > self.outliersToMean] = 0
-                        print("[PREDICT] Setting outliers (> %d) to mean for X[%d]" % (self.outliersToMean, i))
+                if self.outliersToMean and not sparse:
+                    X[abs(X) > self.outliersToMean] = 0
+                    print("[PREDICT] Setting outliers (> %d) to mean for X[%d]" % (self.outliersToMean, i))
             elif self.outliersToMean:
                 print(" Warning: Outliers to mean is not being run because standardize is off")
 
@@ -2922,7 +2935,7 @@ class RPCRidgeCV(LinearModel, RegressorMixin):
 ####################################################################
 ##
 #
-class VERPCA(RandomizedPCA):
+class VERPCA(PCA):
     """Randomized PCA that sets number of components by variance explained
 
     Parameters

@@ -2,12 +2,20 @@ import re
 from collections import OrderedDict
 from pprint import pprint
 import pandas as pd
+import sys
+from dateutil.parser import parse as dtParse
+import datetime
 
 #math / stats:
 from numpy import sqrt, array, std, mean, log2, log
+import numpy as np
 import math
+import numbers
 from operator import mul
 from functools import reduce
+from sklearn.preprocessing import StandardScaler
+from scipy.sparse import csr_matrix
+from scipy.interpolate import interp1d
 
 #local / nlp
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
@@ -366,6 +374,265 @@ class FeatureRefiner(FeatureGetter):
             
         return toKeep
 
+    def createStandardizedFeatTable(self, use_mean = True, use_std = True, groupFreqThresh = 0, setGFTWarning = False, where=None):
+        #creates a copy of a feature table where all group_norms have been standardized
+        #variables effecting standardization: GFT
+        #use_mean : whether to mean center the number of words in the ngrams
+        #use_std : whether to divide by standard deviation
+        featTable = self.featureTable
+        dlac.warn("""Standardizing %s \n -- note that if the table was sparse with many columns then this will make it very large unless use_mean is set to false.""" % (str(featTable)), attention=True)
+
+
+        #1. apply GFT
+        groups = []
+        if not setGFTWarning:
+            dlac.warn("""group_freq_thresh is set to %s. Be aware that groups might be used during mean and std calculation for standardizing.""" % (groupFreqThresh), attention=True)
+        if groupFreqThresh:
+            groupCnts = self.getGroupWordCounts(where)
+            for group, wordCount in groupCnts.items():
+                if (wordCount >= groupFreqThresh):
+                    groups.append(group)
+        else:
+            groups = self.getDistinctGroups(where)
+
+        #2. Get Sparse X:
+        (groupNorms, featureNames) = self.getGroupNormsSparseFeatsFirst(groups)
+        gnList = [groupNorms[feat] for feat in featureNames] #list of dictionaries of group_id => group_norm
+        #featToIndex = dict([(featureNames[i], i) for i in range(len(featureNames))])
+        groupToIndex = dict([(groups[i], i) for i in range(len(groups))])
+        row = []
+        col = []
+        data = []
+        # columns: features.
+        for featIndex in range(len(gnList)):
+            colData = gnList[featIndex]
+            for groupid, value in colData.items():
+                    row.append(groupToIndex[groupid])
+                    col.append(featIndex)
+                    data.append(value)
+        assert all([isinstance(x,numbers.Number) for x in data]), "Data is corrupt, there are non float elements in the group norms (some might be NULL?)"
+        X = csr_matrix((data,(row,col)), shape = (len(groups), len(featureNames)), dtype=np.float)
+        if use_mean: 
+            X = X.todense()
+        dlac.warn("\n X.shape: %s]" % str(X.shape))
+
+        #3. Apply STandardization: 
+        scaler = StandardScaler(with_mean = use_mean, with_std=use_std)
+        dlac.warn("\n [Applying StandardScaler to X: %s]" % str(scaler))
+        X = scaler.fit_transform(X)
+        dlac.warn(" [Done]\n")
+        
+        #4. Create new table:
+        featTable = self.featureTable
+        if isinstance(featTable,list):
+            dlac.warn("Multiple  feature tables; only running on first: %s"%str(featTable))
+            featTable = featTable[0]
+        tableName = featTable+'$z'
+        if not use_mean: tableName+='NoMe'
+        if not use_std: tableName+='NoStd'
+        columns = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, featTable)
+        if not columns: raise ValueError("One of your feature tables probably doesn't exist")
+        currentType = columns['feat']
+        intGrabber = re.compile(r'\d+')
+        featNameSize = int(intGrabber.search(currentType).group())
+        featNameGrabber = re.compile(r'^feat\$([^\$]+)\$')
+        featureType = featNameGrabber.match(featTable).group(1)
+        
+        tableName = self.createFeatureTable(featureType, "VARCHAR(%d)"%featNameSize, 'DOUBLE', tableName)
+
+
+        #5. Insert into table
+        if X.shape[0]*X.shape[1] < dlac.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        for row in range(X.shape[0]):
+            cf_id = groups[row]
+
+            wsql = """INSERT INTO """+tableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+            if self.use_unicode:
+                rows = [(featureNames[col], X[row][col], X[row][col]) for col in range(X.shape[1])]
+            else:
+                rows = [(featureNames[col].encode('utf-8'), X[row][col], X[row][col]) for col in range(X.shape[1])]
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
+
+        dlac.warn("Done Reading / Inserting.")
+
+        if X.shape[0]*X.shape[1] < dlac.MAX_TO_DISABLE_KEYS:
+            dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
+            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        dlac.warn("Done\n")
+
+        return tableName
+
+    def createInterpolatedFeatTable(self, days = 1, dateField = 'created_at', minToImpute = 2, maxDaysUnitsEmpty = 4, groupFreqThresh = 0, setGFTWarning = False, where=None):
+        #creates a new feature table at a higher level of aggregation
+        #days: what units of time to interpolate into
+        #maxDayUnitsEmpty: maximum number of days missed to keep a user.
+        #TODO: handle maxDayUnitsEmpty
+
+        featureTable = self.featureTable
+
+        #0. Create new interpolated table:
+        (_, name, corpTable, oldGroupField) = featureTable.split('$')[:4]
+        assert oldGroupField == self.messageid_field, "Interpolate currently only works if interpolating message-level features"
+        theRest = featureTable.split('$')[4:]
+        feature_name = name[:11]+'_'+'_'.join([i[:3] for i in theRest])
+        dayName = days
+        if dayName%1.0 > 0: dayName = str(int(days*10)/10).replace('.', '_')
+        else: dayName = str(int(dayName))
+        newTable = 'feat$intrp'+ dayName \
+                   + '_'+feature_name+'$'+corpTable+'$'+self.correl_field
+        columns = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, featureTable)
+        if not columns: raise ValueError("One of your feature tables probably doesn't exist")
+        currentType = columns['feat']
+        columns = mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable)
+        if not columns: raise ValueError("One of your feature tables probably doesn't exist")
+        groupidType = columns[self.correl_field]
+        tableName = self.createFeatureTable(feature_name, currentType, 'DOUBLE', newTable)
+        ##add extra columns:
+        mm.execute(self.corpdb, self.dbCursor, "ALTER TABLE %s ADD time INT, ADD %s %s" % (tableName, self.correl_field, groupidType), charset=self.encoding, use_unicode=self.use_unicode)
+     
+        ## we are appending a date to the correl_field so group_id in feat table must be varchar
+        if 'int' in groupidType:
+            mm.execute(self.corpdb, self.dbCursor, "ALTER TABLE %s MODIFY group_id VARCHAR(64)" % (tableName), charset=self.encoding, use_unicode=self.use_unicode)
+ 
+        dlac.warn("""Interpolating %s to the %s level.""" % (str(featureTable), self.correl_field))
+        
+        ## 1. apply GFT to get users we care about: 
+        groups = []
+        if not setGFTWarning:
+            dlac.warn("""group_freq_thresh is set to %s. Only %s s meeting this will have interpolated features""" % (groupFreqThresh, self.correl_field), attention=True)
+        if groupFreqThresh:
+            groupCnts = self.getGroupWordCounts(where)
+            for group, wordCount in groupCnts.items():
+                if (wordCount >= groupFreqThresh):
+                    groups.append(group)
+        else:
+            groups = self.getDistinctGroups(where)
+        dlac.warn("""  Interpolating for up to %d %s s.""" % (len(groups), self.correl_field))
+        gList = "','".join([str(g) for g in groups])
+
+        ## 2. Get the minimum date:
+        dlac.warn("""  [Finding good date range]""" )
+        minIntersectDT, maxIntersectDT, minUnionDT, maxUnionDT  = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT max(min_date), min(max_date), min(min_date), max(max_date) FROM (SELECT %s, MIN(%s) as min_date, MAX(%s) as max_date FROM %s where %s in ('%s') group by %s) as a " % \
+                                         (self.correl_field, dateField, dateField, self.corptable, self.correl_field, gList, self.correl_field))[0]
+        dtClosestToMin = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT min(max_date) FROM (SELECT %s, MAX(%s) as max_date FROM %s where %s in ('%s') AND %s <= '%s' group by %s) as a " % \
+                                         (self.correl_field, dateField, self.corptable, self.correl_field, gList, dateField, minIntersectDT, self.correl_field))[0][0]
+        dtClosestToMax = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT max(min_date) FROM (SELECT %s, MIN(%s) as min_date FROM %s where %s in ('%s') AND %s >= '%s' group by %s) as a " % \
+                                         (self.correl_field, dateField, self.corptable, self.correl_field, gList, dateField, maxIntersectDT, self.correl_field))[0][0]
+        if not isinstance(minIntersectDT, datetime.datetime):
+            minIntersectDT = dtParse(minIntersectDT, ignoretz = True)
+            maxIntersectDT = dtParse(maxIntersectDT, ignoretz = True)
+            minUnionDT = dtParse(minUnionDT, ignoretz = True)
+            maxUnionDT = dtParse(maxUnionDT, ignoretz = True)
+            dtClosestToMin = dtParse(maxUnionDT, ignoretz = True)
+            dtClosestToMax = dtParse(maxUnionDT, ignoretz = True)
+
+            
+            
+        dayDiff = (maxIntersectDT - minIntersectDT).days
+        maxDiffPerUnit = int(dayDiff/days)
+        assert dayDiff > 0, "\nDayDiff (%d) was negative or zero. Increase GFT. Interpolating %ss over %ddays: 0 = %s through %d = %s"% \
+                  (dayDiff, self.correl_field, days, str(minIntersectDT.date()), maxDiffPerUnit, str(maxIntersectDT.date()))
+
+        ## 3. Get Features x SubIds (in Sparse X form):
+        oldFeatures = FeatureGetter(self.corpdb, self.corptable, oldGroupField, self.mysql_host, self.message_field, self.messageid_field, self.encoding, True, self.lexicondb, featureTable)
+        dateWhere = "%s >= DATE('%s') AND %s <= DATE('%s')" % (dateField, dtClosestToMin.date(), dateField, dtClosestToMax.date()) #used when querying mids + dates
+        groupsWhere = "group_id in (SELECT %s FROM %s WHERE "%(oldGroupField, self.corptable) +dateWhere+" AND %s in ('%s'))" %(self.correl_field, gList)
+        #print("groupsWhere", groupsWhere)#debug
+        (groupNormsByMid, featureNames) = oldFeatures.getGroupNormsSparseGroupsFirst(where = groupsWhere)
+        dlac.warn("""  [done]""")
+        
+        ## 4. Create X and Y per group: 
+        lengroups = len(groups)
+        dlac.warn("\nInterpolating %d %ss over %ddays: 0 = %s through %d = %s (full range: %s through %s)"% \
+                  (lengroups, self.correl_field, days, str(minIntersectDT.date()), maxDiffPerUnit, \
+                   str(maxIntersectDT.date()), str(dtClosestToMin.date()), str(dtClosestToMax.date())))
+        gnum = 0
+        wsql = """INSERT INTO """+newTable+""" (group_id, feat, value, group_norm, time, """+self.correl_field+""") values (%s, %s, %s, %s, %s, %s)"""
+        for group in groups:
+
+            #status tracker:
+            if gnum%100==0:
+                dlac.warn("   Read and considered interpolating %d %ss (%.2f complete) "%(gnum, self.correl_field, gnum/lengroups))
+            gnum +=1
+
+            ## 5. go throgh current users messages and align with feature table data:
+            groupXYs = {f: [] for f in featureNames} #feat->[(X, y)...] where X is datediff from min and y is group_norm; adds zeros here
+            midsAndDates = self.getMidAndExtraForCorrelField(group, dateField, where=dateWhere, warnMsg = False)
+            if len(midsAndDates) < minToImpute:#make total messages is at least enough before bothering:
+                dlac.warn(" !Only %d messages to impute for %s %s. Not enough. SKIPPING" % \
+                          (len(midsAndDates), self.correl_field, str(group)))
+                continue
+            uniqueDtInts = set() #tracks total unique dts
+            uniqueDtIntsInRange = set() #tracks total unique dts in the range
+            for dateRow in midsAndDates:
+                #print("dateRow", dateRow)#debug
+                mid = dateRow[0]
+                if mid in groupNormsByMid:
+                    ## 6. get difference in dates by number of days parameter:
+                    #print("checking", mid)
+                    dt = dateRow[1]
+                    if not isinstance(dt, datetime.datetime):
+                        dt = dtParse(dt, ignoretz = True)
+                    dayDiff = (dt - minIntersectDT).days
+                    diffPerUnit = int(dayDiff/days)
+                    uniqueDtInts.add(diffPerUnit)
+                    if diffPerUnit >= 0:
+                        uniqueDtIntsInRange.add(diffPerUnit)
+
+                    for feat in featureNames:
+                        try:
+                            groupXYs[feat].append((diffPerUnit, groupNormsByMid[mid][feat]))
+                        except KeyError: #feat must be missing in group Norms = 0
+                            groupXYs[feat].append((diffPerUnit, 0))
+            if len(uniqueDtInts) < minToImpute:#check that there are enough unique dates: 
+                dlac.warn(" !Only %d unique dates to impute for %s %s (need at least %d). SKIPPING"% \
+                          (len(uniqueDtInts), self.correl_field, str(group), minToImpute))
+                continue
+            elif len(uniqueDtIntsInRange) < minToImpute-1:#check that there are enough unique dates: 
+                dlac.warn(" !Only %d unique dates i the range %s %s (need at least %d). SKIPPING"% \
+                          (len(uniqueDtIntsInRange), self.correl_field, str(group), minToImpute-1))
+                continue
+
+            ## 7. Interpolate (note: this and 8 could be parallelized)
+            minX, maxX = min(uniqueDtInts), max(uniqueDtInts)
+            if maxX - minX < maxDiffPerUnit:#left and/or right will be left out
+                dlac.warn(" !Warning, %s %s has smaller range (%d to %d) than max (0 to %d)."% \
+                          (self.correl_field, str(group), minX, maxX, maxDiffPerUnit))
+            newX = list(range(minX, maxX+1)) #i.e. range to interpolate over
+            newYs = dict()
+            newYs["_%ddInter"%days] = [1.0]*len(newX) #intercept to make sure day counts even if zero
+            #fit:
+            for feat in featureNames:
+                x, y = zip(*groupXYs[feat])
+                #print(x, y)
+                try: 
+                    f = interp1d(x, y, 'slinear')
+                    newYs[feat] = f(newX)
+                except ValueError:
+                    dlac.warn("THIS SHOULD HAVE BEEN CAUGHT EARLIER.\n Not enough values to impute for %s %s. SKIPPING"%\
+                              (self.correl_field, str(group), feat))
+                    #NOTE: this should only happen on the first feat; because zeros have been added
+                    break
+
+            ## 8. Write to DB:
+            #print(newX, newYs)#debug
+            rows = []
+            if not self.use_unicode:
+                rows = [(str(group)+'_'+str(newX[i]), feat, newX[i], Ys[i], newX[i], group) for i in range(len(newX)) for feat, Ys in newYs.items() if Ys[i] != 0]
+            else:
+                rows = [((str(group)+'_'+str(newX[i])).encode('utf-8'), feat.encode('utf-8'), newX[i], \
+                         Ys[i], newX[i], group) for i in range(len(newX)) for feat, Ys in newYs.items() if Ys[i] != 0]
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
+
+            ##ADD USER_ID and DAYS so that can be used. 
+            
+        dlac.warn("Done Reading, Interpolating, and Inserting into '%s'."% tableName )
+        mm.execute(self.corpdb, self.dbCursor, "ALTER TABLE %s ADD INDEX (time), ADD INDEX (%s)" % (tableName, self.correl_field), charset=self.encoding, use_unicode=self.use_unicode)
+
+        return tableName
+
+
+    
     def addFeatNorms(self, ReCompute = True, groupFreqThresh = 0, setGFTWarning=True):
         """Adds the mean normalization by feature (z-score) for each feature"""
         ##TODO: add feat_norm column if doesn't exist
@@ -778,8 +1045,6 @@ class FeatureRefiner(FeatureGetter):
         
         mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
   
-        # patrick changed this to be all SQL 7/21/15. Values and group norms were being calculated wrong before
-
         dlac.warn("Done inserting.\nEnabling keys.")
         mm.enableTableKeys(self.corpdb, self.dbCursor, newTable, charset=self.encoding, use_unicode=self.use_unicode)
         dlac.warn("done.")

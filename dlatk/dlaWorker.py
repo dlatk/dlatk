@@ -39,7 +39,7 @@ class DLAWorker(object):
     DLAWorker object
     """
     
-    def __init__(self, corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb = dlac.DEF_LEXICON_DB, date_field=dlac.DEF_DATE_FIELD, wordTable = None):
+    def __init__(self, corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb = dlac.DEF_LEXICON_DB, date_field=dlac.DEF_DATE_FIELD, wordTable=None):
         self.corpdb = corpdb
         self.corptable = corptable
         self.correl_field = correl_field
@@ -58,6 +58,7 @@ class DLAWorker(object):
         #(self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(corpdb, host=mysql_host, charset=encoding)
         self.lexicondb = lexicondb
         self.wordTable = wordTable if wordTable else "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
+        self.messageIdUniqueChecked = False
 
     ##PUBLIC METHODS#
     def checkIndices(self, table, primary=False, correlField=False):
@@ -66,12 +67,14 @@ class DLAWorker(object):
         if primary:
             hasPrimary = self.data_engine.primaryKeyExists(table, correlField) #mm.primaryKeyExists(self.dbConn, self.dbCursor, table, correlField)
             if not hasPrimary: warn_message += " a PRIMARY key on %s" % correlField
-        if correlField:
+        elif correlField:
             hasCorrelIndex = self.data_engine.indexExists(table, correlField) #mm.indexExists(self.dbConn, self.dbCursor, table, correlField)
             if not hasCorrelIndex: 
                 if not hasPrimary: warn_message += " or"
                 warn_message += " an index on %s" % correlField
         warn_message += ". Consider adding."
+        if self.messageid_field == correlField and not hasPrimary:
+            warn_message += "\n         Please check that all messages have a unique %s, this can significantly impact all downstream analysis" % (self.messageid_field)
         if not hasPrimary or not hasCorrelIndex:
             dlac.warn(warn_message)
         #sys.exit(1)
@@ -117,6 +120,12 @@ class DLAWorker(object):
         #msql = """SELECT %s, %s FROM %s WHERE %s = '%s'""" % (
         #    self.messageid_field, self.message_field, messageTable, self.correl_field, cf_id)
 
+        # check that self.messageid_field is unique
+        if self.messageIdUniqueChecked == False:
+            self.checkIndices(messageTable, primary=True, correlField=self.messageid_field)
+            if self.correl_field != self.messageid_field:
+                self.checkIndices(messageTable, primary=False, correlField=self.correl_field)
+            self.messageIdUniqueChecked = True
         #return self._executeGetSSCursor(msql, warnMsg, host=self.mysql_host)
         where_conditions = """%s='%s'"""%(self.correl_field, cf_id)
         selectQuery = self.qb.create_select_query(messageTable).set_fields([self.messageid_field, self.message_field]).where(where_conditions)
@@ -148,6 +157,34 @@ class DLAWorker(object):
         #return self._executeGetSSCursor(msql, showQuery)
         return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding)
 
+    def getMidAndExtraForCorrelField(self, cf_id, extraField, messageTable = None, where = None, warnMsg = True):
+        """?????
+ 
+        Parameters
+        ----------
+        cf_id : str
+            Correl field id.
+        extraField : str
+            ?????
+        messageTable : :obj:`str`, optional
+            name of message table.
+        warnMsg : :obj:`boolean`, optional
+            ?????
+     
+        Returns
+        -------
+        describe : list
+            A list of messages for a given correl field id.
+        """
+        if not messageTable: messageTable = self.corptable
+        msql = """SELECT %s, %s FROM %s WHERE %s = '%s'""" % (
+            self.messageid_field, extraField, messageTable, self.correl_field, cf_id)
+        if where:
+            msql += ' AND '+where
+        #return self._executeGetSSCursor(msql, showQuery)
+        return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding)
+
+    
     def getNumWordsByCorrelField(self, where = ''):
         """?????
  

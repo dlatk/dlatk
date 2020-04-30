@@ -189,8 +189,10 @@ def main(fn_args = None):
                        help='BERT model to use if extracting bert features.')
     group.add_argument('--bert_msg_aggregation', '--bert_aggregations', type=str, metavar='AGG', nargs='+', dest='bertaggs', default=dlac.DEF_BERT_AGGREGATION,
                        help='Aggregations to use with Bert (e.g. mean, min, max).')
-    group.add_argument('--bert_layer_aggregation', type=str, metavar='AGG', nargs='+', dest='bertlayeraggs', default=dlac.DEF_BERT_LAYER_AGGREGATION,
+    group.add_argument('--bert_layer_aggregation', '--layer_aggregation', type=str, metavar='AGG', nargs='+', dest='bertlayeraggs', default=dlac.DEF_BERT_LAYER_AGGREGATION,
                        help='Aggregations to use with Bert (e.g. mean, min, max).')
+    group.add_argument('--bert_word_aggregation', '--word_aggregation', type=str, metavar='AGG', nargs='+', dest='transwordaggs', default=dlac.DEF_TRANS_WORD_AGGREGATION,
+                       help='Aggregations to use for words (e.g. mean or concatenate).')
     group.add_argument('--bert_layers', type=int, metavar='LAYER', nargs='+', dest='bertlayers', default=dlac.DEF_BERT_LAYERS,
                        help='layers from Bert to keep.')
     group.add_argument('--bert_no_context', action='store_true', dest='bertnocontext', default=False,
@@ -499,18 +501,25 @@ def main(fn_args = None):
                        help='Given multiple feature table, combines them (provide feature name) ')
     group.add_argument('--add_feat_norms', action='store_true', dest='addfeatnorms',
                        help='calculates and adds the mean normalized (feat_norm) value for each row (uses variable feat_table).')
+    group.add_argument('--add_standardized_feats', '--add_std_feats', action='store_true', dest='addstdfeats',
+                       help='Adds a copy of the feature table where group_norms have been standardized (new table appended with "z").')
+
+    
     group.add_argument('--feat_colloc_filter', action='store_true', dest='featcollocfilter',
                        help='removes featrues that do not pass as collocations. (uses feat_table).')
     group.add_argument('--feat_correl_filter', action='store_true', dest='featcorrelfilter',
                        help='removes features that do not pass correlation sig tests with given outcomes (uses -f --outcome_table --outcomes).')
     group.add_argument('--make_topic_labelmap_lex', action='store_true', dest='maketopiclabelmap', default=False,
                        help='Makes labelmap lexicon from topics. Requires --topic_lexicon, --num_topic_words. Optional: --weighted_lexicon')
+    group.add_argument('--tf_idf', action='store_true', dest='tfidf', default=False,
+                       help='Given an ngram feature table, creates a new feature table with tf-idf (uses -f).')
     group.add_argument('--feat_group_by_outcomes', action='store_true', dest='featgroupoutcomes', default=False,
                        help='Creates a feature table grouped by a given outcome (requires outcome field, can use controls)')
     group.add_argument('--aggregate_feats_by_new_group', action='store_true', dest='aggregategroup', default=False,
                        help='Aggregate feature table by group field (i.e. message_id features by user_ids).')
-    group.add_argument('--tf_idf', action='store_true', dest='tfidf', default=False,
-                       help='Given an ngram feature table, creates a new feature table with tf-idf (uses -f).')
+    group.add_argument('--interpolate_aggregated_feats', '--interpolate_feats', type=float, dest='interpolategroup', default=None,
+                       help='Aggregates features from a lower level to new group by field, interpolating across specified amount of days.')
+
 
 
     group = parser.add_argument_group('Outcome Actions', '')
@@ -713,6 +722,13 @@ def main(fn_args = None):
     ##Argument adjustments:
     if not args.valuefunc: args.valuefunc = lambda d: d
     if not args.lexvaluefunc: args.lexvaluefunc = lambda d: d
+
+    if args.feattable:
+        if isinstance(args.feattable,list):
+            args.feattable = [s.strip() for s in args.feattable]
+        else: 
+            args.feattable = arg.feattable.strip()
+
 
     if args.outcomeWithOutcomeOnly and not args.feattable:
         args.groupfreqthresh = 0
@@ -989,7 +1005,7 @@ def main(fn_args = None):
 
     if args.addbert:
         if not fe: fe = FE()
-        args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=args.bertaggs, layersToKeep=args.bertlayers, noContext=args.bertnocontext, layerAggregations = args.bertlayeraggs, valueFunc = args.valuefunc)
+        args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=args.bertaggs, layersToKeep=args.bertlayers, noContext=args.bertnocontext, layerAggregations = args.bertlayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc)
 
     if args.addldafeattable:
         if not fe: fe = FE()
@@ -1160,6 +1176,11 @@ def main(fn_args = None):
         if not fr: fr=FR()
         args.feattable = fr.createAggregateFeatTableByGroup(valueFunc = args.valuefunc)
 
+    if args.interpolategroup:
+        if not fr: fr=FR()
+        args.feattable = fr.createInterpolatedFeatTable(days = args.interpolategroup, dateField = args.date_field, groupFreqThresh = args.groupfreqthresh, where = args.groupswhere)
+
+        
     if args.featoccfilter:
         if args.use_collocs and not args.wordTable:
             args.wordTable = args.feattable
@@ -1208,6 +1229,10 @@ def main(fn_args = None):
         if not fr: fr=FR()
         fr.addFeatNorms(groupFreqThresh = args.groupfreqthresh, setGFTWarning = setGFTWarning)
 
+    if args.addstdfeats:
+        if not fr: fr=FR()
+        fr.createStandardizedFeatTable(groupFreqThresh = args.groupfreqthresh, setGFTWarning = setGFTWarning)
+        
     #create whitelist / blacklist
     if args.categories:
         if isinstance(args.categories, str):
@@ -1657,8 +1682,6 @@ def main(fn_args = None):
 
     if (args.regrToLex or args.classToLex) and '16to' in args.feattable and '16to16' not in args.feattable:
         print("WARNING: using an non 16to16 feature table")
-    if (args.regrToLex or args.classToLex) and args.standardize:
-        print("WARNING: You must use the --no_standardize flag when creating data driven lexica. ")
 
     if args.trainregression:
         rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample, outputName = args.outputname, saveFeatures = True if args.outputname else False)
@@ -1732,7 +1755,7 @@ def main(fn_args = None):
     ##CLASSIFICATION:
     cp = None
     if args.trainclassifiers or args.testclassifiers or args.combotestclassifiers or args.predictclassifiers or args.predictctofeats or args.predictprobstofeats or args.classToLex or args.roc or args.predictCtoOutcomeTable:
-        if args.predictctofeats and isinstance(args.low_variance_thresh, (int, float)): args.low_variance_thresh = False
+        if (args.predictctofeats or args.predictprobstofeats) and isinstance(args.low_variance_thresh, (int, float)): args.low_variance_thresh = False
         if args.model == dlac.DEF_MODEL:#if model wasnt changed form a regression model
             args.model = dlac.DEF_CLASS_MODEL
         if not og: og = OG()
@@ -1771,23 +1794,23 @@ def main(fn_args = None):
         #else:
         pprint(comboScores, compact=True)
         for outcome, cData in sorted(comboScores.items()):
-            print("\n"+outcome)
+            print("\n["+outcome+"]")
             mfc = 0.0
             for controls, wLangData in sorted(cData.items()):
-                print("  CONTROLS: "+str(controls)) if len(controls) > 0 else print("  NO CONTROLS")
+                print("   CONTROLS -- "+' '.join(sorted(controls))) if len(controls) > 0 else print("   NO CONTROLS")
                 if 0 in wLangData:
-                    print("   - LANG: acc: %.3f, f1: %.3f, auc: %.3f" %\
+                    print("     - LANG: acc: %.3f, f1: %.3f, auc: %.3f" %\
                         tuple([wLangData[0][k] for k in ['acc', 'f1', 'auc']]))
                     mfc = wLangData[0]['mfclass_acc']
                 if 1 in wLangData:
                     if len(controls) > 0: 
-                        print("   + LANG: acc: %.3f, f1: %.3f, auc: %.3f, auc ensemble: %.3f (p = %.4f)" %\
+                        print("     + LANG: acc: %.3f, f1: %.3f, auc: %.3f, auc ensemble: %.3f (p = %.4f)" %\
                               tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc', 'auc_cntl_comb2', 'auc_cntl_comb2_p']]))
                     else:
-                        print("   + LANG: acc: %.3f, f1: %.3f, auc: %.3f" %\
+                        print("     + LANG: acc: %.3f, f1: %.3f, auc: %.3f" %\
                               tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc']]))
                         mfc = wLangData[1]['mfclass_acc']
-            print("      (mfc_acc: %.3f)"%mfc)
+            print("   (mfc_acc: %.3f)"%mfc)
 
                 
         if args.pred_csv:

@@ -576,9 +576,9 @@ class OutcomeAnalyzer(OutcomeGetter):
         return correls
 
     def correlateWithFeatures(self, featGetter, spearman = False, p_correction_method = 'BH', interaction = None,
-                              blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False, outcomeWithOutcomeOnly = False,
-                              zscoreRegression = True, logisticReg = False, cohensD = False, outputInteraction = False, 
-                              groupsWhere = ''):
+                              blacklist=None, whitelist=None, includeFreqs = False, outcomeWithOutcome = False,
+                              outcomeWithOutcomeOnly = False, zscoreRegression = True, logisticReg = False,
+                              cohensD = False, outputInteraction = False, groupsWhere = ''):
         """Finds the correlations between features and outcomes
 
         Parameters
@@ -644,7 +644,11 @@ class OutcomeAnalyzer(OutcomeGetter):
                                                       for x in dlac.switchColumnsAndRows(X)])
                             y = rankdata(y)
                         if zscoreRegression:
-                            (X, y) = (zscore(X), zscore(y) if not logisticReg else y)
+                            try: 
+                                (X, y) = (zscore(X), zscore(y) if not logisticReg else y)
+                            except TypeError:
+                                dlac.warn("zscore got type error -- you probably are trying to use non-numeric data")
+                                sys.exit(1)
                         results = None
                         try:
                             means = None
@@ -654,7 +658,12 @@ class OutcomeAnalyzer(OutcomeGetter):
                                 means = dlac.meanXperY(X[:,-1], y)
                             else:
                                 results = sm.OLS(y, X).fit() #runs regression
-                            effect_size = dlac.cohensD(X, y) if cohensD else results.params[-1]
+                            if cohensD:
+                                effect_size = dlac.cohensD(X, y)
+                                if controls: 
+                                    dlac.warn("  !WARNING: Using cohensD with controls is uninterpretable!")
+                            else:
+                                effect_size = results.params[-1]
                             conf = dlac.conf_interval(effect_size, len(y))
                             if means: 
                                 tup = (effect_size, results.pvalues[-1], len(y), conf, means)

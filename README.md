@@ -38,7 +38,7 @@ pip install dlatk
 
 ### 3. GitHub
 ```sh
-git clone SEE_URL_ABOVE
+git clone https://github.com/dlatk/dlatk.git
 cd dlatk
 python setup.py install
 ```

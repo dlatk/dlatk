@@ -34,7 +34,7 @@ from sklearn.svm import SVR
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB, BernoulliNB
 
-from sklearn.decomposition import RandomizedPCA, MiniBatchSparsePCA, PCA, KernelPCA, NMF
+from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF
 #from sklearn.lda import LDA #linear descriminant analysis
 from sklearn import metrics
 
@@ -136,6 +136,29 @@ def pos_neg_auc(y1, y2):
         auc = auc - 1
     return auc
 
+def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True):
+    classes = list(set(ytrue))
+    this_auc = 0.0
+    if multiclass or len(classes) > 2:
+        n_classes = len(classes)
+        ytrue = label_binarize(ytrue, classes=sorted(classes))
+
+        fpr = dict()
+        tpr = dict()
+        roc_auc = dict()
+        for i in range(n_classes):
+            fpr[i], tpr[i], _ = roc_curve(ytrue[:, i], ypredProbs[:, i])
+            roc_auc[i] = auc(fpr[i], tpr[i])
+
+        # Compute micro-average ROC curve and ROC area
+        fpr["micro"], tpr["micro"], _ = roc_curve(ytrue.ravel(), ypredProbs.ravel())
+        this_auc = auc(fpr["micro"], tpr["micro"])
+    else:
+        this_auc = roc_auc_score(ytrue, ypredProbs[:,-1])
+    if negatives and this_auc < 0.5:
+        this_auc = this_auc - 1
+    return this_auc
+
 class ClassifyPredictor:
     """Interfaces with scikit-learn to perform prediction of outcomes for lanaguage features.
 
@@ -220,8 +243,8 @@ class ClassifyPredictor:
             #{'C':[0.01, 0.1, 1, 10, 0.001], 'penalty':['l2'], 'dual':[True]} #timex message-level
 
             ###with l1 feature selection:
-            #{'C':[0.01], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']} #age, general sparse setting #words n phrases, gender (best 0.01=> 91.4 )
-            {'C':[0.01, 0.1, 0.001], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']}, #FIRST PASS l1 OPTION; swl message-level
+            {'C':[0.01], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']} #age, general sparse setting #words n phrases, gender (best 0.01=> 91.4 )
+            #{'C':[0.01, 0.1, 0.001], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']}, #FIRST PASS l1 OPTION; swl message-level
             #{'C':[10, 1, 0.1, 0.01, 0.001, 0.0001, 0.0025, 0.00025, 0.00001, 0.000001, 0.000025, 0.0000001, 0.0000025, 0.00000001, 0.00000025], 'penalty':['l1'], 'dual':[False]} #swl
             #{'C':[0.1], 'penalty':['l1'], 'dual':[False], 'multi_class':['crammer_singer']} #
             #{'C':[0.01, 0.1, 1, 10, 0.001], 'penalty':['l1'], 'dual':[False]} #timex message-level
@@ -251,8 +274,9 @@ class ClassifyPredictor:
             #{'n_jobs': [10], 'n_estimators': [250], 'criterion':['gini']}, 
             #{'n_jobs': [10], 'n_estimators': [1000], 'criterion':['gini']}, 
             #{'n_jobs': [10], 'n_estimators': [100], 'criterion':['entropy']}, 
-            #{'n_jobs': [12], 'n_estimators': [50], 'max_features': ["sqrt", "log2", None], 'criterion':['gini'], 'min_samples_split': [1]}, 
-            {'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced_subsample']}, 
+            #{'n_jobs': [12], 'n_estimators': [50], 'max_features': ["sqrt", "log2", None], 'criterion':['gini'], 'min_samples_split': [1]},
+            {'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced_subsample']},
+            #{'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced']}, 
             #{'n_jobs': [12], 'n_estimators': [200], 'max_features': ["sqrt"], 'critearion':['gini'], 'min_samples_split': [2]}, 
             ],
         'rfc': [
@@ -330,8 +354,8 @@ class ClassifyPredictor:
 
 
     #dimensionality reduction (TODO: make a separate step than feature selection)
-    #featureSelectionString = 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)' ### TRY THIS ###
-    #featureSelectionString = 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)'#smaller among 10% or number of rows / number of feature tables
+    #featureSelectionString = 'PCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")' ### TRY THIS ###
+    #featureSelectionString = 'PCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")'#smaller among 10% or number of rows / number of feature tables
     #featureSelectionString = 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/2)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)'#smaller among 10% or number of rows / 2
     # featureSelectionString = 'RandomizedPCA(n_components=min(X.shape[1], int(X.shape[0]/4)), random_state=42, whiten=False, iterated_power=3)'
     #featureSelectionString = 'RandomizedPCA(n_components=min(X.shape[1], 2000), random_state=42, whiten=False, iterated_power=3)'
@@ -339,7 +363,6 @@ class ClassifyPredictor:
     #featureSelectionString = 'RandomizedPCA(n_components=min(int(X.shape[0]*1.5), X.shape[1]), random_state=42, whiten=False, iterated_power=3)'
     #featureSelectionString = 'PCA(n_components=min(int(X.shape[1]*.10), X.shape[0]), whiten=False)'
     #featureSelectionString = 'PCA(n_components=0.99, whiten=False)'
-    #featureSelectionString = 'VERPCA(n_components=0.999, whiten=False, max_components_ratio = min(1, X.shape[0]/float(X.shape[1])))'
     #featureSelectionString = 'KernelPCA(n_components=int(X.shape[1]*.02), kernel="rbf", degree=3, eigen_solver="auto")'  
 
 
@@ -618,6 +641,7 @@ class ClassifyPredictor:
                 #########################################
                 #3. test classifiers for each possible y:
                 for outcomeName, outcomes in sorted(allOutcomes.items()):
+                    multiclass = False
                     #thisOutcomeGroups = set(outcomes.keys()) & XGroups #this intersects with XGroups maybe use UGroups?
                     thisOutcomeGroups = set(outcomes.keys()) & UGroups #this intersects with UGroups
                     if not outcomeName in scores:
@@ -696,13 +720,15 @@ class ClassifyPredictor:
                             #4) fit model and test accuracy:
                             
                             mfclass = Counter(ytrain).most_common(1)[0][0]
+                            classes = list(set(ytrain))
+                            if len(classes) > 2: multiclass = True
                             # Check if the classifier is using controls - Youngseo
                             if len(controls) > 0:
-                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize = standardize, sparse = sparse, adaptTables=adaptTables, adaptColumns=adaptColumns)
+                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize = standardize, sparse = sparse, adaptTables=adaptTables, adaptColumns=adaptColumns, classes=classes)
                                 ypredProbs, ypredClasses = self._multiXpredict(classifier, multiXtest, \
                                                                                multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse, probs=True, adaptTables=adaptTables, adaptColumns=adaptColumns)
                             else:
-                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize = standardize, sparse = sparse, adaptTables=None, adaptColumns=None)
+                                (classifier, multiScalers, multiFSelectors) = self._multiXtrain(multiXtrain, ytrain, standardize = standardize, sparse = sparse, adaptTables=None, adaptColumns=None, classes=classes)
                                 ypredProbs, ypredClasses = self._multiXpredict(classifier, multiXtest, \
                                                                                multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse, probs=True, adaptTables=None, adaptColumns=None)
 
@@ -712,7 +738,8 @@ class ClassifyPredictor:
 
                             acc = accuracy_score(ytest, ypred)
                             f1 = f1_score(ytest, ypred, average='macro')
-                            auc = pos_neg_auc(ytest, ypredProbs[:,-1])
+                            #auc = pos_neg_auc(ytest, ypredProbs[:,-1])
+                            auc = computeAUC(ytest, ypredProbs, multiclass, negatives=False)
                             # classes = list(set(ytest))
                             # ytest_binary = label_binarize(ytest,classes=classes)
                             # ypred_binary = label_binarize(ypred,classes=classes)
@@ -762,7 +789,10 @@ class ClassifyPredictor:
                         ypredProbs = array(ypredProbs)
                         reportStats['acc'] = accuracy_score(ytrue, ypred)
                         reportStats['f1'] = f1_score(ytrue, ypred, average='macro')
-                        reportStats['auc'] = pos_neg_auc(ytrue, ypredProbs[:,-1])
+                        reportStats['auc']= computeAUC(ytrue, ypredProbs, multiclass)
+                        reportStats['precision'] = precision_score(ytrue, ypred, average='macro')
+                        reportStats['recall'] = recall_score(ytrue, ypred, average='macro')
+                        
                         try:
                             reportStats['matt_ccoef'] = matthews_corrcoef(ytrue, ypred)
                         except ValueError as e:
@@ -775,11 +805,15 @@ class ClassifyPredictor:
                             reportStats['auc_cntl_comb2'] = 0.0#add columns so csv always has same
                             reportStats['auc_cntl_comb2_t'] = 0.0
                             reportStats['auc_cntl_comb2_p'] = 1.0
-                            if withLanguage and savedControlYpp is not None and len(testCounter.keys()) == 2:
+                            if withLanguage and savedControlYpp is not None:
                                 newProbsDict = ensembleNFoldAUCWeight(outcomes, [predictionProbs, savedControlPProbs], groupFolds)
                                 ensYtrue, ensYPredProbs, ensYCntrlProbs = alignDictsAsy(outcomes, newProbsDict, savedControlPProbs)
-                                reportStats['auc_cntl_comb2'] = pos_neg_auc(ensYtrue, np.array(ensYPredProbs)[:,-1])
+                                #reportStats['auc_cntl_comb2'] = pos_neg_auc(ensYtrue, np.array(ensYPredProbs)[:,-1])
+                                reportStats['auc_cntl_comb2'] = computeAUC(ensYtrue, np.array(ensYPredProbs), multiclass)
                                 reportStats['auc_cntl_comb2_t'], reportStats['auc_cntl_comb2_p'] = paired_t_1tail_on_errors(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue)
+                                ## TODO: finish this and add flag: --ensemble_controls
+                                # predictions = #todo:dictionary
+                                # predictionProbs = newProbsDict
                             else: #save probs for next round
                                 savedControlYpp = ypredProbs[:,-1]
                                 savedControlPProbs = predictionProbs
@@ -787,7 +821,8 @@ class ClassifyPredictor:
 
                         if savePredictions: 
                             reportStats['predictions'] = predictions
-                            reportStats['predictionProbs'] = {k:v[-1] for k,v in predictionProbs.items()}
+                            #reportStats['predictionProbs'] = {k:v[-1] for k,v in predictionProbs.items()}
+                            reportStats['predictionProbs'] = predictionProbs
                         #pprint(reportStats) #debug
                         mfclass = Counter(ytest).most_common(1)[0][0]
                         print("* Overall Fold Acc: %.4f (+- %.4f) vs. MFC Accuracy: %.4f (based on test rather than train)"% (reportStats['folds_acc'], reportStats['folds_se_acc'], reportStats['folds_mfclass_acc']))
@@ -800,7 +835,6 @@ class ClassifyPredictor:
                             scores[outcomeName][controlKeyCombo][withLanguage] = reportStats
                         except KeyError:
                             scores[outcomeName][controlKeyCombo] = {withLanguage: reportStats}
-
 
         print("\n[TEST COMPLETE]\n")
         return scores
@@ -847,6 +881,7 @@ class ClassifyPredictor:
             groupNormsList.append(groupNormValues)
             print("  Features Aligned: %d" % len(groupNormValues))
             fgGroups = getGroupsFromGroupNormValues(groupNormValues)
+            print("  Groups Aligned: %d" % len(fgGroups))
             if not XGroups:
                 XGroups = set(fgGroups)
                 UGroups = set(fgGroups)
@@ -905,14 +940,29 @@ class ClassifyPredictor:
             testCounter = Counter(ytest)
             mfclass = Counter(ytest).most_common(1)[0][0]
             mfclass_acc = testCounter[mfclass] / float(len(ytest))
-            print(" *confusion matrix: \n%s"% str(confusion_matrix(ytest, ypred)))
+            matt_ccoef = matthews_corrcoef(ytest, ypred)
+            precision = precision_score(ytest, ypred, average='macro')
+            recall = recall_score(ytest, ypred, average='macro')
+            conf_matrix = confusion_matrix(ytest, ypred)
+            tn, fp, fn, tp = conf_matrix.ravel()
+            specificity = tn / (tn+fp)
+
+            print(" *confusion matrix: \n%s"% str(conf_matrix))
             print(" *precision and recall: \n%s" % classification_report(ytest, ypred))
-            print(" *ACC: %.4f (mfclass_acc: %.4f); mfclass: %s\n" % (acc, mfclass_acc, str(mfclass)))
+            print(" *ACC: %.4f (mfclass_acc: %.4f); mfclass: %s" % (acc, mfclass_acc, str(mfclass)))
 
+            classes = list(set(ytest))
+            multiclass = True if len(classes) > 2 else False
             if probs:
-                auc = pos_neg_auc(ytest, ypredProbs[:,-1])
-                print(" *AUC: %.4f" % auc)            
+                auc = computeAUC(ytest, ypredProbs, multiclass, negatives=False)
+                print(" *AUC: %.4f" % auc)
 
+            print(" *f1: %.4f " % (f1))
+            print(" *matt_ccoef: %.4f " % (matt_ccoef))
+            print(" *precision: %.4f " % (precision))
+            print(" *recall: %.4f " % (recall))
+            print(" *specificity: %.4f " % (specificity))
+            
             mse = metrics.mean_squared_error(ytest, ypred)
             print("*Mean Squared Error:                 %.4f"% mse)
             assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups" 
@@ -1353,6 +1403,21 @@ class ClassifyPredictor:
                     print("Inverting the feature selection: %s" % self.multiFSelectors[outcome][i])
                     coefficients = self.multiFSelectors[outcome][i].inverse_transform(coefficients)
 
+                # Inverting Feature Selection
+                scaler_intercept = 0
+                if self.multiScalers[outcome][i]:
+                    print("Inverting the scaling: %s" % self.multiScalers[outcome][i])
+                    if self.multiScalers[outcome][i].mean_ is not None:
+                        means = self.multiScalers[outcome][i].mean_
+                    else:
+                        means = [0 for ii, coeff in enumerate(coefficients)]
+                    if self.multiScalers[outcome][i].scale_ is not None:
+                        scales = self.multiScalers[outcome][i].scale_
+                    else:
+                        scales = [1 for ii, coeff in enumerate(coefficients)]
+                    scaler_intercept = sum([coeff*means[ii]/scales[ii] for ii, coeff in enumerate(coefficients)])
+                    coefficients = np.asarray([coeff/scales[ii] for ii, coeff in enumerate(coefficients)])
+
                 if 'mean_' in dir(self.multiFSelectors[outcome][i]): # PCA, RPCA
                     print("RPCA mean: ", self.multiFSelectors[outcome][i].mean_)
 
@@ -1366,8 +1431,8 @@ class ClassifyPredictor:
                 coefficients  = np.asarray([list(islice(coeff_iter, 0, j)) for j in self.featureLengthList][i])
                 intercept = self.classificationModels[outcome].intercept_
                 if outcome not in intercept_dict:
-                    intercept_dict[outcome] = intercept
-                    print("Intercept for {o} [{i}]".format(o=outcome, i=intercept))
+                    intercept_dict[outcome] = intercept - scaler_intercept
+                    print("Intercept for {o} [{i}]".format(o=outcome, i=intercept_dict[outcome]))
                 print("coefficients size for {f}: {s}".format(f=featTables[i], s=coefficients.shape))
                 coefficients.resize(1,len(coefficients))
                 coefficients = coefficients.flatten()
@@ -1546,14 +1611,14 @@ class ClassifyPredictor:
             return classifier, scaler, fSelector
 
 
-    def _multiXtrain(self, X, y, standardize = True, sparse = False, adaptTables=None, adaptColumns=None):
+    def _multiXtrain(self, X, y, standardize = True, sparse = False, adaptTables=None, adaptColumns=None, classes=[]):
         """does the actual classification training, first feature selection: can be used by both train and test
            create multiple scalers and feature selectors
            and just one classification model (of combining the Xes into 1)
            adapt tables: specifies which table (i.e. index of X) to adapt
            adapt cols: specifies which columns of the last table (X) to use for adapting the adaptTables 
         """
-
+        
         if not isinstance(X, (list, tuple)):
             X = [X]
         multiX = X
@@ -1663,6 +1728,8 @@ class ClassifyPredictor:
 
         #combine all multiX into one X:
         X = multiX[0]
+        if len(classes) > 2:
+            y = label_binarize(y, classes=sorted(classes))
         for nextX in multiX[1:]:
             try:
                 X = matrixAppendHoriz(X, nextX)
@@ -1677,9 +1744,16 @@ class ClassifyPredictor:
 
         if hasMultValuesPerItem(self.cvParams[modelName]) and modelName[-2:] != 'cv':
             #grid search for classifier params:
-            gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
-                              self.cvParams[modelName], n_jobs = self.cvJobs,
-                              cv=ShuffleSplit(n_splits=self.cvFolds+1, test_size=1/float(self.cvFolds), random_state=DEFAULT_RANDOM_SEED))
+            if len(classes) > 2:
+                parameters = {'estimator__' + k: v for k,v in self.cvParams[modelName][0].items()}
+            
+                gs = GridSearchCV(OneVsRestClassifier(eval(self.modelToClassName[modelName]+'()')), 
+                                  param_grid=parameters, n_jobs = self.cvJobs,
+                                  cv=ShuffleSplit(len(y), n_iter=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
+            else:
+                gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
+                                  self.cvParams[modelName], n_jobs = self.cvJobs,
+                                  cv=ShuffleSplit(n_splits=self.cvFolds+1, test_size=1/float(self.cvFolds), random_state=DEFAULT_RANDOM_SEED))
             print("[Performing grid search for parameters over training]")
             gs.fit(X, y)
 
@@ -1695,6 +1769,8 @@ class ClassifyPredictor:
                 print("No CV parameters available")
                 raise IndexError
             #print dict(self.cvParams[modelName][0])
+            if len(classes) > 2:
+                classifier = OneVsRestClassifier(classifier)
             try:
                 classifier.fit(X, y)
             except ValueError as e:
@@ -2383,89 +2459,6 @@ class ClassifyPredictor:
 ####################################################################
 ##
 #
-class VERPCA(RandomizedPCA):
-    """Randomized PCA that sets number of components by variance explained
-
-    Parameters
-    ----------
-    n_components : int
-        Maximum number of components to keep: default is 50.
-
-    copy : bool
-        If False, data passed to fit are overwritten
-
-    iterated_power : int, optional
-        Number of iteration for the power method. 3 by default.
-
-    whiten : bool, optional
-        When True (False by default) the `components_` vectors are divided
-        by the singular values to ensure uncorrelated outputs with unit
-        component-wise variances.
-
-        Whitening will remove some information from the transformed signal
-        (the relative variance scales of the components) but can sometime
-        improve the predictive accuracy of the downstream estimators by
-        making their data respect some hard-wired assumptions.
-
-    random_state : int or RandomState instance or None (default)
-        Pseudo Random Number generator seed control. If None, use the
-        numpy.random singleton.
-
-    max_components_ratio : float
-        Maximum number of components in terms of their ratio to the number 
-        of features. Default is 0.25 (1/4). 
-    """
-
-    #Vars
-
-
-    def __init__(self, n_components=None, copy=True, iterated_power=3,
-                 whiten=False, random_state=None, max_components_ratio = 0.25):
-        if n_components > 0 and n_components < 1:
-            self.variance_explained = n_components
-            n_components = None
-        else:
-            self.variance_explained = None 
-        self.max_components_ratio = max_components_ratio
-        super(VERPCA, self).__init__(n_components, copy, iterated_power, whiten, random_state)
-
-    def fit(self, X, y=None):
-        """Fit the model to the data X.
-
-        Parameters
-        ----------
-        X: array-like or scipy.sparse matrix, shape (n_samples, n_features)
-            Training vector, where n_samples in the number of samples and
-            n_features is the number of features.
-
-        Returns
-        -------
-        self : object
-            Returns the instance itself.
-        """
-        if self.n_components is None:
-            self.n_components = min(int(X.shape[1]*self.max_components_ratio), X.shape[1])
-
-        super(VERPCA, self).fit(X, y)
-
-        #reduce to variance explained:
-        if self.variance_explained:
-            totalV = 0
-            i = 0
-            for i in range(len(self.explained_variance_ratio_)):
-                totalV += self.explained_variance_ratio_[i]
-                if (i%10 == 0) or (i < 10):
-                    # print "%d: %f" % (i, totalV) #debug
-                    pass
-                if totalV >= self.variance_explained:
-                    i += 1
-                    break
-            self.n_components = i
-
-            #change components matrix (X)
-            self.components_ = self.components_[:i]
-
-        return self
 
 
 
@@ -2568,7 +2561,7 @@ def r2simple(ytrue, ypred):
 
 
 def ensembleNFoldAUCWeight(outcomes, probsListOfDicts, groupFolds):
-    """produce average of two probabilities, weighted by training AUC; return new probs"""
+    """produce average two probability sets (one for each class), weighted by training AUC; return new probs"""
     newProbs = dict()
     for testChunk in [i for i in range(0, len(groupFolds))]:
         trainGroups = set()
@@ -2583,12 +2576,15 @@ def ensembleNFoldAUCWeight(outcomes, probsListOfDicts, groupFolds):
         sumWeights = 0.0
         for c in range(Xtrain.shape[1]):
             #print(c, Xtrain[:,-1,c])#debug
-            weights[c] = ((np.absolute(pos_neg_auc(ytrain, Xtrain[:,c,-1])) - 0.5) / 0.5)**2
+            weights[c] = ((max(computeAUC(ytrain, Xtrain[:,c,:], negatives=False), 0.5) - 0.5) / 0.5)**2
             sumWeights += weights[c]
         weights = np.array([weights / sumWeights])
         warn(weights) #debug
-        ypred_probs = np.dot(Xtest[:,:,-1], weights.T)
-        warn("   ENSEMBLE FOLD AUC: %.4f" %  pos_neg_auc(ytest, ypred_probs[:,-1]))
+        #ypred_probs = np.dot(Xtest[:,:,-1], weights.T)
+        #print(Xtest)#debug
+        ypred_probs = np.dot(np.transpose(Xtest,(0,2,1)), weights.T)
+        ##TODO: change above to :,:,: to handle multiclass; 
+        warn("   ENSEMBLE FOLD AUC: %.4f" %  computeAUC(ytest, ypred_probs[:,:]))
         newProbs.update(dict(zip(testGroupsOrder, ypred_probs)))
     #warn(newProbs)#debug
     return newProbs

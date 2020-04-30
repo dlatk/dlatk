@@ -5,6 +5,7 @@ Module for defining constants and helper methods
 import sys, os, getpass
 import re
 from random import randint
+from pathlib import Path
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -84,10 +85,6 @@ DEF_MIN_FREQ = int(1) #min frequency per group to keep (don't advise above 1)
 DEF_P_OCC = float(.01) #percentage of groups a feature must appear in, to keep it
 DEF_PMI = 3.0
 DEF_MIN_FEAT_SUM = 0 #minimum sum of feature total to keep
-# DEF_STANFORD_SEGMENTER = '../tools/StanfordSegmenter/stanford-segmenter-2014-08-27/segment.sh'
-DEF_STANFORD_SEGMENTER = '/home/maarten/research/tools/stanford-segmenter-2014-08-27/segment.sh'
-# DEF_STANFORD_POS_MODEL = '../tools/StanfordTagger/stanford-postagger-2012-01-06/models/english-bidirectional-distsim.tagger' # for code release
-DEF_STANFORD_POS_MODEL = '/home/hansens/Tools/StanfordTagger/stanford-postagger-2012-01-06/models/english-bidirectional-distsim.tagger'
 DEF_LEXICON_DB = 'dlatk_lexica'
 DEF_FEAT_TABLE = 'feat$1gram$messages_en$user_id$16to16$0_01'
 DEF_COLLOCTABLE = 'test_collocs'
@@ -120,6 +117,8 @@ DEF_BERT_MODEL='base-uncased'
 DEF_BERT_AGGREGATION=['mean']
 DEF_BERT_LAYER_AGGREGATION=['concatenate']
 DEF_BERT_LAYERS=[10]
+DEF_TRANS_WORD_AGGREGATION = ['mean']
+
 
 ##Prediction Settings:
 DEF_MODEL = 'ridgecv'
@@ -128,17 +127,17 @@ DEF_COMB_MODELS = ['ridgecv']
 DEF_FOLDS = 5
 DEF_OUTLIER_THRESHOLD = 2.5
 DEF_RP_FEATURE_SELECTION_MAPPING = {
-    'magic_sauce': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.1)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+    'magic_sauce': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", PCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.1)), min(min(50,X.shape[0]), X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
 
-    'magic_sauce_light': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=100.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.3)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+    'magic_sauce_light': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=100.0)), ("3_rpca", PCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.3)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
 
-    'magic200': 'Pipeline([("1_univariate_select", SelectFwe(alpha=60.0, score_func=f_regression)), ("2_rpca", RandomizedPCA(copy=True, iterated_power=3, n_components=200, random_state=42, whiten=False))])',
+    'magic200': 'Pipeline([("1_univariate_select", SelectFwe(alpha=60.0, score_func=f_regression)), ("2_rpca", PCA(copy=True, iterated_power=3, n_components=200, random_state=42, whiten=False, svd_solver="randomized"))])',
 
-    'topic_ngram_ms': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(2*(X.shape[0]*.20)/len(self.featureGetters) if X.shape[1] > 2000 else 2*(X.shape[0]*.75)/len(self.featureGetters)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+    'topic_ngram_ms': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", PCA(n_components=max(int(2*(X.shape[0]*.20)/len(self.featureGetters) if X.shape[1] > 2000 else 2*(X.shape[0]*.75)/len(self.featureGetters)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
 
-    'magic_sauce_1pct': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=min(int((X.shape[0]/(len(self.featureGetters)+0.1))*.001), int(X.shape[1]*0.2)), random_state=42, whiten=False, iterated_power=3))])',
+    'magic_sauce_1pct': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", PCA(n_components=min(int((X.shape[0]/(len(self.featureGetters)+0.1))*.001), int(X.shape[1]*0.2)), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
 
-    'topic_ngram_ms': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(2*(X.shape[0]*.20)/len(self.featureGetters) if X.shape[1] > 2000 else 2*(X.shape[0]*.75)/len(self.featureGetters)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+    'topic_ngram_ms': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", PCA(n_components=max(int(2*(X.shape[0]*.20)/len(self.featureGetters) if X.shape[1] > 2000 else 2*(X.shape[0]*.75)/len(self.featureGetters)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
 
     'ms_old1':'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=0.60)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
 
@@ -146,16 +145,16 @@ DEF_RP_FEATURE_SELECTION_MAPPING = {
 
     'univariatefwe': 'SelectFwe(f_regression, alpha=60.0)',
 
-    'pca': 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.5), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
+    'pca': 'PCA(n_components=max(min(int(X.shape[1]*.5), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
     'none': None,
 }
 DEF_CP_FEATURE_SELECTION_MAPPING = {
-    'magic_sauce': 'Pipeline([("1_univariate_select", SelectFwe(f_classif, alpha=30.0)), ("2_rpca", RandomizedPCA(n_components=min(max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), 50), X.shape[1]), random_state=42, whiten=False, iterated_power=3))])',
+    'magic_sauce': 'Pipeline([("1_univariate_select", SelectFwe(f_classif, alpha=30.0)), ("2_rpca", PCA(n_components=min(max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), 50), X.shape[1]), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
     'univariatefwe': 'SelectFwe(f_classif, alpha=30.0)',
     'univariatefwe30': 'SelectFwe(f_classif, alpha=30.0)',
     'univariatefwe10': 'SelectFwe(f_classif, alpha=10.0)',
     'univariatefwe60': 'SelectFwe(f_classif, alpha=60.0)',
-    'pca': 'RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3)',
+    'pca': 'PCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
     'none': None,
 }
 DEFAULT_MAX_PREDICT_AT_A_TIME = 100000
@@ -180,15 +179,23 @@ lb, lo, lt, lv, mg, mk, ml, mn, mr, ms, mt, nb, ne,
 nl, nn, no, oc, or, pa, pl, ps, pt, qu, ro, ru, rw,
 se, si, sk, sl, sq, sr, sv, sw, ta, te, th, tl, tr,
 ug, uk, ur, vi, vo, wa, xh, zh, zu"""
-
+DEF_LANG_FILTER_CONF = .80
 DEF_SPAM_FILTER = 0.2 # threshold for removing spam users
 
+## Other tools
+DEF_TOOLS_PATH = str(Path.home()) + '/dlatk_tools'
+
+DEF_STANFORD_SEGMENTER = DEF_TOOLS_PATH + '/stanford-segmenter/segment.sh'
+DEF_STANFORD_POS_MODEL = DEF_TOOLS_PATH + '/stanford-postagger/models/english-bidirectional-distsim.tagger'
+DEF_STANFORD_PARSER = DEF_TOOLS_PATH + '/stanford-parser'
+
 ##CoreNLP settings
-#DEF_CORENLP_DIR = '../tools/corenlp-python' # for code release
-DEF_CORENLP_DIR = '/home/hansens/Tools/corenlp-python'
+DEF_CORENLP_DIR = DEF_TOOLS_PATH + '/corenlp-python'
 DEF_CORENLP_SERVER_COMMAND = './corenlp/corenlp.py'
 DEF_CORENLP_PORT = 20202   #default: 20202
 #CORE NLP PYTHON SERVER COMMAND (must be running): ./corenlp/corenlp.py -p 20202 -q
+
+DEF_WORDCLOUD_JAR = DEF_TOOLS_PATH + "/wordcloud/ibm-word-cloud.jar"
 
 TAG_RE = re.compile(r'<[^>]+>')
 URL_RE = re.compile(r'(?:http[s]?\:\/\/)?(?:[\w\_\-]+\.)+(?:com|net|gov|edu|info|org|ly|be|gl|co|gs|pr|me|cc|us|uk|gd|nl|ws|am|im|fm|kr|to|jp|sg|int|mil|arpa|ac|ad|ae|af|ag|ai|al|am|an|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|bq|br|bs|bt|bv|bw|by|bz|bzh|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cs|cu|cv|cw|cx|cy|cz|dd|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|yu|za|zm|zr|zw)+(?:\/[^\s ]+)?')

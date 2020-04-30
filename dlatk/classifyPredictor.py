@@ -493,7 +493,6 @@ class ClassifyPredictor:
 
         print("\n[TRAINING COMPLETE]\n")
         self.featureNamesList = featureNamesList
-        self.featureLengthList = featureLengthList
         #coefficients = eval('self.classificationModels["page_edits_post_abs_a"].%s' % self.modelToCoeffsName[self.modelName.lower()])
 
     def test(self, standardize = True, sparse = False, saveModels = False, blacklist = None, groupsWhere = ''):
@@ -1398,6 +1397,9 @@ class ClassifyPredictor:
                     continue
                 weights_dict[featTables[i]][outcome] = dict()
 
+                coeff_iter = iter(coefficients)
+                coefficients  = np.asarray([list(islice(coeff_iter, 0, j)) for j in self.featureLengthList][i])
+
                 # Inverting Feature Selection
                 if self.multiFSelectors[outcome][i]:
                     print("Inverting the feature selection: %s" % self.multiFSelectors[outcome][i])
@@ -1427,8 +1429,6 @@ class ClassifyPredictor:
                     print("length of coefficients (%d) does not match number of features (%d)" % (len(coefficients), len(featTableFeats)))
                     sys.exit(1)
 
-                coeff_iter = iter(coefficients)
-                coefficients  = np.asarray([list(islice(coeff_iter, 0, j)) for j in self.featureLengthList][i])
                 intercept = self.classificationModels[outcome].intercept_
                 if outcome not in intercept_dict:
                     intercept_dict[outcome] = intercept - scaler_intercept
@@ -1724,6 +1724,7 @@ class ClassifyPredictor:
             multiX[i] = X
             multiScalers.append(scaler)
             multiFSelectors.append(fSelector)
+            self.featureLengthList.append(X.shape[1])
             i+=1 # added to work with while loop by Youngseo Son
 
         #combine all multiX into one X:

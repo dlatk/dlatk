@@ -608,7 +608,6 @@ class RegressionPredictor:
 
         print("\n[TRAINING COMPLETE]\n")
         self.featureNamesList = featureNamesList
-        self.featureLengthList = featureLengthList
 
     ##################
     ## Old testing Method (random split rather than cross-val)
@@ -2090,6 +2089,7 @@ class RegressionPredictor:
             multiX[i] = X
             multiScalers.append(scaler)
             multiFSelectors.append(fSelector)
+            self.featureLengthList.append(X.shape[1])
 
         #combine all multiX into one X:                
         if factorAddition:

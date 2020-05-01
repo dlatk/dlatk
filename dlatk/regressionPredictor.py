@@ -488,11 +488,14 @@ class RegressionPredictor:
         self.fSelectors = dict()
         """dict: Docstring *after* attribute, with type specified."""
 
+        self.outcomeNames = [] 
+        """list: Holds a list of the outcomes in sorted order."""
+
         self.featureNames = [] 
         """list: Holds the order the features are expected in."""
 
-        self.featureLengthList = []
-        """list: Holds the number of features in each featureGetter."""
+        self.featureLengthDict = dict()
+        """dict: Holds the number of features in each featureGetter."""
 
         self.featureNamesList = []
         """list: Holds the names of features in each featureGetter."""
@@ -571,6 +574,7 @@ class RegressionPredictor:
         self.multiXOn = True
         (self.regressionModels, self.multiScalers, self.multiFSelectors) = (dict(), dict(), dict())
         for outcomeName, outcomes in sorted(allOutcomes.items()):
+            self.outcomeNames.append(outcomeName)
             print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
             multiXtrain = list()
             trainGroupsOrder = list(XGroups & set(outcomes.keys()))
@@ -1739,7 +1743,7 @@ class RegressionPredictor:
                 weights_dict[featTables[i]][outcome] = dict()
 
                 coeff_iter = iter(coefficients.flatten())
-                coefficients  = np.asarray([list(islice(coeff_iter, 0, j)) for j in self.featureLengthList][i])
+                coefficients  = np.asarray([list(islice(coeff_iter, 0, j)) for j in self.featureLengthDict[outcome]][i])
                 
                 # Inverting Feature Selection
                 if self.multiFSelectors[outcome][i]:
@@ -2041,6 +2045,11 @@ class RegressionPredictor:
         elif factorAddition:
             scaledFactors, standardizedFactors, factorScalers = self.scale(factors, sparse = sparse ) 
 
+        try:
+            self.featureLengthDict[self.outcomeNames[-1]] = list()
+        except:
+            # probably running cross validation, this information is not needed
+            pass
         for i in range(len(multiX)):
             X = multiX[i]
             if not sparse and not factorAdaptation:
@@ -2086,10 +2095,14 @@ class RegressionPredictor:
                         print("  >> No features selected, so using original full X")
                 print("  >> After feature selection: (N, features): %s" % str(X.shape))
                 if report: self.addToReport(outputName+'_.result', Str = " after feature selection: (N, features): %s\n_" % str(X.shape))
+            
+            try:
+                self.featureLengthDict[self.outcomeNames[-1]].append(X.shape[1])
+            except:
+                pass
             multiX[i] = X
             multiScalers.append(scaler)
             multiFSelectors.append(fSelector)
-            self.featureLengthList.append(X.shape[1])
 
         #combine all multiX into one X:                
         if factorAddition:

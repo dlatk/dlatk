@@ -55,7 +55,6 @@ class DLAWorker(object):
 
         self.qb = QueryBuilder(self.data_engine)
 
-        #(self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(corpdb, host=mysql_host, charset=encoding)
         self.lexicondb = lexicondb
         self.wordTable = wordTable if wordTable else "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
         self.messageIdUniqueChecked = False
@@ -65,10 +64,11 @@ class DLAWorker(object):
         hasPrimary, hasCorrelIndex = True, True
         warn_message = "WARNING: The table %s does not have:"  % table
         if primary:
-            hasPrimary = self.data_engine.primaryKeyExists(table, correlField) #mm.primaryKeyExists(self.dbConn, self.dbCursor, table, correlField)
+            hasPrimary = self.data_engine.primaryKeyExists(table, correlField) 
             if not hasPrimary: warn_message += " a PRIMARY key on %s" % correlField
         elif correlField:
-            hasCorrelIndex = self.data_engine.indexExists(table, correlField) #mm.indexExists(self.dbConn, self.dbCursor, table, correlField)
+            hasCorrelIndex = self.data_engine.indexExists(table, correlField) 
+
             if not hasCorrelIndex: 
                 if not hasPrimary: warn_message += " or"
                 warn_message += " an index on %s" % correlField
@@ -77,7 +77,6 @@ class DLAWorker(object):
             warn_message += "\n         Please check that all messages have a unique %s, this can significantly impact all downstream analysis" % (self.messageid_field)
         if not hasPrimary or not hasCorrelIndex:
             dlac.warn(warn_message)
-        #sys.exit(1)
 
     def getMessages(self, messageTable = None, where = None):
         """?????
@@ -117,9 +116,6 @@ class DLAWorker(object):
             ?????
         """
         if not messageTable: messageTable = self.corptable
-        #msql = """SELECT %s, %s FROM %s WHERE %s = '%s'""" % (
-        #    self.messageid_field, self.message_field, messageTable, self.correl_field, cf_id)
-
         # check that self.messageid_field is unique
         if self.messageIdUniqueChecked == False:
             self.checkIndices(messageTable, primary=True, correlField=self.messageid_field)
@@ -129,7 +125,6 @@ class DLAWorker(object):
         #return self._executeGetSSCursor(msql, warnMsg, host=self.mysql_host)
         where_conditions = """%s='%s'"""%(self.correl_field, cf_id)
         selectQuery = self.qb.create_select_query(messageTable).set_fields([self.messageid_field, self.message_field]).where(where_conditions)
-        #return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding)
         return selectQuery.execute_query()
 
     def getMessagesWithFieldForCorrelField(self, cf_id, extraField, messageTable = None, warnMsg = True):
@@ -266,8 +261,6 @@ class DLAWorker(object):
         wordTable = self.getWordTable() if not lexicon_count_table else lexicon_count_table
 
         assert self.data_engine.tableExists(wordTable), "Need to create word table to use current functionality: %s" % wordTable
-        #assert mm.tableExists(self.corpdb, self.dbCursor, wordTable), "Need to create word table to use current functionality: %s" % wordTable
-        #import pdb;pdb.set_trace()
         return FeatureGetter(self.corpdb, self.corptable, self.correl_field, self.mysql_host, self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb, featureTable=wordTable, wordTable=wordTable)
     
     def getWordGetterPOcc(self, pocc):
@@ -285,7 +278,6 @@ class DLAWorker(object):
         from .featureGetter import FeatureGetter
         wordTable = self.getWordTablePOcc(pocc)
         assert mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode), "Need to create word table to use current functionality"
-        #import pdb;pdb.set_trace()
         return FeatureGetter(self.corpdb, self.corptable, self.correl_field, self.mysql_host,
                              self.message_field, self.messageid_field, self.encoding, self.use_unicode, 
                              self.lexicondb, featureTable=wordTable, wordTable = wordTable)
@@ -325,7 +317,6 @@ class DLAWorker(object):
             A list of tables names
         """
         if feat_table:
-            #import pdb;pdb.set_trace()
             sql = """SHOW TABLES FROM %s LIKE 'feat$%%$%s$%s$%%' """ % (self.corpdb, self.corptable, self.correl_field)
         else:
             sql = """SHOW TABLES FROM %s where Tables_in_%s NOT LIKE 'feat%%' """ % (self.corpdb, self.corpdb)

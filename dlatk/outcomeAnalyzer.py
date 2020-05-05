@@ -234,7 +234,6 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         """
         if not outcomeWithOutcomeOnly:
-            #assert mm.tableExists(self.corpdb, self.dbCursor, featGetter.featureTable, charset=self.encoding, use_unicode=self.use_unicode), 'feature table does not exist (make sure to quote it)'
             assert self.data_engine.tableExists(featGetter.featureTable), 'feature table does not exist (make sure to quote it)'
         lexicon_count_table = None
         # if 'cat_' in featGetter.featureTable.split('$')[1]:

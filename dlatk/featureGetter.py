@@ -130,11 +130,9 @@ class FeatureGetter(DLAWorker):
         elif groups:
             where = " WHERE group_id in ('%s')" % "','".join(str(g) for g in groups)
         sql = self.qb.create_select_query(self.featureTable).set_fields(["feat", "count(*)"]).where(where).group_by(["feat"])
-        #sql = """select feat, count(*) from %s %s group by feat"""%(self.featureTable, where)
         if SS:
             self.data_engine.execute_get_SSCursor(sql.toString())
-            #mm.executeGetSSCursor(self.corpdb, sql, charset=self.encoding, use_unicode=self.use_unicode, host=self.mysql_host)
-        return sql.execute_query() #mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode) 
+        return sql.execute_query() 
 
     def getFeatureCountsSS(self, groupFreqThresh = 0, where = ''):
         """Gets feature occurence by group.
@@ -156,18 +154,14 @@ class FeatureGetter(DLAWorker):
     def getFeatureValueSums(self, where = ''):
         """returns a list of (feature, count) tuples, where count is the number of groups with the feature"""
         sql = self.qb.create_select_query(self.featureTable).set_fields(["feat", "sum(value)"]).group_by(["feat"])
-        #sql = """select feat, sum(value) from %s group by feat"""%(self.featureTable)
-        if (where): sql.where(where) #sql += ' WHERE ' + where
+        if (where): sql.where(where)
         return sql.execute_query()
-        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode) 
 
     def getDistinctFeatures(self, where=''):
         """returns a distinct list of (feature) tuples given the name of the feature value field (either value, group_norm, or feat_norm)"""
         dlac.warn("\n**This is FeatureGetter.getDistinceFeatures method**\n")
         sql = self.qb.create_select_query(self.featureTable).set_fields(["distinct feat"])
-        #sql = "select distinct feat from %s"%(self.featureTable)
-        if (where): sql.where(where) #sql += ' WHERE ' + where
-        #return [l[0] for l in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)]
+        if (where): sql.where(where)
         return [l[0] for l in sql.execute_query()]
 
     def getFeatureZeros(self, where=''):
@@ -184,58 +178,43 @@ class FeatureGetter(DLAWorker):
 
     def getSumValue(self, where = ''):
         """returns the sum of all values"""
-        #sql = """select sum(value) from %s"""%(self.featureTable)
         sql = self.qb.create_select_query(self.featureTable).set_fields(["sum(value)"])
-        #if (where): sql += ' WHERE ' + where
         if (where): sql.where(where)
         return sql.execute_query()[0][0]
-        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)[0][0]
 
     def getSumValuesByGroup(self, where = ''):
         """ """
         sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "sum(value)"])
-        #sql = """SELECT group_id, sum(value) FROM %s """ % self.featureTable
-        if (where): sql.where(where) #sql += ' WHERE ' + where  
+        if (where): sql.where(where)  
         sql.group_by(["group_id"])
-        #sql += """ GROUP BY group_id """
         return sql.execute_query()
-        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
     def getSumValuesByFeat(self, where = ''):
         """ """
         sql =  self.qb.create_select_query(self.featureTable).set_fields(["feat", "sum(value)"])
-        #sql = """SELECT feat, sum(value) FROM %s """ % self.featureTable
-        if (where): sql.where(where) #sql += ' WHERE ' + where  
-        #sql += """ GROUP BY feat """
+        if (where): sql.where(where)  
         sql.group_by(["feat"])
         return sql.execute_query()
-        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
     def getGroupNorms(self, where = ''):
         """returns a list of (group_id, feature, group_norm) triples"""
         dlac.warn("\n**This is getGroupNorms method**\n")
         sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "feat", "group_norm"])
-        #sql = """SELECT group_id, feat, group_norm from %s"""%(self.featureTable)
-        if (where): sql.where(where) #sql += ' WHERE ' + where
+        if (where): sql.where(where)
         return sql.execute_query()
-        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode) 
 
     def getValuesAndGroupNorms(self, where = ''):
         """returns a list of (group_id, feature, value, group_norm) triples"""
         dlac.warn("\n**This is FeatureGetter.getValuesAndGroupNorms**\n")
         sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "feat", "value", "group_norm"])
-        #sql = """SELECT group_id, feat, value, group_norm from %s"""%(self.featureTable)
-        if (where): sql.where(where) #sql += ' WHERE ' + where
+        if (where): sql.where(where)
         return sql.execute_query()
-        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode) 
 
     def getGroupNormsForFeat(self, feat, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
         dlac.warn("\n**This is FeatureGetter.getGroupNormsForFeat method**\n")
         sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "group_norm"]).where("feat = %s"%feat)
-        #sql = """SELECT group_id, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, feat)
-        if (where): sql.where(" AND "+ where) #sql += ' AND ' + where
-        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg, charset=self.encoding, use_unicode=self.use_unicode)
+        if (where): sql.where(" AND "+ where)
         sql.execute_query()
 
     def getGroupNormsForFeats(self, feats, where = '', warnMsg = False):
@@ -246,10 +225,8 @@ class FeatureGetter(DLAWorker):
         else:
             fCond = " feat in ('%s')" % "','".join(MySQLdb.escape_string(f) for f in feats)
         sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "group_norm"]).where(fCond)
-        #sql = """SELECT group_id, group_norm FROM %s WHERE %s"""%(self.featureTable, fCond)
-        if (where): sql.where(" AND "+ where) #sql += ' AND ' + where
+        if (where): sql.where(" AND "+ where)
         return sql.execute_query()
-        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg, charset=self.encoding, use_unicode=self.use_unicode) 
 
     def getValuesAndGroupNormsForFeats(self, feats, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
@@ -259,10 +236,8 @@ class FeatureGetter(DLAWorker):
         else:
             fCond = " feat in ('%s')" % "','".join(MySQLdb.escape_string(f) for f in feats)
         sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "value", "group_norm"]).where(fCond)
-        #sql = """SELECT group_id, value, group_norm FROM %s WHERE %s"""%(self.featureTable, fCond)
-        if (where): sql.where(' AND '+ where) #sql += ' AND ' + where
+        if (where): sql.where(' AND '+ where)
         return sql.execute_query()
-        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg, charset=self.encoding, use_unicode=self.use_unicode) 
 
     def getValuesAndGroupNormsForFeat(self, feat, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
@@ -270,14 +245,11 @@ class FeatureGetter(DLAWorker):
         if self.use_unicode:
             sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "value", "group_norn"])
             sql.where("""feat = '%s'"""% MySQLdb.escape_string(str(feat, 'utf-8')))
-            #sql = """SELECT group_id, value, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, MySQLdb.escape_string(str(feat, 'utf8')))
         else:
             sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "value", "group_norm"])
             sql.where("""feat = '%s'"""%MySQLdb.escape_string(feat))
-            #sql = """SELECT group_id, value, group_norm FROM %s WHERE feat = '%s'"""%(self.featureTable, MySQLdb.escape_string(feat))
-        if (where): sql.where(' AND ' + where) #sql += ' AND ' + where
+        if (where): sql.where(' AND ' + where)
         return sql.execute_query()
-        #return mm.executeGetList(self.corpdb, self.dbCursor, sql, warnMsg, charset=self.encoding, use_unicode=self.use_unicode) 
 
 
     def getGroupAndFeatureValues(self, featName=None, where=''):
@@ -701,11 +673,8 @@ class FeatureGetter(DLAWorker):
     def getFeatAllSS(self, where = '', featNorm=True):
         """returns a list of (group_id, feature, value, group_norm) tuples"""
         sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "feat", "value", "group_norm"]) if featNorm else self.qb.create_select_query(self.featureTable).set_fields(["group_id", "feat", "value", "group_norm"])
-        #sql = """select group_id, feat, value, group_norm from %s"""%(self.featureTable) if featNorm else """select group_id, feat, value, group_norm from %s"""%(self.featureTable)
-        #if (where): sql += ' WHERE ' + where
         if (where): sql.where(where)
         return self.data_engine.execute_get_SSCursor(sql.toString())
-        #return mm.executeGetSSCursor(self.corpdb, sql, charset=self.encoding, use_unicode=self.use_unicode, host=self.mysql_host) 
 
     def countGroups(self, groupThresh = 0, where=''):
         """returns the number of distinct groups (note that this runs on the corptable to be accurate)"""
@@ -718,9 +687,8 @@ class FeatureGetter(DLAWorker):
             return count
         else:
             sql = self.qb.create_select_query(self.corptable).set_fields(["count(DISTINCT %s)"%self.correl_field])
-            #sql = """select count(DISTINCT %s) from %s""" %(self.correl_field, self.corptable)
-            if (where): qb.where(where) #sql += ' WHERE ' + where
-            return sql.execute_query()[0][0] # mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)[0][0]
+            if (where): qb.where(where)
+            return sql.execute_query()[0][0]
             
     def getDistinctGroupsFromFeatTable(self, where=""):
         """Returns the distinct group ids that are in the feature table"""
@@ -733,9 +701,7 @@ class FeatureGetter(DLAWorker):
         """returns the distinct distinct groups (note that this runs on the corptable to be accurate)"""
         dlac.warn("\n**This is FeatureGetter.getDistinctGroups method**\n")
         sql = self.qb.create_select_query(self.corptable).set_fields(["DISTINCT " +self.correl_field])
-        #sql = """select DISTINCT %s from %s""" %(self.correl_field, self.corptable)
-        if (where): sql.where(where) #sql += ' WHERE ' + where
-        #return [l[0] for l in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)]
+        if (where): sql.where(where)
         return [l[0] for l in sql.execute_query()]
     
     def ttestWithOtherFG(self, other, maskTable= None, groupFreqThresh = 0):

@@ -130,6 +130,15 @@ class DataEngine(object):
 		Parameters
 		------------
 		table: str
+			Name of the table
+		collate: str
+			Collation
+		engine: str
+			Database engine (mysql engine)
+		charset: str
+			Character set encoding
+		use_unicode: bool
+			Use unicode if True
 		
 		Returns
 		------------
@@ -307,6 +316,15 @@ class MySqlDataEngine(DataEngine):
 		Parameers
 		------------
 		table: str
+			Name of the table
+		collate: str
+			Collation
+		engine: str
+			Database engine (mysql engine)
+		charset: str
+			Character set encoding
+		use_unicode: bool
+			Use unicode if True
 
 		Returns
 		------------

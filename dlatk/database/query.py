@@ -24,8 +24,8 @@ class QueryBuilder():
 
 	Parameters
 	------------
-	data_engine: object of MySqlDataEngine/SqliteDataEngine 
-		Name of the data engine eg. mysql, sqlite
+	data_engine: object
+		Object of the database engine being used i.e. either MySqlDataEngine or SqliteDataEngine.
 	"""
 	def __init__(self, data_engine):
 		self.data_engine = data_engine
@@ -92,8 +92,9 @@ class SelectQuery(Query):
 	------------
 	from_table: str
 		Name of the table from which records are to be fetched.
-	data_engine: str
-		Name of the database engine being used.
+	
+	data_engine: object
+		Object of the database engine being used i.e. either MySqlDataEngine or SqliteDataEngine.
 	"""
 
 	def __init__(self, from_table, data_engine):
@@ -236,8 +237,8 @@ class InsertQuery(Query):
 	------------
 	table: str
 		Name of the table from which is to be created.
-	data_engine: str
-		Name of the database engine being used.
+	data_engine: object
+		Object of the database engine being used i.e. either MySqlDataEngine or SqliteDataEngine.
 	"""
 	def __init__(self, table, data_engine):
 		super().__init__()
@@ -322,8 +323,8 @@ class DropQuery(Query):
 	------------
 	table: str
 		Name of the table to be droped.
-	data_engine: str
-		Name of the database engine being used.
+	data_engine: object
+		Object of the database engine being used i.e. either MySqlDataEngine or SqliteDataEngine.
 	"""
 	def __init__(self, table, data_engine):
 		super().__init__()
@@ -360,8 +361,8 @@ class CreateTableQuery(Query):
 	------------
 	table: str
 		Name of the table to be created.
-	data_engine: str
-		Name of the database engine being used.
+	data_engine: object
+		Object of the database engine being used i.e. either MySqlDataEngine or SqliteDataEngine.
 	"""
 	def __init__(self, table, data_engine):
 		super().__init__()
@@ -449,7 +450,7 @@ class CreateTableQuery(Query):
 		"""
 		Create a table similar to the oldTable
 		"""
-		self.likeTable = oldTable;
+		self.likeTable = oldTable
 		return self
 
 	def execute_query(self):

@@ -39,7 +39,6 @@ class DataEngine(object):
 			self.dataEngine = MySqlDataEngine(self.corpdb, self.sql_host, self.encoding)
 		if self.db_type == "sqlite":
 			self.dataEngine = SqliteDataEngine(self.corpdb)
-		dlac.warn("\n%s Data Engine instantiated successfully.\n" % self.db_type)
 		return self.dataEngine.get_db_connection()
 
 	def disable_table_keys(self, featureTableName):

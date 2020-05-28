@@ -840,7 +840,7 @@ class FeatureGetter(DLAWorker):
         if (where): sql += ' WHERE ' + where
         return pd.read_sql(sql=sql, con=db_eng, index_col=index)
 
-    def getTopMessages(self, lex_tbl, outputfile, lim_num, whitelist):
+    def getTopMessages(self, lex_tbl, outputfile, lim_num, whitelist, group_freq_thresh=0):
         """"""
         assert mm.tableExists(self.corpdb, self.dbCursor, self.featureTable, charset=self.encoding, use_unicode=self.use_unicode), 'feature table does not exist (make sure to quote it)'
         assert mm.tableExists(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode), 'message table does not exist (make sure to quote it)'
@@ -856,6 +856,9 @@ class FeatureGetter(DLAWorker):
             if whitelist:
                 feat_sql += """ where feat in ({whitelist})""".format(whitelist="'" + "', '".join(whitelist) + "'")
         features = mm.executeGetList(self.corpdb, self.dbCursor, feat_sql, charset=self.encoding, use_unicode=self.use_unicode)
+        if group_freq_thresh > 0:
+            msg_ids_gft = frozenset([k for k,v in self.getGroupWordCounts().items() if v >= group_freq_thresh])
+
         with open(outputfile, 'w') as f:
             csv_writer = csv.writer(f)
             if lex_tbl:
@@ -879,12 +882,18 @@ class FeatureGetter(DLAWorker):
                     feat_to_search = "'" + feat + "'"
 
                 gid_sql = """SELECT group_id FROM {db}.{tbl}
-                    WHERE feat = {cat} ORDER BY group_norm DESC LIMIT {lim}""".format(db=self.corpdb, tbl=self.featureTable, cat=feat_to_search, lim=lim_num)
+                    WHERE feat = {cat} ORDER BY group_norm DESC""".format(db=self.corpdb, tbl=self.featureTable, cat=feat_to_search)
 
                 msg_ids =  mm.executeGetList(self.corpdb, self.dbCursor, gid_sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode)
+                msg_ids = [msgs_id[0] for msgs_id in msg_ids]
+                if group_freq_thresh > 0:
+                    msg_ids = [m for m in msg_ids if m in msg_ids_gft]
+                    if len(msg_ids) == 0:
+                        dlac.warn("No messages pass the group frequency threshold for %s" % feat)
+                        continue
 
-                ids = [str(msgs_id[0]) for msgs_id in msg_ids]
-                msg_sql = """SELECT message_id, message FROM {db}.{tbl} WHERE message_id in ({msg_ids})""".format(db=self.corpdb, tbl=self.corptable, msg_ids=", ".join(ids))
+                msg_ids = [str(msgs_id) for msgs_id in msg_ids][0:lim_num]
+                msg_sql = """SELECT message_id, message FROM {db}.{tbl} WHERE message_id in ({msg_ids})""".format(db=self.corpdb, tbl=self.corptable, msg_ids=", ".join(msg_ids))
 
                 msgs =  mm.executeGetList(self.corpdb, self.dbCursor, msg_sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode)
                 for msg in msgs:

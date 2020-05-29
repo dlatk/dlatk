@@ -239,7 +239,6 @@ class OutcomeGetter(DLAWorker):
         
     def getGroupAndOutcomeValues(self, outcomeField = None, where=''):
         """returns a list of (group_id, outcome_value) tuples"""
-        dlac.warn("\n**Inside OutcomeGetter.getGroupAndOutcomeValues**\n")
         if not outcomeField: outcomeField = self.outcome_value_fields[0]
         query = self.qb.create_select_query(self.outcome_table).set_fields([self.correl_field, outcomeField]).where("%s IS NOT NULL"%outcomeField)
         if (where): query.where(" AND "+ where)

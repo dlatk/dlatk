@@ -1420,7 +1420,7 @@ class FeatureExtractor(DLAWorker):
 
         #CREATE TABLE:
         featureName = 'flkin'
-        featureTableName = self.createFeatureTable(featureName, "VARCHAR(8)", 'FLOAT', tableName, valueFunc)
+        featureTableName = self.createFeatureTable(featureName, "VARCHAR(16)", 'FLOAT', tableName, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
         usql = """SELECT %s FROM %s GROUP BY %s""" % (

@@ -459,8 +459,6 @@ class CreateTableQuery(Query):
 		"""
 		self.sql = self.build_query()	
 		success = self.data_engine.execute(self.sql)
-		print("\nSUCCESSFULL QUERY: %s\n"%self.sql)
-		print("\nSuccess: '{0}', Database Type: '{1}'\n".format(success,self.data_engine.db_type))
 		if success==True and self.data_engine.db_type == "sqlite":
 			if self.mul_keys:
 				for key in self.mul_keys:

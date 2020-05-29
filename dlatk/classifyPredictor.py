@@ -136,8 +136,9 @@ def pos_neg_auc(y1, y2):
         auc = auc - 1
     return auc
 
-def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True):
-    classes = list(set(ytrue))
+def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True, classes = None):
+    if not classes:
+        classes = list(set(ytrue))
     this_auc = 0.0
     if multiclass or len(classes) > 2:
         n_classes = len(classes)
@@ -151,7 +152,12 @@ def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True):
             roc_auc[i] = auc(fpr[i], tpr[i])
 
         # Compute micro-average ROC curve and ROC area
+        print(len(ytrue))
+        print(len(ypredProbs))
+        print(len(ytrue.ravel()), len(ypredProbs.ravel()))
+        print(ytrue.ravel(), ypredProbs.ravel())
         fpr["micro"], tpr["micro"], _ = roc_curve(ytrue.ravel(), ypredProbs.ravel())
+        #except ValueError
         this_auc = auc(fpr["micro"], tpr["micro"])
     else:
         this_auc = roc_auc_score(ytrue, ypredProbs[:,-1])
@@ -738,7 +744,7 @@ class ClassifyPredictor:
                             acc = accuracy_score(ytest, ypred)
                             f1 = f1_score(ytest, ypred, average='macro')
                             #auc = pos_neg_auc(ytest, ypredProbs[:,-1])
-                            auc = computeAUC(ytest, ypredProbs, multiclass, negatives=False)
+                            auc = computeAUC(ytest, ypredProbs, multiclass, negatives=False, classes=classes)
                             # classes = list(set(ytest))
                             # ytest_binary = label_binarize(ytest,classes=classes)
                             # ypred_binary = label_binarize(ypred,classes=classes)

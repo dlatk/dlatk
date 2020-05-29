@@ -159,7 +159,6 @@ class FeatureGetter(DLAWorker):
 
     def getDistinctFeatures(self, where=''):
         """returns a distinct list of (feature) tuples given the name of the feature value field (either value, group_norm, or feat_norm)"""
-        dlac.warn("\n**This is FeatureGetter.getDistinceFeatures method**\n")
         sql = self.qb.create_select_query(self.featureTable).set_fields(["distinct feat"])
         if (where): sql.where(where)
         return [l[0] for l in sql.execute_query()]
@@ -198,28 +197,24 @@ class FeatureGetter(DLAWorker):
 
     def getGroupNorms(self, where = ''):
         """returns a list of (group_id, feature, group_norm) triples"""
-        dlac.warn("\n**This is getGroupNorms method**\n")
         sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "feat", "group_norm"])
         if (where): sql.where(where)
         return sql.execute_query()
 
     def getValuesAndGroupNorms(self, where = ''):
         """returns a list of (group_id, feature, value, group_norm) triples"""
-        dlac.warn("\n**This is FeatureGetter.getValuesAndGroupNorms**\n")
         sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "feat", "value", "group_norm"])
         if (where): sql.where(where)
         return sql.execute_query()
 
     def getGroupNormsForFeat(self, feat, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
-        dlac.warn("\n**This is FeatureGetter.getGroupNormsForFeat method**\n")
         sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "group_norm"]).where("feat = %s"%feat)
         if (where): sql.where(" AND "+ where)
         sql.execute_query()
 
     def getGroupNormsForFeats(self, feats, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
-        dlac.warn("\n**This is FeatureGetter.getGroupNormsForFeats method**\n")
         if self.use_unicode:
             fCond = " feat in ('%s')" % "','".join(MySQLdb.escape_string(str(f)) for f in feats)
         else:
@@ -230,7 +225,6 @@ class FeatureGetter(DLAWorker):
 
     def getValuesAndGroupNormsForFeats(self, feats, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
-        dlac.warn("\n**This is FeatureGetter.getValuesAndGroupNormsForFeats method**\n")
         if self.use_unicode:
             fCond = " feat in ('%s')" % "','".join(MySQLdb.escape_string(str(f)) for f in feats)
         else:
@@ -241,7 +235,6 @@ class FeatureGetter(DLAWorker):
 
     def getValuesAndGroupNormsForFeat(self, feat, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
-        dlac.warn("\n**This is FeatureGetter.getValuesAndGroupNormsForFeat method**\n")
         if self.use_unicode:
             sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "value", "group_norn"])
             sql.where("""feat = '%s'"""% MySQLdb.escape_string(str(feat, 'utf-8')))
@@ -699,7 +692,6 @@ class FeatureGetter(DLAWorker):
 
     def getDistinctGroups(self, where=''):
         """returns the distinct distinct groups (note that this runs on the corptable to be accurate)"""
-        dlac.warn("\n**This is FeatureGetter.getDistinctGroups method**\n")
         sql = self.qb.create_select_query(self.corptable).set_fields(["DISTINCT " +self.correl_field])
         if (where): sql.where(where)
         return [l[0] for l in sql.execute_query()]

@@ -152,10 +152,6 @@ def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True, classes = No
             roc_auc[i] = auc(fpr[i], tpr[i])
 
         # Compute micro-average ROC curve and ROC area
-        print(len(ytrue))
-        print(len(ypredProbs))
-        print(len(ytrue.ravel()), len(ypredProbs.ravel()))
-        print(ytrue.ravel(), ypredProbs.ravel())
         fpr["micro"], tpr["micro"], _ = roc_curve(ytrue.ravel(), ypredProbs.ravel())
         #except ValueError
         this_auc = auc(fpr["micro"], tpr["micro"])

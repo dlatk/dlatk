@@ -254,8 +254,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                 if outcomeWithOutcome :
                     featFreqs.update(dict([('outcome_'+k, len(v)) for k, v in allOutcomes.items()]))
 
-        #run correlations:
-        dlac.warn("Yielding data to correlate over %s, adjusting for: %s%s" % (str(self.outcome_value_fields),
+        #apply lists:
+        dlac.warn("Yielding data over %s, adjusting for: %s%s" % (str(self.outcome_value_fields),
                                                                             str(self.outcome_controls),
                                                                             " interaction with "+str(self.outcome_interaction) if self.outcome_interaction else "."))
         if whitelist:
@@ -277,7 +277,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 featsToYield = whitelist
                 whitelist = None
             # else:
-            #     featsToYield = whitelist ## IGNORES WILDCARDS!!!!!!!
+            #     featsToYield = whitelist ## IGNORES WILDCARDS!!!
             #     featsToYield = map(lambda x:x[:-1] if x[-1] == '*' else x, featsToYield)
 
         # _warn('these are the features of yield...')

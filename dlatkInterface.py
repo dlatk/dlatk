@@ -59,7 +59,6 @@ def main(fn_args = None):
     """
     :param fn_args: string - ex "-d testing -t msgs -c user_id --add_ngrams -n 1 "
     """
-    
     strTime = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())    
     dlac.warn("\n\n-----\nDLATK Interface Initiated: %s\n-----" % strTime)
     start_time = time.time()
@@ -1290,7 +1289,7 @@ def main(fn_args = None):
       if not fg: fg = FG()
 
       outputFile = makeOutputFilename(args, None, None, suffix="_topmsgs.csv") if args.outputname else None
-      fg.getTopMessages(args.lextable, outputFile, args.top_messages, args.feat_whitelist)
+      fg.getTopMessages(args.lextable, outputFile, args.top_messages, args.feat_whitelist, group_freq_thresh=args.groupfreqthresh)
 
     #Outcome Only options:
     if args.p_correction_method == '':

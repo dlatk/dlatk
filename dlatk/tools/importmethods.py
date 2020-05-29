@@ -4,10 +4,12 @@ import os, sys
 import argparse
 from MySQLdb import Warning
 from MySQLdb.cursors import SSCursor
+import sqlite3
 from pathlib import Path
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/dlatk/tools",""))
 from dlatk.mysqlmethods import mysqlMethods as mm
+from dlatk.mysqlmethods import mysqlMethods as sm
 
 from warnings import filterwarnings
 filterwarnings('ignore', category = Warning)
@@ -17,6 +19,7 @@ DEFAULT_TABLE = ''
 DEFAULT_CSV_FILE = ''
 DEFAULT_JSON_FILE = ''
 
+# MySQL methods
 def appendCSVtoMySQL(csvFile, database, table, ignoreLines=0, dbCursor=None):
     if not dbCursor:
         dbConn, dbCursor, dictCursor = mm.dbConnect(database)
@@ -53,9 +56,6 @@ def csvToMySQL(csvFile, database, table, columnDescription, ignoreLines=0):
     appendCSVtoMySQL(csvFile, database, table, ignoreLines, dbCursor)
     return
 
-def jsonToMySQL(jsonFile, database, table, columnDescription):
-    return
-
 def mySQLToCSV(database, table, csvFile, csvQuoting=csv.QUOTE_ALL):
     csvPath = os.path.dirname(os.path.abspath(csvFile))
     if not os.path.isdir(csvPath):
@@ -70,6 +70,71 @@ def mySQLToCSV(database, table, csvFile, csvQuoting=csv.QUOTE_ALL):
         csv_writer.writerow(header)
         csv_writer.writerows(ssCursor)
     return
+
+# SQLite methods
+def chunks(data, rows=10000):
+    """ Divides the data into 10000 rows each """
+    for i in range(0, len(data), rows):
+        yield data[i:i+rows]
+        
+def csvToSQLite(csvFile, database, table, columnDescription, ignoreLines=0):
+    dbConn, dbCursor = sm.dbConnect(database)
+    dbCursor.execute("""SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '{table}'""".format(table=table))
+    tables = [item[0] for item in dbCursor.fetchall()]
+    if tables:
+        print("A table by that name already exists in the database. Please use appendCSVtoSQLite or choose a new name.")
+        sys.exit(1)
+    createSQL = """CREATE TABLE {table} {colDesc}""".format(table=table, colDesc=columnDescription)
+    print(createSQL)
+    dbCursor.execute(createSQL)
+    appendCSVtoSQLite(csvFile, database, table, ignoreLines, dbCursor, dbConn)
+    return
+
+def appendCSVtoSQLite(csvFile, database, table, ignoreLines=0, dbCursor=None, dbConn=None):
+    if not dbCursor:
+        dbConn, dbCursor = sm.dbConnect(database)
+        dbCursor.execute("""SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '{table}'""".format(table=table))
+        tables = [item[0] for item in dbCursor.fetchall()]
+        if tables:
+            print("A table by that name already exists in the database. Please use appendCSVtoSQLite or choose a new name.")
+            sys.exit(1)
+    print("""Importing data, reading {csvFile} file""".format(csvFile=csvFile))
+    with open(csvFile, "r") as f:
+        csvReader = csv.reader(f, delimiter=",")
+        if ignoreLines > 0:
+            for i in range(0,ignoreLines): 
+                next(csvReader)
+        csvData = list(csvReader)
+        chunkData = chunks(csvData) 
+        numColumns = None
+        for chunk in chunkData:
+            if not numColumns:
+                numColumns = len(chunk[0])
+                values_str = "(" + ",".join(["?"]*numColumns) + ")"
+            dbCursor.executemany("""INSERT INTO {table} VALUES {values}""".format(table=table, values=values_str), chunk)
+            dbConn.commit()
+    dbConn.close()
+    return
+
+def sqliteToCSV(database, table, csvFile, csvQuoting=csv.QUOTE_ALL):
+    csvPath = os.path.dirname(os.path.abspath(csvFile))
+    if not os.path.isdir(csvPath):
+        print("Path {path} does not exist".format(path=csvPath))
+        sys.exit(1)
+    dbConn, dbCursor = sm.dbConnect(database)
+    dbCursor.execute("select * from {table}".format(table=table))
+    header = [i[0] for i in dbCursor.description]
+    with open(csvFile, "w") as csv_file:
+        csv_writer = csv.writer(csv_file, quoting=csvQuoting)
+        csv_writer.writerow(header)
+        csv_writer.writerows(dbCursor)
+    dbConn.close()
+    return
+
+# JSON methods
+def jsonToMySQL(jsonFile, database, table, columnDescription):
+    return
+
 
 def main():
 

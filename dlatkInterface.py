@@ -652,7 +652,7 @@ def main(fn_args = None):
                        help='use during super topics creation if you have already run --reducer_to_lexicon')
     group.add_argument('--fit_reducer', action='store_true', dest='fitreducer', default=False,
                        help='reduces a feature space to clusters')
-    group.add_argument('--num_factors', '--n_components', dest='n_components', default=None,
+    group.add_argument('--num_factors', '--n_components', '-k', dest='n_components', default=None,
                        help='Number of factors in clustering method. Used with --fit_reducer.')
     
     group = parser.add_argument_group('CCA Actions', '')

@@ -144,7 +144,7 @@ DEF_RP_FEATURE_SELECTION_MAPPING = {
     'univariatefwe': 'SelectFwe(f_regression, alpha=60.0)',
 
     'pca': 'PCA(n_components=max(min(int(X.shape[1]*.5), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
-    'k_pca': 'PCA(n_components=n_components, random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
+    'k_pca': 'PCA(n_components=int(self.n_components), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
     'none': None,
 }
 DEF_CP_FEATURE_SELECTION_MAPPING = {
@@ -154,7 +154,7 @@ DEF_CP_FEATURE_SELECTION_MAPPING = {
     'univariatefwe10': 'SelectFwe(f_classif, alpha=10.0)',
     'univariatefwe60': 'SelectFwe(f_classif, alpha=60.0)',
     'pca': 'PCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
-    'k_pca': 'PCA(n_components=n_components, random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
+    'k_pca': 'PCA(n_components=int(self.n_components), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
     'none': None,
 }
 DEFAULT_MAX_PREDICT_AT_A_TIME = 100000

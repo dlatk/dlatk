@@ -378,7 +378,7 @@ class ClassifyPredictor:
 
     trainingSize = 1000000 #if this is smaller than the training set, then it will be reduced to this. 
 
-    def __init__(self, og, fgs, modelName = 'svc', outliersToMean = None):
+    def __init__(self, og, fgs, modelName = 'svc', outliersToMean = None, n_components = None):
         #initialize classification predictor
         self.outcomeGetter = og
 
@@ -401,6 +401,9 @@ class ClassifyPredictor:
 
         self.fSelectors = dict()
         """dict: Docstring *after* attribute, with type specified."""
+
+        self.n_components = n_components #number of components for feature selection
+        """int: Docstring *after* attribute, with type specified."""
 
         self.featureNames = [] 
         """list: Holds the order the features are expected in."""

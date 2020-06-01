@@ -1662,7 +1662,7 @@ def main(fn_args = None):
             RegressionPredictor.featureSelectionString = args.featureselectionstring
         elif args.featureselection:
             RegressionPredictor.featureSelectionString = dlac.DEF_RP_FEATURE_SELECTION_MAPPING[args.featureselection]
-        rp = RegressionPredictor(og, fgs, args.model, args.outlier_to_mean)
+        rp = RegressionPredictor(og, fgs, args.model, args.outlier_to_mean, n_components = args.n_components)
     if args.testcombregression:
         if not og: og = OG()
         if not fgs: fgs = FGs() #all feature getters
@@ -1694,7 +1694,7 @@ def main(fn_args = None):
     if args.combotestregression or args.controladjustreg:
         if not og: og = OG()
         if not fg: fg = FG()
-        if not rp: rp = RegressionPredictor(og, fgs, args.model, args.outlier_to_mean)
+        if not rp: rp = RegressionPredictor(og, fgs, args.model, args.outlier_to_mean, n_components = args.n_components)
 
         comboScores = None
         if args.combotestregression:
@@ -1765,7 +1765,7 @@ def main(fn_args = None):
             ClassifyPredictor.featureSelectionString = args.featureselectionstring
         elif args.featureselection:
             ClassifyPredictor.featureSelectionString = dlac.DEF_CP_FEATURE_SELECTION_MAPPING[args.featureselection]
-        cp = ClassifyPredictor(og, fgs, args.model, args.outlier_to_mean) #todo change to a method variables (like og...etc..)
+        cp = ClassifyPredictor(og, fgs, args.model, args.outlier_to_mean, n_components = args.n_components) #todo change to a method variables (like og...etc..)
 
 
     if args.loadmodels and cp:

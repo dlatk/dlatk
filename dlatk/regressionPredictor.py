@@ -464,7 +464,7 @@ class RegressionPredictor:
 
     trainingSize = 1000000 #if this is smaller than the training set, then it will be reduced to this. 
 
-    def __init__(self, og, fgs, modelName = 'ridge', outliersToMean = None):
+    def __init__(self, og, fgs, modelName = 'ridge', outliersToMean = None, n_components=None):
         #initialize regression predictor
         self.outcomeGetter = og
 
@@ -488,6 +488,9 @@ class RegressionPredictor:
         self.fSelectors = dict()
         """dict: Docstring *after* attribute, with type specified."""
 
+        self.n_components = n_components #number of components for feature selection
+        """int: Docstring *after* attribute, with type specified."""
+        
         self.outcomeNames = [] 
         """list: Holds a list of the outcomes in sorted order."""
 

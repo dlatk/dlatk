@@ -28,7 +28,7 @@ from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score, precision_score, recall_score, roc_curve, auc, roc_auc_score, matthews_corrcoef
 from sklearn.feature_selection import f_classif, SelectPercentile, SelectKBest, SelectFdr, SelectFpr, SelectFwe
 
-from sklearn.preprocessing import StandardScaler, label_binarize
+from sklearn.preprocessing import StandardScaler, label_binarize, MinMaxScaler
 from sklearn.linear_model import PassiveAggressiveClassifier, LogisticRegression, Lasso
 from sklearn.svm import SVR
 from sklearn.multiclass import OneVsRestClassifier

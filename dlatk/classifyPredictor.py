@@ -56,7 +56,7 @@ import math
 
 #infrastructure
 from .mysqlmethods import mysqlMethods as mm
-from .dlaConstants import DEFAULT_RANDOM_SEED, warn
+from .dlaConstants import DEFAULT_RANDOM_SEED, warn, MinScaler
 
 #For ROC curves
 try:

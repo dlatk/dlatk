@@ -144,6 +144,8 @@ DEF_RP_FEATURE_SELECTION_MAPPING = {
     'univariatefwe': 'SelectFwe(f_regression, alpha=60.0)',
 
     'pca': 'PCA(n_components=max(min(int(X.shape[1]*.5), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
+    'k_fa': 'FactorAnalysis(n_components=int(self.n_components), random_state=42, whiten=False, iterated_power=3, svd_method="randomized")',
+    'k_nmf': 'NMF(n_components=int(self.n_components), init=nndsvd, random_state=42, solver="mu")',
     'k_pca': 'PCA(n_components=int(self.n_components), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
     'none': None,
 }

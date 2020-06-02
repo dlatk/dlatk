@@ -157,6 +157,8 @@ DEF_CP_FEATURE_SELECTION_MAPPING = {
     'univariatefwe60': 'SelectFwe(f_classif, alpha=60.0)',
     'pca': 'PCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
     'k_pca': 'PCA(n_components=int(self.n_components), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
+    'k_fa': 'FactorAnalysis(n_components=int(self.n_components), random_state=42, whiten=False, iterated_power=3, svd_method="randomized")',
+    'k_nmf': 'NMF(n_components=int(self.n_components), init=nndsvd, random_state=42, solver="mu")',
     'none': None,
 }
 DEFAULT_MAX_PREDICT_AT_A_TIME = 100000

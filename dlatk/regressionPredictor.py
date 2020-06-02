@@ -29,7 +29,7 @@ from sklearn.linear_model import Ridge, RidgeCV, LinearRegression, Lasso, LassoC
     PassiveAggressiveRegressor
 from sklearn.svm import SVR
 from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV 
-from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF
+from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF, FactorAnalysis
 from sklearn import metrics
 from sklearn.feature_selection import f_regression, RFE, SelectPercentile, SelectKBest, \
     SelectFdr, SelectFpr, SelectFwe

@@ -34,7 +34,7 @@ from sklearn.svm import SVR
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB, BernoulliNB
 
-from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF
+from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF, FactorAnalysis
 #from sklearn.lda import LDA #linear descriminant analysis
 from sklearn import metrics
 

@@ -58,7 +58,7 @@ import math
 #infrastructure
 from .classifyPredictor import ClassifyPredictor
 from .mysqlmethods import mysqlMethods as mm
-from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, DEFAULT_RANDOM_SEED, warn
+from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, DEFAULT_RANDOM_SEED, warn, MinScaler
 
 
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
@@ -2224,7 +2224,8 @@ class RegressionPredictor:
                 print(" Warning: Outliers to mean is not being run because standardize is off")
 
             if fSelector:
-                print("[PREDICT] applying feature selection to X[%d]: %s" % (i, str(fSelector))) #debug
+                print("[PREDICT] applying existing feature selection to X[%d]: %s" % (i, str(fSelector))) #debug
+                pprint(fSelector.steps[0][1].__dict__)
                 newX = fSelector.transform(X)
                 if newX.shape[1]:
                     X = newX

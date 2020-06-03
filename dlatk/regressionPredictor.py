@@ -295,7 +295,7 @@ class RegressionPredictor:
         'lasso': [
             #{'alpha': [10000, 25000, 1000, 2500, 100, 250, 1, 25, .01, 2.5, .01, .25, .001, .025, .0001, .0025, .00001, .00025, 100000, 250000, 1000000]}, 
             #{'alpha': [0.1, 0.01, 0.001, 0.0001], 'max_iter':[1500]}, 
-            #{'alpha': [10000, 100, 1, 0.1, 0.01, 0.001, 0.0001]}, 
+           #{'alpha': [10000, 100, 1, 0.1, 0.01, 0.001, 0.0001]}, 
             {'alpha': [0.001], 'max_iter':[1500]}, #1to3gram, personality (best => 0.01, fi=true: .158)
             ],
         'lassocv': [
@@ -413,9 +413,9 @@ class RegressionPredictor:
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 60000
-    backOffPerc = .10 #when the num_featrue / training_insts is less than this backoff to backoffmodel
-    backOffModel = 'ridge10'
-    #backOffModel = 'linear'
+    backOffPerc = .01 #when the num_featrue / training_insts is less than this backoff to backoffmodel
+    #backOffModel = 'ridge10'
+    backOffModel = 'linear'
 
     # feature selection:
     featureSelectionString = None
@@ -518,7 +518,7 @@ class RegressionPredictor:
         self.controlsOrder = []
         """list: Holds the ordered control names"""
 
-    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', outputName = '', saveFeatures = False):
+    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', outputName = '', saveFeatures = False, trainBootstraps = None):
         """Train Regressors"""
 
         ################
@@ -601,8 +601,7 @@ class RegressionPredictor:
             #4) fit model
             if saveFeatures: 
                 (self.regressionModels[outcomeName], self.multiScalers[outcomeName], self.multiFSelectors[outcomeName], featureX) = \
-                                                                                                                          self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights, returnX=True)#DEBUG
-                ##DEBUG
+                                                                                                                                    self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights, returnX=True)
                 csvFeatureFile = outputName+'.'+outcomeName+'.train.features.csv'
                 featureXwithGroups =  np.hstack((np.array([trainGroupsOrder]).T, featureX))
                 print(" saving features to: %s (shape: %s; %s)" % (csvFeatureFile, str(featureXwithGroups.shape), str(featureX.shape)))
@@ -612,9 +611,22 @@ class RegressionPredictor:
             else: 
                 (self.regressionModels[outcomeName], self.multiScalers[outcomeName], self.multiFSelectors[outcomeName]) = \
                                                                                                                           self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights)
+            if trainBootstraps:
+                #create a set of bootstrapped training instances (usually to be exported in separate pickles)
+                n = 0
+                self.bootstrappedRPs = [None]*10
+                from copy import deepcopy
+                for bsMultiX, bsY in self._monteCarloResampleMultiXY(multiXtrain, ytrain, trainBootstraps):
+                    bsRP = deepCopy(self)
+                    (bsRP.regressionModels[outcomeName], bsRP.multiScalers[outcomeName], bsRP.multiFSelectors[outcomeName]) = \
+                                                                                                                        bsRP._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights)
+                    self.bootstrappedRPs[n] = bsRP
+                    n += 1
+                    
 
         print("\n[TRAINING COMPLETE]\n")
         self.featureNamesList = featureNamesList
+
 
     ##################
     ## Old testing Method (random split rather than cross-val)
@@ -2022,6 +2034,18 @@ class RegressionPredictor:
         multiX = multiAdaptedX
         return multiX, scaledFactors, standardizedFactors, factorScalers
 
+    def _monteCarloResampleMultiXY(multiX, y, N=10):
+        """returns monteCarloResampling (i.e. for bootstrapping average and std based on model)"""
+        if not isinstance(multiX, (list, tuple)):
+            multiX = [multiX]
+
+        from sklearn.utils import resample
+        rs = np.random.RandomState(42)
+        for i in range(N):
+            *newMultiX, newY = resample(*multiX, Y, random_state=rs)
+            yield newMultiXX, newY
+            
+    
 
     def _multiXtrain(self, X, y, standardize = True, sparse = False, weightedSample = None, factorAdaptation=False, featureSelectionParameters=None, factorAddition=False, 
                      outputName = '', report=False, factors=None, returnX=False):
@@ -2123,7 +2147,7 @@ class RegressionPredictor:
         #for Xi in multiX[0]:
         #    totalFeats += X.shape[1]
         if (X.shape[1] / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
-            print("[COMBINED FEATS] number of features is small enough (feats: %d, observations: %d), backing off to: %s" %\
+            print("![COMBINED FEATS] number of features is small enough (feats: %d, observations: %d), backing off to: '%s'!" %\
                   (X.shape[1], X.shape[0], self.backOffModel))
             modelName = self.backOffModel.lower()
 

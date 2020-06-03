@@ -386,6 +386,8 @@ def main(fn_args = None):
                        help='Specify feature selection pipeline in prediction: magic_sauce, univariateFWE, PCA.')
     group.add_argument('--feature_selection_string', metavar='NAME', type=str, dest='featureselectionstring', default=getInitVar('featureselectionstring', conf_parser, ''),
                        help='Specify any feature selection pipeline in prediction.')
+    group.add_argument('--train_bootstraps', metavar='NUM_ITER', dest='train_bootstraps', type=int, default=None, 
+                       help='Number of bootstrapped training resamples to use (default None -- no bootstrap).')
 
 
     group = parser.add_argument_group('Standard Extraction Actions', '')
@@ -1685,7 +1687,7 @@ def main(fn_args = None):
         print("WARNING: using an non 16to16 feature table")
 
     if args.trainregression:
-        rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample, outputName = args.outputname, saveFeatures = True if args.outputname else False)
+        rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample, outputName = args.outputname, saveFeatures = True if args.outputname else False, trainBootstraps = args.train_bootstraps)
 
     if args.testregression:
         rp.test(sparse = args.sparse, blacklist = blacklist,  standardize = args.standardize, groupsWhere = args.groupswhere)
@@ -1772,7 +1774,7 @@ def main(fn_args = None):
         cp.load(args.picklefile)
 
     if args.trainclassifiers:
-        cp.train(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere)
+        cp.train(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere, trainBootstraps = args.train_bootstraps)
 
     if args.testclassifiers:
         cp.test(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere)

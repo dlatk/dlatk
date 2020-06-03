@@ -613,14 +613,12 @@ class RegressionPredictor:
                                                                                                                           self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights)
             if trainBootstraps:
                 #create a set of bootstrapped training instances (usually to be exported in separate pickles)
+                print("Running Bootstrapoped Trainined for %s, %d resamples" % (outcomeName, trainBootstraps))
                 n = 0
-                self.bootstrappedRPs = [None]*10
-                from copy import deepcopy
+                bsOutcomeName = outcomeName+'_bs'+str(n)
                 for bsMultiX, bsY in self._monteCarloResampleMultiXY(multiXtrain, ytrain, trainBootstraps):
-                    bsRP = deepCopy(self)
-                    (bsRP.regressionModels[outcomeName], bsRP.multiScalers[outcomeName], bsRP.multiFSelectors[outcomeName]) = \
-                                                                                                                        bsRP._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights)
-                    self.bootstrappedRPs[n] = bsRP
+                    (self.regressionModels[bsOutcomeName], self.multiScalers[bsOutcomeName], self.multiFSelectors[bsOutcomeName]) = \
+                                                                                                                        self._multiXtrain(bsMultiX, bsY, standardize, sparse = False, weightedSample = None)
                     n += 1
                     
 
@@ -2034,7 +2032,7 @@ class RegressionPredictor:
         multiX = multiAdaptedX
         return multiX, scaledFactors, standardizedFactors, factorScalers
 
-    def _monteCarloResampleMultiXY(multiX, y, N=10):
+    def _monteCarloResampleMultiXY(self, multiX, y, N=10):
         """returns monteCarloResampling (i.e. for bootstrapping average and std based on model)"""
         if not isinstance(multiX, (list, tuple)):
             multiX = [multiX]
@@ -2042,8 +2040,8 @@ class RegressionPredictor:
         from sklearn.utils import resample
         rs = np.random.RandomState(42)
         for i in range(N):
-            *newMultiX, newY = resample(*multiX, Y, random_state=rs)
-            yield newMultiXX, newY
+            *newMultiX, newY = resample(*multiX, y, random_state=rs)
+            yield newMultiX, newY
             
     
 
@@ -2079,7 +2077,8 @@ class RegressionPredictor:
             pass
         for i in range(len(multiX)):
             X = multiX[i]
-            if not sparse and not factorAdaptation:
+            #this logic seemed off so commiting out beuase causing issues (HAS 6/3/2020)
+            if not sparse and not factorAdaptation and isinstance(X, csr_matrix):
                 X = X.todense()
             print(" X[%d]: (N, features): %s" % (i, str(X.shape)))
 

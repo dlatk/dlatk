@@ -518,7 +518,7 @@ class RegressionPredictor:
         self.controlsOrder = []
         """list: Holds the ordered control names"""
 
-    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', outputName = '', saveFeatures = False, trainBootstraps = None):
+    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', outputName = '', saveFeatures = False, trainBootstraps = None, trainBootstrapsNs = None):
         """Train Regressors"""
 
         ################
@@ -614,12 +614,17 @@ class RegressionPredictor:
             if trainBootstraps:
                 #create a set of bootstrapped training instances (usually to be exported in separate pickles)
                 print("Running Bootstrapoped Trainined for %s, %d resamples" % (outcomeName, trainBootstraps))
-                n = 0
-                bsOutcomeName = outcomeName+'_bs'+str(n)
-                for bsMultiX, bsY in self._monteCarloResampleMultiXY(multiXtrain, ytrain, trainBootstraps):
-                    (self.regressionModels[bsOutcomeName], self.multiScalers[bsOutcomeName], self.multiFSelectors[bsOutcomeName]) = \
-                                                                                                                        self._multiXtrain(bsMultiX, bsY, standardize, sparse = False, weightedSample = None)
-                    n += 1
+                if not trainBootstrapsNs:
+                    trainBootstrapsNs = [len(ytrain)]
+                for sampleN in trainBootstrapsNs:
+                    bsBaseOutcomeName = outcomeName+'_N'+str(sampleN)
+                    #TODO: sample N
+                    bsi = 0
+                    for bsMultiX, bsY in self._monteCarloResampleMultiXY(multiXtrain, ytrain, trainBootstraps):
+                        bsOutcomeName = bsBaseOutcomeName+'_bs'+str(bsi)
+                        (self.regressionModels[bsOutcomeName], self.multiScalers[bsOutcomeName], self.multiFSelectors[bsOutcomeName]) = \
+                                                                                                                            self._multiXtrain(bsMultiX, bsY, standardize, sparse = False, weightedSample = None)
+                        bsi += 1
                     
 
         print("\n[TRAINING COMPLETE]\n")

@@ -388,6 +388,8 @@ def main(fn_args = None):
                        help='Specify any feature selection pipeline in prediction.')
     group.add_argument('--train_bootstraps', metavar='NUM_ITER', dest='train_bootstraps', type=int, default=None, 
                        help='Number of bootstrapped training resamples to use (default None -- no bootstrap).')
+    group.add_argument('--train_bootstraps_ns', metavar='N N N...', dest='train_bootstraps_ns', nargs='+', type=int, default=None, 
+                       help='Various sample sizes to use while doing bootstrapped training.')
 
 
     group = parser.add_argument_group('Standard Extraction Actions', '')
@@ -1687,7 +1689,7 @@ def main(fn_args = None):
         print("WARNING: using an non 16to16 feature table")
 
     if args.trainregression:
-        rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample, outputName = args.outputname, saveFeatures = True if args.outputname else False, trainBootstraps = args.train_bootstraps)
+        rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample, outputName = args.outputname, saveFeatures = True if args.outputname else False, trainBootstraps = args.train_bootstraps, trainBootstrapsNs = args.train_bootstraps_ns)
 
     if args.testregression:
         rp.test(sparse = args.sparse, blacklist = blacklist,  standardize = args.standardize, groupsWhere = args.groupswhere)
@@ -1774,7 +1776,7 @@ def main(fn_args = None):
         cp.load(args.picklefile)
 
     if args.trainclassifiers:
-        cp.train(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere, trainBootstraps = args.train_bootstraps)
+        cp.train(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere, trainBootstraps = args.train_bootstraps, trainBootstrapsNs = args.train_bootstraps_ns)
 
     if args.testclassifiers:
         cp.test(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere)

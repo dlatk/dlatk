@@ -518,6 +518,8 @@ class RegressionPredictor:
         self.controlsOrder = []
         """list: Holds the ordered control names"""
 
+        self.trainBootstrapNames = None
+
     def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', outputName = '', saveFeatures = False, trainBootstraps = None, trainBootstrapsNs = None):
         """Train Regressors"""
         ################
@@ -574,7 +576,8 @@ class RegressionPredictor:
         #########################################
         #3. train for all possible ys:
         self.multiXOn = True
-        if trainBootstraps: self.trainBootstrapNames = dict()
+        if trainBootstraps:
+            self.trainBootstrapNames = dict()
         (self.regressionModels, self.multiScalers, self.multiFSelectors) = (dict(), dict(), dict())
         for outcomeName, outcomes in sorted(allOutcomes.items()):
             self.outcomeNames.append(outcomeName)
@@ -1442,7 +1445,7 @@ class RegressionPredictor:
             assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups" 
             predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder,ypred)))
 
-            if 'trainBootstrapNames' in self.__dict__ and outcomeName in self.trainBootstrapNames:
+            if self.trainBootstrapNames and outcomeName in self.trainBootstrapNames:
                 print("\n Bootstrapped Models Found; Evaluating...")
                 resultsPerN = {}
                 for n, modelNames in self.trainBootstrapNames[outcomeName].items():
@@ -1450,8 +1453,8 @@ class RegressionPredictor:
                     for bsModelName in modelNames:
                         print("   [running %s]"%bsModelName)
                         ypred = self._multiXpredict(self.regressionModels[bsModelName], multiXtest, \
-                                                    multiScalers = self.multiScalers[outcomeName], \
-                                                    multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
+                                                    multiScalers = self.multiScalers[bsModelName], \
+                                                    multiFSelectors = self.multiFSelectors[bsModelName], sparse = True)
                         currentResults.append(self.regressionMetrics(ytest, ypred))
                     resultsPerN[n] = self.averageMetrics(currentResults)
                 print(" [Done. Results:]")
@@ -1472,10 +1475,10 @@ class RegressionPredictor:
         R2 = metrics.r2_score(ytrue, ypred)
         return {'R2': R2,
                 'R': sqrt(R2),
-                'r': pearsonr(ytrue, ypred),
-                'rho': spearmanr(ytrue, ypred),
-                'mse': metrics.mean_squared_error(ytest, ypred),
-                'mae': metrics.mean_absolute_error(ytest, ypred)}
+                'r': pearsonr(ytrue, ypred)[0],
+                'rho': spearmanr(ytrue, ypred)[0],
+                'mse': metrics.mean_squared_error(ytrue, ypred),
+                'mae': metrics.mean_absolute_error(ytrue, ypred)}
     
     def predictToOutcomeTable(self, standardize = True, sparse = False, name = None, nFolds = 10, groupsWhere = ''):
 
@@ -2354,7 +2357,8 @@ class RegressionPredictor:
                   'featureNames' : self.featureNames,
                   'featureNamesList' : self.featureNamesList,
                   'multiXOn' : self.multiXOn,
-                  'controlsOrder' : self.controlsOrder
+                  'controlsOrder' : self.controlsOrder,
+                  'trainBootstrapNames' : self.trainBootstrapNames,
                   }
         pickle.dump(toDump,f,2)
         f.close()

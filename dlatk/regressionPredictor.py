@@ -2225,7 +2225,7 @@ class RegressionPredictor:
 
             if fSelector:
                 print("[PREDICT] applying existing feature selection to X[%d]: %s" % (i, str(fSelector))) #debug
-                pprint(fSelector.steps[0][1].__dict__)
+                #pprint(fSelector.steps[0][1].__dict__)
                 newX = fSelector.transform(X)
                 if newX.shape[1]:
                     X = newX

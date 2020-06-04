@@ -413,7 +413,7 @@ class RegressionPredictor:
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 60000
-    backOffPerc = .01 #when the num_featrue / training_insts is less than this backoff to backoffmodel
+    backOffPerc = .001 #when the num_featrue / training_insts is less than this backoff to backoffmodel
     #backOffModel = 'ridge10'
     backOffModel = 'linear'
 
@@ -620,12 +620,12 @@ class RegressionPredictor:
                 if not trainBootstrapsNs:
                     trainBootstrapsNs = [len(ytrain)]
                 self.trainBootstrapNames[outcomeName] = {} #saves all of the outcome names
-                for sampleN in trainBootstrapsNs:
+                for sampleN in sorted(trainBootstrapsNs, reverse = True):
                     bsBaseOutcomeName = outcomeName+'_N'+str(sampleN)
                     #TODO: sample N
                     bsi = 0
                     self.trainBootstrapNames[outcomeName][sampleN] = []
-                    for bsMultiX, bsY in self._monteCarloResampleMultiXY(multiXtrain, ytrain, trainBootstraps):
+                    for bsMultiX, bsY in self._monteCarloResampleMultiXY(multiXtrain, ytrain, trainBootstraps, sampleN=sampleN):
                         print("Sample Size: %d, bs resample num: %d"%(sampleN, bsi))
                         bsOutcomeName = bsBaseOutcomeName+'_bs'+str(bsi)
                         self.trainBootstrapNames[outcomeName][sampleN].append(bsOutcomeName)
@@ -2075,7 +2075,7 @@ class RegressionPredictor:
         multiX = multiAdaptedX
         return multiX, scaledFactors, standardizedFactors, factorScalers
 
-    def _monteCarloResampleMultiXY(self, multiX, y, N=10):
+    def _monteCarloResampleMultiXY(self, multiX, y, N=10, sampleN = None):
         """returns monteCarloResampling (i.e. for bootstrapping average and std based on model)"""
         if not isinstance(multiX, (list, tuple)):
             multiX = [multiX]
@@ -2083,7 +2083,7 @@ class RegressionPredictor:
         from sklearn.utils import resample
         rs = np.random.RandomState(42)
         for i in range(N):
-            *newMultiX, newY = resample(*multiX, y, random_state=rs)
+            *newMultiX, newY = resample(*multiX, y, random_state=rs, n_samples = sampleN)
             yield newMultiX, newY
             
     

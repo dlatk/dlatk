@@ -424,7 +424,7 @@ class ClassifyPredictor:
         """float: Threshold for setting outliers to mean value."""
 
 
-    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
+    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', trainBootstraps = None, trainBootstrapsNs = None):
         """Tests classifier, by pulling out random testPerc percentage as a test set"""
         
         ################
@@ -474,6 +474,8 @@ class ClassifyPredictor:
         #########################################
         #3. train for all possible ys:
         self.multiXOn = True
+        if trainBootstraps:
+            self.trainBootstrapNames = dict()
         (self.classificationModels, self.multiScalers, self.multiFSelectors) = (dict(), dict(), dict())
         for outcomeName, outcomes in sorted(allOutcomes.items()):
             print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
@@ -495,6 +497,25 @@ class ClassifyPredictor:
             #4) fit model
             (self.classificationModels[outcomeName], self.multiScalers[outcomeName], self.multiFSelectors[outcomeName]) = \
                 self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse)
+
+            if trainBootstraps:
+                #create a set of bootstrapped training instances (usually to be exported in separate pickles)
+                print("Running Bootstrapoped Trainined for %s, %d resamples" % (outcomeName, trainBootstraps))
+                if not trainBootstrapsNs:
+                    trainBootstrapsNs = [len(ytrain)]
+                self.trainBootstrapNames[outcomeName] = {} #saves all of the outcome names
+                for sampleN in sorted(trainBootstrapsNs, reverse = True):
+                    bsBaseOutcomeName = outcomeName+'_N'+str(sampleN)
+                    #TODO: sample N
+                    bsi = 0
+                    self.trainBootstrapNames[outcomeName][sampleN] = []
+                    for bsMultiX, bsY in self._monteCarloResampleMultiXY(multiXtrain, ytrain, trainBootstraps, sampleN=sampleN):
+                        print("Sample Size: %d, bs resample num: %d"%(sampleN, bsi))
+                        bsOutcomeName = bsBaseOutcomeName+'_bs'+str(bsi)
+                        self.trainBootstrapNames[outcomeName][sampleN].append(bsOutcomeName)
+                        (self.classificationModels[bsOutcomeName], self.multiScalers[bsOutcomeName], self.multiFSelectors[bsOutcomeName]) = \
+                                                            self._multiXtrain(bsMultiX, bsY, standardize, sparse = False)
+                        bsi += 1
 
         print("\n[TRAINING COMPLETE]\n")
         self.featureNamesList = featureNamesList
@@ -937,7 +958,7 @@ class ClassifyPredictor:
             else:
                 ypred = self._multiXpredict(self.classificationModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
                                             multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
-                            
+                
             print("[Done. Evaluation:]")
             acc = accuracy_score(ytest, ypred)
             f1 = f1_score(ytest, ypred, average='macro')
@@ -975,9 +996,51 @@ class ClassifyPredictor:
             else:
                 predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder, ypred)))
 
-        print("[Prediction Complete]")
+
+            if self.trainBootstrapNames and outcomeName in self.trainBootstrapNames:
+                print("\n Bootstrapped Models Found; Evaluating...")
+                resultsPerN = {}
+                for n, modelNames in self.trainBootstrapNames[outcomeName].items():
+                    currentResults = []
+                    for bsModelName in modelNames:
+                        print("   [running %s]"%bsModelName)
+                        ypredProbs, ypredClasses = self._multiXpredict(self.classificationModels[bsModelName], multiXtest, multiScalers = self.multiScalers[bsModelName], \
+                                                                       multiFSelectors = self.multiFSelectors[bsModelName], sparse = sparse, probs = True)
+                        ypred = ypredClasses[ypredProbs.argmax(axis=1)]
+                        currentResults.append(self.classificationMetrics(ytest, ypred, ypredProbs))
+                    resultsPerN[n] = self.averageMetrics(currentResults)
+                print(" [Done. Results:]")
+                pprint(resultsPerN)
+                
+        print("\n[Prediction Complete]")
 
         return predictions
+
+    def averageMetrics(self, results):
+        resultsD = {k: [dic[k] for dic in results] for k in results[0]}
+        meanSDs = {}
+        for metric, data in resultsD.items():
+            meanSDs[metric] = (np.mean(data), np.std(data))
+        return meanSDs
+    
+    def classificationMetrics(self, ytest, ypred, ypredProbs = None):
+        testCounter = Counter(ytest)
+        mfclass = Counter(ytest).most_common(1)[0][0]
+        mfclass_acc = testCounter[mfclass] / float(len(ytest))
+        classes = list(set(ytest))
+        multiclass = True if len(classes) > 2 else False
+        auc = 0.0
+        if isinstance(ypredProbs, np.ndarray):
+            auc = computeAUC(ytest, ypredProbs, multiclass, negatives=False,  classes = classes)
+        return {
+            'auc' : auc,
+            'acc' : accuracy_score(ytest, ypred),
+            'mfc_acc': mfclass_acc,
+            'f1' : f1_score(ytest, ypred, average='macro'),
+            'precision' :  precision_score(ytest, ypred, average='macro'),
+            'recall' : recall_score(ytest, ypred, average='macro'),
+            'matt_ccoef' : matthews_corrcoef(ytest, ypred),
+            }
 
     def predictNoOutcomeGetter(self, groups, standardize = True, sparse = False, restrictToGroups = None):
         
@@ -1615,7 +1678,18 @@ class ClassifyPredictor:
                 print("  selected alpha: %f" % classifier.alpha_)
             return classifier, scaler, fSelector
 
+    def _monteCarloResampleMultiXY(self, multiX, y, N=10, sampleN = None):
+        """returns monteCarloResampling (i.e. for bootstrapping average and std based on model)"""
+        if not isinstance(multiX, (list, tuple)):
+            multiX = [multiX]
 
+        from sklearn.utils import resample
+        rs = np.random.RandomState(42)
+        for i in range(N):
+            *newMultiX, newY = resample(*multiX, y, random_state=rs, n_samples = sampleN)
+            yield newMultiX, newY
+
+        
     def _multiXtrain(self, X, y, standardize = True, sparse = False, adaptTables=None, adaptColumns=None, classes=[]):
         """does the actual classification training, first feature selection: can be used by both train and test
            create multiple scalers and feature selectors
@@ -2211,7 +2285,8 @@ class ClassifyPredictor:
                   'fSelectors' : self.fSelectors,
                   'featureNames' : self.featureNames,
                   'featureNamesList' : self.featureNamesList,
-                  'multiXOn' : self.multiXOn
+                  'multiXOn' : self.multiXOn,
+                  'trainBootstrapNames': self.trainBootstrapNames,
                   }
         pickle.dump(toDump,f,2)
         f.close()

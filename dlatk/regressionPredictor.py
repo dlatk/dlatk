@@ -1442,7 +1442,7 @@ class RegressionPredictor:
             assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups" 
             predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder,ypred)))
 
-            if outcomeName in self.trainBootstrapNames:
+            if 'trainBootstrapNames' in self.__dict__ and outcomeName in self.trainBootstrapNames:
                 print("\n Bootstrapped Models Found; Evaluating...")
                 resultsPerN = {}
                 for n, modelNames in self.trainBootstrapNames[outcomeName].items():

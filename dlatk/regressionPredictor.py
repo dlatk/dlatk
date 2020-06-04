@@ -520,7 +520,6 @@ class RegressionPredictor:
 
     def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', outputName = '', saveFeatures = False, trainBootstraps = None, trainBootstrapsNs = None):
         """Train Regressors"""
-
         ################
         #1a. setup groups
         (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
@@ -575,6 +574,7 @@ class RegressionPredictor:
         #########################################
         #3. train for all possible ys:
         self.multiXOn = True
+        if trainBootstraps: self.trainBootstrapNames = dict()
         (self.regressionModels, self.multiScalers, self.multiFSelectors) = (dict(), dict(), dict())
         for outcomeName, outcomes in sorted(allOutcomes.items()):
             self.outcomeNames.append(outcomeName)
@@ -616,12 +616,16 @@ class RegressionPredictor:
                 print("Running Bootstrapoped Trainined for %s, %d resamples" % (outcomeName, trainBootstraps))
                 if not trainBootstrapsNs:
                     trainBootstrapsNs = [len(ytrain)]
+                self.trainBootstrapNames[outcomeName] = {} #saves all of the outcome names
                 for sampleN in trainBootstrapsNs:
                     bsBaseOutcomeName = outcomeName+'_N'+str(sampleN)
                     #TODO: sample N
                     bsi = 0
+                    self.trainBootstrapNames[outcomeName][sampleN] = []
                     for bsMultiX, bsY in self._monteCarloResampleMultiXY(multiXtrain, ytrain, trainBootstraps):
+                        print("Sample Size: %d, bs resample num: %d"%(sampleN, bsi))
                         bsOutcomeName = bsBaseOutcomeName+'_bs'+str(bsi)
+                        self.trainBootstrapNames[outcomeName][sampleN].append(bsOutcomeName)
                         (self.regressionModels[bsOutcomeName], self.multiScalers[bsOutcomeName], self.multiFSelectors[bsOutcomeName]) = \
                                                                                                                             self._multiXtrain(bsMultiX, bsY, standardize, sparse = False, weightedSample = None)
                         bsi += 1
@@ -1438,10 +1442,41 @@ class RegressionPredictor:
             assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups" 
             predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder,ypred)))
 
+            if outcomeName in self.trainBootstrapNames:
+                print("\n Bootstrapped Models Found; Evaluating...")
+                resultsPerN = {}
+                for n, modelNames in self.trainBootstrapNames[outcomeName].items():
+                    currentResults = []
+                    for bsModelName in modelNames:
+                        print("   [running %s]"%bsModelName)
+                        ypred = self._multiXpredict(self.regressionModels[bsModelName], multiXtest, \
+                                                    multiScalers = self.multiScalers[outcomeName], \
+                                                    multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
+                        currentResults.append(self.regressionMetrics(ytest, ypred))
+                    resultsPerN[n] = self.averageMetrics(currentResults)
+                print(" [Done. Results:]")
+                pprint(resultsPerN)
+                
         print("[Prediction Complete]")
 
         return predictions
 
+    def averageMetrics(self, results):
+        resultsD = {k: [dic[k] for dic in results] for k in results[0]}
+        meanSDs = {}
+        for metric, data in resultsD.items():
+            meanSDs[metric] = (np.mean(data), np.std(data))
+        return meanSDs
+    
+    def regressionMetrics(self, ytrue, ypred):
+        R2 = metrics.r2_score(ytrue, ypred)
+        return {'R2': R2,
+                'R': sqrt(R2),
+                'r': pearsonr(ytrue, ypred),
+                'rho': spearmanr(ytrue, ypred),
+                'mse': metrics.mean_squared_error(ytest, ypred),
+                'mae': metrics.mean_absolute_error(ytest, ypred)}
+    
     def predictToOutcomeTable(self, standardize = True, sparse = False, name = None, nFolds = 10, groupsWhere = ''):
 
         warn("WARNING! Predict to outcome table sometimes excludes groups if not in a feature table.")

@@ -958,7 +958,7 @@ class ClassifyPredictor:
             else:
                 ypred = self._multiXpredict(self.classificationModels[outcomeName], multiXtest, multiScalers = self.multiScalers[outcomeName], \
                                             multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
-                            
+                
             print("[Done. Evaluation:]")
             acc = accuracy_score(ytest, ypred)
             f1 = f1_score(ytest, ypred, average='macro')
@@ -996,9 +996,52 @@ class ClassifyPredictor:
             else:
                 predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder, ypred)))
 
-        print("[Prediction Complete]")
+
+            if self.trainBootstrapNames and outcomeName in self.trainBootstrapNames:
+                print("\n Bootstrapped Models Found; Evaluating...")
+                resultsPerN = {}
+                for n, modelNames in self.trainBootstrapNames[outcomeName].items():
+                    currentResults = []
+                    for bsModelName in modelNames:
+                        print("   [running %s]"%bsModelName)
+                        ypredProbs, ypredClasses = self._multiXpredict(self.classificationModels[bsModelName], multiXtest, multiScalers = self.multiScalers[bsModelName], \
+                                                                       multiFSelectors = self.multiFSelectors[bsModelName], sparse = sparse, probs = True)
+                        ypred = ypredClasses[ypredProbs.argmax(axis=1)]
+                        currentResults.append(self.classificationMetrics(ytest, ypred, ypredProbs))
+                    resultsPerN[n] = self.averageMetrics(currentResults)
+                print(" [Done. Results:]")
+                pprint(resultsPerN)
+                
+        print("\n[Prediction Complete]")
 
         return predictions
+
+    def averageMetrics(self, results):
+        resultsD = {k: [dic[k] for dic in results] for k in results[0]}
+        meanSDs = {}
+        for metric, data in resultsD.items():
+            meanSDs[metric] = (np.mean(data), np.std(data))
+        return meanSDs
+    
+    def classificationMetrics(self, ytest, ypred, ypredProbs = None):
+        testCounter = Counter(ytest)
+        mfclass = Counter(ytest).most_common(1)[0][0]
+        mfclass_acc = testCounter[mfclass] / float(len(ytest))
+        classes = list(set(ytest))
+        multiclass = True if len(classes) > 2 else False
+        auc = 0.0
+        pprint(ypredProbs)
+        if isinstance(ypredProbs, np.ndarray):
+            auc = computeAUC(ytest, ypredProbs, multiclass, negatives=False,  classes = classes)
+        return {
+            'auc' : auc,
+            'acc' : accuracy_score(ytest, ypred),
+            'mfc_acc': mfclass_acc,
+            'f1' : f1_score(ytest, ypred, average='macro'),
+            'precision' :  precision_score(ytest, ypred, average='macro'),
+            'recall' : recall_score(ytest, ypred, average='macro'),
+            'matt_ccoef' : matthews_corrcoef(ytest, ypred),
+            }
 
     def predictNoOutcomeGetter(self, groups, standardize = True, sparse = False, restrictToGroups = None):
         

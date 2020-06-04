@@ -1030,7 +1030,6 @@ class ClassifyPredictor:
         classes = list(set(ytest))
         multiclass = True if len(classes) > 2 else False
         auc = 0.0
-        pprint(ypredProbs)
         if isinstance(ypredProbs, np.ndarray):
             auc = computeAUC(ytest, ypredProbs, multiclass, negatives=False,  classes = classes)
         return {

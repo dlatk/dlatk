@@ -424,7 +424,7 @@ class ClassifyPredictor:
         """float: Threshold for setting outliers to mean value."""
 
 
-    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = ''):
+    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', trainBootstraps = None, trainBootstrapsNs = None):
         """Tests classifier, by pulling out random testPerc percentage as a test set"""
         
         ################
@@ -474,6 +474,8 @@ class ClassifyPredictor:
         #########################################
         #3. train for all possible ys:
         self.multiXOn = True
+        if trainBootstraps:
+            self.trainBootstrapNames = dict()
         (self.classificationModels, self.multiScalers, self.multiFSelectors) = (dict(), dict(), dict())
         for outcomeName, outcomes in sorted(allOutcomes.items()):
             print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
@@ -495,6 +497,25 @@ class ClassifyPredictor:
             #4) fit model
             (self.classificationModels[outcomeName], self.multiScalers[outcomeName], self.multiFSelectors[outcomeName]) = \
                 self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse)
+
+            if trainBootstraps:
+                #create a set of bootstrapped training instances (usually to be exported in separate pickles)
+                print("Running Bootstrapoped Trainined for %s, %d resamples" % (outcomeName, trainBootstraps))
+                if not trainBootstrapsNs:
+                    trainBootstrapsNs = [len(ytrain)]
+                self.trainBootstrapNames[outcomeName] = {} #saves all of the outcome names
+                for sampleN in sorted(trainBootstrapsNs, reverse = True):
+                    bsBaseOutcomeName = outcomeName+'_N'+str(sampleN)
+                    #TODO: sample N
+                    bsi = 0
+                    self.trainBootstrapNames[outcomeName][sampleN] = []
+                    for bsMultiX, bsY in self._monteCarloResampleMultiXY(multiXtrain, ytrain, trainBootstraps, sampleN=sampleN):
+                        print("Sample Size: %d, bs resample num: %d"%(sampleN, bsi))
+                        bsOutcomeName = bsBaseOutcomeName+'_bs'+str(bsi)
+                        self.trainBootstrapNames[outcomeName][sampleN].append(bsOutcomeName)
+                        (self.classificationModels[bsOutcomeName], self.multiScalers[bsOutcomeName], self.multiFSelectors[bsOutcomeName]) = \
+                                                            self._multiXtrain(bsMultiX, bsY, standardize, sparse = False)
+                        bsi += 1
 
         print("\n[TRAINING COMPLETE]\n")
         self.featureNamesList = featureNamesList
@@ -1615,7 +1636,18 @@ class ClassifyPredictor:
                 print("  selected alpha: %f" % classifier.alpha_)
             return classifier, scaler, fSelector
 
+    def _monteCarloResampleMultiXY(self, multiX, y, N=10, sampleN = None):
+        """returns monteCarloResampling (i.e. for bootstrapping average and std based on model)"""
+        if not isinstance(multiX, (list, tuple)):
+            multiX = [multiX]
 
+        from sklearn.utils import resample
+        rs = np.random.RandomState(42)
+        for i in range(N):
+            *newMultiX, newY = resample(*multiX, y, random_state=rs, n_samples = sampleN)
+            yield newMultiX, newY
+
+        
     def _multiXtrain(self, X, y, standardize = True, sparse = False, adaptTables=None, adaptColumns=None, classes=[]):
         """does the actual classification training, first feature selection: can be used by both train and test
            create multiple scalers and feature selectors
@@ -2211,7 +2243,8 @@ class ClassifyPredictor:
                   'fSelectors' : self.fSelectors,
                   'featureNames' : self.featureNames,
                   'featureNamesList' : self.featureNamesList,
-                  'multiXOn' : self.multiXOn
+                  'multiXOn' : self.multiXOn,
+                  'trainBootstrapNames': self.trainBootstrapNames,
                   }
         pickle.dump(toDump,f,2)
         f.close()

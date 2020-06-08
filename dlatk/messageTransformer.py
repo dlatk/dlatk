@@ -8,6 +8,8 @@ import sys
 import os
 import re
 
+from io import StringIO
+
 #infrastructure
 from .dlaWorker import DLAWorker
 from . import dlaConstants as dlac
@@ -59,7 +61,7 @@ class MessageTransformer(DLAWorker):
         
         mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-    
+
         columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
         messageIndex = columnNames.index(self.message_field)
         messageIdIndex = columnNames.index(self.messageid_field)
@@ -149,7 +151,7 @@ class MessageTransformer(DLAWorker):
         tableName = "%s_lda$%s" %(self.corptable, baseFileName)
 
         #Create Table:
-        columnNames, messageIndex, messageIdIndex = self.createTable(tableName, modify='LONGTEXT')
+        columnNames, messageIndex, messageIdIndex = self.__createTable(tableName, modify='LONGTEXT')
 
         commentLine = re.compile('^\#')
         ldaColumnLabels = ['doc', 'message_id', 'index', 'term_id', 'term', 'topic_id']

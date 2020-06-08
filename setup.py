@@ -6,6 +6,7 @@ _version = sys.version_info[0]
 
 try:
   from setuptools import setup
+  from setuptools import Extension
 except ImportError:
   if _version >= 3:
     sys.exit("Need setuptools to install dlatk for Python 3.x")
@@ -58,6 +59,7 @@ PACKAGES = ['dlatk',
   'dlatk.lexicainterface',
   'dlatk.mysqlmethods',
   'dlatk.tools',
+  'dlatk.pymallet'
 ]
 LICENSE = 'GNU General Public License v3 (GPLv3)'
 AUTHOR = "H. Andrew Schwartz, Salvatore Giorgi, Maarten Sap, Patrick Crutchley, Lukasz Dziurzynski and Megha Agrawal"
@@ -84,7 +86,7 @@ PACKAGE_DATA = {
 }
 INCLUDE_PACKAGE_DATA = True
 SETUP_REQUIRES = [
-  'numpy', 
+  'numpy',
 ]
 INSTALL_REQUIRES = [
   'matplotlib>=1.3.1', 
@@ -106,10 +108,12 @@ EXTRAS_REQUIRE = {
   'rpy2': ['rpy2'],
   'simplejson': ['simplejson>=3.3.1'],
   'textstat': ['textstat>=0.6.1'],
-  'wordcloud':  ['wordcloud==1.1.3'],
+  'wordcloud':  ['wordcloud==1.1.3']
 }
 
 SCRIPTS = ['dlatkInterface.py']
+
+extensions = [Extension(name='dlatk.pymallet.topicmodel', sources=['pymallet/topicmodel.c'])]
 
 if __name__ == "__main__":
 
@@ -130,5 +134,6 @@ if __name__ == "__main__":
       extras_require=EXTRAS_REQUIRE,
       install_requires=INSTALL_REQUIRES,
       scripts = SCRIPTS,
+      ext_modules=extensions
   )
 

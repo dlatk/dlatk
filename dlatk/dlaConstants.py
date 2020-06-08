@@ -274,6 +274,16 @@ POSSIBLE_VALUE_FUNCS = [
     lambda d: 2*sqrt(d+3/float(8))
 ]
 
+## PyMallet defaults
+DEF_STOPLIST_LANGUAGE_CHOICES = ['en', 'de', 'fi', 'fr', 'jp', 'nl']
+DEF_STOPLIST_LANGUAGE = 'en'
+DEF_NUM_TOPICS = 100
+DEF_NUM_ITERATIONS = 1000
+DEF_ALPHA = 0.05
+DEF_BETA = 0.01
+DEF_OUTPUT_STATE_FILE = 'lda_model.state'
+DEF_OUTPUT_TOPIC_KEYS_FILE = 'lda_model.keys'
+
 ##Meta settings
 DEF_INIT_FILE = 'initFile.ini'
 WARNING_STRING = "\n".join(["#"*68, "#"*68, "WARNING: %s", "#"*68, "#"*68])

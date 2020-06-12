@@ -10,17 +10,17 @@ Switch
 Description
 ===========
 
-Any method that can be called as `np.method(sentEncPerWord, axis=0)`.
+Specifies a method to aggregate over words to produce a single message embedding.
 
 Argument and Default Value
 ==========================
 
-By default we take the mean of the messages.
+Default: mean.
 
 Details
 =======
 
-
+Any numpy method that can be called as `np.method(sentEncPerWord, axis=0)`.
 
 Other Switches
 ==============
@@ -35,24 +35,14 @@ Optional Switches:
 * :doc:`fwflag_bert_layer_aggregation`
 * :doc:`fwflag_bert_msg_aggregation`
 * :doc:`fwflag_bert_layers` 
-* :doc:`fwflag_no_context` 
+* :doc:`fwflag_bert_no_context` 
 
 
 Example Commands
 ================
 
-Creates 1gram features and save in `feat$1gram$msgs$user_id$16to16`.
+Creates a BERT feature table that aggregates words by summing over their vectors.
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams
-
-
-This command will create tables for 1grams (`feat$1gram$msgs$user_id$16to16`) and 2grams (`feat$2gram$msgs$user_id$16to16`) and then a third table which contains 1-2grams (`feat$1to2gram$msgs$user_id$16to16`). 
-
-.. code-block:: bash
-
-	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1 2 --combine_feat_tables 1to2gram
-
-
-
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_bert --bert_word_aggregation sum

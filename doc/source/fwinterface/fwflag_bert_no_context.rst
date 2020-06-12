@@ -10,7 +10,7 @@ Switch
 Description
 ===========
 
-
+Disables contextual embedding. This means words will be embedded individually, rather than in each others context.
 
 Argument and Default Value
 ==========================
@@ -41,18 +41,8 @@ Optional Switches:
 Example Commands
 ================
 
-Creates 1gram features and save in `feat$1gram$msgs$user_id$16to16`.
+Creates a BERT feature table in which words are embedded without their context.
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams
-
-
-This command will create tables for 1grams (`feat$1gram$msgs$user_id$16to16`) and 2grams (`feat$2gram$msgs$user_id$16to16`) and then a third table which contains 1-2grams (`feat$1to2gram$msgs$user_id$16to16`). 
-
-.. code-block:: bash
-
-	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1 2 --combine_feat_tables 1to2gram
-
-
-
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_bert --no_context

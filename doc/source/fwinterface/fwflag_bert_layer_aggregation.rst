@@ -10,17 +10,17 @@ Switch
 Description
 ===========
 
-
+Specifies the aggregation method to apply over bert layers to produce a single vector representation. The layers to aggregate over are specified with :doc:`fwflag_bert_layers`.
 
 Argument and Default Value
 ==========================
 
-By default we concatenate the layers.
+Default: concatenate. Currently accepts only one aggregation method.
 
 Details
 =======
 
-
+This option is interpreted as a numpy method name, applied to the 0th axis.
 
 Other Switches
 ==============
@@ -40,18 +40,8 @@ Optional Switches:
 Example Commands
 ================
 
-Creates 1gram features and save in `feat$1gram$msgs$user_id$16to16`.
+Creates a BERT feature table summed over the last two layers.
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams
-
-
-This command will create tables for 1grams (`feat$1gram$msgs$user_id$16to16`) and 2grams (`feat$2gram$msgs$user_id$16to16`) and then a third table which contains 1-2grams (`feat$1to2gram$msgs$user_id$16to16`). 
-
-.. code-block:: bash
-
-	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1 2 --combine_feat_tables 1to2gram
-
-
-
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_bert --bert_layers 10 11 --bert_layer_aggregation sum

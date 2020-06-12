@@ -10,17 +10,17 @@ Switch
 Description
 ===========
 
-
+The name of the BERT model to use from `Hugging Face <https://huggingface.co/models>`.
 
 Argument and Default Value
 ==========================
 
-Default model is `base-uncased`.
+Default: `base-uncased`
 
 Details
 =======
 
-
+Specify a Hugging Face model to use. You can specify "base-*" or "large-*" for BERT models; non-BERT models may also work, but they have not been tested fully.
 
 Other Switches
 ==============
@@ -40,18 +40,8 @@ Optional Switches:
 Example Commands
 ================
 
-Creates 1gram features and save in `feat$1gram$msgs$user_id$16to16`.
+Creates a BERT feature table using ``bert-large-uncased``
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams
-
-
-This command will create tables for 1grams (`feat$1gram$msgs$user_id$16to16`) and 2grams (`feat$2gram$msgs$user_id$16to16`) and then a third table which contains 1-2grams (`feat$1to2gram$msgs$user_id$16to16`). 
-
-.. code-block:: bash
-
-	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1 2 --combine_feat_tables 1to2gram
-
-
-
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_bert --bert_model large-uncased

@@ -1174,6 +1174,115 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
+    def addBERTTable_(self, modelName = 'bert-base-uncased', tokenizerName = 'bert-base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], tableName = None, valueFunc = lambda d: d):
+        '''
+
+        '''
+        ##FIRST MAKE SURE SENTENCE TOKENIZED TABLE EXISTS:
+        sentTable = self.corptable+'_stoks'
+        assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with Bert featrue extraction (run --add_sent_tokenized)" % sentTable
+        if len(layerAggregations) > 1:
+            dlac.warn("AddBert: !!Does not currently support more than one layer aggregation; only using first aggregation!!")
+            layerAggregations = layerAggregations[:1]
+
+        try: 
+            import torch
+            from transformers import AutoConfig, AutoModel, AutoTokenizer
+        except ImportError:
+            dlac.warn("warning: unable to import torch or pytorch_pretrained_bert")
+            dlac.warn("Please install pytorch and pretrained bert.")
+            sys.exit(1)
+
+        config = AutoConfig.from_pretrained(modelName, output_hidden_states=True)
+        tokenizer = AutoTokenizer.from_pretrained(tokenizerName)
+        model = AutoModel.from_config(config)
+        model.eval()
+        cuda = True
+        try:
+            model.to('cuda')
+        except:
+            dlac.warn("  unable to use CUDA (GPU) for BERT")
+            cuda = False
+        dlac.warn("Done.")
+    
+        #TODO: Change the model name later
+        noc = ''
+        if noContext: noc = 'noc_'#adds noc to name if no context
+        modelPieces = modelName.split('-')
+        modelNameShort = modelPieces[0] + '_' + '_'.join([s[:2] for s in modelPieces[1:]])\
+                         + '_' + noc+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep])+''.join([str(ag[:2]) for ag in layerAggregations])
+        bertTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', tableName, valueFunc)
+
+        #SELECT / LOOP ON CORREL FIELD FIRST:
+        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
+        msgs = 0#keeps track of the number of messages read
+        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
+
+        ##iterate through correl_ids (group id):
+        dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
+        mm.disableTableKeys(self.corpdb, self.dbCursor, bertTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        lengthWarned = False #whether the length warning has been printed yet
+        #Each User: ( #message aggregations, #layers, #Word aggregations, hidden size)
+        for cfRow in cfRows:
+            cf_id = cfRow[0]
+            mids = set() #currently seen message ids
+            bertMessageVectors = [] #( #messages, #layers, #Word aggregations, hidden size) --> Per user
+
+            #grab sents by messages for that correl field:
+            messageRows = self.getMessagesForCorrelField(cf_id, messageTable = sentTable, warnMsg=True)
+            for messageRow in messageRows:
+                message_id = messageRow[0]
+                try:
+                    messageSents = loads(messageRow[1])
+                except NameError: 
+                    dlac.warn("Eror: Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
+                    sys.exit(1)
+                except JSONDecodeError:
+                    dlac.warn("WARNING: JSONDecodeError on %s. Skipping Message"%str(messageRow))
+                    pass
+
+                if ((message_id not in mids) and (len(messageSents) > 0)):
+                    msgs+=1
+                    subMessages = []
+                    if noContext:#break up to run on one word at a time:               
+                        for s in messageSents:
+                            subMessages.extend([[word] for word in tokenizer.tokenize(s)])
+                    else: #keep context; one submessage; subMessages: [[Msg1, Msg2...]]
+                        subMessages=[messageSents]
+
+                    for sents in subMessages: #only matters for noContext)
+                        #Add tokens to BERT:
+                        sents[0] = '[CLS] ' + sents[0]
+                        #TODO: preprocess to remove newlines
+                        sentsTok = [tokenizer.tokenize(s+' [SEP]') for s in sents]
+                        #print(sentsTok)#debug
+                        #check for overlength:
+                        i = 0
+                        while (i < len(sentsTok)):#while instead of for since array may change size
+                            if len(sentsTok[i]) > maxTokensPerSeg:
+                                newSegs = [sentsTok[i][j:j+maxTokensPerSeg]+['[SEP]'] for j in range(0, len(sentsTok[i]), maxTokensPerSeg)]
+                                newSegs[-1] = newSegs[-1][:-1] #remove last seperator
+                                if not lengthWarned:
+                                    dlac.warn("AddBert: Some segments are too long; splitting up; first example: %s" % str(newSegs))
+                                    #lengthWarned = True
+                                sentsTok = sentsTok[:i] + newSegs + sentsTok[i+1:]
+                                i+=(len(newSegs) - 1)#skip ahead new segments
+                            i+=1
+
+                        
+                
+                if msgs == 10:
+                    print (subMessages)
+                    sys.exit(0)
+                
+
+
+            
+            
+
+
+
+
     def addBERTTable(self, modelName = 'bert-base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], tableName = None, valueFunc = lambda d: d):
         """Creates feature tuples (correl_field, feature, values) table where features are parsed phrases
 

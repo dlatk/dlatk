@@ -658,6 +658,8 @@ def main(fn_args = None):
                        help='reduces a feature space to clusters')
     group.add_argument('--num_factors', '--n_components', '-k', dest='n_components', default=None,
                        help='Number of factors in clustering method. Used with --fit_reducer.')
+    group.add_argument('--transform_to_feats', dest='transformdrtofeats', type=str, default = None,
+                       help='feature table to send reduced features to.')
     
     group = parser.add_argument_group('CCA Actions', '')
     group.add_argument('--cca', type=int, dest='cca', default=0,
@@ -1891,8 +1893,12 @@ def main(fn_args = None):
 
     if args.fitreducer:
         #dr.fit(sparse = args.sparse, blacklist = blacklist)
-        dr.fit(sparse = args.sparse)
+        dr.fit(sparse = args.sparse, standardize = args.standardize)
 
+    if args.transformdrtofeats and dr:
+        if not fe: fe = FE()
+        dr.transformToFeatureTable(sparse = args.sparse, fe = fe, name = args.transformdrtofeats, standardize = args.standardize, groupsWhere = args.groupswhere)
+        
     if args.reducertolexicon or args.supertopics:
         if args.reducertolexicon:
           lexicons = dr.modelToLexicon()

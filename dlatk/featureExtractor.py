@@ -55,6 +55,7 @@ offsetre = re.compile(r'p(\-?\d+)([a-z])')
 toffsetre = re.compile(r'pt(\-?\d+)([a-z])')
 TimexDateTimeTypes = frozenset(['date', 'time'])
 
+
 class FeatureExtractor(DLAWorker):
     """Deals with extracting features from text and writing tables of features
 
@@ -1174,37 +1175,48 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
-    def addBERTTable(self, modelName = 'bert-base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], tableName = None, valueFunc = lambda d: d):
+    #def addBERTTable(self, modelName = 'bert-base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], tableName = None, valueFunc = lambda d: d):
+    def addEmbTable(self, modelName = 'bert-base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], tableName = None, valueFunc = lambda d: d):
         """Creates feature tuples (correl_field, feature, values) table where features are parsed phrases
 
         Parameters
         ----------
         modelName : :obj:`str`, optional
-            name of the bert model to use. 
+            name of the model to use.
         aggregations : :obj:`lambda`, optional
             Scales the features by the function given
 
         Returns
         -------
-        bertTableName : str
-            Name of the Bert Feature table
+        featTableName : str
+            Name of the Feature table
         """
-
         ##FIRST MAKE SURE SENTENCE TOKENIZED TABLE EXISTS:
         sentTable = self.corptable+'_stoks'
-        assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with Bert featrue extraction (run --add_sent_tokenized)" % sentTable
+        assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with feature extraction (run --add_sent_tokenized)" % sentTable
         if len(layerAggregations) > 1:
-            dlac.warn("AddBert: !!Does not currently support more than one layer aggregation; only using first aggregation!!")
+            dlac.warn("AddFeat: !!Does not currently support more than one layer aggregation; only using first aggregation!!")
             layerAggregations = layerAggregations[:1]
 
         
         #LOAD hugging face's pretrained Google Bert
         try: 
             import torch
-            from pytorch_pretrained_bert import BertTokenizer, BertModel, BertForMaskedLM
+            from pytorch_transformers import BertTokenizer, BertModel, BertForMaskedLM, BertConfig, XLNetConfig, XLNetTokenizer, XLNetModel
         except ImportError:
-            dlac.warn("warning: unable to import torch or pytorch_pretrained_bert")
-            dlac.warn("Please install pytorch and pretrained bert.")
+            dlac.warn("warning: unable to import torch or pytorch_transformers")
+            dlac.warn("Please install pytorch and pytorch_transformers.")
+            sys.exit(1)
+
+        MODEL_CLASSES = {
+            'bert': (BertTokenizer, BertModel, BertConfig),
+            'xlnet': (XLNetTokenizer, XLNetModel, XLNetConfig)
+        }
+
+        # Extracting model type from model name
+        modelType = modelName.split('-')[0]
+        if MODEL_CLASSES.get(modelType) == None:
+            dlac.warn("Please select a valid model name")
             sys.exit(1)
 
         # Load pre-trained model tokenizer (vocabulary)
@@ -1212,12 +1224,15 @@ class FeatureExtractor(DLAWorker):
             modelName = 'bert-'+modelName
         layersToKeep = np.array(layersToKeep, dtype='int')
         dlac.warn("Loading %s..." % modelName)
-        bTokenizer = BertTokenizer.from_pretrained(modelName)
-        bModel = BertModel.from_pretrained(modelName)
-        bModel.eval()
+
+        tokenizer_class, model_class, config_class = MODEL_CLASSES[modelType]
+        tokenizer = tokenizer_class.from_pretrained(modelName)
+
+        model = model_class.from_pretrained(modelName, output_hidden_states=True)
+        model.eval()
         cuda = True
         try:
-            bModel.to('cuda')
+            model.to('cuda')
         except:
             dlac.warn("  unable to use CUDA (GPU) for BERT")
             cuda = False
@@ -1229,7 +1244,7 @@ class FeatureExtractor(DLAWorker):
         modelPieces = modelName.split('-')
         modelNameShort = modelPieces[0] + '_' + '_'.join([s[:2] for s in modelPieces[1:]])\
                          + '_' + noc+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep])+''.join([str(ag[:2]) for ag in layerAggregations])
-        bertTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', tableName, valueFunc)
+        featTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', tableName, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
@@ -1238,7 +1253,7 @@ class FeatureExtractor(DLAWorker):
 
         ##iterate through correl_ids (group id):
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        mm.disableTableKeys(self.corpdb, self.dbCursor, bertTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        mm.disableTableKeys(self.corpdb, self.dbCursor, featTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
         lengthWarned = False #whether the length warning has been printed yet
         for cfRow in cfRows:
             cf_id = cfRow[0]
@@ -1262,7 +1277,7 @@ class FeatureExtractor(DLAWorker):
                     subMessages = []
                     if noContext:#break up to run on one word at a time:               
                         for s in messageSents:
-                            subMessages.extend([[word] for word in bTokenizer.tokenize(s)])
+                            subMessages.extend([[word] for word in tokenizer.tokenize(s)])
                     else: #keep context; one submessage
                         subMessages=[messageSents]
 
@@ -1273,6 +1288,7 @@ class FeatureExtractor(DLAWorker):
                         #TODO: preprocess to remove newlines
                         sentsTok = [bTokenizer.tokenize(s+' [SEP]') for s in sents]
                         #print(sentsTok)#debug
+
                         #check for overlength:
                         i = 0
                         while (i < len(sentsTok)):#while instead of for since array may change size
@@ -1280,7 +1296,7 @@ class FeatureExtractor(DLAWorker):
                                 newSegs = [sentsTok[i][j:j+maxTokensPerSeg]+['[SEP]'] for j in range(0, len(sentsTok[i]), maxTokensPerSeg)]
                                 newSegs[-1] = newSegs[-1][:-1] #remove last seperator
                                 if not lengthWarned:
-                                    dlac.warn("AddBert: Some segments are too long; splitting up; first example: %s" % str(newSegs))
+                                    dlac.warn("AddFeat: Some segments are too long; splitting up; first example: %s" % str(newSegs))
                                     #lengthWarned = True
                                 sentsTok = sentsTok[:i] + newSegs + sentsTok[i+1:]
                                 i+=(len(newSegs) - 1)#skip ahead new segments
@@ -1293,7 +1309,7 @@ class FeatureExtractor(DLAWorker):
                             thisPairFlat = [t for s in thisPair for t in s]
 
                             # Convert token to vocabulary indices
-                            indexedToks = bTokenizer.convert_tokens_to_ids(thisPairFlat)
+                            indexedToks = tokenizer.convert_tokens_to_ids(thisPairFlat)
                             # Define segs:
                             segIds = [j for j in range(len(thisPair)) for x in thisPair[j]]
                             #print(segIds) #debug
@@ -1301,6 +1317,7 @@ class FeatureExtractor(DLAWorker):
                             # Convert inputs to PyTorch tensors
                             toksTens = torch.tensor([indexedToks])
                             segsTens = torch.tensor([segIds])
+                        
                             if cuda: 
                                 try:
                                     toksTens = toksTens.to('cuda')
@@ -1311,7 +1328,9 @@ class FeatureExtractor(DLAWorker):
 
                             # Combine vectors of each select layers; store as first sent and second sent:
                             with torch.no_grad():
-                                encAllLayers, _ = bModel(toksTens, segsTens)
+                                output = model(toksTens, token_type_ids=segsTens)
+                                encAllLayers = output[2]
+                                
                                 #save layers:
                                 encSelectLayers = []
                                 for lyr in layersToKeep:
@@ -1377,16 +1396,16 @@ class FeatureExtractor(DLAWorker):
 
                 #print(bertFeats)#debug            
                 #write phrases to database (no need for "REPLACE" because we are creating the table)
-                wsql = """INSERT INTO """+bertTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                wsql = """INSERT INTO """+featTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 bertRows = [(k, v, valueFunc(v)) for k, v in bertFeats.items()] #adds group_norm and applies freq filter
                 mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, bertRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
         dlac.warn("Done Reading / Inserting.")
 
         dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-        mm.enableTableKeys(self.corpdb, self.dbCursor, bertTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        mm.enableTableKeys(self.corpdb, self.dbCursor, featTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
         dlac.warn("Done\n")
-        return bertTableName;
+        return featTableName;
 
     
     def addFleschKincaidTable(self, tableName = None, valueFunc = lambda d: d, removeXML = True, removeURL = True):
@@ -2879,12 +2898,6 @@ class FeatureExtractor(DLAWorker):
 
     @staticmethod
     def removeXML(text):
-        """Removed XML from text"""
-        return dlac.TAG_RE.sub(' ', text)
-
-    @staticmethod
-    def removeURL(text):
-        """Removes URLs from text"""
         return dlac.URL_RE.sub(' ', text)
 
     @staticmethod

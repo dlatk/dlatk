@@ -185,15 +185,15 @@ def main(fn_args = None):
                        help='range of group id\'s to include in binning.')
     group.add_argument('--mask_table', type=str, metavar='TABLE', dest='masktable', default=None,
                        help='Table containing which groups run in various bins (for ttest).')
-    group.add_argument('--emb_model_name', '--bert_model', type=str, metavar='NAME', dest='embmodelname', default=dlac.DEF_BERT_MODEL,
+    group.add_argument('--emb_model_name', '--bert_model', type=str, metavar='NAME', dest='embmodelname', default=dlac.DEF_EMB_MODEL,
                        help='Model weights to use if extracting features.')
-    group.add_argument('--emb_msg_aggregation', '--emb_aggregations', '--bert_msg_aggregation', type=str, metavar='AGG', nargs='+', dest='embaggregations', default=dlac.DEF_BERT_AGGREGATION,
+    group.add_argument('--emb_msg_aggregation', '--emb_aggregations', '--bert_msg_aggregation', type=str, metavar='AGG', nargs='+', dest='embaggregations', default=dlac.DEF_EMB_AGGREGATION,
                        help='Aggregations to use with model(e.g. mean, min, max).')
-    group.add_argument('--emb_layer_aggregation', '--bert_layer_aggregation', type=str, metavar='AGG', nargs='+', dest='emblayeraggregations', default=dlac.DEF_BERT_LAYER_AGGREGATION,
+    group.add_argument('--emb_layer_aggregation', '--bert_layer_aggregation', type=str, metavar='AGG', nargs='+', dest='emblayeraggregations', default=dlac.DEF_EMB_LAYER_AGGREGATION,
                        help='Aggregations to use with model (e.g. mean, min, max).')
     group.add_argument('--emb_word_aggregation', '--bert_word_aggregation', '--word_aggregation', type=str, metavar='AGG', nargs='+', dest='embwordaggs', default=dlac.DEF_TRANS_WORD_AGGREGATION,
                        help='Aggregations to use for words (e.g. mean or concatenate).')
-    group.add_argument('--emb_layers', '--bert_layers', type=int, metavar='LAYER', nargs='+', dest='emblayerstokeep', default=dlac.DEF_BERT_LAYERS,
+    group.add_argument('--emb_layers', '--bert_layers', type=int, metavar='LAYER', nargs='+', dest='emblayerstokeep', default=dlac.DEF_EMB_LAYERS,
                        help='layers from model to keep.')
     group.add_argument('--emb_no_context', '--bert_no_context', action='store_true', dest='embnocontext', default=False,
                        help='encoded without considering context.')

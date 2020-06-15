@@ -445,7 +445,7 @@ def main(fn_args = None):
                        help='add flesch-kincaid scores, averaged per group.')
     group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
-    group.add_argument('--emb_add_feat', action='store_true', dest='embaddfeat',
+    group.add_argument('--add_emb', '--add_bert', action='store_true', dest='embaddfeat',
                        help='add mean features (--emb_model_name optionally add min, max)')
 
 

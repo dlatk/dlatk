@@ -1174,7 +1174,7 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
-    def addBERTTable_(self, modelName = 'bert-base-uncased', tokenizerName = 'bert-base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], tableName = None, valueFunc = lambda d: d):
+    def addBERTTable_(self, modelName = 'bert-base-uncased', tokenizerName = 'bert-base-uncased', batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], tableName = None, valueFunc = lambda d: d):
         '''
 
         '''
@@ -1187,30 +1187,73 @@ class FeatureExtractor(DLAWorker):
 
         try: 
             import torch
+            from torch.nn.utils.rnn import pad_sequence
             from transformers import AutoConfig, AutoModel, AutoTokenizer
+            from transformers import TransfoXLTokenizer, TransfoXLModel, BertModel, BertTokenizer, OpenAIGPTModel, OpenAIGPTTokenizer
+            from transformers import GPT2Model, GPT2Tokenizer, XLNetModel, XLNetTokenizer, DistilBertModel, DistilBertTokenizer
+            from transformers import RobertaModel, RobertaTokenizer, XLMModel, XLMTokenizer, XLMRobertaModel, XLMRobertaTokenizer
+            from transformers import AlbertModel, AlbertTokenizer, T5Model, T5Tokenizer
+            #from transformers import ElectraModel, ElectraTokenizer
         except ImportError:
-            dlac.warn("warning: unable to import torch or pytorch_pretrained_bert")
-            dlac.warn("Please install pytorch and pretrained bert.")
+            dlac.warn("warning: unable to import torch or transformers")
+            dlac.warn("Please install pytorch and transformers.")
             sys.exit(1)
 
-        config = AutoConfig.from_pretrained(modelName, output_hidden_states=True)
-        tokenizer = AutoTokenizer.from_pretrained(tokenizerName)
-        model = AutoModel.from_config(config)
+        SHORTHAND_DICT = { 'bert-base-uncased': 'bert', 'bert-large-uncased': 'bert', 'bert-base-cased': 'bert', 'bert-large-cased': 'bert',
+                            'SpanBERT/spanbert-base-cased': 'bert', 'SpanBERT/spanbert-large-cased': 'bert',
+                            'allenai/scibert_scivocab_cased': 'bert', 'allenai/scibert_scivocab_uncased': 'bert',# 'transfo-xl-wt103': 'transfoXL',
+                            #'openai-gpt': 'OpenAIGPT', 'gpt2': 'GPT2', 'gpt2-medium': 'GPT2', 'gpt2-large': 'GPT2', 'gpt2-xl': 'GPT2',
+                            'xlnet-base-cased': 'XLNet', 'xlnet-large-cased': 'XLNet',
+                            'roberta-base': 'Roberta', 'roberta-large': 'Roberta', 'roberta-large-mnli': 'Roberta', 
+                            #'distilroberta-base': 'Roberta', 'roberta-base-openai-detector': 'Roberta', 'roberta-large-openai-detector': 'Roberta',
+                            #'distilbert-base-uncased': 'DistilBert', 'distilbert-base-cased': 'DistilBert', 
+                            #'distilbert-base-multilingual-cased': 'DistilBert', 'distilbert-base-cased-distilled-squad': 'DistilBert',
+                            'albert-base-v2': 'Albert', 'albert-large-v2': 'Albert', 'albert-xlarge-v2': 'Albert', 'albert-xxlarge-v2': 'Albert',
+                            #'xlm-roberta-base': 'XLMRoberta', 'xlm-roberta-large': 'XLMRoberta', #'t5-small': 'T5', 't5-base': 'T5', 't5-large': 'T5', 
+        }
+
+        MODEL_DICT = {
+            #'transfoXL': [TransfoXLModel, TransfoXLTokenizer], #Need to look into tokenization
+            'bert' : [BertModel, BertTokenizer],
+            'XLNet': [XLNetModel, XLNetTokenizer], 
+            #'OpenAIGPT': [OpenAIGPTModel,  OpenAIGPTTokenizer], # Need to fix tokenization [Token type Ids]
+            'Roberta': [RobertaModel, RobertaTokenizer], # Need to fix tokenization [Token type Ids]
+            #'GPT2': [GPT2Model, GPT2Tokenizer], # Need to fix tokenization [Token type Ids]
+            #'DistilBert': [DistilBertModel, DistilBertTokenizer], #Doesn't take Token Type IDS as input
+            #'XLM': [XLMModel, XLMTokenizer], #Need to decide on the specific models
+            #'XLMRoberta': [XLMRobertaModel, XLMRobertaTokenizer],  # Need to fix tokenization [Token type Ids]
+            'Albert': [AlbertModel, AlbertTokenizer],
+            #'Electra': [ElectraModel, ElectraTokenizer], #Need to understand the discriminator and generator outputs better
+            #'T5': [T5Model, T5Tokenizer] #Doesn't take Token Type IDS as input
+        }
+
+        #print (modelName) #debug
+        #Fix AutoModel, runs into a weird positional embedding issue right now.
+        #config = AutoConfig.from_pretrained(modelName, output_hidden_states=True)
+        #tokenizer = AutoTokenizer.from_pretrained(tokenizerName)
+        #model = AutoModel.from_pretrained(modelName, config=config)
+        tokenizer = MODEL_DICT[SHORTHAND_DICT[modelName]][1].from_pretrained(modelName)
+        model = MODEL_DICT[SHORTHAND_DICT[modelName]][0].from_pretrained(modelName, output_hidden_states=True)
+        
         model.eval()
         cuda = True
         try:
             model.to('cuda')
+            batch_size=batchSize
         except:
-            dlac.warn("  unable to use CUDA (GPU) for BERT")
+            dlac.warn(" unable to use CUDA (GPU) for BERT")
+            batch_size=batchSize
             cuda = False
         dlac.warn("Done.")
-    
+        layersToKeep = np.array(layersToKeep, dtype='int')
+
         #TODO: Change the model name later
+        #Need to test noc
         noc = ''
         if noContext: noc = 'noc_'#adds noc to name if no context
         modelPieces = modelName.split('-')
         modelNameShort = modelPieces[0] + '_' + '_'.join([s[:2] for s in modelPieces[1:]])\
-                         + '_' + noc+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep])+''.join([str(ag[:2]) for ag in layerAggregations])
+                         + '_' + noc+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep])+''.join([str(ag[:2]) for ag in layerAggregations]) + 'n'
         bertTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', tableName, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
@@ -1224,12 +1267,18 @@ class FeatureExtractor(DLAWorker):
         lengthWarned = False #whether the length warning has been printed yet
         #Each User: ( #message aggregations, #layers, #Word aggregations, hidden size)
         for cfRow in cfRows:
+            #user_id
             cf_id = cfRow[0]
             mids = set() #currently seen message ids
-            bertMessageVectors = [] #( #messages, #layers, #Word aggregations, hidden size) --> Per user
 
             #grab sents by messages for that correl field:
             messageRows = self.getMessagesForCorrelField(cf_id, messageTable = sentTable, warnMsg=True)
+            input_ids = []
+            token_type_ids = []
+            attention_mask = []
+            message_id_seq = [] 
+            #stores the sequence of message_id corresponding to the message embeddings for applying aggregation later 
+            #along with the sentence 1 and sentence 2 lengths
             for messageRow in messageRows:
                 message_id = messageRow[0]
                 try:
@@ -1239,7 +1288,7 @@ class FeatureExtractor(DLAWorker):
                     sys.exit(1)
                 except JSONDecodeError:
                     dlac.warn("WARNING: JSONDecodeError on %s. Skipping Message"%str(messageRow))
-                    pass
+                    continue
 
                 if ((message_id not in mids) and (len(messageSents) > 0)):
                     msgs+=1
@@ -1252,34 +1301,184 @@ class FeatureExtractor(DLAWorker):
 
                     for sents in subMessages: #only matters for noContext)
                         #Add tokens to BERT:
-                        sents[0] = '[CLS] ' + sents[0]
+                        sents[0] = tokenizer._cls_token + ' ' + sents[0] #For context, It adds CLS before the first sentence
                         #TODO: preprocess to remove newlines
-                        sentsTok = [tokenizer.tokenize(s+' [SEP]') for s in sents]
+                        sentsTok = [tokenizer.tokenize(s+' '+tokenizer._sep_token) for s in sents] #For context: It adds SEP to the end of each sentence
                         #print(sentsTok)#debug
                         #check for overlength:
                         i = 0
                         while (i < len(sentsTok)):#while instead of for since array may change size
-                            if len(sentsTok[i]) > maxTokensPerSeg:
-                                newSegs = [sentsTok[i][j:j+maxTokensPerSeg]+['[SEP]'] for j in range(0, len(sentsTok[i]), maxTokensPerSeg)]
+                            if len(sentsTok[i]) > maxTokensPerSeg: #If the number of tokens is greater than maxTokenPerSeg in a Sentence, split it
+                                newSegs = [sentsTok[i][j:j+maxTokensPerSeg]+[tokenizer._sep_token] for j in range(0, len(sentsTok[i]), maxTokensPerSeg)]
                                 newSegs[-1] = newSegs[-1][:-1] #remove last seperator
                                 if not lengthWarned:
-                                    dlac.warn("AddBert: Some segments are too long; splitting up; first example: %s" % str(newSegs))
+                                    dlac.warn("AddEmb: Some segments are too long; splitting up; first example: %s" % str(newSegs))
                                     #lengthWarned = True
                                 sentsTok = sentsTok[:i] + newSegs + sentsTok[i+1:]
                                 i+=(len(newSegs) - 1)#skip ahead new segments
                             i+=1
 
-                        
+                        for i in range(len(sentsTok)):
+                            thisPair = sentsTok[i:i+2] #Give two sequences as input
+                            thisPair_id = [tokenizer.convert_tokens_to_ids(s) for s in thisPair]
+                            
+                            # Convert token to vocabulary indices
+                            indexedToks = []
+                            for s in thisPair_id:
+                                #Combine: [[CLS, I, am, a, New, Yorker, SEP],[I, am, awesome, SEP] ] -> [CLS, I, am, a, New, Yorker, SEP, I, am, awesome, SEP] 
+                                indexedToks.extend(s)
+                            if (len(thisPair_id) > 1) and (i==0): #More than 1 sentence exist, and CLS in the; 1:-1 since this function creates token_type_ids for CLS and SEP on its own 
+                                segIds = tokenizer.create_token_type_ids_from_sequences(thisPair_id[0][1:-1], thisPair_id[1][:-1])  
+                            elif (len(thisPair_id) > 1): #More than 1 sentence exist, and CLS is not there. 
+                                segIds = tokenizer.create_token_type_ids_from_sequences(thisPair_id[0][:-1], thisPair_id[1][:-1])[1:]
+                            elif len(sentsTok) > 1: #The last sentence of the message
+                                segIds = tokenizer.create_token_type_ids_from_sequences(thisPair_id[0][:-1])[:-1]
+                            else: # Message has only 1 sentence
+                                segIds = tokenizer.create_token_type_ids_from_sequences(thisPair_id[0][1:-1])
+                             
+
+                            input_ids.append(torch.tensor(indexedToks, dtype=torch.long))
+                            token_type_ids.append(torch.tensor(segIds, dtype=torch.long))
+                            attention_mask.append(torch.tensor([1]*len(indexedToks), dtype=torch.long))
+
+                            if len(thisPair)>1: #Collecting the sentence length of the pair along with their message IDs
+                                # If multiple sentences in a message, it will store the message_ids multiple times for aggregating emb later.
+                                message_id_seq.append([message_id, len(thisPair[0]), len(thisPair[1])]) 
+                            else:
+                                message_id_seq.append([message_id, len(thisPair[0]), 0]) 
+                            if len(segIds) != len(indexedToks): 
+                                dlac.warn('Tokenization mistake. Look into token_type_ids generation.')
+                                sys.exit(1)
+                            
                 
-                if msgs == 10:
-                    print (subMessages)
-                    sys.exit(0)
+                if msgs % int(dlac.PROGRESS_AFTER_ROWS/5) == 0: #progress update
+                    dlac.warn("Messages Read: %.2f k" % (msgs/1000.0))
+                mids.add(message_id)
+            
+            #Number of Batches
+            num_batches = int(np.ceil(len(input_ids)/batch_size))
+            encSelectLayers = []
+            #print ('len(input_ids): ',len(input_ids))
+            #print ('Num Batches:', num_batches)
+            
+            for i in range(num_batches):
+                #Padding for batch input
+                input_ids_padded = pad_sequence(input_ids[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=tokenizer.pad_token_id)
+                token_type_ids_padded = pad_sequence(token_type_ids[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=0)
+                attention_mask_padded = pad_sequence(attention_mask[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=0)
+
+                if cuda:
+                    input_ids_padded = input_ids_padded.to('cuda') 
+                    token_type_ids_padded = token_type_ids_padded.to('cuda') 
+                    attention_mask_padded = attention_mask_padded.to('cuda')
+
+                input_ids_padded = input_ids_padded.long()
+                token_type_ids_padded = token_type_ids_padded.long()
+                attention_mask_padded = attention_mask_padded.long()
                 
+                #print (input_ids_padded.shape, token_type_ids_padded.shape, attention_mask_padded.shape)
+                encSelectLayers_temp = []
+                with torch.no_grad():
+                    encAllLayers = model(input_ids = input_ids_padded, attention_mask = attention_mask_padded,  token_type_ids = token_type_ids_padded)
+                    #Getting all layers output
+                    encAllLayers = encAllLayers[-1]            
+                    for lyr in layersToKeep: #Shape: (batch_size, max Seq len, hidden dim, #layers)
+                        encSelectLayers_temp.append(encAllLayers[int(lyr)].detach().cpu().numpy())
 
+                    #print(encSelectLayers[-1].shape)
+                    del encAllLayers
+                encSelectLayers.append(np.transpose(np.array(encSelectLayers_temp),(1,2,3,0)))
 
+            i = 0
+            j = 0
+            msg_rep = [] #Shape: (num layers, seq Len, hidden_dim)
+            while i < len(message_id_seq):
+                # Does next embedding also pertain to the same message
+                if i == len(message_id_seq)-1:
+                    next_msg_same = False
+                else:
+                    next_msg_same = True if message_id_seq[i][0] == message_id_seq[i+1][0] else False
+                if next_msg_same:
+                    # Process all sub messages pertaining to a single message at once
+                    msg_rep_temp = []
+                    # Store the first message's first sentence embedding followed by averaging the second sentence of that message and the first sentence of next message's embedding   
+                    msg_rep_temp.append(encSelectLayers[i//batch_size][j%batch_size, :message_id_seq[i][1]])
+                    while next_msg_same:
+                        enc_batch_number = i//batch_size
+                        next_enc_batch_number = (i+1)//batch_size
+                        seq_len1 = message_id_seq[i][1]
+                        seq_len2 = message_id_seq[i][2]
+                        #Shape: (seq2 len, hidden dim, num layers)
+                        #Apply mean for the embedding of the sentence that appeared second in the current part and first in the next part
+                        sent2enc = (encSelectLayers[enc_batch_number][j%batch_size, seq_len1:seq_len1+seq_len2] + encSelectLayers[next_enc_batch_number][(j+1)%batch_size, :seq_len2])/2
+                        #Store the representation
+                        msg_rep_temp.append(sent2enc)
+                        #print (message_id_seq[i], sent2enc.shape) #debug
+                        i+=1
+                        j+=1
+                        #Check if the next part of the message has single sentence, if yes, break 
+                        if message_id_seq[i][2] == 0:
+                            i+=1
+                            j+=1
+                            break                        
+                        next_msg_same = True if message_id_seq[i][0] == message_id_seq[i+1][0] else False
+                    #Store all the representation as a list
+                    msg_rep.append(msg_rep_temp)
+                else:
+                    # Single message representations.
+                    enc_batch_number = i//batch_size
+                    seq_len = message_id_seq[i][1]
+                    #Store the message representation
+                    msg_rep_temp = encSelectLayers[enc_batch_number][j%batch_size, :seq_len] #Shape: (seq len, hidden dim, #layers)
+                    #print (seq_len, msg_rep_temp.shape) #debug
+                    i+=1
+                    j+=1
+                    msg_rep.append([msg_rep_temp])
+
+            #Layer aggregation followed my word aggregation
+            user_rep = [] #(num msgs, hidden_dim, lagg)
+            for i in range(len(msg_rep)):#Iterating through messages
+                sent_rep = []
+                for j in range(len(msg_rep[i])): #Iterate through the submessages to apply layer aggregation. 
+                    sub_msg = msg_rep[i][j]
+                    sub_msg_lagg = []
+                    for lagg in layerAggregations:
+                        if lagg == 'concatenate':
+                            sub_msg_lagg.append(sub_msg) #(seq len, hidden dim, num layers)
+                        else:
+                            sub_msg_lagg.append(eval("np."+lagg+"(sub_msg, axis=-1)").reshape(sub_msg.shape[0], sub_msg.shape[1], 1) )#(seq len, hidden dim, 1)
+                        #Shape: (seq len, hidden dim, (num_layers*(concatenate==True)+(sum(other layer aggregations))))
+                        #Example: lagg = [mean, min, concatenate], layers = [8,9]; Shape: (seq len, hidden dim, 2 + 1 + 1)
+                        sub_msg_lagg = np.concatenate(sub_msg_lagg, axis=-1) 
+                    #Getting the mean of all tokens representation
+                    sub_msg_lagg_wagg = np.mean(sub_msg_lagg, axis=0) #Shape: (hidden dim, lagg)
+                    #ReShaping: (1, hidden dim, lagg)
+                    sub_msg_lagg_wagg = sub_msg_lagg_wagg.reshape(1, sub_msg_lagg_wagg.shape[0], sub_msg_lagg_wagg.shape[1]) 
+                    #Sentence representations
+                    sent_rep.append(sub_msg_lagg_wagg)
+                #Accumulate all the sentence representation of a user
+                user_rep.append(np.mean(np.concatenate(sent_rep, axis=0), axis=0)) 
+
+            user_rep = np.array(user_rep)
+            #Flatten the features [layer aggregations] to a single dimension.
+            user_rep = user_rep.reshape(user_rep.shape[0], -1)
+            if len(user_rep)>0:
+                bertFeats = dict()
+                #Applying message aggregations
+                for ag in aggregations:
+                    thisAg = eval("np."+ag+"(user_rep, axis=0)")
+                    bertFeats.update([(str(k)+ag[:2], v) for (k, v) in enumerate(thisAg)])
+                
+                
+                wsql = """INSERT INTO """+bertTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                bertRows = [(k, v, valueFunc(v)) for k, v in bertFeats.items()] #adds group_norm and applies freq filter
+                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, bertRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
             
-            
-
+        dlac.warn("Done Reading / Inserting.")
+        dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
+        mm.enableTableKeys(self.corpdb, self.dbCursor, bertTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        dlac.warn("Done\n")
+        return bertTableName;            
 
 
 

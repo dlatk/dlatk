@@ -197,6 +197,8 @@ def main(fn_args = None):
                        help='layers from Bert to keep.')
     group.add_argument('--bert_no_context', action='store_true', dest='bertnocontext', default=False,
                        help='encoded without considering context.')
+    group.add_argument('--batch_size', dest='batchsize', default=dlac.GPU_BATCH_SIZE, type=int, 
+                       help='Specify the batch size for generating the embeddings.')
 
 
     group = parser.add_argument_group('MySQL Interactoins', '')
@@ -1010,7 +1012,8 @@ def main(fn_args = None):
 
     if args.addbert:
         if not fe: fe = FE()
-        args.feattable = fe.addBERTTable_(modelName = args.bertmodel, aggregations=args.bertaggs, layersToKeep=args.bertlayers, noContext=args.bertnocontext, layerAggregations = args.bertlayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc)
+        args.feattable = fe.addBERTTable_(modelName = args.bertmodel, batchSize=args.batchsize, aggregations=args.bertaggs, layersToKeep=args.bertlayers, noContext=args.bertnocontext, layerAggregations = args.bertlayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc)
+        #args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=args.bertaggs, layersToKeep=args.bertlayers, noContext=args.bertnocontext, layerAggregations = args.bertlayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc)
 
     if args.addldafeattable:
         if not fe: fe = FE()

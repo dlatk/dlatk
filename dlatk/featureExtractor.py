@@ -1174,10 +1174,11 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
-    def addEmbTable(self, modelName, tokenizerName, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], tableName = None, valueFunc = lambda d: d):
+    def addEmbTable(self, modelName, tokenizerName, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], customTableName = None, valueFunc = lambda d: d):
         '''
 
         '''
+        dlac.warn("WARNING: new version of BERT and transformer models starts at layer 1 rather than layer 0. Layer 0 is now the input embedding. For example, if you were using layer 10 for the second to last layer of bert-base that is now considered layer 11.")
         ##FIRST MAKE SURE SENTENCE TOKENIZED TABLE EXISTS:
         sentTable = self.corptable+'_stoks'
         assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with Bert featrue extraction (run --add_sent_tokenized)" % sentTable
@@ -1207,11 +1208,11 @@ class FeatureExtractor(DLAWorker):
                             #'openai-gpt': 'OpenAIGPT', 'gpt2': 'GPT2', 'gpt2-medium': 'GPT2', 'gpt2-large': 'GPT2', 'gpt2-xl': 'GPT2',
                             'xlnet-base-cased': 'XLNet', 'xlnet-large-cased': 'XLNet',
                             'roberta-base': 'Roberta', 'roberta-large': 'Roberta', 'roberta-large-mnli': 'Roberta', 
-                            #'distilroberta-base': 'Roberta', 'roberta-base-openai-detector': 'Roberta', 'roberta-large-openai-detector': 'Roberta',
-                            #'distilbert-base-uncased': 'DistilBert', 'distilbert-base-cased': 'DistilBert', 
-                            #'distilbert-base-multilingual-cased': 'DistilBert', 'distilbert-base-cased-distilled-squad': 'DistilBert',
+                            'distilroberta-base': 'Roberta', 'roberta-base-openai-detector': 'Roberta', 'roberta-large-openai-detector': 'Roberta',
+                            'distilbert-base-uncased': 'DistilBert', 'distilbert-base-cased': 'DistilBert', 
+                            'distilbert-base-multilingual-cased': 'DistilBert', 'distilbert-base-cased-distilled-squad': 'DistilBert',
                             'albert-base-v2': 'Albert', 'albert-large-v2': 'Albert', 'albert-xlarge-v2': 'Albert', 'albert-xxlarge-v2': 'Albert',
-                            #'xlm-roberta-base': 'XLMRoberta', 'xlm-roberta-large': 'XLMRoberta', #'t5-small': 'T5', 't5-base': 'T5', 't5-large': 'T5', 
+                            'xlm-roberta-base': 'XLMRoberta', 'xlm-roberta-large': 'XLMRoberta', #'t5-small': 'T5', 't5-base': 'T5', 't5-large': 'T5', 
         }
 
         MODEL_DICT = {
@@ -1221,9 +1222,9 @@ class FeatureExtractor(DLAWorker):
             #'OpenAIGPT': [OpenAIGPTModel,  OpenAIGPTTokenizer], # Need to fix tokenization [Token type Ids], Doesn't have CLS or SEP
             'Roberta': [RobertaModel, RobertaTokenizer], # Need to fix tokenization [Token type Ids]
             #'GPT2': [GPT2Model, GPT2Tokenizer], # Need to fix tokenization [Token type Ids], Doesn't have CLS or SEP
-            #'DistilBert': [DistilBertModel, DistilBertTokenizer], #Doesn't take Token Type IDS as input
+            'DistilBert': [DistilBertModel, DistilBertTokenizer], #Doesn't take Token Type IDS as input
             #'XLM': [XLMModel, XLMTokenizer], #Need to decide on the specific models
-            #'XLMRoberta': [XLMRobertaModel, XLMRobertaTokenizer],  # Need to fix tokenization [Token type Ids]
+            'XLMRoberta': [XLMRobertaModel, XLMRobertaTokenizer],  # Need to fix tokenization [Token type Ids]
             'Albert': [AlbertModel, AlbertTokenizer],
             #'Electra': [ElectraModel, ElectraTokenizer], #Need to understand the discriminator and generator outputs better
             #'T5': [T5Model, T5Tokenizer] #Doesn't take Token Type IDS as input, Doesn't have CLS or SEP, Need to understand how to input the decoder_input_ids/decoder_inputs_embeds
@@ -1234,9 +1235,11 @@ class FeatureExtractor(DLAWorker):
         #config = AutoConfig.from_pretrained(modelName, output_hidden_states=True)
         #tokenizer = AutoTokenizer.from_pretrained(tokenizerName)
         #model = AutoModel.from_pretrained(modelName, config=config)
-        tokenizer = MODEL_DICT[SHORTHAND_DICT[modelName]][1].from_pretrained(modelName)
+        tokenizer = MODEL_DICT[SHORTHAND_DICT[tokenizerName]][1].from_pretrained(tokenizerName)
         model = MODEL_DICT[SHORTHAND_DICT[modelName]][0].from_pretrained(modelName, output_hidden_states=True)
         
+        maxTokensPerSeg = tokenizer.max_len_sentences_pair//2
+
         model.eval()
         cuda = True
         try:
@@ -1253,10 +1256,14 @@ class FeatureExtractor(DLAWorker):
         #Need to test noc
         noc = ''
         if noContext: noc = 'noc_'#adds noc to name if no context
-        modelPieces = modelName.split('-')
-        modelNameShort = modelPieces[0] + '_' + '_'.join([s[:2] for s in modelPieces[1:]])\
-                         + '_' + noc+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep])+''.join([str(ag[:2]) for ag in layerAggregations]) + 'n'
-        bertTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', tableName, valueFunc)
+        if customTableName is None:
+            modelName = modelName.split('/')[-1] if '/' in modelName else modelName
+            modelPieces = modelName.split('-')
+            modelNameShort = modelPieces[0] + '_' + '_'.join([s[:2] for s in modelPieces[1:]])\
+                            + '_' + noc+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep])+''.join([str(ag[:2]) for ag in layerAggregations]) + 'n'
+        else:
+            modelNameShort = customTableName
+        bertTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', None, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
@@ -1302,17 +1309,14 @@ class FeatureExtractor(DLAWorker):
                         subMessages=[messageSents]
 
                     for sents in subMessages: #only matters for noContext)
-                        #Add tokens to BERT:
-                        sents[0] = tokenizer._cls_token + ' ' + sents[0] #For context, It adds CLS before the first sentence
                         #TODO: preprocess to remove newlines
-                        sentsTok = [tokenizer.tokenize(s+' '+tokenizer._sep_token) for s in sents] #For context: It adds SEP to the end of each sentence
+                        sentsTok = [tokenizer.tokenize(s) for s in sents]
                         #print(sentsTok)#debug
                         #check for overlength:
                         i = 0
                         while (i < len(sentsTok)):#while instead of for since array may change size
                             if len(sentsTok[i]) > maxTokensPerSeg: #If the number of tokens is greater than maxTokenPerSeg in a Sentence, split it
-                                newSegs = [sentsTok[i][j:j+maxTokensPerSeg]+[tokenizer._sep_token] for j in range(0, len(sentsTok[i]), maxTokensPerSeg)]
-                                newSegs[-1] = newSegs[-1][:-1] #remove last seperator
+                                newSegs = [sentsTok[i][j:j+maxTokensPerSeg] for j in range(0, len(sentsTok[i]), maxTokensPerSeg)]    
                                 if not lengthWarned:
                                     dlac.warn("AddEmb: Some segments are too long; splitting up; first example: %s" % str(newSegs))
                                     #lengthWarned = True
@@ -1322,25 +1326,13 @@ class FeatureExtractor(DLAWorker):
 
                         for i in range(len(sentsTok)):
                             thisPair = sentsTok[i:i+2] #Give two sequences as input
-                            thisPair_id = [tokenizer.convert_tokens_to_ids(s) for s in thisPair]
-                            
-                            # Convert token to vocabulary indices
-                            indexedToks = []
-                            for s in thisPair_id:
-                                #Combine: [[CLS, I, am, a, New, Yorker, SEP],[I, am, awesome, SEP] ] -> [CLS, I, am, a, New, Yorker, SEP, I, am, awesome, SEP] 
-                                indexedToks.extend(s)
-                            if (len(thisPair_id) > 1) and (i==0): #More than 1 sentence exist, and CLS in the; 1:-1 since this function creates token_type_ids for CLS and SEP on its own 
-                                segIds = tokenizer.create_token_type_ids_from_sequences(thisPair_id[0][1:-1], thisPair_id[1][:-1])  
-                            elif (len(thisPair_id) > 1): #More than 1 sentence exist, and CLS is not there. 
-                                segIds = tokenizer.create_token_type_ids_from_sequences(thisPair_id[0][:-1], thisPair_id[1][:-1])[1:]
-                            elif len(sentsTok) > 1: #The last sentence of the message
-                                segIds = tokenizer.create_token_type_ids_from_sequences(thisPair_id[0][:-1])[:-1]
-                            else: # Message has only 1 sentence
-                                segIds = tokenizer.create_token_type_ids_from_sequences(thisPair_id[0][1:-1])
-                             
+                            encoded = tokenizer.encode_plus(thisPair[0], thisPair[1]) if len(thisPair)>1 else tokenizer.encode_plus(thisPair[0])
+                            indexedToks = encoded['input_ids']
+                            segIds = encoded['token_type_ids'] if 'token_type_ids' in encoded else None
 
                             input_ids.append(torch.tensor(indexedToks, dtype=torch.long))
-                            token_type_ids.append(torch.tensor(segIds, dtype=torch.long))
+                            if 'token_type_ids' in encoded:
+                                token_type_ids.append(torch.tensor(segIds, dtype=torch.long))
                             attention_mask.append(torch.tensor([1]*len(indexedToks), dtype=torch.long))
 
                             if len(thisPair)>1: #Collecting the sentence length of the pair along with their message IDs
@@ -1348,10 +1340,6 @@ class FeatureExtractor(DLAWorker):
                                 message_id_seq.append([message_id, len(thisPair[0]), len(thisPair[1])]) 
                             else:
                                 message_id_seq.append([message_id, len(thisPair[0]), 0]) 
-                            if len(segIds) != len(indexedToks): 
-                                dlac.warn('Tokenization mistake. Look into token_type_ids generation.')
-                                sys.exit(1)
-                            
                 
                 if msgs % int(dlac.PROGRESS_AFTER_ROWS/5) == 0: #progress update
                     dlac.warn("Messages Read: %.2f k" % (msgs/1000.0))
@@ -1366,22 +1354,28 @@ class FeatureExtractor(DLAWorker):
             for i in range(num_batches):
                 #Padding for batch input
                 input_ids_padded = pad_sequence(input_ids[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=tokenizer.pad_token_id)
-                token_type_ids_padded = pad_sequence(token_type_ids[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=0)
+                if len(token_type_ids)>0:
+                    token_type_ids_padded = pad_sequence(token_type_ids[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=0)
                 attention_mask_padded = pad_sequence(attention_mask[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=0)
 
                 if cuda:
                     input_ids_padded = input_ids_padded.to('cuda') 
-                    token_type_ids_padded = token_type_ids_padded.to('cuda') 
+                    if len(token_type_ids)>0:
+                        token_type_ids_padded = token_type_ids_padded.to('cuda') 
                     attention_mask_padded = attention_mask_padded.to('cuda')
 
                 input_ids_padded = input_ids_padded.long()
-                token_type_ids_padded = token_type_ids_padded.long()
+                if len(token_type_ids)>0:
+                    token_type_ids_padded = token_type_ids_padded.long()
                 attention_mask_padded = attention_mask_padded.long()
                 
                 #print (input_ids_padded.shape, token_type_ids_padded.shape, attention_mask_padded.shape)
                 encSelectLayers_temp = []
                 with torch.no_grad():
-                    encAllLayers = model(input_ids = input_ids_padded, attention_mask = attention_mask_padded,  token_type_ids = token_type_ids_padded)
+                    if len(token_type_ids)>0:
+                        encAllLayers = model(input_ids = input_ids_padded, attention_mask = attention_mask_padded,  token_type_ids = token_type_ids_padded)
+                    else:
+                        encAllLayers = model(input_ids = input_ids_padded, attention_mask = attention_mask_padded)    
                     #Getting all layers output
                     encAllLayers = encAllLayers[-1]            
                     for lyr in layersToKeep: #Shape: (batch_size, max Seq len, hidden dim, #layers)
@@ -1451,10 +1445,10 @@ class FeatureExtractor(DLAWorker):
                             sub_msg_lagg.append(eval("np."+lagg+"(sub_msg, axis=-1)").reshape(sub_msg.shape[0], sub_msg.shape[1], 1) )#(seq len, hidden dim, 1)
                         #Shape: (seq len, hidden dim, (num_layers*(concatenate==True)+(sum(other layer aggregations))))
                         #Example: lagg = [mean, min, concatenate], layers = [8,9]; Shape: (seq len, hidden dim, 2 + 1 + 1)
-                        sub_msg_lagg = np.concatenate(sub_msg_lagg, axis=-1) 
+                        sub_msg_lagg_ = np.concatenate(sub_msg_lagg, axis=-1) 
                     #Getting the mean of all tokens representation
                     #TODO: add word agg list and do eval
-                    sub_msg_lagg_wagg = np.mean(sub_msg_lagg, axis=0) #Shape: (hidden dim, lagg)
+                    sub_msg_lagg_wagg = np.mean(sub_msg_lagg_, axis=0) #Shape: (hidden dim, lagg)
                     #ReShaping: (1, hidden dim, lagg)
                     sub_msg_lagg_wagg = sub_msg_lagg_wagg.reshape(1, sub_msg_lagg_wagg.shape[0], sub_msg_lagg_wagg.shape[1]) 
                     #Sentence representations

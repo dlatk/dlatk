@@ -186,7 +186,7 @@ def main(fn_args = None):
     group.add_argument('--mask_table', type=str, metavar='TABLE', dest='masktable', default=None,
                        help='Table containing which groups run in various bins (for ttest).')
     group.add_argument('--bert_model', '--emb_model', type=str, metavar='NAME', dest='embmodel', default=dlac.DEF_BERT_MODEL,
-                       help='Contextual Embedding model to use for extracting features.')
+                       help='Contextual Embedding model to use for extracting features.', choices=dlac.EMB_OPTIONS)
     group.add_argument('--tokenizer_model', type=str, dest='tokenizermodel', default=None,
                        help='Tokenizer model to use for tokenizing.')
     group.add_argument('--bert_msg_aggregation', '--bert_aggregations', '--emb_msg_aggregation', '--emb_aggregations', type=str, metavar='AGG', nargs='+', dest='embaggs', default=dlac.DEF_BERT_AGGREGATION,
@@ -199,6 +199,8 @@ def main(fn_args = None):
                        help='layers from Contextual model to keep.')
     group.add_argument('--bert_no_context', '--emb_no_context', action='store_true', dest='embnocontext', default=False,
                        help='encoded without considering context.')
+    group.add_argument('--emb_table_name', dest='embtablename', default=None,
+                       help='custom table name')                       
     group.add_argument('--batch_size', dest='batchsize', default=dlac.GPU_BATCH_SIZE, type=int, 
                        help='Specify the batch size for generating the embeddings.')
 
@@ -449,8 +451,8 @@ def main(fn_args = None):
                        help='add flesch-kincaid scores, averaged per group.')
     group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
-    group.add_argument('--add_bert', action='store_true', dest='addbert', 
-                       help='add BERT mean features (optionally add min, max, --bert_model large)')
+    group.add_argument('--add_bert', '--add_conemb', action='store_true', dest='addbert', 
+                       help='add embeddings mean features (optionally add min, max, --bert_model large)')
 
 
     group = parser.add_argument_group('Messages Transformation Actions', '')
@@ -1014,7 +1016,7 @@ def main(fn_args = None):
 
     if args.addbert:
         if not fe: fe = FE()
-        args.feattable = fe.addEmbTable(modelName = args.embmodel, tokenizerName=args.tokenizermodel, batchSize=args.batchsize, aggregations=args.embaggs, layersToKeep=args.emblayers, noContext=args.embnocontext, layerAggregations = args.emblayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc)
+        args.feattable = fe.addEmbTable(modelName = args.embmodel, tokenizerName=args.tokenizermodel, batchSize=args.batchsize, aggregations=args.embaggs, layersToKeep=args.emblayers, noContext=args.embnocontext, layerAggregations = args.emblayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc, customTableName = args.embtablename)
         #args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=args.bertaggs, layersToKeep=args.bertlayers, noContext=args.bertnocontext, layerAggregations = args.bertlayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc)
 
     if args.addldafeattable:

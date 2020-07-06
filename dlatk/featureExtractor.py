@@ -1174,17 +1174,19 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
-    def addBERTTable_(self, modelName = 'bert-base-uncased', tokenizerName = 'bert-base-uncased', batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], tableName = None, valueFunc = lambda d: d):
+    def addEmbTable(self, modelName, tokenizerName, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], tableName = None, valueFunc = lambda d: d):
         '''
 
         '''
         ##FIRST MAKE SURE SENTENCE TOKENIZED TABLE EXISTS:
         sentTable = self.corptable+'_stoks'
         assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with Bert featrue extraction (run --add_sent_tokenized)" % sentTable
-        if len(layerAggregations) > 1:
-            dlac.warn("AddBert: !!Does not currently support more than one layer aggregation; only using first aggregation!!")
-            layerAggregations = layerAggregations[:1]
+        #if len(layerAggregations) > 1:
+        #    dlac.warn("AddBert: !!Does not currently support more than one layer aggregation; only using first aggregation!!")
+        #    layerAggregations = layerAggregations[:1]
 
+        tokenizerName = modelName if tokenizerName is None else tokenizerName
+        
         try: 
             import torch
             from torch.nn.utils.rnn import pad_sequence
@@ -1216,15 +1218,15 @@ class FeatureExtractor(DLAWorker):
             #'transfoXL': [TransfoXLModel, TransfoXLTokenizer], #Need to look into tokenization
             'bert' : [BertModel, BertTokenizer],
             'XLNet': [XLNetModel, XLNetTokenizer], 
-            #'OpenAIGPT': [OpenAIGPTModel,  OpenAIGPTTokenizer], # Need to fix tokenization [Token type Ids]
+            #'OpenAIGPT': [OpenAIGPTModel,  OpenAIGPTTokenizer], # Need to fix tokenization [Token type Ids], Doesn't have CLS or SEP
             'Roberta': [RobertaModel, RobertaTokenizer], # Need to fix tokenization [Token type Ids]
-            #'GPT2': [GPT2Model, GPT2Tokenizer], # Need to fix tokenization [Token type Ids]
+            #'GPT2': [GPT2Model, GPT2Tokenizer], # Need to fix tokenization [Token type Ids], Doesn't have CLS or SEP
             #'DistilBert': [DistilBertModel, DistilBertTokenizer], #Doesn't take Token Type IDS as input
             #'XLM': [XLMModel, XLMTokenizer], #Need to decide on the specific models
             #'XLMRoberta': [XLMRobertaModel, XLMRobertaTokenizer],  # Need to fix tokenization [Token type Ids]
             'Albert': [AlbertModel, AlbertTokenizer],
             #'Electra': [ElectraModel, ElectraTokenizer], #Need to understand the discriminator and generator outputs better
-            #'T5': [T5Model, T5Tokenizer] #Doesn't take Token Type IDS as input
+            #'T5': [T5Model, T5Tokenizer] #Doesn't take Token Type IDS as input, Doesn't have CLS or SEP, Need to understand how to input the decoder_input_ids/decoder_inputs_embeds
         }
 
         #print (modelName) #debug
@@ -1451,6 +1453,7 @@ class FeatureExtractor(DLAWorker):
                         #Example: lagg = [mean, min, concatenate], layers = [8,9]; Shape: (seq len, hidden dim, 2 + 1 + 1)
                         sub_msg_lagg = np.concatenate(sub_msg_lagg, axis=-1) 
                     #Getting the mean of all tokens representation
+                    #TODO: add word agg list and do eval
                     sub_msg_lagg_wagg = np.mean(sub_msg_lagg, axis=0) #Shape: (hidden dim, lagg)
                     #ReShaping: (1, hidden dim, lagg)
                     sub_msg_lagg_wagg = sub_msg_lagg_wagg.reshape(1, sub_msg_lagg_wagg.shape[0], sub_msg_lagg_wagg.shape[1]) 

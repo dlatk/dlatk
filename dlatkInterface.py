@@ -185,17 +185,19 @@ def main(fn_args = None):
                        help='range of group id\'s to include in binning.')
     group.add_argument('--mask_table', type=str, metavar='TABLE', dest='masktable', default=None,
                        help='Table containing which groups run in various bins (for ttest).')
-    group.add_argument('--bert_model', type=str, metavar='NAME', dest='bertmodel', default=dlac.DEF_BERT_MODEL,
-                       help='BERT model to use if extracting bert features.')
-    group.add_argument('--bert_msg_aggregation', '--bert_aggregations', type=str, metavar='AGG', nargs='+', dest='bertaggs', default=dlac.DEF_BERT_AGGREGATION,
-                       help='Aggregations to use with Bert (e.g. mean, min, max).')
-    group.add_argument('--bert_layer_aggregation', '--layer_aggregation', type=str, metavar='AGG', nargs='+', dest='bertlayeraggs', default=dlac.DEF_BERT_LAYER_AGGREGATION,
-                       help='Aggregations to use with Bert (e.g. mean, min, max).')
+    group.add_argument('--bert_model', '--emb_model', type=str, metavar='NAME', dest='embmodel', default=dlac.DEF_BERT_MODEL,
+                       help='Contextual Embedding model to use for extracting features.')
+    group.add_argument('--tokenizer_model', type=str, dest='tokenizermodel', default=None,
+                       help='Tokenizer model to use for tokenizing.')
+    group.add_argument('--bert_msg_aggregation', '--bert_aggregations', '--emb_msg_aggregation', '--emb_aggregations', type=str, metavar='AGG', nargs='+', dest='embaggs', default=dlac.DEF_BERT_AGGREGATION,
+                       help='Aggregations to use with Contextual embedding model (e.g. mean, min, max).')
+    group.add_argument('--bert_layer_aggregation', '--layer_aggregation', type=str, metavar='AGG', nargs='+', dest='emblayeraggs', default=dlac.DEF_BERT_LAYER_AGGREGATION,
+                       help='Aggregations to use with Contextual embedding model (e.g. mean, min, max).')
     group.add_argument('--bert_word_aggregation', '--word_aggregation', type=str, metavar='AGG', nargs='+', dest='transwordaggs', default=dlac.DEF_TRANS_WORD_AGGREGATION,
                        help='Aggregations to use for words (e.g. mean or concatenate).')
-    group.add_argument('--bert_layers', type=int, metavar='LAYER', nargs='+', dest='bertlayers', default=dlac.DEF_BERT_LAYERS,
-                       help='layers from Bert to keep.')
-    group.add_argument('--bert_no_context', action='store_true', dest='bertnocontext', default=False,
+    group.add_argument('--bert_layers', '--emb_layers', type=int, metavar='LAYER', nargs='+', dest='emblayers', default=dlac.DEF_BERT_LAYERS,
+                       help='layers from Contextual model to keep.')
+    group.add_argument('--bert_no_context', '--emb_no_context', action='store_true', dest='embnocontext', default=False,
                        help='encoded without considering context.')
     group.add_argument('--batch_size', dest='batchsize', default=dlac.GPU_BATCH_SIZE, type=int, 
                        help='Specify the batch size for generating the embeddings.')
@@ -1012,7 +1014,7 @@ def main(fn_args = None):
 
     if args.addbert:
         if not fe: fe = FE()
-        args.feattable = fe.addBERTTable_(modelName = args.bertmodel, batchSize=args.batchsize, aggregations=args.bertaggs, layersToKeep=args.bertlayers, noContext=args.bertnocontext, layerAggregations = args.bertlayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc)
+        args.feattable = fe.addEmbTable(modelName = args.embmodel, tokenizerName=args.tokenizermodel, batchSize=args.batchsize, aggregations=args.embaggs, layersToKeep=args.emblayers, noContext=args.embnocontext, layerAggregations = args.emblayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc)
         #args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=args.bertaggs, layersToKeep=args.bertlayers, noContext=args.bertnocontext, layerAggregations = args.bertlayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc)
 
     if args.addldafeattable:

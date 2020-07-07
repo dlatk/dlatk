@@ -129,10 +129,10 @@ DEF_P_MAPPING = { # maps old R method names to statsmodel names
 DEF_CONF_INT = 0.95
 DEF_TOP_MESSAGES = 10
 
-DEF_BERT_MODEL='base-uncased'
-DEF_BERT_AGGREGATION=['mean']
-DEF_BERT_LAYER_AGGREGATION=['concatenate']
-DEF_BERT_LAYERS=[10]
+DEF_EMB_MODEL='bert-base-uncased'
+DEF_EMB_AGGREGATION=['mean']
+DEF_EMB_LAYER_AGGREGATION=['concatenate']
+DEF_EMB_LAYERS=[10]
 DEF_TRANS_WORD_AGGREGATION = ['mean']
 GPU_BATCH_SIZE = 32
 EMB_OPTIONS = ['bert-base-uncased', 'bert-large-uncased', 'bert-base-cased', 'bert-large-cased', 'SpanBERT/spanbert-base-cased', 'SpanBERT/spanbert-large-cased', 

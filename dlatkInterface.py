@@ -452,7 +452,11 @@ def main(fn_args = None):
     group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
 <<<<<<< HEAD
+<<<<<<< HEAD
     group.add_argument('--emb_add_feat', action='store_true', dest='embaddfeat',
+=======
+    group.add_argument('--add_emb', '--add_bert', action='store_true', dest='embaddfeat',
+>>>>>>> ae860ea7dd3a558794edcb8dbe57bdc4ea9d6b8e
                        help='add mean features (--emb_model_name optionally add min, max)')
 =======
     group.add_argument('--add_bert', '--add_conemb', action='store_true', dest='addbert', 

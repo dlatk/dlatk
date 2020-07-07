@@ -203,6 +203,8 @@ def main(fn_args = None):
                        help='custom table name')                       
     group.add_argument('--batch_size', dest='batchsize', default=dlac.GPU_BATCH_SIZE, type=int, 
                        help='Specify the batch size for generating the embeddings.')
+    group.add_argument('--add_bert', '--add_emb_feat', action='store_true', dest='embaddfeat', 
+                       help='add embeddings mean features (optionally add min, max)')
 
 
     group = parser.add_argument_group('MySQL Interactoins', '')
@@ -451,11 +453,6 @@ def main(fn_args = None):
                        help='add flesch-kincaid scores, averaged per group.')
     group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
-
-    group.add_argument('--add_bert', '--add_emb_feat', action='store_true', dest='embaddfeat', 
-                       help='add embeddings mean features (optionally add min, max, --bert_model large)')
-
-
 
     group = parser.add_argument_group('Messages Transformation Actions', '')
     group.add_argument('--add_tokenized', action='store_true', dest='addtokenized',

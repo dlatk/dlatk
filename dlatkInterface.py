@@ -185,17 +185,17 @@ def main(fn_args = None):
                        help='range of group id\'s to include in binning.')
     group.add_argument('--mask_table', type=str, metavar='TABLE', dest='masktable', default=None,
                        help='Table containing which groups run in various bins (for ttest).')
-    group.add_argument('--bert_model', '--emb_model', type=str, metavar='NAME', dest='embmodel', default=dlac.DEF_BERT_MODEL,
+    group.add_argument('--bert_model', '--emb_model', type=str, metavar='NAME', dest='embmodel', default=dlac.DEF_EMB_MODEL,
                        help='Contextual Embedding model to use for extracting features.', choices=dlac.EMB_OPTIONS)
     group.add_argument('--tokenizer_model', type=str, dest='tokenizermodel', default=None,
                        help='Tokenizer model to use for tokenizing.')
-    group.add_argument('--bert_msg_aggregation', '--bert_aggregations', '--emb_msg_aggregation', '--emb_aggregations', type=str, metavar='AGG', nargs='+', dest='embaggs', default=dlac.DEF_BERT_AGGREGATION,
+    group.add_argument('--bert_msg_aggregation', '--bert_aggregations', '--emb_msg_aggregation', '--emb_aggregations', type=str, metavar='AGG', nargs='+', dest='embaggs', default=dlac.DEF_EMB_AGGREGATION,
                        help='Aggregations to use with Contextual embedding model (e.g. mean, min, max).')
-    group.add_argument('--bert_layer_aggregation', '--layer_aggregation', type=str, metavar='AGG', nargs='+', dest='emblayeraggs', default=dlac.DEF_BERT_LAYER_AGGREGATION,
+    group.add_argument('--bert_layer_aggregation', '--layer_aggregation', type=str, metavar='AGG', nargs='+', dest='emblayeraggs', default=dlac.DEF_EMB_LAYER_AGGREGATION,
                        help='Aggregations to use with Contextual embedding model (e.g. mean, min, max).')
     group.add_argument('--bert_word_aggregation', '--word_aggregation', type=str, metavar='AGG', nargs='+', dest='transwordaggs', default=dlac.DEF_TRANS_WORD_AGGREGATION,
                        help='Aggregations to use for words (e.g. mean or concatenate).')
-    group.add_argument('--bert_layers', '--emb_layers', type=int, metavar='LAYER', nargs='+', dest='emblayers', default=dlac.DEF_BERT_LAYERS,
+    group.add_argument('--bert_layers', '--emb_layers', type=int, metavar='LAYER', nargs='+', dest='emblayers', default=dlac.DEF_EMB_LAYERS,
                        help='layers from Contextual model to keep.')
     group.add_argument('--bert_no_context', '--emb_no_context', action='store_true', dest='embnocontext', default=False,
                        help='encoded without considering context.')

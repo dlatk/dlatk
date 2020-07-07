@@ -451,17 +451,10 @@ def main(fn_args = None):
                        help='add flesch-kincaid scores, averaged per group.')
     group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
-<<<<<<< HEAD
-<<<<<<< HEAD
-    group.add_argument('--emb_add_feat', action='store_true', dest='embaddfeat',
-=======
-    group.add_argument('--add_emb', '--add_bert', action='store_true', dest='embaddfeat',
->>>>>>> ae860ea7dd3a558794edcb8dbe57bdc4ea9d6b8e
-                       help='add mean features (--emb_model_name optionally add min, max)')
-=======
-    group.add_argument('--add_bert', '--add_conemb', action='store_true', dest='addbert', 
+
+    group.add_argument('--add_bert', '--add_emb_feat', action='store_true', dest='embaddfeat', 
                        help='add embeddings mean features (optionally add min, max, --bert_model large)')
->>>>>>> adi
+
 
 
     group = parser.add_argument_group('Messages Transformation Actions', '')
@@ -1027,12 +1020,8 @@ def main(fn_args = None):
 
     if args.embaddfeat:
         if not fe: fe = FE()
-<<<<<<< HEAD
-        args.feattable = fe.addEmbTable(modelName = args.embmodelname, aggregations=args.embaggregations, layersToKeep=args.emblayerstokeep, noContext=args.embnocontext, layerAggregations = args.emblayeraggregations, wordAggregations=args.embwordaggs, valueFunc = args.valuefunc)
-=======
         args.feattable = fe.addEmbTable(modelName = args.embmodel, tokenizerName=args.tokenizermodel, batchSize=args.batchsize, aggregations=args.embaggs, layersToKeep=args.emblayers, noContext=args.embnocontext, layerAggregations = args.emblayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc, customTableName = args.embtablename)
         #args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=args.bertaggs, layersToKeep=args.bertlayers, noContext=args.bertnocontext, layerAggregations = args.bertlayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc)
->>>>>>> adi
 
     if args.addldafeattable:
         if not fe: fe = FE()

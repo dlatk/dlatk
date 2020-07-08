@@ -472,18 +472,21 @@ class FeatureRefiner(FeatureGetter):
         groupidType = columns[self.correl_field]
         tableName = self.createFeatureTable(feature_name, currentType, 'DOUBLE', newTable)
         ##add extra columns:
-        mm.execute(self.corpdb, self.dbCursor, "ALTER TABLE %s ADD time INT, ADD %s %s" % (tableName, self.correl_field, groupidType), charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, "ALTER TABLE %s ADD time INT, ADD %s %s" %
+                   (tableName, self.correl_field, groupidType), charset=self.encoding, use_unicode=self.use_unicode)
      
         ## we are appending a date to the correl_field so group_id in feat table must be varchar
         if 'int' in groupidType:
-            mm.execute(self.corpdb, self.dbCursor, "ALTER TABLE %s MODIFY group_id VARCHAR(64)" % (tableName), charset=self.encoding, use_unicode=self.use_unicode)
+            mm.execute(self.corpdb, self.dbCursor, "ALTER TABLE %s MODIFY group_id VARCHAR(64)" %
+                       (tableName), charset=self.encoding, use_unicode=self.use_unicode)
  
         dlac.warn("""Interpolating %s to the %s level.""" % (str(featureTable), self.correl_field))
         
         ## 1. apply GFT to get users we care about: 
         groups = []
         if not setGFTWarning:
-            dlac.warn("""group_freq_thresh is set to %s. Only %s s meeting this will have interpolated features""" % (groupFreqThresh, self.correl_field), attention=True)
+            dlac.warn("""group_freq_thresh is set to %s. Only %s s meeting this will have interpolated features""" %
+                      (groupFreqThresh, self.correl_field), attention=True)
         if groupFreqThresh:
             groupCnts = self.getGroupWordCounts(where)
             for group, wordCount in groupCnts.items():
@@ -494,7 +497,7 @@ class FeatureRefiner(FeatureGetter):
         dlac.warn("""  Interpolating for up to %d %s s.""" % (len(groups), self.correl_field))
         gList = "','".join([str(g) for g in groups])
 
-        ## 2. Get the minimum date:
+        ## 2. Get the minimum and maximum dates:
         dlac.warn("""  [Finding good date range]""" )
         minIntersectDT, maxIntersectDT, minUnionDT, maxUnionDT  = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT max(min_date), min(max_date), min(min_date), max(max_date) FROM (SELECT %s, MIN(%s) as min_date, MAX(%s) as max_date FROM %s where %s in ('%s') group by %s) as a " % \
                                          (self.correl_field, dateField, dateField, self.corptable, self.correl_field, gList, self.correl_field))[0]
@@ -509,7 +512,6 @@ class FeatureRefiner(FeatureGetter):
             maxUnionDT = dtParse(maxUnionDT, ignoretz = True)
             dtClosestToMin = dtParse(maxUnionDT, ignoretz = True)
             dtClosestToMax = dtParse(maxUnionDT, ignoretz = True)
-
             
             
         dayDiff = (maxIntersectDT - minIntersectDT).days

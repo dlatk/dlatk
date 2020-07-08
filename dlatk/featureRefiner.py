@@ -527,7 +527,7 @@ class FeatureRefiner(FeatureGetter):
         (groupNormsByMid, featureNames) = oldFeatures.getGroupNormsSparseGroupsFirst(where = groupsWhere)
         dlac.warn("""  [done]""")
         
-        ## 4. Create X and Y per group: 
+        ## 4. Create X (time steps) and Y (group_norm) per group: 
         lengroups = len(groups)
         dlac.warn("\nInterpolating %d %ss over %ddays: 0 = %s through %d = %s (full range: %s through %s)"% \
                   (lengroups, self.correl_field, days, str(minIntersectDT.date()), maxDiffPerUnit, \

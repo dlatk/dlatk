@@ -326,7 +326,7 @@ class DimensionReducer:
                 print("\n= %s =\n%s" % (outcomeName, '-' * (len(outcomeName) + 4)))
                 print("[Aligning Dicts to get X and y]")
                 (X, y) = alignDictsAsXy(groupNormValues + controlValues, outcomes, sparse)
-                (self.clusterModels[outcomeName], self.scalers[outcomeName], self.fSelectors[outcomeName]) = self._fit(X, y, standardize=standardize)
+                #(self.clusterModels[outcomeName], self.scalers[outcomeName], self.fSelectors[outcomeName]) = self._fit(X, y, standardize=standardize)
         else:
             X = alignDictsAsX(groupNormValues + controlValues, sparse, returnKeyList= False)
             #newX = self.transform(X, standardize=standardize)

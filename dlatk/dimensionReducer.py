@@ -52,6 +52,9 @@ from numpy import sqrt, outer
 from numpy.linalg import norm
 import math
 
+#Infrastructure
+from .mysqlmethods import mysqlMethods as mm
+
 def alignDictsAsXy(X, y, sparse=False, returnKeyList=False):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
     keys = frozenset(list(y.keys()))
@@ -129,7 +132,7 @@ class DimensionReducer:
             
             'lda': { 'nb_topics':50, 'dictionary':None, 'alpha':None },
 
-            'rpca': {'n_components':15, 'random_state':42, 'whiten':False, 'iterated_power':3},
+            'rpca': {'n_components':15, 'random_state':42, 'whiten':False, 'iterated_power':3, 'svd_solver':'randomized'},
 
             'fa': {'n_components': 10, 'random_state': 42}
     
@@ -287,7 +290,7 @@ class DimensionReducer:
      
         return cluster, scaler, fSelector
 
-    def transformToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = ''):
+    def transformToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = '', featNames=None):
         if not fe:
             print("Must provide a feature extractor object")
             sys.exit(0)
@@ -313,7 +316,6 @@ class DimensionReducer:
 
         self.featureNames = list(groupNorms.keys())  # holds the order to expect features
         groupNormValues = list(groupNorms.values())  # list of dictionaries of group => group_norm
-        
     #     this will return a dictionary of dictionaries
 
         # 3. transform for each possible y:
@@ -327,29 +329,32 @@ class DimensionReducer:
                 (self.clusterModels[outcomeName], self.scalers[outcomeName], self.fSelectors[outcomeName]) = self._fit(X, y, standardize=standardize)
         else:
             X = alignDictsAsX(groupNormValues + controlValues, sparse, returnKeyList= False)
-            newX = self.transform(X, standardize=standardize)
+            #newX = self.transform(X, standardize=standardize)
+            newX = self.transform(standardize=standardize)
         
         # INSERTING the chunk into MySQL
         #Creating table if not done yet
         if not featNames:
-            featNames = list(chunkPredictions.keys())
-            featLength = max([len(s) for s in featNames])
-            # CREATE TABLE, and insert into it progressively:
-            featureName = "p_%s" % self.modelName[:4]
-            if name: featureName += '_' + name
-            featureTableName = fe.createFeatureTable(featureName, "VARCHAR(%d)"%featLength, 'DOUBLE')
+            n_components = self.clusterModels['noOutcome'].n_components_            
+            featNames = ["COMPONENT_"+str(i) for i in range(n_components)]
+            #featNames = list(chunkPredictions.keys())
+        featLength = max([len(s) for s in featNames])
+        # CREATE TABLE, and insert into it progressively:
+        featureName = "p_%s" % self.modelName[:4]
+        if name: featureName += '_' + name
+        featureTableName = fe.createFeatureTable(featureName, "VARCHAR(%d)"%featLength, 'DOUBLE')
 
         written = 0
         rows = []
         for feat in featNames:
-            preds = chunkPredictions[feat]
+            preds = newX['noOutcome'][feat]
 
             print("[Inserting Predictions as Feature values for feature: %s]" % feat)
             wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
 
             for k, v in preds.items():
                 rows.append((k, v, v))
-                if len(rows) >  self.maxPredictAtTime or len(rows) >= len(preds):
+                if len(rows) >  60000 or len(rows) >= len(preds):
                     mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
                     written += len(rows)
                     print("   %d feature rows written" % written)
@@ -406,22 +411,22 @@ class DimensionReducer:
         if allOutcomes:
             for outcomeName, outcomes in allOutcomes.items():
                 print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
-                X, group_ids = alignDictAsX(groupNormValues + controlValues, sparse, returnKeyList=True)
+                X, group_ids = alignDictsAsX(groupNormValues + controlValues, sparse, returnKeyList=True)
                 (cluster, scaler, fSelector) = (self.clusterModels[outcomeName], self.scalers[outcomeName], self.fSelectors[outcomeName])
                 transformedX[outcomeName] = _transform(cluster, scaler, fSelector)
         else:
-            X, group_ids = alignDictAsX(groupNormValues + controlValues, sparse, returnKeyList=True)
+            X, group_ids = alignDictsAsX(groupNormValues + controlValues, sparse, returnKeyList=True)
             (cluster, scaler, fSelector) = (self.clusterModels['noOutcome'], self.scalers['noOutcome'], self.fSelectors['noOutcome'])
-            transformedX['noOutcome'] = _transform(cluster, scaler, fSelector)
-            
+            transformedX['noOutcome'] = self._transform(cluster=cluster, X=X, scaler=scaler, fSelector=fSelector)
+
         for outcomeName, outcomeX  in transformedX.items():
             if not isinstance(outcomeX, csr_matrix):
                 dictX = dict()
                 (n, m) = outcomeX.shape
                 for j in range(m):
-                    dictX[group_ids[j]] = dict()
+                    dictX['COMPONENT_'+str(j)] = dict()
                     for i in range(n):
-                        dictX[group_ids[j]]['rfeat'+str(i)]= outcomeX[i][j]
+                        dictX['COMPONENT_'+str(j)][group_ids[i]]= outcomeX[i][j]
                 transformedX[outcomeName] = dictX
             else:
                 raise NotImplementedError

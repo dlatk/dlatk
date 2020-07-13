@@ -1673,7 +1673,7 @@ def main(fn_args = None):
         if not og: og = OG()
         if not fgs: fgs = FGs() #all feature getters
         crp = CombinedRegressionPredictor(og, fgs, args.combmodels, args.model)
-    if args.fitreducer or args.reducertolexicon or args.supertopics:
+    if args.fitreducer or args.reducertolexicon or args.supertopics or args.transformdrtofeats:
         if not og: og = OG()
         if not fg: fg = FG()
         dr = DimensionReducer(fg, args.model, og, args.n_components)
@@ -1874,6 +1874,7 @@ def main(fn_args = None):
         cp.save(args.picklefile)
 
     if args.loadmodels and dr:
+        print("LOADING ", args.picklefile)
         dr.load(args.picklefile)
 
     if args.classToLex or args.regrToLex:
@@ -1897,7 +1898,7 @@ def main(fn_args = None):
 
     if args.transformdrtofeats and dr:
         if not fe: fe = FE()
-        dr.transformToFeatureTable(sparse = args.sparse, fe = fe, name = args.transformdrtofeats, standardize = args.standardize, groupsWhere = args.groupswhere)
+        dr.transform(sparse = args.sparse, standardize = args.standardize, writeToFeats = args.transformdrtofeats, fe = fe)
         
     if args.reducertolexicon or args.supertopics:
         if args.reducertolexicon:

@@ -283,6 +283,8 @@ class DimensionReducer:
         # print(cluster.components_)
         print("model: %s " % str(cluster))
 
+        #TODO FOR DEBUGGING: have it run transform on X and print the mean, min, max, std per component
+
         if rotate:
             XFCC = cluster.components_.T
             R, T = rotate_promax(XFCC)
@@ -290,84 +292,86 @@ class DimensionReducer:
      
         return cluster, scaler, fSelector
 
-    def transformToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = '', featNames=None):
-        if not fe:
-            print("Must provide a feature extractor object")
-            sys.exit(0)
+    ### TODO: REMOVE THIS METHOD (kept for debugging writeToFeats)
+    # def transformToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = '', featNames=None):
+    #     if not fe:
+    #         print("Must provide a feature extractor object")
+    #         sys.exit(0)
 
-        print()
-        # 1. get data possible ys (outcomes)
-        groups = []
-        #list of control values for groups
-        controlValues = None
-        allOutcomes = None
-        if self.outcomeGetter != None: # and self.outcomeGetter.hasOutcomes():
-            (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
-            print("[number of groups: %d]" % len(groups))
-            controlValues = list(controls.values())  # list of dictionaries of group=>group_norm
-        groups = list(groups)
+    #     print()
+    #     # 1. get data possible ys (outcomes)
+    #     groups = []
+    #     #list of control values for groups
+    #     controlValues = None
+    #     allOutcomes = None
+    #     if self.outcomeGetter != None: # and self.outcomeGetter.hasOutcomes():
+    #         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
+    #         print("[number of groups: %d]" % len(groups))
+    #         controlValues = list(controls.values())  # list of dictionaries of group=>group_norm
+    #     groups = list(groups)
             
-        # 2. get data for X:
-        (groupNorms, featureNames) = (None, None)
-        if sparse:
-            (groupNorms, featureNames) = self.featureGetter.getGroupNormsSparseFeatsFirst(groups)
-        else:
-            (groupNorms, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups)
+    #     # 2. get data for X:
+    #     (groupNorms, featureNames) = (None, None)
+    #     if sparse:
+    #         (groupNorms, featureNames) = self.featureGetter.getGroupNormsSparseFeatsFirst(groups)
+    #     else:
+    #         (groupNorms, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups)
 
-        self.featureNames = list(groupNorms.keys())  # holds the order to expect features
-        groupNormValues = list(groupNorms.values())  # list of dictionaries of group => group_norm
-    #     this will return a dictionary of dictionaries
+    #     self.featureNames = list(groupNorms.keys())  # holds the order to expect features
+    #     groupNormValues = list(groupNorms.values())  # list of dictionaries of group => group_norm
+    # #     this will return a dictionary of dictionaries
 
-        # 3. transform for each possible y:
-        if allOutcomes:
-            dlac.warn("NOT IMPLEMENTED")
-            sys.exit(1)
-            for outcomeName, outcomes in allOutcomes.items():
-                print("\n= %s =\n%s" % (outcomeName, '-' * (len(outcomeName) + 4)))
-                print("[Aligning Dicts to get X and y]")
-                (X, y) = alignDictsAsXy(groupNormValues + controlValues, outcomes, sparse)
-                #(self.clusterModels[outcomeName], self.scalers[outcomeName], self.fSelectors[outcomeName]) = self._fit(X, y, standardize=standardize)
-        else:
-            X = alignDictsAsX(groupNormValues + controlValues, sparse, returnKeyList= False)
-            #newX = self.transform(X, standardize=standardize)
-            newX = self.transform(standardize=standardize)
+    #     # 3. transform for each possible y:
+    #     if allOutcomes:
+    #         dlac.warn("NOT IMPLEMENTED")
+    #         sys.exit(1)
+    #         for outcomeName, outcomes in allOutcomes.items():
+    #             print("\n= %s =\n%s" % (outcomeName, '-' * (len(outcomeName) + 4)))
+    #             print("[Aligning Dicts to get X and y]")
+    #             (X, y) = alignDictsAsXy(groupNormValues + controlValues, outcomes, sparse)
+    #             #(self.clusterModels[outcomeName], self.scalers[outcomeName], self.fSelectors[outcomeName]) = self._fit(X, y, standardize=standardize)
+    #     else:
+    #         X = alignDictsAsX(groupNormValues + controlValues, sparse, returnKeyList= False)
+    #         #newX = self.transform(X, standardize=standardize)
+    #         newX = self.transform(standardize=standardize)
         
-        # INSERTING the chunk into MySQL
-        #Creating table if not done yet
-        if not featNames:
-            n_components = self.clusterModels['noOutcome'].n_components_            
-            featNames = ["COMPONENT_"+str(i) for i in range(n_components)]
-            #featNames = list(chunkPredictions.keys())
-        featLength = max([len(s) for s in featNames])
-        # CREATE TABLE, and insert into it progressively:
-        featureName = "p_%s" % self.modelName[:4]
-        if name: featureName += '_' + name
-        featureTableName = fe.createFeatureTable(featureName, "VARCHAR(%d)"%featLength, 'DOUBLE')
+    #     # INSERTING the chunk into MySQL
+    #     #Creating table if not done yet
+    #     if not featNames:
+    #         n_components = self.clusterModels['noOutcome'].n_components_            
+    #         featNames = ["COMPONENT_"+str(i) for i in range(n_components)]
+    #         #featNames = list(chunkPredictions.keys())
+    #     featLength = max([len(s) for s in featNames])
+    #     # CREATE TABLE, and insert into it progressively:
+    #     featureName = "p_%s" % self.modelName[:4]
+    #     if name: featureName += '_' + name
+    #     featureTableName = fe.createFeatureTable(featureName, "VARCHAR(%d)"%featLength, 'DOUBLE')
 
-        written = 0
-        rows = []
-        for feat in featNames:
-            preds = newX['noOutcome'][feat]
+    #     written = 0
+    #     rows = []
+    #     for feat in featNames:
+    #         preds = newX['noOutcome'][feat]
 
-            print("[Inserting Predictions as Feature values for feature: %s]" % feat)
-            wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
+    #         print("[Inserting Predictions as Feature values for feature: %s]" % feat)
+    #         wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
 
-            for k, v in preds.items():
-                rows.append((k, v, v))
-                if len(rows) >  60000 or len(rows) >= len(preds):
-                    mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
-                    written += len(rows)
-                    print("   %d feature rows written" % written)
-                    rows = []
-        # if there's rows left
-        if rows:
-            mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
-            written += len(rows)
-            print("   %d feature rows written" % written)
+    #         for k, v in preds.items():
+    #             rows.append((k, v, v))
+    #             if len(rows) >  60000 or len(rows) >= len(preds):
+    #                 mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+    #                 written += len(rows)
+    #                 print("   %d feature rows written" % written)
+    #                 rows = []
+    #     # if there's rows left
+    #     if rows:
+    #         mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+    #         written += len(rows)
+    #         print("   %d feature rows written" % written)
 
-        return
+    #     return
     
-    def transform(self, standardize=True, sparse=False, restrictToGroups=None):
+    def transform(self, standardize=True, sparse=False, restrictToGroups=None, writeToFeats=False, fe = None):
+        ##TODO: add groupsWhere parameter
         groups = []
         controlValues = None
         allOutcomes = None
@@ -428,6 +432,42 @@ class DimensionReducer:
                     for i in range(n):
                         dictX['COMPONENT_'+str(j)][group_ids[i]]= outcomeX[i][j]
                 transformedX[outcomeName] = dictX
+
+                if writeToFeats:
+                    #Creating table if not done yet
+                    n_components = self.clusterModels[outcomeName].n_components_            
+                    featNames = ["COMPONENT_"+str(i) for i in range(n_components)]
+                    #featNames = list(chunkPredictions.keys())
+                    featLength = max([len(s) for s in featNames])
+
+                    # CREATE TABLE, and insert into it progressively:
+                    featureName = "dr_%s" % self.modelName[:4]
+                    featureName += '_' + writeToFeats
+                    featureTableName = fe.createFeatureTable(featureName, "VARCHAR(%d)"%featLength, 'DOUBLE')
+                    
+                    written = 0
+                    rows = []
+                    for feat in featNames:
+                        preds = transformedX[outcomeName][feat]
+
+                        print("[Inserting Predictions as Feature values for feature: %s]" % feat)
+                        wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
+
+                        for k, v in preds.items():
+                            rows.append((k, v, v))
+                            if len(rows) >  60000 or len(rows) >= len(preds):
+                                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                                written += len(rows)
+                                print("   %d feature rows written" % written)
+                                rows = []
+                    # if there's rows left
+                    if rows:
+                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                        written += len(rows)
+                        print("   %d feature rows written" % written)
+
+                
+                
             else:
                 raise NotImplementedError
         
@@ -435,9 +475,13 @@ class DimensionReducer:
     
     def _transform(self, cluster, X, scaler = None, fSelector = None, y = None):
         if scaler:
+            print("[ Running Scaler]:%s\n"%str(scaler))
             X = scaler.transform(X)
         if fSelector:
+            print("[ Running feature selector]:%s\n"%str(fSelector))
             X = fSelector.transform(X)
+
+        print("[ Running dim reducer]:%s\n"%str(cluster))
         
         return cluster.transform(X)
     

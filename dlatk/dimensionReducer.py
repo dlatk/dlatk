@@ -35,6 +35,7 @@ from itertools import combinations
 
 # scikit-learn imports
 from sklearn.preprocessing import StandardScaler
+from sklearn.base import TransformerMixin
 from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV 
 from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF, SparsePCA, FactorAnalysis
 from sklearn import metrics
@@ -90,7 +91,40 @@ def alignDictsAsXy(X, y, sparse=False, returnKeyList=False):
         else:
             return (listX, listy)
 
+class PPA(TransformerMixin):
+    ''' To apply Post processing of word embeddings: Mu and Viswanath, Proceedings of ICLR 2018 '''
 
+    def __init__(self, D = None, svd_solver = 'auto'):
+        self.D = D
+        self.svd_solver = svd_solver
+    
+    def fit(self, X:np.array):
+
+        if self.D is None: self.D = max(X.shape[1]//100, 1) #init D if not passed
+
+        self.pca = PCA(n_components=min(X.shape[0], X.shape[1]), svd_solver=self.svd_solver)
+        X_new = X - np.mean(X)
+        self.pca.fit_transform(X_new)
+        self.Ufit = self.pca.components_
+
+        return self
+    
+    def transform(self, X:np.array):
+        
+        X_new = X - np.mean(X)
+        X_ppa = []
+        for i in range(X_new.shape[0]):
+            ppa_emb = X_new[i]
+            for u in self.Ufit[0:self.D]:
+                ppa_emb = ppa_emb - np.dot(u.transpose(), ppa_emb) * u
+            X_ppa.append(ppa_emb)
+        
+        X_ppa = np.array(X_ppa)
+        return X_ppa
+    
+    def fit_transform(self, X:np.array):
+        self.fit(X)
+        return self.transform(X)
 
 class DimensionReducer:
     """Handles clustering of continuous outcomes"""
@@ -134,7 +168,9 @@ class DimensionReducer:
 
             'rpca': {'n_components':15, 'random_state':42, 'whiten':False, 'iterated_power':3, 'svd_solver':'randomized'},
 
-            'fa': {'n_components': 10, 'random_state': 42}
+            'fa': {'n_components': 10, 'random_state': 42},
+
+            'ppa': {'D': None}
     
             }
 
@@ -146,7 +182,8 @@ class DimensionReducer:
         'mbsparsepca': 'MiniBatchSparsePCA',
         'lda' : 'LDA',
         'rpca' : 'PCA',#TODO: somehow update to use rpca
-        'fa' : 'FactorAnalysis'
+        'fa' : 'FactorAnalysis',
+        'ppa': 'PPA'
         }
 
     def __init__(self, fg, modelName='nmf', og=None, n_components=None):

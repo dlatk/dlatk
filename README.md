@@ -1,23 +1,28 @@
 # Differential Language Analysis ToolKit
 
-DLATK is an end to end human text analysis package, specifically suited for social media and social scientific applications. It is written in Python 3 and developed by the World Well-Being Project at the University of Pennsylvania and Stony Brook University. 
+DLATK is an end to end human text analysis package for Python 3. It is specifically *suited for social media, Psychology, and health research*, developed originally for projects out of the University of Pennsylvania and Stony Brook University.  Currently, it has been used in over 75 peer-reviewed publicaitons (many from before there was an article to reference). 
 
-It contains:
+DLATK can perform:
 
-- feature extraction
-- part-of-speech tagging
-- correlation
-- prediction and classification
-- mediation 
-- dimensionality reduction and clustering
+- linguistic feature extraction (i.e. turning text into variables)
+- differential language analysis (i.e. finding the language that is most associated with psychological or health variables)
 - wordcloud visualization
+- statistical- and machine learning-based supervised prediction (regresion and classification)
+- statistical- and machine learning-based dimensionality reduction and clustering
+- mediation analysis
+- contextual embeddings: using deep learning transformers message, user, or group embeddings
+- part-of-speech tagging
 
-DLATK can utilize:
+DLATK can integrate with
+- [pandas] (http://pandas.pydata.org/) dataframe output
 
+Functions of DLATK use:
+
+- [HuggingFace](http://??.org/) dataframe output
 - [Mallet](http://mallet.cs.umass.edu/) for creating LDA topics
 - [Stanford Parser](http://nlp.stanford.edu/software/lex-parser.shtml) 
 - [CMU's TweetNLP](http://www.cs.cmu.edu/~ark/TweetNLP/) 
-- [pandas](http://pandas.pydata.org/) dataframe output
+
 
 ## Installation
 

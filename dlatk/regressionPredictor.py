@@ -57,6 +57,7 @@ import math
 
 #infrastructure
 from .classifyPredictor import ClassifyPredictor
+from .dimensionReducer import PPA
 from .mysqlmethods import mysqlMethods as mm
 from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, DEFAULT_RANDOM_SEED, warn, MinScaler
 

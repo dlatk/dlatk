@@ -163,7 +163,7 @@ DEF_RP_FEATURE_SELECTION_MAPPING = {
 
     'pca': 'PCA(n_components=max(min(int(X.shape[1]*.5), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
     'k_pca': 'PCA(n_components=int(self.n_components), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
-    'k_pca_ppa': 'PIPELINE([ ("1_PCA", PCA(n_components=int(self.n_components), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")), ("2_PPA", PPA()) ])',
+    'k_pca_ppa': 'Pipeline([ ("1_PCA", PCA(n_components=int(self.n_components), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")), ("2_PPA", PPA()) ])',
     'k_fa': 'FactorAnalysis(n_components=int(self.n_components), random_state=42, iterated_power=3, svd_method="randomized")',
     'k_nmf': 'Pipeline([("1_min", MinScaler()), ("2_nmf", NMF(n_components=int(self.n_components), init="nndsvd", random_state=42))])',
     'none': None,

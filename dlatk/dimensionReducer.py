@@ -35,7 +35,7 @@ from itertools import combinations
 
 # scikit-learn imports
 from sklearn.preprocessing import StandardScaler
-from sklearn.base import TransformerMixin
+from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV 
 from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF, SparsePCA, FactorAnalysis
 from sklearn import metrics
@@ -588,16 +588,17 @@ def rotate_varimax(X):
 #############################################################
 ## Other classes:
 
-class PPA(TransformerMixin):
+class PPA(TransformerMixin, BaseEstimator):
     ''' To apply Post processing of word embeddings: Mu and Viswanath, Proceedings of ICLR 2018 '''
 
     def __init__(self, D = None, svd_solver = 'auto'):
         self.D = D
         self.svd_solver = svd_solver
     
-    def fit(self, X:np.array):
+    def fit(self, X:np.array, y=None):
 
         if self.D is None: self.D = max(X.shape[1]//100, 1) #init D if not passed
+        self.n_components_ = X.shape[1]
 
         self.pca = PCA(n_components=min(X.shape[0], X.shape[1]), svd_solver=self.svd_solver)
         X_new = X - np.mean(X)
@@ -606,7 +607,7 @@ class PPA(TransformerMixin):
 
         return self
     
-    def transform(self, X:np.array):
+    def transform(self, X:np.array, y=None):
         
         X_new = X - np.mean(X)
         X_ppa = []
@@ -619,7 +620,7 @@ class PPA(TransformerMixin):
         X_ppa = np.array(X_ppa)
         return X_ppa
     
-    def fit_transform(self, X:np.array):
+    def fit_transform(self, X:np.array, y=None):
         self.fit(X)
         return self.transform(X)
 

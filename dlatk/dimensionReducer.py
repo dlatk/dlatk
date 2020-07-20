@@ -135,7 +135,7 @@ class DimensionReducer:
 
             'fa': {'n_components': 10, 'random_state': 42},
 
-            'ppa': {'D': None} #None defaults to original dimensions / 100
+            'ppa': {'D': 1} #None defaults to original dimensions / 100
     
             }
 
@@ -591,7 +591,7 @@ def rotate_varimax(X):
 class PPA(TransformerMixin, BaseEstimator):
     ''' To apply Post processing of word embeddings: Mu and Viswanath, Proceedings of ICLR 2018 '''
 
-    def __init__(self, D = None, svd_solver = 'auto'):
+    def __init__(self, D = None, svd_solver = 'randomized'):
         self.D = D
         self.svd_solver = svd_solver
     
@@ -601,7 +601,7 @@ class PPA(TransformerMixin, BaseEstimator):
         self.n_components_ = X.shape[1]
 
         self.pca = PCA(n_components=min(X.shape[0], X.shape[1]), svd_solver=self.svd_solver)
-        X_new = X - np.mean(X)
+        X_new = X - np.mean(X, axis=0)
         self.pca.fit_transform(X_new)
         self.Ufit = self.pca.components_
 
@@ -609,12 +609,12 @@ class PPA(TransformerMixin, BaseEstimator):
     
     def transform(self, X:np.array, y=None):
         
-        X_new = X - np.mean(X)
+        X_new = X - np.mean(X, axis=0)
         X_ppa = []
         for i in range(X_new.shape[0]):
             ppa_emb = X_new[i]
             for u in self.Ufit[0:self.D]:
-                ppa_emb = ppa_emb - np.dot(u.transpose(), ppa_emb) * u
+                ppa_emb = ppa_emb - (np.dot(u.transpose(), X[i]) * u)
             X_ppa.append(ppa_emb)
         
         X_ppa = np.array(X_ppa)

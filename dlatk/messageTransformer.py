@@ -185,11 +185,7 @@ class MessageTransformer(DLAWorker):
         tableName = "%s_lda$%s" %(self.corptable, ldaStatesName)
 
         #Create Table:
-<<<<<<< HEAD
         columnNames, messageIndex, messageIdIndex = self._createTable(tableName, modify='LONGTEXT')
-=======
-        columnNames, messageIndex, messageIdIndex = self.__createTable(tableName, modify='LONGTEXT')
->>>>>>> c2d2f66a5d1fa3c83079719771d7f189487db5c8
 
         commentLine = re.compile('^\#')
         ldaColumnLabels = ['doc', 'message_id', 'index', 'term_id', 'term', 'topic_id']

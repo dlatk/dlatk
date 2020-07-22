@@ -98,6 +98,7 @@ INSTALL_REQUIRES = [
   'scipy>=0.13.3', 
   'SQLAlchemy>=0.9.9', 
   'statsmodels>=0.5.0', 
+  'gensim==3.8.3'
 ]
 EXTRAS_REQUIRE = {
   'image': ['image'],
@@ -106,8 +107,7 @@ EXTRAS_REQUIRE = {
   'rpy2': ['rpy2'],
   'simplejson': ['simplejson>=3.3.1'],
   'textstat': ['textstat>=0.6.1'],
-  'wordcloud':  ['wordcloud==1.1.3'],
-  'gensim': ['gensim==3.8.3']
+  'wordcloud':  ['wordcloud==1.1.3']
 }
 
 SCRIPTS = ['dlatkInterface.py']

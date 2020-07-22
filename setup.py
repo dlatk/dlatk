@@ -98,7 +98,8 @@ INSTALL_REQUIRES = [
   'scipy>=0.13.3', 
   'SQLAlchemy>=0.9.9', 
   'statsmodels>=0.5.0', 
-  'gensim==3.8.3'
+  'gensim==3.8.3',
+  'dlatk-pymallet==1.0.0'
 ]
 EXTRAS_REQUIRE = {
   'image': ['image'],

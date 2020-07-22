@@ -2,21 +2,26 @@
 #########################################
 import re
 
-from gensim import corpora
-from gensim.models.wrappers import LdaMallet
-from numpy import log2, isnan
 import csv
 import os, sys
 
 from dlatk.messageTransformer import MessageTransformer
-from dlatk.pymallet import defaults
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/dlatk/LexicaInterface",""))
 
 from dlatk.featureExtractor import FeatureExtractor
 from dlatk import dlaConstants as dlac
 
-from dlatk.pymallet.lda import estimate_topics
+gensim_available = True
+try:
+    from gensim import corpora
+    from gensim.models.wrappers import LdaMallet
+except ImportError:
+    gensim_available = False
+
+from numpy import log2, isnan
+from pymallet import defaults
+from pymallet.lda import estimate_topics
 
 from json import loads
 
@@ -224,7 +229,7 @@ class LDAEstimator(object):
         return self._stopwords
 
     def estimate_topics(self, feature_lines_file, mallet_path=None):
-        if not mallet_path:
+        if not mallet_path or not gensim_available:
             print('Estimating LDA topics using PyMallet.')
             estimate_topics(feature_lines_file, num_topics=self.num_topics, alpha=self.alpha, beta=self.beta,
                             iterations=self.iterations, stoplist=self.stopwords)

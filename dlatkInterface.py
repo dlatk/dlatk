@@ -3,8 +3,6 @@
 """
 Interface Module to DLATK
 """
-from dlatk.pymallet import lda
-
 print("\n")#clear some lines to make command more obvious
 import os, getpass
 import sys
@@ -34,9 +32,7 @@ from dlatk.outcomeGetter import OutcomeGetter
 from dlatk.outcomeAnalyzer import OutcomeAnalyzer
 from dlatk.regressionPredictor import RegressionPredictor, CombinedRegressionPredictor, ClassifyToRegressionPredictor
 from dlatk.semanticsExtractor import SemanticsExtractor
-from dlatk.topicExtractor import TopicExtractor
-
-from dlatk.pymallet.lda import run as run_lda
+from dlatk.topicExtractor import TopicExtractor, LDAEstimator
 
 try:
     from dlatk.lib import wordcloud
@@ -485,7 +481,8 @@ def main(fn_args = None):
 
     group = parser.add_argument_group('LDA Actions', '')
     group.add_argument('--add_message_id', type=str, nargs=2, dest='addmessageid',
-                       help='Adds the message IDs to the topic distributions and stores the result in --output_name. Previously addMessageID.py (two agrs: MESSAGE_FILE, STATE_FILE)')
+                       help='Adds the message IDs to the topic distributions and stores the result in --output_name. '
+                            'Previously addMessageID.py (two args: MESSAGE_FILE, STATE_FILE)')
     group.add_argument('-m', '--lda_msg_tbl', metavar='TABLE', dest='ldamsgtbl', type=str, default=dlac.DEF_LDA_MSG_TABLE,
                            help='LDA Message Table')
     group.add_argument('--create_dists', action='store_true', dest='createdists',
@@ -713,17 +710,15 @@ def main(fn_args = None):
 
     group = parser.add_argument_group('LDA Estimation Actions', '')
     group.add_argument('--estimate_lda_topics', action='store_true', help="Estimates LDA topics using PyMallet.")
-    group.add_argument('--lda_name', help="The name of the LDA topic-lexicon. Required unless --no_lda_lexicon is "
-                                          "used.")
+    group.add_argument('--mallet_path', help="Specify the path to the Mallet executable. If unspecified, "
+                                             "LDA estimation is performed with PyMallet.")
+    group.add_argument('--lda_lexicon_name', help="The name of the LDA topic-lexicon. Required unless --no_lda_lexicon "
+                                                  "is used.")
     group.add_argument('--no_lda_lexicon', action='store_true', help="Do not store the LDA topics as a lexicon.")
-    group.add_argument('--lda_files', default="./.lda",
-                       help="The directory to use for storing intermediate LDA files. Will be created if does not "
-                            "exist. Default: './.lda'")
     group.add_argument('--num_topics', type=int, default=dlac.DEF_NUM_TOPICS,
                        help="The number of LDA topics to estimate. Default: {}".format(str(dlac.DEF_NUM_TOPICS)))
-    group.add_argument('--lda_stoplist', choices=dlac.DEF_STOPLIST_LANGUAGE_CHOICES, default=dlac.DEF_STOPLIST_LANGUAGE,
-                       help="The default stoplist to use. Default: {}".format(dlac.DEF_STOPLIST_LANGUAGE))
-    group.add_argument('--extra_lda_stopwords', help="An optional file containing extra stopwords to use.")
+    group.add_argument('--num_stopwords', type=int, default=dlac.DEF_NUM_STOPWORDS, help="The number of stopwords to "
+                                                                                         "use.")
     group.add_argument('--no_lda_stopping', action='store_true', help="Disables stopping")
     group.add_argument('--lda_alpha', type=float, default=dlac.DEF_ALPHA,
                        help="The LDA alpha parameter. Default: {}".format(str(dlac.DEF_ALPHA)))
@@ -1062,39 +1057,72 @@ def main(fn_args = None):
     if args.estimate_lda_topics:
         if not args.feattable:
             raise Exception('LDA topic estimation requires a 1gram feature table.')
-        if not args.lda_name and not args.no_lda_lexicon:
-            raise Exception('Must specify an LDA lexicon name or disable topic-lexicon with --no_lda_lexicon.')
-        if os.path.exists(args.lda_files) and not os.path.isdir(args.lda_files):
-            raise Exception('Attempt to save files in {} failed; is not a directory.'.format(args.lda_files))
-        if not os.path.exists(args.lda_files):
-            os.mkdir(args.lda_files)
-        output_state = os.path.join(args.lda_files, 'lda.state')
-        output_topic_keys = os.path.join(args.lda_files, 'lda.keys')
+        if not args.lda_lexicon_name and not args.no_lda_lexicon:
+            raise Exception('Must specify an LDA lexicon name with --lda_lexicon_name or disable topic-lexicon with '
+                            '--no_lda_lexicon.')
         if not args.printjoinedfeaturelines:  # allow users to specify a file if they want to write it out
-            args.printjoinedfeaturelines = os.path.join(args.lda_files, 'msgs.txt')
-        args.addldamsgs = output_state
+            args.printjoinedfeaturelines = '/tmp/lda_msgs.txt'
         args.createdists = True
 
     if args.printjoinedfeaturelines:
-        print('Writing joined feature lines file.')
+        print('Writing joined feature lines file: {}.'.format(args.printjoinedfeaturelines))
         if not fg: fg = FG()
         fg.printJoinedFeatureLines(args.printjoinedfeaturelines)
 
     if args.estimate_lda_topics:
         print('Estimating LDA topics. This may take a long time!')
-        run_lda(args.printjoinedfeaturelines, args.num_topics, args.lda_alpha, args.lda_beta, args.lda_iterations,
-                args.lda_stoplist, output_state, output_topic_keys, args.extra_lda_stopwords,
-                args.no_lda_stopping)
+        if not fg: fg = FG()
+        lda_estimator = LDAEstimator(fg, args.num_topics, args.lda_alpha, args.lda_beta,
+                                     args.lda_iterations, args.num_stopwords, args.no_lda_stopping)
+        state_file = lda_estimator.estimate_topics(args.printjoinedfeaturelines, args.mallet_path)
+        if args.mallet_path:  # only need to add message IDs if using mallet; pymallet handles this for us
+            args.addmessageid = [args.printjoinedfeaturelines, state_file]
+            state_file = os.path.splitext(state_file)[0]
+            args.outputname = state_file
+        args.addldamsgs = state_file
 
+    # LDA
+    if args.addmessageid:
+        messageFile = open(args.addmessageid[0], 'rb')
+        stateFile = gzip.open(args.addmessageid[1], 'rb')
+        writeFile = open(args.outputname, 'w')
+        writeFile.write(stateFile.readline().decode())
+        writeFile.write(stateFile.readline().decode())
+        writeFile.write(stateFile.readline().decode())
+        error = open('error.log.txt', 'w+')
+
+        currentindex = -1
+        messageid = -1
+        while (True):
+            line = stateFile.readline().decode()
+            if len(line) == 0:
+                break
+            tokens = line.split()
+            if tokens[0] != currentindex:
+                currentindex = tokens[0]
+                line_read = messageFile.readline()
+                if len(line_read.split()) > 0:
+                    messageid = line_read.split()[0]
+                    if str(messageid) == '$':
+                        error.write("Error line: " + line_read)
+
+            tokens[1] = messageid.decode()
+            line = ' '.join(tokens)
+            line += '\n'
+            writeFile.write(line)
+        messageFile.close()
+        stateFile.close()
+        writeFile.close()
 
     # transform message tables
     if args.addldamsgs:
+        lda_state_name = None
         if args.estimate_lda_topics:
-            base_state_file = os.path.splitext(os.path.basename(args.addldamsgs))[0].replace('-', '_')
+            lda_state_name = args.lda_lexicon_name.replace('-', '_') if args.lda_lexicon_name else 'lda_topics'
         if not mt:
             mt = MT()
         print('Importing LDA state.')
-        mt.addLDAMessages(args.addldamsgs)
+        mt.addLDAMessages(args.addldamsgs, ldaStatesName=lda_state_name)
 
     if args.addtokenized:
         if not mt: mt = MT()
@@ -1146,65 +1174,31 @@ def main(fn_args = None):
         ma.addAnonymizedTable()
 
 
-    # LDA
-    if args.addmessageid:
-        messageFile=open(args.addmessageid[0], 'rb')
-        stateFile=gzip.open(args.addmessageid[1], 'rb')
-        writeFile=open(args.outputname, 'w')
-        writeFile.write(stateFile.readline().decode())
-        writeFile.write(stateFile.readline().decode())
-        writeFile.write(stateFile.readline().decode())
-        error = open('error.log.txt','w+')
-
-        currentindex=-1
-        messageid=-1
-        while(True):
-            line=stateFile.readline().decode()
-            if len(line)==0:
-                break
-            tokens=line.split()
-            if tokens[0]!=currentindex:
-                currentindex=tokens[0]
-                line_read = messageFile.readline()
-                if len(line_read.split()) >  0:
-                    messageid=line_read.split()[0]
-                    if str(messageid) == '$':
-                        error.write("Error line: "+line_read)
-
-            tokens[1]=messageid.decode()
-            line=' '.join(tokens)
-            line+='\n'
-            writeFile.write(line)
-        messageFile.close()
-        stateFile.close()
-        writeFile.close()
 
     if args.createdists:
-        dist_file_name = None
-        if args.lda_files:
-            dist_file_name = os.path.join(args.lda_files, 'lda')
-            print('Creating readable LDA distribution files at {}.'.format(dist_file_name))
+        dist_file_output_name = None
         if args.estimate_lda_topics:
-            args.ldamsgtbl = '{}_lda${}'.format(args.corptable, base_state_file)
+            dist_file_output_name = '/tmp/lda'
+            args.ldamsgtbl = '{}_lda${}'.format(args.corptable, lda_state_name)
             te = TopicExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field,
                                 args.messageid_field, dlac.DEF_ENCODING, dlac.DEF_UNICODE_SWITCH, args.ldamsgtbl)
         elif not te:
             te = TE()
-        te.createDistributions(dist_file_name)
+        te.createDistributions(dist_file_output_name)
 
     if args.estimate_lda_topics:
         if not args.no_lda_lexicon:
             lex_interface = LexInterfaceParser()
 
-            topic_file = os.path.join(args.lda_files, 'lda.topicGivenWord.csv')
-            create_name = '{}_cp'.format(args.lda_name)
+            topic_file = '/tmp/lda.topicGivenWord.csv'
+            create_name = '{}_cp'.format(args.lda_lexicon_name)
 
             print('Adding topic lexicon: {}'.format(create_name))
             lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name])
             lex_interface.processArgs(lex_interface_args)
 
-            topic_file = os.path.join(args.lda_files, 'lda.freq.threshed50.loglik.csv')
-            create_name = '{}_freq_t50ll'.format(args.lda_name)
+            topic_file = '/tmp/lda.freq.threshed50.loglik.csv'
+            create_name = '{}_freq_t50ll'.format(args.lda_lexicon_name)
 
             print('Adding topic lexicon: {}'.format(create_name))
             lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name])

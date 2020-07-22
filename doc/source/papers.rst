@@ -30,9 +30,47 @@ Peer Reviewed Publications
 
 The following peer reviewed publications have used DLATK:
 
+2020
+----
+
+* Estimating geographic subjective well-being from Twitter: A comparison of dictionary and data-driven language methods
+* Abebe, R., Giorgi, S., Tedijanto, A., Buffone, A. & Schwartz, H.A. (2020). Quantifying Community Characteristics of Maternal Mortality Using Social Media. In The World Wide Web Conference
+* Giorgi, S., Yaden, D. B., Eichstaedt, J. C., Ashford, R. D., Buffone, A. E., Schwartz, H. A., ... & Curtis, B. (2020). Cultural Differences in Tweeting about Drinking Across the US. International Journal of Environmental Research and Public Health, 17(4), 1125.
+* Stevens, R. C., Brawner, B. M., Kranzler, E., Giorgi, S., Lazarus, E., Abera, M., ... & Ungar, L. (2020). Exploring Substance Use Tweets of Youth in the United States: Mixed Methods Study. JMIR Public Health and Surveillance, 6(1), e16191.
+* Ashford, R. D., Giorgi, S., Mann, B., Pesce, C., Sherritt, L., Ungar, L., & Curtis, B. (2020). Digital recovery networks: Characterizing user participation, engagement, and outcomes of a novel recovery social network smartphone application. Journal of Substance Abuse Treatment, 109, 50-55.
+
+2019
+----
+
+* Guntuku, S. C., Schneider, R., Pelullo, A., Young, J., Wong, V., Ungar, L., ... & Merchant, R. (2019). Studying expressions of loneliness in individuals using twitter: an observational study. BMJ Open, 9(11).
+* Matero, M., Idnani, A., Son, Y., Giorgi, S., Vu, H., Zamani, M., Limbachiya, P., Guntuku, S. C., & Schwartz, H. A. (2019, June). Suicide risk assessment with multi-level dual-context language and BERT. Paper presented at the Sixth Workshop on Computational Linguistics and Clinical Psychology, Minneapolis, Minnesota
+* Pang, D., Eichstaedt, J. C., Buffone, A., Slaff, B., Ruch, W., & Ungar, L. H. (2019). The language of character strengths: Predicting morally valued traits on social media. Journal of Personality. 2019;00:1-20. https://doi.org/10.1111/jopy.12491
+* 
+
+2018
+----
+
+* Clifton, J.D., Baker, J.D., Park, C.L., Yaden, D.B., Clifton, A.B., Terni, P., Miller, J.L., Zeng, G., Giorgi, S., Schwartz, H.A. and Seligman, M.E. (2018). Primal World Beliefs. Psychological assessment
+* Eichstaedt, J. C., Smith, R. J., Merchant, R. M., Ungar, L. H., Crutchley, P., Preo?iuc-Pietro, D., ... & Schwartz, H. A. (2018). Facebook language predicts depression in medical records. Proceedings of the National Academy of Sciences, 115(44), 11203-11208
+* Rouhizadeh, M., Jaidka, K., Smith, L., Schwartz, H. A., & Buffone, A.. 2018. Identifying Locus of Control in Social Media Language. In Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing
+* Giorgi, S., Preotiuc-Pietro, D., Buffone, A., Rieman, D.,Ungar, L. H., & Schwartz, H. A. 2018. The Remarkable Benefit of User-Level Aggregation for Lexical-based Population-Level Predictions. In Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing
+* Buechel, S., Buffone, A., Slaff, B., Ungar, L. and Sedoc, J. 2018. Modeling Empathy & Distress in Reaction to News Stories. In Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing
+* Eichstaedt, J. C., Schwartz, H. A., Giorgi, S., Kern, M. L., Park, G., Sap, M., Labarthe D.R., Larson, E. E., Seligman, M. E, P., & Ungar, L. H. (2018, March 15). More Evidence that Twitter Language Predicts Heart Disease: A Response and Replication. PsyArXiv. https://doi.org/10.31234/osf.io/p75ku
+* Jaidka, K., Chhaya, N. & Ungar, L. (2018). Diachronic degradation of language models: Insights from social media. Proceedings of the 56th Conference of the Association of Computational Linguistics, ACL
+* Mohammadzaman Zamani, Anneke Buffone, and H. Andrew Schwartz (2018). Predicting Human Trustfulness from Facebook Language. Proceedings of the Fifth Workshop on Computational Linguistics and Clinical Psychology: From Keyboard to Clinic, pages 174-181 New Orleans, Louisiana, June 5, 2018
+* Kokil Jaidka, Anneke Buffone, Salvatore Giorgi, Johannes Eichstaedt, Masoud Rouhizadeh, and Lyle Ungar (2018). Modeling and Visualizing Locus of Control with Facebook Language. Proceedings of the International AAAI Conference on Web and Social Media
+* Kokil Jaidka, Tanya Goyal, and Niyati Chhaya (2018). Predicting Email and Article Clickthroughs with Domain-adaptive Language Models. Proceedings of the 10th ACM conference on Web Science
+* Kokil Jaidka, Sharath Chandra Guntuku, Anneke Buffone, H. Andrew Schwartz, and Lyle Ungar (2018). Facebook versus Twitter: Cross-Platform Differences in Self-Disclosure and Trait Prediction. Proceedings of the International AAAI Conference on Web and Social Media
+* Kokil Jaidka, Saifuddin Ahmed, Marko Skoric & Martin Hilbert (2018) Predicting elections from social media: a three-country, three-method comparative study, Asian Journal of Communication, DOI: 10.1080/01292986.2018.1453849
+* Curtis B, Giorgi S, Buffone AEK, Ungar LH, Ashford RD, et al. (2018) Can Twitter be used to predict county excessive alcohol consumption rates?. PLOS ONE 13(4): e0194290. https://doi.org/10.1371/journal.pone.0194290
+
+
 2017
 ----
 
+* Yaden, D. B., Eichstaedt, J. C., Kern, M. L., Smith, L. K., Buffone, A., Stillwell, D. J., Kosinski, M., Ungar, L. H., Seligman, M. E. P., Schwartz, H. A. (2017). The Language of Religious Affiliation: Social, Emotional, and Cognitive Differences. Social Psychological and Personality Science. doi: https://doi.org/10.1177/1948550617711228
+* Guntuku, S., Ramsay, J. R., Merchant, R. M., & Ungar, L. H. (2017). Language of ADHD in Adults on Social Media . Journal of Attention Disorders . doi:https://doi.org/10.1177/1087054717738083
+* Schwartz, H. A., Rouhizadeh, M., Bishop, M., Tetlock, P., Mellers, B., & Ungar, L. (2017). Assessing Objective Recommendation Quality through Political Forecasting. In Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing (pp. 2338-2347).
 * Guntuku, S.C., Lin, W., Carpenter, J., Ng, W.K, Ungar, L. & Preotiuc-Pietro D. *Studying Personality through the Content of Posted and Liked Images on Twitter*. Proceedings of the 9th International ACM Web Science Conference, Web Science. `PDF <http://wwbp.org/papers/persimages17websci.pdf>`_
 * Preotiuc-Pietro D., Liu Y., Hopkins, D. & Ungar, L. (2017). *Beyond Binary Labels: Political Ideology Prediction of Twitter Users*. Proceedings of the 55th Conference of the Association for Computational Linguistics, ACL. `PDF <http://wwbp.org/papers/moderates17acl.pdf>`_ 
 * Almodaresi, F., Ungar, L., Kulkarni, V., Zakeri, M., Giorgi, S., and Schwartz, H.A., *On the Distribution of Lexical Features in Social Media*, ACL, 2017 `PDF <https://wwbp.org/papers/Almodaresi-Schwartz_ACL-2017.pdf>`_ 

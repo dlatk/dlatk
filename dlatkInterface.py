@@ -59,7 +59,6 @@ def main(fn_args = None):
     """
     :param fn_args: string - ex "-d testing -t msgs -c user_id --add_ngrams -n 1 "
     """
-
     strTime = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
     dlac.warn("\n\n-----\nDLATK Interface Initiated: %s\n-----" % strTime)
     start_time = time.time()
@@ -388,6 +387,10 @@ def main(fn_args = None):
                        help='Specify feature selection pipeline in prediction: magic_sauce, univariateFWE, PCA.')
     group.add_argument('--feature_selection_string', metavar='NAME', type=str, dest='featureselectionstring', default=getInitVar('featureselectionstring', conf_parser, ''),
                        help='Specify any feature selection pipeline in prediction.')
+    group.add_argument('--train_bootstraps', metavar='NUM_ITER', dest='train_bootstraps', type=int, default=None, 
+                       help='Number of bootstrapped training resamples to use (default None -- no bootstrap).')
+    group.add_argument('--train_bootstraps_ns', metavar='N N N...', dest='train_bootstraps_ns', nargs='+', type=int, default=None, 
+                       help='Various sample sizes to use while doing bootstrapped training.')
 
 
     group = parser.add_argument_group('Standard Extraction Actions', '')
@@ -472,6 +475,7 @@ def main(fn_args = None):
     group = parser.add_argument_group('Message Cleaning Actions', '')
     group.add_argument('--language_filter', '--lang_filter',  type=str, metavar='FIELD(S)', dest='langfilter', nargs='+', default=[],
                        help='Filter message table for list of languages.')
+    group.add_argument('--light_english_filter', dest='lightenglishfilter', action = 'store_true', help="Apply a less stringent English filter than --language_filter")
     group.add_argument('--clean_messages', dest='cleanmessages', action = 'store_true', help="Remove URLs, hashtags and @ mentions from messages")
     group.add_argument('--deduplicate', action='store_true', dest='deduplicate',
                        help='Removes duplicate messages within correl_field grouping, writes to new table corptable_dedup Not to be run at the message level.')
@@ -654,7 +658,7 @@ def main(fn_args = None):
                        help='use during super topics creation if you have already run --reducer_to_lexicon')
     group.add_argument('--fit_reducer', action='store_true', dest='fitreducer', default=False,
                        help='reduces a feature space to clusters')
-    group.add_argument('--num_factors', '--n_components', dest='n_components', default=None,
+    group.add_argument('--num_factors', '--n_components', '-k', dest='n_components', default=None,
                        help='Number of factors in clustering method. Used with --fit_reducer.')
 
     group = parser.add_argument_group('CCA Actions', '')
@@ -1157,9 +1161,9 @@ def main(fn_args = None):
         mt.addParsedMessages()
 
     # annotate message tables
-    if args.langfilter:
+    if args.langfilter or args.lightenglishfilter:
         if not ma: ma = MA()
-        ma.addLanguageFilterTable(args.langfilter, args.cleanmessages, args.lowercaseonly)
+        ma.addLanguageFilterTable(args.langfilter, args.cleanmessages, args.lowercaseonly, args.lightenglishfilter)
 
     if args.deduplicate:
         if not ma: ma = MA()
@@ -1364,7 +1368,7 @@ def main(fn_args = None):
       if not fg: fg = FG()
 
       outputFile = makeOutputFilename(args, None, None, suffix="_topmsgs.csv") if args.outputname else None
-      fg.getTopMessages(args.lextable, outputFile, args.top_messages, args.feat_whitelist)
+      fg.getTopMessages(args.lextable, outputFile, args.top_messages, args.feat_whitelist, group_freq_thresh=args.groupfreqthresh)
 
     #Outcome Only options:
     if args.p_correction_method == '':
@@ -1737,7 +1741,7 @@ def main(fn_args = None):
             RegressionPredictor.featureSelectionString = args.featureselectionstring
         elif args.featureselection:
             RegressionPredictor.featureSelectionString = dlac.DEF_RP_FEATURE_SELECTION_MAPPING[args.featureselection]
-        rp = RegressionPredictor(og, fgs, args.model, args.outlier_to_mean)
+        rp = RegressionPredictor(og, fgs, args.model, args.outlier_to_mean, n_components = args.n_components)
     if args.testcombregression:
         if not og: og = OG()
         if not fgs: fgs = FGs() #all feature getters
@@ -1760,7 +1764,7 @@ def main(fn_args = None):
         print("WARNING: using an non 16to16 feature table")
 
     if args.trainregression:
-        rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample, outputName = args.outputname, saveFeatures = True if args.outputname else False)
+        rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample, outputName = args.outputname, saveFeatures = True if args.outputname else False, trainBootstraps = args.train_bootstraps, trainBootstrapsNs = args.train_bootstraps_ns)
 
     if args.testregression:
         rp.test(sparse = args.sparse, blacklist = blacklist,  standardize = args.standardize, groupsWhere = args.groupswhere)
@@ -1769,7 +1773,7 @@ def main(fn_args = None):
     if args.combotestregression or args.controladjustreg:
         if not og: og = OG()
         if not fg: fg = FG()
-        if not rp: rp = RegressionPredictor(og, fgs, args.model, args.outlier_to_mean)
+        if not rp: rp = RegressionPredictor(og, fgs, args.model, args.outlier_to_mean, n_components = args.n_components)
 
         comboScores = None
         if args.combotestregression:
@@ -1840,14 +1844,14 @@ def main(fn_args = None):
             ClassifyPredictor.featureSelectionString = args.featureselectionstring
         elif args.featureselection:
             ClassifyPredictor.featureSelectionString = dlac.DEF_CP_FEATURE_SELECTION_MAPPING[args.featureselection]
-        cp = ClassifyPredictor(og, fgs, args.model, args.outlier_to_mean) #todo change to a method variables (like og...etc..)
+        cp = ClassifyPredictor(og, fgs, args.model, args.outlier_to_mean, n_components = args.n_components) #todo change to a method variables (like og...etc..)
 
 
     if args.loadmodels and cp:
         cp.load(args.picklefile)
 
     if args.trainclassifiers:
-        cp.train(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere)
+        cp.train(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere, trainBootstraps = args.train_bootstraps, trainBootstrapsNs = args.train_bootstraps_ns)
 
     if args.testclassifiers:
         cp.test(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere)

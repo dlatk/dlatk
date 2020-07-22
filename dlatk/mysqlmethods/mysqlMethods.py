@@ -141,6 +141,7 @@ def executeGetDict( db, dictCursor, sql, warnQuery=False, charset=DEF_ENCODING, 
 
 def executeGetList( db, dbCursor, sql, warnQuery=True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
     """Executes a given query, returns results as a list of lists"""
+    warnQuery = False
     if warnQuery:
         warn("SQL QUERY: %s"% sql[:MAX_SQL_PRINT_CHARS])
     data = []

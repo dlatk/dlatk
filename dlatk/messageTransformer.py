@@ -48,7 +48,7 @@ class MessageTransformer(DLAWorker):
 
     groupsAtTime = 100
 
-    def __createTable(self, tableName, modify=''):
+    def _createTable(self, tableName, modify=''):
         drop = """DROP TABLE IF EXISTS %s""" % (tableName)
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
 
@@ -67,18 +67,18 @@ class MessageTransformer(DLAWorker):
         messageIdIndex = columnNames.index(self.messageid_field)
         return columnNames, messageIndex, messageIdIndex
 
-    def __findAllGroups(self):
+    def _findAllGroups(self):
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
         cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)]
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
         return cfRows
 
-    def __getMsgsForGroups(self, groups, columnNames, messageIndex):
+    def _getMsgsForGroups(self, groups, columnNames, messageIndex):
         sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
         rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))#, False)
         return rows
 
-    def __writeMsgsForGroups(self, rows, parses, messageIndex, tableName, columnNames):
+    def _writeMsgsForGroups(self, rows, parses, messageIndex, tableName, columnNames):
         insert_idx_start = 0
         insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
 
@@ -94,6 +94,38 @@ class MessageTransformer(DLAWorker):
             mm.executeWriteMany(self.corpdb, self.dbCursor, sql, dataToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
             insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
             insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
+
+    def _addTransformedMessages(self, tableName, transformation_func):
+        
+        #Create Table:
+        columnNames, messageIndex, messageIdIndex = self._createTable(tableName, modify='LONGTEXT')
+
+        #find all groups
+        cfRows = self._findAllGroups()
+
+        #iterate through groups in chunks
+        groupsWritten = 0
+        for groups in dlac.chunks(cfRows, self.groupsAtTime):
+
+            #get msgs for groups:
+            rows = self._getMsgsForGroups(groups, columnNames, messageIndex)
+            messages = [r[messageIndex] for r in rows]
+
+            if messages:
+                #tokenize msgs:
+                parses = [json.dumps(transformation_func(m)) for m in messages]
+                self._writeMsgsForGroups(rows, parses, messageIndex, tableName, columnNames)
+
+                groupsWritten += self.groupsAtTime
+                if groupsWritten % 100 == 0:
+                    dlac.warn("  %.1fk %ss' messages tagged and written" % (groupsWritten/float(1000), self.correl_field))
+            else:
+                dlac.warn("   Warning: No messages for:" + str(groups))
+
+        #re-enable keys:
+        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
+
+        return tableName
 
     def insertLDARows(self, ldas, tableName, columnNames, messageIndex, messageIdIndex):
         """?????
@@ -153,7 +185,11 @@ class MessageTransformer(DLAWorker):
         tableName = "%s_lda$%s" %(self.corptable, ldaStatesName)
 
         #Create Table:
+<<<<<<< HEAD
         columnNames, messageIndex, messageIdIndex = self._createTable(tableName, modify='LONGTEXT')
+=======
+        columnNames, messageIndex, messageIdIndex = self.__createTable(tableName, modify='LONGTEXT')
+>>>>>>> c2d2f66a5d1fa3c83079719771d7f189487db5c8
 
         commentLine = re.compile('^\#')
         ldaColumnLabels = ['doc', 'message_id', 'index', 'term_id', 'term', 'topic_id']
@@ -198,38 +234,8 @@ class MessageTransformer(DLAWorker):
         """
         tableName = "%s_tok" %(self.corptable)
         tokenizer = Tokenizer(use_unicode=self.use_unicode)
-
-        #Create Table:
-        columnNames, messageIndex, messageIdIndex = self.__createTable(tableName, modify='LONGTEXT')
-
-        #find all groups
-        cfRows = self.__findAllGroups()
-
-        #iterate through groups in chunks
-
-        if self.correl_field == 'message_id':#more at a time when messages:
-            self.groupsAtTime = 2000
-        groupsWritten = 0
-        for groups in dlac.chunks(cfRows, self.groupsAtTime):
-
-            #get msgs for groups:
-            rows = self.__getMsgsForGroups(groups, columnNames, messageIndex)
-            messages = [r[messageIndex] for r in rows]
-
-            if messages:
-                #tokenize msgs:
-                parses = [json.dumps(tokenizer.tokenize(m)) for m in messages]
-                self.__writeMsgsForGroups(rows, parses, messageIndex, tableName, columnNames)
-
-                groupsWritten += self.groupsAtTime
-                if groupsWritten % 100 == 0:
-                    dlac.warn("  %.1fk %ss' messages tagged and written" % (groupsWritten/float(1000), self.correl_field))
-            else:
-                dlac.warn("   Warning: No messages for:" + str(groups))
-
-        #re-enable keys:
-        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-
+        self._addTransformedMessages(tableName, tokenizer.tokenize)
+        
         return tableName
 
     def addSegmentedMessages(self, model="ctb", tmpdir="/tmp"):
@@ -318,35 +324,9 @@ class MessageTransformer(DLAWorker):
         except NameError:
             dlac.warn("Method not available without TweetNLP interface")
             raise
+        self._addTransformedMessages(tableName, tagger.tag)
 
-        #Create Table:
-        columnNames, messageIndex, messageIdIndex = self.__createTable(tableName)
-
-        #find all groups
-        cfRows = self.__findAllGroups()
-
-        #iterate through groups in chunks
-        groupsWritten = 0
-        for groups in dlac.chunks(cfRows, self.groupsAtTime):
-
-            #get msgs for groups:
-            rows = self.__getMsgsForGroups(groups, columnNames, messageIndex)
-            messages = [r[messageIndex] for r in rows]
-
-            if messages:
-                #tokenize msgs:
-                parses = [json.dumps(tagger.tag(m)) for m in messages]
-                self.__writeMsgsForGroups(rows, parses, messageIndex, tableName, columnNames)
-
-                groupsWritten += self.groupsAtTime
-                if groupsWritten % 100 == 0:
-                    dlac.warn("  %.1fk %ss' messages tagged and written" % (groupsWritten/float(1000), self.correl_field))
-            else:
-                dlac.warn("   Warning: No messages for:" + str(groups))
-
-        #re-enable keys:
-        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-
+        
         return tableName
 
     def addTweetTokenizedMessages(self):
@@ -363,34 +343,7 @@ class MessageTransformer(DLAWorker):
         except NameError:
             dlac.warn("Method not available without TweetNLP interface")
             raise
-
-        #Create Table:
-        columnNames, messageIndex, messageIdIndex = self.__createTable(tableName)
-
-        #find all groups
-        cfRows = self.__findAllGroups()
-
-        #iterate through groups in chunks
-        groupsWritten = 0
-        for groups in dlac.chunks(cfRows, self.groupsAtTime):
-
-            #get msgs for groups:
-            rows = self.__getMsgsForGroups(groups, columnNames, messageIndex)
-            messages = [r[messageIndex] for r in rows]
-
-            if messages:
-                #tokenize msgs:
-                parses = [json.dumps(tokenizer.tokenize(m)) for m in messages]
-                self.__writeMsgsForGroups(rows, parses, messageIndex, tableName, columnNames)
-
-                groupsWritten += self.groupsAtTime
-                if groupsWritten % 100 == 0:
-                    dlac.warn("  %.1fk %ss' messages tagged and written" % (groupsWritten/float(1000), self.correl_field))
-            else:
-                dlac.warn("   Warning: No messages for:" + str(groups))
-
-        #re-enable keys:
-        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
+        self._addTransformedMessages(tableName, tokenizer.tokenize)
 
         return tableName
 
@@ -413,7 +366,7 @@ class MessageTransformer(DLAWorker):
             modify = 'VARCHAR(64)'
         else:
             modify = ''
-        columnNames, messageIndex, messageIdIndex = self.__createTable(tableName, modify)
+        columnNames, messageIndex, messageIdIndex = self._createTable(tableName, modify)
         
         if cleanMessages:
 
@@ -431,7 +384,7 @@ class MessageTransformer(DLAWorker):
         
 
         #find all groups
-        cfRows = self.__findAllGroups()
+        cfRows = self._findAllGroups()
 
         #iterate through groups in chunks
         groupsWritten = 0
@@ -439,9 +392,7 @@ class MessageTransformer(DLAWorker):
             sentRows = list()
             
             #get msgs for groups:
-            sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
-            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))#, False)
-            rows = [r for r in rows if r[messageIndex]]
+            rows = self._getMsgsForGroups(groups, columnNames, messageIndex)
             messages = [r[messageIndex] for r in rows]
 
             if messages:
@@ -626,8 +577,7 @@ class MessageTransformer(DLAWorker):
         activePs = set()
         for groups in dlac.chunks(cfRows, self.groupsAtTime):
             #get msgs for groups:
-            sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
-            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
+            rows = self._getMsgsForGroups(groups, columnNames, messageIndex)
             rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
             messages = [r[messageIndex] for r in rows]
             messages = [m if m else '_' for m in messages]

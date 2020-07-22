@@ -11,6 +11,9 @@ from . import dlaConstants as dlac
 from .mysqlmethods import mysqlMethods as mm
 from .mysqlmethods.mysql_iter_funcs import get_db_engine
 
+from .database.query import QueryBuilder
+from .database.dataEngine import DataEngine
+
 class OutcomeGetter(DLAWorker):
     """Deals with outcome tables
 
@@ -237,9 +240,9 @@ class OutcomeGetter(DLAWorker):
     def getGroupAndOutcomeValues(self, outcomeField = None, where=''):
         """returns a list of (group_id, outcome_value) tuples"""
         if not outcomeField: outcomeField = self.outcome_value_fields[0]
-        sql = "select %s, %s from `%s` WHERE %s IS NOT NULL"%(self.correl_field, outcomeField, self.outcome_table, outcomeField)
-        if (where): sql += ' AND ' + where
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
+        query = self.qb.create_select_query(self.outcome_table).set_fields([self.correl_field, outcomeField]).where("%s IS NOT NULL"%outcomeField)
+        if (where): query.where(" AND "+ where)
+        return query.execute_query()
 
     def makeContingencyTable(self, featureGetter, featureValueField, outcome_filter_where='', feature_value_group_sum_min=0):
         """makes a contingency table from this outcome value, a featureGetter, and the desired column of the featureGetter, assumes both correl_field's are the same"""

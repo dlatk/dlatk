@@ -2,6 +2,9 @@ import sys
 import time
 import MySQLdb
 
+from .database.dataEngine import DataEngine
+from .database.query import QueryBuilder
+
 from . import dlaConstants as dlac
 from .mysqlmethods import mysqlMethods as mm 
 
@@ -45,7 +48,13 @@ class DLAWorker(object):
         self.messageid_field = messageid_field
         self.encoding = encoding
         self.use_unicode = use_unicode
-        (self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(corpdb, host=mysql_host, charset=encoding)
+
+        self.db_type = dlac.DB_TYPE
+        self.data_engine = DataEngine(corpdb, mysql_host, encoding, use_unicode, self.db_type)
+        (self.dbConn, self.dbCursor, self.dictCursor) = self.data_engine.connect()
+
+        self.qb = QueryBuilder(self.data_engine)
+
         self.lexicondb = lexicondb
         self.wordTable = wordTable if wordTable else "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
         self.messageIdUniqueChecked = False
@@ -55,10 +64,11 @@ class DLAWorker(object):
         hasPrimary, hasCorrelIndex = True, True
         warn_message = "WARNING: The table %s does not have:"  % table
         if primary:
-            hasPrimary = mm.primaryKeyExists(self.dbConn, self.dbCursor, table, correlField)
+            hasPrimary = self.data_engine.primaryKeyExists(table, correlField) 
             if not hasPrimary: warn_message += " a PRIMARY key on %s" % correlField
         elif correlField:
-            hasCorrelIndex = mm.indexExists(self.dbConn, self.dbCursor, table, correlField)
+            hasCorrelIndex = self.data_engine.indexExists(table, correlField) 
+
             if not hasCorrelIndex: 
                 if not hasPrimary: warn_message += " or"
                 warn_message += " an index on %s" % correlField
@@ -112,10 +122,10 @@ class DLAWorker(object):
             if self.correl_field != self.messageid_field:
                 self.checkIndices(messageTable, primary=False, correlField=self.correl_field)
             self.messageIdUniqueChecked = True
-        msql = """SELECT %s, %s FROM %s WHERE %s = '%s'""" % (
-            self.messageid_field, self.message_field, messageTable, self.correl_field, cf_id)
         #return self._executeGetSSCursor(msql, warnMsg, host=self.mysql_host)
-        return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding)
+        where_conditions = """%s='%s'"""%(self.correl_field, cf_id)
+        selectQuery = self.qb.create_select_query(messageTable).set_fields([self.messageid_field, self.message_field]).where(where_conditions)
+        return selectQuery.execute_query()
 
     def getMessagesWithFieldForCorrelField(self, cf_id, extraField, messageTable = None, warnMsg = True):
         """?????
@@ -250,10 +260,8 @@ class DLAWorker(object):
         if lexicon_count_table: dlac.warn(lexicon_count_table)
         wordTable = self.getWordTable() if not lexicon_count_table else lexicon_count_table
 
-        assert mm.tableExists(self.corpdb, self.dbCursor, wordTable), "Need to create word table to use current functionality: %s" % wordTable
-        return FeatureGetter(self.corpdb, self.corptable, self.correl_field, self.mysql_host,
-                             self.message_field, self.messageid_field, self.encoding, self.use_unicode, 
-                             self.lexicondb, featureTable=wordTable, wordTable = wordTable)
+        assert self.data_engine.tableExists(wordTable), "Need to create word table to use current functionality: %s" % wordTable
+        return FeatureGetter(self.corpdb, self.corptable, self.correl_field, self.mysql_host, self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb, featureTable=wordTable, wordTable=wordTable)
     
     def getWordGetterPOcc(self, pocc):
         """Returns a FeatureGetter for given p_occ filter values used for getting word counts. Usually used for group_freq_thresh.

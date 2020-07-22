@@ -29,7 +29,7 @@ from sklearn.linear_model import Ridge, RidgeCV, LinearRegression, Lasso, LassoC
     PassiveAggressiveRegressor
 from sklearn.svm import SVR
 from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV 
-from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF
+from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF, FactorAnalysis
 from sklearn import metrics
 from sklearn.feature_selection import f_regression, RFE, SelectPercentile, SelectKBest, \
     SelectFdr, SelectFpr, SelectFwe
@@ -58,7 +58,7 @@ import math
 #infrastructure
 from .classifyPredictor import ClassifyPredictor
 from .mysqlmethods import mysqlMethods as mm
-from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, DEFAULT_RANDOM_SEED, warn
+from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, DEFAULT_RANDOM_SEED, warn, MinScaler
 
 
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
@@ -295,7 +295,7 @@ class RegressionPredictor:
         'lasso': [
             #{'alpha': [10000, 25000, 1000, 2500, 100, 250, 1, 25, .01, 2.5, .01, .25, .001, .025, .0001, .0025, .00001, .00025, 100000, 250000, 1000000]}, 
             #{'alpha': [0.1, 0.01, 0.001, 0.0001], 'max_iter':[1500]}, 
-            #{'alpha': [10000, 100, 1, 0.1, 0.01, 0.001, 0.0001]}, 
+           #{'alpha': [10000, 100, 1, 0.1, 0.01, 0.001, 0.0001]}, 
             {'alpha': [0.001], 'max_iter':[1500]}, #1to3gram, personality (best => 0.01, fi=true: .158)
             ],
         'lassocv': [
@@ -413,9 +413,9 @@ class RegressionPredictor:
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 60000
-    backOffPerc = .10 #when the num_featrue / training_insts is less than this backoff to backoffmodel
-    backOffModel = 'ridge10'
-    #backOffModel = 'linear'
+    backOffPerc = .001 #when the num_featrue / training_insts is less than this backoff to backoffmodel
+    #backOffModel = 'ridge10'
+    backOffModel = 'linear'
 
     # feature selection:
     featureSelectionString = None
@@ -464,7 +464,7 @@ class RegressionPredictor:
 
     trainingSize = 1000000 #if this is smaller than the training set, then it will be reduced to this. 
 
-    def __init__(self, og, fgs, modelName = 'ridge', outliersToMean = None):
+    def __init__(self, og, fgs, modelName = 'ridge', outliersToMean = None, n_components=None):
         #initialize regression predictor
         self.outcomeGetter = og
 
@@ -488,11 +488,17 @@ class RegressionPredictor:
         self.fSelectors = dict()
         """dict: Docstring *after* attribute, with type specified."""
 
+        self.n_components = n_components #number of components for feature selection
+        """int: Docstring *after* attribute, with type specified."""
+        
+        self.outcomeNames = [] 
+        """list: Holds a list of the outcomes in sorted order."""
+
         self.featureNames = [] 
         """list: Holds the order the features are expected in."""
 
-        self.featureLengthList = []
-        """list: Holds the number of features in each featureGetter."""
+        self.featureLengthDict = dict()
+        """dict: Holds the number of features in each featureGetter."""
 
         self.featureNamesList = []
         """list: Holds the names of features in each featureGetter."""
@@ -512,9 +518,10 @@ class RegressionPredictor:
         self.controlsOrder = []
         """list: Holds the ordered control names"""
 
-    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', outputName = '', saveFeatures = False):
-        """Train Regressors"""
+        self.trainBootstrapNames = None
 
+    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', outputName = '', saveFeatures = False, trainBootstraps = None, trainBootstrapsNs = None):
+        """Train Regressors"""
         ################
         #1a. setup groups
         (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
@@ -569,8 +576,11 @@ class RegressionPredictor:
         #########################################
         #3. train for all possible ys:
         self.multiXOn = True
+        if trainBootstraps:
+            self.trainBootstrapNames = dict()
         (self.regressionModels, self.multiScalers, self.multiFSelectors) = (dict(), dict(), dict())
         for outcomeName, outcomes in sorted(allOutcomes.items()):
+            self.outcomeNames.append(outcomeName)
             print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
             multiXtrain = list()
             trainGroupsOrder = list(XGroups & set(outcomes.keys()))
@@ -594,8 +604,7 @@ class RegressionPredictor:
             #4) fit model
             if saveFeatures: 
                 (self.regressionModels[outcomeName], self.multiScalers[outcomeName], self.multiFSelectors[outcomeName], featureX) = \
-                                                                                                                          self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights, returnX=True)#DEBUG
-                ##DEBUG
+                                                                                                                                    self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights, returnX=True)
                 csvFeatureFile = outputName+'.'+outcomeName+'.train.features.csv'
                 featureXwithGroups =  np.hstack((np.array([trainGroupsOrder]).T, featureX))
                 print(" saving features to: %s (shape: %s; %s)" % (csvFeatureFile, str(featureXwithGroups.shape), str(featureX.shape)))
@@ -605,10 +614,29 @@ class RegressionPredictor:
             else: 
                 (self.regressionModels[outcomeName], self.multiScalers[outcomeName], self.multiFSelectors[outcomeName]) = \
                                                                                                                           self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights)
+            if trainBootstraps:
+                #create a set of bootstrapped training instances (usually to be exported in separate pickles)
+                print("Running Bootstrapoped Trainined for %s, %d resamples" % (outcomeName, trainBootstraps))
+                if not trainBootstrapsNs:
+                    trainBootstrapsNs = [len(ytrain)]
+                self.trainBootstrapNames[outcomeName] = {} #saves all of the outcome names
+                for sampleN in sorted(trainBootstrapsNs, reverse = True):
+                    bsBaseOutcomeName = outcomeName+'_N'+str(sampleN)
+                    #TODO: sample N
+                    bsi = 0
+                    self.trainBootstrapNames[outcomeName][sampleN] = []
+                    for bsMultiX, bsY in self._monteCarloResampleMultiXY(multiXtrain, ytrain, trainBootstraps, sampleN=sampleN):
+                        print("Sample Size: %d, bs resample num: %d"%(sampleN, bsi))
+                        bsOutcomeName = bsBaseOutcomeName+'_bs'+str(bsi)
+                        self.trainBootstrapNames[outcomeName][sampleN].append(bsOutcomeName)
+                        (self.regressionModels[bsOutcomeName], self.multiScalers[bsOutcomeName], self.multiFSelectors[bsOutcomeName]) = \
+                                                                                                                            self._multiXtrain(bsMultiX, bsY, standardize, sparse = False, weightedSample = None)
+                        bsi += 1
+                    
 
         print("\n[TRAINING COMPLETE]\n")
         self.featureNamesList = featureNamesList
-        self.featureLengthList = featureLengthList
+
 
     ##################
     ## Old testing Method (random split rather than cross-val)
@@ -1417,10 +1445,41 @@ class RegressionPredictor:
             assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups" 
             predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder,ypred)))
 
+            if self.trainBootstrapNames and outcomeName in self.trainBootstrapNames:
+                print("\n Bootstrapped Models Found; Evaluating...")
+                resultsPerN = {}
+                for n, modelNames in self.trainBootstrapNames[outcomeName].items():
+                    currentResults = []
+                    for bsModelName in modelNames:
+                        print("   [running %s]"%bsModelName)
+                        ypred = self._multiXpredict(self.regressionModels[bsModelName], multiXtest, \
+                                                    multiScalers = self.multiScalers[bsModelName], \
+                                                    multiFSelectors = self.multiFSelectors[bsModelName], sparse = True)
+                        currentResults.append(self.regressionMetrics(ytest, ypred))
+                    resultsPerN[n] = self.averageMetrics(currentResults)
+                print(" [Done. Results:]")
+                pprint(resultsPerN)
+                
         print("[Prediction Complete]")
 
         return predictions
 
+    def averageMetrics(self, results):
+        resultsD = {k: [dic[k] for dic in results] for k in results[0]}
+        meanSDs = {}
+        for metric, data in resultsD.items():
+            meanSDs[metric] = (np.mean(data), np.std(data))
+        return meanSDs
+    
+    def regressionMetrics(self, ytrue, ypred):
+        R2 = metrics.r2_score(ytrue, ypred)
+        return {'R2': R2,
+                'R': sqrt(R2),
+                'r': pearsonr(ytrue, ypred)[0],
+                'rho': spearmanr(ytrue, ypred)[0],
+                'mse': metrics.mean_squared_error(ytrue, ypred),
+                'mae': metrics.mean_absolute_error(ytrue, ypred)}
+    
     def predictToOutcomeTable(self, standardize = True, sparse = False, name = None, nFolds = 10, groupsWhere = ''):
 
         warn("WARNING! Predict to outcome table sometimes excludes groups if not in a feature table.")
@@ -1740,7 +1799,7 @@ class RegressionPredictor:
                 weights_dict[featTables[i]][outcome] = dict()
 
                 coeff_iter = iter(coefficients.flatten())
-                coefficients  = np.asarray([list(islice(coeff_iter, 0, j)) for j in self.featureLengthList][i])
+                coefficients  = np.asarray([list(islice(coeff_iter, 0, j)) for j in self.featureLengthDict[outcome]][i])
                 
                 # Inverting Feature Selection
                 if self.multiFSelectors[outcome][i]:
@@ -2016,6 +2075,18 @@ class RegressionPredictor:
         multiX = multiAdaptedX
         return multiX, scaledFactors, standardizedFactors, factorScalers
 
+    def _monteCarloResampleMultiXY(self, multiX, y, N=10, sampleN = None):
+        """returns monteCarloResampling (i.e. for bootstrapping average and std based on model)"""
+        if not isinstance(multiX, (list, tuple)):
+            multiX = [multiX]
+
+        from sklearn.utils import resample
+        rs = np.random.RandomState(42)
+        for i in range(N):
+            *newMultiX, newY = resample(*multiX, y, random_state=rs, n_samples = sampleN)
+            yield newMultiX, newY
+            
+    
 
     def _multiXtrain(self, X, y, standardize = True, sparse = False, weightedSample = None, factorAdaptation=False, featureSelectionParameters=None, factorAddition=False, 
                      outputName = '', report=False, factors=None, returnX=False):
@@ -2042,9 +2113,15 @@ class RegressionPredictor:
         elif factorAddition:
             scaledFactors, standardizedFactors, factorScalers = self.scale(factors, sparse = sparse ) 
 
+        try:
+            self.featureLengthDict[self.outcomeNames[-1]] = list()
+        except:
+            # probably running cross validation, this information is not needed
+            pass
         for i in range(len(multiX)):
             X = multiX[i]
-            if not sparse and not factorAdaptation:
+            #this logic seemed off so commiting out beuase causing issues (HAS 6/3/2020)
+            if not sparse and not factorAdaptation and isinstance(X, csr_matrix):
                 X = X.todense()
             print(" X[%d]: (N, features): %s" % (i, str(X.shape)))
 
@@ -2087,6 +2164,11 @@ class RegressionPredictor:
                         print("  >> No features selected, so using original full X")
                 print("  >> After feature selection: (N, features): %s" % str(X.shape))
                 if report: self.addToReport(outputName+'_.result', Str = " after feature selection: (N, features): %s\n_" % str(X.shape))
+            
+            try:
+                self.featureLengthDict[self.outcomeNames[-1]].append(X.shape[1])
+            except:
+                pass
             multiX[i] = X
             multiScalers.append(scaler)
             multiFSelectors.append(fSelector)
@@ -2107,7 +2189,7 @@ class RegressionPredictor:
         #for Xi in multiX[0]:
         #    totalFeats += X.shape[1]
         if (X.shape[1] / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
-            print("[COMBINED FEATS] number of features is small enough (feats: %d, observations: %d), backing off to: %s" %\
+            print("![COMBINED FEATS] number of features is small enough (feats: %d, observations: %d), backing off to: '%s'!" %\
                   (X.shape[1], X.shape[0], self.backOffModel))
             modelName = self.backOffModel.lower()
 
@@ -2208,7 +2290,8 @@ class RegressionPredictor:
                 print(" Warning: Outliers to mean is not being run because standardize is off")
 
             if fSelector:
-                print("[PREDICT] applying feature selection to X[%d]: %s" % (i, str(fSelector))) #debug
+                print("[PREDICT] applying existing feature selection to X[%d]: %s" % (i, str(fSelector))) #debug
+                pprint(fSelector.steps[0][1].__dict__)
                 newX = fSelector.transform(X)
                 if newX.shape[1]:
                     X = newX
@@ -2274,7 +2357,8 @@ class RegressionPredictor:
                   'featureNames' : self.featureNames,
                   'featureNamesList' : self.featureNamesList,
                   'multiXOn' : self.multiXOn,
-                  'controlsOrder' : self.controlsOrder
+                  'controlsOrder' : self.controlsOrder,
+                  'trainBootstrapNames' : self.trainBootstrapNames,
                   }
         pickle.dump(toDump,f,2)
         f.close()

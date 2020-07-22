@@ -36,6 +36,7 @@ Clustering
 
 Other Topics
 ------------
+* :doc:`tutorials/tut_import_methods`
 * :doc:`tutorials/tut_lda`
 * :doc:`tutorials/tut_dla_rot`
 * :doc:`tutorials/tut_classes`

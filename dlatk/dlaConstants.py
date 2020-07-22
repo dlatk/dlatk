@@ -20,6 +20,8 @@ from sklearn.metrics import roc_auc_score
 from sklearn.linear_model import LogisticRegression
 import statsmodels.stats.multitest as mt
 
+DB_TYPE = "mysql"
+
 #DB INFO:
 USER = getpass.getuser()
 
@@ -27,6 +29,7 @@ MAX_ATTEMPTS = 5 #max number of times to try a query before exiting
 PROGRESS_AFTER_ROWS = 5000 #the number of rows to process between each progress updated
 FEATURE_TABLE_PREFIX = 'feats_'
 MYSQL_ERROR_SLEEP = 4 #number of seconds to wait before trying a query again (incase there was a server restart
+SQLITE_ERROR_SLEEP = 4
 MYSQL_BATCH_INSERT_SIZE = 10000 # how many rows are inserted into mysql at a time
 MAX_SQL_SELECT = 1000000 # how many rows are selected at a time
 MYSQL_HOST = '127.0.0.1'
@@ -72,6 +75,24 @@ DEF_MAX_TOP_TC_WORDS = 15
 DEF_TC_FILTER = True
 DEF_WEIGHTS = ''
 DEF_LOW_VARIANCE_THRESHOLD = 0.0
+
+
+##TODO: move elsewhere; quick hack for last minute EMNLP2020
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import MinMaxScaler
+class MinScaler(MinMaxScaler, BaseEstimator):
+    def fit(self, X, y=None):
+        self.minX = X.min()
+
+    def transform(self, X):
+        #make sure non-negative
+        X = X + (self.minX*-1)
+        return X.clip(0)
+
+    def fit_transform(self, X, y=None):
+        self.fit(X)
+        return self.transform(X)
+    
 
 ##Feature Settings:
 DEF_N = int(1)
@@ -141,6 +162,9 @@ DEF_RP_FEATURE_SELECTION_MAPPING = {
     'univariatefwe': 'SelectFwe(f_regression, alpha=60.0)',
 
     'pca': 'PCA(n_components=max(min(int(X.shape[1]*.5), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
+    'k_pca': 'PCA(n_components=int(self.n_components), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
+    'k_fa': 'FactorAnalysis(n_components=int(self.n_components), random_state=42, iterated_power=3, svd_method="randomized")',
+    'k_nmf': 'Pipeline([("1_min", MinScaler()), ("2_nmf", NMF(n_components=int(self.n_components), init="nndsvd", random_state=42))])',
     'none': None,
 }
 DEF_CP_FEATURE_SELECTION_MAPPING = {
@@ -150,6 +174,9 @@ DEF_CP_FEATURE_SELECTION_MAPPING = {
     'univariatefwe10': 'SelectFwe(f_classif, alpha=10.0)',
     'univariatefwe60': 'SelectFwe(f_classif, alpha=60.0)',
     'pca': 'PCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
+    'k_pca': 'PCA(n_components=int(self.n_components), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
+    'k_fa': 'FactorAnalysis(n_components=int(self.n_components), random_state=42, iterated_power=3, svd_method="randomized")',
+    'k_nmf': 'Pipeline([("1_min", MinScaler()), ("2_nmf", NMF(n_components=int(self.n_components), init="nndsvd", random_state=42))])',
     'none': None,
 }
 DEFAULT_MAX_PREDICT_AT_A_TIME = 100000
@@ -253,6 +280,7 @@ DEF_NUM_ITERATIONS = 1000
 DEF_NUM_STOPWORDS = 50
 DEF_ALPHA = 5.0
 DEF_BETA = 0.01
+
 
 ##Meta settings
 DEF_INIT_FILE = 'initFile.ini'

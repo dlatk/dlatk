@@ -31,6 +31,11 @@ from . import dlaConstants as dlac
 from . import textCleaner as tc
 from .mysqlmethods import mysqlMethods as mm
 
+#dataEngine / query
+from .database.query import QueryBuilder
+from .database.query import Column
+from .database.dataEngine import DataEngine
+
 #local / nlp
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 
@@ -140,12 +145,11 @@ class FeatureExtractor(DLAWorker):
             mfTableName = self.createFeatureTable(mfName, "VARCHAR(%d)" % mfLength, 'INTEGER', tableName, valueFunc, extension = extension)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
-        usql = """SELECT %s FROM %s GROUP BY %s""" % (
-            self.correl_field, self.corptable, self.correl_field)
+        query = self.qb.create_select_query(self.corptable).set_fields([self.correl_field]).group_by([self.correl_field])
         msgs = 0 # keeps track of the number of messages read
-        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
+        cfRows = FeatureExtractor.noneToNull(query.execute_query())#SSCursor woudl be better, but it loses connection
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        if len(cfRows)*n < dlac.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        if len(cfRows)*n < dlac.MAX_TO_DISABLE_KEYS: self.data_engine.disable_table_keys(featureTableName) #for faster, when enough space for repair by sorting
 
         #warnedMaybeForeignLanguage = False
         for cfRow in cfRows:
@@ -199,7 +203,7 @@ class FeatureExtractor(DLAWorker):
             if totalGrams:
                 insert_idx_start = 0
                 insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
-                wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                query = self.qb.create_insert_query(featureTableName).set_values([("group_id",str(cf_id)),("feat",""),("value",""),("group_norm","")])
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 try:
                     if self.use_unicode:
@@ -212,13 +216,13 @@ class FeatureExtractor(DLAWorker):
                 while insert_idx_start < len(rows):
                     insert_rows = rows[insert_idx_start:min(insert_idx_end, len(rows))]
                     #_warn("Inserting rows %d to %d... " % (insert_idx_start, insert_idx_end))
-                    mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, insert_rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode);
+                    query.execute_query(insert_rows)
                     insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
                     insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
 
 
 
-                wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                query = self.qb.create_insert_query(featureTableName).set_values([("group_id",str(cf_id)),("feat",""),("value",""),("group_norm","")])
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:
                     rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
@@ -227,7 +231,7 @@ class FeatureExtractor(DLAWorker):
 
                 if metaFeatures:
                     mfRows = []
-                    mfwsql = """INSERT INTO """+mfTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                    mfwsql = self.qb.create_insert_query(mfTableName).set_values([("group_id",str(cf_id)),("feat",""),("value",""),("group_norm","")])
                     avgGramLength = totalChars / totalGrams
                     lenmids=len(mids)
                     avgGramsPerMsg = totalGrams / lenmids
@@ -235,15 +239,14 @@ class FeatureExtractor(DLAWorker):
                     mfRows.append( ('_avg'+str(n)+'gramsPerMsg', avgGramsPerMsg, valueFunc(avgGramsPerMsg)) )
                     mfRows.append( ('_total'+str(n)+'grams', totalGrams, valueFunc(totalGrams)) )
                     mfRows.append( ('_totalMsgs', lenmids, valueFunc(lenmids)) )
-                    mm.executeWriteMany(self.corpdb, self.dbCursor, mfwsql, mfRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                    mfwsql.execute_query(mfRows)
 
-                # mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
 
         dlac.warn("Done Reading / Inserting.")
 
         if len(cfRows)*n < dlac.MAX_TO_DISABLE_KEYS:
             dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+            self.data_engine.enable_table_keys(featureTableName)
         dlac.warn("Done\n")
         return featureTableName
 
@@ -1417,7 +1420,7 @@ class FeatureExtractor(DLAWorker):
 
         #CREATE TABLE:
         featureName = 'flkin'
-        featureTableName = self.createFeatureTable(featureName, "VARCHAR(8)", 'FLOAT', tableName, valueFunc)
+        featureTableName = self.createFeatureTable(featureName, "VARCHAR(16)", 'FLOAT', tableName, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
         usql = """SELECT %s FROM %s GROUP BY %s""" % (
@@ -1530,11 +1533,11 @@ class FeatureExtractor(DLAWorker):
                 tableName += '$' + extension
 
         #find correl_field type:
-        sql = """SELECT column_type FROM information_schema.columns WHERE table_schema='%s' AND table_name='%s' AND column_name='%s'""" % (
-            self.corpdb, self.corptable, self.correl_field)
+        where_conditions = """table_schema='%s' AND table_name='%s' AND column_name='%s'"""%(self.corpdb, self.corptable, self.correl_field)
+        query = self.qb.create_select_query("information_schema.columns").set_fields(["column_type"]).where(where_conditions)
         try:
             correlField = self.getCorrelFieldType(self.correl_field) if not correlField else correlField
-            correl_fieldType = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)[0][0] if not correlField else correlField
+            correl_fieldType = query.execute_query()[0][0] if not correlField else correlField
         except IndexError:
             dlac.warn("Your message table '%s' (or the group field, '%s') probably doesn't exist (or the group field)!" %(self.corptable, self.correl_field))
             raise IndexError("Your message table '%s' probably doesn't exist!" % self.corptable)
@@ -1542,20 +1545,17 @@ class FeatureExtractor(DLAWorker):
         featureTypeAndEncoding = featureType
         if featureType[0].lower() == 't' or featureType[0].lower() == 'v':
             #string type; add unicode: 
-            featureTypeAndEncoding = "%s CHARACTER SET %s COLLATE %s" % (featureType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()])
-
-                    
+            featureTypeAndEncoding = "%s CHARACTER SET %s COLLATE %s" % (featureType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()])            
+            if self.db_type == "sqlite":
+                featureTypeAndEncoding = featureType 
             
         #create sql
-        drop = """DROP TABLE IF EXISTS %s""" % tableName
-        sql = """CREATE TABLE %s (id BIGINT(16) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                 group_id %s, feat %s, value %s, group_norm DOUBLE,
-                 KEY `correl_field` (`group_id`), KEY `feature` (`feat`))
-                 CHARACTER SET %s COLLATE %s ENGINE=%s""" %(tableName, correl_fieldType, featureTypeAndEncoding, valueType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()], dlac.DEF_MYSQL_ENGINE)
+        dropTable = self.qb.create_drop_query(tableName)
+        createTable = self.qb.create_createTable_query(tableName).add_columns([Column("id","BIGINT(16)", unsigned=True, primary_key=True, nullable=False, auto_increment=True),Column("group_id", correl_fieldType), Column("feat", featureTypeAndEncoding), Column("value", valueType), Column("group_norm", "DOUBLE")]).add_mul_keys([("correl_field", "group_id"), ("feature", "feat")]).set_character_set(self.encoding).set_collation(dlac.DEF_COLLATIONS[self.encoding.lower()]).set_engine(dlac.DEF_MYSQL_ENGINE)
 
         #run sql
-        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        dropTable.execute_query()
+        createTable.execute_query()
 
         return tableName
 

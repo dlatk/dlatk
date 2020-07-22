@@ -12,12 +12,8 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/dlatk/Lexi
 from dlatk.featureExtractor import FeatureExtractor
 from dlatk import dlaConstants as dlac
 
-gensim_available = True
-try:
-    from gensim import corpora
-    from gensim.models.wrappers import LdaMallet
-except ImportError:
-    gensim_available = False
+from gensim import corpora
+from gensim.models.wrappers import LdaMallet
 
 from numpy import log2, isnan
 from pymallet import defaults
@@ -229,7 +225,7 @@ class LDAEstimator(object):
         return self._stopwords
 
     def estimate_topics(self, feature_lines_file, mallet_path=None):
-        if not mallet_path or not gensim_available:
+        if not mallet_path:
             print('Estimating LDA topics using PyMallet.')
             estimate_topics(feature_lines_file, num_topics=self.num_topics, alpha=self.alpha, beta=self.beta,
                             iterations=self.iterations, stoplist=self.stopwords)

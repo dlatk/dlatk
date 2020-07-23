@@ -4,6 +4,7 @@ import re
 
 import csv
 import os, sys
+from subprocess import check_output
 
 from dlatk.messageTransformer import MessageTransformer
 
@@ -201,6 +202,35 @@ class TopicExtractor(FeatureExtractor):
         return featureTableName;
 
 
+token_regex = r'(#|@)?(?!(\W)\2+)([a-zA-Z\_\-\'0-9\(-\@]{2,})'
+
+
+class OurLdaMallet(LdaMallet):
+    def set_stopwords(self, stopwords):
+        stopwords_file = self.prefix + 'stopwords'
+        with open(stopwords_file, 'w') as fout:
+            for stopword in stopwords:
+                print(stopword, file=fout)
+        self.stopwords = stopwords_file
+
+    def convert_input(self, corpus, infer=False, serialize_corpus=True):
+        """
+        Converts input our way:
+          - uses the already-generated corpus txt file instead of the gensim corpus object
+          - our token regex
+          - without removing stopwords
+        """
+        cmd = \
+            self.mallet_path + \
+            " import-file --preserve-case --keep-sequence " \
+            "--token-regex \"{}\" --input %s --output %s".format(token_regex)
+        stopwords = getattr(self, 'stopwords', None)
+        if stopwords:
+            cmd += " --stoplist-file {}".format(stopwords)
+        cmd = cmd % (corpus, self.fcorpusmallet())
+        check_output(args=cmd, shell=True)
+
+
 class LDAEstimator(object):
     def __init__(self, feature_getter, num_topics, alpha, beta, iterations, num_stopwords=50, no_stopping=False):
         self.feature_getter = feature_getter
@@ -232,20 +262,10 @@ class LDAEstimator(object):
             state_file = defaults.OUTPUT_STATE_FILE
         else:
             print('Estimating LDA topics using Mallet.')
-            id2word = corpora.Dictionary(line for line in self._load_corpus(feature_lines_file))
-            mallet = LdaMallet(mallet_path, corpus=self._load_corpus(feature_lines_file, dictionary=id2word),
-                               id2word=id2word, num_topics=self.num_topics, alpha=self.alpha,
-                               iterations=self.iterations)
+            mallet = OurLdaMallet(mallet_path, id2word=corpora.Dictionary([["dummy"]]),
+                                  num_topics=self.num_topics, alpha=self.alpha, iterations=self.iterations)
+            if not self.no_stopping:
+                mallet.set_stopwords(self.stopwords)
+            mallet.train(feature_lines_file)
             state_file = mallet.fstate()
         return state_file
-
-    def _load_corpus(self, feature_lines_file, dictionary=None):
-        token_regex = r'(#|@)?(?!(\W)\2+)([a-zA-Z\_\-\'0-9\(-\@]{2,})'
-        with open(feature_lines_file) as f:
-            for line in f:
-                _, _, line = line.split(' ', 2)
-                tokens = [token.group(0) for token in re.finditer(token_regex, line) if token.group(0) not in self.stopwords]
-                if dictionary is None:
-                    yield tokens
-                else:
-                    yield dictionary.doc2bow(tokens)

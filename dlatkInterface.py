@@ -718,6 +718,8 @@ def main(fn_args = None):
     group.add_argument('--estimate_lda_topics', action='store_true', help="Estimates LDA topics using PyMallet.")
     group.add_argument('--mallet_path', help="Specify the path to the Mallet executable. If unspecified, "
                                              "LDA estimation is performed with PyMallet.")
+    group.add_argument('--save_lda_files', default='/tmp', help="The directory in which to save LDA estimation files. "
+                                                                "Default: /tmp")
     group.add_argument('--lda_lexicon_name', help="The name of the LDA topic-lexicon. Required unless --no_lda_lexicon "
                                                   "is used.")
     group.add_argument('--no_lda_lexicon', action='store_true', help="Do not store the LDA topics as a lexicon.")
@@ -729,7 +731,8 @@ def main(fn_args = None):
     group.add_argument('--lda_alpha', type=float, default=dlac.DEF_ALPHA,
                        help="The LDA alpha parameter. Default: {}".format(str(dlac.DEF_ALPHA)))
     group.add_argument('--lda_beta', type=float, default=dlac.DEF_BETA,
-                       help="The LDA beta parameter. Default: {}".format(str(dlac.DEF_BETA)))
+                       help="The LDA beta parameter. Currently ignored by Mallet. Default: {}".format(str(
+                           dlac.DEF_BETA)))
     group.add_argument('--lda_iterations', type=int, default=dlac.DEF_NUM_ITERATIONS,
                        help="The number of Gibbs sampling iterations to perform. Default: {}"
                        .format(str(dlac.DEF_NUM_ITERATIONS)))
@@ -1066,8 +1069,15 @@ def main(fn_args = None):
         if not args.lda_lexicon_name and not args.no_lda_lexicon:
             raise Exception('Must specify an LDA lexicon name with --lda_lexicon_name or disable topic-lexicon with '
                             '--no_lda_lexicon.')
+        if not os.path.isdir(args.save_lda_files):
+            try:
+                os.makedirs(args.save_lda_files)
+            except FileExistsError:
+                raise Exception('--save_lda_files path is already a file: {}'.format(args.save_lda_files))
+            except PermissionError:
+                raise Exception('You do not have permission to create a directory at {}'.format(args.save_lda_files))
         if not args.printjoinedfeaturelines:  # allow users to specify a file if they want to write it out
-            args.printjoinedfeaturelines = '/tmp/lda_msgs.txt'
+            args.printjoinedfeaturelines = os.path.join(args.save_lda_files, 'lda_msgs.txt')
         args.createdists = True
 
     if args.printjoinedfeaturelines:
@@ -1079,7 +1089,8 @@ def main(fn_args = None):
         print('Estimating LDA topics. This may take a long time!')
         if not fg: fg = FG()
         lda_estimator = LDAEstimator(fg, args.num_topics, args.lda_alpha, args.lda_beta,
-                                     args.lda_iterations, args.num_stopwords, args.no_lda_stopping)
+                                     args.lda_iterations, args.num_stopwords, args.no_lda_stopping,
+                                     files_dir=args.save_lda_files)
         state_file = lda_estimator.estimate_topics(args.printjoinedfeaturelines, args.mallet_path)
         if args.mallet_path:  # only need to add message IDs if using mallet; pymallet handles this for us
             args.addmessageid = [args.printjoinedfeaturelines, state_file]
@@ -1121,7 +1132,7 @@ def main(fn_args = None):
         writeFile.close()
 
     # transform message tables
-    if args.addldamsgs:
+    if args.addldamsgs and not args.no_lda_lexicon:
         lda_state_name = None
         if args.estimate_lda_topics:
             lda_state_name = args.lda_lexicon_name.replace('-', '_') if args.lda_lexicon_name else 'lda_topics'
@@ -1179,12 +1190,10 @@ def main(fn_args = None):
         if not ma: ma = MA()
         ma.addAnonymizedTable()
 
-
-
-    if args.createdists:
+    if args.createdists and not args.no_lda_lexicon:
         dist_file_output_name = None
         if args.estimate_lda_topics:
-            dist_file_output_name = '/tmp/lda'
+            dist_file_output_name = os.path.join(args.save_lda_files, 'lda')
             args.ldamsgtbl = '{}_lda${}'.format(args.corptable, lda_state_name)
             te = TopicExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field,
                                 args.messageid_field, dlac.DEF_ENCODING, dlac.DEF_UNICODE_SWITCH, args.ldamsgtbl)
@@ -1196,20 +1205,20 @@ def main(fn_args = None):
         if not args.no_lda_lexicon:
             lex_interface = LexInterfaceParser()
 
-            topic_file = '/tmp/lda.topicGivenWord.csv'
+            topic_file = os.path.join(args.save_lda_files, 'lda.topicGivenWord.csv')
             create_name = '{}_cp'.format(args.lda_lexicon_name)
 
             print('Adding topic lexicon: {}'.format(create_name))
             lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name])
             lex_interface.processArgs(lex_interface_args)
 
-            topic_file = '/tmp/lda.freq.threshed50.loglik.csv'
+            topic_file = os.path.join(args.save_lda_files, 'lda.freq.threshed50.loglik.csv')
             create_name = '{}_freq_t50ll'.format(args.lda_lexicon_name)
 
             print('Adding topic lexicon: {}'.format(create_name))
             lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name])
             lex_interface.processArgs(lex_interface_args)
-        print('LDA topics estimated.')
+        print('LDA topics estimated. Files saved in {}.'.format(args.save_lda_files))
 
     if args.addtopiclexfromtopicfile:
         if not fe: fe = FE()

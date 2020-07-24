@@ -195,6 +195,20 @@ class FeatureGetter(DLAWorker):
         sql.group_by(["feat"])
         return sql.execute_query()
 
+    def getTopFeats(self, n=50, where=''):
+        """
+        Gets the top features by value.
+        :param n: The number of features to return.
+        :param where: An optional where clause to SQL.
+        :return: The list of rows in [feat, sum(value)] format.
+        """
+        sql =  self.qb.create_select_query(self.featureTable).set_fields(["feat", "sum(value)"])
+        if (where): sql.where(where)
+        sql.group_by(["feat"])
+        sql.order_by([("sum(value)", "DESC")])
+        sql.set_limit(n)
+        return sql.execute_query()
+
     def getGroupNorms(self, where = ''):
         """returns a list of (group_id, feature, group_norm) triples"""
         sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "feat", "group_norm"])

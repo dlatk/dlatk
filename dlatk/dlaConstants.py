@@ -275,6 +275,14 @@ POSSIBLE_VALUE_FUNCS = [
     lambda d: 2*sqrt(d+3/float(8))
 ]
 
+## PyMallet defaults
+DEF_NUM_TOPICS = 100
+DEF_NUM_ITERATIONS = 1000
+DEF_NUM_STOPWORDS = 50
+DEF_ALPHA = 5.0
+DEF_BETA = 0.01
+
+
 ##Meta settings
 DEF_INIT_FILE = 'initFile.ini'
 WARNING_STRING = "\n".join(["#"*68, "#"*68, "WARNING: %s", "#"*68, "#"*68])

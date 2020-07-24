@@ -103,6 +103,8 @@ class SelectQuery(Query):
 		self.fields = None
 		self.where_conditions = "" 
 		self.group_by_fields = None
+		self.order_by_fields = None
+		self.limit = None
 		self.from_table = from_table
 		self.data_engine = data_engine
 
@@ -148,6 +150,24 @@ class SelectQuery(Query):
 		self.group_by_fields = group_by_fields
 		return self
 
+	def order_by(self, order_by_fields):
+		"""
+		Parameters
+		----------
+		order_by_fields: list
+			List containing tuples of form (field_name, 'ASC'|'DESC')
+
+		Returns
+		-------
+		SelectQuery object
+		"""
+		self.order_by_fields = ['{} {}'.format(field_name, asc_desc) for field_name, asc_desc in order_by_fields]
+		return self
+
+	def set_limit(self, limit):
+		self.limit = limit
+		return self
+
 	def toString(self):
 		return self.build_query()
 
@@ -189,6 +209,10 @@ class SelectQuery(Query):
 					#selectQuery = selectQuery[:-4]
 			if self.group_by_fields:
 				selectQuery += """ GROUP BY %s"""%(', '.join(self.group_by_fields))
+			if self.order_by_fields:
+				selectQuery += """ ORDER BY {}""".format(', '.join(self.order_by_fields))
+			if self.limit:
+				selectQuery += """ LIMIT {}""".format(str(self.limit))
 			return selectQuery
 
 		if self.data_engine.db_type == "sqlite":
@@ -226,6 +250,10 @@ class SelectQuery(Query):
 						#selectQuery = selectQuery[:-4]
 				if self.group_by_fields:
 					selectQuery += """ GROUP BY %s"""%(', '.join(self.group_by_fields))
+				if self.order_by_fields:
+					selectQuery += """ ORDER BY {}""".format(', '.join(self.order_by_fields))
+				if self.limit:
+					selectQuery += """ LIMIT {}""".format(str(self.limit))
 				return selectQuery
 
 

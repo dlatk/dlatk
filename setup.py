@@ -120,7 +120,7 @@ PACKAGES = ['dlatk',
   'dlatk.lib',
   'dlatk.lexicainterface',
   'dlatk.mysqlmethods',
-  'dlatk.tools',
+  'dlatk.tools'
 ]
 LICENSE = 'GNU General Public License v3 (GPLv3)'
 AUTHOR = "H. Andrew Schwartz, Salvatore Giorgi, Maarten Sap, Patrick Crutchley, Lukasz Dziurzynski and Megha Agrawal"
@@ -147,7 +147,7 @@ PACKAGE_DATA = {
 }
 INCLUDE_PACKAGE_DATA = True
 SETUP_REQUIRES = [
-  'numpy', 
+  'numpy',
 ]
 INSTALL_REQUIRES = [
   'matplotlib>=1.3.1', 
@@ -157,10 +157,12 @@ INSTALL_REQUIRES = [
   'pandas>=0.20.3', 
   'patsy>=0.2.1', 
   'python-dateutil>=2.5.0', 
-  'scikit-learn==0.18.2', 
-  'scipy>=0.19.1', 
-  'SQLAlchemy>=1.0.13', 
-  'statsmodels>=0.8.0', 
+  'scikit-learn>=0.17.1', 
+  'scipy>=0.13.3', 
+  'SQLAlchemy>=0.9.9', 
+  'statsmodels>=0.5.0', 
+  'gensim==3.8.3',
+  'dlatk-pymallet==1.0.0'
 ]
 EXTRAS_REQUIRE = {
   'image': ['image'],
@@ -169,7 +171,7 @@ EXTRAS_REQUIRE = {
   'rpy2': ['rpy2'],
   'simplejson': ['simplejson>=3.3.1'],
   'textstat': ['textstat>=0.6.1'],
-  'wordcloud':  ['wordcloud==1.1.3'],
+  'wordcloud':  ['wordcloud==1.1.3']
 }
 
 SCRIPTS = ['dlatkInterface.py']
@@ -193,6 +195,6 @@ if __name__ == "__main__":
       extras_require=EXTRAS_REQUIRE,
       install_requires=INSTALL_REQUIRES,
       scripts = SCRIPTS,
-      long_description_content_type ='text/markdown',
+      long_description_content_type ='text/markdown'
   )
 

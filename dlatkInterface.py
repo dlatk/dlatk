@@ -3,7 +3,6 @@
 """
 Interface Module to DLATK
 """
-
 print("\n")#clear some lines to make command more obvious
 import os, getpass
 import sys
@@ -33,7 +32,8 @@ from dlatk.outcomeGetter import OutcomeGetter
 from dlatk.outcomeAnalyzer import OutcomeAnalyzer
 from dlatk.regressionPredictor import RegressionPredictor, CombinedRegressionPredictor, ClassifyToRegressionPredictor
 from dlatk.semanticsExtractor import SemanticsExtractor
-from dlatk.topicExtractor import TopicExtractor
+from dlatk.topicExtractor import TopicExtractor, LDAEstimator
+
 try:
     from dlatk.lib import wordcloud
 except ImportError:
@@ -59,11 +59,11 @@ def main(fn_args = None):
     """
     :param fn_args: string - ex "-d testing -t msgs -c user_id --add_ngrams -n 1 "
     """
-    strTime = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())    
+    strTime = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
     dlac.warn("\n\n-----\nDLATK Interface Initiated: %s\n-----" % strTime)
     start_time = time.time()
 
-    
+
     ##Argument Parser:
     init_parser = argparse.ArgumentParser(prefix_chars='-+', formatter_class=argparse.ArgumentDefaultsHelpFormatter, add_help=False)
 
@@ -199,6 +199,7 @@ def main(fn_args = None):
                        help='encoded without considering context.')
 
 
+
     group = parser.add_argument_group('MySQL Interactoins', '')
     group.add_argument('--show_feature_tables', '--show_feat_tables', '--ls', action='store_true', dest='listfeattables', default=False,
                        help='List all feature tables for given corpdb, corptable and correl_field')
@@ -214,7 +215,7 @@ def main(fn_args = None):
                        nargs=2, help='OLD_TABLE NEW_TABLE copies OLD_TABLE to NEW_TABLE')
     group.add_argument('--extension', metavar='EXTENSION', dest='extension', default=None,
                        help='String added to the end of the feature table name')
-    
+
     group.add_argument('--top_messages', type=int, dest='top_messages', nargs='?', const=dlac.DEF_TOP_MESSAGES, default=False,
                        help='Print top messages with the largest score for a given topic.')
 
@@ -445,7 +446,7 @@ def main(fn_args = None):
                        help='add flesch-kincaid scores, averaged per group.')
     group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
-    group.add_argument('--add_bert', action='store_true', dest='addbert', 
+    group.add_argument('--add_bert', action='store_true', dest='addbert',
                        help='add BERT mean features (optionally add min, max, --bert_model large)')
 
 
@@ -470,7 +471,7 @@ def main(fn_args = None):
                        help='add lda topic version of message table.')
     group.add_argument('--add_outcome_feats', action='store_true', dest='addoutcomefeats',
                        help='add a feature table from the specified outcome table.')
-    
+
     group = parser.add_argument_group('Message Cleaning Actions', '')
     group.add_argument('--language_filter', '--lang_filter',  type=str, metavar='FIELD(S)', dest='langfilter', nargs='+', default=[],
                        help='Filter message table for list of languages.')
@@ -484,10 +485,11 @@ def main(fn_args = None):
 
     group = parser.add_argument_group('LDA Actions', '')
     group.add_argument('--add_message_id', type=str, nargs=2, dest='addmessageid',
-                       help='Adds the message IDs to the topic distributions and stores the result in --output_name. Previously addMessageID.py (two agrs: MESSAGE_FILE, STATE_FILE)')
+                       help='Adds the message IDs to the topic distributions and stores the result in --output_name. '
+                            'Previously addMessageID.py (two args: MESSAGE_FILE, STATE_FILE)')
     group.add_argument('-m', '--lda_msg_tbl', metavar='TABLE', dest='ldamsgtbl', type=str, default=dlac.DEF_LDA_MSG_TABLE,
                            help='LDA Message Table')
-    group.add_argument('--create_dists', action='store_true', dest='createdists', 
+    group.add_argument('--create_dists', action='store_true', dest='createdists',
                            help='Create conditional prob, and likelihood distributions.')
 
     group = parser.add_argument_group('Semantic Extraction Actions', '')
@@ -509,7 +511,7 @@ def main(fn_args = None):
     group.add_argument('--add_standardized_feats', '--add_std_feats', action='store_true', dest='addstdfeats',
                        help='Adds a copy of the feature table where group_norms have been standardized (new table appended with "z").')
 
-    
+
     group.add_argument('--feat_colloc_filter', action='store_true', dest='featcollocfilter',
                        help='removes featrues that do not pass as collocations. (uses feat_table).')
     group.add_argument('--feat_correl_filter', action='store_true', dest='featcorrelfilter',
@@ -603,18 +605,18 @@ def main(fn_args = None):
                        help='predict outcomes into a feature file (provide a name)')
 
     group = parser.add_argument_group('Factor Adaptation Actions', '')
-    group.add_argument('--fs_params', action='store_true', dest='fsparams', default=False, help = 'send values for feature selection parameters')    
+    group.add_argument('--fs_params', action='store_true', dest='fsparams', default=False, help = 'send values for feature selection parameters')
     group.add_argument('--k_best', type=str, dest='kbest', nargs='+', help='vaiables needed for feature selection .')
     group.add_argument('--pca_comp', type=str, dest='pcacomp', nargs='+', help='vaiables needed for feature selection .')
     group.add_argument('--adaptation_factors', '--factors', type=str, metavar='FIELD(S)', dest='adaptationfactors', nargs='+', help='Fields in outcome table to use as factors for adaptation in FA or RFA.')
     group.add_argument('--factor_selection_type', type=str , dest = 'factorselectiontype', default='rfe', help='chooses the type of factor selection, either pca or rfe.')
     group.add_argument('--num_of_factors', type=int, dest='numoffactors', nargs='+',
-                       help='specifies the number of factors for factor selection. 0 means all factor1. ') 
+                       help='specifies the number of factors for factor selection. 0 means all factor1. ')
     group.add_argument('--paired_factors',  action='store_true',  dest = 'pairedfactors', default=False , help='multiplying factors to themself, to make bigger pool of factors')
     group.add_argument('--report', action='store_true', dest='report', default=False, help = 'Indicates if we want to store a report on outputfile+"_.report".')
     group.add_argument('--factor_addition', action='store_true', dest='factoraddition', default=False, help = 'Indicates we want to append factors to language.')
     group.add_argument('--factor_adaptation', '--fa',  action='store_true', dest='factoradaptation', default=False, help = 'Indicates we want to factor_adapt language features.')
-    group.add_argument('--res_factor_adaptation', '--rfa' , action='store_true', dest='residualizedfactoradaptation', default=False, help = 'Indicates we want to apply residualized factor adaptation.')    
+    group.add_argument('--res_factor_adaptation', '--rfa' , action='store_true', dest='residualizedfactoradaptation', default=False, help = 'Indicates we want to apply residualized factor adaptation.')
 
 
     group = parser.add_argument_group('Classification Actions', '')
@@ -646,7 +648,7 @@ def main(fn_args = None):
                        help='trains and tests classification for each outcome')
     group.add_argument('--predict_c2r', action='store_true', dest='predictclasstoreg', default=False,
                        help='predict w/ classification to regression model')
-    
+
     group = parser.add_argument_group('Clustering Actions', '')
     group.add_argument('--reducer_to_lexicon', type=str, dest='reducertolexicon', default=None,
                        help='writes the reduction model to a specified lexicon')
@@ -712,6 +714,29 @@ def main(fn_args = None):
     group.add_argument('--loessplot', type=str, metavar='FEAT(S)', dest='loessplot', nargs='+', default='',
                        help='Output loess plots of the given features.')
 
+    group = parser.add_argument_group('LDA Estimation Actions', '')
+    group.add_argument('--estimate_lda_topics', action='store_true', help="Estimates LDA topics using PyMallet.")
+    group.add_argument('--mallet_path', help="Specify the path to the Mallet executable. If unspecified, "
+                                             "LDA estimation is performed with PyMallet.")
+    group.add_argument('--save_lda_files', default='/tmp', help="The directory in which to save LDA estimation files. "
+                                                                "Default: /tmp")
+    group.add_argument('--lda_lexicon_name', help="The name of the LDA topic-lexicon. Required unless --no_lda_lexicon "
+                                                  "is used.")
+    group.add_argument('--no_lda_lexicon', action='store_true', help="Do not store the LDA topics as a lexicon.")
+    group.add_argument('--num_topics', type=int, default=dlac.DEF_NUM_TOPICS,
+                       help="The number of LDA topics to estimate. Default: {}".format(str(dlac.DEF_NUM_TOPICS)))
+    group.add_argument('--num_stopwords', type=int, default=dlac.DEF_NUM_STOPWORDS, help="The number of stopwords to "
+                                                                                         "use.")
+    group.add_argument('--no_lda_stopping', action='store_true', help="Disables stopping")
+    group.add_argument('--lda_alpha', type=float, default=dlac.DEF_ALPHA,
+                       help="The LDA alpha parameter. Default: {}".format(str(dlac.DEF_ALPHA)))
+    group.add_argument('--lda_beta', type=float, default=dlac.DEF_BETA,
+                       help="The LDA beta parameter. Currently ignored by Mallet. Default: {}".format(str(
+                           dlac.DEF_BETA)))
+    group.add_argument('--lda_iterations', type=int, default=dlac.DEF_NUM_ITERATIONS,
+                       help="The number of Gibbs sampling iterations to perform. Default: {}"
+                       .format(str(dlac.DEF_NUM_ITERATIONS)))
+
     if len(sys.argv)==1:
         parser.print_help()
         sys.exit(1)
@@ -733,7 +758,7 @@ def main(fn_args = None):
     if args.feattable:
         if isinstance(args.feattable,list):
             args.feattable = [s.strip() for s in args.feattable]
-        else: 
+        else:
             args.feattable = arg.feattable.strip()
 
 
@@ -777,7 +802,7 @@ def main(fn_args = None):
 
     args.integrationmethod = ''
     if args.factoradaptation:
-        args.integrationmethod = 'fa'  
+        args.integrationmethod = 'fa'
         if args.factoraddition:
             args.integrationmethod += '_plus'
     elif args.residualizedfactoradaptation:
@@ -874,11 +899,11 @@ def main(fn_args = None):
     if args.listfeattables or args.showtables or args.describetables or args.createrandsample or args.viewtables or args.createcopiedtable:
         if not dlaw: dlaw = DLAW()
 
-    if isinstance(args.describetables, list) and len(args.describetables) == 0: 
+    if isinstance(args.describetables, list) and len(args.describetables) == 0:
         if not dlaw: dlaw = DLAW()
         args.describetables = True
 
-    if isinstance(args.viewtables, list) and len(args.viewtables) == 0: 
+    if isinstance(args.viewtables, list) and len(args.viewtables) == 0:
         if not dlaw: dlaw = DLAW()
         args.viewtables = True
 
@@ -890,13 +915,13 @@ def main(fn_args = None):
 
     def printTableDesc(description):
         header = ['Field', 'Type','Null', 'Key', 'Default', 'Extra']
-        row_format ="{:>25}{:>25}{:>10}{:>10}{:>10}{:>15}" 
+        row_format ="{:>25}{:>25}{:>10}{:>10}{:>10}{:>15}"
         print(row_format.format(*header))
         for row in description:
             print(row_format.format(*[r if r or r == 0 else '' for r in row]))
 
     def printTableData(data):
-        row_format = "{:>15}" * len(data[0]) 
+        row_format = "{:>15}" * len(data[0])
         for row in data:
             print(row_format.format(*[' ' + str(r)[0:14] if r or r == 0 else '' for r in row]))
 
@@ -929,18 +954,18 @@ def main(fn_args = None):
             for tbl in args.viewtables: printTableData(dlaw.viewTable(table_name=tbl))
 
     if args.createrandsample:
-        if len(args.createrandsample) > 2: 
+        if len(args.createrandsample) > 2:
             print("Error: Only two optional arguments for --create_random_sample")
             sys.exit(1)
         percentage, random_seed = args.createrandsample if len(args.createrandsample) > 1 else (args.createrandsample[0], dlac.DEFAULT_RANDOM_SEED)
         rand_table = dlaw.createRandomSample(float(percentage), random_seed, where=args.groupswhere)
 
     if args.createcopiedtable:
-        if len(args.createcopiedtable) != 2: 
+        if len(args.createcopiedtable) != 2:
             print("Error: Need two arguments for --create_copied_table")
             sys.exit(1)
         new_table = dlaw.createCopiedTable(args.createcopiedtable[0], args.createcopiedtable[1], where=args.groupswhere)
-        
+
 
     #Feature Extraction:
     if args.addngrams:
@@ -1025,7 +1050,7 @@ def main(fn_args = None):
         langLex = lexInterface.Lexicon(mysql_host = args.mysql_host)
         langLex.loadLexicon(args.addpnames[1])
         args.feattable = fe.addPNamesTable(namesLex.getLexicon(), langLex.getLexicon(),  valueFunc = args.valuefunc)
-        
+
     if args.addwnnopos:
         if not fe: fe = FE()
         args.feattable = fe.addWNNoPosFeat(valueFunc = args.valuefunc, featValueFunc=args.lexvaluefunc)
@@ -1038,14 +1063,83 @@ def main(fn_args = None):
         if not fe: fe = FE()
         args.feattable = fe.addFleschKincaidTable(valueFunc = args.valuefunc)
 
+    if args.estimate_lda_topics:
+        if not args.feattable:
+            raise Exception('LDA topic estimation requires a 1gram feature table.')
+        if not args.lda_lexicon_name and not args.no_lda_lexicon:
+            raise Exception('Must specify an LDA lexicon name with --lda_lexicon_name or disable topic-lexicon with '
+                            '--no_lda_lexicon.')
+        if not os.path.isdir(args.save_lda_files):
+            try:
+                os.makedirs(args.save_lda_files)
+            except FileExistsError:
+                raise Exception('--save_lda_files path is already a file: {}'.format(args.save_lda_files))
+            except PermissionError:
+                raise Exception('You do not have permission to create a directory at {}'.format(args.save_lda_files))
+        if not args.printjoinedfeaturelines:  # allow users to specify a file if they want to write it out
+            args.printjoinedfeaturelines = os.path.join(args.save_lda_files, 'lda_msgs.txt')
+        args.createdists = True
+
     if args.printjoinedfeaturelines:
+        print('Writing joined feature lines file: {}.'.format(args.printjoinedfeaturelines))
         if not fg: fg = FG()
         fg.printJoinedFeatureLines(args.printjoinedfeaturelines)
 
+    if args.estimate_lda_topics:
+        print('Estimating LDA topics. This may take a long time!')
+        if not fg: fg = FG()
+        lda_estimator = LDAEstimator(fg, args.num_topics, args.lda_alpha, args.lda_beta,
+                                     args.lda_iterations, args.num_stopwords, args.no_lda_stopping,
+                                     files_dir=args.save_lda_files)
+        state_file = lda_estimator.estimate_topics(args.printjoinedfeaturelines, args.mallet_path)
+        if args.mallet_path:  # only need to add message IDs if using mallet; pymallet handles this for us
+            args.addmessageid = [args.printjoinedfeaturelines, state_file]
+            state_file = os.path.splitext(state_file)[0]
+            args.outputname = state_file
+        args.addldamsgs = state_file
+
+    # LDA
+    if args.addmessageid:
+        messageFile = open(args.addmessageid[0], 'rb')
+        stateFile = gzip.open(args.addmessageid[1], 'rb')
+        writeFile = open(args.outputname, 'w')
+        writeFile.write(stateFile.readline().decode())
+        writeFile.write(stateFile.readline().decode())
+        writeFile.write(stateFile.readline().decode())
+        error = open('error.log.txt', 'w+')
+
+        currentindex = -1
+        messageid = -1
+        while (True):
+            line = stateFile.readline().decode()
+            if len(line) == 0:
+                break
+            tokens = line.split()
+            if tokens[0] != currentindex:
+                currentindex = tokens[0]
+                line_read = messageFile.readline()
+                if len(line_read.split()) > 0:
+                    messageid = line_read.split()[0]
+                    if str(messageid) == '$':
+                        error.write("Error line: " + line_read)
+
+            tokens[1] = messageid.decode()
+            line = ' '.join(tokens)
+            line += '\n'
+            writeFile.write(line)
+        messageFile.close()
+        stateFile.close()
+        writeFile.close()
+
     # transform message tables
-    if args.addldamsgs:
-        if not mt: mt = MT()
-        mt.addLDAMessages(args.addldamsgs)
+    if args.addldamsgs and not args.no_lda_lexicon:
+        lda_state_name = None
+        if args.estimate_lda_topics:
+            lda_state_name = args.lda_lexicon_name.replace('-', '_') if args.lda_lexicon_name else 'lda_topics'
+        if not mt:
+            mt = MT()
+        print('Importing LDA state.')
+        mt.addLDAMessages(args.addldamsgs, ldaStatesName=lda_state_name)
 
     if args.addtokenized:
         if not mt: mt = MT()
@@ -1096,45 +1190,35 @@ def main(fn_args = None):
         if not ma: ma = MA()
         ma.addAnonymizedTable()
 
-
-    # LDA
-    if args.addmessageid:
-        messageFile=open(args.addmessageid[0], 'rb')
-        stateFile=gzip.open(args.addmessageid[1], 'rb')
-        writeFile=open(args.outputname, 'w')
-        writeFile.write(stateFile.readline().decode())
-        writeFile.write(stateFile.readline().decode())
-        writeFile.write(stateFile.readline().decode())
-        error = open('error.log.txt','w+')
-
-        currentindex=-1
-        messageid=-1
-        while(True):
-            line=stateFile.readline().decode()
-            if len(line)==0:
-                break
-            tokens=line.split()
-            if tokens[0]!=currentindex:
-                currentindex=tokens[0]
-                line_read = messageFile.readline()
-                if len(line_read.split()) >  0:
-                    messageid=line_read.split()[0]
-                    if str(messageid) == '$':
-                        error.write("Error line: "+line_read)
-
-            tokens[1]=messageid.decode()
-            line=' '.join(tokens)
-            line+='\n'
-            writeFile.write(line)
-        messageFile.close()
-        stateFile.close()
-        writeFile.close()
-
-    if args.createdists:
-        if not te:
+    if args.createdists and not args.no_lda_lexicon:
+        dist_file_output_name = None
+        if args.estimate_lda_topics:
+            dist_file_output_name = os.path.join(args.save_lda_files, 'lda')
+            args.ldamsgtbl = '{}_lda${}'.format(args.corptable, lda_state_name)
+            te = TopicExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field,
+                                args.messageid_field, dlac.DEF_ENCODING, dlac.DEF_UNICODE_SWITCH, args.ldamsgtbl)
+        elif not te:
             te = TE()
-        te.createDistributions()
+        te.createDistributions(dist_file_output_name)
 
+    if args.estimate_lda_topics:
+        if not args.no_lda_lexicon:
+            lex_interface = LexInterfaceParser()
+
+            topic_file = os.path.join(args.save_lda_files, 'lda.topicGivenWord.csv')
+            create_name = '{}_cp'.format(args.lda_lexicon_name)
+
+            print('Adding topic lexicon: {}'.format(create_name))
+            lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name])
+            lex_interface.processArgs(lex_interface_args)
+
+            topic_file = os.path.join(args.save_lda_files, 'lda.freq.threshed50.loglik.csv')
+            create_name = '{}_freq_t50ll'.format(args.lda_lexicon_name)
+
+            print('Adding topic lexicon: {}'.format(create_name))
+            lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name])
+            lex_interface.processArgs(lex_interface_args)
+        print('LDA topics estimated. Files saved in {}.'.format(args.save_lda_files))
 
     if args.addtopiclexfromtopicfile:
         if not fe: fe = FE()
@@ -1187,13 +1271,13 @@ def main(fn_args = None):
         if not fr: fr=FR()
         args.feattable = fr.createInterpolatedFeatTable(days = args.interpolategroup, dateField = args.date_field, groupFreqThresh = args.groupfreqthresh, where = args.groupswhere)
 
-        
+
     if args.featoccfilter:
         if args.use_collocs and not args.wordTable:
             args.wordTable = args.feattable
         if not fr: fr=FR()
         args.feattable = fr.createTableWithRemovedFeats(args.pocc, args.minfeatsum, args.groupfreqthresh, setGFTWarning)
-        
+
     if args.featcollocfilter:
         if not fr: fr=FR()
         if args.use_collocs:
@@ -1239,7 +1323,7 @@ def main(fn_args = None):
     if args.addstdfeats:
         if not fr: fr=FR()
         fr.createStandardizedFeatTable(groupFreqThresh = args.groupfreqthresh, setGFTWarning = setGFTWarning)
-        
+
     #create whitelist / blacklist
     if args.categories:
         if isinstance(args.categories, str):
@@ -1300,7 +1384,7 @@ def main(fn_args = None):
     #Outcome Only options:
     if args.p_correction_method == '':
         args.bonferroni = False
-    
+
     if args.printcsv:
         pprint(args)
         if not oa: oa = OA()
@@ -1707,7 +1791,7 @@ def main(fn_args = None):
             comboScores = rp.testControlCombos(sparse = args.sparse, blacklist = blacklist,
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
                                            nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval,
-                                           standardize = args.standardize, residualizedControls = args.res_controls, groupsWhere = args.groupswhere, 
+                                           standardize = args.standardize, residualizedControls = args.res_controls, groupsWhere = args.groupswhere,
                                            weightedSample = args.weightedsample, adaptationFactorsName = args.adaptationfactors, featureSelectionParameters=args.featureselectionparams , factorSelectionType=args.factorselectiontype, numOfFactors=args.numoffactors, pairedFactors=args.pairedfactors, outputName = args.outputname, report=args.report, integrationMethod = args.integrationmethod)
         elif args.controladjustreg:
             comboScores = rp.adjustOutcomesFromControls(standardize = args.standardize, sparse = args.sparse,
@@ -1719,7 +1803,7 @@ def main(fn_args = None):
                 outputStream = open(args.outputname+'.predicted_data.csv', 'w')
             RegressionPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
-            if args.outputname: 
+            if args.outputname:
                 outputStream.close()
         #TODO:
         # if args.pred_feat:
@@ -1730,7 +1814,7 @@ def main(fn_args = None):
                 outputStream = open(args.outputname+'.variance_data.csv', 'w')
             RegressionPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
-            if args.outputname: 
+            if args.outputname:
                 outputStream.close()
         elif not args.pred_csv:
             pprint(comboScores)
@@ -1810,7 +1894,7 @@ def main(fn_args = None):
                         tuple([wLangData[0][k] for k in ['acc', 'f1', 'auc']]))
                     mfc = wLangData[0]['mfclass_acc']
                 if 1 in wLangData:
-                    if len(controls) > 0: 
+                    if len(controls) > 0:
                         print("     + LANG: acc: %.3f, f1: %.3f, auc: %.3f, auc ensemble: %.3f (p = %.4f)" %\
                               tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc', 'auc_cntl_comb2', 'auc_cntl_comb2_p']]))
                     else:
@@ -1819,7 +1903,7 @@ def main(fn_args = None):
                         mfc = wLangData[1]['mfclass_acc']
             print("   (mfc_acc: %.3f)"%mfc)
 
-                
+
         if args.pred_csv:
             outputStream = sys.stdout
             if args.outputname:
@@ -1915,7 +1999,7 @@ def main(fn_args = None):
         else:
             lexicon = lexInterface.WeightedLexicon("", mysql_host = args.mysql_host)
             lexicon.createSuperTopicTable(args.supertopics, args.reducedlexicon, args.lextable)
-            
+
     if args.savemodels and dr:
         dr.save(args.picklefile)
 

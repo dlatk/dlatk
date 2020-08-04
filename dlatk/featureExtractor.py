@@ -1238,7 +1238,6 @@ class FeatureExtractor(DLAWorker):
         #model = AutoModel.from_pretrained(modelName, config=config)
         tokenizer = MODEL_DICT[SHORTHAND_DICT[tokenizerName]][1].from_pretrained(tokenizerName)
         model = MODEL_DICT[SHORTHAND_DICT[modelName]][0].from_pretrained(modelName, output_hidden_states=True)
-        
         maxTokensPerSeg = tokenizer.max_len_sentences_pair//2
 
         model.eval()
@@ -1327,7 +1326,14 @@ class FeatureExtractor(DLAWorker):
 
                         for i in range(len(sentsTok)):
                             thisPair = sentsTok[i:i+2] #Give two sequences as input
-                            encoded = tokenizer.encode_plus(thisPair[0], thisPair[1]) if len(thisPair)>1 else tokenizer.encode_plus(thisPair[0])
+                            try:
+                                encoded = tokenizer.encode_plus(thisPair[0], thisPair[1]) if len(thisPair)>1 else tokenizer.encode_plus(thisPair[0])
+                            except:
+                                dlac.warn("Message pair/ message unreadable. Skipping this....")
+                                continue
+                                #print(thisPair, message_id)
+                                #sys.exit(0)
+                                
                             indexedToks = encoded['input_ids']
                             segIds = encoded['token_type_ids'] if 'token_type_ids' in encoded else None
 
@@ -1351,7 +1357,7 @@ class FeatureExtractor(DLAWorker):
             encSelectLayers = []
             #print ('len(input_ids): ',len(input_ids))
             #print ('Num Batches:', num_batches)
-            
+            #TODO: Check if len(messageSents) = 0, skip this and print warning
             for i in range(num_batches):
                 #Padding for batch input
                 input_ids_padded = pad_sequence(input_ids[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=tokenizer.pad_token_id)
@@ -1458,6 +1464,8 @@ class FeatureExtractor(DLAWorker):
                 user_rep.append(np.mean(np.concatenate(sent_rep, axis=0), axis=0)) 
 
             user_rep = np.array(user_rep)
+            if user_rep.shape[0] == 0:
+                continue
             #Flatten the features [layer aggregations] to a single dimension.
             user_rep = user_rep.reshape(user_rep.shape[0], -1)
             if len(user_rep)>0:

@@ -595,6 +595,11 @@ class PPA(TransformerMixin, BaseEstimator):
         self.D = D
         self.svd_solver = svd_solver
         ## init var to None
+        self.n_components_ = None
+        self.pca = None
+        self.U = None
+        self.mean_vector = None
+        
     
     def fit(self, X:np.array, y=None):
 
@@ -602,20 +607,20 @@ class PPA(TransformerMixin, BaseEstimator):
         self.n_components_ = X.shape[1]
 
         self.pca = PCA(n_components=min(X.shape[0], X.shape[1]), svd_solver=self.svd_solver)
-        X_new = X - np.mean(X, axis=0)
-        # use train sets mean for test set, make it instance variable
+        self.mean_vector = np.mean(X, axis=0)
+        X_new = X - self.mean_vector
         self.pca.fit_transform(X_new)
-        self.Ufit = self.pca.components_
+        self.U = self.pca.components_
 
         return self
     
     def transform(self, X:np.array, y=None):
         
-        X_new = X - np.mean(X, axis=0)
+        X_new = X - self.mean_vector
         X_ppa = []
         for i in range(X_new.shape[0]):
             ppa_emb = X_new[i]
-            for u in self.Ufit[0:self.D]:
+            for u in self.U[0:self.D]:
                 ppa_emb = ppa_emb - (np.dot(u.transpose(), X[i]) * u)
             X_ppa.append(ppa_emb)
         

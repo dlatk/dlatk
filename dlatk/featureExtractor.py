@@ -1206,7 +1206,8 @@ class FeatureExtractor(DLAWorker):
         SHORTHAND_DICT = { 'bert-base-uncased': 'bert', 'bert-large-uncased': 'bert', 'bert-base-cased': 'bert', 'bert-large-cased': 'bert',
                             'SpanBERT/spanbert-base-cased': 'bert', 'SpanBERT/spanbert-large-cased': 'bert',
                             'allenai/scibert_scivocab_cased': 'bert', 'allenai/scibert_scivocab_uncased': 'bert',# 'transfo-xl-wt103': 'transfoXL',
-                            #'openai-gpt': 'OpenAIGPT', 'gpt2': 'GPT2', 'gpt2-medium': 'GPT2', 'gpt2-large': 'GPT2', 'gpt2-xl': 'GPT2',
+                            #'openai-gpt': 'OpenAIGPT', 
+                            'gpt2': 'GPT2', 'gpt2-medium': 'GPT2', 'gpt2-large': 'GPT2', 'gpt2-xl': 'GPT2',
                             'xlnet-base-cased': 'XLNet', 'xlnet-large-cased': 'XLNet',
                             'roberta-base': 'Roberta', 'roberta-large': 'Roberta', 'roberta-large-mnli': 'Roberta', 
                             'distilroberta-base': 'Roberta', 'roberta-base-openai-detector': 'Roberta', 'roberta-large-openai-detector': 'Roberta',
@@ -1222,7 +1223,7 @@ class FeatureExtractor(DLAWorker):
             'XLNet': [XLNetModel, XLNetTokenizer], 
             #'OpenAIGPT': [OpenAIGPTModel,  OpenAIGPTTokenizer], # Need to fix tokenization [Token type Ids], Doesn't have CLS or SEP
             'Roberta': [RobertaModel, RobertaTokenizer], # Need to fix tokenization [Token type Ids]
-            #'GPT2': [GPT2Model, GPT2Tokenizer], # Need to fix tokenization [Token type Ids], Doesn't have CLS or SEP
+            'GPT2': [GPT2Model, GPT2Tokenizer], # Need to fix tokenization [Token type Ids], Doesn't have CLS or SEP
             'DistilBert': [DistilBertModel, DistilBertTokenizer], #Doesn't take Token Type IDS as input
             #'XLM': [XLMModel, XLMTokenizer], #Need to decide on the specific models
             'XLMRoberta': [XLMRobertaModel, XLMRobertaTokenizer],  # Need to fix tokenization [Token type Ids]
@@ -1239,7 +1240,8 @@ class FeatureExtractor(DLAWorker):
         tokenizer = MODEL_DICT[SHORTHAND_DICT[tokenizerName]][1].from_pretrained(tokenizerName)
         model = MODEL_DICT[SHORTHAND_DICT[modelName]][0].from_pretrained(modelName, output_hidden_states=True)
         maxTokensPerSeg = tokenizer.max_len_sentences_pair//2
-
+        #Fix for gpt2
+        pad_token_id = tokenizer.pad_token_id if tokenizer.pad_token_id else 0
         model.eval()
         cuda = True
         try:
@@ -1360,7 +1362,7 @@ class FeatureExtractor(DLAWorker):
             #TODO: Check if len(messageSents) = 0, skip this and print warning
             for i in range(num_batches):
                 #Padding for batch input
-                input_ids_padded = pad_sequence(input_ids[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=tokenizer.pad_token_id)
+                input_ids_padded = pad_sequence(input_ids[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=pad_token_id)
                 if len(token_type_ids)>0:
                     token_type_ids_padded = pad_sequence(token_type_ids[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=0)
                 attention_mask_padded = pad_sequence(attention_mask[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=0)
@@ -1389,7 +1391,9 @@ class FeatureExtractor(DLAWorker):
                         encSelectLayers_temp.append(encAllLayers[int(lyr)].detach().cpu().numpy())
 
                     #print(encSelectLayers[-1].shape)
-                    del encAllLayers
+                    del encAllLayers, input_ids_padded, attention_mask_padded
+                    if len(token_type_ids)>0: del token_type_ids_padded
+                    
                 encSelectLayers.append(np.transpose(np.array(encSelectLayers_temp),(1,2,3,0)))
 
             i = 0

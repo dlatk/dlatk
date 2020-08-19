@@ -139,7 +139,7 @@ EMB_OPTIONS = ['bert-base-uncased', 'bert-large-uncased', 'bert-base-cased', 'be
             'allenai/scibert_scivocab_cased', 'allenai/scibert_scivocab_uncased', 'xlnet-base-cased', 'xlnet-large-cased', 'roberta-base', 'roberta-large', 
             'roberta-large-mnli', 'distilroberta-base', 'roberta-base-openai-detector', 'roberta-large-openai-detector', 'distilbert-base-uncased', 
             'distilbert-base-cased', 'distilbert-base-multilingual-cased', 'distilbert-base-cased-distilled-squad', 'albert-base-v2', 'albert-large-v2', 
-            'albert-xlarge-v2', 'albert-xxlarge-v2', 'xlm-roberta-base', 'xlm-roberta-large']
+            'albert-xlarge-v2', 'albert-xxlarge-v2', 'xlm-roberta-base', 'xlm-roberta-large', 'gpt2', 'gpt2-medium', 'gpt2-large', 'gpt2-xl']
 
 
 ##Prediction Settings:

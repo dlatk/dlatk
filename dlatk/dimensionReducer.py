@@ -437,7 +437,11 @@ class DimensionReducer:
 
                 if writeToFeats:
                     #Creating table if not done yet
-                    n_components = self.clusterModels[outcomeName].n_components_            
+                    try:
+                        n_components = self.clusterModels[outcomeName].n_components_            
+                    except:
+                        #FA didnt have n_components_ in its class. Handling those cases
+                        n_components = len(self.clusterModels[outcomeName].components_)
                     featNames = ["COMPONENT_"+str(i) for i in range(n_components)]
                     #featNames = list(chunkPredictions.keys())
                     featLength = max([len(s) for s in featNames])

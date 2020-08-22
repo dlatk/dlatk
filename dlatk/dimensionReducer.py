@@ -635,6 +635,38 @@ class PPA(TransformerMixin, BaseEstimator):
         self.fit(X)
         return self.transform(X)
 
+class NonNegativeStandardScaler(TransformerMixin, BaseEstimator):
+    '''
+        class method that shifts the axis to ensure the matrix doesn't have negative values.
+        Used before applying NMF.
+    '''
+    def __init__(self, with_mean=True, with_std=True):
+        self.with_mean = with_mean
+        self.with_std = with_std
+        self.min_val = -np.inf
+        self.std_scaler = StandardScaler()
+
+    def fit(self, X:np.ndarray, y=None):
+        
+        X = self.std_scaler.fit_transform(X)
+        self.min_val = X.min()
+        if np.isinf(self.min_val):
+            print ("min value is negative inf.")
+            sys.exit(0)
+        X = X + (self.min_val*-1)
+
+        return self
+    
+    def transform(self, X:np.ndarray, y=None):
+
+        X = self.std_scaler.transform(X)
+        X = X + (self.min_val*-1)
+        X[X<0] = 0
+        return X
+
+    def fit_transform(self, X:np.ndarray, y=None):
+        self.fit(X)
+        return self.transform(X)
 
 class CCA:
     """Handles CCA analyses of language and outcomes"""

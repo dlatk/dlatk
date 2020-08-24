@@ -247,14 +247,21 @@ class DimensionReducer:
             sparse = False
      
         scaler = None
-        if standardize:
+        if 'nmf' in self.modelName.lower():
+            scaler = NonNegativeStandardScaler(standardize)
+            print("[Applying NonNegativeStandardScaler to X: %s]" % str(scaler))
+            X = scaler.fit_transform(X)
+
+        elif standardize:
             scaler = StandardScaler(with_mean=not sparse)
             print("[Applying StandardScaler to X: %s]" % str(scaler))
             X = scaler.fit_transform(X)
-
+        
+        '''
         if 'nmf' in self.modelName.lower():
             minX = X.min()
             X = X + (minX*-1)
+        '''
 
         #if y:
         #    y = np.array(y)
@@ -640,27 +647,28 @@ class NonNegativeStandardScaler(TransformerMixin, BaseEstimator):
         class method that shifts the axis to ensure the matrix doesn't have negative values.
         Used before applying NMF.
     '''
-    def __init__(self, with_mean=True, with_std=True):
-        self.with_mean = with_mean
-        self.with_std = with_std
+    def __init__(self, standardize):
+        self.standardize = standardize
         self.min_val = -np.inf
         self.std_scaler = StandardScaler()
 
     def fit(self, X:np.ndarray, y=None):
         
-        X = self.std_scaler.fit_transform(X)
+        if self.standardize: X = self.std_scaler.fit_transform(X)
+
         self.min_val = X.min()
         if np.isinf(self.min_val):
             print ("min value is negative inf.")
             sys.exit(0)
-        X = X + (self.min_val*-1)
 
         return self
     
     def transform(self, X:np.ndarray, y=None):
-
-        X = self.std_scaler.transform(X)
+        
+        print ("Min value of the matrix: ", np.array(X).min())
+        if self.standardize: X = self.std_scaler.transform(X)
         X = X + (self.min_val*-1)
+        if X[X<0].shape[0]: print ("Matrix with %d negative values after applying axis shifting. Zeroing those values now...."% (X[X<0].shape[0]))
         X[X<0] = 0
         return X
 

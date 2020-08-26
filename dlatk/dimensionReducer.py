@@ -6,6 +6,7 @@ to perform prediction of outcomes for language features.
 """
 
 from .dlaConstants import warn, alignDictsAsX
+from .autoencoders import AE
 import pickle as pickle
 
 try:
@@ -135,7 +136,9 @@ class DimensionReducer:
 
             'fa': {'n_components': 10, 'random_state': 42},
 
-            'ppa': {'D': 1} #None defaults to original dimensions / 100
+            'ppa': {'D': 1}, #None defaults to original dimensions / 100
+
+            'ae': {'n_components': 128, 'layers': 2, 'epochs': 4, 'dropout_prob':0, 'batch_size':100}
     
             }
 
@@ -148,7 +151,8 @@ class DimensionReducer:
         'lda' : 'LDA',
         'rpca' : 'PCA',#TODO: somehow update to use rpca
         'fa' : 'FactorAnalysis',
-        'ppa': 'PPA'
+        'ppa': 'PPA',
+        'ae': 'AE'
         }
 
     def __init__(self, fg, modelName='nmf', og=None, n_components=None):

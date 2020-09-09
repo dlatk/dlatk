@@ -245,8 +245,11 @@ class RegressionPredictor:
         'ridge250': [
             {'alpha': [250]}, #PCA counties
         ],
-        'ridge100000': [
-            {'alpha': [100000]}, 
+        'ridge1m': [
+            {'alpha': [1000000]}, 
+        ],
+        'ridge10m': [
+            {'alpha': [10000000]}, 
         ],
         'ridge100': [{'alpha': [100]}],
         'ridge10': [{'alpha': [10]}],
@@ -286,6 +289,9 @@ class RegressionPredictor:
         ],
         'ridgelowcv': [
             {'alphas': np.array([.01, .1, .001, 1, .0001, .00001])}, 
+        ],
+        'ridgeveryhighcv': [
+            {'alphas': np.array([100000, 1000000, 10000, 10000000, 100000000, 1000000000])}, 
         ],
         'rpcridgecv': [
             #{'alphas': np.array([100, 1000, 10000]), 'component_percs':np.array([.01, .02154, .0464, .1, .2154, .464, 1])}, #standard
@@ -370,9 +376,12 @@ class RegressionPredictor:
         'ridge100' : 'Ridge',
         'ridge10' : 'Ridge',
         'ridge1' : 'Ridge',
+        'ridge1m' : 'Ridge',
+        'ridge10m' : 'Ridge',
         'ridgecv' : 'RidgeCV',
         'ridgefirstpasscv' : 'RidgeCV',
         'ridgehighcv' : 'RidgeCV',
+        'ridgeveryhighcv' : 'RidgeCV',
         'ridgelowcv' : 'RidgeCV',
         'rpcridgecv' : 'RPCRidgeCV',
         'linear' : 'LinearRegression',

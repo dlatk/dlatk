@@ -2311,10 +2311,10 @@ class RegressionPredictor:
         for nextX in multiX[startIndex:]:
             X = np.append(X, nextX, 1)
 
-        print("[PREDICT] combined X shape: %s" % str(X.shape)) #debu
-        if hasattr(regressor, 'intercept_'):
-            print("[PREDICT] regression intercept: %f" % regressor.intercept_)
+        print("[PREDICT] combined X shape: %s" % str(X.shape)) 
 
+        print("[PREDICT] regressor: %s\nsettings: " %
+              str(regressor), str([i for i in regressor.__dict__.items() if not isinstance(i[1], Iterable)]))
         if returnX:
             return regressor.predict(X), X
         else: 

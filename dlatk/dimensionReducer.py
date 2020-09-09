@@ -6,6 +6,7 @@ to perform prediction of outcomes for language features.
 """
 
 from .dlaConstants import warn, alignDictsAsX
+from .autoencoders import AE
 import pickle as pickle
 
 try:
@@ -135,7 +136,9 @@ class DimensionReducer:
 
             'fa': {'n_components': 10, 'random_state': 42},
 
-            'ppa': {'D': 1} #None defaults to original dimensions / 100
+            'ppa': {'D': 1}, #None defaults to original dimensions / 100
+
+            'ae': {'n_components': 128, 'layers': 2, 'epochs': 4, 'dropout_prob':0, 'batch_size':100}
     
             }
 
@@ -148,7 +151,8 @@ class DimensionReducer:
         'lda' : 'LDA',
         'rpca' : 'PCA',#TODO: somehow update to use rpca
         'fa' : 'FactorAnalysis',
-        'ppa': 'PPA'
+        'ppa': 'PPA',
+        'ae': 'AE'
         }
 
     def __init__(self, fg, modelName='nmf', og=None, n_components=None):
@@ -247,14 +251,21 @@ class DimensionReducer:
             sparse = False
      
         scaler = None
-        if standardize:
+        if 'nmf' in self.modelName.lower():
+            scaler = NonNegativeStandardScaler(standardize)
+            print("[Applying NonNegativeStandardScaler to X: %s]" % str(scaler))
+            X = scaler.fit_transform(X)
+
+        elif standardize:
             scaler = StandardScaler(with_mean=not sparse)
             print("[Applying StandardScaler to X: %s]" % str(scaler))
             X = scaler.fit_transform(X)
-
+        
+        '''
         if 'nmf' in self.modelName.lower():
             minX = X.min()
             X = X + (minX*-1)
+        '''
 
         #if y:
         #    y = np.array(y)
@@ -437,7 +448,11 @@ class DimensionReducer:
 
                 if writeToFeats:
                     #Creating table if not done yet
-                    n_components = self.clusterModels[outcomeName].n_components_            
+                    try:
+                        n_components = self.clusterModels[outcomeName].n_components_            
+                    except:
+                        #FA didnt have n_components_ in its class. Handling those cases
+                        n_components = len(self.clusterModels[outcomeName].components_)
                     featNames = ["COMPONENT_"+str(i) for i in range(n_components)]
                     #featNames = list(chunkPredictions.keys())
                     featLength = max([len(s) for s in featNames])
@@ -594,6 +609,12 @@ class PPA(TransformerMixin, BaseEstimator):
     def __init__(self, D = None, svd_solver = 'randomized'):
         self.D = D
         self.svd_solver = svd_solver
+        ## init var to None
+        self.n_components_ = None
+        self.pca = None
+        self.U = None
+        self.mean_vector = None
+        
     
     def fit(self, X:np.array, y=None):
 
@@ -601,19 +622,20 @@ class PPA(TransformerMixin, BaseEstimator):
         self.n_components_ = X.shape[1]
 
         self.pca = PCA(n_components=min(X.shape[0], X.shape[1]), svd_solver=self.svd_solver)
-        X_new = X - np.mean(X, axis=0)
+        self.mean_vector = np.mean(X, axis=0)
+        X_new = X - self.mean_vector
         self.pca.fit_transform(X_new)
-        self.Ufit = self.pca.components_
+        self.U = self.pca.components_
 
         return self
     
     def transform(self, X:np.array, y=None):
         
-        X_new = X - np.mean(X, axis=0)
+        X_new = X - self.mean_vector
         X_ppa = []
         for i in range(X_new.shape[0]):
             ppa_emb = X_new[i]
-            for u in self.Ufit[0:self.D]:
+            for u in self.U[0:self.D]:
                 ppa_emb = ppa_emb - (np.dot(u.transpose(), X[i]) * u)
             X_ppa.append(ppa_emb)
         
@@ -624,6 +646,39 @@ class PPA(TransformerMixin, BaseEstimator):
         self.fit(X)
         return self.transform(X)
 
+class NonNegativeStandardScaler(TransformerMixin, BaseEstimator):
+    '''
+        class method that shifts the axis to ensure the matrix doesn't have negative values.
+        Used before applying NMF.
+    '''
+    def __init__(self, standardize):
+        self.standardize = standardize
+        self.min_val = -np.inf
+        self.std_scaler = StandardScaler()
+
+    def fit(self, X:np.ndarray, y=None):
+        
+        if self.standardize: X = self.std_scaler.fit_transform(X)
+
+        self.min_val = X.min()
+        if np.isinf(self.min_val):
+            print ("min value is negative inf.")
+            sys.exit(0)
+
+        return self
+    
+    def transform(self, X:np.ndarray, y=None):
+        
+        print ("Min value of the matrix: ", np.array(X).min())
+        if self.standardize: X = self.std_scaler.transform(X)
+        X = X + (self.min_val*-1)
+        if X[X<0].shape[0]: print ("Matrix with %d negative values after applying axis shifting. Zeroing those values now...."% (X[X<0].shape[0]))
+        X[X<0] = 0
+        return X
+
+    def fit_transform(self, X:np.ndarray, y=None):
+        self.fit(X)
+        return self.transform(X)
 
 class CCA:
     """Handles CCA analyses of language and outcomes"""

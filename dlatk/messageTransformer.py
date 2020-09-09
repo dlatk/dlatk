@@ -8,6 +8,8 @@ import sys
 import os
 import re
 
+from io import StringIO
+
 #infrastructure
 from .dlaWorker import DLAWorker
 from . import dlaConstants as dlac
@@ -59,7 +61,7 @@ class MessageTransformer(DLAWorker):
         
         mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)
-    
+
         columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode).keys())
         messageIndex = columnNames.index(self.message_field)
         messageIdIndex = columnNames.index(self.messageid_field)
@@ -163,7 +165,7 @@ class MessageTransformer(DLAWorker):
         mm.executeWriteMany(self.corpdb, self.dbCursor, sql, newRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
 
-    def addLDAMessages(self, ldaStatesFile):
+    def addLDAMessages(self, ldaStatesFile, ldaStatesName=None):
         """Creates a LDA topic version of message table
 
         Parameters
@@ -176,12 +178,14 @@ class MessageTransformer(DLAWorker):
         tableName : str
             Name of LDA message table: corptable_lda$ldaStatesFileBaseName
         """
+        print('LDA states file: {}'.format(ldaStatesFile))
         fin = open(ldaStatesFile, 'r') #done first so throws error if not existing
-        baseFileName = os.path.splitext(os.path.basename(ldaStatesFile))[0].replace('-', '_')
-        tableName = "%s_lda$%s" %(self.corptable, baseFileName)
+        if ldaStatesName is None:
+            ldaStatesName = os.path.splitext(os.path.basename(ldaStatesFile))[0].replace('-', '_')
+        tableName = "%s_lda$%s" %(self.corptable, ldaStatesName)
 
         #Create Table:
-        columnNames, messageIndex, messageIdIndex = self.createTable(tableName, modify='LONGTEXT')
+        columnNames, messageIndex, messageIdIndex = self._createTable(tableName, modify='LONGTEXT')
 
         commentLine = re.compile('^\#')
         ldaColumnLabels = ['doc', 'message_id', 'index', 'term_id', 'term', 'topic_id']

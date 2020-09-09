@@ -1,3 +1,4 @@
+import collections
 import re
 import json
 import sys
@@ -1707,7 +1708,9 @@ class FeatureExtractor(DLAWorker):
 
         return tableName
 
-    def addLexiconFeat(self, lexiconTableName, lowercase_only=dlac.LOWERCASE_ONLY, tableName=None, valueFunc = lambda x: float(x), isWeighted=False, featValueFunc=lambda d: float(d), extension=None):
+    def addLexiconFeat(self, lexiconTableName, lowercase_only=dlac.LOWERCASE_ONLY, tableName=None,
+                       valueFunc=lambda x: float(x), isWeighted=False, featValueFunc=lambda d: float(d),
+                       extension=None, lexicon_weighting=False):
         """Creates a feature table given a 1gram feature table name, a lexicon table / database name
 
         Parameters
@@ -1775,13 +1778,18 @@ class FeatureExtractor(DLAWorker):
                     max_category_string_length = len(category)
 
         #3. create new Feature Table
+        lexiconTableNameToCreate = lexiconTableName
         if isWeighted:
-            lexiconTableName += "_w"
+            lexiconTableNameToCreate += "_w"
         if featValueFunc(16) != 16:
-            lexiconTableName += "_16to"+str(int(featValueFunc(16)))
+            lexiconTableNameToCreate += "_16to"+str(int(featValueFunc(16)))
+        if lexicon_weighting:
+            lexiconTableNameToCreate += "_lw"
 
 
-        tableName = self.createFeatureTable("cat_%s"%lexiconTableName, 'VARCHAR(%d)'%max_category_string_length, 'INTEGER', tableName, valueFunc, extension=extension)
+        tableName = self.createFeatureTable("cat_%s" % lexiconTableNameToCreate, 'VARCHAR(%d)' %
+                                            max_category_string_length, 'INTEGER', tableName, valueFunc,
+                                            extension=extension)
 
 
         #4. grab all distinct group ids
@@ -1796,7 +1804,19 @@ class FeatureExtractor(DLAWorker):
         #if (len(categories)* len(groupIdRows)) < dlac.MAX_TO_DISABLE_KEYS:
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode) #for faster, when enough space for repair by sorting
 
-        #6. iterate through source feature table by group_id (fixed, column name will always be group_id)
+        # 6. get new totals if using lexicon_weighting; this is slow and does not work with wildcards!
+        if lexicon_weighting:
+            dlac.warn('Using lexicon weighting')
+            sql = "SELECT group_id, category, sum(value) as total FROM {feats} feats JOIN {lex_db}.{lex_table} lex ON " \
+                  "feats.feat = lex.term GROUP BY group_id, category;".format(feats=wordTable, lex_db=self.lexicondb,
+                                                                              lex_table=lexiconTableName)
+            totals_rows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding,
+                                            use_unicode=self.use_unicode)
+            totals = collections.defaultdict(lambda: collections.defaultdict(float))
+            for group_id, category, total in totals_rows:
+                totals[group_id][category] = total
+
+        #7. iterate through source feature table by group_id (fixed, column name will always be group_id)
         rowsToInsert = []
 
         isql = "INSERT IGNORE INTO "+tableName+" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"
@@ -1811,7 +1831,6 @@ class FeatureExtractor(DLAWorker):
             cat_to_summed_value = dict()
             cat_to_function_summed_weight = dict()
             cat_to_function_summed_weight_gn = {}
-            sql = ''
             if isinstance(groupId, str):
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id LIKE '%s'"%(wordTable, groupId)
             else:
@@ -1845,6 +1864,15 @@ class FeatureExtractor(DLAWorker):
                             cat_to_weight = dlac.unionDictsMaxOnCollision(cat_to_weight, feat_cat_weight[featWild])
                 #update all cats:
                 for category in cat_to_weight:
+                    try:
+                        group_norm = value / float(totals[gid][category])
+                    except NameError:  # not using lexicon_weighting
+                        pass
+                    except ZeroDivisionError:  # should be impossible; a cat w/o a total shouldn't have this feat in it
+                        dlac.warn('Something is wrong: feature {feat} appears in empty category {cat} for '
+                                  'group_id {gid}'.format(feat=feat, cat=category, gid=gid))
+                        group_norm = 0.0
+
                     try:
                         cat_to_summed_value[category] += value
                         cat_to_function_summed_weight[category] += cat_to_weight[category] * featValueFunc(value)

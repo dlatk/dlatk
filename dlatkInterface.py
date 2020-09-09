@@ -32,7 +32,10 @@ from dlatk.outcomeGetter import OutcomeGetter
 from dlatk.outcomeAnalyzer import OutcomeAnalyzer
 from dlatk.regressionPredictor import RegressionPredictor, CombinedRegressionPredictor, ClassifyToRegressionPredictor
 from dlatk.semanticsExtractor import SemanticsExtractor
-from dlatk.topicExtractor import TopicExtractor, LDAEstimator
+try:
+    from dlatk.topicExtractor import TopicExtractor, LDAEstimator
+except ImportError:
+    print("Unable to import topic extractor; topic extraction disabled")
 
 try:
     from dlatk.lib import wordcloud

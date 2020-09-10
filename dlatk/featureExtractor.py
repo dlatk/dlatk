@@ -1804,19 +1804,7 @@ class FeatureExtractor(DLAWorker):
         #if (len(categories)* len(groupIdRows)) < dlac.MAX_TO_DISABLE_KEYS:
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode) #for faster, when enough space for repair by sorting
 
-        # 6. get new totals if using lexicon_weighting; this is slow and does not work with wildcards!
-        if lexicon_weighting:
-            dlac.warn('Using lexicon weighting')
-            sql = "SELECT group_id, category, sum(value) as total FROM {feats} feats JOIN {lex_db}.{lex_table} lex ON " \
-                  "feats.feat = lex.term GROUP BY group_id, category;".format(feats=wordTable, lex_db=self.lexicondb,
-                                                                              lex_table=lexiconTableName)
-            totals_rows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding,
-                                            use_unicode=self.use_unicode)
-            totals = collections.defaultdict(lambda: collections.defaultdict(float))
-            for group_id, category, total in totals_rows:
-                totals[group_id][category] = total
-
-        #7. iterate through source feature table by group_id (fixed, column name will always be group_id)
+        #6. iterate through source feature table by group_id (fixed, column name will always be group_id)
         rowsToInsert = []
 
         isql = "INSERT IGNORE INTO "+tableName+" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"
@@ -1846,6 +1834,14 @@ class FeatureExtractor(DLAWorker):
 
             totalFunctionSumForThisGroupId = float(0.0)
             totalWordsInLexForThisGroupId = float(0.0)
+
+            if lexicon_weighting:
+                totals = collections.defaultdict(lambda: collections.defaultdict(float))
+                for gid, feat, value, _ in attributeRows:
+                    if feat in feat_cat_weight:
+                        for category in feat_cat_weight[feat]:
+                            totals[gid][category] += value
+
             for (gid, feat, value, group_norm) in attributeRows:
                 #e.g. (69L, 8476L, 'spent', 1L, 0.00943396226415094, None),
                 cat_to_weight = dict()#dictionary holding all categories, weights that feat is a part of

@@ -101,7 +101,8 @@ def main(fn_args = None):
                         help='Corpus Database Name.')
     group.add_argument('-t', '--corptable', metavar='TABLE', dest='corptable', default=getInitVar('corptable', conf_parser, dlac.DEF_CORPTABLE),
                         help='Corpus Table.')
-    group.add_argument('-c', '--correl_field', metavar='FIELD', dest='correl_field', default=getInitVar('correl_field', conf_parser, dlac.DEF_CORREL_FIELD),
+    group.add_argument('-c', '-g', '--correl_field', '--group', '--group_by_field', metavar='FIELD', dest='correl_field',
+                       default=getInitVar('correl_field', conf_parser, dlac.DEF_CORREL_FIELD),
                         help='Correlation Field (AKA Group Field): The field which features are aggregated over.')
     group.add_argument('-H', '--host', metavar='HOST', dest='mysql_host', default=getInitVar('mysql_host', conf_parser, dlac.MYSQL_HOST),
                        help='Host that the mysql server runs on (default: %s)' % dlac.MYSQL_HOST)

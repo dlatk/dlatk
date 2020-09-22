@@ -452,6 +452,7 @@ def main(fn_args = None):
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
     group.add_argument('--add_bert', action='store_true', dest='addbert',
                        help='add BERT mean features (optionally add min, max, --bert_model large)')
+    group.add_argument('--lexicon_weighting', action='store_true', help='Use weighting over lexicon terms (instead of over all terms). Currently only works correctly with non-wildcard lexica.')
 
 
     group = parser.add_argument_group('Messages Transformation Actions', '')
@@ -1022,7 +1023,10 @@ def main(fn_args = None):
 
     if args.addlextable:
         if not fe: fe = FE()
-        args.feattable = fe.addLexiconFeat(args.lextable, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc, isWeighted=args.weightedlexicon, featValueFunc=args.lexvaluefunc, extension=args.extension)
+        args.feattable = fe.addLexiconFeat(args.lextable, lowercase_only=args.lowercaseonly,
+                                           valueFunc=args.valuefunc, isWeighted=args.weightedlexicon,
+                                           featValueFunc=args.lexvaluefunc, extension=args.extension,
+                                           lexicon_weighting=args.lexicon_weighting)
 
     if args.addcorplextable:
         if not args.lextable:

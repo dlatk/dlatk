@@ -14,14 +14,14 @@ DLATK can perform:
 - part-of-speech tagging
 
 DLATK can integrate with
-- [pandas] (http://pandas.pydata.org/) dataframe output
+- [pandas](http://pandas.pydata.org/) dataframe output
 
 Functions of DLATK use:
 
-- [HuggingFace](http://??.org/) dataframe output
+- [HuggingFace](http://??.org/) for transformer language models
 - [Mallet](http://mallet.cs.umass.edu/) for creating LDA topics
-- [Stanford Parser](http://nlp.stanford.edu/software/lex-parser.shtml) 
-- [CMU's TweetNLP](http://www.cs.cmu.edu/~ark/TweetNLP/) 
+- [Stanford Parser](http://nlp.stanford.edu/software/lex-parser.shtml) for syntactic parsing
+- [CMU's TweetNLP](http://www.cs.cmu.edu/~ark/TweetNLP/) for POS tagging; alternative tokenizing
 
 
 ## Installation

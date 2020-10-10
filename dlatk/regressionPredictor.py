@@ -2052,7 +2052,7 @@ class RegressionPredictor:
         n = fsparams['pca']
         self.featureSelectionString = []
         for i in range(0,dim):
-            self.featureSelectionString.append('Pipeline([("1_univariate_select",  SelectKBest(score_func=f_regression, k={0})) , ("2_rpca", RandomizedPCA(n_components=int({1}), random_state={2}, whiten=False, iterated_power=3))])'.format(k[i], n[i]), DEFAULT_RANDOM_SEED)
+            self.featureSelectionString.append('Pipeline([("1_univariate_select",  SelectKBest(score_func=f_regression, k={0})) , ("2_rpca", RandomizedPCA(n_components=int({1}), random_state={2}, whiten=False, iterated_power=3))])'.format(k[i], n[i], DEFAULT_RANDOM_SEED))
         print ('kbest: ' , k, '  , pca:  ' , n )
 
 

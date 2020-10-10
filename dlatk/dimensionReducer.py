@@ -6,7 +6,10 @@ to perform prediction of outcomes for language features.
 """
 
 from .dlaConstants import warn, alignDictsAsX
-from .autoencoders import AE
+try:
+    from .autoencoders import AE
+except:
+    pass
 import pickle as pickle
 
 try:

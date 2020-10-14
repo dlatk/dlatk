@@ -1,5 +1,8 @@
-import torch
-import torch.nn as nn
+try:
+    import torch
+    import torch.nn as nn
+except:
+    pass
 
 import numpy as np
 from sklearn.base import TransformerMixin, BaseEstimator

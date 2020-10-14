@@ -223,9 +223,9 @@ class FeatureGetter(DLAWorker):
 
     def getGroupNormsForFeat(self, feat, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""
-        sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "group_norm"]).where("feat = %s"%feat)
+        sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "group_norm"]).where("feat = '%s'"%feat.replace("'", r"\'"))
         if (where): sql.where(" AND "+ where)
-        sql.execute_query()
+        return sql.execute_query()
 
     def getGroupNormsForFeats(self, feats, where = '', warnMsg = False):
         """returns a list of (group_id, feature, group_norm) triples"""

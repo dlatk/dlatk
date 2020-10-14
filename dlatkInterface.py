@@ -528,7 +528,7 @@ def main(fn_args = None):
     group.add_argument('--feat_group_by_outcomes', action='store_true', dest='featgroupoutcomes', default=False,
                        help='Creates a feature table grouped by a given outcome (requires outcome field, can use controls)')
     group.add_argument('--aggregate_feats_by_new_group', action='store_true', dest='aggregategroup', default=False,
-                       help='Aggregate feature table by group field (i.e. message_id features by user_ids).')
+                       help='Aggregate feature table by group field (i.e. message_id features by user_ids). Specify new group with --group_by field; old group is whatever was used for the feature table.')
     group.add_argument('--interpolate_aggregated_feats', '--interpolate_feats', type=float, dest='interpolategroup', default=None,
                        help='Aggregates features from a lower level to new group by field, interpolating across specified amount of days.')
 

@@ -1841,6 +1841,12 @@ class FeatureExtractor(DLAWorker):
                     if feat in feat_cat_weight:
                         for category in feat_cat_weight[feat]:
                             totals[gid][category] += value
+                    if lexiconHasWildCard:  # check wildcard matches
+                        for endI in range(3, len(feat) + 1):
+                            featWild = feat[0:endI] + '*'
+                            if featWild in feat_cat_weight:
+                                for category in feat_cat_weight[featWild]:
+                                    totals[gid][category] += value
 
             for (gid, feat, value, group_norm) in attributeRows:
                 #e.g. (69L, 8476L, 'spent', 1L, 0.00943396226415094, None),

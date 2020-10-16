@@ -423,6 +423,8 @@ class ClassifyPredictor:
         self.outliersToMean = outliersToMean
         """float: Threshold for setting outliers to mean value."""
 
+        self.trainBootstrapNames = None
+
 
     def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', trainBootstraps = None, trainBootstrapsNs = None):
         """Tests classifier, by pulling out random testPerc percentage as a test set"""

@@ -159,7 +159,7 @@ def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True, classes = No
         try:
             this_auc = roc_auc_score(ytrue, ypredProbs[:,-1])
         except ValueError as e:
-            print("Unable to comput a ROC_AUC: ", e, "\nReplacing with zero")
+            print("\nWARNING: Unable to comput a ROC_AUC: '", e, "'\n  Thus, using AUC = 0.0.\n")
             this_auc = 0.0
     if negatives and this_auc < 0.5:
         this_auc = this_auc - 1

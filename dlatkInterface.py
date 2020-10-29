@@ -730,8 +730,13 @@ def main(fn_args = None):
     group.add_argument('--no_lda_lexicon', action='store_true', help="Do not store the LDA topics as a lexicon.")
     group.add_argument('--num_topics', type=int, default=dlac.DEF_NUM_TOPICS,
                        help="The number of LDA topics to estimate. Default: {}".format(str(dlac.DEF_NUM_TOPICS)))
+    group.add_argument('--num_lda_threads', type=int, default=dlac.DEF_NUM_THREADS,
+                       help="The number of parallel threads to use by Mallet. Does not affect PyMallet. Default: {"
+                            "}".format(str(dlac.DEF_NUM_THREADS)))
     group.add_argument('--num_stopwords', type=int, default=dlac.DEF_NUM_STOPWORDS, help="The number of stopwords to "
                                                                                          "use.")
+    group.add_argument('--extra_lda_stopwords', help="Supply a file containing extra stopwords to use in estimating "
+                                                     "LDA topics. One stopword per line.")
     group.add_argument('--no_lda_stopping', action='store_true', help="Disables stopping")
     group.add_argument('--lda_alpha', type=float, default=dlac.DEF_ALPHA,
                        help="The LDA alpha parameter. Default: {}".format(str(dlac.DEF_ALPHA)))
@@ -1098,7 +1103,8 @@ def main(fn_args = None):
         if not fg: fg = FG()
         lda_estimator = LDAEstimator(fg, args.num_topics, args.lda_alpha, args.lda_beta,
                                      args.lda_iterations, args.num_stopwords, args.no_lda_stopping,
-                                     files_dir=args.save_lda_files)
+                                     files_dir=args.save_lda_files, num_threads=args.num_lda_threads,
+                                     extra_stopwords_file=args.extra_lda_stopwords)
         state_file = lda_estimator.estimate_topics(args.printjoinedfeaturelines, args.mallet_path)
         if args.mallet_path:  # only need to add message IDs if using mallet; pymallet handles this for us
             args.addmessageid = [args.printjoinedfeaturelines, state_file]

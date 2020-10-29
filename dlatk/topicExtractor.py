@@ -233,16 +233,18 @@ class OurLdaMallet(LdaMallet):
 
 
 class LDAEstimator(object):
-    def __init__(self, feature_getter, num_topics, alpha, beta, iterations, num_stopwords=50, no_stopping=False,
-                 files_dir=None):
+    def __init__(self, feature_getter, num_topics, alpha, beta, iterations, num_stopwords=dlac.DEF_NUM_STOPWORDS,
+                 extra_stopwords_file=None, no_stopping=False, files_dir=None, num_threads=dlac.DEF_NUM_THREADS):
         self.feature_getter = feature_getter
         self.num_topics = num_topics
         self.alpha = alpha
         self.beta = beta
         self.iterations = iterations
         self.num_stopwords = num_stopwords
+        self.extra_stopwords_file = extra_stopwords_file
         self.no_stopping = no_stopping
         self.files_dir = files_dir
+        self.num_threads = num_threads
 
         self._stopwords = None
 
@@ -255,6 +257,14 @@ class LDAEstimator(object):
                 for top_feat_row in top_feats:
                     self._stopwords.add(top_feat_row[0])
                 print('Automatically removed stopwords: {}'.format(str(self._stopwords)))
+                if self.extra_stopwords_file is not None:
+                    try:
+                        with open(self.extra_stopwords_file) as f:
+                            extra_stopwords = set(f.read().split())
+                        self._stopwords = self._stopwords.union(set(extra_stopwords))
+                        print('Removed an additional {} extra stopwords'.format(str(len(extra_stopwords))))
+                    except FileNotFoundError:
+                        print('Error loading extra stopwords. Skipping.')
         return self._stopwords
 
     def estimate_topics(self, feature_lines_file, mallet_path=None):
@@ -267,7 +277,8 @@ class LDAEstimator(object):
         else:
             print('Estimating LDA topics using Mallet.')
             mallet = OurLdaMallet(mallet_path, id2word=corpora.Dictionary([["dummy"]]),
-                                  num_topics=self.num_topics, alpha=self.alpha, iterations=self.iterations)
+                                  num_topics=self.num_topics, alpha=self.alpha, iterations=self.iterations,
+                                  workers=self.num_threads)
             if not self.no_stopping:
                 mallet.set_stopwords(self.stopwords)
             mallet.train(feature_lines_file)

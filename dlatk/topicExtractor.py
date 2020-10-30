@@ -234,7 +234,7 @@ class OurLdaMallet(LdaMallet):
 
 class LDAEstimator(object):
     def __init__(self, feature_getter, num_topics, alpha, beta, iterations, num_stopwords=dlac.DEF_NUM_STOPWORDS,
-                 extra_stopwords_file=None, no_stopping=False, files_dir=None, num_threads=dlac.DEF_NUM_THREADS):
+                 no_stopping=False, files_dir=None, num_threads=dlac.DEF_NUM_THREADS, extra_stopwords_file=None):
         self.feature_getter = feature_getter
         self.num_topics = num_topics
         self.alpha = alpha
@@ -261,8 +261,9 @@ class LDAEstimator(object):
                     try:
                         with open(self.extra_stopwords_file) as f:
                             extra_stopwords = set(f.read().split())
-                        self._stopwords = self._stopwords.union(set(extra_stopwords))
-                        print('Removed an additional {} extra stopwords'.format(str(len(extra_stopwords))))
+                        extra_stopwords = set(extra_stopwords)
+                        self._stopwords = self._stopwords.union(extra_stopwords)
+                        print('Removed an additional {} extra stopwords: {}'.format(str(len(extra_stopwords)), str(extra_stopwords)))
                     except FileNotFoundError:
                         print('Error loading extra stopwords. Skipping.')
         return self._stopwords

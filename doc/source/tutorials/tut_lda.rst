@@ -58,9 +58,9 @@ However, it is important to realize that the command above will estimate LDA top
         -f 'feat$1gram$msgs_lda$message_id$16to16' \
         --estimate_lda_topics \
         --lda_lexicon_name my_lda_lexicon \
-        --mallet_path /path/to/mallet/bin
+        --mallet_path /path/to/mallet/bin/mallet
 
-Be sure to replace ``/path/to/mallet/bin`` with the correct path that you installed Mallet to in Step 0.
+Be sure to replace ``/path/to/mallet/bin/mallet`` with the correct path to which you installed Mallet in Step 0.
 
 It is good practice to refrain from storing the topics as a lexicon until after you have reviewed them. While the interim LDA estimation files are typically stored in your ``/tmp`` directory, you can specify a different directory to allow you to more easily review the topics you have estimated. The following command will store these files in the ``lda_files`` directory and prevent creating a topic lexicon:
 

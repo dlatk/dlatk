@@ -7,6 +7,7 @@ to perform prediction of outcomes for language features.
 
 from .dlaConstants import warn, alignDictsAsX
 try:
+    import torch
     from .autoencoders import AE
 except ImportError:
     pass

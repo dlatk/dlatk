@@ -1209,6 +1209,7 @@ class FeatureExtractor(DLAWorker):
             sys.exit(1)
 
         # Load pre-trained model tokenizer (vocabulary)
+        modelName = modelName.strip('/').split('/')[-1]
         if modelName[:3] == 'bas' or modelName[:3] == 'lar':
             modelName = 'bert-'+modelName
         layersToKeep = np.array(layersToKeep, dtype='int')

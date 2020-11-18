@@ -1209,12 +1209,14 @@ class FeatureExtractor(DLAWorker):
             sys.exit(1)
 
         # Load pre-trained model tokenizer (vocabulary)
+        modelNameFull = modelName
+        modelName = modelName.strip('/').split('/')[-1]
         if modelName[:3] == 'bas' or modelName[:3] == 'lar':
             modelName = 'bert-'+modelName
         layersToKeep = np.array(layersToKeep, dtype='int')
         dlac.warn("Loading %s..." % modelName)
-        bTokenizer = BertTokenizer.from_pretrained(modelName)
-        bModel = BertModel.from_pretrained(modelName)
+        bTokenizer = BertTokenizer.from_pretrained(modelNameFull)
+        bModel = BertModel.from_pretrained(modelNameFull)
         bModel.eval()
         cuda = True
         try:

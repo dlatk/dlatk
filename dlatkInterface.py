@@ -1031,7 +1031,7 @@ def main(fn_args = None):
         args.feattable = fe.addLexiconFeat(args.lextable, lowercase_only=args.lowercaseonly,
                                            valueFunc=args.valuefunc, isWeighted=args.weightedlexicon,
                                            featValueFunc=args.lexvaluefunc, extension=args.extension,
-                                           lexicon_weighting=args.lexicon_weighting)
+                                           lexicon_weighting=args.lexicon_normalization)
 
     if args.addcorplextable:
         if not args.lextable:

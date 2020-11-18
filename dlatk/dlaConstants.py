@@ -206,7 +206,7 @@ DEF_LANG_FILTER_CONF = .80
 DEF_SPAM_FILTER = 0.2 # threshold for removing spam users
 
 ## Other tools
-DEF_TOOLS_PATH = str(Path.home()) + '/dlatk_tools'
+DEF_TOOLS_PATH = str(Path.home()) + '/dlatk_lib'
 
 DEF_STANFORD_SEGMENTER = DEF_TOOLS_PATH + '/stanford-segmenter/segment.sh'
 DEF_STANFORD_POS_MODEL = DEF_TOOLS_PATH + '/stanford-postagger/models/english-bidirectional-distsim.tagger'

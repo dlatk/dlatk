@@ -1209,13 +1209,14 @@ class FeatureExtractor(DLAWorker):
             sys.exit(1)
 
         # Load pre-trained model tokenizer (vocabulary)
+        modelNameFull = modelName
         modelName = modelName.strip('/').split('/')[-1]
         if modelName[:3] == 'bas' or modelName[:3] == 'lar':
             modelName = 'bert-'+modelName
         layersToKeep = np.array(layersToKeep, dtype='int')
         dlac.warn("Loading %s..." % modelName)
-        bTokenizer = BertTokenizer.from_pretrained(modelName)
-        bModel = BertModel.from_pretrained(modelName)
+        bTokenizer = BertTokenizer.from_pretrained(modelNameFull)
+        bModel = BertModel.from_pretrained(modelNameFull)
         bModel.eval()
         cuda = True
         try:
@@ -2208,7 +2209,9 @@ class FeatureExtractor(DLAWorker):
             posFeatTableName = self.createFeatureTable('pos', "VARCHAR(%s)" % min_varchar_length, 'INTEGER', tableName, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
-        posMessageTable = self.corptable+'_pos'
+        posMessageTable = self.corptable
+        if posMessageTable[-4:] != '_pos':
+            posMessageTable = self.corptable+'_pos'
         assert mm.tableExists(self.corpdb, self.dbCursor, posMessageTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with pos featrue extraction " % posMessageTable
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, posMessageTable, self.correl_field)
         msgs = 0#keeps track of the number of messages read
@@ -2231,17 +2234,25 @@ class FeatureExtractor(DLAWorker):
                         dlac.warn("POS Messages Read: %dk" % int(msgs/1000))
                     mids.add(message_id)
 
-                    #find poses in message
-                    if keep_words:
-                        # keep the actual word with its POS too
-                        pos_list = pos_message.split()
-                        pos_list = ['/'.join([w.lower()
-                                              for w in i.split('/')[:-1]]+
-                                             [i.split('/')[-1]])
-                                    for i in pos_list]
+
+                    pos_list = []
+                    if posMessageTable[-4:] != 'tpos':
+                        if keep_words:
+                            dlac.warn("keep words not implemented yet for tweetpos tags")
+                        else:##TODO: Debug; make sure this works
+                            pos_list = loads(pos_message)['tags']
                     else:
-                        # Just extract the POSes if not needed to keep the ngrams
-                        pos_list = [x.split('/')[-1] for x in pos_message.split()]
+                        #find poses in message
+                        if keep_words:
+                            # keep the actual word with its POS too
+                            pos_list = pos_message.split()
+                            pos_list = ['/'.join([w.lower()
+                                                  for w in i.split('/')[:-1]]+
+                                                 [i.split('/')[-1]])
+                                        for i in pos_list]
+                        else:
+                            # Just extract the POSes if not needed to keep the ngrams
+                            pos_list = [x.split('/')[-1] for x in pos_message.split()]
 
                     # posDict = find pos frequencies in pos_message
                     for pos in pos_list:

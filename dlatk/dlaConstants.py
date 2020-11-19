@@ -282,6 +282,7 @@ DEF_NUM_STOPWORDS = 50
 DEF_ALPHA = 5.0
 DEF_BETA = 0.01
 DEF_NUM_THREADS = 4
+DEF_LANG = 'en'
 
 
 ##Meta settings

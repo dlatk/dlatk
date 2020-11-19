@@ -118,6 +118,8 @@ def main(fn_args = None):
                         help='MySQL encoding')
     group.add_argument('--no_unicode', action='store_false', dest='useunicode', default=dlac.DEF_UNICODE_SWITCH,
                        help='Turn off unicode for reading/writing mysql and text processing.')
+    group.add_argument('--language', '--lang', choices=['en', 'zh'], default=dlac.DEF_LANG,
+                       help='Corpus language. Affects certain aspects of processing, like tokenization. Default: en.')
 
     group = parser.add_argument_group('Feature Variables', 'Use of these is dependent on the action.')
     group.add_argument('-f', '--feat_table', metavar='TABLE', dest='feattable', type=str, nargs='+', default=getInitVar('feattable', conf_parser, None, varList=True),
@@ -1104,7 +1106,7 @@ def main(fn_args = None):
         lda_estimator = LDAEstimator(fg, args.num_topics, args.lda_alpha, args.lda_beta,
                                      args.lda_iterations, args.num_stopwords, args.no_lda_stopping,
                                      files_dir=args.save_lda_files, num_threads=args.num_lda_threads,
-                                     extra_stopwords_file=args.extra_lda_stopwords)
+                                     extra_stopwords_file=args.extra_lda_stopwords, language=args.language)
         state_file = lda_estimator.estimate_topics(args.printjoinedfeaturelines, args.mallet_path)
         if args.mallet_path:  # only need to add message IDs if using mallet; pymallet handles this for us
             args.addmessageid = [args.printjoinedfeaturelines, state_file]

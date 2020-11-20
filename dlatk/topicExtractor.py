@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 #########################################
+import random
 import re
 
 import csv
@@ -292,9 +293,10 @@ class LDAEstimator(object):
             keys_file = defaults.OUTPUT_TOPIC_KEYS_FILE
         else:
             print('Estimating LDA topics using Mallet.')
+            prefix = os.path.join(self.files_dir, hex(random.randint(0, 0xffffff))[2:] + '_')
             mallet = OurLdaMallet(mallet_path, id2word=corpora.Dictionary([["dummy"]]),
                                   num_topics=self.num_topics, alpha=self.alpha, iterations=self.iterations,
-                                  workers=self.num_threads)
+                                  workers=self.num_threads, prefix=prefix)
             mallet.set_language(self.language)
             if not self.no_stopping:
                 mallet.set_stopwords(self.stopwords)
@@ -302,8 +304,4 @@ class LDAEstimator(object):
             state_file = mallet.fstate()
             keys_file = mallet.ftopickeys()
 
-        moved_state_file = os.path.join(self.files_dir, os.path.basename(state_file))
-        shutil.move(state_file, moved_state_file)
-        shutil.move(keys_file, os.path.join(self.files_dir, os.path.basename(keys_file)))
-
-        return moved_state_file
+        return state_file

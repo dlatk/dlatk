@@ -725,8 +725,8 @@ def main(fn_args = None):
     group.add_argument('--estimate_lda_topics', action='store_true', help="Estimates LDA topics using PyMallet.")
     group.add_argument('--mallet_path', help="Specify the path to the Mallet executable. If unspecified, "
                                              "LDA estimation is performed with PyMallet.")
-    group.add_argument('--save_lda_files', default='/tmp', help="The directory in which to save LDA estimation files. "
-                                                                "Default: /tmp")
+    group.add_argument('--save_lda_files', help="The directory in which to save LDA estimation files. Default: "
+                                                "current working directory.")
     group.add_argument('--lda_lexicon_name', help="The name of the LDA topic-lexicon. Required unless --no_lda_lexicon "
                                                   "is used.")
     group.add_argument('--no_lda_lexicon', action='store_true', help="Do not store the LDA topics as a lexicon.")
@@ -1084,6 +1084,8 @@ def main(fn_args = None):
         if not args.lda_lexicon_name and not args.no_lda_lexicon:
             raise Exception('Must specify an LDA lexicon name with --lda_lexicon_name or disable topic-lexicon with '
                             '--no_lda_lexicon.')
+        if args.save_lda_files is None:
+            args.save_lda_files = os.getcwd()
         if not os.path.isdir(args.save_lda_files):
             try:
                 os.makedirs(args.save_lda_files)

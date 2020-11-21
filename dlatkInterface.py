@@ -209,9 +209,9 @@ def main(fn_args = None):
                        help='custom table name')                       
     group.add_argument('--batch_size', dest='batchsize', default=dlac.GPU_BATCH_SIZE, type=int, 
                        help='Specify the batch size for generating the embeddings.')
-    group.add_argument('--add_bert', '--add_emb_feat', action='store_true', dest='embaddfeat', 
-                       help='add embeddings mean features (optionally add min, max)')
-
+    group.add_argument('--emb_keep_msg', action='store_true', dest='embkeepmsg', default=False,
+                       help='store embeddings as message_level feature table instead.')
+    
 
 
     group = parser.add_argument_group('MySQL Interactoins', '')
@@ -460,13 +460,10 @@ def main(fn_args = None):
                        help='add flesch-kincaid scores, averaged per group.')
     group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
-<<<<<<< HEAD
-=======
-    group.add_argument('--add_bert', action='store_true', dest='addbert',
-                       help='add BERT mean features (optionally add min, max, --bert_model large)')
+    group.add_argument('--add_bert', '--add_emb_feat', action='store_true', dest='embaddfeat', 
+                       help='add embeddings mean features (optionally add min, max)')
     group.add_argument('--lexicon_normalization', '--lex_norm', '--dict_norm', action='store_true', help='Use weighting over lexicon terms (instead of over all terms).')
 
->>>>>>> bc9eb40796e61a980c81b57abff6ccdd1546ef64
 
     group = parser.add_argument_group('Messages Transformation Actions', '')
     group.add_argument('--add_tokenized', action='store_true', dest='addtokenized',
@@ -1063,7 +1060,7 @@ def main(fn_args = None):
 
     if args.embaddfeat:
         if not fe: fe = FE()
-        args.feattable = fe.addEmbTable(modelName = args.embmodel, tokenizerName=args.tokenizermodel, batchSize=args.batchsize, aggregations=args.embaggs, layersToKeep=args.emblayers, noContext=args.embnocontext, layerAggregations = args.emblayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc, customTableName = args.embtablename)
+        args.feattable = fe.addEmbTable(modelName = args.embmodel, tokenizerName=args.tokenizermodel, batchSize=args.batchsize, aggregations=args.embaggs, layersToKeep=args.emblayers, noContext=args.embnocontext, layerAggregations = args.emblayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc, customTableName = args.embtablename, keepMsgFeats = args.embkeepmsg)
         #args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=args.bertaggs, layersToKeep=args.bertlayers, noContext=args.bertnocontext, layerAggregations = args.bertlayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc)
 
     if args.addldafeattable:

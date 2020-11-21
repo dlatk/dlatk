@@ -1176,7 +1176,7 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
-    def addEmbTable(self, modelName, tokenizerName, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], customTableName = None, valueFunc = lambda d: d):
+    def addEmbTable(self, modelName, tokenizerName, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], keepMsgFeats = False, customTableName = None, valueFunc = lambda d: d):
         '''
 
         '''
@@ -1266,7 +1266,10 @@ class FeatureExtractor(DLAWorker):
                             + '_' + noc+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep])+''.join([str(ag[:2]) for ag in layerAggregations]) + 'n'
         else:
             modelNameShort = customTableName
-        bertTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', None, valueFunc)
+        if keepMsgFeats:
+            embTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', None, valueFunc, correlField='message_id')
+        else:
+            embTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', None, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
@@ -1275,13 +1278,14 @@ class FeatureExtractor(DLAWorker):
 
         ##iterate through correl_ids (group id):
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        mm.disableTableKeys(self.corpdb, self.dbCursor, bertTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        mm.disableTableKeys(self.corpdb, self.dbCursor, embTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
         lengthWarned = False #whether the length warning has been printed yet
         #Each User: ( #message aggregations, #layers, #Word aggregations, hidden size)
         for cfRow in cfRows:
             #user_id
             cf_id = cfRow[0]
             mids = set() #currently seen message ids
+            midList = [] #only for keepMsgFeats
 
             #grab sents by messages for that correl field:
             messageRows = self.getMessagesForCorrelField(cf_id, messageTable = sentTable, warnMsg=True)
@@ -1354,6 +1358,7 @@ class FeatureExtractor(DLAWorker):
                 if msgs % int(dlac.PROGRESS_AFTER_ROWS/5) == 0: #progress update
                     dlac.warn("Messages Read: %.2f k" % (msgs/1000.0))
                 mids.add(message_id)
+                midList.append(message_id)
             
             #Number of Batches
             num_batches = int(np.ceil(len(input_ids)/batch_size))
@@ -1443,7 +1448,7 @@ class FeatureExtractor(DLAWorker):
                     j+=1
                     msg_rep.append([msg_rep_temp])
 
-            #Layer aggregation followed my word aggregation
+            #Layer aggregation followed by word aggregation
             user_rep = [] #(num msgs, hidden_dim, lagg)
             for i in range(len(msg_rep)):#Iterating through messages
                 sent_rep = []
@@ -1474,258 +1479,265 @@ class FeatureExtractor(DLAWorker):
             #Flatten the features [layer aggregations] to a single dimension.
             user_rep = user_rep.reshape(user_rep.shape[0], -1)
             if len(user_rep)>0:
-                bertFeats = dict()
-                #Applying message aggregations
-                for ag in aggregations:
-                    thisAg = eval("np."+ag+"(user_rep, axis=0)")
-                    bertFeats.update([(str(k)+ag[:2], v) for (k, v) in enumerate(thisAg)])
+                embFeats = dict()
+
+                if keepMsgFeats: #just store message embeddings
+                    embRows = []
+                    for mid, msg in zip(midList, user_rep):
+                        embRows.extend([(str(mid), str(k), v, valueFunc(v)) for (k, v) in enumerate(msg)])
+                    wsql = """INSERT INTO """+embTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
+                    mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, embRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                    
+                else:#Applying message aggregations
+                    for ag in aggregations:
+                        thisAg = eval("np."+ag+"(user_rep, axis=0)")
+                        embFeats.update([(str(k)+ag[:2], v) for (k, v) in enumerate(thisAg)])
                 
-                
-                wsql = """INSERT INTO """+bertTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
-                bertRows = [(k, v, valueFunc(v)) for k, v in bertFeats.items()] #adds group_norm and applies freq filter
-                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, bertRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                        wsql = """INSERT INTO """+embTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                        embRows = [(k, v, valueFunc(v)) for k, v in embFeats.items()] #adds group_norm and applies freq filter
+                        mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, embRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
             
         dlac.warn("Done Reading / Inserting.")
         dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-        mm.enableTableKeys(self.corpdb, self.dbCursor, bertTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        mm.enableTableKeys(self.corpdb, self.dbCursor, embTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
         dlac.warn("Done\n")
-        return bertTableName;            
+        return embTableName;            
 
 
 
-    def addBERTTable(self, modelName = 'bert-base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], tableName = None, valueFunc = lambda d: d):
-        """Creates feature tuples (correl_field, feature, values) table where features are parsed phrases
+    # def addBERTTable(self, modelName = 'bert-base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], tableName = None, valueFunc = lambda d: d):
+    #     """Creates feature tuples (correl_field, feature, values) table where features are parsed phrases
 
-        Parameters
-        ----------
-        modelName : :obj:`str`, optional
-            name of the model to use.
-        aggregations : :obj:`lambda`, optional
-            Scales the features by the function given
+    #     Parameters
+    #     ----------
+    #     modelName : :obj:`str`, optional
+    #         name of the model to use.
+    #     aggregations : :obj:`lambda`, optional
+    #         Scales the features by the function given
 
-        Returns
-        -------
-        featTableName : str
-            Name of the Feature table
-        """
-        ##FIRST MAKE SURE SENTENCE TOKENIZED TABLE EXISTS:
-        sentTable = self.corptable+'_stoks'
-        assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with feature extraction (run --add_sent_tokenized)" % sentTable
-        if len(layerAggregations) > 1:
-            dlac.warn("AddFeat: !!Does not currently support more than one layer aggregation; only using first aggregation!!")
-            layerAggregations = layerAggregations[:1]
+    #     Returns
+    #     -------
+    #     featTableName : str
+    #         Name of the Feature table
+    #     """
+    #     ##FIRST MAKE SURE SENTENCE TOKENIZED TABLE EXISTS:
+    #     sentTable = self.corptable+'_stoks'
+    #     assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with feature extraction (run --add_sent_tokenized)" % sentTable
+    #     if len(layerAggregations) > 1:
+    #         dlac.warn("AddFeat: !!Does not currently support more than one layer aggregation; only using first aggregation!!")
+    #         layerAggregations = layerAggregations[:1]
 
         
-        #LOAD hugging face's pretrained Google Bert
-        try: 
-            import torch
-            from pytorch_transformers import BertTokenizer, BertModel, BertForMaskedLM, BertConfig, XLNetConfig, XLNetTokenizer, XLNetModel
-        except ImportError:
-            dlac.warn("warning: unable to import torch or pytorch_transformers")
-            dlac.warn("Please install pytorch and pytorch_transformers.")
-            sys.exit(1)
+    #     #LOAD hugging face's pretrained Google Bert
+    #     try: 
+    #         import torch
+    #         from pytorch_transformers import BertTokenizer, BertModel, BertForMaskedLM, BertConfig, XLNetConfig, XLNetTokenizer, XLNetModel
+    #     except ImportError:
+    #         dlac.warn("warning: unable to import torch or pytorch_transformers")
+    #         dlac.warn("Please install pytorch and pytorch_transformers.")
+    #         sys.exit(1)
 
-        MODEL_CLASSES = {
-            'bert': (BertTokenizer, BertModel, BertConfig),
-            'xlnet': (XLNetTokenizer, XLNetModel, XLNetConfig)
-        }
+    #     MODEL_CLASSES = {
+    #         'bert': (BertTokenizer, BertModel, BertConfig),
+    #         'xlnet': (XLNetTokenizer, XLNetModel, XLNetConfig)
+    #     }
 
-        # Extracting model type from model name
-        modelType = modelName.split('-')[0]
-        if MODEL_CLASSES.get(modelType) == None:
-            dlac.warn("Please select a valid model name")
-            sys.exit(1)
+    #     # Extracting model type from model name
+    #     modelType = modelName.split('-')[0]
+    #     if MODEL_CLASSES.get(modelType) == None:
+    #         dlac.warn("Please select a valid model name")
+    #         sys.exit(1)
 
-        # Load pre-trained model tokenizer (vocabulary)
-        modelNameFull = modelName
-        modelName = modelName.strip('/').split('/')[-1]
-        if modelName[:3] == 'bas' or modelName[:3] == 'lar':
-            modelName = 'bert-'+modelName
-        layersToKeep = np.array(layersToKeep, dtype='int')
-        dlac.warn("Loading %s..." % modelName)
+    #     # Load pre-trained model tokenizer (vocabulary)
+    #     modelNameFull = modelName
+    #     modelName = modelName.strip('/').split('/')[-1]
+    #     if modelName[:3] == 'bas' or modelName[:3] == 'lar':
+    #         modelName = 'bert-'+modelName
+    #     layersToKeep = np.array(layersToKeep, dtype='int')
+    #     dlac.warn("Loading %s..." % modelName)
 
-        tokenizer_class, model_class, config_class = MODEL_CLASSES[modelType]
-        tokenizer = tokenizer_class.from_pretrained(modelName)
+    #     tokenizer_class, model_class, config_class = MODEL_CLASSES[modelType]
+    #     tokenizer = tokenizer_class.from_pretrained(modelName)
 
-        model = model_class.from_pretrained(modelName, output_hidden_states=True)
-        model.eval()
+    #     model = model_class.from_pretrained(modelName, output_hidden_states=True)
+    #     model.eval()
 
-        cuda = True
-        try:
-            model.to('cuda')
-        except:
-            dlac.warn("  unable to use CUDA (GPU) for BERT")
-            cuda = False
-        dlac.warn("Done.")
+    #     cuda = True
+    #     try:
+    #         model.to('cuda')
+    #     except:
+    #         dlac.warn("  unable to use CUDA (GPU) for BERT")
+    #         cuda = False
+    #     dlac.warn("Done.")
         
-        #CREATE TABLEs and Names:
-        noc = ''
-        if noContext: noc = 'noc_'#adds noc to name if no context
-        modelPieces = modelName.split('-')
-        modelNameShort = modelPieces[0] + '_' + '_'.join([s[:2] for s in modelPieces[1:]])\
-                         + '_' + noc+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep])+''.join([str(ag[:2]) for ag in layerAggregations])
-        featTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', tableName, valueFunc)
+    #     #CREATE TABLEs and Names:
+    #     noc = ''
+    #     if noContext: noc = 'noc_'#adds noc to name if no context
+    #     modelPieces = modelName.split('-')
+    #     modelNameShort = modelPieces[0] + '_' + '_'.join([s[:2] for s in modelPieces[1:]])\
+    #                      + '_' + noc+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep])+''.join([str(ag[:2]) for ag in layerAggregations])
+    #     featTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', tableName, valueFunc)
 
-        #SELECT / LOOP ON CORREL FIELD FIRST:
-        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
-        msgs = 0#keeps track of the number of messages read
-        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
+    #     #SELECT / LOOP ON CORREL FIELD FIRST:
+    #     usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
+    #     msgs = 0#keeps track of the number of messages read
+    #     cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
 
-        ##iterate through correl_ids (group id):
-        dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        mm.disableTableKeys(self.corpdb, self.dbCursor, featTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
-        lengthWarned = False #whether the length warning has been printed yet
-        for cfRow in cfRows:
-            cf_id = cfRow[0]
-            mids = set() #currently seen message ids
-            bertMessageVectors = [] #holds the aggregated BERT features per message (to be aggregated further)
+    #     ##iterate through correl_ids (group id):
+    #     dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
+    #     mm.disableTableKeys(self.corpdb, self.dbCursor, featTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+    #     lengthWarned = False #whether the length warning has been printed yet
+    #     for cfRow in cfRows:
+    #         cf_id = cfRow[0]
+    #         mids = set() #currently seen message ids
+    #         bertMessageVectors = [] #holds the aggregated BERT features per message (to be aggregated further)
 
-            #grab sents by messages for that correl field:
-            for messageRow in self.getMessagesForCorrelField(cf_id, messageTable = sentTable, warnMsg=True):
-                message_id = messageRow[0]
-                try:
-                    messageSents = loads(messageRow[1])
-                except NameError: 
-                    dlac.warn("Eror: Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
-                    sys.exit(1)
-                except JSONDecodeError:
-                    dlac.warn("WARNING: JSONDecodeError on %s. Skipping Message"%str(messageRow))
-                    next
+    #         #grab sents by messages for that correl field:
+    #         for messageRow in self.getMessagesForCorrelField(cf_id, messageTable = sentTable, warnMsg=True):
+    #             message_id = messageRow[0]
+    #             try:
+    #                 messageSents = loads(messageRow[1])
+    #             except NameError: 
+    #                 dlac.warn("Eror: Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
+    #                 sys.exit(1)
+    #             except JSONDecodeError:
+    #                 dlac.warn("WARNING: JSONDecodeError on %s. Skipping Message"%str(messageRow))
+    #                 next
 
-                if not message_id in mids and len(messageSents) > 0:
-                    msgs+=1
-                    subMessages = []
-                    if noContext:#break up to run on one word at a time:               
-                        for s in messageSents:
-                            subMessages.extend([[word] for word in tokenizer.tokenize(s)])
-                    else: #keep context; one submessage
-                        subMessages=[messageSents]
+    #             if not message_id in mids and len(messageSents) > 0:
+    #                 msgs+=1
+    #                 subMessages = []
+    #                 if noContext:#break up to run on one word at a time:               
+    #                     for s in messageSents:
+    #                         subMessages.extend([[word] for word in tokenizer.tokenize(s)])
+    #                 else: #keep context; one submessage
+    #                     subMessages=[messageSents]
 
-                    for sents in subMessages: #only matters for noContext)
+    #                 for sents in subMessages: #only matters for noContext)
 
-                        #Add tokens to BERT:
-                        sents[0] = '[CLS] ' + sents[0]
-                        #TODO: preprocess to remove newlines
-                        sentsTok = [bTokenizer.tokenize(s+' [SEP]') for s in sents]
-                        #print(sentsTok)#debug
+    #                     #Add tokens to BERT:
+    #                     sents[0] = '[CLS] ' + sents[0]
+    #                     #TODO: preprocess to remove newlines
+    #                     sentsTok = [bTokenizer.tokenize(s+' [SEP]') for s in sents]
+    #                     #print(sentsTok)#debug
 
-                        #check for overlength:
-                        i = 0
-                        while (i < len(sentsTok)):#while instead of for since array may change size
-                            if len(sentsTok[i]) > maxTokensPerSeg:
-                                newSegs = [sentsTok[i][j:j+maxTokensPerSeg]+['[SEP]'] for j in range(0, len(sentsTok[i]), maxTokensPerSeg)]
-                                newSegs[-1] = newSegs[-1][:-1] #remove last seperator
-                                if not lengthWarned:
-                                    dlac.warn("AddFeat: Some segments are too long; splitting up; first example: %s" % str(newSegs))
-                                    #lengthWarned = True
-                                sentsTok = sentsTok[:i] + newSegs + sentsTok[i+1:]
-                                i+=(len(newSegs) - 1)#skip ahead new segments
-                            i+=1
+    #                     #check for overlength:
+    #                     i = 0
+    #                     while (i < len(sentsTok)):#while instead of for since array may change size
+    #                         if len(sentsTok[i]) > maxTokensPerSeg:
+    #                             newSegs = [sentsTok[i][j:j+maxTokensPerSeg]+['[SEP]'] for j in range(0, len(sentsTok[i]), maxTokensPerSeg)]
+    #                             newSegs[-1] = newSegs[-1][:-1] #remove last seperator
+    #                             if not lengthWarned:
+    #                                 dlac.warn("AddFeat: Some segments are too long; splitting up; first example: %s" % str(newSegs))
+    #                                 #lengthWarned = True
+    #                             sentsTok = sentsTok[:i] + newSegs + sentsTok[i+1:]
+    #                             i+=(len(newSegs) - 1)#skip ahead new segments
+    #                         i+=1
 
-                        #calculate for all pairs:
-                        encsPerSent = [[] for i in range(len(sentsTok))]#holds multiple encodings per sentence (based on first/second)
-                        for i in range(len(sentsTok)):
-                            thisPair = sentsTok[i:i+2]
-                            thisPairFlat = [t for s in thisPair for t in s]
+    #                     #calculate for all pairs:
+    #                     encsPerSent = [[] for i in range(len(sentsTok))]#holds multiple encodings per sentence (based on first/second)
+    #                     for i in range(len(sentsTok)):
+    #                         thisPair = sentsTok[i:i+2]
+    #                         thisPairFlat = [t for s in thisPair for t in s]
 
-                            # Convert token to vocabulary indices
-                            indexedToks = tokenizer.convert_tokens_to_ids(thisPairFlat)
-                            # Define segs:
-                            segIds = [j for j in range(len(thisPair)) for x in thisPair[j]]
-                            #print(segIds) #debug
+    #                         # Convert token to vocabulary indices
+    #                         indexedToks = tokenizer.convert_tokens_to_ids(thisPairFlat)
+    #                         # Define segs:
+    #                         segIds = [j for j in range(len(thisPair)) for x in thisPair[j]]
+    #                         #print(segIds) #debug
 
-                            # Convert inputs to PyTorch tensors
-                            toksTens = torch.tensor([indexedToks])
-                            segsTens = torch.tensor([segIds])
+    #                         # Convert inputs to PyTorch tensors
+    #                         toksTens = torch.tensor([indexedToks])
+    #                         segsTens = torch.tensor([segIds])
                         
-                            if cuda: 
-                                try:
-                                    toksTens = toksTens.to('cuda')
-                                    segsTens = segsTens.to('cuda')
-                                except:
-                                    dlac.warn("! unable to use CUDA (gpus) for tensors even though it worked for model.")
-                            #print (toksTens, segsTens) #debug
+    #                         if cuda: 
+    #                             try:
+    #                                 toksTens = toksTens.to('cuda')
+    #                                 segsTens = segsTens.to('cuda')
+    #                             except:
+    #                                 dlac.warn("! unable to use CUDA (gpus) for tensors even though it worked for model.")
+    #                         #print (toksTens, segsTens) #debug
 
-                            # Combine vectors of each select layers; store as first sent and second sent:
-                            with torch.no_grad():
-                                output = model(toksTens, token_type_ids=segsTens)
-                                encAllLayers = output[2]
+    #                         # Combine vectors of each select layers; store as first sent and second sent:
+    #                         with torch.no_grad():
+    #                             output = model(toksTens, token_type_ids=segsTens)
+    #                             encAllLayers = output[2]
                                 
-                                #save layers:
-                                encSelectLayers = []
-                                for lyr in layersToKeep:
-                                    encSelectLayers.append(encAllLayers[int(lyr)].detach().cpu().numpy())
+    #                             #save layers:
+    #                             encSelectLayers = []
+    #                             for lyr in layersToKeep:
+    #                                 encSelectLayers.append(encAllLayers[int(lyr)].detach().cpu().numpy())
 
-                                #aggregate layers:
-                                for lagg in layerAggregations: #TODO: support more than one
-                                    if lagg == 'concatenate':#axis 2
-                                        #concatenate (this may have a bug?):
-                                        twoSentEnc = np.concatenate(encSelectLayers, axis=2) 
-                                    else: #along axis 0
-                                        twoSentEnc = eval("np."+lagg+"(encSelectLayers, axis=0)")
+    #                             #aggregate layers:
+    #                             for lagg in layerAggregations: #TODO: support more than one
+    #                                 if lagg == 'concatenate':#axis 2
+    #                                     #concatenate (this may have a bug?):
+    #                                     twoSentEnc = np.concatenate(encSelectLayers, axis=2) 
+    #                                 else: #along axis 0
+    #                                     twoSentEnc = eval("np."+lagg+"(encSelectLayers, axis=0)")
 
-                                    if (i < (len(sentsTok) - 1)) or (len(sentsTok) == 1):
-                                        sent1enc = twoSentEnc[:,:len(thisPair[0])]
-                                        encsPerSent[i].append(sent1enc)
-                                    if (i+1) < len(sentsTok):
-                                        sent2enc = twoSentEnc[:,len(thisPair[0]):]
-                                        encsPerSent[i+1].append(sent2enc)
+    #                                 if (i < (len(sentsTok) - 1)) or (len(sentsTok) == 1):
+    #                                     sent1enc = twoSentEnc[:,:len(thisPair[0])]
+    #                                     encsPerSent[i].append(sent1enc)
+    #                                 if (i+1) < len(sentsTok):
+    #                                     sent2enc = twoSentEnc[:,len(thisPair[0]):]
+    #                                     encsPerSent[i+1].append(sent2enc)
 
-                        #Aggregate the (up to 2; one as first; one as second) vectors per sentence
-                        sentEncs = []
-                        #print(encsPerSent)#debug
-                        for i in range(len(sentsTok)):
-                            sentEncPerWord = np.mean(encsPerSent[i], axis=0)[0]
-
-
-                            #aggregate words into setence:
-                            #TODO: ADD option to use CLS token instead (first token)
-                            #sentEncs.append(np.mean(sentEncPerWord, axis=0)) #TODO: consider more than mean?
-                            singleSentEnc = np.array([[]])
-                            for wAgg in wordAggregations:
-                                #print(wAgg, "  sentEncPerWord", sentEncPerWord.shape)#debug
-                                if wAgg == 'concatenate':
-                                    assert (len(wordAggregations)<2), "can't use multiple word aggs with concat"
-                                    singleSentEnc = np.append(singleSentEnc, np.concatenate(sentEncPerWord))
-                                else:
-                                    #print("BEFORE singleSentEnc", singleSentEnc.shape)#debug
-                                    singleSentEnc = np.append(singleSentEnc, eval("np."+wAgg+"(sentEncPerWord, axis=0)"))
-                                    #print("AFTER singleSentEnc", singleSentEnc.shape)#debug
-                            sentEncs.append(singleSentEnc)
-                        #print([(p[0], p[1].shape) for p in zip(sentsTok, sentEncs)])#debug
-
-                        #Aggregate across sentences:
-                        #print(sentEncs)#debug
-                        if wordAggregations == ['concatenate']:
-                            bertMessageVectors.append(np.concatenate(sentEncs, axis=0)) 
-                        else:
-                            bertMessageVectors.append(np.mean(sentEncs, axis=0)) #TODO: consider more than mean?
+    #                     #Aggregate the (up to 2; one as first; one as second) vectors per sentence
+    #                     sentEncs = []
+    #                     #print(encsPerSent)#debug
+    #                     for i in range(len(sentsTok)):
+    #                         sentEncPerWord = np.mean(encsPerSent[i], axis=0)[0]
 
 
-                        if msgs % int(dlac.PROGRESS_AFTER_ROWS/5) == 0: #progress update
-                            dlac.warn("Messages Read: %.2f k" % (msgs/1000.0))
-                        mids.add(message_id)
+    #                         #aggregate words into setence:
+    #                         #TODO: ADD option to use CLS token instead (first token)
+    #                         #sentEncs.append(np.mean(sentEncPerWord, axis=0)) #TODO: consider more than mean?
+    #                         singleSentEnc = np.array([[]])
+    #                         for wAgg in wordAggregations:
+    #                             #print(wAgg, "  sentEncPerWord", sentEncPerWord.shape)#debug
+    #                             if wAgg == 'concatenate':
+    #                                 assert (len(wordAggregations)<2), "can't use multiple word aggs with concat"
+    #                                 singleSentEnc = np.append(singleSentEnc, np.concatenate(sentEncPerWord))
+    #                             else:
+    #                                 #print("BEFORE singleSentEnc", singleSentEnc.shape)#debug
+    #                                 singleSentEnc = np.append(singleSentEnc, eval("np."+wAgg+"(sentEncPerWord, axis=0)"))
+    #                                 #print("AFTER singleSentEnc", singleSentEnc.shape)#debug
+    #                         sentEncs.append(singleSentEnc)
+    #                     #print([(p[0], p[1].shape) for p in zip(sentsTok, sentEncs)])#debug
+
+    #                     #Aggregate across sentences:
+    #                     #print(sentEncs)#debug
+    #                     if wordAggregations == ['concatenate']:
+    #                         bertMessageVectors.append(np.concatenate(sentEncs, axis=0)) 
+    #                     else:
+    #                         bertMessageVectors.append(np.mean(sentEncs, axis=0)) #TODO: consider more than mean?
 
 
-            #Aggregate message vectors:
-            if len(bertMessageVectors) > 0:
-                bertFeats = dict()
-                for ag in aggregations:
-                    thisAg = eval("np."+ag+"(bertMessageVectors, axis=0)")
-                    bertFeats.update([(str(k)+ag[:2], v) for (k, v) in enumerate(thisAg)])
+    #                     if msgs % int(dlac.PROGRESS_AFTER_ROWS/5) == 0: #progress update
+    #                         dlac.warn("Messages Read: %.2f k" % (msgs/1000.0))
+    #                     mids.add(message_id)
 
-                #print(bertFeats)#debug            
-                #write phrases to database (no need for "REPLACE" because we are creating the table)
-                wsql = """INSERT INTO """+featTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
-                bertRows = [(k, v, valueFunc(v)) for k, v in bertFeats.items()] #adds group_norm and applies freq filter
-                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, bertRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
 
-        dlac.warn("Done Reading / Inserting.")
+    #         #Aggregate message vectors:
+    #         if len(bertMessageVectors) > 0:
+    #             embFeats = dict()
+    #             for ag in aggregations:
+    #                 thisAg = eval("np."+ag+"(bertMessageVectors, axis=0)")
+    #                 embFeats.update([(str(k)+ag[:2], v) for (k, v) in enumerate(thisAg)])
 
-        dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-        mm.enableTableKeys(self.corpdb, self.dbCursor, featTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
-        dlac.warn("Done\n")
-        return featTableName;
+    #             #print(embFeats)#debug            
+    #             #write phrases to database (no need for "REPLACE" because we are creating the table)
+    #             wsql = """INSERT INTO """+featTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+    #             embRows = [(k, v, valueFunc(v)) for k, v in embFeats.items()] #adds group_norm and applies freq filter
+    #             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, embRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+
+    #     dlac.warn("Done Reading / Inserting.")
+
+    #     dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
+    #     mm.enableTableKeys(self.corpdb, self.dbCursor, featTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+    #     dlac.warn("Done\n")
+    #     return featTableName;
 
     
     def addFleschKincaidTable(self, tableName = None, valueFunc = lambda d: d, removeXML = True, removeURL = True):
@@ -1849,9 +1861,12 @@ class FeatureExtractor(DLAWorker):
             ?????
 
         """
+        if not correlField:
+            correlField = self.correl_field
+        
         #create table name
         if not tableName:
-            tableName = 'feat$'+featureName+'$'+self.corptable+'$'+self.correl_field
+            tableName = 'feat$'+featureName+'$'+self.corptable+'$'+correlField
             if 'cat_' in featureName:
                 if valueFunc and round(valueFunc(16)) != 16:
                     tableName += '$' + str(16)+'to'+"%d"%round(valueFunc(16))
@@ -1872,13 +1887,13 @@ class FeatureExtractor(DLAWorker):
                 tableName += '$' + extension
 
         #find correl_field type:
-        where_conditions = """table_schema='%s' AND table_name='%s' AND column_name='%s'"""%(self.corpdb, self.corptable, self.correl_field)
+        where_conditions = """table_schema='%s' AND table_name='%s' AND column_name='%s'"""%(self.corpdb, self.corptable, correlField)
         query = self.qb.create_select_query("information_schema.columns").set_fields(["column_type"]).where(where_conditions)
         try:
-            correlField = self.getCorrelFieldType(self.correl_field) if not correlField else correlField
-            correl_fieldType = query.execute_query()[0][0] if not correlField else correlField
+            correlField = self.getCorrelFieldType(correlField)
+            correl_fieldType = query.execute_query()[0][0]
         except IndexError:
-            dlac.warn("Your message table '%s' (or the group field, '%s') probably doesn't exist (or the group field)!" %(self.corptable, self.correl_field))
+            dlac.warn("Your message table '%s' (or the group field, '%s') probably doesn't exist (or the group field)!" %(self.corptable, correlField))
             raise IndexError("Your message table '%s' probably doesn't exist!" % self.corptable)
 
         featureTypeAndEncoding = featureType

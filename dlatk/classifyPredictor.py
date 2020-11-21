@@ -969,8 +969,8 @@ class ClassifyPredictor:
             precision = precision_score(ytest, ypred, average='macro')
             recall = recall_score(ytest, ypred, average='macro')
             conf_matrix = confusion_matrix(ytest, ypred)
-            tn, fp, fn, tp = conf_matrix.ravel()
-            specificity = tn / (tn+fp)
+            #tn, fp, fn, tp = conf_matrix.ravel()
+            #specificity = tn / (tn+fp)
 
             print(" *confusion matrix: \n%s"% str(conf_matrix))
             print(" *precision and recall: \n%s" % classification_report(ytest, ypred))
@@ -986,7 +986,7 @@ class ClassifyPredictor:
             print(" *matt_ccoef: %.4f " % (matt_ccoef))
             print(" *precision: %.4f " % (precision))
             print(" *recall: %.4f " % (recall))
-            print(" *specificity: %.4f " % (specificity))
+            #print(" *specificity: %.4f " % (specificity))
             
             mse = metrics.mean_squared_error(ytest, ypred)
             print("*Mean Squared Error:                 %.4f"% mse)

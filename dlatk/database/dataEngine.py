@@ -261,7 +261,7 @@ class MySqlDataEngine(DataEngine):
 		Results as list of lists
 
 		"""
-		return mm.executeGetSSCursor(self.corpdb, usql, charset=self.encoding, use_unicode=self.use_unicode, host=self.mysql_host)
+		return mm.executeGetSSCursor(self.corpdb, usql, charset=self.encoding, use_unicode=self.use_unicode)
 
 	def disable_table_keys(self, featureTableName):
 		"""

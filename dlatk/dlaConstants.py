@@ -169,6 +169,7 @@ DEF_RP_FEATURE_SELECTION_MAPPING = {
 
     'pca': 'PCA(n_components=max(min(int(X.shape[1]*.5), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
     'k_pca': 'PCA(n_components=int(self.n_components), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
+    'k_pca_ppa': 'Pipeline([ ("1_PCA", PCA(n_components=int(self.n_components), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")), ("2_PPA", PPA()) ])',
     'k_fa': 'FactorAnalysis(n_components=int(self.n_components), random_state=42, iterated_power=3, svd_method="randomized")',
     'k_nmf': 'Pipeline([("1_min", MinScaler()), ("2_nmf", NMF(n_components=int(self.n_components), init="nndsvd", random_state=42))])',
     'none': None,
@@ -211,7 +212,7 @@ DEF_LANG_FILTER_CONF = .80
 DEF_SPAM_FILTER = 0.2 # threshold for removing spam users
 
 ## Other tools
-DEF_TOOLS_PATH = str(Path.home()) + '/dlatk_tools'
+DEF_TOOLS_PATH = str(Path.home()) + '/dlatk_lib'
 
 DEF_STANFORD_SEGMENTER = DEF_TOOLS_PATH + '/stanford-segmenter/segment.sh'
 DEF_STANFORD_POS_MODEL = DEF_TOOLS_PATH + '/stanford-postagger/models/english-bidirectional-distsim.tagger'
@@ -279,6 +280,16 @@ POSSIBLE_VALUE_FUNCS = [
     lambda d: log2(float(d) + 1),
     lambda d: 2*sqrt(d+3/float(8))
 ]
+
+## PyMallet defaults
+DEF_NUM_TOPICS = 100
+DEF_NUM_ITERATIONS = 1000
+DEF_NUM_STOPWORDS = 50
+DEF_ALPHA = 5.0
+DEF_BETA = 0.01
+DEF_NUM_THREADS = 4
+DEF_LANG = 'en'
+
 
 ##Meta settings
 DEF_INIT_FILE = 'initFile.ini'

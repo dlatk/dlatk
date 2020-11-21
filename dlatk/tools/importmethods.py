@@ -28,13 +28,16 @@ def appendCSVtoMySQL(csvFile, database, table, ignoreLines=0, dbCursor=None):
         if not tables:
             print("The table {table} does not exist in the database. Please use csvToMySQL or create the table.".format(table=table))
             sys.exit(1)
+    with open(csvFile, 'U') as f:
+        f.readline()
+        line_termination = f.newlines
     disableSQL = """ALTER TABLE {table} DISABLE KEYS""".format(table=table)
     print(disableSQL)
     dbCursor.execute(disableSQL)
     print("""Importing data, reading {csvFile} file""".format(csvFile=csvFile))
     importSQL = """LOAD DATA LOCAL INFILE '{csvFile}' INTO TABLE {table} 
         FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
-        LINES TERMINATED BY '\r\n' IGNORE {ignoreLines} LINES""".format(csvFile=csvFile, table=table, ignoreLines=ignoreLines)
+        LINES TERMINATED BY '{lineTermination}' IGNORE {ignoreLines} LINES""".format(csvFile=csvFile, table=table, ignoreLines=ignoreLines, lineTermination=line_termination)
     dbCursor.execute(importSQL)
     enableSQL = """ALTER TABLE {table} ENABLE KEYS""".format(table=table)
     print(enableSQL)

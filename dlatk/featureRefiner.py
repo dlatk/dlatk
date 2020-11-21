@@ -448,13 +448,13 @@ class FeatureRefiner(FeatureGetter):
 
     def createInterpolatedFeatTable(self, days = 1, dateField = 'created_at', minToImpute = 2, maxDaysUnitsEmpty = 4, groupFreqThresh = 0, setGFTWarning = False, where=None):
         #creates a new feature table at a higher level of aggregation
-        #days: what units of time to interpolate into
+        #days: what units of time to aggregate/interpolate into
         #maxDayUnitsEmpty: maximum number of days missed to keep a user.
-        #TODO: handle maxDayUnitsEmpty
+        #TODO: handle maxDaysUnitsEmpty
 
         featureTable = self.featureTable
 
-        #0. Create new interpolated table:
+        ## 0. Create new interpolated table:
         (_, name, corpTable, oldGroupField) = featureTable.split('$')[:4]
         assert oldGroupField == self.messageid_field, "Interpolate currently only works if interpolating message-level features"
         theRest = featureTable.split('$')[4:]
@@ -513,9 +513,8 @@ class FeatureRefiner(FeatureGetter):
             dtClosestToMin = dtParse(maxUnionDT, ignoretz = True)
             dtClosestToMax = dtParse(maxUnionDT, ignoretz = True)
             
-            
-        dayDiff = (maxIntersectDT - minIntersectDT).days
-        maxDiffPerUnit = int(dayDiff/days)
+        dayDiff = (maxIntersectDT - minIntersectDT).days #difference in days
+        maxDiffPerUnit = int(dayDiff/days) #convert to timesteps
         assert dayDiff > 0, "\nDayDiff (%d) was negative or zero. Increase GFT. Interpolating %ss over %ddays: 0 = %s through %d = %s"% \
                   (dayDiff, self.correl_field, days, str(minIntersectDT.date()), maxDiffPerUnit, str(maxIntersectDT.date()))
 
@@ -527,7 +526,7 @@ class FeatureRefiner(FeatureGetter):
         (groupNormsByMid, featureNames) = oldFeatures.getGroupNormsSparseGroupsFirst(where = groupsWhere)
         dlac.warn("""  [done]""")
         
-        ## 4. Create X and Y per group: 
+        ## 4. Create X (time steps) and Y (group_norm) per group: 
         lengroups = len(groups)
         dlac.warn("\nInterpolating %d %ss over %ddays: 0 = %s through %d = %s (full range: %s through %s)"% \
                   (lengroups, self.correl_field, days, str(minIntersectDT.date()), maxDiffPerUnit, \
@@ -554,6 +553,7 @@ class FeatureRefiner(FeatureGetter):
                 #print("dateRow", dateRow)#debug
                 mid = dateRow[0]
                 if mid in groupNormsByMid:
+                    
                     ## 6. get difference in dates by number of days parameter:
                     #print("checking", mid)
                     dt = dateRow[1]
@@ -567,7 +567,7 @@ class FeatureRefiner(FeatureGetter):
 
                     for feat in featureNames:
                         try:
-                            groupXYs[feat].append((diffPerUnit, groupNormsByMid[mid][feat]))
+                            groupXYs[feat].append((diffPerUnit, groupNormsByMid[mid][feat]))#appends (X, y) to entry for feat
                         except KeyError: #feat must be missing in group Norms = 0
                             groupXYs[feat].append((diffPerUnit, 0))
             if len(uniqueDtInts) < minToImpute:#check that there are enough unique dates: 
@@ -600,7 +600,7 @@ class FeatureRefiner(FeatureGetter):
                     #NOTE: this should only happen on the first feat; because zeros have been added
                     break
 
-            ## 8. Write to DB:
+            ## 8. Write to feature table DB, including time and initial group_id (the version without time)
             #print(newX, newYs)#debug
             rows = []
             if not self.use_unicode:
@@ -610,8 +610,6 @@ class FeatureRefiner(FeatureGetter):
                          Ys[i], newX[i], group) for i in range(len(newX)) for feat, Ys in newYs.items() if Ys[i] != 0]
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
 
-            ##ADD USER_ID and DAYS so that can be used. 
-            
         dlac.warn("Done Reading, Interpolating, and Inserting into '%s'."% tableName )
         mm.execute(self.corpdb, self.dbCursor, "ALTER TABLE %s ADD INDEX (time), ADD INDEX (%s)" % (tableName, self.correl_field), charset=self.encoding, use_unicode=self.use_unicode)
 
@@ -645,7 +643,6 @@ class FeatureRefiner(FeatureGetter):
                     numWritten += num_at_time
                     if numWritten % 100000 == 0: dlac.warn("%.1fm feature instances updated out of %dm" % 
                                                         ((numWritten/float(1000000)), len(groupNorms)/1000000))
-                                    
         
         #write values back in 
         if featNorms: 

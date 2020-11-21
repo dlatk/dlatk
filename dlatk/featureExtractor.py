@@ -1,3 +1,4 @@
+import collections
 import re
 import json
 import sys
@@ -1536,6 +1537,8 @@ class FeatureExtractor(DLAWorker):
             sys.exit(1)
 
         # Load pre-trained model tokenizer (vocabulary)
+        modelNameFull = modelName
+        modelName = modelName.strip('/').split('/')[-1]
         if modelName[:3] == 'bas' or modelName[:3] == 'lar':
             modelName = 'bert-'+modelName
         layersToKeep = np.array(layersToKeep, dtype='int')
@@ -1546,6 +1549,7 @@ class FeatureExtractor(DLAWorker):
 
         model = model_class.from_pretrained(modelName, output_hidden_states=True)
         model.eval()
+
         cuda = True
         try:
             model.to('cuda')
@@ -2042,7 +2046,9 @@ class FeatureExtractor(DLAWorker):
 
         return tableName
 
-    def addLexiconFeat(self, lexiconTableName, lowercase_only=dlac.LOWERCASE_ONLY, tableName=None, valueFunc = lambda x: float(x), isWeighted=False, featValueFunc=lambda d: float(d), extension=None):
+    def addLexiconFeat(self, lexiconTableName, lowercase_only=dlac.LOWERCASE_ONLY, tableName=None,
+                       valueFunc=lambda x: float(x), isWeighted=False, featValueFunc=lambda d: float(d),
+                       extension=None, lexicon_weighting=False):
         """Creates a feature table given a 1gram feature table name, a lexicon table / database name
 
         Parameters
@@ -2110,13 +2116,18 @@ class FeatureExtractor(DLAWorker):
                     max_category_string_length = len(category)
 
         #3. create new Feature Table
+        lexiconTableNameToCreate = lexiconTableName
         if isWeighted:
-            lexiconTableName += "_w"
+            lexiconTableNameToCreate += "_w"
         if featValueFunc(16) != 16:
-            lexiconTableName += "_16to"+str(int(featValueFunc(16)))
+            lexiconTableNameToCreate += "_16to"+str(int(featValueFunc(16)))
+        if lexicon_weighting:
+            lexiconTableNameToCreate += "_lw"
 
 
-        tableName = self.createFeatureTable("cat_%s"%lexiconTableName, 'VARCHAR(%d)'%max_category_string_length, 'INTEGER', tableName, valueFunc, extension=extension)
+        tableName = self.createFeatureTable("cat_%s" % lexiconTableNameToCreate, 'VARCHAR(%d)' %
+                                            max_category_string_length, 'INTEGER', tableName, valueFunc,
+                                            extension=extension)
 
 
         #4. grab all distinct group ids
@@ -2146,7 +2157,6 @@ class FeatureExtractor(DLAWorker):
             cat_to_summed_value = dict()
             cat_to_function_summed_weight = dict()
             cat_to_function_summed_weight_gn = {}
-            sql = ''
             if isinstance(groupId, str):
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id LIKE '%s'"%(wordTable, groupId)
             else:
@@ -2162,6 +2172,20 @@ class FeatureExtractor(DLAWorker):
 
             totalFunctionSumForThisGroupId = float(0.0)
             totalWordsInLexForThisGroupId = float(0.0)
+
+            if lexicon_weighting:
+                totals = collections.defaultdict(lambda: collections.defaultdict(float))
+                for gid, feat, value, _ in attributeRows:
+                    if feat in feat_cat_weight:
+                        for category in feat_cat_weight[feat]:
+                            totals[gid][category] += value
+                    if lexiconHasWildCard:  # check wildcard matches
+                        for endI in range(3, len(feat) + 1):
+                            featWild = feat[0:endI] + '*'
+                            if featWild in feat_cat_weight:
+                                for category in feat_cat_weight[featWild]:
+                                    totals[gid][category] += value
+
             for (gid, feat, value, group_norm) in attributeRows:
                 #e.g. (69L, 8476L, 'spent', 1L, 0.00943396226415094, None),
                 cat_to_weight = dict()#dictionary holding all categories, weights that feat is a part of
@@ -2180,6 +2204,15 @@ class FeatureExtractor(DLAWorker):
                             cat_to_weight = dlac.unionDictsMaxOnCollision(cat_to_weight, feat_cat_weight[featWild])
                 #update all cats:
                 for category in cat_to_weight:
+                    try:
+                        group_norm = value / float(totals[gid][category])
+                    except NameError:  # not using lexicon_weighting
+                        pass
+                    except ZeroDivisionError:  # should be impossible; a cat w/o a total shouldn't have this feat in it
+                        dlac.warn('Something is wrong: feature {feat} appears in empty category {cat} for '
+                                  'group_id {gid}'.format(feat=feat, cat=category, gid=gid))
+                        group_norm = 0.0
+
                     try:
                         cat_to_summed_value[category] += value
                         cat_to_function_summed_weight[category] += cat_to_weight[category] * featValueFunc(value)
@@ -2512,7 +2545,9 @@ class FeatureExtractor(DLAWorker):
             posFeatTableName = self.createFeatureTable('pos', "VARCHAR(%s)" % min_varchar_length, 'INTEGER', tableName, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
-        posMessageTable = self.corptable+'_pos'
+        posMessageTable = self.corptable
+        if posMessageTable[-4:] != '_pos':
+            posMessageTable = self.corptable+'_pos'
         assert mm.tableExists(self.corpdb, self.dbCursor, posMessageTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with pos featrue extraction " % posMessageTable
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, posMessageTable, self.correl_field)
         msgs = 0#keeps track of the number of messages read
@@ -2535,17 +2570,25 @@ class FeatureExtractor(DLAWorker):
                         dlac.warn("POS Messages Read: %dk" % int(msgs/1000))
                     mids.add(message_id)
 
-                    #find poses in message
-                    if keep_words:
-                        # keep the actual word with its POS too
-                        pos_list = pos_message.split()
-                        pos_list = ['/'.join([w.lower()
-                                              for w in i.split('/')[:-1]]+
-                                             [i.split('/')[-1]])
-                                    for i in pos_list]
+
+                    pos_list = []
+                    if posMessageTable[-4:] != 'tpos':
+                        if keep_words:
+                            dlac.warn("keep words not implemented yet for tweetpos tags")
+                        else:##TODO: Debug; make sure this works
+                            pos_list = loads(pos_message)['tags']
                     else:
-                        # Just extract the POSes if not needed to keep the ngrams
-                        pos_list = [x.split('/')[-1] for x in pos_message.split()]
+                        #find poses in message
+                        if keep_words:
+                            # keep the actual word with its POS too
+                            pos_list = pos_message.split()
+                            pos_list = ['/'.join([w.lower()
+                                                  for w in i.split('/')[:-1]]+
+                                                 [i.split('/')[-1]])
+                                        for i in pos_list]
+                        else:
+                            # Just extract the POSes if not needed to keep the ngrams
+                            pos_list = [x.split('/')[-1] for x in pos_message.split()]
 
                     # posDict = find pos frequencies in pos_message
                     for pos in pos_list:

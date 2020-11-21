@@ -6,6 +6,11 @@ to perform prediction of outcomes for language features.
 """
 
 from .dlaConstants import warn, alignDictsAsX
+try:
+    import torch
+    from .autoencoders import AE
+except ImportError:
+    pass
 import pickle as pickle
 
 try:
@@ -35,6 +40,7 @@ from itertools import combinations
 
 # scikit-learn imports
 from sklearn.preprocessing import StandardScaler
+from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV 
 from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF, SparsePCA, FactorAnalysis
 from sklearn import metrics
@@ -51,6 +57,9 @@ import numpy as np
 from numpy import sqrt, outer
 from numpy.linalg import norm
 import math
+
+#Infrastructure
+from .mysqlmethods import mysqlMethods as mm
 
 def alignDictsAsXy(X, y, sparse=False, returnKeyList=False):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
@@ -86,8 +95,6 @@ def alignDictsAsXy(X, y, sparse=False, returnKeyList=False):
             return (listX, listy, keys)
         else:
             return (listX, listy)
-
-
 
 class DimensionReducer:
     """Handles clustering of continuous outcomes"""
@@ -129,9 +136,13 @@ class DimensionReducer:
             
             'lda': { 'nb_topics':50, 'dictionary':None, 'alpha':None },
 
-            'rpca': {'n_components':15, 'random_state':42, 'whiten':False, 'iterated_power':3},
+            'rpca': {'n_components':15, 'random_state':42, 'whiten':False, 'iterated_power':3, 'svd_solver':'randomized'},
 
-            'fa': {'n_components': 10, 'random_state': 42}
+            'fa': {'n_components': 10, 'random_state': 42},
+
+            'ppa': {'D': 1}, #None defaults to original dimensions / 100
+
+            'ae': {'n_components': 128, 'layers': 2, 'epochs': 4, 'dropout_prob':0, 'batch_size':100}
     
             }
 
@@ -143,7 +154,9 @@ class DimensionReducer:
         'mbsparsepca': 'MiniBatchSparsePCA',
         'lda' : 'LDA',
         'rpca' : 'PCA',#TODO: somehow update to use rpca
-        'fa' : 'FactorAnalysis'
+        'fa' : 'FactorAnalysis',
+        'ppa': 'PPA',
+        'ae': 'AE'
         }
 
     def __init__(self, fg, modelName='nmf', og=None, n_components=None):
@@ -242,14 +255,21 @@ class DimensionReducer:
             sparse = False
      
         scaler = None
-        if standardize:
+        if 'nmf' in self.modelName.lower():
+            scaler = NonNegativeStandardScaler(standardize)
+            print("[Applying NonNegativeStandardScaler to X: %s]" % str(scaler))
+            X = scaler.fit_transform(X)
+
+        elif standardize:
             scaler = StandardScaler(with_mean=not sparse)
             print("[Applying StandardScaler to X: %s]" % str(scaler))
             X = scaler.fit_transform(X)
-
+        
+        '''
         if 'nmf' in self.modelName.lower():
             minX = X.min()
             X = X + (minX*-1)
+        '''
 
         #if y:
         #    y = np.array(y)
@@ -280,6 +300,8 @@ class DimensionReducer:
         # print(cluster.components_)
         print("model: %s " % str(cluster))
 
+        #TODO FOR DEBUGGING: have it run transform on X and print the mean, min, max, std per component
+
         if rotate:
             XFCC = cluster.components_.T
             R, T = rotate_promax(XFCC)
@@ -287,82 +309,86 @@ class DimensionReducer:
      
         return cluster, scaler, fSelector
 
-    def transformToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = ''):
-        if not fe:
-            print("Must provide a feature extractor object")
-            sys.exit(0)
+    ### TODO: REMOVE THIS METHOD (kept for debugging writeToFeats)
+    # def transformToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = '', featNames=None):
+    #     if not fe:
+    #         print("Must provide a feature extractor object")
+    #         sys.exit(0)
 
-        print()
-        # 1. get data possible ys (outcomes)
-        groups = []
-        #list of control values for groups
-        controlValues = None
-        allOutcomes = None
-        if self.outcomeGetter != None: # and self.outcomeGetter.hasOutcomes():
-            (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
-            print("[number of groups: %d]" % len(groups))
-            controlValues = list(controls.values())  # list of dictionaries of group=>group_norm
-        groups = list(groups)
+    #     print()
+    #     # 1. get data possible ys (outcomes)
+    #     groups = []
+    #     #list of control values for groups
+    #     controlValues = None
+    #     allOutcomes = None
+    #     if self.outcomeGetter != None: # and self.outcomeGetter.hasOutcomes():
+    #         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
+    #         print("[number of groups: %d]" % len(groups))
+    #         controlValues = list(controls.values())  # list of dictionaries of group=>group_norm
+    #     groups = list(groups)
             
-        # 2. get data for X:
-        (groupNorms, featureNames) = (None, None)
-        if sparse:
-            (groupNorms, featureNames) = self.featureGetter.getGroupNormsSparseFeatsFirst(groups)
-        else:
-            (groupNorms, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups)
+    #     # 2. get data for X:
+    #     (groupNorms, featureNames) = (None, None)
+    #     if sparse:
+    #         (groupNorms, featureNames) = self.featureGetter.getGroupNormsSparseFeatsFirst(groups)
+    #     else:
+    #         (groupNorms, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups)
 
-        self.featureNames = list(groupNorms.keys())  # holds the order to expect features
-        groupNormValues = list(groupNorms.values())  # list of dictionaries of group => group_norm
+    #     self.featureNames = list(groupNorms.keys())  # holds the order to expect features
+    #     groupNormValues = list(groupNorms.values())  # list of dictionaries of group => group_norm
+    # #     this will return a dictionary of dictionaries
+
+    #     # 3. transform for each possible y:
+    #     if allOutcomes:
+    #         dlac.warn("NOT IMPLEMENTED")
+    #         sys.exit(1)
+    #         for outcomeName, outcomes in allOutcomes.items():
+    #             print("\n= %s =\n%s" % (outcomeName, '-' * (len(outcomeName) + 4)))
+    #             print("[Aligning Dicts to get X and y]")
+    #             (X, y) = alignDictsAsXy(groupNormValues + controlValues, outcomes, sparse)
+    #             #(self.clusterModels[outcomeName], self.scalers[outcomeName], self.fSelectors[outcomeName]) = self._fit(X, y, standardize=standardize)
+    #     else:
+    #         X = alignDictsAsX(groupNormValues + controlValues, sparse, returnKeyList= False)
+    #         #newX = self.transform(X, standardize=standardize)
+    #         newX = self.transform(standardize=standardize)
         
-    #     this will return a dictionary of dictionaries
+    #     # INSERTING the chunk into MySQL
+    #     #Creating table if not done yet
+    #     if not featNames:
+    #         n_components = self.clusterModels['noOutcome'].n_components_            
+    #         featNames = ["COMPONENT_"+str(i) for i in range(n_components)]
+    #         #featNames = list(chunkPredictions.keys())
+    #     featLength = max([len(s) for s in featNames])
+    #     # CREATE TABLE, and insert into it progressively:
+    #     featureName = "p_%s" % self.modelName[:4]
+    #     if name: featureName += '_' + name
+    #     featureTableName = fe.createFeatureTable(featureName, "VARCHAR(%d)"%featLength, 'DOUBLE')
 
-        # 3. transform for each possible y:
-        if allOutcomes:
-            dlac.warn("NOT IMPLEMENTED")
-            sys.exit(1)
-            for outcomeName, outcomes in allOutcomes.items():
-                print("\n= %s =\n%s" % (outcomeName, '-' * (len(outcomeName) + 4)))
-                print("[Aligning Dicts to get X and y]")
-                (X, y) = alignDictsAsXy(groupNormValues + controlValues, outcomes, sparse)
-                (self.clusterModels[outcomeName], self.scalers[outcomeName], self.fSelectors[outcomeName]) = self._fit(X, y, standardize=standardize)
-        else:
-            X = alignDictsAsX(groupNormValues + controlValues, sparse, returnKeyList= False)
-            newX = self.transform(X, standardize=standardize)
-        
-        # INSERTING the chunk into MySQL
-        #Creating table if not done yet
-        if not featNames:
-            featNames = list(chunkPredictions.keys())
-            featLength = max([len(s) for s in featNames])
-            # CREATE TABLE, and insert into it progressively:
-            featureName = "p_%s" % self.modelName[:4]
-            if name: featureName += '_' + name
-            featureTableName = fe.createFeatureTable(featureName, "VARCHAR(%d)"%featLength, 'DOUBLE')
+    #     written = 0
+    #     rows = []
+    #     for feat in featNames:
+    #         preds = newX['noOutcome'][feat]
 
-        written = 0
-        rows = []
-        for feat in featNames:
-            preds = chunkPredictions[feat]
+    #         print("[Inserting Predictions as Feature values for feature: %s]" % feat)
+    #         wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
 
-            print("[Inserting Predictions as Feature values for feature: %s]" % feat)
-            wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
+    #         for k, v in preds.items():
+    #             rows.append((k, v, v))
+    #             if len(rows) >  60000 or len(rows) >= len(preds):
+    #                 mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+    #                 written += len(rows)
+    #                 print("   %d feature rows written" % written)
+    #                 rows = []
+    #     # if there's rows left
+    #     if rows:
+    #         mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+    #         written += len(rows)
+    #         print("   %d feature rows written" % written)
 
-            for k, v in preds.items():
-                rows.append((k, v, v))
-                if len(rows) >  self.maxPredictAtTime or len(rows) >= len(preds):
-                    mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
-                    written += len(rows)
-                    print("   %d feature rows written" % written)
-                    rows = []
-        # if there's rows left
-        if rows:
-            mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
-            written += len(rows)
-            print("   %d feature rows written" % written)
-
-        return
+    #     return
     
-    def transform(self, standardize=True, sparse=False, restrictToGroups=None):
+    def transform(self, standardize=True, sparse=False, restrictToGroups=None, writeToFeats=False, fe = None):
+        ##TODO: add groupsWhere parameter
         groups = []
         controlValues = None
         allOutcomes = None
@@ -406,23 +432,63 @@ class DimensionReducer:
         if allOutcomes:
             for outcomeName, outcomes in allOutcomes.items():
                 print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
-                X, group_ids = alignDictAsX(groupNormValues + controlValues, sparse, returnKeyList=True)
+                X, group_ids = alignDictsAsX(groupNormValues + controlValues, sparse, returnKeyList=True)
                 (cluster, scaler, fSelector) = (self.clusterModels[outcomeName], self.scalers[outcomeName], self.fSelectors[outcomeName])
                 transformedX[outcomeName] = _transform(cluster, scaler, fSelector)
         else:
-            X, group_ids = alignDictAsX(groupNormValues + controlValues, sparse, returnKeyList=True)
+            X, group_ids = alignDictsAsX(groupNormValues + controlValues, sparse, returnKeyList=True)
             (cluster, scaler, fSelector) = (self.clusterModels['noOutcome'], self.scalers['noOutcome'], self.fSelectors['noOutcome'])
-            transformedX['noOutcome'] = _transform(cluster, scaler, fSelector)
-            
+            transformedX['noOutcome'] = self._transform(cluster=cluster, X=X, scaler=scaler, fSelector=fSelector)
+
         for outcomeName, outcomeX  in transformedX.items():
             if not isinstance(outcomeX, csr_matrix):
                 dictX = dict()
                 (n, m) = outcomeX.shape
                 for j in range(m):
-                    dictX[group_ids[j]] = dict()
+                    dictX['COMPONENT_'+str(j)] = dict()
                     for i in range(n):
-                        dictX[group_ids[j]]['rfeat'+str(i)]= outcomeX[i][j]
+                        dictX['COMPONENT_'+str(j)][group_ids[i]]= outcomeX[i][j]
                 transformedX[outcomeName] = dictX
+
+                if writeToFeats:
+                    #Creating table if not done yet
+                    try:
+                        n_components = self.clusterModels[outcomeName].n_components_            
+                    except:
+                        #FA didnt have n_components_ in its class. Handling those cases
+                        n_components = len(self.clusterModels[outcomeName].components_)
+                    featNames = ["COMPONENT_"+str(i) for i in range(n_components)]
+                    #featNames = list(chunkPredictions.keys())
+                    featLength = max([len(s) for s in featNames])
+
+                    # CREATE TABLE, and insert into it progressively:
+                    featureName = "dr_%s" % self.modelName[:4]
+                    featureName += '_' + writeToFeats
+                    featureTableName = fe.createFeatureTable(featureName, "VARCHAR(%d)"%featLength, 'DOUBLE')
+                    
+                    written = 0
+                    rows = []
+                    for feat in featNames:
+                        preds = transformedX[outcomeName][feat]
+
+                        print("[Inserting Predictions as Feature values for feature: %s]" % feat)
+                        wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
+
+                        for k, v in preds.items():
+                            rows.append((k, v, v))
+                            if len(rows) >  60000 or len(rows) >= len(preds):
+                                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                                written += len(rows)
+                                print("   %d feature rows written" % written)
+                                rows = []
+                    # if there's rows left
+                    if rows:
+                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                        written += len(rows)
+                        print("   %d feature rows written" % written)
+
+                
+                
             else:
                 raise NotImplementedError
         
@@ -430,9 +496,13 @@ class DimensionReducer:
     
     def _transform(self, cluster, X, scaler = None, fSelector = None, y = None):
         if scaler:
+            print("[ Running Scaler]:%s\n"%str(scaler))
             X = scaler.transform(X)
         if fSelector:
+            print("[ Running feature selector]:%s\n"%str(fSelector))
             X = fSelector.transform(X)
+
+        print("[ Running dim reducer]:%s\n"%str(cluster))
         
         return cluster.transform(X)
     
@@ -533,6 +603,86 @@ def rotate_varimax(X):
     T = np.array(T)
     return R, T
 
+
+#############################################################
+## Other classes:
+
+class PPA(TransformerMixin, BaseEstimator):
+    ''' To apply Post processing of word embeddings: Mu and Viswanath, Proceedings of ICLR 2018 '''
+
+    def __init__(self, D = None, svd_solver = 'randomized'):
+        self.D = D
+        self.svd_solver = svd_solver
+        ## init var to None
+        self.n_components_ = None
+        self.pca = None
+        self.U = None
+        self.mean_vector = None
+        
+    
+    def fit(self, X:np.array, y=None):
+
+        if self.D is None: self.D = max(X.shape[1]//100, 1) #init D if not passed
+        self.n_components_ = X.shape[1]
+
+        self.pca = PCA(n_components=min(X.shape[0], X.shape[1]), svd_solver=self.svd_solver)
+        self.mean_vector = np.mean(X, axis=0)
+        X_new = X - self.mean_vector
+        self.pca.fit_transform(X_new)
+        self.U = self.pca.components_
+
+        return self
+    
+    def transform(self, X:np.array, y=None):
+        
+        X_new = X - self.mean_vector
+        X_ppa = []
+        for i in range(X_new.shape[0]):
+            ppa_emb = X_new[i]
+            for u in self.U[0:self.D]:
+                ppa_emb = ppa_emb - (np.dot(u.transpose(), X[i]) * u)
+            X_ppa.append(ppa_emb)
+        
+        X_ppa = np.array(X_ppa)
+        return X_ppa
+    
+    def fit_transform(self, X:np.array, y=None):
+        self.fit(X)
+        return self.transform(X)
+
+class NonNegativeStandardScaler(TransformerMixin, BaseEstimator):
+    '''
+        class method that shifts the axis to ensure the matrix doesn't have negative values.
+        Used before applying NMF.
+    '''
+    def __init__(self, standardize):
+        self.standardize = standardize
+        self.min_val = -np.inf
+        self.std_scaler = StandardScaler()
+
+    def fit(self, X:np.ndarray, y=None):
+        
+        if self.standardize: X = self.std_scaler.fit_transform(X)
+
+        self.min_val = X.min()
+        if np.isinf(self.min_val):
+            print ("min value is negative inf.")
+            sys.exit(0)
+
+        return self
+    
+    def transform(self, X:np.ndarray, y=None):
+        
+        print ("Min value of the matrix: ", np.array(X).min())
+        if self.standardize: X = self.std_scaler.transform(X)
+        X = X + (self.min_val*-1)
+        if X[X<0].shape[0]: print ("Matrix with %d negative values after applying axis shifting. Zeroing those values now...."% (X[X<0].shape[0]))
+        X[X<0] = 0
+        return X
+
+    def fit_transform(self, X:np.ndarray, y=None):
+        self.fit(X)
+        return self.transform(X)
 
 class CCA:
     """Handles CCA analyses of language and outcomes"""

@@ -57,6 +57,7 @@ import math
 
 #infrastructure
 from .classifyPredictor import ClassifyPredictor
+from .dimensionReducer import PPA
 from .mysqlmethods import mysqlMethods as mm
 from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, DEFAULT_RANDOM_SEED, warn, MinScaler
 
@@ -244,8 +245,11 @@ class RegressionPredictor:
         'ridge250': [
             {'alpha': [250]}, #PCA counties
         ],
-        'ridge100000': [
-            {'alpha': [100000]}, 
+        'ridge1m': [
+            {'alpha': [1000000]}, 
+        ],
+        'ridge10m': [
+            {'alpha': [10000000]}, 
         ],
         'ridge100': [{'alpha': [100]}],
         'ridge10': [{'alpha': [10]}],
@@ -285,6 +289,9 @@ class RegressionPredictor:
         ],
         'ridgelowcv': [
             {'alphas': np.array([.01, .1, .001, 1, .0001, .00001])}, 
+        ],
+        'ridgeveryhighcv': [
+            {'alphas': np.array([100000, 1000000, 10000, 10000000, 100000000, 1000000000])}, 
         ],
         'rpcridgecv': [
             #{'alphas': np.array([100, 1000, 10000]), 'component_percs':np.array([.01, .02154, .0464, .1, .2154, .464, 1])}, #standard
@@ -369,9 +376,12 @@ class RegressionPredictor:
         'ridge100' : 'Ridge',
         'ridge10' : 'Ridge',
         'ridge1' : 'Ridge',
+        'ridge1m' : 'Ridge',
+        'ridge10m' : 'Ridge',
         'ridgecv' : 'RidgeCV',
         'ridgefirstpasscv' : 'RidgeCV',
         'ridgehighcv' : 'RidgeCV',
+        'ridgeveryhighcv' : 'RidgeCV',
         'ridgelowcv' : 'RidgeCV',
         'rpcridgecv' : 'RPCRidgeCV',
         'linear' : 'LinearRegression',
@@ -2042,7 +2052,7 @@ class RegressionPredictor:
         n = fsparams['pca']
         self.featureSelectionString = []
         for i in range(0,dim):
-            self.featureSelectionString.append('Pipeline([("1_univariate_select",  SelectKBest(score_func=f_regression, k={0})) , ("2_rpca", RandomizedPCA(n_components=int({1}), random_state={2}, whiten=False, iterated_power=3))])'.format(k[i], n[i]), DEFAULT_RANDOM_SEED)
+            self.featureSelectionString.append('Pipeline([("1_univariate_select",  SelectKBest(score_func=f_regression, k={0})) , ("2_rpca", PCA(n_components=int({1}), random_state={2}, whiten=False, iterated_power=3, svd_solver="randomized"))])'.format(k[i], n[i], DEFAULT_RANDOM_SEED))
         print ('kbest: ' , k, '  , pca:  ' , n )
 
 
@@ -2310,10 +2320,10 @@ class RegressionPredictor:
         for nextX in multiX[startIndex:]:
             X = np.append(X, nextX, 1)
 
-        print("[PREDICT] combined X shape: %s" % str(X.shape)) #debu
-        if hasattr(regressor, 'intercept_'):
-            print("[PREDICT] regression intercept: %f" % regressor.intercept_)
+        print("[PREDICT] combined X shape: %s" % str(X.shape)) 
 
+        print("[PREDICT] regressor: %s\nsettings: " %
+              str(regressor), str([i for i in regressor.__dict__.items() if not isinstance(i[1], Iterable)]))
         if returnX:
             return regressor.predict(X), X
         else: 

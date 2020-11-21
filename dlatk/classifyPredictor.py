@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#/bin/python
 """
 Classify Predictor
 
@@ -147,16 +147,22 @@ def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True, classes = No
         fpr = dict()
         tpr = dict()
         roc_auc = dict()
+        print("Muti-AUCs:")
         for i in range(n_classes):
             fpr[i], tpr[i], _ = roc_curve(ytrue[:, i], ypredProbs[:, i])
             roc_auc[i] = auc(fpr[i], tpr[i])
+            print("  ", i, ": %.4f" % roc_auc[i]) 
 
         # Compute micro-average ROC curve and ROC area
         fpr["micro"], tpr["micro"], _ = roc_curve(ytrue.ravel(), ypredProbs.ravel())
         #except ValueError
         this_auc = auc(fpr["micro"], tpr["micro"])
     else:
-        this_auc = roc_auc_score(ytrue, ypredProbs[:,-1])
+        try:
+            this_auc = roc_auc_score(ytrue, ypredProbs[:,-1])
+        except ValueError as e:
+            print("\nWARNING: Unable to comput a ROC_AUC: '", e, "'\n  Thus, using AUC = 0.0.\n")
+            this_auc = 0.0
     if negatives and this_auc < 0.5:
         this_auc = this_auc - 1
     return this_auc
@@ -338,8 +344,8 @@ class ClassifyPredictor:
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 30000
-    backOffPerc = .00 #when the num_featrue / training_insts is less than this backoff to backoffmodel
-    backOffModel = 'linear-svc'
+    backOffPerc = .05 #when the num_featrue / training_insts is less than this backoff to backoffmodel
+    backOffModel = 'lr'
 
     # feature selection:
     featureSelectionString = None
@@ -402,14 +408,20 @@ class ClassifyPredictor:
         self.fSelectors = dict()
         """dict: Docstring *after* attribute, with type specified."""
 
+        self.outcomeNames = [] 
+        """list: Holds a list of the outcomes in sorted order."""
+
         self.n_components = n_components #number of components for feature selection
         """int: Docstring *after* attribute, with type specified."""
 
         self.featureNames = [] 
         """list: Holds the order the features are expected in."""
 
-        self.featureLengthList = []
-        """list: Holds the number of features in each featureGetter."""
+        self.featureLengthDict = dict()
+        """dict: Holds the number of features in each featureGetter."""
+
+        self.featureNamesList = []
+        """list: Holds the names of features in each featureGetter."""
         
         self.multiFSelectors = None
         """str: Docstring *after* attribute, with type specified."""
@@ -422,6 +434,8 @@ class ClassifyPredictor:
 
         self.outliersToMean = outliersToMean
         """float: Threshold for setting outliers to mean value."""
+
+        self.trainBootstrapNames = None
 
 
     def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', trainBootstraps = None, trainBootstrapsNs = None):
@@ -478,6 +492,7 @@ class ClassifyPredictor:
             self.trainBootstrapNames = dict()
         (self.classificationModels, self.multiScalers, self.multiFSelectors) = (dict(), dict(), dict())
         for outcomeName, outcomes in sorted(allOutcomes.items()):
+            self.outcomeNames.append(outcomeName)
             print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
             multiXtrain = list()
             #trainGroupsOrder = list(XGroups & set(outcomes.keys()))
@@ -1465,13 +1480,13 @@ class ClassifyPredictor:
                     continue
                 weights_dict[featTables[i]][outcome] = dict()
 
-                coeff_iter = iter(coefficients)
-                coefficients  = np.asarray([list(islice(coeff_iter, 0, j)) for j in self.featureLengthList][i])
+                coeff_iter = iter(coefficients.flatten())
+                coefficients  = np.asarray([list(islice(coeff_iter, 0, j)) for j in self.featureLengthDict[outcome]][i])
 
                 # Inverting Feature Selection
                 if self.multiFSelectors[outcome][i]:
                     print("Inverting the feature selection: %s" % self.multiFSelectors[outcome][i])
-                    coefficients = self.multiFSelectors[outcome][i].inverse_transform(coefficients)
+                    coefficients = self.multiFSelectors[outcome][i].inverse_transform(coefficients).flatten()
 
                 # Inverting Feature Selection
                 scaler_intercept = 0
@@ -1488,10 +1503,9 @@ class ClassifyPredictor:
                     scaler_intercept = sum([coeff*means[ii]/scales[ii] for ii, coeff in enumerate(coefficients)])
                     coefficients = np.asarray([coeff/scales[ii] for ii, coeff in enumerate(coefficients)])
 
-                if 'mean_' in dir(self.multiFSelectors[outcome][i]): # PCA, RPCA
+                if 'mean_' in dir(self.multiFSelectors[outcome][i]):
                     print("RPCA mean: ", self.multiFSelectors[outcome][i].mean_)
 
-                coefficients = coefficients.flatten()
                 # featTableFeats contains the list of features 
                 if len(coefficients) != len(featTableFeats):
                     print("length of coefficients (%d) does not match number of features (%d)" % (len(coefficients), len(featTableFeats)))
@@ -1504,8 +1518,8 @@ class ClassifyPredictor:
                 print("coefficients size for {f}: {s}".format(f=featTables[i], s=coefficients.shape))
                 coefficients.resize(1,len(coefficients))
                 coefficients = coefficients.flatten()
-            
-                weights_dict[featTables[i]][outcome] = {featTableFeats[j]: coefficients[j] for j in range(len(featTableFeats))}
+
+                weights_dict[featTables[i]][outcome] = {featTableFeats[j]: coefficients[j] for j in range(len(featTableFeats)) if coefficients[j] != 0}
 
         if unpackTopicWeights:
             # only topic tables
@@ -1552,7 +1566,6 @@ class ClassifyPredictor:
         for featTable in weights_dict:
             for outcome in weights_dict[featTable]:
                 weights_dict[featTable][outcome]['_intercept'] = intercept_dict[outcome]
-        
         return weights_dict
 
     def unpackTopicTables(self, featureGetter, topicFeatTable, weightsDict):
@@ -1718,7 +1731,11 @@ class ClassifyPredictor:
                     #c =np.insert(c,c.shape[1],thelist[0][:,0],axis=1)
                     adaptMatrix=np.insert(adaptMatrix,adaptMatrix.shape[1],controls_mat[:,adaptCol],axis=1)
 
-
+        try:
+            self.featureLengthDict[self.outcomeNames[-1]] = list()
+        except Exception as e: 
+            # probably running cross validation, this information is not needed
+            pass
 
         #for i in xrange(len(multiX)):
         i=0
@@ -1798,12 +1815,14 @@ class ClassifyPredictor:
             '''
                         
             #if adaptation is set,....
-            
+            try:
+                self.featureLengthDict[self.outcomeNames[-1]].append(X.shape[1])
+            except:
+                pass
 
             multiX[i] = X
             multiScalers.append(scaler)
             multiFSelectors.append(fSelector)
-            self.featureLengthList.append(X.shape[1])
             i+=1 # added to work with while loop by Youngseo Son
 
         #combine all multiX into one X:

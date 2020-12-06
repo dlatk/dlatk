@@ -1466,6 +1466,8 @@ class RegressionPredictor:
                                                     multiScalers = self.multiScalers[bsModelName], \
                                                     multiFSelectors = self.multiFSelectors[bsModelName], sparse = True)
                         currentResults.append(self.regressionMetrics(ytest, ypred))
+                        #Saving the predictions to the feature table
+                        predictions[bsModelName] = dict(list(zip(thisTestGroupsOrder,ypred)))
                     resultsPerN[n] = self.averageMetrics(currentResults)
                 print(" [Done. Results:]")
                 pprint(resultsPerN)

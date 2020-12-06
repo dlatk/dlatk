@@ -2240,7 +2240,10 @@ class FeatureExtractor(DLAWorker):
                         if keep_words:
                             dlac.warn("keep words not implemented yet for tweetpos tags")
                         else:##TODO: Debug; make sure this works
-                            pos_list = loads(pos_message)['tags']
+                            try:
+                                pos_list = loads(pos_message)['tags'] 
+                            except:
+                                pos_list = []
                     else:
                         #find poses in message
                         if keep_words:

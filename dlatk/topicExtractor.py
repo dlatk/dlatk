@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 #########################################
+import random
 import re
 
 import csv
@@ -22,6 +23,7 @@ from pymallet import defaults
 from pymallet.lda import estimate_topics
 
 from json import loads
+
 
 class TopicExtractor(FeatureExtractor):
 
@@ -203,10 +205,22 @@ class TopicExtractor(FeatureExtractor):
         return featureTableName;
 
 
-token_regex = r'(#|@)?(?!(\W)\2+)([a-zA-Z\_\-\'0-9\(-\@]{2,})'
+token_regexes = {
+    'en': r'(#|@)?(?!(\W)\2+)([a-zA-Z\_\-\'0-9\(-\@]{2,})',
+    'zh': r'([\p{L}\p{M}]+|[\p{IsHan}]+)'
+}
 
 
 class OurLdaMallet(LdaMallet):
+    def set_language(self, lang):
+        self._lang = lang
+
+    @property
+    def token_regex(self):
+        if not hasattr(self, '_lang'):
+            self.set_language('en')
+        return token_regexes[self._lang]
+
     def set_stopwords(self, stopwords):
         stopwords_file = self.prefix + 'stopwords'
         with open(stopwords_file, 'w') as fout:
@@ -224,7 +238,7 @@ class OurLdaMallet(LdaMallet):
         cmd = \
             self.mallet_path + \
             " import-file --preserve-case --keep-sequence " \
-            "--token-regex \"{}\" --input %s --output %s".format(token_regex)
+            "--token-regex \"{}\" --input %s --output %s".format(self.token_regex)
         stopwords = getattr(self, 'stopwords', None)
         if stopwords:
             cmd += " --stoplist-file {}".format(stopwords)
@@ -234,7 +248,8 @@ class OurLdaMallet(LdaMallet):
 
 class LDAEstimator(object):
     def __init__(self, feature_getter, num_topics, alpha, beta, iterations, num_stopwords=dlac.DEF_NUM_STOPWORDS,
-                 no_stopping=False, files_dir=None, num_threads=dlac.DEF_NUM_THREADS, extra_stopwords_file=None):
+                 no_stopping=False, files_dir=None, num_threads=dlac.DEF_NUM_THREADS, extra_stopwords_file=None,
+                 language=dlac.DEF_LANG):
         self.feature_getter = feature_getter
         self.num_topics = num_topics
         self.alpha = alpha
@@ -245,6 +260,7 @@ class LDAEstimator(object):
         self.no_stopping = no_stopping
         self.files_dir = files_dir
         self.num_threads = num_threads
+        self.language = language
 
         self._stopwords = None
 
@@ -277,17 +293,15 @@ class LDAEstimator(object):
             keys_file = defaults.OUTPUT_TOPIC_KEYS_FILE
         else:
             print('Estimating LDA topics using Mallet.')
+            prefix = os.path.join(self.files_dir, hex(random.randint(0, 0xffffff))[2:] + '_')
             mallet = OurLdaMallet(mallet_path, id2word=corpora.Dictionary([["dummy"]]),
                                   num_topics=self.num_topics, alpha=self.alpha, iterations=self.iterations,
-                                  workers=self.num_threads)
+                                  workers=self.num_threads, prefix=prefix)
+            mallet.set_language(self.language)
             if not self.no_stopping:
                 mallet.set_stopwords(self.stopwords)
             mallet.train(feature_lines_file)
             state_file = mallet.fstate()
             keys_file = mallet.ftopickeys()
 
-        moved_state_file = os.path.join(self.files_dir, os.path.basename(state_file))
-        shutil.move(state_file, moved_state_file)
-        shutil.move(keys_file, os.path.join(self.files_dir, os.path.basename(keys_file)))
-
-        return moved_state_file
+        return state_file

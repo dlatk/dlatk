@@ -118,6 +118,8 @@ def main(fn_args = None):
                         help='MySQL encoding')
     group.add_argument('--no_unicode', action='store_false', dest='useunicode', default=dlac.DEF_UNICODE_SWITCH,
                        help='Turn off unicode for reading/writing mysql and text processing.')
+    group.add_argument('--language', '--lang', choices=['en', 'zh'], default=dlac.DEF_LANG,
+                       help='Corpus language. Affects certain aspects of processing, like tokenization. Default: en.')
 
     group = parser.add_argument_group('Feature Variables', 'Use of these is dependent on the action.')
     group.add_argument('-f', '--feat_table', metavar='TABLE', dest='feattable', type=str, nargs='+', default=getInitVar('feattable', conf_parser, None, varList=True),
@@ -723,8 +725,8 @@ def main(fn_args = None):
     group.add_argument('--estimate_lda_topics', action='store_true', help="Estimates LDA topics using PyMallet.")
     group.add_argument('--mallet_path', help="Specify the path to the Mallet executable. If unspecified, "
                                              "LDA estimation is performed with PyMallet.")
-    group.add_argument('--save_lda_files', default='/tmp', help="The directory in which to save LDA estimation files. "
-                                                                "Default: /tmp")
+    group.add_argument('--save_lda_files', help="The directory in which to save LDA estimation files. Default: "
+                                                "current working directory.")
     group.add_argument('--lda_lexicon_name', help="The name of the LDA topic-lexicon. Required unless --no_lda_lexicon "
                                                   "is used.")
     group.add_argument('--no_lda_lexicon', action='store_true', help="Do not store the LDA topics as a lexicon.")
@@ -1082,6 +1084,8 @@ def main(fn_args = None):
         if not args.lda_lexicon_name and not args.no_lda_lexicon:
             raise Exception('Must specify an LDA lexicon name with --lda_lexicon_name or disable topic-lexicon with '
                             '--no_lda_lexicon.')
+        if args.save_lda_files is None:
+            args.save_lda_files = os.getcwd()
         if not os.path.isdir(args.save_lda_files):
             try:
                 os.makedirs(args.save_lda_files)
@@ -1104,7 +1108,7 @@ def main(fn_args = None):
         lda_estimator = LDAEstimator(fg, args.num_topics, args.lda_alpha, args.lda_beta,
                                      args.lda_iterations, args.num_stopwords, args.no_lda_stopping,
                                      files_dir=args.save_lda_files, num_threads=args.num_lda_threads,
-                                     extra_stopwords_file=args.extra_lda_stopwords)
+                                     extra_stopwords_file=args.extra_lda_stopwords, language=args.language)
         state_file = lda_estimator.estimate_topics(args.printjoinedfeaturelines, args.mallet_path)
         if args.mallet_path:  # only need to add message IDs if using mallet; pymallet handles this for us
             args.addmessageid = [args.printjoinedfeaturelines, state_file]

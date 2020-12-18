@@ -236,6 +236,9 @@ class RegressionPredictor:
         'ridge': [
             {'alpha': [1]}, 
         ],
+        'ridge100000': [
+            {'alpha': [100000]},
+        ],
         'ridge10000': [
             {'alpha': [10000]}, #topics age
         ],

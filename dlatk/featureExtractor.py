@@ -1176,7 +1176,7 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
-    def addEmbTable(self, modelName, tokenizerName, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], keepMsgFeats = False, customTableName = None, valueFunc = lambda d: d):
+    def addEmbTable(self, modelName, tokenizerName, modelClass=None, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], keepMsgFeats = False, customTableName = None, valueFunc = lambda d: d):
         '''
 
         '''
@@ -1238,8 +1238,12 @@ class FeatureExtractor(DLAWorker):
         #config = AutoConfig.from_pretrained(modelName, output_hidden_states=True)
         #tokenizer = AutoTokenizer.from_pretrained(tokenizerName)
         #model = AutoModel.from_pretrained(modelName, config=config)
-        tokenizer = MODEL_DICT[SHORTHAND_DICT[tokenizerName]][1].from_pretrained(tokenizerName)
-        model = MODEL_DICT[SHORTHAND_DICT[modelName]][0].from_pretrained(modelName, output_hidden_states=True)
+        if modelClass is not None: 
+            tokenizer = MODEL_DICT[modelClass][1].from_pretrained(tokenizerName)
+            model = MODEL_DICT[modelClass][0].from_pretrained(modelName, output_hidden_states=True)
+        else:
+            tokenizer = MODEL_DICT[SHORTHAND_DICT[tokenizerName]][1].from_pretrained(tokenizerName)
+            model = MODEL_DICT[SHORTHAND_DICT[modelName]][0].from_pretrained(modelName, output_hidden_states=True)
         maxTokensPerSeg = tokenizer.max_len_sentences_pair//2
         #Fix for gpt2
         pad_token_id = tokenizer.pad_token_id if tokenizer.pad_token_id else 0

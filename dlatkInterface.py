@@ -192,7 +192,9 @@ def main(fn_args = None):
     group.add_argument('--mask_table', type=str, metavar='TABLE', dest='masktable', default=None,
                        help='Table containing which groups run in various bins (for ttest).')
     group.add_argument('--bert_model', '--emb_model', type=str, metavar='NAME', dest='embmodel', default=dlac.DEF_EMB_MODEL,
-                       help='Contextual Embedding model to use for extracting features.', choices=dlac.EMB_OPTIONS)
+                       help='Contextual Embedding model to use for extracting features.')
+    group.add_argument('--emb_class', type=str, metavar='NAME', dest='embclass', default=None,
+                       help='Contextual Embedding model class to use for extracting features.', choices=dlac.EMB_CLASS)
     group.add_argument('--tokenizer_model', type=str, dest='tokenizermodel', default=None,
                        help='Tokenizer model to use for tokenizing.')
     group.add_argument('--bert_msg_aggregation', '--bert_aggregations', '--emb_msg_aggregation', '--emb_aggregations', type=str, metavar='AGG', nargs='+', dest='embaggs', default=dlac.DEF_EMB_AGGREGATION,
@@ -1060,7 +1062,7 @@ def main(fn_args = None):
 
     if args.embaddfeat:
         if not fe: fe = FE()
-        args.feattable = fe.addEmbTable(modelName = args.embmodel, tokenizerName=args.tokenizermodel, batchSize=args.batchsize, aggregations=args.embaggs, layersToKeep=args.emblayers, noContext=args.embnocontext, layerAggregations = args.emblayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc, customTableName = args.embtablename, keepMsgFeats = args.embkeepmsg)
+        args.feattable = fe.addEmbTable(modelName = args.embmodel, tokenizerName=args.tokenizermodel, modelClass = args.embclass, batchSize=args.batchsize, aggregations=args.embaggs, layersToKeep=args.emblayers, noContext=args.embnocontext, layerAggregations = args.emblayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc, customTableName = args.embtablename, keepMsgFeats = args.embkeepmsg)
         #args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=args.bertaggs, layersToKeep=args.bertlayers, noContext=args.bertnocontext, layerAggregations = args.bertlayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc)
 
     if args.addldafeattable:

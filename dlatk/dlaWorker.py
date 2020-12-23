@@ -39,7 +39,9 @@ class DLAWorker(object):
     DLAWorker object
     """
     
-    def __init__(self, corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb = dlac.DEF_LEXICON_DB, date_field=dlac.DEF_DATE_FIELD, wordTable=None):
+    def __init__(self, corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding,
+                 use_unicode, lexicondb = dlac.DEF_LEXICON_DB, date_field=dlac.DEF_DATE_FIELD, wordTable=None,
+                 language=dlac.DEF_LANG):
         self.corpdb = corpdb
         self.corptable = corptable
         self.correl_field = correl_field
@@ -48,6 +50,7 @@ class DLAWorker(object):
         self.messageid_field = messageid_field
         self.encoding = encoding
         self.use_unicode = use_unicode
+        self.language = language
 
         self.db_type = dlac.DB_TYPE
         self.data_engine = DataEngine(corpdb, mysql_host, encoding, use_unicode, self.db_type)

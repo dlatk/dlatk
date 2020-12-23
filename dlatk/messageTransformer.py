@@ -11,6 +11,8 @@ import re
 from io import StringIO
 
 #infrastructure
+import jieba
+
 from .dlaWorker import DLAWorker
 from . import dlaConstants as dlac
 from . import textCleaner as tc
@@ -234,50 +236,53 @@ class MessageTransformer(DLAWorker):
         
         return tableName
 
-    def addSegmentedMessages(self, model="ctb", tmpdir="/tmp"):
+    def addSegmentedMessages(self, model="jieba", tmpdir="/tmp"):
         """Exports the messages to a csv, writes to a tmp file, segments, cleans up and reimports as JSON list
 
         Parameters
         -------
         model : :obj:`str`, optional
-            model used for segmentation: ctb (Penn Chinese Treebank) or pku (Beijing Univ.)
+            model used for segmentation: jieba (default), ctb (Penn Chinese Treebank), or pku (Beijing Univ.)
         tmpdir : :obj:`dict`, optional
             temp directory for storing intermediate results
         """
 
-        assert model.lower() in ["ctb", "pku"], "Available models for segmentation are CTB or PKU"
+        assert model.lower() in ["ctb", "pku", "jieba"], "Available models for segmentation are jieba, CTB, or PKU"
         sql = "select %s, %s from %s" % (self.messageid_field, self.message_field, self.corptable)
         rows = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
 
-        tmpfile = tmpdir+"/tmpChineseUnsegmented.txt"
-        tmpfile_seg = tmpdir+"/tmpChineseSegmented.txt"
+        if model.lower() != 'jieba':
+            tmpfile = tmpdir+"/tmpChineseUnsegmented.txt"
+            tmpfile_seg = tmpdir+"/tmpChineseSegmented.txt"
 
-        with open(tmpfile, "w+") as a:
-            w = csv.writer(a)
-            w.writerows(rows)
+            with open(tmpfile, "w+") as a:
+                w = csv.writer(a)
+                w.writerows(rows)
 
-        os.system("%s %s %s UTF-8 0 > %s" % (dlac.DEF_STANFORD_SEGMENTER , model.lower(), tmpfile, tmpfile_seg))
+            os.system("%s %s %s UTF-8 0 > %s" % (dlac.DEF_STANFORD_SEGMENTER , model.lower(), tmpfile, tmpfile_seg))
 
-        new_rows = []
-        raw = []
-        with open(tmpfile_seg, "r") as b:
-            raw = [r for r in b]
-        try:
-            r = csv.reader(raw)
-            new_rows = [i for i in r]
-        except:
             new_rows = []
-            for row in raw:
-                r = csv.reader([row])
-                new_rows.append(next(r))
+            raw = []
+            with open(tmpfile_seg, "r") as b:
+                raw = [r for r in b]
+            try:
+                r = csv.reader(raw)
+                new_rows = [i for i in r]
+            except:
+                new_rows = []
+                for row in raw:
+                    r = csv.reader([row])
+                    new_rows.append(next(r))
 
-        new_rows = [[i[0].strip().replace(" ",""), # Message_ids shouldn't get split
-                     i[1].strip().replace("[ ","[").replace(" ]", "]").replace(" http : //", " http://").replace(" https : //", " https://")]
-                    for i in new_rows[:]]
+            new_rows = [[i[0].strip().replace(" ",""), # Message_ids shouldn't get split
+                         i[1].strip().replace("[ ","[").replace(" ]", "]").replace(" http : //", " http://").replace(" https : //", " https://")]
+                        for i in new_rows[:]]
 
-        # os.system("rm %s %s" % (tmpfile, tmpfile_seg))
+            # os.system("rm %s %s" % (tmpfile, tmpfile_seg))
 
-        new_rows = [(i[0], json.dumps(i[1].split(" "))) for i in new_rows[:]]
+            new_rows = [(i[0], json.dumps(i[1].split(" "))) for i in new_rows[:]]
+        else:
+            new_rows = [(r[0], json.dumps(jieba.cut(r[1]))) for r in rows]
 
         # Now that we have the new rows, we should insert them. 1) Create table, 2) insert
         tableName = self.corptable+"_seg"

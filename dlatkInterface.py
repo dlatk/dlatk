@@ -468,8 +468,8 @@ def main(fn_args = None):
                        help='adds parsed versions of message table.')
     group.add_argument('--add_segmented', action="store_true", dest='addsegmented', default=False,
                        help='adds segmented versions of message table.')
-    group.add_argument('--segmentation_model',type=str, dest='segmentationModel', default="ctb",
-                       help='Chooses which model to use for message segmentation (CTB or PKU; Default CTB)')
+    group.add_argument('--segmentation_model',type=str, dest='segmentationModel', default="jieba",
+                       help='Chooses which model to use for message segmentation (jieba, CTB, or PKU; default jieba)')
     group.add_argument('--add_tweettok', action='store_true', dest='addtweettok',
                        help='adds tweetNLP tokenized versions of message table.')
     group.add_argument('--add_tweetpos', action='store_true', dest='addtweetpos',
@@ -837,6 +837,11 @@ def main(fn_args = None):
 
     DLAWorker.lexicon_db = args.lexicondb
 
+    if args.language != 'en':
+        if not args.useunicode:
+            print('Non-English language used. Enforcing unicode.')
+            args.useunicode = True
+
     ##Process Arguments
     def DLAW():
         return DLAWorker(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
@@ -845,10 +850,14 @@ def main(fn_args = None):
         return MessageAnnotator(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
 
     def MT():
-        return MessageTransformer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
+        return MessageTransformer(args.corpdb, args.corptable, args.correl_field, args.mysql_host,
+                                  args.message_field, args.messageid_field, args.encoding, args.useunicode,
+                                  args.lexicondb, wordTable = args.wordTable, language=args.language)
 
     def FE():
-        return FeatureExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
+        return FeatureExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field,
+                                args.messageid_field, args.encoding, args.useunicode, args.lexicondb,
+                                wordTable=args.wordTable, language=args.language)
 
     def SE():
         return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.corpdir, wordTable = args.wordTable)
@@ -1015,6 +1024,8 @@ def main(fn_args = None):
                 args.feattable = ftables[0]
 
     if args.addcharngrams:
+        if args.language == 'zh':
+            print('Warning: you are adding character n-grams in a non-alphabetic language.')
         if not fe: fe = FE()
 
         #elif args.gzipcsv:
@@ -1608,7 +1619,8 @@ def main(fn_args = None):
         if not args.tagcloud:
             print("ERROR, can't use --make_wordclouds without --tagcloud", file=sys.stderr)
             sys.exit()
-        wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True, metric=metric)
+        wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold",
+                                      toFolders=True, metric=metric, language=args.language)
 
     if args.topictc or args.corptopictc:
         if args.corptopictc: oa.lexicondb = oa.corpdb
@@ -1622,7 +1634,9 @@ def main(fn_args = None):
             print("ERROR, can't use --make_topic_wordclouds without --topic_tagcloud or --corp_topic_tagcloud", file=sys.stderr)
             sys.exit()
         print(outputFile)
-        wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True, metric=metric, keepDuplicates=args.keepduplicates)
+        wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold",
+                                      toFolders=True, metric=metric, keepDuplicates=args.keepduplicates,
+                                      language=args.language)
 
     comboCorrels = None
     if args.combormatrix:

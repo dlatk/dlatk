@@ -90,7 +90,8 @@ def wordcloud(word_list, freq_list, output_prefix='test',
     min_font_size=40, max_font_size=250, max_words=500,
     big_mask=False,
     background_color="#FFFFFF",
-    wordcloud_algorithm='ibm'):
+    wordcloud_algorithm='ibm',
+    language=dlac.DEF_LANG):
     """given a list of words and a list of their frequencies, builds a wordle"""
 
     PERMA_path = os.path.dirname(os.path.realpath(__file__))
@@ -99,7 +100,10 @@ def wordcloud(word_list, freq_list, output_prefix='test',
     if not ibm_jar.is_file(): wordcloud_algorithm = 'amueller'
 
     if font_path == "":
-        font_path = PERMA_path + "/meloche_bd.ttf"
+        if language == 'zh':  # meloche supports latin alphabet-based, but not asian languages
+            font_path = os.path.join(PERMA_path, 'open')
+        else:
+            font_path = os.path.join(PERMA_path, "/meloche_bd.ttf")
 
     if wordcloud_algorithm == 'old': #old wordcloud function
         # requires rpy2, Cairo(rpackage), Wordcloud(rpackage), extrafont(Rpackage), ImageMagick (installed on the system)
@@ -407,7 +411,8 @@ def coerceToValidFileName(filename):
     valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
     return ''.join(c for c in filename if c in valid_chars)
 
-def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="Helvetica-Narrow", fontStyle=None, toFolders=False, useTopicWords=True, metric='R', keepDuplicates=False):
+def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="Helvetica-Narrow", fontStyle=None,
+                        toFolders=False, useTopicWords=True, metric='R', keepDuplicates=False, language=dlac.DEF_LANG):
     processedFiles = {}
 
     if not directory:
@@ -565,9 +570,11 @@ def tagcloudToWordcloud(filename='', directory='', withTitle=False, fontFamily="
 
         else:
             output_filez = os.path.join(directory, filename)
-        wordcloud(ngrams, freqs,output_file, colors, rgb=False, title=title, fontFamily=fontFamily, fontStyle=fontStyle)
+        wordcloud(ngrams, freqs,output_file, colors, rgb=False, title=title, fontFamily=fontFamily,
+                  fontStyle=fontStyle, language=language)
         try:
-            wordcloud(ngrams, freqs,output_file, colors, rgb=False, title=title, fontFamily=fontFamily, fontStyle=fontStyle)
+            wordcloud(ngrams, freqs,output_file, colors, rgb=False, title=title, fontFamily=fontFamily,
+                      fontStyle=fontStyle, language=language)
         except Exception as e:
             print('WARNING: ERROR happened for file: %s'%(output_file,))
             print(e)

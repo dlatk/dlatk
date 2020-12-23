@@ -162,7 +162,8 @@ INSTALL_REQUIRES = [
   'SQLAlchemy>=0.9.9', 
   'statsmodels>=0.5.0', 
   'gensim==3.8.3',
-  'dlatk-pymallet==1.0.0'
+  'dlatk-pymallet==1.0.0',
+  'jieba==0.42.1'
 ]
 EXTRAS_REQUIRE = {
   'image': ['image'],

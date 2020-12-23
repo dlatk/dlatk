@@ -6,6 +6,8 @@ import csv
 import gzip
 import datetime
 from pprint import pprint
+
+import jieba as jieba
 from dateutil.parser import parse as dtParse
 from collections import Counter
 import traceback
@@ -56,6 +58,10 @@ offsetre = re.compile(r'p(\-?\d+)([a-z])')
 toffsetre = re.compile(r'pt(\-?\d+)([a-z])')
 TimexDateTimeTypes = frozenset(['date', 'time'])
 
+class JiebaWrapper:
+    def tokenize(self, msg):
+        return jieba.cut(msg)
+
 class FeatureExtractor(DLAWorker):
     """Deals with extracting features from text and writing tables of features
 
@@ -105,7 +111,8 @@ class FeatureExtractor(DLAWorker):
 
     ##Feature Tables ##
 
-    def addNGramTable(self, n, lowercase_only=dlac.LOWERCASE_ONLY, min_freq=1, tableName = None, valueFunc = lambda d: d, metaFeatures = True, extension = None):
+    def addNGramTable(self, n, lowercase_only=dlac.LOWERCASE_ONLY, min_freq=1, tableName = None,
+                      valueFunc = lambda d: d, metaFeatures = True, extension = None):
         """Creates feature tuples (correl_field, feature, values) table where features are ngrams
 
         Parameters
@@ -129,7 +136,10 @@ class FeatureExtractor(DLAWorker):
             Name of n-gram table: feat%ngram%corptable%correl_field%transform
         """
         ##NOTE: correl_field should have an index for this to be quick
-        tokenizer = Tokenizer(use_unicode=self.use_unicode)
+        if self.language == 'zh':
+            tokenizer = JiebaWrapper()
+        else:
+            tokenizer = Tokenizer(use_unicode=self.use_unicode)
 
         #debug:
         #print "valueFunc(30) = %f" % valueFunc(float(30)) #debug

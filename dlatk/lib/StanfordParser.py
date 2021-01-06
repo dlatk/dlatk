@@ -19,6 +19,7 @@ from pprint import pprint
 import glob
 
 from ..dlaConstants import warn, DEF_STANFORD_PARSER
+from ..textCleaner import removeNonAscii
 
 _DefaultParams ={
     'save_file' : 'parsed.data',
@@ -115,7 +116,7 @@ class StanfordParser:
 
 
 def shortenToNWords(sent, n):
-    words = sent.split()
+    words = removeNonAscii(sent)
     return ' '.join(words[:int(n)])
 
 if __name__ == "__main__":

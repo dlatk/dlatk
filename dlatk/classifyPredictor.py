@@ -1465,12 +1465,12 @@ class ClassifyPredictor:
         """
 
         weights_dict = dict()
-        unpackTopicWeights = [] 
+        unpackTopicWeights = dict()
         intercept_dict = dict()
         featTables = [fg.featureTable for fg in self.featureGetters]
         for i, featTableFeats in enumerate(self.featureNamesList):
             if "cat_" in featTables[i]:
-                unpackTopicWeights.append(featTables[i])
+                unpackTopicWeights[i] = featTables[i]
 
             weights_dict[featTables[i]] = dict()
             for outcome, model in self.classificationModels.items():
@@ -1526,14 +1526,17 @@ class ClassifyPredictor:
             if len(unpackTopicWeights) == len(weights_dict):
                 # single topic table
                 if len(unpackTopicWeights) == 1:
-                    topicFeatTable = unpackTopicWeights[0]
+                    topicFeatTable = unpackTopicWeights[list(unpackTopicWeights)[0]]
                     print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
                     weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[0], topicFeatTable, weights_dict)
                 # multiple topic tables
                 else:
                     weights_dict['words'] = dict()
-                    for idx, topicFeatTable in enumerate(unpackTopicWeights):
-                        if idx == 0: weights_dict['words'] = {o: dict() for o in weights_dict[topicFeatTable].keys()}
+                    first = True
+                    for idx, topicFeatTable in unpackTopicWeights.items():
+                        if first: 
+                            weights_dict['words'] = {o: dict() for o in weights_dict[topicFeatTable].keys()}
+                            first = False
                         print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
                         weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[idx], topicFeatTable, weights_dict)
                         for outcome, wordDict in weights_dict[topicFeatTable].items():
@@ -1547,7 +1550,7 @@ class ClassifyPredictor:
                         
             # mixed tables
             else:
-                for idx, topicFeatTable in enumerate(unpackTopicWeights):
+                for idx, topicFeatTable in unpackTopicWeights.items():
                     print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
                     weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[idx], topicFeatTable, weights_dict)
                     for featTable in weights_dict:

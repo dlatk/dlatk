@@ -832,6 +832,11 @@ class ClassifyPredictor:
                         reportStats['auc']= computeAUC(ytrue, ypredProbs, multiclass,  classes = classes)
                         reportStats['precision'] = precision_score(ytrue, ypred, average='macro')
                         reportStats['recall'] = recall_score(ytrue, ypred, average='macro')
+                        reportStats['recall_micro'] = recall_score(ytrue, ypred, average='micro')
+                        if not multiclass:
+                            reportStats['recall_sensitivity'] = recall_score(ytrue, ypred, average='binary')
+                            reportStats['recall_specificity'] = recall_score(np.abs(np.array(ytrue) - 1), np.abs(np.array(ypred)-1), average='binary')
+                        
                         
                         try:
                             reportStats['matt_ccoef'] = matthews_corrcoef(ytrue, ypred)

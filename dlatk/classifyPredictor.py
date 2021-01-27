@@ -1002,10 +1002,15 @@ class ClassifyPredictor:
                 auc = computeAUC(ytest, ypredProbs, multiclass, negatives=False,  classes = classes)
                 print(" *AUC: %.4f" % auc)
 
-            print(" *f1: %.4f " % (f1))
+            print(" *f1 (macro): %.4f " % (f1))
             print(" *matt_ccoef: %.4f " % (matt_ccoef))
             print(" *precision: %.4f " % (precision))
             print(" *recall: %.4f " % (recall))
+            if not multiclass:
+                recall_sensitivity = recall_score(ytest, ypred, average='binary')
+                recall_specificity = recall_score(np.abs(np.array(ytest) - 1), np.abs(np.array(ypred)-1), average='binary')
+                print("  *sensitivity: %.4f (at default class split)" % (recall_sensitivity))
+                print("  *specificity: %.4f (at default class split)" % (recall_specificity))
             #print(" *specificity: %.4f " % (specificity))
             
             mse = metrics.mean_squared_error(ytest, ypred)

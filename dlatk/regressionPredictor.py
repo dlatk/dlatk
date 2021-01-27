@@ -236,6 +236,9 @@ class RegressionPredictor:
         'ridge': [
             {'alpha': [1]}, 
         ],
+        'ridge100000': [
+            {'alpha': [100000]},
+        ],
         'ridge10000': [
             {'alpha': [10000]}, #topics age
         ],
@@ -405,6 +408,10 @@ class RegressionPredictor:
         'ridge100000' : 'coef_',
         'ridge1000' : 'coef_',
         'ridge100' : 'coef_',
+        'ridge10' : 'coef_',
+        'ridge1' : 'coef_',
+        'ridge1m' : 'coef_',
+        'ridge10m' : 'coef_',
         'ridgecv' : 'coef_',
         'ridgefirstpasscv' : 'coef_',
         'ridgehighcv' : 'coef_',
@@ -1466,6 +1473,8 @@ class RegressionPredictor:
                                                     multiScalers = self.multiScalers[bsModelName], \
                                                     multiFSelectors = self.multiFSelectors[bsModelName], sparse = True)
                         currentResults.append(self.regressionMetrics(ytest, ypred))
+                        #Saving the predictions to the feature table
+                        predictions[bsModelName] = dict(list(zip(thisTestGroupsOrder,ypred)))
                     resultsPerN[n] = self.averageMetrics(currentResults)
                 print(" [Done. Results:]")
                 pprint(resultsPerN)
@@ -1796,12 +1805,12 @@ class RegressionPredictor:
         """
 
         weights_dict = dict()
-        unpackTopicWeights = [] 
+        unpackTopicWeights = dict()
         intercept_dict = dict()
         featTables = [fg.featureTable for fg in self.featureGetters]
         for i, featTableFeats in enumerate(self.featureNamesList):
             if "cat_" in featTables[i]:
-                unpackTopicWeights.append(featTables[i])
+                unpackTopicWeights[i] = featTables[i]
 
             weights_dict[featTables[i]] = dict()
             for outcome, model in self.regressionModels.items():
@@ -1860,8 +1869,11 @@ class RegressionPredictor:
                 # multiple topic tables
                 else:
                     weights_dict['words'] = dict()
-                    for idx, topicFeatTable in enumerate(unpackTopicWeights):
-                        if idx == 0: weights_dict['words'] = {o: dict() for o in weights_dict[topicFeatTable].keys()}
+                    first = True
+                    for idx, topicFeatTable in unpackTopicWeights.items():
+                        if first: 
+                            weights_dict['words'] = {o: dict() for o in weights_dict[topicFeatTable].keys()}
+                            first = False
                         print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
                         weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[idx], topicFeatTable, weights_dict)
                         for outcome, wordDict in weights_dict[topicFeatTable].items():
@@ -1870,14 +1882,15 @@ class RegressionPredictor:
                                     weights_dict['words'][outcome][word] += weight
                                 else:
                                     weights_dict['words'][outcome][word] = weight
-                        print("Combining %s with %s." % (topicFeatTable, '"words"'))
+                        print(" * Combining %s with %s." % (topicFeatTable, '"words"'))
                         del weights_dict[topicFeatTable]
                         
             # mixed tables
             else:
-                for idx, topicFeatTable in enumerate(unpackTopicWeights):
+                for idx, topicFeatTable in unpackTopicWeights.items():
                     print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
                     weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[idx], topicFeatTable, weights_dict)
+
                     for featTable in weights_dict:
                         if featTable.split("$")[1].startswith(buildTable):
                             for outcome, wordDict in weights_dict[topicFeatTable].items():
@@ -1886,7 +1899,7 @@ class RegressionPredictor:
                                         weights_dict[featTable][outcome][word] += weight
                                     else:
                                         weights_dict[featTable][outcome][word] = weight
-                            print("Combining %s with %s." % (topicFeatTable, featTable))
+                            print(" * Combining %s with %s." % (topicFeatTable, featTable))
                             del weights_dict[topicFeatTable]
                             break
 

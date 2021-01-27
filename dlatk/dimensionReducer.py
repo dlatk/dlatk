@@ -49,6 +49,7 @@ from sklearn.utils import shuffle
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model.base import LinearModel
+from sklearn.cluster import SpectralClustering
 
 from scipy.stats import zscore
 from scipy.stats.stats import pearsonr, spearmanr
@@ -138,6 +139,9 @@ class DimensionReducer:
 
             'rpca': {'n_components':15, 'random_state':42, 'whiten':False, 'iterated_power':3, 'svd_solver':'randomized'},
 
+            'spectralclustering': {'n_clusters': 2},
+            'sc': {'n_clusters': 2},
+
             'fa': {'n_components': 10, 'random_state': 42},
 
             'ppa': {'D': 1}, #None defaults to original dimensions / 100
@@ -156,7 +160,9 @@ class DimensionReducer:
         'rpca' : 'PCA',#TODO: somehow update to use rpca
         'fa' : 'FactorAnalysis',
         'ppa': 'PPA',
-        'ae': 'AE'
+        'ae': 'AE',
+        'spectralclustering': 'SpectralClustering',
+        'sc': 'SpectralClustering',
         }
 
     def __init__(self, fg, modelName='nmf', og=None, n_components=None):
@@ -456,7 +462,12 @@ class DimensionReducer:
                         n_components = self.clusterModels[outcomeName].n_components_            
                     except:
                         #FA didnt have n_components_ in its class. Handling those cases
-                        n_components = len(self.clusterModels[outcomeName].components_)
+                        try:
+                            n_components = len(self.clusterModels[outcomeName].components_)
+                        except AttributeError:
+                            #must be single component (or clustering)
+                            n_components = 1
+                        
                     featNames = ["COMPONENT_"+str(i) for i in range(n_components)]
                     #featNames = list(chunkPredictions.keys())
                     featLength = max([len(s) for s in featNames])
@@ -503,8 +514,17 @@ class DimensionReducer:
             X = fSelector.transform(X)
 
         print("[ Running dim reducer]:%s\n"%str(cluster))
-        
-        return cluster.transform(X)
+
+        try:
+            return cluster.transform(X)
+        except AttributeError:
+            try: 
+                return cluster.predict(X)
+            except AttributeError:
+                warn("Warning: Refitting model before predicting")
+                preds = cluster.fit_predict(X)
+                #print(preds) #DEBUG
+                return preds.reshape((len(preds), 1))
     
     def modelToLexicon(self):
         lexicons = dict()

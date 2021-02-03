@@ -23,6 +23,7 @@ except ImportError:
     pass
 
 import pandas as pd
+
 try:
     import pandas.rpy.common as com
 except ImportError:
@@ -35,14 +36,26 @@ from itertools import combinations
 
 # scikit-learn imports
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV 
-from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF, SparsePCA, FactorAnalysis
+from sklearn.model_selection import (
+    StratifiedKFold,
+    KFold,
+    ShuffleSplit,
+    train_test_split,
+    GridSearchCV,
+)
+from sklearn.decomposition import (
+    MiniBatchSparsePCA,
+    PCA,
+    KernelPCA,
+    NMF,
+    SparsePCA,
+    FactorAnalysis,
+)
 from sklearn import metrics
 from sklearn.feature_selection import f_regression, SelectPercentile, SelectKBest
 from sklearn.utils import shuffle
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model.base import LinearModel
 
 from scipy.stats import zscore
 from scipy.stats.stats import pearsonr, spearmanr
@@ -52,11 +65,14 @@ from numpy import sqrt, outer
 from numpy.linalg import norm
 import math
 
+
 def alignDictsAsXy(X, y, sparse=False, returnKeyList=False):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
     keys = frozenset(list(y.keys()))
     if sparse:
-        keys = keys.intersection([item for sublist in X for item in sublist])  # union X keys
+        keys = keys.intersection(
+            [item for sublist in X for item in sublist]
+        )  # union X keys
     else:
         keys = keys.intersection(*[list(x.keys()) for x in X])  # intersect X keys
     keys = list(keys)  # to make sure it stays in order
@@ -79,14 +95,12 @@ def alignDictsAsXy(X, y, sparse=False, returnKeyList=False):
         else:
             return (sparseX, listy)
 
-        
-    else: 
+    else:
         listX = [[x[k] for x in X] for k in keys]
         if returnKeyList:
             return (listX, listy, keys)
         else:
             return (listX, listy)
-
 
 
 class DimensionReducer:
@@ -105,48 +119,62 @@ class DimensionReducer:
     # featureSelectionString = 'PCA(n_components=min(int(X.shape[1]*.10), int(X.shape[0]/2)), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")'
     # featureSelectionString = 'PCA(n_components=min(int(X.shape[1]*.02), X.shape[0]), whiten=False)'
     # featureSelectionString = 'PCA(n_components=None, whiten=False)'
-    # featureSelectionString = 'KernelPCA(n_components=int(X.shape[1]*.02), kernel="rbf", degree=3, eigen_solver="auto")'  
+    # featureSelectionString = 'KernelPCA(n_components=int(X.shape[1]*.02), kernel="rbf", degree=3, eigen_solver="auto")'
     # featureSelectionString = \
     #    'MiniBatchSparsePCA(n_components=int(X.shape[1]*.05), random_state=42, alpha=0.01, chunk_size=20, n_jobs=self.cvJobs)'
 
     featureSelectPerc = 1.00  # only perform feature selection on a sample of training (set to 1 to perform on all)
     # featureSelectPerc = 0.20 #only perform feature selection on a sample of training (set to 1 to perform on all)
 
-    testPerc = .20  # percentage of sample to use as test set (the rest is training)
+    testPerc = 0.20  # percentage of sample to use as test set (the rest is training)
     randomState = 42  # percentage of sample to use as test set (the rest is training)
-    
+
     params = {
-            #'nmf' : { 'n_components': 15, 'init': 'nndsvd', 'sparseness': None, 'beta': 1, 'eta' : 0.1, 'tol': .0001, 'max_iter' : 200, 'nls_max_iter': 2000, 'random_state' :42 },
-            #'nmf' : { 'n_components': 30, 'init': 'nndsvd', 'solver':'cd', 'l1_ratio': 0.95, 'alpha': 10, 'max_iter' : 200, 'random_state' :42 },
-            'nmf' : { 'n_components': 30, 'init': 'nndsvd', 'random_state' :42 },
-
-            'pca' : { 'n_components': 'mle', 'whiten': False},
-            #'pca' : { 'n_components': 'mle', 'whiten': True},
-
-            #'sparsepca': {'n_components':None, 'alpha':1, 'ridge_alpha':0.01, 'method': 'lars', 'n_jobs':4, 'random_state':42},
-            'sparsepca': {'n_components':50, 'alpha':1, 'ridge_alpha':0.01, 'method': 'cd', 'n_jobs':8, 'random_state':42},
-            'mbsparsepca': {'n_components':50, 'alpha':1, 'batch_size':10, 'ridge_alpha':0.01, 'method': 'cd', 'n_jobs':8, 'random_state':42},
-            
-            'lda': { 'nb_topics':50, 'dictionary':None, 'alpha':None },
-
-            'rpca': {'n_components':15, 'random_state':42, 'whiten':False, 'iterated_power':3},
-
-            'fa': {'n_components': 10, 'random_state': 42}
-    
-            }
+        #'nmf' : { 'n_components': 15, 'init': 'nndsvd', 'sparseness': None, 'beta': 1, 'eta' : 0.1, 'tol': .0001, 'max_iter' : 200, 'nls_max_iter': 2000, 'random_state' :42 },
+        #'nmf' : { 'n_components': 30, 'init': 'nndsvd', 'solver':'cd', 'l1_ratio': 0.95, 'alpha': 10, 'max_iter' : 200, 'random_state' :42 },
+        "nmf": {"n_components": 30, "init": "nndsvd", "random_state": 42},
+        "pca": {"n_components": "mle", "whiten": False},
+        #'pca' : { 'n_components': 'mle', 'whiten': True},
+        #'sparsepca': {'n_components':None, 'alpha':1, 'ridge_alpha':0.01, 'method': 'lars', 'n_jobs':4, 'random_state':42},
+        "sparsepca": {
+            "n_components": 50,
+            "alpha": 1,
+            "ridge_alpha": 0.01,
+            "method": "cd",
+            "n_jobs": 8,
+            "random_state": 42,
+        },
+        "mbsparsepca": {
+            "n_components": 50,
+            "alpha": 1,
+            "batch_size": 10,
+            "ridge_alpha": 0.01,
+            "method": "cd",
+            "n_jobs": 8,
+            "random_state": 42,
+        },
+        "lda": {"nb_topics": 50, "dictionary": None, "alpha": None},
+        "rpca": {
+            "n_components": 15,
+            "random_state": 42,
+            "whiten": False,
+            "iterated_power": 3,
+        },
+        "fa": {"n_components": 10, "random_state": 42},
+    }
 
     # maps the identifier of the algorithm used to the actual class name from the module
     modelToClassName = {
-        'nmf' : 'NMF',
-        'pca' : 'PCA',
-        'sparsepca': 'SparsePCA',
-        'mbsparsepca': 'MiniBatchSparsePCA',
-        'lda' : 'LDA',
-        'rpca' : 'PCA',#TODO: somehow update to use rpca
-        'fa' : 'FactorAnalysis'
-        }
+        "nmf": "NMF",
+        "pca": "PCA",
+        "sparsepca": "SparsePCA",
+        "mbsparsepca": "MiniBatchSparsePCA",
+        "lda": "LDA",
+        "rpca": "PCA",  # TODO: somehow update to use rpca
+        "fa": "FactorAnalysis",
+    }
 
-    def __init__(self, fg, modelName='nmf', og=None, n_components=None):
+    def __init__(self, fg, modelName="nmf", og=None, n_components=None):
         # initialize regression predictor
         self.outcomeGetter = og
         self.featureGetter = fg
@@ -157,7 +185,7 @@ class DimensionReducer:
 
         # scales the data in the matrix
         self.scalers = dict()
-        
+
         # selects appropriate features/columns
         self.fSelectors = dict()
 
@@ -165,26 +193,30 @@ class DimensionReducer:
 
         if n_components:
             self._set_n_components(modelName, n_components)
-            
 
     def _set_n_components(self, modelName, n_components):
-        try: 
+        try:
             self.params[modelName]
         except:
-            warn("Model %s not recognized. Try: %s" % (modelName, ", ".join(self.params.keys())))
+            warn(
+                "Model %s not recognized. Try: %s"
+                % (modelName, ", ".join(self.params.keys()))
+            )
             sys.exit()
-        if modelName == 'lda':
-            component_name = 'nb_topics'
+        if modelName == "lda":
+            component_name = "nb_topics"
         else:
-            component_name = 'n_components'
+            component_name = "n_components"
         try:
             n_components = int(n_components)
         except:
             n_components = self.params[modelName][component_name]
-            warn("n_components must be integer valued. Setting to default: %s" % n_components)
+            warn(
+                "n_components must be integer valued. Setting to default: %s"
+                % n_components
+            )
 
         self.params[modelName][component_name] = n_components
-
 
     def fit(self, standardize=True, sparse=False, restrictToGroups=None):
         """Create clusters"""
@@ -193,19 +225,25 @@ class DimensionReducer:
         print()
         # 1. get data possible ys (outcomes)
         groups = []
-        #list of control values for groups
+        # list of control values for groups
         controlValues = None
         allOutcomes = None
-        if self.outcomeGetter != None: # and self.outcomeGetter.hasOutcomes():
+        if self.outcomeGetter != None:  # and self.outcomeGetter.hasOutcomes():
             (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
-            if restrictToGroups:  # restrict to groups 
+            if restrictToGroups:  # restrict to groups
                 groups = groups.intersection(restrictToGroups)
                 for outcomeName, outcomes in allOutcomes.items():
-                    allOutcomes[outcomeName] = dict([(g, outcomes[g]) for g in groups if (g in outcomes)])
+                    allOutcomes[outcomeName] = dict(
+                        [(g, outcomes[g]) for g in groups if (g in outcomes)]
+                    )
                 for controlName, controlValues in controls.items():
-                    controls[controlName] = dict([(g, controlValues[g]) for g in groups])
+                    controls[controlName] = dict(
+                        [(g, controlValues[g]) for g in groups]
+                    )
             print("[number of groups: %d]" % len(groups))
-            controlValues = list(controls.values())  # list of dictionaries of group=>group_norm
+            controlValues = list(
+                controls.values()
+            )  # list of dictionaries of group=>group_norm
         elif restrictToGroups:
             print("[Not using outcomes]")
             groups = restrictToGroups
@@ -213,25 +251,47 @@ class DimensionReducer:
         # 2. get data for X:
         (groupNorms, featureNames) = (None, None)
         if sparse:
-            (groupNorms, featureNames) = self.featureGetter.getGroupNormsSparseFeatsFirst(groups)
+            (
+                groupNorms,
+                featureNames,
+            ) = self.featureGetter.getGroupNormsSparseFeatsFirst(groups)
         else:
-            (groupNorms, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups)
+            (
+                groupNorms,
+                featureNames,
+            ) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups)
 
-        self.featureNames = list(groupNorms.keys())  # holds the order to expect features
-        groupNormValues = list(groupNorms.values())  # list of dictionaries of group => group_norm
-        
-    #     this will return a dictionary of dictionaries
+        self.featureNames = list(
+            groupNorms.keys()
+        )  # holds the order to expect features
+        groupNormValues = list(
+            groupNorms.values()
+        )  # list of dictionaries of group => group_norm
+
+        #     this will return a dictionary of dictionaries
 
         # 3. Create models for each possible y:
         if allOutcomes:
             for outcomeName, outcomes in allOutcomes.items():
-                print("\n= %s =\n%s" % (outcomeName, '-' * (len(outcomeName) + 4)))
+                print("\n= %s =\n%s" % (outcomeName, "-" * (len(outcomeName) + 4)))
                 print("[Aligning Dicts to get X and y]")
-                (X, y) = alignDictsAsXy(groupNormValues + controlValues, outcomes, sparse)
-                (self.clusterModels[outcomeName], self.scalers[outcomeName], self.fSelectors[outcomeName]) = self._fit(X, y, standardize)
+                (X, y) = alignDictsAsXy(
+                    groupNormValues + controlValues, outcomes, sparse
+                )
+                (
+                    self.clusterModels[outcomeName],
+                    self.scalers[outcomeName],
+                    self.fSelectors[outcomeName],
+                ) = self._fit(X, y, standardize)
         else:
-            X = alignDictsAsX(groupNormValues + controlValues, sparse, returnKeyList= False)
-            (self.clusterModels['noOutcome'], self.scalers['noOutcome'], self.fSelectors['noOutcome']) = self._fit(X, standardize)
+            X = alignDictsAsX(
+                groupNormValues + controlValues, sparse, returnKeyList=False
+            )
+            (
+                self.clusterModels["noOutcome"],
+                self.scalers["noOutcome"],
+                self.fSelectors["noOutcome"],
+            ) = self._fit(X, standardize)
 
     def _fit(self, X, y=[], standardize=True, rotate=False):
         """does the actual regression training, can be used by both train and test"""
@@ -240,20 +300,20 @@ class DimensionReducer:
         if not isinstance(X, csr_matrix):
             X = np.array(X)
             sparse = False
-     
+
         scaler = None
         if standardize == True:
             scaler = StandardScaler(with_mean=not sparse)
             print("[Applying StandardScaler to X: %s]" % str(scaler))
             X = scaler.fit_transform(X)
 
-        if 'nmf' in self.modelName.lower():
+        if "nmf" in self.modelName.lower():
             minX = X.min()
-            X = X + (minX*-1)
+            X = X + (minX * -1)
 
-        #if y:
+        # if y:
         #    y = np.array(y)
-        
+
         print(" (N, features): %s" % str(X.shape))
 
         fSelector = None
@@ -263,19 +323,18 @@ class DimensionReducer:
             X = fSelector.fit_transform(X, y)
             print(" after feature selection: (N, features): %s" % str(X.shape))
 
-
         # no grid search
         print("[Doing clustering using : %s]" % self.modelName.lower())
-        cluster = eval(self.modelToClassName[self.modelName.lower()] + '()')
-        if 'lda' in self.modelName.lower():
-            self.params['lda']['dictionary'] = self.featureNames        
-        cluster.set_params( **self.params[self.modelName.lower()])
+        cluster = eval(self.modelToClassName[self.modelName.lower()] + "()")
+        if "lda" in self.modelName.lower():
+            self.params["lda"]["dictionary"] = self.featureNames
+        cluster.set_params(**self.params[self.modelName.lower()])
 
         if y:
-            cluster.fit(X,y)
+            cluster.fit(X, y)
         else:
             cluster.fit(X)
-            
+
         # print("components:")
         # print(cluster.components_)
         print("model: %s " % str(cluster))
@@ -284,9 +343,9 @@ class DimensionReducer:
             XFCC = cluster.components_.T
             R, T = rotate_promax(XFCC)
             cluster.components_ = R
-     
+
         return cluster, scaler, fSelector
-    
+
     def transform(self, standardize=True, sparse=False, restrictToGroups=None):
         groups = []
         controlValues = None
@@ -296,20 +355,32 @@ class DimensionReducer:
             if restrictToGroups:  # restrict to groups
                 groups = groups.intersection(restrictToGroups)
                 for outcomeName, outcomes in allOutcomes.items():
-                    allOutcomes[outcomeName] = dict([(g, outcomes[g]) for g in groups if (g in outcomes)])
+                    allOutcomes[outcomeName] = dict(
+                        [(g, outcomes[g]) for g in groups if (g in outcomes)]
+                    )
                 for controlName, controlValues in controls.items():
-                    controls[controlName] = dict([(g, controlValues[g]) for g in groups])
+                    controls[controlName] = dict(
+                        [(g, controlValues[g]) for g in groups]
+                    )
             print("[number of groups: %d]" % len(groups))
-            controlValues = list(controls.values())  # list of dictionaries of group=>group_norm
+            controlValues = list(
+                controls.values()
+            )  # list of dictionaries of group=>group_norm
         elif restrictToGroups:
             groups = restrictToGroups
 
         # 2. get data for X:
         (groupNorms, featureNames) = (None, None)
         if sparse:
-            (groupNorms, featureNames) = self.featureGetter.getGroupNormsSparseFeatsFirst(groups)
+            (
+                groupNorms,
+                featureNames,
+            ) = self.featureGetter.getGroupNormsSparseFeatsFirst(groups)
         else:
-            (groupNorms, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups)
+            (
+                groupNorms,
+                featureNames,
+            ) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups)
 
         groupNormValues = []
         transformGroups = None
@@ -318,91 +389,112 @@ class DimensionReducer:
             if feat in groupNorms:
                 groupNormValues.append(groupNorms[feat])
             else:
-                if sparse: #assumed all zeros
+                if sparse:  # assumed all zeros
                     groupNormValues.append(dict())
-                else: #need to insert 0s
+                else:  # need to insert 0s
                     if not transformGroups:
-                        transformGroups = list(groupNorms[next(iter(groupNorms.keys()))].keys())
+                        transformGroups = list(
+                            groupNorms[next(iter(groupNorms.keys()))].keys()
+                        )
                     groupNormValues.append(dict([(k, 0.0) for k in transformGroups]))
-        #groupNormValues = groupNorms.values() #list of dictionaries of group => group_norm
+        # groupNormValues = groupNorms.values() #list of dictionaries of group => group_norm
         print("number of features after alignment: %d" % len(groupNormValues))
         transformedX = dict()
         group_ids = []
         if allOutcomes:
             for outcomeName, outcomes in allOutcomes.items():
-                print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
-                X, group_ids = alignDictAsX(groupNormValues + controlValues, sparse, returnKeyList=True)
-                (cluster, scaler, fSelector) = (self.clusterModels[outcomeName], self.scalers[outcomeName], self.fSelectors[outcomeName])
+                print("\n= %s =\n%s" % (outcomeName, "-" * (len(outcomeName) + 4)))
+                X, group_ids = alignDictAsX(
+                    groupNormValues + controlValues, sparse, returnKeyList=True
+                )
+                (cluster, scaler, fSelector) = (
+                    self.clusterModels[outcomeName],
+                    self.scalers[outcomeName],
+                    self.fSelectors[outcomeName],
+                )
                 transformedX[outcomeName] = _transform(cluster, scaler, fSelector)
         else:
-            X, group_ids = alignDictAsX(groupNormValues + controlValues, sparse, returnKeyList=True)
-            (cluster, scaler, fSelector) = (self.clusterModels['noOutcome'], self.scalers['noOutcome'], self.fSelectors['noOutcome'])
-            transformedX['noOutcome'] = _transform(cluster, scaler, fSelector)
-            
-        for outcomeName, outcomeX  in transformedX.items():
+            X, group_ids = alignDictAsX(
+                groupNormValues + controlValues, sparse, returnKeyList=True
+            )
+            (cluster, scaler, fSelector) = (
+                self.clusterModels["noOutcome"],
+                self.scalers["noOutcome"],
+                self.fSelectors["noOutcome"],
+            )
+            transformedX["noOutcome"] = _transform(cluster, scaler, fSelector)
+
+        for outcomeName, outcomeX in transformedX.items():
             if not isinstance(outcomeX, csr_matrix):
                 dictX = dict()
                 (n, m) = outcomeX.shape
                 for j in range(m):
                     dictX[group_ids[j]] = dict()
                     for i in range(n):
-                        dictX[group_ids[j]]['rfeat'+str(i)]= outcomeX[i][j]
+                        dictX[group_ids[j]]["rfeat" + str(i)] = outcomeX[i][j]
                 transformedX[outcomeName] = dictX
             else:
                 raise NotImplementedError
-        
+
         return transformedX
-    
-    def _transform(self, cluster, X, scaler = None, fSelector = None, y = None):
+
+    def _transform(self, cluster, X, scaler=None, fSelector=None, y=None):
         if scaler:
             X = scaler.transform(X)
         if fSelector:
             X = fSelector.transform(X)
-        
+
         return cluster.transform(X)
-    
+
     def modelToLexicon(self):
         lexicons = dict()
         for outcomeName, model in self.clusterModels.items():
             reduction_dict = dict()
             if self.fSelectors[outcomeName]:
-                print('Error: Does not handle writing models with feature selection to a lexicon (yet)')
+                print(
+                    "Error: Does not handle writing models with feature selection to a lexicon (yet)"
+                )
                 raise NotImplementedError
             component_mat = model.components_
-            (n,m) = component_mat.shape
-            print('components shape : %s', str(component_mat.shape))
+            (n, m) = component_mat.shape
+            print("components shape : %s", str(component_mat.shape))
             for i in range(n):
-                reduction_dict['component_'+str(i)] = dict()
+                reduction_dict["component_" + str(i)] = dict()
                 for j in range(m):
-                     if abs(component_mat[i][j]) > 0:
-                         #print "feature name: %s"% self.featureNames[j] 
-                         reduction_dict['component_'+str(i)][self.featureNames[j]] = component_mat[i][j]
+                    if abs(component_mat[i][j]) > 0:
+                        # print "feature name: %s"% self.featureNames[j]
+                        reduction_dict["component_" + str(i)][
+                            self.featureNames[j]
+                        ] = component_mat[i][j]
             lexicons[outcomeName] = reduction_dict
-        #print(lexicons)#debug
+        # print(lexicons)#debug
         return lexicons
-        
+
     ######################
     def load(self, filename):
         print("[Loading %s]" % filename)
-        f = open(filename, 'rb')
+        f = open(filename, "rb")
         tmp_dict = pickle.load(f)
-        f.close()          
+        f.close()
 
-        self.__dict__.update(tmp_dict) 
+        self.__dict__.update(tmp_dict)
 
     def save(self, filename):
         print("[Saving %s]" % filename)
-        f = open(filename, 'wb')
-        toDump = {'modelName': self.modelName,
-                  'clusterModels': self.clusterModels,
-                  'scalers' : self.scalers,
-                  'fSelectors' : self.fSelectors,
-                  'featureNames' : self.featureNames
-                  }
+        f = open(filename, "wb")
+        toDump = {
+            "modelName": self.modelName,
+            "clusterModels": self.clusterModels,
+            "scalers": self.scalers,
+            "fSelectors": self.fSelectors,
+            "featureNames": self.featureNames,
+        }
         pickle.dump(toDump, f, 2)
         f.close()
 
-#class LDA (BaseReducerClass)
+
+# class LDA (BaseReducerClass)
+
 
 def chunks(X, y, size):
     """ Yield successive n-sized chunks from l."""
@@ -410,9 +502,9 @@ def chunks(X, y, size):
         assert len(X) == len(y), "chunks: size of X and y don't match"
     size = max(len(y), size)
 
-    
     for i in range(0, len(y), size):
-        yield X[i:i + size], y[i:i + size]
+        yield X[i : i + size], y[i : i + size]
+
 
 def hasMultValuesPerItem(listOfD):
     """returns true if the dictionary has a list with more than one element"""
@@ -420,8 +512,10 @@ def hasMultValuesPerItem(listOfD):
         return True
     for d in listOfD:
         for value in d.values():
-            if len(value) > 1: return True
+            if len(value) > 1:
+                return True
     return False
+
 
 def r2simple(ytrue, ypred):
     y_mean = sum(ytrue) / float(len(ytrue))
@@ -431,29 +525,33 @@ def r2simple(ytrue, ypred):
     return r2
 
 
-
 ###############################################
 ## Matlab Static Methods:
 
 
 def rotate_promax(X):
     import matlab.engine
+
     eng = matlab.engine.start_matlab()
 
-    gamma = (X.shape[1]/2.0)
+    gamma = X.shape[1] / 2.0
     print(gamma, X.shape)
     XM = matlab.double(X.tolist())
-    R, T = eng.rotatefactors(XM, 'Method', 'promax', 'Coeff',gamma, 'Maxit', 1000, nargout=2)
+    R, T = eng.rotatefactors(
+        XM, "Method", "promax", "Coeff", gamma, "Maxit", 1000, nargout=2
+    )
     R = np.array(R)
     T = np.array(T)
     return R, T
 
+
 def rotate_varimax(X):
     import matlab.engine
+
     eng = matlab.engine.start_matlab()
 
     XM = matlab.double(X.tolist())
-    R, T = eng.rotatefactors(XM, 'Maxit', 1000, nargout=2)
+    R, T = eng.rotatefactors(XM, "Maxit", 1000, nargout=2)
     R = np.array(R)
     T = np.array(T)
     return R, T
@@ -461,7 +559,7 @@ def rotate_varimax(X):
 
 class CCA:
     """Handles CCA analyses of language and outcomes"""
-    
+
     def __init__(self, fg, og, numComponents=15):
         try:
             import pandas.rpy.common as com
@@ -472,12 +570,13 @@ class CCA:
         self.outcomeGetter = og
         self.featureGetter = fg
         self.numComponents = numComponents
-        self.model = {'u': None, # Pandas DF so we have the list of outcomes and topics
-                      'v': None, # Pandas DF so we have the list of outcomes and topics
-                      'd': None  # Vector
-                  }
+        self.model = {
+            "u": None,  # Pandas DF so we have the list of outcomes and topics
+            "v": None,  # Pandas DF so we have the list of outcomes and topics
+            "d": None,  # Vector
+        }
 
-    def saveModel(self,filename):
+    def saveModel(self, filename):
         print("Saving model to %s" % filename)
         with open(filename, "wb+") as f:
             pickle.dump(self.model, f)
@@ -486,7 +585,7 @@ class CCA:
         print("Loading model from %s" % filename)
         with open(filename, "rb") as f:
             self.model = pickle.load(f)
-        
+
     def RsoftImpute(self, X):
         try:
             softImpute = importr("softImpute")
@@ -495,14 +594,16 @@ class CCA:
             sys.exit(1)
         try:
             X = com.convert_to_r_dataframe(X)
-            X = softImpute.complete(X,softImpute.softImpute(softImpute.biScale(X, maxit = 100)))
+            X = softImpute.complete(
+                X, softImpute.softImpute(softImpute.biScale(X, maxit=100))
+            )
             X = com.convert_robj(X)
         except NameError:
             warn("pandas.rpy.common cannot be imported")
             sys.exit(1)
         return X
 
-    def prepMatricesTogether(self, X, Z, NAthresh = 4):
+    def prepMatricesTogether(self, X, Z, NAthresh=4):
         """\tConcatenates X and Z, then completes the resulting matrix, splits the matrix back"""
 
         print("Performing SoftImpute on the concatenated controls+outcomes matrix")
@@ -510,14 +611,16 @@ class CCA:
         Zcols = Z.columns
         Xcols = X.columns
 
-        Z = pd.concat([Z,X], axis=1)
+        Z = pd.concat([Z, X], axis=1)
 
         ## Cleaning the outcome table
         ## removing counties that have less than NAthresh4 diseases
-        Z = Z[Z.apply(lambda x: sum(1 for i in x if not np.isnan(i)), axis=1) >= NAthresh]
+        Z = Z[
+            Z.apply(lambda x: sum(1 for i in x if not np.isnan(i)), axis=1) >= NAthresh
+        ]
 
         Zfreqs = Z[Zcols].apply(lambda x: sum(1 for i in x if not np.isnan(i)))
-        
+
         Z = self.RsoftImpute(Z)
         Z.columns = [z.strip("X") for z in Z.columns]
 
@@ -527,17 +630,19 @@ class CCA:
 
         X = Z[Xcols]
         Z = Z[Zcols]
- 
+
         Zfreqs.index = Z.columns
-        
+
         Ngroups = X.shape[0]
 
         return X, Z, Xfreqs.to_dict(), Zfreqs.to_dict()
-        
-    def prepMatrices(self, X, Z, NAthresh = 4, softImputeXtoo = False, softImputeXZtogether = False):
+
+    def prepMatrices(
+        self, X, Z, NAthresh=4, softImputeXtoo=False, softImputeXZtogether=False
+    ):
         """Completes matrices that are incomplete, imputes rows that don't have enough data (NAthresh), and aligns the rows"""
 
-        #with open("countyDiseaseData.pickle", "wb+") as f:
+        # with open("countyDiseaseData.pickle", "wb+") as f:
         #    pickle.dump((X,Z), f)
         #    print "Dumped data to countyDiseaseData.pickle"
 
@@ -545,19 +650,23 @@ class CCA:
             # Concatenate matrices together
             oldZ = Z
             oldX = X
-            Z = pd.concat([Z,X], axis=1)
+            Z = pd.concat([Z, X], axis=1)
 
         ## Cleaning the outcome table
         ## removing counties that have less than NAthresh4 diseases
-        Z = Z[Z.apply(lambda x: sum(1 for i in x if not np.isnan(i)), axis=1) >= NAthresh]
+        Z = Z[
+            Z.apply(lambda x: sum(1 for i in x if not np.isnan(i)), axis=1) >= NAthresh
+        ]
         Zfreqs = Z.apply(lambda x: sum(1 for i in x if not np.isnan(i)))
-        
-        Z = self.RsoftImpute(Z)
 
+        Z = self.RsoftImpute(Z)
 
         # Removing groups that didn't make the NAN criterion
         if softImputeXtoo:
-            X = X[X.apply(lambda x: sum(1 for i in x if not np.isnan(i)), axis=1) >= NAthresh]
+            X = X[
+                X.apply(lambda x: sum(1 for i in x if not np.isnan(i)), axis=1)
+                >= NAthresh
+            ]
         Xfreqs = X.apply(lambda x: sum(1 for i in x if not np.isnan(i)))
         if softImputeXtoo:
             X = self.RsoftImpute(X)
@@ -565,22 +674,26 @@ class CCA:
 
         X = X[X.index.isin(Z.index)]
         Z = Z[Z.index.isin(X.index)]
- 
+
         Zfreqs.index = Z.columns
-        
+
         Ngroups = X.shape[0]
 
         return X, Z, Xfreqs.to_dict(), Zfreqs.to_dict()
 
-
-    def predictCompsToSQL(self,tablename=None,  csv = False, outputname = None, NAthresh = 4, useXmatrix = False):
+    def predictCompsToSQL(
+        self, tablename=None, csv=False, outputname=None, NAthresh=4, useXmatrix=False
+    ):
         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
         # groups: set(group_ids)
         # allOutcomes: {outcome: {group_id: value}}
         # controls: {control: {group_id: value}}
         dataDict = {}
         if useXmatrix:
-            (groupNorms, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups)
+            (
+                groupNorms,
+                featureNames,
+            ) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups)
             # groupNorms: {feat: {group_id: group_norm}}
             dataDict = groupNorms
         else:
@@ -593,53 +706,61 @@ class CCA:
         df = pd.DataFrame(data=dataDict)
         df = df[df.apply(lambda x: sum(1 for i in x if not np.isnan(i)), axis=1) >= 4]
         df = self.RsoftImpute(df)
-        comps = self.model['u'] if useXmatrix else self.model['v']
+        comps = self.model["u"] if useXmatrix else self.model["v"]
 
-        assert comps.shape[0] == df.shape[1], "Number of outcomes (& controls) is wrong. Please see wiki.wwbp.org on how to fix this."
-        C = pd.DataFrame(np.dot(df, comps), index = df.index, columns = comps.columns)
+        assert (
+            comps.shape[0] == df.shape[1]
+        ), "Number of outcomes (& controls) is wrong. Please see wiki.wwbp.org on how to fix this."
+        C = pd.DataFrame(np.dot(df, comps), index=df.index, columns=comps.columns)
 
         if csv:
             fn = outputname
-            if fn[-4:] != '.csv': fn += '.csv'
-            C.to_csv(open(fn,"w+"), index_label = self.outcomeGetter.correl_field)
+            if fn[-4:] != ".csv":
+                fn += ".csv"
+            C.to_csv(open(fn, "w+"), index_label=self.outcomeGetter.correl_field)
         if tablename:
             self.outcomeGetter.createOutcomeTable(tablename, C)
 
         return C
-    
+
     def _cca(self, X, Z, **params):
         """Given two Pandas dataframes and a set of parameters, performs CCA
         returns CCA dict (converted from R CCA named list object)
         """
-        
+
         pma = importr("PMA")
-        
+
         # Defaults:
-        kwParams = {"typex": "standard",
-                    "typez": "standard",
-                    "trace": False,
-                    "K": self.numComponents,
+        kwParams = {
+            "typex": "standard",
+            "typez": "standard",
+            "trace": False,
+            "K": self.numComponents,
         }
         kwParams.update(params)
-        
+
         if isinstance(X, pd.core.frame.DataFrame):
             X = com.convert_to_r_dataframe(X)
         if isinstance(Z, pd.core.frame.DataFrame):
             Z = com.convert_to_r_dataframe(Z)
 
-        assert isinstance(X, ro.vectors.DataFrame) and isinstance(Z, ro.vectors.DataFrame), "X, Z need to be either Pandas DataFrames or R dataframes!"
+        assert isinstance(X, ro.vectors.DataFrame) and isinstance(
+            Z, ro.vectors.DataFrame
+        ), "X, Z need to be either Pandas DataFrames or R dataframes!"
 
-        assert self.numComponents <= min(len(X.names),len(Z.names)), "Number of components must be smaller than the minimum of columns in each of your matrices"
+        assert self.numComponents <= min(
+            len(X.names), len(Z.names)
+        ), "Number of components must be smaller than the minimum of columns in each of your matrices"
 
         nGroups = com.convert_robj(ro.r["nrow"](X)[0])
-        
+
         print("\tCCA parameters:", kwParams)
         cca = pma.CCA(X, Z, **kwParams)
-        cca = {k:v for k, v in list(cca.items())}
-        cca['nGroups'] = nGroups
+        cca = {k: v for k, v in list(cca.items())}
+        cca["nGroups"] = nGroups
         return cca
-        
-    def ccaOutcomesVsControls(self, penaltyX = None, penaltyZ = None, NAthresh = 4):
+
+    def ccaOutcomesVsControls(self, penaltyX=None, penaltyZ=None, NAthresh=4):
         """Performs CCA using controls and outcomes, no language"""
         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
         # groups: set(group_ids)
@@ -651,84 +772,106 @@ class CCA:
         Xdict = controls
 
         # R doesn't handle '$'s in column names
-        Xdict = {k.replace('$','.'):v for k, v in Xdict.items()}
-        Zdict = {k.replace('$','.'):v for k, v in Zdict.items()}
+        Xdict = {k.replace("$", "."): v for k, v in Xdict.items()}
+        Zdict = {k.replace("$", "."): v for k, v in Zdict.items()}
 
         Xdf = pd.DataFrame(data=Xdict)
         Zdf = pd.DataFrame(data=Zdict)
-        
+
         # X, Z, Xfreqs, Zfreqs = self.prepMatrices(Xdf,Zdf, NAthresh = NAthresh, softImputeXtoo=True)
-        X, Z, Xfreqs, Zfreqs = self.prepMatricesTogether(Xdf,Zdf, NAthresh = NAthresh)
+        X, Z, Xfreqs, Zfreqs = self.prepMatricesTogether(Xdf, Zdf, NAthresh=NAthresh)
         kwParams = {}
-        if penaltyX: kwParams['penaltyx'] = penaltyX
-        if penaltyZ: kwParams['penaltyz'] = penaltyZ
+        if penaltyX:
+            kwParams["penaltyx"] = penaltyX
+        if penaltyZ:
+            kwParams["penaltyz"] = penaltyZ
         # kwParams['upos'] = True
         # kwParams['vneg'] = True
 
-        cca = self._cca(X,Z, **kwParams)
-        
+        cca = self._cca(X, Z, **kwParams)
+
         try:
-            Xcomp = com.convert_robj(cca['u']) # Controls
-            Zcomp = com.convert_robj(cca['v']) # Outcomes
-            d = com.convert_robj(cca['d']) # Something
+            Xcomp = com.convert_robj(cca["u"])  # Controls
+            Zcomp = com.convert_robj(cca["v"])  # Outcomes
+            d = com.convert_robj(cca["d"])  # Something
         except NameError:
             warn("pandas.rpy.common cannot be imported")
             sys.exit(1)
 
         self.model = {
-            'u': Xcomp,
-            'v': Zcomp,
-            'd': d,
+            "u": Xcomp,
+            "v": Zcomp,
+            "d": d,
         }
 
         featureNames = X.columns
         Xcomp.index = [i.strip("X") for i in featureNames]
-        Xfreqs = {k.strip("X"): v for k,v in Xfreqs.items()}
+        Xfreqs = {k.strip("X"): v for k, v in Xfreqs.items()}
         Xcomp.columns = ["%.2d_comp" % i for i in range(Xcomp.shape[1])]
 
         outcomeNames = Z.columns
         Zcomp.index = [i.strip("X") for i in outcomeNames]
-        Zfreqs = {k.strip("X"): v for k,v in Zfreqs.items()}
+        Zfreqs = {k.strip("X"): v for k, v in Zfreqs.items()}
         Zcomp.columns = ["%.2d_comp" % i for i in range(Zcomp.shape[1])]
-        
-        Zcomp2 = pd.concat([Xcomp, Zcomp])
-        
-        Xcomp_dict = {k: {i:(j,
-                             0.0 if j != 0 else 1,
-                             cca["nGroups"],
-                             (0,0) if j != 0 else (1,1),
-                             Xfreqs[i]) for i, j in v.items()} for k, v in Xcomp.to_dict().items()}
-        Zcomp_dict = {k: {i:(j,0.0 if j != 0 else 1,cca["nGroups"],
-                             (0,0) if j != 0 else (1,1),
-                             Zfreqs[i] if i in list(Zfreqs.keys()) else Xfreqs[i]
-                         ) for i, j in v.items()} for k, v in Zcomp2.to_dict().items()}
 
-        d_dict = dict(list(zip(Zcomp.columns,d)))
+        Zcomp2 = pd.concat([Xcomp, Zcomp])
+
+        Xcomp_dict = {
+            k: {
+                i: (
+                    j,
+                    0.0 if j != 0 else 1,
+                    cca["nGroups"],
+                    (0, 0) if j != 0 else (1, 1),
+                    Xfreqs[i],
+                )
+                for i, j in v.items()
+            }
+            for k, v in Xcomp.to_dict().items()
+        }
+        Zcomp_dict = {
+            k: {
+                i: (
+                    j,
+                    0.0 if j != 0 else 1,
+                    cca["nGroups"],
+                    (0, 0) if j != 0 else (1, 1),
+                    Zfreqs[i] if i in list(Zfreqs.keys()) else Xfreqs[i],
+                )
+                for i, j in v.items()
+            }
+            for k, v in Zcomp2.to_dict().items()
+        }
+
+        d_dict = dict(list(zip(Zcomp.columns, d)))
         return Xcomp_dict, Zcomp_dict, d_dict
 
-    def cca(self, penaltyX = None, penaltyZ = None, NAthresh = 4, controlsWithFeats = False):
+    def cca(self, penaltyX=None, penaltyZ=None, NAthresh=4, controlsWithFeats=False):
         """Performs CCA based on the outcomes and controls (X: features, Z: outcomes)"""
         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
         # groups: set(group_ids)
         # allOutcomes: {outcome: {group_id: value}}
         # controls: {control: {group_id: value}}
 
-        (groupNorms, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups)
+        (
+            groupNorms,
+            featureNames,
+        ) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups)
         # groupNorms: {feat: {group_id: group_norm}}
 
         Zdict = allOutcomes
         Xdict = groupNorms
-        
+
         if controlsWithFeats:
             print("Appending controls to X")
             Xdict.update(controls)
         else:
             print("Appending controls to Z")
-            Zdict.update(controls)        
+            Zdict.update(controls)
 
         # R doesn't handle '$'s in column names
-        Xdict = {k.replace('$','.'):v for k, v in Xdict.items()}
-        Zdict = {k.replace('$','.'):v for k, v in Zdict.items()}
+        Xdict = {k.replace("$", "."): v for k, v in Xdict.items()}
+        Zdict = {k.replace("$", "."): v for k, v in Zdict.items()}
 
         # TO DO: get topic frequencies?
 
@@ -738,29 +881,35 @@ class CCA:
         Xdf = pd.DataFrame(data=Xdict)
         Zdf = pd.DataFrame(data=Zdict)
 
-        assert self.numComponents <= min(Xdf.shape[1],Zdf.shape[1]), "Number of components cannot be more than min(#feats, #outcomes+#controls)"
-        X, Z, Xfreqs, Zfreqs = self.prepMatrices(Xdf,Zdf, NAthresh = NAthresh)
-        
-        Xt_Z = pd.DataFrame(np.dot(X.transpose(),Z), index = X.columns, columns = Z.columns)
-        
-        kwParams = {}
-        if penaltyX: kwParams['penaltyx'] = penaltyX
-        if penaltyZ: kwParams['penaltyz'] = penaltyZ
+        assert self.numComponents <= min(
+            Xdf.shape[1], Zdf.shape[1]
+        ), "Number of components cannot be more than min(#feats, #outcomes+#controls)"
+        X, Z, Xfreqs, Zfreqs = self.prepMatrices(Xdf, Zdf, NAthresh=NAthresh)
 
-        cca = self._cca(X,Z, **kwParams)
+        Xt_Z = pd.DataFrame(
+            np.dot(X.transpose(), Z), index=X.columns, columns=Z.columns
+        )
+
+        kwParams = {}
+        if penaltyX:
+            kwParams["penaltyx"] = penaltyX
+        if penaltyZ:
+            kwParams["penaltyz"] = penaltyZ
+
+        cca = self._cca(X, Z, **kwParams)
 
         try:
-            Xcomp = com.convert_robj(cca['u']) # Features
-            Zcomp = com.convert_robj(cca['v']) # Outcomes
-            d = com.convert_robj(cca['d']) # Something
+            Xcomp = com.convert_robj(cca["u"])  # Features
+            Zcomp = com.convert_robj(cca["v"])  # Outcomes
+            d = com.convert_robj(cca["d"])  # Something
         except NameError:
             warn("pandas.rpy.common cannot be imported")
             sys.exit(1)
-        
+
         self.model = {
-            'u': Xcomp,
-            'v': Zcomp,
-            'd': d,
+            "u": Xcomp,
+            "v": Zcomp,
+            "d": d,
         }
 
         # with open("/localdata/county-disease/CCA/Xt_Z.Xcomp.Zcomp.d.pickle","wb+") as f:
@@ -768,33 +917,52 @@ class CCA:
         #     pickle.dump((Xt_Z, Xcomp, Zcomp, d), f)
         #     print("Dumping data to /localdata/county-disease/CCA/X.Z.pickle")
         #     pickle.dump((X,Z), f)
-        
-        reconstruction_err = [ 
-            sum(np.linalg.norm(np.outer(Xcomp[i]*d_i,Zcomp[i].transpose()),axis=0))/sum(np.linalg.norm(Xt_Z, axis=0))
+
+        reconstruction_err = [
+            sum(np.linalg.norm(np.outer(Xcomp[i] * d_i, Zcomp[i].transpose()), axis=0))
+            / sum(np.linalg.norm(Xt_Z, axis=0))
             for i, d_i in enumerate(d)
         ]
         print(reconstruction_err)
-        
+
         featureNames = X.columns
         Xcomp.index = [i.strip("X") for i in featureNames]
-        Xfreqs = {k.strip("X"): v for k,v in Xfreqs.items()}
+        Xfreqs = {k.strip("X"): v for k, v in Xfreqs.items()}
         Xcomp.columns = ["%.2d_comp" % i for i in range(Xcomp.shape[1])]
 
         outcomeNames = Z.columns
         Zcomp.index = [i.strip("X") for i in outcomeNames]
-        Zfreqs = {k.strip("X"): v for k,v in Zfreqs.items()}
+        Zfreqs = {k.strip("X"): v for k, v in Zfreqs.items()}
         Zcomp.columns = ["%.2d_comp" % i for i in range(Zcomp.shape[1])]
-        
-        d_dict = dict(list(zip(Zcomp.columns,d)))
-                
-        Xcomp_dict = {k: {i:(j,
-                             0.0 if j != 0 else 1,
-                             cca["nGroups"],
-                             (0,0) if j != 0 else (1,1),
-                             Xfreqs[i]) for i, j in v.items()} for k, v in Xcomp.to_dict().items()}
-        Zcomp_dict = {k: {i:(j,0.0 if j != 0 else 1,cca["nGroups"],
-                             (0,0) if j != 0 else (1,1),
-                            Zfreqs[i]) for i, j in v.items()} for k, v in Zcomp.to_dict().items()}
+
+        d_dict = dict(list(zip(Zcomp.columns, d)))
+
+        Xcomp_dict = {
+            k: {
+                i: (
+                    j,
+                    0.0 if j != 0 else 1,
+                    cca["nGroups"],
+                    (0, 0) if j != 0 else (1, 1),
+                    Xfreqs[i],
+                )
+                for i, j in v.items()
+            }
+            for k, v in Xcomp.to_dict().items()
+        }
+        Zcomp_dict = {
+            k: {
+                i: (
+                    j,
+                    0.0 if j != 0 else 1,
+                    cca["nGroups"],
+                    (0, 0) if j != 0 else (1, 1),
+                    Zfreqs[i],
+                )
+                for i, j in v.items()
+            }
+            for k, v in Zcomp.to_dict().items()
+        }
 
         return Xcomp_dict, Zcomp_dict, d_dict
         ## output: {outcome: feat: (r,p,n,freq)}
@@ -802,30 +970,54 @@ class CCA:
     def _ccaPermute(self, X, Z, **params):
         """Performs CCA.permute from the PMA package to see which penalty values are better"""
         pma = importr("PMA")
-        
-        kwParams = {"typex": "standard",
-                    "typez": "standard",
-                    "trace": True}
+
+        kwParams = {"typex": "standard", "typez": "standard", "trace": True}
         kwParams.update(params)
 
         print("\tCCA permute parameters:", kwParams)
-        
-        cca_permute = ro.r['CCA.permute'](X, Z, **kwParams)
-        header = ['penaltyxs', 'penaltyzs', 'zstats', 'pvals','cors', 'ft.corperms', 'nnonzerous', 'nnonzerovs']
-        header2 = ["X Penalty", "Z Penalty", "Z-Stat", "P-Value", "Cors", "FT(Cors)", "# U's Non-Zero", "# Vs Non-Zero"]
 
-        cca_permute = {k:v for k,v in list(cca_permute.items())}
+        cca_permute = ro.r["CCA.permute"](X, Z, **kwParams)
+        header = [
+            "penaltyxs",
+            "penaltyzs",
+            "zstats",
+            "pvals",
+            "cors",
+            "ft.corperms",
+            "nnonzerous",
+            "nnonzerovs",
+        ]
+        header2 = [
+            "X Penalty",
+            "Z Penalty",
+            "Z-Stat",
+            "P-Value",
+            "Cors",
+            "FT(Cors)",
+            "# U's Non-Zero",
+            "# Vs Non-Zero",
+        ]
 
-        df = pd.DataFrame({h:com.convert_robj(cca_permute[h]) for h in header}, columns=header)
+        cca_permute = {k: v for k, v in list(cca_permute.items())}
+
+        df = pd.DataFrame(
+            {h: com.convert_robj(cca_permute[h]) for h in header}, columns=header
+        )
         df.columns = header2
-        df.index = range(1,18)
+        df.index = range(1, 18)
 
         print("\n", df)
-        print() 
-        print("Best L1 bound for x: %.5f" % com.convert_robj(cca_permute["bestpenaltyx"])[0])
-        print("Best L1 bound for z: %.5f" % com.convert_robj(cca_permute["bestpenaltyz"])[0])
+        print()
+        print(
+            "Best L1 bound for x: %.5f"
+            % com.convert_robj(cca_permute["bestpenaltyx"])[0]
+        )
+        print(
+            "Best L1 bound for z: %.5f"
+            % com.convert_robj(cca_permute["bestpenaltyz"])[0]
+        )
 
-    def ccaPermuteOutcomesVsControls(self, nPerms = 25, penaltyXs = None , penaltyZs = None):
+    def ccaPermuteOutcomesVsControls(self, nPerms=25, penaltyXs=None, penaltyZs=None):
         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
         # groups: set(group_ids)
         # allOutcomes: {outcome: {group_id: value}}
@@ -834,13 +1026,15 @@ class CCA:
         # X contains feature group_norms, Z contains outcome values
         Zdict = allOutcomes
         Xdict = controls
-        
+
         # R doesn't handle '$'s in column names
-        Xdict = {k.replace('$','.'):v for k, v in Xdict.items()}
-        Zdict = {k.replace('$','.'):v for k, v in Zdict.items()}
-        
+        Xdict = {k.replace("$", "."): v for k, v in Xdict.items()}
+        Zdict = {k.replace("$", "."): v for k, v in Zdict.items()}
+
         # X, Z, Xfreqs, Zfreqs = self.prepMatrices(pd.DataFrame(data=Xdict),pd.DataFrame(data=Zdict), softImputeXtoo=True)
-        X, Z, Xfreqs, Zfreqs = self.prepMatricesTogether(pd.DataFrame(data=Xdict), pd.DataFrame(data=Zdict))
+        X, Z, Xfreqs, Zfreqs = self.prepMatricesTogether(
+            pd.DataFrame(data=Xdict), pd.DataFrame(data=Zdict)
+        )
         try:
             X = com.convert_to_r_dataframe(X)
             Z = com.convert_to_r_dataframe(Z)
@@ -848,30 +1042,43 @@ class CCA:
         except NameError:
             warn("pandas.rpy.common cannot be imported")
             sys.exit(1)
-        
+
         kwParams = {"nperms": nPerms}
-        kwParams['penaltyxs'] = penaltyXs if penaltyXs else ro.vectors.FloatVector(np.arange(.1,.91,.05))
-        kwParams['penaltyzs'] = penaltyZs if penaltyZs else ro.vectors.FloatVector(np.arange(.1,.91,.05))
-        
-        self._ccaPermute(X,Z, **kwParams)
-        
-    def ccaPermute(self, nPerms = 25, penaltyXs = None , penaltyZs = None, controlsWithFeats = False):
+        kwParams["penaltyxs"] = (
+            penaltyXs
+            if penaltyXs
+            else ro.vectors.FloatVector(np.arange(0.1, 0.91, 0.05))
+        )
+        kwParams["penaltyzs"] = (
+            penaltyZs
+            if penaltyZs
+            else ro.vectors.FloatVector(np.arange(0.1, 0.91, 0.05))
+        )
+
+        self._ccaPermute(X, Z, **kwParams)
+
+    def ccaPermute(
+        self, nPerms=25, penaltyXs=None, penaltyZs=None, controlsWithFeats=False
+    ):
         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
         # groups: set(group_ids)
         # allOutcomes: {outcome: {group_id: value}}
         # controls: {control: {group_id: value}}
-        
-        (groupNorms, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups)
+
+        (
+            groupNorms,
+            featureNames,
+        ) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups)
 
         Zdict = allOutcomes
         Xdict = groupNorms
-        
+
         if controlsWithFeats:
             print("Appending controls to X")
             Xdict.update(controls)
         else:
             print("Appending controls to Z")
-            Zdict.update(controls)        
+            Zdict.update(controls)
 
         # TO DO: get topic frequencies?
 
@@ -879,8 +1086,10 @@ class CCA:
         # featureNames: list of possible feature names
 
         # X contains feature group_norms, Z contains outcome values
-        X, Z, Xfreqs, Zfreqs = self.prepMatrices(pd.DataFrame(data=Xdict),pd.DataFrame(data=Zdict))
-        
+        X, Z, Xfreqs, Zfreqs = self.prepMatrices(
+            pd.DataFrame(data=Xdict), pd.DataFrame(data=Zdict)
+        )
+
         try:
             X = com.convert_to_r_dataframe(X)
             Z = com.convert_to_r_dataframe(Z)
@@ -888,9 +1097,17 @@ class CCA:
         except NameError:
             warn("pandas.rpy.common cannot be imported")
             sys.exit(1)
-        
+
         kwParams = {"nperms": nPerms}
-        kwParams['penaltyxs'] = penaltyXs if penaltyXs else ro.vectors.FloatVector(np.arange(.1,.91,.05))
-        kwParams['penaltyzs'] = penaltyZs if penaltyZs else ro.vectors.FloatVector(np.arange(.1,.91,.05))
-        
-        self._ccaPermute(X,Z, **kwParams)
+        kwParams["penaltyxs"] = (
+            penaltyXs
+            if penaltyXs
+            else ro.vectors.FloatVector(np.arange(0.1, 0.91, 0.05))
+        )
+        kwParams["penaltyzs"] = (
+            penaltyZs
+            if penaltyZs
+            else ro.vectors.FloatVector(np.arange(0.1, 0.91, 0.05))
+        )
+
+        self._ccaPermute(X, Z, **kwParams)

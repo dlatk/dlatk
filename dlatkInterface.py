@@ -59,12 +59,12 @@ def main(fn_args = None):
     """
     :param fn_args: string - ex "-d testing -t msgs -c user_id --add_ngrams -n 1 "
     """
-    
-    strTime = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())    
+
+    strTime = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
     dlac.warn("\n\n-----\nDLATK Interface Initiated: %s\n-----" % strTime)
     start_time = time.time()
 
-    
+
     ##Argument Parser:
     init_parser = argparse.ArgumentParser(prefix_chars='-+', formatter_class=argparse.ArgumentDefaultsHelpFormatter, add_help=False)
 
@@ -215,7 +215,7 @@ def main(fn_args = None):
                        nargs=2, help='OLD_TABLE NEW_TABLE copies OLD_TABLE to NEW_TABLE')
     group.add_argument('--extension', metavar='EXTENSION', dest='extension', default=None,
                        help='String added to the end of the feature table name')
-    
+
     group.add_argument('--top_messages', type=int, dest='top_messages', nargs='?', const=dlac.DEF_TOP_MESSAGES, default=False,
                        help='Print top messages with the largest score for a given topic.')
 
@@ -442,7 +442,7 @@ def main(fn_args = None):
                        help='add flesch-kincaid scores, averaged per group.')
     group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
-    group.add_argument('--add_bert', action='store_true', dest='addbert', 
+    group.add_argument('--add_bert', action='store_true', dest='addbert',
                        help='add BERT mean features (optionally add min, max, --bert_model large)')
 
 
@@ -467,7 +467,7 @@ def main(fn_args = None):
                        help='add lda topic version of message table.')
     group.add_argument('--add_outcome_feats', action='store_true', dest='addoutcomefeats',
                        help='add a feature table from the specified outcome table.')
-    
+
     group = parser.add_argument_group('Message Cleaning Actions', '')
     group.add_argument('--language_filter', '--lang_filter',  type=str, metavar='FIELD(S)', dest='langfilter', nargs='+', default=[],
                        help='Filter message table for list of languages.')
@@ -483,7 +483,7 @@ def main(fn_args = None):
                        help='Adds the message IDs to the topic distributions and stores the result in --output_name. Previously addMessageID.py (two agrs: MESSAGE_FILE, STATE_FILE)')
     group.add_argument('-m', '--lda_msg_tbl', metavar='TABLE', dest='ldamsgtbl', type=str, default=dlac.DEF_LDA_MSG_TABLE,
                            help='LDA Message Table')
-    group.add_argument('--create_dists', action='store_true', dest='createdists', 
+    group.add_argument('--create_dists', action='store_true', dest='createdists',
                            help='Create conditional prob, and likelihood distributions.')
 
     group = parser.add_argument_group('Semantic Extraction Actions', '')
@@ -505,7 +505,7 @@ def main(fn_args = None):
     group.add_argument('--add_standardized_feats', '--add_std_feats', action='store_true', dest='addstdfeats',
                        help='Adds a copy of the feature table where group_norms have been standardized (new table appended with "z").')
 
-    
+
     group.add_argument('--feat_colloc_filter', action='store_true', dest='featcollocfilter',
                        help='removes featrues that do not pass as collocations. (uses feat_table).')
     group.add_argument('--feat_correl_filter', action='store_true', dest='featcorrelfilter',
@@ -599,18 +599,18 @@ def main(fn_args = None):
                        help='predict outcomes into a feature file (provide a name)')
 
     group = parser.add_argument_group('Factor Adaptation Actions', '')
-    group.add_argument('--fs_params', action='store_true', dest='fsparams', default=False, help = 'send values for feature selection parameters')    
+    group.add_argument('--fs_params', action='store_true', dest='fsparams', default=False, help = 'send values for feature selection parameters')
     group.add_argument('--k_best', type=str, dest='kbest', nargs='+', help='vaiables needed for feature selection .')
     group.add_argument('--pca_comp', type=str, dest='pcacomp', nargs='+', help='vaiables needed for feature selection .')
     group.add_argument('--adaptation_factors', '--factors', type=str, metavar='FIELD(S)', dest='adaptationfactors', nargs='+', help='Fields in outcome table to use as factors for adaptation in FA or RFA.')
     group.add_argument('--factor_selection_type', type=str , dest = 'factorselectiontype', default='rfe', help='chooses the type of factor selection, either pca or rfe.')
     group.add_argument('--num_of_factors', type=int, dest='numoffactors', nargs='+',
-                       help='specifies the number of factors for factor selection. 0 means all factor1. ') 
+                       help='specifies the number of factors for factor selection. 0 means all factor1. ')
     group.add_argument('--paired_factors',  action='store_true',  dest = 'pairedfactors', default=False , help='multiplying factors to themself, to make bigger pool of factors')
     group.add_argument('--report', action='store_true', dest='report', default=False, help = 'Indicates if we want to store a report on outputfile+"_.report".')
     group.add_argument('--factor_addition', action='store_true', dest='factoraddition', default=False, help = 'Indicates we want to append factors to language.')
     group.add_argument('--factor_adaptation', '--fa',  action='store_true', dest='factoradaptation', default=False, help = 'Indicates we want to factor_adapt language features.')
-    group.add_argument('--res_factor_adaptation', '--rfa' , action='store_true', dest='residualizedfactoradaptation', default=False, help = 'Indicates we want to apply residualized factor adaptation.')    
+    group.add_argument('--res_factor_adaptation', '--rfa' , action='store_true', dest='residualizedfactoradaptation', default=False, help = 'Indicates we want to apply residualized factor adaptation.')
 
 
     group = parser.add_argument_group('Classification Actions', '')
@@ -642,7 +642,7 @@ def main(fn_args = None):
                        help='trains and tests classification for each outcome')
     group.add_argument('--predict_c2r', action='store_true', dest='predictclasstoreg', default=False,
                        help='predict w/ classification to regression model')
-    
+
     group = parser.add_argument_group('Clustering Actions', '')
     group.add_argument('--reducer_to_lexicon', type=str, dest='reducertolexicon', default=None,
                        help='writes the reduction model to a specified lexicon')
@@ -654,7 +654,7 @@ def main(fn_args = None):
                        help='reduces a feature space to clusters')
     group.add_argument('--num_factors', '--n_components', dest='n_components', default=None,
                        help='Number of factors in clustering method. Used with --fit_reducer.')
-    
+
     group = parser.add_argument_group('CCA Actions', '')
     group.add_argument('--cca', type=int, dest='cca', default=0,
                        help='Performs sparse CCA on a set of features and a set of outcomes.'+
@@ -727,7 +727,7 @@ def main(fn_args = None):
     if args.feattable:
         if isinstance(args.feattable,list):
             args.feattable = [s.strip() for s in args.feattable]
-        else: 
+        else:
             args.feattable = arg.feattable.strip()
 
 
@@ -771,7 +771,7 @@ def main(fn_args = None):
 
     args.integrationmethod = ''
     if args.factoradaptation:
-        args.integrationmethod = 'fa'  
+        args.integrationmethod = 'fa'
         if args.factoraddition:
             args.integrationmethod += '_plus'
     elif args.residualizedfactoradaptation:
@@ -868,11 +868,11 @@ def main(fn_args = None):
     if args.listfeattables or args.showtables or args.describetables or args.createrandsample or args.viewtables or args.createcopiedtable:
         if not dlaw: dlaw = DLAW()
 
-    if isinstance(args.describetables, list) and len(args.describetables) == 0: 
+    if isinstance(args.describetables, list) and len(args.describetables) == 0:
         if not dlaw: dlaw = DLAW()
         args.describetables = True
 
-    if isinstance(args.viewtables, list) and len(args.viewtables) == 0: 
+    if isinstance(args.viewtables, list) and len(args.viewtables) == 0:
         if not dlaw: dlaw = DLAW()
         args.viewtables = True
 
@@ -884,13 +884,13 @@ def main(fn_args = None):
 
     def printTableDesc(description):
         header = ['Field', 'Type','Null', 'Key', 'Default', 'Extra']
-        row_format ="{:>25}{:>25}{:>10}{:>10}{:>10}{:>15}" 
+        row_format ="{:>25}{:>25}{:>10}{:>10}{:>10}{:>15}"
         print(row_format.format(*header))
         for row in description:
             print(row_format.format(*[r if r or r == 0 else '' for r in row]))
 
     def printTableData(data):
-        row_format = "{:>15}" * len(data[0]) 
+        row_format = "{:>15}" * len(data[0])
         for row in data:
             print(row_format.format(*[' ' + str(r)[0:14] if r or r == 0 else '' for r in row]))
 
@@ -923,18 +923,18 @@ def main(fn_args = None):
             for tbl in args.viewtables: printTableData(dlaw.viewTable(table_name=tbl))
 
     if args.createrandsample:
-        if len(args.createrandsample) > 2: 
+        if len(args.createrandsample) > 2:
             print("Error: Only two optional arguments for --create_random_sample")
             sys.exit(1)
         percentage, random_seed = args.createrandsample if len(args.createrandsample) > 1 else (args.createrandsample[0], dlac.DEFAULT_RANDOM_SEED)
         rand_table = dlaw.createRandomSample(float(percentage), random_seed, where=args.groupswhere)
 
     if args.createcopiedtable:
-        if len(args.createcopiedtable) != 2: 
+        if len(args.createcopiedtable) != 2:
             print("Error: Need two arguments for --create_copied_table")
             sys.exit(1)
         new_table = dlaw.createCopiedTable(args.createcopiedtable[0], args.createcopiedtable[1], where=args.groupswhere)
-        
+
 
     #Feature Extraction:
     if args.addngrams:
@@ -1019,7 +1019,7 @@ def main(fn_args = None):
         langLex = lexInterface.Lexicon(mysql_host = args.mysql_host)
         langLex.loadLexicon(args.addpnames[1])
         args.feattable = fe.addPNamesTable(namesLex.getLexicon(), langLex.getLexicon(),  valueFunc = args.valuefunc)
-        
+
     if args.addwnnopos:
         if not fe: fe = FE()
         args.feattable = fe.addWNNoPosFeat(valueFunc = args.valuefunc, featValueFunc=args.lexvaluefunc)
@@ -1181,13 +1181,13 @@ def main(fn_args = None):
         if not fr: fr=FR()
         args.feattable = fr.createInterpolatedFeatTable(days = args.interpolategroup, dateField = args.date_field, groupFreqThresh = args.groupfreqthresh, where = args.groupswhere)
 
-        
+
     if args.featoccfilter:
         if args.use_collocs and not args.wordTable:
             args.wordTable = args.feattable
         if not fr: fr=FR()
         args.feattable = fr.createTableWithRemovedFeats(args.pocc, args.minfeatsum, args.groupfreqthresh, setGFTWarning)
-        
+
     if args.featcollocfilter:
         if not fr: fr=FR()
         if args.use_collocs:
@@ -1233,7 +1233,7 @@ def main(fn_args = None):
     if args.addstdfeats:
         if not fr: fr=FR()
         fr.createStandardizedFeatTable(groupFreqThresh = args.groupfreqthresh, setGFTWarning = setGFTWarning)
-        
+
     #create whitelist / blacklist
     if args.categories:
         if isinstance(args.categories, str):
@@ -1294,7 +1294,7 @@ def main(fn_args = None):
     #Outcome Only options:
     if args.p_correction_method == '':
         args.bonferroni = False
-    
+
     if args.printcsv:
         pprint(args)
         if not oa: oa = OA()
@@ -1701,7 +1701,7 @@ def main(fn_args = None):
             comboScores = rp.testControlCombos(sparse = args.sparse, blacklist = blacklist,
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
                                            nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval,
-                                           standardize = args.standardize, residualizedControls = args.res_controls, groupsWhere = args.groupswhere, 
+                                           standardize = args.standardize, residualizedControls = args.res_controls, groupsWhere = args.groupswhere,
                                            weightedSample = args.weightedsample, adaptationFactorsName = args.adaptationfactors, featureSelectionParameters=args.featureselectionparams , factorSelectionType=args.factorselectiontype, numOfFactors=args.numoffactors, pairedFactors=args.pairedfactors, outputName = args.outputname, report=args.report, integrationMethod = args.integrationmethod)
         elif args.controladjustreg:
             comboScores = rp.adjustOutcomesFromControls(standardize = args.standardize, sparse = args.sparse,
@@ -1713,7 +1713,7 @@ def main(fn_args = None):
                 outputStream = open(args.outputname+'.predicted_data.csv', 'w')
             RegressionPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
-            if args.outputname: 
+            if args.outputname:
                 outputStream.close()
         #TODO:
         # if args.pred_feat:
@@ -1724,7 +1724,7 @@ def main(fn_args = None):
                 outputStream = open(args.outputname+'.variance_data.csv', 'w')
             RegressionPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
-            if args.outputname: 
+            if args.outputname:
                 outputStream.close()
         elif not args.pred_csv:
             pprint(comboScores)
@@ -1804,7 +1804,7 @@ def main(fn_args = None):
                         tuple([wLangData[0][k] for k in ['acc', 'f1', 'auc']]))
                     mfc = wLangData[0]['mfclass_acc']
                 if 1 in wLangData:
-                    if len(controls) > 0: 
+                    if len(controls) > 0:
                         print("     + LANG: acc: %.3f, f1: %.3f, auc: %.3f, auc ensemble: %.3f (p = %.4f)" %\
                               tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc', 'auc_cntl_comb2', 'auc_cntl_comb2_p']]))
                     else:
@@ -1813,7 +1813,7 @@ def main(fn_args = None):
                         mfc = wLangData[1]['mfclass_acc']
             print("   (mfc_acc: %.3f)"%mfc)
 
-                
+
         if args.pred_csv:
             outputStream = sys.stdout
             if args.outputname:
@@ -1904,7 +1904,7 @@ def main(fn_args = None):
         else:
             lexicon = lexInterface.WeightedLexicon("", mysql_host = args.mysql_host)
             lexicon.createSuperTopicTable(args.supertopics, args.reducedlexicon, args.lextable)
-            
+
     if args.savemodels and dr:
         dr.save(args.picklefile)
 

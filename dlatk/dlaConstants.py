@@ -7,9 +7,9 @@ import re
 from random import randint
 from pathlib import Path
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 
-#math / stats:
+# math / stats:
 from math import floor, log
 from numpy import sqrt, log2, array, mean, std, isnan, fabs, round
 from numpy.random import permutation
@@ -20,137 +20,136 @@ from sklearn.metrics import roc_auc_score
 from sklearn.linear_model import LogisticRegression
 import statsmodels.stats.multitest as mt
 
-#DB INFO:
-USER = getpass.getuser()
+# DB INFO:
+USER = os.environ.get("MYSQL_USER", getpass.getuser())
 
-MAX_ATTEMPTS = 5 #max number of times to try a query before exiting
-PROGRESS_AFTER_ROWS = 5000 #the number of rows to process between each progress updated
-FEATURE_TABLE_PREFIX = 'feats_'
-MYSQL_ERROR_SLEEP = 4 #number of seconds to wait before trying a query again (incase there was a server restart
-MYSQL_BATCH_INSERT_SIZE = 10000 # how many rows are inserted into mysql at a time
-MAX_SQL_SELECT = 1000000 # how many rows are selected at a time
-MYSQL_HOST = '127.0.0.1'
-VARCHAR_WORD_LENGTH = 36 #length to allocate var chars per words
-LOWERCASE_ONLY = True #if the db is case insensitive, set to True
-MAX_TO_DISABLE_KEYS = 100000 #number of groups * n must be less than this to disable keys
+MAX_ATTEMPTS = 5  # max number of times to try a query before exiting
+PROGRESS_AFTER_ROWS = (
+    5000  # the number of rows to process between each progress updated
+)
+FEATURE_TABLE_PREFIX = "feats_"
+MYSQL_ERROR_SLEEP = 4  # number of seconds to wait before trying a query again (incase there was a server restart
+MYSQL_BATCH_INSERT_SIZE = 10000  # how many rows are inserted into mysql at a time
+MAX_SQL_SELECT = 1000000  # how many rows are selected at a time
+MYSQL_HOST = "127.0.0.1"
+VARCHAR_WORD_LENGTH = 36  # length to allocate var chars per words
+LOWERCASE_ONLY = True  # if the db is case insensitive, set to True
+MAX_TO_DISABLE_KEYS = (
+    100000  # number of groups * n must be less than this to disable keys
+)
 MAX_SQL_PRINT_CHARS = 256
 
 ##Corpus Settings:
-DEF_CORPDB = 'dla_tutorial'
-DEF_CORPTABLE = ''
-DEF_CORREL_FIELD = 'user_id'
-DEF_MESSAGE_FIELD = 'message'
-DEF_MESSAGEID_FIELD = 'message_id'
-DEF_ENCODING = 'utf8mb4'
+DEF_CORPDB = "dla_tutorial"
+DEF_CORPTABLE = ""
+DEF_CORREL_FIELD = "user_id"
+DEF_MESSAGE_FIELD = "message"
+DEF_MESSAGEID_FIELD = "message_id"
+DEF_ENCODING = "utf8mb4"
 DEF_UNICODE_SWITCH = True
-DEF_LEXTABLE = 'wn_O'
-DEF_DATE_FIELD = 'updated_time'
+DEF_LEXTABLE = "wn_O"
+DEF_DATE_FIELD = "updated_time"
 DEF_COLLATIONS = {
-        'utf8mb4': 'utf8mb4_bin',
-        'utf8': 'utf8_general_ci',
-        'latin1': 'latin1_swedish_ci',
-        'latin2': 'latin2_general_ci',
-        'ascii': 'ascii_general_ci',
-    }
-DEF_MYSQL_ENGINE = 'MYISAM'
+    "utf8mb4": "utf8mb4_bin",
+    "utf8": "utf8_general_ci",
+    "latin1": "latin1_swedish_ci",
+    "latin2": "latin2_general_ci",
+    "ascii": "ascii_general_ci",
+}
+DEF_MYSQL_ENGINE = "MYISAM"
 
 ##lexInterface settings
-DEF_TERM_FIELD = 'term'
+DEF_TERM_FIELD = "term"
 DEF_MIN_WORD_FREQ = 1000
 DEF_NUM_RAND_MESSAGES = 100
-MAX_WRITE_RECORDS = 1000 #maximum number of records to write at a time (for add_terms...)
+MAX_WRITE_RECORDS = (
+    1000  # maximum number of records to write at a time (for add_terms...)
+)
 
 ##Outcome settings
-DEF_OUTCOME_TABLE = ''
-DEF_OUTCOME_FIELD = ''
+DEF_OUTCOME_TABLE = ""
+DEF_OUTCOME_FIELD = ""
 DEF_OUTCOME_FIELDS = []
 DEF_OUTCOME_CONTROLS = []
-DEF_GROUP_FREQ_THRESHOLD = 1000 #min. number of total feature values that the group has, to use it
+DEF_GROUP_FREQ_THRESHOLD = (
+    1000  # min. number of total feature values that the group has, to use it
+)
 DEF_SHOW_FEAT_FREQS = True
 DEF_MAX_TC_WORDS = 100
 DEF_MAX_TOP_TC_WORDS = 15
 DEF_TC_FILTER = True
-DEF_WEIGHTS = ''
+DEF_WEIGHTS = ""
 DEF_LOW_VARIANCE_THRESHOLD = 0.0
 
 ##Feature Settings:
 DEF_N = int(1)
-DEF_FEAT_NAMES = ['honor']
-DEF_MIN_FREQ = int(1) #min frequency per group to keep (don't advise above 1)
-DEF_P_OCC = float(.01) #percentage of groups a feature must appear in, to keep it
+DEF_FEAT_NAMES = ["honor"]
+DEF_MIN_FREQ = int(1)  # min frequency per group to keep (don't advise above 1)
+DEF_P_OCC = float(0.01)  # percentage of groups a feature must appear in, to keep it
 DEF_PMI = 3.0
-DEF_MIN_FEAT_SUM = 0 #minimum sum of feature total to keep
-DEF_LEXICON_DB = 'dlatk_lexica'
-DEF_FEAT_TABLE = 'feat$1gram$messages_en$user_id$16to16$0_01'
-DEF_COLLOCTABLE = 'test_collocs'
+DEF_MIN_FEAT_SUM = 0  # minimum sum of feature total to keep
+DEF_LEXICON_DB = "dlatk_lexica"
+DEF_FEAT_TABLE = "feat$1gram$messages_en$user_id$16to16$0_01"
+DEF_COLLOCTABLE = "test_collocs"
 DEF_COLUMN_COLLOC = "feat"
 DEF_COLUMN_PMI_FILTER = "pmi_filter_val"
-DEF_P = 0.05 # p value for printing tagclouds
-DEF_P_CORR = 'BH' #Benjamini, Hochberg
-DEF_P_MAPPING = { # maps old R method names to statsmodel names
-        "holm": "holm",
-        "hochberg": "simes-hochberg",
-        "simes": "simes",
-        "hommel": "hommel",
-        "bonferroni": "bonferroni",
-        "bonf": "bonferroni",
-        "BH": "fdr_bh",
-        "BY": "fdr_by",
-        "fdr": "fdr_bh",
-        "sidak": "sidak",
-        "holm-sidak": "holm-sidak",
-        "simes-hochberg": "simes-hochberg",
-        "fdr_bh": "fdr_bh",
-        "fdr_by": "fdr_by",
-        "fdr_tsbh": "fdr_tsbh",
-        "fdr_tsbky": "fdr_tsbky",
-    }
+DEF_P = 0.05  # p value for printing tagclouds
+DEF_P_CORR = "BH"  # Benjamini, Hochberg
+DEF_P_MAPPING = {  # maps old R method names to statsmodel names
+    "holm": "holm",
+    "hochberg": "simes-hochberg",
+    "simes": "simes",
+    "hommel": "hommel",
+    "bonferroni": "bonferroni",
+    "bonf": "bonferroni",
+    "BH": "fdr_bh",
+    "BY": "fdr_by",
+    "fdr": "fdr_bh",
+    "sidak": "sidak",
+    "holm-sidak": "holm-sidak",
+    "simes-hochberg": "simes-hochberg",
+    "fdr_bh": "fdr_bh",
+    "fdr_by": "fdr_by",
+    "fdr_tsbh": "fdr_tsbh",
+    "fdr_tsbky": "fdr_tsbky",
+}
 DEF_CONF_INT = 0.95
 DEF_TOP_MESSAGES = 10
 
-DEF_BERT_MODEL='base-uncased'
-DEF_BERT_AGGREGATION=['mean']
-DEF_BERT_LAYER_AGGREGATION=['concatenate']
-DEF_BERT_LAYERS=[10]
-DEF_TRANS_WORD_AGGREGATION = ['mean']
+DEF_BERT_MODEL = "base-uncased"
+DEF_BERT_AGGREGATION = ["mean"]
+DEF_BERT_LAYER_AGGREGATION = ["concatenate"]
+DEF_BERT_LAYERS = [10]
+DEF_TRANS_WORD_AGGREGATION = ["mean"]
 
 
 ##Prediction Settings:
-DEF_MODEL = 'ridgecv'
-DEF_CLASS_MODEL = 'svc'
-DEF_COMB_MODELS = ['ridgecv']
+DEF_MODEL = "ridgecv"
+DEF_CLASS_MODEL = "svc"
+DEF_COMB_MODELS = ["ridgecv"]
 DEF_FOLDS = 5
 DEF_OUTLIER_THRESHOLD = 2.5
 DEF_RP_FEATURE_SELECTION_MAPPING = {
-    'magic_sauce': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", PCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.1)), min(min(50,X.shape[0]), X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
-
-    'magic_sauce_light': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=100.0)), ("3_rpca", PCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.3)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
-
-    'magic200': 'Pipeline([("1_univariate_select", SelectFwe(alpha=60.0, score_func=f_regression)), ("2_rpca", PCA(copy=True, iterated_power=3, n_components=200, random_state=42, whiten=False, svd_solver="randomized"))])',
-
-    'topic_ngram_ms': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", PCA(n_components=max(int(2*(X.shape[0]*.20)/len(self.featureGetters) if X.shape[1] > 2000 else 2*(X.shape[0]*.75)/len(self.featureGetters)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
-
-    'magic_sauce_1pct': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", PCA(n_components=min(int((X.shape[0]/(len(self.featureGetters)+0.1))*.001), int(X.shape[1]*0.2)), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
-
-    'topic_ngram_ms': 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", PCA(n_components=max(int(2*(X.shape[0]*.20)/len(self.featureGetters) if X.shape[1] > 2000 else 2*(X.shape[0]*.75)/len(self.featureGetters)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
-
-    'ms_old1':'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=0.60)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
-
-    'ms_old2': 'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])', 
-
-    'univariatefwe': 'SelectFwe(f_regression, alpha=60.0)',
-
-    'pca': 'PCA(n_components=max(min(int(X.shape[1]*.5), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
-    'none': None,
+    "magic_sauce": 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", PCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.1)), min(min(50,X.shape[0]), X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
+    "magic_sauce_light": 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=100.0)), ("3_rpca", PCA(n_components=max(int(X.shape[0]/(len(self.featureGetters)+0.3)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
+    "magic200": 'Pipeline([("1_univariate_select", SelectFwe(alpha=60.0, score_func=f_regression)), ("2_rpca", PCA(copy=True, iterated_power=3, n_components=200, random_state=42, whiten=False, svd_solver="randomized"))])',
+    "topic_ngram_ms": 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", PCA(n_components=max(int(2*(X.shape[0]*.20)/len(self.featureGetters) if X.shape[1] > 2000 else 2*(X.shape[0]*.75)/len(self.featureGetters)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
+    "magic_sauce_1pct": 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", PCA(n_components=min(int((X.shape[0]/(len(self.featureGetters)+0.1))*.001), int(X.shape[1]*0.2)), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
+    "topic_ngram_ms": 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=int(sqrt(X.shape[0]*10000)))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", PCA(n_components=max(int(2*(X.shape[0]*.20)/len(self.featureGetters) if X.shape[1] > 2000 else 2*(X.shape[0]*.75)/len(self.featureGetters)), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
+    "ms_old1": 'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=0.60)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+    "ms_old2": 'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])',
+    "univariatefwe": "SelectFwe(f_regression, alpha=60.0)",
+    "pca": 'PCA(n_components=max(min(int(X.shape[1]*.5), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
+    "none": None,
 }
 DEF_CP_FEATURE_SELECTION_MAPPING = {
-    'magic_sauce': 'Pipeline([("1_univariate_select", SelectFwe(f_classif, alpha=30.0)), ("2_rpca", PCA(n_components=min(max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), 50), X.shape[1]), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
-    'univariatefwe': 'SelectFwe(f_classif, alpha=30.0)',
-    'univariatefwe30': 'SelectFwe(f_classif, alpha=30.0)',
-    'univariatefwe10': 'SelectFwe(f_classif, alpha=10.0)',
-    'univariatefwe60': 'SelectFwe(f_classif, alpha=60.0)',
-    'pca': 'PCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
-    'none': None,
+    "magic_sauce": 'Pipeline([("1_univariate_select", SelectFwe(f_classif, alpha=30.0)), ("2_rpca", PCA(n_components=min(max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), 50), X.shape[1]), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])',
+    "univariatefwe": "SelectFwe(f_classif, alpha=30.0)",
+    "univariatefwe30": "SelectFwe(f_classif, alpha=30.0)",
+    "univariatefwe10": "SelectFwe(f_classif, alpha=10.0)",
+    "univariatefwe60": "SelectFwe(f_classif, alpha=60.0)",
+    "pca": 'PCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
+    "none": None,
 }
 DEFAULT_MAX_PREDICT_AT_A_TIME = 100000
 DEFAULT_RANDOM_SEED = 42
@@ -159,10 +158,10 @@ DEFAULT_RANDOM_SEED = 42
 DEF_MEDIATION_BOOTSTRAP = 1000
 DEF_OUTCOME_PATH_STARTS = []
 DEF_OUTCOME_MEDIATORS = []
-DEF_MAX_MED_SUMMARY_SIZE = 10 # maximum number of results to print in summary for each path start / outcome pair
+DEF_MAX_MED_SUMMARY_SIZE = 10  # maximum number of results to print in summary for each path start / outcome pair
 
 ##LDA settings
-DEF_LDA_MSG_TABLE = 'messages_en_lda$msgs_en_tok_a30'
+DEF_LDA_MSG_TABLE = "messages_en_lda$msgs_en_tok_a30"
 
 ##Language filtering settings
 AVAILABLE_LANGUAGES = """
@@ -174,69 +173,76 @@ lb, lo, lt, lv, mg, mk, ml, mn, mr, ms, mt, nb, ne,
 nl, nn, no, oc, or, pa, pl, ps, pt, qu, ro, ru, rw,
 se, si, sk, sl, sq, sr, sv, sw, ta, te, th, tl, tr,
 ug, uk, ur, vi, vo, wa, xh, zh, zu"""
-DEF_LANG_FILTER_CONF = .80
-DEF_SPAM_FILTER = 0.2 # threshold for removing spam users
+DEF_LANG_FILTER_CONF = 0.80
+DEF_SPAM_FILTER = 0.2  # threshold for removing spam users
 
 ## Other tools
-DEF_TOOLS_PATH = str(Path.home()) + '/dlatk_tools'
+DEF_TOOLS_PATH = str(Path.home()) + "/dlatk_tools"
 
-DEF_STANFORD_SEGMENTER = DEF_TOOLS_PATH + '/stanford-segmenter/segment.sh'
-DEF_STANFORD_POS_MODEL = DEF_TOOLS_PATH + '/stanford-postagger/models/english-bidirectional-distsim.tagger'
-DEF_STANFORD_PARSER = DEF_TOOLS_PATH + '/stanford-parser'
+DEF_STANFORD_SEGMENTER = DEF_TOOLS_PATH + "/stanford-segmenter/segment.sh"
+DEF_STANFORD_POS_MODEL = (
+    DEF_TOOLS_PATH + "/stanford-postagger/models/english-bidirectional-distsim.tagger"
+)
+DEF_STANFORD_PARSER = DEF_TOOLS_PATH + "/stanford-parser"
 
 ##CoreNLP settings
-DEF_CORENLP_DIR = DEF_TOOLS_PATH + '/corenlp-python'
-DEF_CORENLP_SERVER_COMMAND = './corenlp/corenlp.py'
-DEF_CORENLP_PORT = 20202   #default: 20202
-#CORE NLP PYTHON SERVER COMMAND (must be running): ./corenlp/corenlp.py -p 20202 -q
+DEF_CORENLP_DIR = DEF_TOOLS_PATH + "/corenlp-python"
+DEF_CORENLP_SERVER_COMMAND = "./corenlp/corenlp.py"
+DEF_CORENLP_PORT = 20202  # default: 20202
+# CORE NLP PYTHON SERVER COMMAND (must be running): ./corenlp/corenlp.py -p 20202 -q
 
 DEF_WORDCLOUD_JAR = DEF_TOOLS_PATH + "/wordcloud/ibm-word-cloud.jar"
 
-TAG_RE = re.compile(r'<[^>]+>')
-URL_RE = re.compile(r'(?:http[s]?\:\/\/)?(?:[\w\_\-]+\.)+(?:com|net|gov|edu|info|org|ly|be|gl|co|gs|pr|me|cc|us|uk|gd|nl|ws|am|im|fm|kr|to|jp|sg|int|mil|arpa|ac|ad|ae|af|ag|ai|al|am|an|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|bq|br|bs|bt|bv|bw|by|bz|bzh|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cs|cu|cv|cw|cx|cy|cz|dd|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|yu|za|zm|zr|zw)+(?:\/[^\s ]+)?')
+TAG_RE = re.compile(r"<[^>]+>")
+URL_RE = re.compile(
+    r"(?:http[s]?\:\/\/)?(?:[\w\_\-]+\.)+(?:com|net|gov|edu|info|org|ly|be|gl|co|gs|pr|me|cc|us|uk|gd|nl|ws|am|im|fm|kr|to|jp|sg|int|mil|arpa|ac|ad|ae|af|ag|ai|al|am|an|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|bq|br|bs|bt|bv|bw|by|bz|bzh|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cs|cu|cv|cw|cx|cy|cz|dd|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|yu|za|zm|zr|zw)+(?:\/[^\s ]+)?"
+)
 
-DEF_TOPIC_LEX_METHOD = 'csv_lik'
+DEF_TOPIC_LEX_METHOD = "csv_lik"
 
-PERMA_SORTED = ['P+',
-                'P-',
-                'E+',
-                'E-',
-                'R+',
-                'R-',
-                'M+',
-                'M-',
-                'A+',
-                'A-',
-                'ope',
-                'con',
-                'ext',
-                'agr',
-                'neu'
-                ]
+PERMA_SORTED = [
+    "P+",
+    "P-",
+    "E+",
+    "E-",
+    "R+",
+    "R-",
+    "M+",
+    "M-",
+    "A+",
+    "A-",
+    "ope",
+    "con",
+    "ext",
+    "agr",
+    "neu",
+]
 
-DEF_CENSOR_DICT = {"fuck":"f**k",
-        "pussy":"p**sy",
-        "bitch":"b**ch",
-        "bitches":"b**ches",
-        "fuckn":"f**kn",
-        "motherfucker":"motherf**ker",
-        "fucked":"f**ked",
-        "fucking":"f**king",
-        "dick":"d**k",
-        "dickhead":"d**khead",
-        "cock":"c**k",
-        "shit":"s**t",
-        "bullshit":"bulls**t",
-        "fuckin":"f**kin",
-        "whore":"w**re",
-        "hoe":"h**",
-        "hoes":"h**s",
-        "nigga":"n**ga",
-        "niggas":"n**gas",
-        "nigga's":"n**ga's",
-        "niggaz":"n**gaz"}
-GIGS_OF_MEMORY = 512 #used to determine when to use queries that hold data in memory
-CORES = 32 #used to determine multi-processing
+DEF_CENSOR_DICT = {
+    "fuck": "f**k",
+    "pussy": "p**sy",
+    "bitch": "b**ch",
+    "bitches": "b**ches",
+    "fuckn": "f**kn",
+    "motherfucker": "motherf**ker",
+    "fucked": "f**ked",
+    "fucking": "f**king",
+    "dick": "d**k",
+    "dickhead": "d**khead",
+    "cock": "c**k",
+    "shit": "s**t",
+    "bullshit": "bulls**t",
+    "fuckin": "f**kin",
+    "whore": "w**re",
+    "hoe": "h**",
+    "hoes": "h**s",
+    "nigga": "n**ga",
+    "niggas": "n**gas",
+    "nigga's": "n**ga's",
+    "niggaz": "n**gaz",
+}
+GIGS_OF_MEMORY = 512  # used to determine when to use queries that hold data in memory
+CORES = 32  # used to determine multi-processing
 
 POSSIBLE_VALUE_FUNCS = [
     lambda d: 1,
@@ -244,25 +250,27 @@ POSSIBLE_VALUE_FUNCS = [
     lambda d: sqrt(float(d)),
     lambda d: log(float(d) + 1),
     lambda d: log2(float(d) + 1),
-    lambda d: 2*sqrt(d+3/float(8))
+    lambda d: 2 * sqrt(d + 3 / float(8)),
 ]
 
 ##Meta settings
-DEF_INIT_FILE = 'initFile.ini'
-WARNING_STRING = "\n".join(["#"*68, "#"*68, "WARNING: %s", "#"*68, "#"*68])
+DEF_INIT_FILE = "initFile.ini"
+WARNING_STRING = "\n".join(["#" * 68, "#" * 68, "WARNING: %s", "#" * 68, "#" * 68])
 
 ##########################################################
 ### Static Module Methods
 ##
 #
 
+
 def alignDictsAsLists(dict1, dict2):
     """Converts two dictionaries to vectors, where the values are aligned by keys"""
     coFields = frozenset(list(dict1.keys())).intersection(frozenset(list(dict2.keys())))
     list1 = [dict1[c] for c in coFields]
-    #list1 = [dict1[c] for c in coFields] #equivalent to above
+    # list1 = [dict1[c] for c in coFields] #equivalent to above
     list2 = [dict2[c] for c in coFields]
     return (list1, list2)
+
 
 def alignDictsAsX(X, sparse=False, returnKeyList=False):
     """turns a list of dicts for into a matrix X"""
@@ -270,7 +278,9 @@ def alignDictsAsX(X, sparse=False, returnKeyList=False):
     if sparse:
         keys = frozenset([item for sublist in X for item in sublist])  # union X keys
     else:
-        keys = frozenset(list(X[0].keys())). intersection(*[list(x.keys()) for x in X[1:]])  # intersect X keys
+        keys = frozenset(list(X[0].keys())).intersection(
+            *[list(x.keys()) for x in X[1:]]
+        )  # intersect X keys
     keys = list(keys)  # to make sure it stays in order
     if sparse:
         keyToIndex = dict([(keys[i], i) for i in range(len(keys))])
@@ -288,31 +298,39 @@ def alignDictsAsX(X, sparse=False, returnKeyList=False):
         if returnKeyList:
             return (sparseX, keys)
         else:
-            return (sparseX)
+            return sparseX
     else:
         listX = [[x[k] for x in X] for k in keys]
         if returnKeyList:
             return (listX, keys)
         else:
-            return (listX)
+            return listX
+
 
 def alignDictsAsXy(X, y):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
     keys = frozenset(list(y.keys()))
     keys = keys.intersection(*[list(x.keys()) for x in X])
-    keys = list(keys) #to make sure it stays in order
+    keys = list(keys)  # to make sure it stays in order
     listy = [y[k] for k in keys]
     # Order of columns of X is preserved
     listX = [[x[k] for x in X] for k in keys]
     # print type(listy), type(listy[0])
     import decimal
-    listy = [float(v) for v in listy] if isinstance(listy,list) and isinstance(listy[0],decimal.Decimal) else listy
+
+    listy = (
+        [float(v) for v in listy]
+        if isinstance(listy, list) and isinstance(listy[0], decimal.Decimal)
+        else listy
+    )
     # print type(listy), type(listy[0])
     return (listX, listy)
 
+
 def bonfPCorrection(tup, numFeats):
     """given tuple with second entry a p value, multiply by num of feats and return"""
-    return (tup[0], tup[1]*numFeats) + tup[2:]
+    return (tup[0], tup[1] * numFeats) + tup[2:]
+
 
 def cohensD(x, y):
     """Calculate Cohen's D effect size
@@ -330,25 +348,29 @@ def cohensD(x, y):
             x1.append(x[i])
         else:
             x0.append(x[i])
-    return (mean(x1) - mean(x0)) / (sqrt((std(x0, ddof=1) ** 2 + std(x1, ddof=1) ** 2) / 2))
+    return (mean(x1) - mean(x0)) / (
+        sqrt((std(x0, ddof=1) ** 2 + std(x1, ddof=1) ** 2) / 2)
+    )
 
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
-        yield l[i:i+n]
+        yield l[i : i + n]
+
 
 def conf_interval(r, samp_size, percent=DEF_CONF_INT):
     """calculates two sided confidence interval for pearson correlation coefficient (r)"""
     tup = ()
     if not np.isnan(r):
         z = np.arctanh(r)
-        sigma = (1/((samp_size-3)**0.5))
-        cint = z + np.array([-1, 1]) * sigma * norm.ppf((1+percent)/2)
+        sigma = 1 / ((samp_size - 3) ** 0.5)
+        cint = z + np.array([-1, 1]) * sigma * norm.ppf((1 + percent) / 2)
         tup = tuple(np.tanh(cint))
     else:
         tup = (np.nan, np.nan)
     return tup
+
 
 def meanXperY(x, y):
     """find the mean x for each label y"""
@@ -366,64 +388,87 @@ def meanXperY(x, y):
         means[yKey] = sums[yKey] / float(counts[yKey])
     return means
 
+
 def fiftyChecks(args):
     Xc, Xend, y, check = args
     np.random.seed()
-    lr = LogisticRegression(penalty='l2', C=1000000, fit_intercept=True)
+    lr = LogisticRegression(penalty="l2", C=1000000, fit_intercept=True)
     if Xc is not None:
-        r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [np.append(Xc, permutation(Xend), 1) for i in range(50)]])
+        r = sum(
+            [
+                roc_auc_score(y, lr.fit(newX, y).predict_proba(newX)[:, 1]) > check
+                for newX in [np.append(Xc, permutation(Xend), 1) for i in range(50)]
+            ]
+        )
     else:
-        r = sum([roc_auc_score(y, lr.fit(newX,y).predict_proba(newX)[:,1]) > check for newX in [permutation(Xend).reshape(len(Xend),1) for i in range(50)]])
+        r = sum(
+            [
+                roc_auc_score(y, lr.fit(newX, y).predict_proba(newX)[:, 1]) > check
+                for newX in [permutation(Xend).reshape(len(Xend), 1) for i in range(50)]
+            ]
+        )
     return r
+
 
 def getGroupFreqThresh(correl_field=None):
     """set group_freq_thresh based on level of analysis"""
     group_freq_thresh = DEF_GROUP_FREQ_THRESHOLD
     if correl_field:
-        if any(field in correl_field.lower() for field in ["mess", "msg"]) or correl_field.lower().startswith("id"):
+        if any(
+            field in correl_field.lower() for field in ["mess", "msg"]
+        ) or correl_field.lower().startswith("id"):
             group_freq_thresh = 1
         elif any(field in correl_field.lower() for field in ["user", "usr", "auth"]):
             group_freq_thresh = 500
-        elif any(field in correl_field.lower() for field in ["county", "cnty", "cty", "fips"]):
+        elif any(
+            field in correl_field.lower() for field in ["county", "cnty", "cty", "fips"]
+        ):
             group_freq_thresh = 40000
     return group_freq_thresh
+
 
 def getMetric(logistic=False, cohensd=False, idp=False, spearman=False, controls=False):
     """Return a string which best represents the metric used in the analysis. String is used in output (csv, wordcloud, etc.)"""
     if logistic:
-        metric = 'B'
+        metric = "B"
     elif cohensd:
-        metric = 'D'
+        metric = "D"
     elif idp:
-        metric = 'R'
+        metric = "R"
     elif spearman:
-        metric = 'rho'
+        metric = "rho"
     elif controls:
-        metric = 'beta'
+        metric = "beta"
     else:
-        metric = 'r'
+        metric = "r"
     return metric
+
 
 def permaSortedKey(s):
     if isinstance(s, (list, tuple)):
         s = str(s[0])
-    if isinstance (s, (float, int)):
+    if isinstance(s, (float, int)):
         return s
     return s
 
-def pCorrection(pDict, method=DEF_P_CORR, pLevelsSimes=[0.05, 0.01, 0.001], rDict = None):
+
+def pCorrection(pDict, method=DEF_P_CORR, pLevelsSimes=[0.05, 0.01, 0.001], rDict=None):
     """returns corrected p-values given a dict of [key]=> p-value"""
     method = DEF_P_MAPPING[method]
-    pLevelsSimes = list(pLevelsSimes) #copy so it can be popped
+    pLevelsSimes = list(pLevelsSimes)  # copy so it can be popped
     new_pDict = {}
-    if method == 'simes':
+    if method == "simes":
         n = len(pDict)
 
-        #pDictTuples = [[k, 1 if isnan(float(v)) else v] for k, v in pDict.iteritems()]
+        # pDictTuples = [[k, 1 if isnan(float(v)) else v] for k, v in pDict.iteritems()]
         pDictTuples = [[k, v] for k, v in pDict.items()]
         sortDict = rDict if rDict else pDict
 
-        sortedPTuples = sorted(pDictTuples, key=lambda tup: 0 if isnan(sortDict[tup[0]]) else fabs(sortDict[tup[0]]), reverse=True if rDict else False)
+        sortedPTuples = sorted(
+            pDictTuples,
+            key=lambda tup: 0 if isnan(sortDict[tup[0]]) else fabs(sortDict[tup[0]]),
+            reverse=True if rDict else False,
+        )
         ii = 0
         rejectRest = False
         pMax = pLevelsSimes.pop()
@@ -433,32 +478,37 @@ def pCorrection(pDict, method=DEF_P_CORR, pLevelsSimes=[0.05, 0.01, 0.001], rDic
             else:
                 newPValue = sortedPTuples[ii][1] * n / (ii + 1)
                 if newPValue < pMax:
-                    sortedPTuples[ii][1] = round((pMax - .00001) * pMax, 5)
+                    sortedPTuples[ii][1] = round((pMax - 0.00001) * pMax, 5)
                 else:
                     while len(pLevelsSimes) > 0 and newPValue >= pMax:
                         pMax = pLevelsSimes.pop()
                     if len(pLevelsSimes) == 0:
                         if newPValue < pMax:
-                            sortedPTuples[ii][1] = round((pMax - .00001) * pMax, 5)
+                            sortedPTuples[ii][1] = round((pMax - 0.00001) * pMax, 5)
                         else:
                             rejectRest = True
                             sortedPTuples[ii][1] = 1
                     else:
-                        sortedPTuples[ii][1] = round((pMax - .00001) * pMax, 5)
+                        sortedPTuples[ii][1] = round((pMax - 0.00001) * pMax, 5)
         new_pDict = dict(sortedPTuples)
     else:
         keys = list(pDict.keys())
-        reject, pvals_corrected, alphacSidak, alphacBonf  = mt.multipletests(
-            pvals=[1 if isnan(p) else p for p in [pDict[k] for k in keys]], method=method)
+        reject, pvals_corrected, alphacSidak, alphacBonf = mt.multipletests(
+            pvals=[1 if isnan(p) else p for p in [pDict[k] for k in keys]],
+            method=method,
+        )
         i = 0
         for key in keys:
             new_pDict[key] = pvals_corrected[i]
-            i+=1
+            i += 1
     return new_pDict
+
 
 def reverseDictDict(d):
     """reverses the order of keys in a dict of dicts"""
-    assert isinstance(next(iter(d.values())), dict), 'reverseDictDict not given a dictionary of dictionaries'
+    assert isinstance(
+        next(iter(d.values())), dict
+    ), "reverseDictDict not given a dictionary of dictionaries"
     revDict = dict()
     for key1, subd in d.items():
         for key2, value in subd.items():
@@ -467,16 +517,19 @@ def reverseDictDict(d):
             revDict[key2][key1] = value
     return revDict
 
-def rgbColorMix(fromColor, toColor, resolution, randomness = False):
-    #fromColor, toColor rgb (255 max) tuple
-    #resolution, how many truple to return inbetween
-    #(starts at from, but comes up one short of ToColor)
+
+def rgbColorMix(fromColor, toColor, resolution, randomness=False):
+    # fromColor, toColor rgb (255 max) tuple
+    # resolution, how many truple to return inbetween
+    # (starts at from, but comes up one short of ToColor)
     (fromColor, toColor) = (array(fromColor), array(toColor))
-    fromTo = toColor - fromColor #how to get from fromColor to toColor
+    fromTo = toColor - fromColor  # how to get from fromColor to toColor
     fromToInc = fromTo / float(resolution)
     gradientColors = []
     for i in range(resolution):
-        gradientColors.append(tuple([int(x) for x in round(fromColor + (i * fromToInc))]))
+        gradientColors.append(
+            tuple([int(x) for x in round(fromColor + (i * fromToInc))])
+        )
     if randomness:
         for i in range(len(gradientColors)):
             color = gradientColors[i]
@@ -489,14 +542,16 @@ def rgbColorMix(fromColor, toColor, resolution, randomness = False):
 
     return gradientColors
 
+
 def rowsToColumns(X):
     """Changes each X from being represented in columns to rows """
     return [X[0:, c] for c in range(len(X[0]))]
 
+
 def stratifiedZScoreybyX0(X, y):
     """zscores based on the means of all unique ys"""
-    #TODO: probably faster in vector operations
-    #first separate all rows for each y
+    # TODO: probably faster in vector operations
+    # first separate all rows for each y
     X0sToYs = dict()
     for i in range(len(y)):
         try:
@@ -504,32 +559,36 @@ def stratifiedZScoreybyX0(X, y):
         except KeyError:
             X0sToYs[X[i][0]] = [y[i]]
 
-    #next figure out the mean for x, for each unique y
+    # next figure out the mean for x, for each unique y
     meanYforX0s = []
     for ys in X0sToYs.values():
-        meanYforX0s.append(mean(ys)) #should turn into a row
+        meanYforX0s.append(mean(ys))  # should turn into a row
 
-    #figure out mean and std-dev for meanXs:
-    meanOfMeans = mean(meanYforX0s) #should be a row
-    stdDevOfMeans = std(meanYforX0s) #shoudl be a row
+    # figure out mean and std-dev for meanXs:
+    meanOfMeans = mean(meanYforX0s)  # should be a row
+    stdDevOfMeans = std(meanYforX0s)  # shoudl be a row
 
-    #apply to y:
+    # apply to y:
     newY = []
     for yi in y:
-        newY.append((yi - meanOfMeans)/float(stdDevOfMeans))
+        newY.append((yi - meanOfMeans) / float(stdDevOfMeans))
 
     return (zscore(X), newY)
 
+
 def switchColumnsAndRows(X):
     """Toggles X between rows of columns and columns of rows """
-    if not isinstance(X, np.ndarray): X = array(X)
+    if not isinstance(X, np.ndarray):
+        X = array(X)
     return array([X[0:, c] for c in range(len(X[0]))])
+
 
 def tupleToStr(tp):
     """Takes in a tuple and returns a string with spaces instead of commas"""
     if isinstance(tp, tuple):
-        return ';'.join([tupleToStr(t) for t in tp])
+        return ";".join([tupleToStr(t) for t in tp])
     return tp
+
 
 def unionDictsMaxOnCollision(d1, d2):
     """unions d1 and 2 always choosing the max between the two on a collision"""
@@ -539,14 +598,21 @@ def unionDictsMaxOnCollision(d1, d2):
             newD[k2] = v2
     return newD
 
+
 def warn(string, attention=False):
-    if attention: string = WARNING_STRING % string
+    if attention:
+        string = WARNING_STRING % string
     print(string, file=sys.stderr)
 
-#Local maintenance:
+
+# Local maintenance:
 def getReportingInt(reporting_percent, iterable_length):
     return max(1, floor(reporting_percent * iterable_length))
 
+
 def report(object_description, ii, reporting_int, iterable_length):
     if ii % reporting_int == 0:
-        warn("%d out of %d %s processed; %2.2f complete"%(ii, iterable_length, object_description, float(ii)/iterable_length))
+        warn(
+            "%d out of %d %s processed; %2.2f complete"
+            % (ii, iterable_length, object_description, float(ii) / iterable_length)
+        )

@@ -3,10 +3,12 @@
 
 import numpy as np
 from sklearn.base import BaseEstimator
-from sklearn.feature_selection.base import SelectorMixin
+from sklearn.feature_selection import SelectorMixin
 from sklearn.utils import check_array
-#from sklearn.utils.sparsefuncs_fast import csr_mean_variance_axis0
+
+# from sklearn.utils.sparsefuncs_fast import csr_mean_variance_axis0
 from scipy.stats import rankdata
+
 
 class OccurrenceThreshold(BaseEstimator, SelectorMixin):
     """Feature selector that removes all low-variance features.
@@ -15,12 +17,12 @@ class OccurrenceThreshold(BaseEstimator, SelectorMixin):
 
     Parameters
     ----------
- 
+
     threshold : float, optional
         Features with a training-set variance lower than this threshold will
         be removed. The default is to keep all features with non-zero variance,
         i.e. remove the features that have the same value in all samples.
-        
+
     Attributes
     ----------
     `counts_` : array, shape (n_features,)
@@ -29,33 +31,33 @@ class OccurrenceThreshold(BaseEstimator, SelectorMixin):
     --------
     The following dataset has integer features, two of which are the same
     in every sample. These are removed with the default setting for threshold:
-                                                                                                                                                                                                              
-        >>> X = [[0, 2, 0, 3], [0, 1, 4, 3], [0, 1, 1, 3]]                                                                                                                                                    
-        >>> selector = VarianceThreshold()                                                                                                                                                                    
-        >>> selector.fit_transform(X)                                                                                                                                                                         
-        array([[2, 0],                                                                                                                                                                                        
-               [1, 4],                                                                                                                                                                                        
-               [1, 1]])                                                                                                                                                                                       
+
+        >>> X = [[0, 2, 0, 3], [0, 1, 4, 3], [0, 1, 1, 3]]
+        >>> selector = VarianceThreshold()
+        >>> selector.fit_transform(X)
+        array([[2, 0],
+               [1, 4],
+               [1, 1]])
     """
 
     def __init__(self, threshold=1.0):
         """
-        zero_value identify the value that represents 0 when standardizing 
+        zero_value identify the value that represents 0 when standardizing
         """
         self.threshold = threshold
 
     def fit(self, X, y=None):
-        """Learn the occurrences. good for frequency / count data                                                                                                                                                                                                              
+        """Learn the occurrences. good for frequency / count data
         Parameters
-        ----------                                                                                                                                                                                            
+        ----------
         X : {array-like, sparse matrix}, shape (n_samples, n_features)
-            Sample vectors from which to compute variances.                                                                                                                                                                                                              
+            Sample vectors from which to compute variances.
         y : any
             Ignored. This parameter exists only for compatibility with
-            sklearn.pipeline.Pipeline.                                                                                                                                                                                                              
+            sklearn.pipeline.Pipeline.
         Returns
         -------
-        self                                                                                                                                                                                                  
+        self
         """
         X = check_array(X, dtype=np.float64)
 
@@ -65,11 +67,11 @@ class OccurrenceThreshold(BaseEstimator, SelectorMixin):
         #     self.avgValues_ = np.diff(X.tocsr().indptr)
         self.means_ = np.mean(X, 0)
 
-        self.ranks_ = self.means_.shape[0] - rankdata(self.means_, method='ordinal')
+        self.ranks_ = self.means_.shape[0] - rankdata(self.means_, method="ordinal")
         if isinstance(self.threshold, float):
-            self.threshold = int(round(X.shape[0]*self.threshold))
-        #print("SET THRESHOLD %s" % self.threshold) #debug
-        #print "RANKS: %s" % str(self.ranks_)[:30] #debug
+            self.threshold = int(round(X.shape[0] * self.threshold))
+        # print("SET THRESHOLD %s" % self.threshold) #debug
+        # print "RANKS: %s" % str(self.ranks_)[:30] #debug
 
         return self
 
@@ -77,25 +79,24 @@ class OccurrenceThreshold(BaseEstimator, SelectorMixin):
         return self.ranks_ < self.threshold
 
 
-#OLD approach (like p_occ)
-        # if hasattr(X, "toarray"):   # sparse matrix
-        #     if self.zero_value != "min" and self.zero_value != 0:
-        #         raise ValueError("zero_value other than -0 or min not possible with sparse matrices")
-        #     self.counts_ = np.diff(X.tocsr().indptr)
-        # else:
-        #     if self.zero_value == "min":
-        #         X = X - X.min(axis=0)
-        #     else:
-        #         X = X - self.zero_value
-        #     self.counts_ = np.apply_along_axis(np.count_nonzero, axis = 0, arr = X)
+# OLD approach (like p_occ)
+# if hasattr(X, "toarray"):   # sparse matrix
+#     if self.zero_value != "min" and self.zero_value != 0:
+#         raise ValueError("zero_value other than -0 or min not possible with sparse matrices")
+#     self.counts_ = np.diff(X.tocsr().indptr)
+# else:
+#     if self.zero_value == "min":
+#         X = X - X.min(axis=0)
+#     else:
+#         X = X - self.zero_value
+#     self.counts_ = np.apply_along_axis(np.count_nonzero, axis = 0, arr = X)
 
 
-        # if self.threshold < 1:
-        #     self.threshold = long(round(counts_.shape[0]*self.threshold))
+# if self.threshold < 1:
+#     self.threshold = long(round(counts_.shape[0]*self.threshold))
 
-        # if np.all(self.counts_ < self.threshold):
-        #     msg = "No feature in X meets the occurrence threshold {0:d}"
-        #     if X.shape[0] == 1:
-        #         msg += " (X contains only one sample)"
-        #     raise ValueError(msg.format(self.threshold))
-        
+# if np.all(self.counts_ < self.threshold):
+#     msg = "No feature in X meets the occurrence threshold {0:d}"
+#     if X.shape[0] == 1:
+#         msg += " (X contains only one sample)"
+#     raise ValueError(msg.format(self.threshold))

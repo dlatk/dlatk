@@ -31,6 +31,11 @@ DLATK is available via any of four popular installation platforms: conda, pip, g
 #### New to installing Python packages?
 It is recommended that you see the [full installation instructions](http://dlatk.wwbp.org/install.html#dependencies). 
 
+### 0. Make sure you have python3-mysqldb:
+```sh
+sudo apt-get install python3-mysqldb
+```
+
 ### 1. conda
 ```sh
 conda install -c wwbp dlatk

@@ -74,6 +74,19 @@ docker run -it --rm --name dlatk_docker --link mysql_v5:mysql dlatk/dlatk bash
 See the [full installation instructions](http://dlatk.wwbp.org/install.html#dependencies)
 for recommended and optional dependencies.
 
+## Quick Start
+
+To check if it will run:
+
+```sh
+python3 dlatkInterface.py -h```
+
+To add packaged data to mysql:
+```sh
+mysql -e 'CREATE DATABASE dla_tutorial'; cat dlatk/data/dla_tutorial.sql | mysql dla_tutorial
+mysql -e 'CREATE DATABASE dlatk_lexica'; cat dlatk/data/dlatk_lexica.sql | mysql dlark_lexica
+```
+
 ## Documentation
 
 The documentation for the latest release is at [dlatk.wwbp.org](dlatk.wwbp.org).

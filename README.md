@@ -79,12 +79,50 @@ for recommended and optional dependencies.
 To check if it will run:
 
 ```sh
-python3 dlatkInterface.py -h```
+python3 dlatkInterface.py -h
+```
 
-To add packaged data to mysql:
+To add packaged data to mysql and text with it:
+
 ```sh
 mysql -e 'CREATE DATABASE dla_tutorial'; cat dlatk/data/dla_tutorial.sql | mysql dla_tutorial
 mysql -e 'CREATE DATABASE dlatk_lexica'; cat dlatk/data/dlatk_lexica.sql | mysql dlark_lexica
+
+python3 dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_ngrams -n 1 --add_lex -l dd_intAff --weighted_lex
+```
+
+```console
+-----
+DLATK Interface Initiated: XXXX-XX-XX XX:XX:XX
+-----
+SQL QUERY: DROP TABLE IF EXISTS feat$1gram$msgs$user_id$16to16
+SQL QUERY: CREATE TABLE feat$1gram$msgs$user_id$16to16 ( id BIGINT(16) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, group_id int(10) unsigned, feat VARCHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin, value INTEGER, group_norm DOUBLE, KEY `correl_field` (`group_id
+SQL QUERY: DROP TABLE IF EXISTS feat$meta_1gram$msgs$user_id$16to16
+SQL QUERY: CREATE TABLE feat$meta_1gram$msgs$user_id$16to16 ( id BIGINT(16) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, group_id int(10) unsigned, feat VARCHAR(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin, value INTEGER, group_norm DOUBLE, KEY `correl_field` (`gro
+finding messages for 1000 'user_id's
+SQL QUERY: ALTER TABLE feat$1gram$msgs$user_id$16to16 DISABLE KEYS
+Messages Read: 5k
+...
+Messages Read: 30k
+Done Reading / Inserting.
+Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).
+SQL QUERY: ALTER TABLE feat$1gram$msgs$user_id$16to16 ENABLE KEYS
+Done
+
+Intercept detected 5.037105 [category: AFFECT_AVG]
+Intercept detected 2.399763 [category: INTENSITY_AVG]
+SQL QUERY: DROP TABLE IF EXISTS feat$cat_dd_intAff_w$msgs$user_id$1gra
+SQL QUERY: CREATE TABLE feat$cat_dd_intAff_w$msgs$user_id$1gra ( id BIGINT(16) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, group_id int(10) unsigned, feat VARCHAR(13) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin, value INTEGER, group_norm DOUBLE, KEY `correl_field` (`
+WORD TABLE feat$1gram$msgs$user_id$16to16
+SQL QUERY: ALTER TABLE feat$cat_dd_intAff_w$msgs$user_id$1gra DISABLE KEYS
+10 out of 1000 group Id's processed; 0.01 complete
+20 out of 1000 group Id's processed; 0.02 complete
+...
+1000 out of 1000 group Id's processed; 1.00 complete
+SQL QUERY: ALTER TABLE feat$cat_dd_intAff_w$msgs$user_id$1gra ENABLE KEYS
+--
+Interface Runtime: 167.67 seconds
+DLATK exits with success! A good day indeed  ¯\_(ツ)_/¯.
 ```
 
 ## Documentation

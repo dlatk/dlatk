@@ -91,6 +91,8 @@ mysql -e 'CREATE DATABASE dlatk_lexica'; cat dlatk/data/dlatk_lexica.sql | mysql
 python3 dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_ngrams -n 1 --add_lex -l dd_intAff --weighted_lex
 ```
 
+Expected output:
+
 ```console
 -----
 DLATK Interface Initiated: XXXX-XX-XX XX:XX:XX

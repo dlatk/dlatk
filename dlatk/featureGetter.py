@@ -899,7 +899,8 @@ class FeatureGetter(DLAWorker):
                         continue
 
                 msg_ids = [str(msgs_id) for msgs_id in msg_ids][0:lim_num]
-                msg_sql = """SELECT message_id, message FROM {db}.{tbl} WHERE message_id in ({msg_ids})""".format(db=self.corpdb, tbl=self.corptable, msg_ids=", ".join(msg_ids))
+                msg_sql = """SELECT message_id, message FROM {db}.{tbl} WHERE message_id in ('{msg_ids}')""" \
+                    .format(db=self.corpdb, tbl=self.corptable, msg_ids="', '".join(msg_ids))
 
                 msgs =  mm.executeGetList(self.corpdb, self.dbCursor, msg_sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode)
                 for msg in msgs:

@@ -129,13 +129,14 @@ class FeatureExtractor(DLAWorker):
             Name of n-gram table: feat%ngram%corptable%correl_field%transform
         """
         ##NOTE: correl_field should have an index for this to be quick
-        tokenizer = Tokenizer(use_unicode=self.use_unicode)
+        tokenizer = Tokenizer(preserve_case = not lowercase_only, use_unicode=self.use_unicode)
 
         #debug:
         #print "valueFunc(30) = %f" % valueFunc(float(30)) #debug
 
         #CREATE TABLE:
         featureName = str(n)+'gram'
+        if not lowercasE_only: featureName += 'Up'
         varcharLength = min((dlac.VARCHAR_WORD_LENGTH-(n-1))*n, 255)
         featureTableName = self.createFeatureTable(featureName, "VARCHAR(%d)"%varcharLength, 'INTEGER', tableName, valueFunc, extension = extension)
 

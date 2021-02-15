@@ -136,7 +136,7 @@ class FeatureExtractor(DLAWorker):
 
         #CREATE TABLE:
         featureName = str(n)+'gram'
-        if not lowercasE_only: featureName += 'Up'
+        if not lowercase_only: featureName += 'Up'
         varcharLength = min((dlac.VARCHAR_WORD_LENGTH-(n-1))*n, 255)
         featureTableName = self.createFeatureTable(featureName, "VARCHAR(%d)"%varcharLength, 'INTEGER', tableName, valueFunc, extension = extension)
 

@@ -1,4 +1,11 @@
-<welcome>
+Welcome as a developer of DLATK!
+
+Protocols for editing:
+1. Commit often (i.e. every 30 minutes)
+2. Make sure to include a commit message that breifly describes the update:
+ -- if it's a bug fix, prepend message with "FIXED BUG:"
+ -- if it's a feature addition, prepend message with "ADDED FEATURE:"
+ These can be short but to the point, e.g. "BUG FIX: regressionPredictor working with sklearn v0.22)
 
 
 This package is maintains at the level of being prototyping; With current resources, it should not be considered on a "mature" update cycle. 
@@ -6,3 +13,6 @@ The process that the maintainers take to update public (and pip..etc...) consist
    1. Running unit tests that cover word DLA, topic DLA, and regression and classification
    2. A look through of the commit log to pull out key peices for change log
    3. An increment of the version number
+   4. Make sure setup.py runs
+
+Unit Test:

@@ -1,0 +1,8 @@
+<welcome>
+
+
+This package is maintains at the level of being prototyping; With current resources, it should not be considered on a "mature" update cycle. 
+The process that the maintainers take to update public (and pip..etc...) consists of:
+   1. Running unit tests that cover word DLA, topic DLA, and regression and classification
+   2. A look through of the commit log to pull out key peices for change log
+   3. An increment of the version number

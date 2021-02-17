@@ -1,13 +1,23 @@
 Welcome as a developer of DLATK! 
 
-DLATK is an open source package. Our typical development is motivated by rapid prototyping of new techniques. However, there are several corse pieces of DLATK that need to be reliable: running DLA on words, topic extraction, and running ridge regression, logistic regression and/or extra tree classifiers. We rely on developers making clear commit statements documenting their process, as well as contributing to the overall documentation for more significant updates. We try to balance not getting bogged down with protocols with also trying to make it easy to update and insure reliability of our core functionality. 
+DLATK is an open source package. Our typical development is motivated by rapid prototyping 
+of new techniques. However, there are several corse pieces of DLATK that need to be reliable: 
+running DLA on words, topic extraction, and running ridge regression, logistic regression 
+and/or extra tree classifiers. We rely on developers making clear commit statements documenting 
+their process, as well as contributing to the overall documentation for more significant 
+updates. We try to balance not getting bogged down with protocols with also trying to make 
+it easy to update and insure reliability of our core functionality. 
+
 
 Protocols for editing:
+======================
 1. Commit often (i.e. every 30 minutes)
+
 2. Make sure to include a commit message that breifly describes the update:
  -- if it's a bug fix, prepend message with "FIXED BUG:"
  -- if it's a feature addition, prepend message with "ADDED FEATURE:"
  These can be short but to the point, e.g. "BUG FIX: regressionPredictor working with sklearn v0.22)
+
 3. If adding a significant new feature, create a new branch (e.g. we created dev-transformers when we first added transformers to dlatk). 
  -- be sure to add documentation
 

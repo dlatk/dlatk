@@ -6,7 +6,8 @@ Protocols for editing:
  -- if it's a bug fix, prepend message with "FIXED BUG:"
  -- if it's a feature addition, prepend message with "ADDED FEATURE:"
  These can be short but to the point, e.g. "BUG FIX: regressionPredictor working with sklearn v0.22)
-
+3. If adding a significant new feature, create a new branch (e.g. we created dev-transformers when we first added transformers to dlatk). 
+ -- be sure to add documentation
 
 This package is maintains at the level of being prototyping; With current resources, it should not be considered on a "mature" update cycle. 
 The process that the maintainers take to update public (and pip..etc...) consists of:

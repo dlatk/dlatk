@@ -1511,7 +1511,7 @@ class FeatureExtractor(DLAWorker):
         correlField : :obj:`str`, optional
             Correlation Field (AKA Group Field): The field which features are aggregated over
         extension : :obj:`str`, optional
-            ?????
+            Sting appended to end of table name
 
         """
         #create table name
@@ -1531,7 +1531,7 @@ class FeatureExtractor(DLAWorker):
                     warn("feature extractor: unable to check if category name can support _intercept")
 
             else:
-                if valueFunc:
+                if valueFunc and round(valueFunc(16)) != 16:
                     tableName += '$' + str(16)+'to'+"%d"%round(valueFunc(16))
             if extension:
                 tableName += '$' + extension

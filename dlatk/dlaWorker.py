@@ -56,7 +56,14 @@ class DLAWorker(object):
         self.qb = QueryBuilder(self.data_engine)
 
         self.lexicondb = lexicondb
-        self.wordTable = wordTable if wordTable else "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
+        if wordTable:
+            self.wordTable = wordTable
+        else:
+            wordTable = "feat$1gram$%s$%s"%(self.corptable, self.correl_field)
+            if not self.data_engine.tableExists(wordTable):
+                wordTable = "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
+            self.wordTable = wordTable
+        print("wordTablewordTablewordTable", wordTable)
         self.messageIdUniqueChecked = False
 
     ##PUBLIC METHODS#
@@ -217,7 +224,11 @@ class DLAWorker(object):
         if self.wordTable: return self.wordTable
         if not corptable:
             corptable  = self.corptable
-        return "feat$1gram$%s$%s$16to16"%(corptable, self.correl_field)
+        
+        wordTable = "feat$1gram$%s$%s"%(corptable, self.correl_field)
+        if not self.data_engine.tableExists(wordTable):
+            wordTable = "feat$1gram$%s$%s$16to16"%(corptable, self.correl_field)
+        return wordTable
 
     def get1gramTable(self):
         """?????
@@ -227,7 +238,10 @@ class DLAWorker(object):
         str
             Name of word table (1gram table) for a given corptable and correl field.
         """
-        return "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
+        wordTable = "feat$1gram$%s$%s"%(self.corptable, self.correl_field)
+        if not self.data_engine.tableExists(wordTable):
+            wordTable = "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
+        return wordTable
         
     def getWordTablePOcc(self, pocc):
         """This function does something.
@@ -242,7 +256,10 @@ class DLAWorker(object):
         str
             A word table (1gram table) for a given corptable, correl field and p occurrence value.
         """
-        return "feat$1gram$%s$%s$16to16$%s"%(self.corptable, self.correl_field, str(pocc).replace('.', '_'))
+        wordTable = "feat$1gram$%s$%s$%s"%(self.corptable, self.correl_field, str(pocc).replace('.', '_'))
+        if not self.data_engine.tableExists(wordTable):
+            wordTable = "feat$1gram$%s$%s$16to16$%s"%(self.corptable, self.correl_field, str(pocc).replace('.', '_'))
+        return wordTable
 
     def getWordGetter(self, lexicon_count_table=None):
         """Returns a FeatureGetter used for getting word counts. Usually used for group_freq_thresh.

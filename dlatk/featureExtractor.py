@@ -2075,11 +2075,13 @@ class FeatureExtractor(DLAWorker):
         #3. grab all distinct group ids
         wordTable = self.getWordTable()
         dlac.warn("WORD TABLE %s"%(wordTable,))
-        assert mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode), "Need to create 1gram 16to16 table to apply groupThresh: %s" % wordTable
+        assert mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode), "Need to create 1gram with default scaling (16to16) table to apply groupThresh: %s" % wordTable
 
         #3.2 check that the POS table exists
         if not pos_table:
-            pos_table = "feat$1gram_pos$%s$%s$16to16" %(self.corptable, self.correl_field)
+            pos_table = "feat$1gram_pos$%s$%s" %(self.corptable, self.correl_field)
+            if not mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode):
+                pos_table = "feat$1gram_pos$%s$%s$16to16" %(self.corptable, self.correl_field)
         dlac.warn("POS TABLE: %s"%(pos_table,))
         assert mm.tableExists(self.corpdb, self.dbCursor, pos_table, charset=self.encoding, use_unicode=self.use_unicode), "Need to create POS table to apply functionality: %s" % pos_table
         sql = "SELECT DISTINCT group_id FROM %s"%pos_table

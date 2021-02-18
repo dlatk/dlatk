@@ -35,7 +35,7 @@ Unigrams
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_ngrams -n 1
 
 .. code-block:: mysql
 
@@ -75,7 +75,7 @@ This command will make separate feature tables for each "n".
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 2 3
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_ngrams -n 2 3
 
 .. code-block:: mysql
 
@@ -108,7 +108,7 @@ DLATK uses `Happier Fun Tokenizer <https://github.com/dlatk/happierfuntokenizing
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs_tok -c user_id --add_ngrams_from_tokenized -n 1
+   ./dlatkInterface.py -d dla_tutorial -t msgs_tok -g user_id --add_ngrams_from_tokenized -n 1
 
 .. code-block:: mysql
 
@@ -134,7 +134,7 @@ This removes rare features. Specifically, it filters features so as to keep only
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id' --feat_occ_filter --set_p_occ .05 --group_freq_thresh 500
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id -f 'feat$1to3gram$msgs$user_id' --feat_occ_filter --set_p_occ .05 --group_freq_thresh 500
 
 Note the use of --group_freq_thresh. This is one of the only feature extraction methods where this flag is considered.
 
@@ -146,11 +146,11 @@ Character n-grams
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_char_ngrams -n 1 
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_char_ngrams -n 1 
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_char_ngrams -n 1 2 --combine_feat_tables 1to2Cgram
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_char_ngrams -n 1 2 --combine_feat_tables 1to2Cgram
 
 .. code-block:: mysql
 
@@ -174,7 +174,7 @@ Creates new feature table where the group_norm is the tf-idf score
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id' --tf_idf
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id -f 'feat$1gram$msgs$user_id' --tf_idf
 
 .. code-block:: mysql
 
@@ -198,7 +198,7 @@ Collocations and Pointwise Mutual Information
 .. code-block:: bash
 
    # creates the table feat$1to3gram$msgs$user_id
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id' --feat_colloc_filter --set_pmi_threshold 6.0
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id -f 'feat$1to3gram$msgs$user_id' --feat_colloc_filter --set_pmi_threshold 6.0
 
 Transformed Tables
 ------------------
@@ -213,16 +213,16 @@ These switches transform the feature table during feature extraction and therefo
 .. code-block:: bash
 
    # produces the table feat$1gram$msgs$user_id$16to8
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1 --anscombe
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_ngrams -n 1 --anscombe
 
    # produces the table feat$1gram$msgs$user_id$16to4
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1 --sqrt
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_ngrams -n 1 --sqrt
 
    # produces the table feat$1gram$msgs$user_id$16to3
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1 --log
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_ngrams -n 1 --log
 
    # produces the table feat$1gram$msgs$user_id$16to1
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1 --boolean
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_ngrams -n 1 --boolean
 
 .. code-block:: mysql
 
@@ -278,17 +278,17 @@ Word Tables
 * :doc:`../fwinterface/fwflag_word_table`
 * :doc:`../fwinterface/fwflag_group_freq_thresh`
 
-The word table is used to select groups that meet a certain language useage threshold. This is what we call the "group frequency threshold", as specified by the --group_freq_thresh flag. It says that we will only consider groups who use at least N words (typically 1 when working at the message level, 500 when working at the user level and 40,000 when working with communities). The word table is automatically queried based on the -t and -c flag. For example, given the following base command:
+The word table is used to select groups that meet a certain language useage threshold. This is what we call the "group frequency threshold", as specified by the --group_freq_thresh flag. It says that we will only consider groups who use at least N words (typically 1 when working at the message level, 500 when working at the user level and 40,000 when working with communities). The word table is automatically queried based on the -t and -g flag. For example, given the following base command:
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id 
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id 
 
 DLATK will query the table "feat$1gram$msgs$user_id". The flag --word_table overrides this. It is especially useful when working with large data when the standard word table will not fit into memory. In this case we often use a feature occurrence filtered table (filtered at a small threshold). For example
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --word_table 'feat$1gram$msgs$user_id$0_01'
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id --word_table 'feat$1gram$msgs$user_id$0_01'
 
 Lexica
 ------
@@ -298,7 +298,7 @@ DLATK supports both unweighted and weighted lexica. Here is an example of an unw
 .. code-block:: bash
 
    # creates the table feat$cat_LIWC2015$msgs$user_id$1gra
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_lex_table -l LIWC2015
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_lex_table -l LIWC2015
 
 .. code-block:: mysql
 
@@ -333,7 +333,7 @@ Here is an example of a weighted lexicon. Note the use of the --weighted_lexicon
 .. code-block:: bash
 
    # creates the table feat$cat_met_a30_2000_cp_w$msgs$user_id$1gra
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_lex_table -l met_a30_2000_cp --weighted_lexicon
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_lex_table -l met_a30_2000_cp --weighted_lexicon
 
 .. code-block:: mysql
 
@@ -368,13 +368,13 @@ Combine multiple feature tables into a single table.
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id' 'feat$2gram$msgs$user_id' 'feat$3gram$msgs$user_id' --combine_feat_tables 1to3gram
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id -f 'feat$1gram$msgs$user_id' 'feat$2gram$msgs$user_id' 'feat$3gram$msgs$user_id' --combine_feat_tables 1to3gram
 
 This also works during ngram extraction:
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1 2 3 --combine_feat_tables 1to3gram
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_ngrams -n 1 2 3 --combine_feat_tables 1to3gram
 
 Part of Speech
 ==============
@@ -386,7 +386,7 @@ Part of Speech Usage
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_pos_table
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_pos_table
 
 .. code-block:: mysql
 
@@ -409,7 +409,7 @@ Part of Speech N-grams
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_pos_ngram_table
+   ./dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_pos_ngram_table
 
 .. code-block:: mysql
 

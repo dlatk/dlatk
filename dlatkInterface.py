@@ -286,7 +286,7 @@ def main(fn_args = None):
                        help='Uses feat_blacklist or --lex_table and --categories.')
     group.add_argument('--spearman', action='store_true', dest='spearman',
                        help='Use Spearman R instead of Pearson.')
-    group.add_argument('--logistic_reg', action='store_true', dest='logisticReg', default=False,
+    group.add_argument('--logistic_reg', '--logistic', '--logistic_regression', action='store_true', dest='logisticReg', default=False,
                        help='Use logistic regression instead of linear regression. This is better for binary outcomes.')
     group.add_argument('--cohens_d', action='store_true', dest='cohensd', default=False,
                        help='Report Cohen\'s D with logistic regression instead coefficients (B\'s).')

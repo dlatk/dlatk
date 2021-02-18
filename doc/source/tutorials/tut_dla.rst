@@ -51,10 +51,10 @@ This step generates a quantitative summary of a body of text.  It basically does
 .. code-block:: bash
 
 	##EXPECTED OUTPUT TABLES 
-	#feat$1gram$msgs_xxx$user_id$16to16
-	#feat$2gram$msgs_xxx$user_id$16to16
-	#feat$3gram$msgs_xxx$user_id$16to16
-	#feat$1to3gram$msgs_xxx$user_id$16to16
+	#feat$1gram$msgs_xxx$user_id
+	#feat$2gram$msgs_xxx$user_id
+	#feat$3gram$msgs_xxx$user_id
+	#feat$1to3gram$msgs_xxx$user_id
 	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_ngrams -n 1 2 3 --combine_feat_tables 1to3gram
 
 The above command will produce four tables: one for each 'n' and then a table which combines everything (the 1gram, 2gram and 3gram tables). Next we will remove rare features from the combined table using the following:
@@ -62,8 +62,8 @@ The above command will produce four tables: one for each 'n' and then a table wh
 .. code-block:: bash
 
 	##EXPECTED OUTPUT TABLES 
-	#feat$1to3gram$msgs_xxx$user_id$16to16$0_05
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id -f 'feat$1to3gram$msgs_xxx$user_id$16to16' --feat_occ_filter --set_p_occ 0.05 --group_freq_thresh 500
+	#feat$1to3gram$msgs_xxx$user_id$0_05
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id -f 'feat$1to3gram$msgs_xxx$user_id' --feat_occ_filter --set_p_occ 0.05 --group_freq_thresh 500
 
 This command removes any feature used by less than 5% of groups. Note that we are using the :doc:`../fwinterface/fwflag_group_freq_thresh` flag as well which says we are only looking at groups with at least 500 words.
 
@@ -82,7 +82,7 @@ To view the columns in your feature table use the following **mysql** command:
 
 .. code-block:: mysql
 
-	describe feat$1gram$msgs_xxx$user_id$16to16;
+	describe feat$1gram$msgs_xxx$user_id;
 
 This will give you the following output
 
@@ -110,7 +110,7 @@ To view the features tables use the following command in **mysql**. This will sh
 
 .. code-block:: mysql
 
-	mysql> select * from dla_tutorial.feat$1gram$msgs_xxx$user_id$16to16 limit 10;
+	mysql> select * from dla_tutorial.feat$1to3gram$msgs_xxx$user_id limit 10;
 	+----+----------------------------------+-----------+-------+----------------------+
 	| id | group_id                         | feat      | value | group_norm           |
 	+----+----------------------------------+-----------+-------+----------------------+
@@ -130,14 +130,14 @@ You can also compare the sizes of the two tables to see the effect of --feat_occ
 
 .. code-block:: mysql
 
-	mysql> select count(distinct feat) from dla_tutorial.feat$1gram$msgs_xxx$user_id$16to16;
+	mysql> select count(distinct feat) from dla_tutorial.feat$1to3gram$msgs_xxx$user_id;
 	+----------------------+
 	| count(distinct feat) |
 	+----------------------+
 	|                65593 |
 	+----------------------+
 
-	mysql> select count(distinct feat) from dla_tutorial.feat$1gram$msgs_xxx$user_id$16to16$0_1;
+	mysql> select count(distinct feat) from dla_tutorial.feat$1to3gram$msgs_xxx$user_id$0_05;
 	+----------------------+
 	| count(distinct feat) |
 	+----------------------+
@@ -150,7 +150,7 @@ Given the definition of group norm above, what would you expect to get if you su
 
 .. code-block:: mysql
 
-	select group_id, sum(group_norm) from dla_tutorial.feat$1gram$msgs_xxx$user_id$16to16 group by group_id limit 10;
+	select group_id, sum(group_norm) from dla_tutorial.feat$1gram$msgs_xxx$user_id group by group_id limit 10;
 
 Generate 1to3-gram Features
 ---------------------------
@@ -160,13 +160,13 @@ Now we will generate a 1-3 gram table which will contain all 1grams, 2grams 3gra
 .. code-block:: bash
 
 	##EXPECTED OUTPUT TABLES 
-	#feat$1gram$msgs_xxx$user_id$16to16
-	#feat$2gram$msgs_xxx$user_id$16to16
-	#feat$3gram$msgs_xxx$user_id$16to16
-	#feat$1to3gram$msgs_xxx$user_id$16to16
+	#feat$1gram$msgs_xxx$user_id
+	#feat$2gram$msgs_xxx$user_id
+	#feat$3gram$msgs_xxx$user_id
+	#feat$1to3gram$msgs_xxx$user_id
 	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_ngrams -n 1 2 3 --combine_feat_tables 1to3gram
 
-The argument to the :doc:`../fwinterface/fwflag_combine_feat_tables` flag is used to name the combined table. We used 1to3gram which have us the feature table feat$1to3gram$msgs_xxx$user_id$16to16. 
+The argument to the :doc:`../fwinterface/fwflag_combine_feat_tables` flag is used to name the combined table. We used 1to3gram which have us the feature table feat$1to3gram$msgs_xxx$user_id. 
 
 Generate Lexicon (topic) Features
 ---------------------------------
@@ -285,7 +285,7 @@ Next we look at language correlates and begin with 1to3grams:
 .. code-block:: bash
 
 	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
-	-f 'feat$1to3gram$msgs_xxx$user_id$16to16$0_05' \ 
+	-f 'feat$1to3gram$msgs_xxx$user_id$0_05' \ 
 	--outcome_table blog_outcomes  --group_freq_thresh 500 \ 
 	--outcomes age gender --output_name xxx_output \ 
 	--tagcloud --make_wordclouds

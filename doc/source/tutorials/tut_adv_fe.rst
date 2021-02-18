@@ -39,7 +39,7 @@ Unigrams
 
 .. code-block:: mysql
 
-   mysql> select * from feat$1gram$msgs$user_id$16to16 limit 5;
+   mysql> select * from feat$1gram$msgs$user_id limit 5;
    +----+----------+-----------+-------+----------------------+
    | id | group_id | feat      | value | group_norm           |
    +----+----------+-----------+-------+----------------------+
@@ -50,11 +50,11 @@ Unigrams
    |  5 |    28451 | lime      |     1 | 0.000953288846520496 |
    +----+----------+-----------+-------+----------------------+
 
-This also creates a "meta" table called feat$meta_1gram$msgs$user_id$16to16 which contains average 1gram length, average 1grams per message and total 1grams:
+This also creates a "meta" table called feat$meta_1gram$msgs$user_id which contains average 1gram length, average 1grams per message and total 1grams:
 
 .. code-block:: mysql
 
-   mysql> select * from feat$meta_1gram$msgs$user_id$16to16 limit 5;
+   mysql> select * from feat$meta_1gram$msgs$user_id limit 5;
    +----+----------+------------------+-------+------------------+
    | id | group_id | feat             | value | group_norm       |
    +----+----------+------------------+-------+------------------+
@@ -79,7 +79,7 @@ This command will make separate feature tables for each "n".
 
 .. code-block:: mysql
 
-   mysql> select * from feat$2gram$msgs$user_id$16to16 limit 5;
+   mysql> select * from feat$2gram$msgs$user_id limit 5;
    +----+----------+------------------+-------+----------------------+
    | id | group_id | feat             | value | group_norm           |
    +----+----------+------------------+-------+----------------------+
@@ -90,7 +90,7 @@ This command will make separate feature tables for each "n".
    |  5 |    28451 | charecter ,      |     1 | 0.000965250965250965 |
    +----+----------+------------------+-------+----------------------+
 
-   mysql> select * from feat$3gram$msgs$user_id$16to16 limit 5;
+   mysql> select * from feat$3gram$msgs$user_id limit 5;
    +----+----------+-------------------+-------+----------------------+
    | id | group_id | feat              | value | group_norm           |
    +----+----------+-------------------+-------+----------------------+
@@ -112,7 +112,7 @@ DLATK uses `Happier Fun Tokenizer <https://github.com/dlatk/happierfuntokenizing
 
 .. code-block:: mysql
 
-   mysql> select * from feat$1gram$msgs_tok$user_id$16to16 limit 5;
+   mysql> select * from feat$1gram$msgs_tok$user_id limit 5;
    +----+----------+-------------+-------+----------------------+
    | id | group_id | feat        | value | group_norm           |
    +----+----------+-------------+-------+----------------------+
@@ -134,7 +134,7 @@ This removes rare features. Specifically, it filters features so as to keep only
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$16to16' --feat_occ_filter --set_p_occ .05 --group_freq_thresh 500
+   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id' --feat_occ_filter --set_p_occ .05 --group_freq_thresh 500
 
 Note the use of --group_freq_thresh. This is one of the only feature extraction methods where this flag is considered.
 
@@ -154,7 +154,7 @@ Character n-grams
 
 .. code-block:: mysql
 
-   mysql> select * from feat$1to2Cgram$msgs$user_id$16to16 limit 5;
+   mysql> select * from feat$1to2Cgram$msgs$user_id limit 5;
    +----+----------+------+-------+---------------------+
    | id | group_id | feat | value | group_norm          |
    +----+----------+------+-------+---------------------+
@@ -174,7 +174,7 @@ Creates new feature table where the group_norm is the tf-idf score
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' --tf_idf
+   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id' --tf_idf
 
 .. code-block:: mysql
 
@@ -197,8 +197,8 @@ Collocations and Pointwise Mutual Information
 
 .. code-block:: bash
 
-   # creates the table feat$1to3gram$msgs$user_id$16to16
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$16to16' --feat_colloc_filter --set_pmi_threshold 6.0
+   # creates the table feat$1to3gram$msgs$user_id
+   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id' --feat_colloc_filter --set_pmi_threshold 6.0
 
 Transformed Tables
 ------------------
@@ -284,11 +284,11 @@ The word table is used to select groups that meet a certain language useage thre
 
    ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id 
 
-DLATK will query the table "feat$1gram$msgs$user_id$16to16". The flag --word_table overrides this. It is especially useful when working with large data when the standard word table will not fit into memory. In this case we often use a feature occurrence filtered table (filtered at a small threshold). For example
+DLATK will query the table "feat$1gram$msgs$user_id". The flag --word_table overrides this. It is especially useful when working with large data when the standard word table will not fit into memory. In this case we often use a feature occurrence filtered table (filtered at a small threshold). For example
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --word_table 'feat$1gram$msgs$user_id$16to16$0_01'
+   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --word_table 'feat$1gram$msgs$user_id$0_01'
 
 Lexica
 ------
@@ -297,7 +297,7 @@ DLATK supports both unweighted and weighted lexica. Here is an example of an unw
 
 .. code-block:: bash
 
-   # creates the table feat$cat_LIWC2015$msgs$user_id$16to16
+   # creates the table feat$cat_LIWC2015$msgs$user_id$1gra
    ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_lex_table -l LIWC2015
 
 .. code-block:: mysql
@@ -313,7 +313,7 @@ DLATK supports both unweighted and weighted lexica. Here is an example of an unw
    |  5 | hers | PPRON    |      1 |
    +----+------+----------+--------+
 
-   mysql> select * from feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16  limit 5;
+   mysql> select * from feat$cat_met_a30_2000_cp_w$msgs$user_id$1gra  limit 5;
    +----+----------+------+-------+--------------------------+
    | id | group_id | feat | value | group_norm               |
    +----+----------+------+-------+--------------------------+
@@ -332,7 +332,7 @@ Here is an example of a weighted lexicon. Note the use of the --weighted_lexicon
 
 .. code-block:: bash
 
-   # creates the table feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16
+   # creates the table feat$cat_met_a30_2000_cp_w$msgs$user_id$1gra
    ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_lex_table -l met_a30_2000_cp --weighted_lexicon
 
 .. code-block:: mysql
@@ -348,7 +348,7 @@ Here is an example of a weighted lexicon. Note the use of the --weighted_lexicon
    |  5 | finest  | 344      |  0.000520020800832 |
    +----+---------+----------+--------------------+
 
-   mysql> select * from feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16  limit 5;
+   mysql> select * from feat$cat_met_a30_2000_cp_w$msgs$user_id$1gra  limit 5;
    +----+----------+------+-------+--------------------------+
    | id | group_id | feat | value | group_norm               |
    +----+----------+------+-------+--------------------------+
@@ -368,7 +368,7 @@ Combine multiple feature tables into a single table.
 
 .. code-block:: bash
 
-   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' 'feat$2gram$msgs$user_id$16to16' 'feat$3gram$msgs$user_id$16to16' --combine_feat_tables 1to3gram
+   ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id' 'feat$2gram$msgs$user_id' 'feat$3gram$msgs$user_id' --combine_feat_tables 1to3gram
 
 This also works during ngram extraction:
 
@@ -390,7 +390,7 @@ Part of Speech Usage
 
 .. code-block:: mysql
 
-   mysql> select * from feat$pos$msgs$user_id$16to16 limit 5;
+   mysql> select * from feat$pos$msgs$user_id limit 5;
    +----+----------+------+-------+----------------------+
    | id | group_id | feat | value | group_norm           |
    +----+----------+------+-------+----------------------+
@@ -413,7 +413,7 @@ Part of Speech N-grams
 
 .. code-block:: mysql
 
-   mysql> select * from feat$1gram_pos$msgs$user_id$16to16 limit 5;
+   mysql> select * from feat$1gram_pos$msgs$user_id limit 5;
    +----+----------+----------------------+-------+----------------------+
    | id | group_id | feat                 | value | group_norm           |
    +----+----------+----------------------+-------+----------------------+

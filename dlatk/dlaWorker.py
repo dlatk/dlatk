@@ -63,7 +63,6 @@ class DLAWorker(object):
             if not self.data_engine.tableExists(wordTable):
                 wordTable = "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
             self.wordTable = wordTable
-        print("wordTablewordTablewordTable", wordTable)
         self.messageIdUniqueChecked = False
 
     ##PUBLIC METHODS#

@@ -373,8 +373,10 @@ def main(fn_args = None):
                         help='')
     group.add_argument('--picklefile', type=str, metavar='filename', dest='picklefile', default='',
                        help='Name of file to save or load pickle of model')
-    group.add_argument('--all_controls_only', action='store_true', dest='allcontrolsonly', default=False,
+    group.add_argument('--all_controls_only', action='store_true', dest='allcontrolsonly', default=True,
                        help='Only uses all controls when prediction doing test_combo_regression')
+    group.add_argument('--all_control_combinations', action='store_false', dest='allcontrolsonly', default=True,
+                       help='Run all control combinations when prediction doing test_combo_regression')
     group.add_argument('--no_lang', action='store_true', dest='nolang', default=False,
                        help='Runs with language features excluded')
     group.add_argument('--control_combo_sizes', '--combo_sizes', type=int, metavar="index", nargs='+', dest='controlcombosizes',

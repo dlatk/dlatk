@@ -11,15 +11,18 @@ it easy to update and insure reliability of our core functionality.
 
 Protocols for editing:
 ======================
-1. Commit often (i.e. every 30 minutes)
+1. Create a new branch for your edit. 
 
-2. Make sure to include a commit message that breifly describes the update:
+2. Commit often (i.e. every 30 minutes)
+
+3. Make sure to include a commit message that breifly describes the update:
  -- if it's a bug fix, prepend message with "FIXED BUG:"
  -- if it's a feature addition, prepend message with "ADDED FEATURE:"
  These can be short but to the point, e.g. "BUG FIX: regressionPredictor working with sklearn v0.22)
 
-3. If adding a significant new feature, create a new branch (e.g. we created dev-transformers when we first added transformers to dlatk). 
- -- be sure to add documentation
+4. Add documentation for significant new features. 
+
+5. Send a pull request to the public branch when ready for main-stream. 
 
 This package is maintains at the level of being prototyping; With current resources, it should not be considered on a "mature" update cycle. 
 The process that the maintainers take to update public (and pip..etc...) consists of:
@@ -29,4 +32,12 @@ The process that the maintainers take to update public (and pip..etc...) consist
    4. Make sure setup.py runs
    5. Make sure dlatk webserver get updated with source
 
-Unit Test:
+Suggested Unit Test:
+--ngram extraction, feat_combine, p_occ
+--topic extraction
+--rmatrix
+--print_csv
+--tagclouds
+--topic_tagclouds
+--nfold_test_regression --model ridgecv
+--nfold_test_classif --model lr

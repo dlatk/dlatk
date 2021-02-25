@@ -24,7 +24,7 @@ Protocols for editing:
 
 5. Send a pull request to the public branch when ready for main-stream. 
 
-This package is maintains at the level of being prototyping; With current resources, it should not be considered on a "mature" update cycle. 
+A majority of this package is maintained at the level of prototyping new techniques; The "Suggested Unit Tests" below are the pieces we plan to maintain consistency. With current resources, it should not be considered on a "mature" update cycle. 
 The process that the maintainers take to update public (and pip..etc...) consists of:
    1. Running unit tests that cover word DLA, topic DLA, and regression and classification
    2. A look through of the commit log to pull out key peices for change log
@@ -32,7 +32,7 @@ The process that the maintainers take to update public (and pip..etc...) consist
    4. Make sure setup.py runs
    5. Make sure dlatk webserver get updated with source
 
-Suggested Unit Test:
+Suggested Unit Tests:
 --ngram extraction, feat_combine, p_occ
 --topic extraction
 --rmatrix

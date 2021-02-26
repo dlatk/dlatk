@@ -1,6 +1,9 @@
 import sys
 import re
-import MySQLdb
+try:
+    import MySQLdb
+except:
+    pass
 import pandas as pd
 import numpy as np
 from math import isclose

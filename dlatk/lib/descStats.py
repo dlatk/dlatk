@@ -12,7 +12,10 @@ __email__ = "lukaszdz@sas.upenn.edu"
 import sys
 import time
 import argparse
-import MySQLdb
+try:
+    import MySQLdb
+except:
+    pass
 import re
 import pickle
 from pprint import pprint
@@ -35,11 +38,6 @@ try:
 except ImportError:
     fwc.warn("rpy2 cannot be imported")
     pass
-
-#DB INFO:
-HOST = '127.0.0.1'
-USER = os.getlogin()
-PASSWD = ''
 
 #plotting:
 N_HIST_BREAKS = 16

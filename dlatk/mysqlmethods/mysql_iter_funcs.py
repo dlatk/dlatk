@@ -5,13 +5,17 @@ MySQL interface methods based on the SQLAlchemy package
 import socket
 import logging
 import itertools
-from sqlalchemy import create_engine
-from sqlalchemy.engine.url import URL
 import pandas as pd
 import warnings
 import sys
 import time
-import MySQLdb.cursors
+
+try:
+    import MySQLdb.cursors
+    from sqlalchemy import create_engine
+    from sqlalchemy.engine.url import URL
+except:
+    pass
 
 from dlatk.dlaConstants import DEF_ENCODING, MYSQL_ERROR_SLEEP, MYSQL_HOST, MAX_ATTEMPTS, warn
 

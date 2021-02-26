@@ -2,13 +2,16 @@
 MySQL interface methods based on the mysqlclient package
 """
 import sys, time, datetime, os, getpass
-import MySQLdb
+try:
+    import MySQLdb
+except:
+    pass
 import re
 import csv
 from random import sample
 from math import floor
 
-from dlatk.dlaConstants import USER, MAX_ATTEMPTS, MYSQL_ERROR_SLEEP, MYSQL_HOST, DEF_ENCODING, MAX_SQL_PRINT_CHARS, DEF_UNICODE_SWITCH, DEF_MYSQL_ENGINE, warn
+from dlatk.dlaConstants import MAX_ATTEMPTS, MYSQL_ERROR_SLEEP, MYSQL_HOST, DEF_ENCODING, MAX_SQL_PRINT_CHARS, DEF_UNICODE_SWITCH, DEF_MYSQL_ENGINE, warn
 
 #DB INFO:
 PASSWD = ''
@@ -45,7 +48,6 @@ def dbConnect(db, host=MYSQL_HOST, charset=DEF_ENCODING, use_unicode=DEF_UNICODE
         try:
             dbConn = MySQLdb.connect (
                 host = host,
-                user = USER,
                 db = db,
                 charset = charset,
                 use_unicode = use_unicode, 
@@ -62,9 +64,9 @@ def dbConnect(db, host=MYSQL_HOST, charset=DEF_ENCODING, use_unicode=DEF_UNICODE
     dictCursor = dbConn.cursor(MySQLdb.cursors.DictCursor)
     return dbConn, dbCursor, dictCursor
 
-def abstractDBConnect(db, host=MYSQL_HOST, user=USER):
+def abstractDBConnect(db, host=MYSQL_HOST):
     dbConn = MySQLdb.connect (host = host,
-                          user = user,
+                          read_default_file = "~/.my.cnf",
                           db = db)
     dbCursor = dbConn.cursor()
     return (dbConn, dbCursor)
@@ -383,43 +385,4 @@ def getTableColumnNameList(db, dbCursor, table, charset=DEF_ENCODING, use_unicod
     """returns a dict of column names mapped to types"""
     sql = """SELECT column_name FROM information_schema.columns where TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s' ORDER BY ORDINAL_POSITION"""%(db, table)
     return [x[0] for x in executeGetList(db, dbCursor, sql, charset=charset, use_unicode=use_unicode)]
-
-#our_sql
-# import oursql
-# def oConnect(db):
-#     """ Connects to specified database. Returns tuple of (dbConn, dbCursor, dictCursor) """
-#     dbConn = None
-#     attempts = 0;
-#     while (1):
-#         try:
-#             dbConn = oursql.connect(host=MYSQL_HOST, user=USER, passwd=PASSWD, db=db)
-#             break
-#         except e:
-#             attempts += 1
-#             warn(" *OUSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db, e, attempts))
-#             time.sleep(MYSQL_ERROR_SLEEP)
-#             if (attempts > MAX_ATTEMPTS):
-#                 sys.exit(1)
-#     dbCursor = dbConn.cursor(try_plain_query=False)
-#     dictCursor = dbConn.cursor(oursql.DictCursor)
-#     return dbConn, dbCursor, dictCursor
-
-# def oTestQueryIteration(sql, cur):
-#     b = datetime.datetime.now()
-#     print('running execute statement...')
-#     cur.execute(sql)
-#     e = datetime.datetime.now()
-#     print("...finished execution! Took %d seconds."%(e-b).total_seconds())
-#     print("iterating  through rows...")
-#     b = datetime.datetime.now()
-#     counter = 0
-#     while True:
-#         row = cur.fetchone()
-#         if not row: break
-#         if counter % 10000000 == 0:
-#             print(row)
-#         counter += 1
-#     e = datetime.datetime.now()
-#     print("...finished iterating! Took %d seconds."%(e-b).total_seconds())
-#     print(counter)
 

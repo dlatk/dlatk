@@ -1,5 +1,8 @@
 from configparser import SafeConfigParser
-import MySQLdb
+try:
+    import MySQLdb
+except:
+    pass
 import pandas as pd
 import csv
 

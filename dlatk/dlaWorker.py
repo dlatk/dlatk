@@ -1,6 +1,9 @@
 import sys
 import time
-import MySQLdb
+try:
+    import MySQLdb
+except:
+    pass
 
 from .database.dataEngine import DataEngine
 from .database.query import QueryBuilder

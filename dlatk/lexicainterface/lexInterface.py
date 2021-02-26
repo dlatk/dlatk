@@ -12,7 +12,10 @@ import sys,os, getpass
 import re, csv
 import pprint
 import time
-import MySQLdb
+try:
+    import MySQLdb
+except:
+    pass
 import random
 
 #from optparse import OptionParser, OptionGroup
@@ -558,7 +561,7 @@ class Lexicon(object):
         termREs = dict((term, re.compile(r'\b(%s)\b' % re.escape(term).replace('\\*', '\w*'), re.I)) for term in termList)
         termLCs = dict((term, term.rstrip('*').lower()) for term in termList)
 
-        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=dlac.MYSQL_HOST, user=dlac.USER)
+        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=dlac.MYSQL_HOST)
         writeCursor = corpDb.cursor()
         #get field list:
         sql = """SELECT column_name FROM information_schema.columns WHERE table_name='%s' and table_schema='%s'""" % (corptable, corpdb)
@@ -641,7 +644,7 @@ class Lexicon(object):
         """Creates a lexicon (all in one category) from a examining word frequencies in a corpus"""
         wordList = dict()
         
-        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=dlac.MYSQL_HOST, user=dlac.USER)
+        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=dlac.MYSQL_HOST)
 
         #Go through each message      
         try:
@@ -793,7 +796,7 @@ class Lexicon(object):
         return words
 
     def likeExamples(self, corpdb, corptable, messagefield, numForEach = 60, onlyPrintIfMin = True, onlyPrintStartingAlpha = True):
-        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=dlac.MYSQL_HOST, user=dlac.USER)
+        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=dlac.MYSQL_HOST)
 
         print("<html><head>")
         print("<style>")
@@ -839,7 +842,7 @@ class Lexicon(object):
         print("</table></body></html>")
 
     def likeSamples(self, corpdb, corptable, messagefield, category, lexicon_name, number_of_messages):
-        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=dlac.MYSQL_HOST, user=dlac.USER)
+        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=dlac.MYSQL_HOST)
 
         #csvFile = open('/tmp/examples.csv', 'w')
         csvFile = open(lexicon_name+"_"+category+'.csv','wb')

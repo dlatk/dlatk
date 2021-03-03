@@ -20,7 +20,7 @@ Protocols for editing:
  -- if it's a feature addition, prepend message with "ADDED FEATURE:"
  These can be short but to the point, e.g. "BUG FIX: regressionPredictor working with sklearn v0.22)
 
-4. Add documentation for significant new features. 
+4. Add to the package documentation for new options that have been added (i.e. anytime there is a new -- option). 
 
 5. Send a pull request to the public branch when ready for main-stream. 
 

@@ -32,12 +32,10 @@ The process that the maintainers take to update public (and pip..etc...) consist
    4. Make sure setup.py runs
    5. Make sure dlatk webserver get updated with source
 
-Suggested Unit Tests:
+Suggested Unit Tests (using age and occupation as outcomes):
 --ngram extraction, feat_combine, p_occ
 --topic extraction
---rmatrix
---print_csv
---tagclouds
---topic_tagclouds
+--rmatrix --print_csv --tagclouds (ngrams)  --cat_to_bin occupation)
+--topic_tagclouds --topic_lex
 --nfold_test_regression --model ridgecv
---nfold_test_classif --model lr
+--nfold_test_classif --model lr --cat_to_bin occupation

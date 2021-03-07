@@ -11,19 +11,18 @@ import csv
 from random import sample
 from math import floor
 
-from dlatk.dlaConstants import MAX_ATTEMPTS, MYSQL_ERROR_SLEEP, MYSQL_HOST, DEF_ENCODING, MAX_SQL_PRINT_CHARS, DEF_UNICODE_SWITCH, DEF_MYSQL_ENGINE, warn
+from dlatk.dlaConstants import MAX_ATTEMPTS, MYSQL_ERROR_SLEEP, DEF_ENCODING, MAX_SQL_PRINT_CHARS, DEF_UNICODE_SWITCH, DEF_MYSQL_ENGINE, warn
 
 #DB INFO:
 PASSWD = ''
 
-def executeGetSSCursor(db, sql, warnMsg = True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH,host=MYSQL_HOST):
+def executeGetSSCursor(db, sql, warnMsg = True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
     """Executes a given query (ss cursor is good to iterate over for large returns)"""
     if warnMsg: 
         warn("SQL (SSCursor) QUERY: %s"% sql[:MAX_SQL_PRINT_CHARS])
     ssCursor = dbConnect(db, 
                          charset=charset, 
                          use_unicode=use_unicode,
-                         host = host,
                          )[0].cursor(MySQLdb.cursors.SSCursor)
     data = []
     attempts = 0;
@@ -40,14 +39,13 @@ def executeGetSSCursor(db, sql, warnMsg = True, charset=DEF_ENCODING, use_unicod
                 sys.exit(1)
     return ssCursor
 
-def dbConnect(db, host=MYSQL_HOST, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def dbConnect(db, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
     """ Connects to specified database. Returns tuple of (dbConn, dbCursor, dictCursor) """
     dbConn = None
     attempts = 0;
     while (1):
         try:
             dbConn = MySQLdb.connect (
-                host = host,
                 db = db,
                 charset = charset,
                 use_unicode = use_unicode, 
@@ -64,8 +62,8 @@ def dbConnect(db, host=MYSQL_HOST, charset=DEF_ENCODING, use_unicode=DEF_UNICODE
     dictCursor = dbConn.cursor(MySQLdb.cursors.DictCursor)
     return dbConn, dbCursor, dictCursor
 
-def abstractDBConnect(db, host=MYSQL_HOST):
-    dbConn = MySQLdb.connect (host = host,
+def abstractDBConnect(db):
+    dbConn = MySQLdb.connect (
                           read_default_file = "~/.my.cnf",
                           db = db)
     dbCursor = dbConn.cursor()

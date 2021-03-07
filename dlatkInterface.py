@@ -104,8 +104,6 @@ def main(fn_args = None):
     group.add_argument('-c', '-g', '--correl_field', '--group', '--group_by_field', metavar='FIELD', dest='correl_field',
                        default=getInitVar('correl_field', conf_parser, dlac.DEF_CORREL_FIELD),
                         help='Correlation Field (AKA Group Field): The field which features are aggregated over.')
-    group.add_argument('-H', '--host', metavar='HOST', dest='mysql_host', default=getInitVar('mysql_host', conf_parser, dlac.MYSQL_HOST),
-                       help='Host that the mysql server runs on (default: %s)' % dlac.MYSQL_HOST)
     group.add_argument('--message_field', metavar='FIELD', dest='message_field', default=getInitVar('message_field', conf_parser, dlac.DEF_MESSAGE_FIELD),
                         help='The field where the text to be analyzed is located.')
     group.add_argument('--messageid_field', metavar='FIELD', dest='messageid_field', default=getInitVar('messageid_field', conf_parser, dlac.DEF_MESSAGEID_FIELD),
@@ -841,33 +839,33 @@ def main(fn_args = None):
 
     ##Process Arguments
     def DLAW():
-        return DLAWorker(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
+        return DLAWorker(args.corpdb, args.corptable, args.correl_field, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
 
     def MA():
-        return MessageAnnotator(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
+        return MessageAnnotator(args.corpdb, args.corptable, args.correl_field, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
 
     def MT():
-        return MessageTransformer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
+        return MessageTransformer(args.corpdb, args.corptable, args.correl_field, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
 
     def FE():
-        return FeatureExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
+        return FeatureExtractor(args.corpdb, args.corptable, args.correl_field, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
 
     def SE():
-        return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.corpdir, wordTable = args.wordTable)
+        return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.corpdir, wordTable = args.wordTable)
 
     def OG():
-        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, fold_column = args.fold_column)
+        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, fold_column = args.fold_column)
 
     def OA():
-        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
+        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
 
     def FR():
-        return FeatureRefiner(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
+        return FeatureRefiner(args.corpdb, args.corptable, args.correl_field, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
 
     def FG(featTable = None):
         if not featTable:
             featTable = args.feattable
-        return FeatureGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, featTable, args.featnames, wordTable = args.wordTable)
+        return FeatureGetter(args.corpdb, args.corptable, args.correl_field, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, featTable, args.featnames, wordTable = args.wordTable)
 
     def FGs(featTable = None):
         if not featTable:
@@ -880,7 +878,6 @@ def main(fn_args = None):
         return [FeatureGetter(args.corpdb,
                               args.corptable,
                               args.correl_field,
-                              args.mysql_host,
                               args.message_field,
                               args.messageid_field,
                               args.encoding,
@@ -890,7 +887,7 @@ def main(fn_args = None):
                               wordTable = args.wordTable)
                 for featTable in featTable]
     def TE():
-        return TopicExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, dlac.DEF_ENCODING, dlac.DEF_UNICODE_SWITCH, args.ldamsgtbl)
+        return TopicExtractor(args.corpdb, args.corptable, args.correl_field, args.message_field, args.messageid_field, dlac.DEF_ENCODING, dlac.DEF_UNICODE_SWITCH, args.ldamsgtbl)
 
     dlaw = None
     ma = None
@@ -1062,9 +1059,9 @@ def main(fn_args = None):
 
     if args.addpnames:
         if not fe: fe = FE()
-        namesLex = lexInterface.Lexicon(mysql_host = args.mysql_host)
+        namesLex = lexInterface.Lexicon()
         namesLex.loadLexicon(args.addpnames[0])
-        langLex = lexInterface.Lexicon(mysql_host = args.mysql_host)
+        langLex = lexInterface.Lexicon()
         langLex.loadLexicon(args.addpnames[1])
         args.feattable = fe.addPNamesTable(namesLex.getLexicon(), langLex.getLexicon(),  valueFunc = args.valuefunc)
 
@@ -1215,7 +1212,7 @@ def main(fn_args = None):
         if args.estimate_lda_topics:
             dist_file_output_name = os.path.join(args.save_lda_files, 'lda')
             args.ldamsgtbl = '{}_lda${}'.format(args.corptable, lda_state_name)
-            te = TopicExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field,
+            te = TopicExtractor(args.corpdb, args.corptable, args.correl_field, args.message_field,
                                 args.messageid_field, dlac.DEF_ENCODING, dlac.DEF_UNICODE_SWITCH, args.ldamsgtbl)
         elif not te:
             te = TE()
@@ -1993,7 +1990,7 @@ def main(fn_args = None):
         lex_dict_with_name = {args.classToLex: v for featTableName,v in lexicon_dict.items()} if args.classToLex else {args.regrToLex: v for featTableName,v in lexicon_dict.items()}
         # print lex_dict_with_name.items()
         for lexName, lexicon in lex_dict_with_name.items():
-            lex = lexInterface.WeightedLexicon(lexicon, mysql_host = args.mysql_host)
+            lex = lexInterface.WeightedLexicon(lexicon)
             lex.createWeightedLexiconTable('dd_'+lexName)
 
     if args.fitreducer:
@@ -2012,12 +2009,12 @@ def main(fn_args = None):
               lexiconName = args.reducertolexicon if args.reducertolexicon else args.reducedlexicon
               if outcomeName != 'noOutcome':
                   lexiconName += '_'+outcomeName
-              lexicon = lexInterface.WeightedLexicon(lexDict, mysql_host = args.mysql_host)
+              lexicon = lexInterface.WeightedLexicon(lexDict)
               lexicon.createLexiconTable(lexiconName)
               if args.supertopics:
                   lexicon.createSuperTopicTable(args.supertopics, lexiconName, args.lextable)
         else:
-            lexicon = lexInterface.WeightedLexicon("", mysql_host = args.mysql_host)
+            lexicon = lexInterface.WeightedLexicon("")
             lexicon.createSuperTopicTable(args.supertopics, args.reducedlexicon, args.lextable)
 
     if args.savemodels and dr:
@@ -2095,7 +2092,6 @@ def main(fn_args = None):
         if (args.corpdb and args.corpdb != dlac.DEF_CORPDB): init_file.write("corpdb = " + str(args.corpdb)+"\n")
         if (args.corptable and args.corptable != dlac.DEF_CORPTABLE): init_file.write("corptable = " + str(args.corptable)+"\n")
         if (args.correl_field): init_file.write("correl_field = " + str(args.correl_field)+"\n")
-        if (args.mysql_host and args.mysql_host != dlac.MYSQL_HOST): init_file.write("mysql_host = " + str(args.mysql_host)+"\n")
         if (args.message_field and args.message_field != dlac.DEF_MESSAGE_FIELD): init_file.write("message_field = " + str(args.message_field)+"\n")
         if (args.messageid_field and args.messageid_field != dlac.DEF_MESSAGEID_FIELD): init_file.write("messageid_field = " + str(args.messageid_field)+"\n")
         if (args.encoding and args.encoding != dlac.DEF_ENCODING): init_file.write("encoding = " + str(args.encoding)+"\n")

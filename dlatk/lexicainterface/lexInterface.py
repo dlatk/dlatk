@@ -385,9 +385,8 @@ class Lexicon(object):
     dbCursor = None
     currentLexicon = None
 
-    def __init__(self, lex = None, mysql_host = dlac.MYSQL_HOST, lexicon_db=dlac.DEF_LEXICON_DB):
-        (self.dbConn, self.dbCursor, self.dictCursor) = dbConnect(db=lexicon_db, host=mysql_host)
-        self.mysql_host = mysql_host
+    def __init__(self, lex = None, lexicon_db=dlac.DEF_LEXICON_DB):
+        (self.dbConn, self.dbCursor, self.dictCursor) = dbConnect(db=lexicon_db)
         self.lexicon_db = lexicon_db
         self.currentLexicon = lex
 
@@ -561,7 +560,7 @@ class Lexicon(object):
         termREs = dict((term, re.compile(r'\b(%s)\b' % re.escape(term).replace('\\*', '\w*'), re.I)) for term in termList)
         termLCs = dict((term, term.rstrip('*').lower()) for term in termList)
 
-        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=dlac.MYSQL_HOST)
+        (corpDb, corpCursor) = abstractDBConnect(db=corpdb)
         writeCursor = corpDb.cursor()
         #get field list:
         sql = """SELECT column_name FROM information_schema.columns WHERE table_name='%s' and table_schema='%s'""" % (corptable, corpdb)
@@ -644,7 +643,7 @@ class Lexicon(object):
         """Creates a lexicon (all in one category) from a examining word frequencies in a corpus"""
         wordList = dict()
         
-        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=dlac.MYSQL_HOST)
+        (corpDb, corpCursor) = abstractDBConnect(db=corpdb)
 
         #Go through each message      
         try:
@@ -796,7 +795,7 @@ class Lexicon(object):
         return words
 
     def likeExamples(self, corpdb, corptable, messagefield, numForEach = 60, onlyPrintIfMin = True, onlyPrintStartingAlpha = True):
-        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=dlac.MYSQL_HOST)
+        (corpDb, corpCursor) = abstractDBConnect(db=corpdb)
 
         print("<html><head>")
         print("<style>")
@@ -842,7 +841,7 @@ class Lexicon(object):
         print("</table></body></html>")
 
     def likeSamples(self, corpdb, corptable, messagefield, category, lexicon_name, number_of_messages):
-        (corpDb, corpCursor) = abstractDBConnect(db=corpdb, host=dlac.MYSQL_HOST)
+        (corpDb, corpCursor) = abstractDBConnect(db=corpdb)
 
         #csvFile = open('/tmp/examples.csv', 'w')
         csvFile = open(lexicon_name+"_"+category+'.csv','wb')
@@ -929,8 +928,8 @@ class Lexicon(object):
 
 class WeightedLexicon(Lexicon):
     """WeightedLexicons have an additional dictionary with weights for each term in the regular lexicon"""
-    def __init__(self, weightedLexicon=None, lex=None, mysql_host = dlac.MYSQL_HOST, lexicon_db=dlac.DEF_LEXICON_DB):
-        super(WeightedLexicon, self).__init__(lex, mysql_host = mysql_host, lexicon_db = lexicon_db)
+    def __init__(self, weightedLexicon=None, lex=None, lexicon_db=dlac.DEF_LEXICON_DB):
+        super(WeightedLexicon, self).__init__(lex, lexicon_db = lexicon_db)
         self.weightedLexicon = weightedLexicon
      
     def isTableLexiconWeighted(self, tablename):

@@ -11,17 +11,14 @@ class DataEngine(object):
 	-------------
 	corpdb: str
 		Corpus Database name.
-	sql_host: str
-		Host that the mysql server runs on.
 	encoding: str
 		MySQL encoding
 	db_type: str
 		Type of the database being used (mysql, sqlite).
 	
 	"""
-	def __init__(self, corpdb=dlac.DEF_CORPDB, sql_host=dlac.MYSQL_HOST, encoding=dlac.DEF_ENCODING,use_unicode=dlac.DEF_UNICODE_SWITCH, db_type=dlac.DB_TYPE):
+	def __init__(self, corpdb=dlac.DEF_CORPDB, encoding=dlac.DEF_ENCODING,use_unicode=dlac.DEF_UNICODE_SWITCH, db_type=dlac.DB_TYPE):
 		self.encoding = encoding
-		self.sql_host = sql_host
 		self.corpdb = corpdb
 		self.use_unicode = use_unicode
 		self.db_type = db_type
@@ -36,7 +33,7 @@ class DataEngine(object):
 		Database connection objects
 		"""
 		if self.db_type == "mysql":
-			self.dataEngine = MySqlDataEngine(self.corpdb, self.sql_host, self.encoding)
+			self.dataEngine = MySqlDataEngine(self.corpdb, self.encoding)
 		if self.db_type == "sqlite":
 			self.dataEngine = SqliteDataEngine(self.corpdb)
 		return self.dataEngine.get_db_connection()
@@ -212,15 +209,13 @@ class MySqlDataEngine(DataEngine):
 	------------
 	corpdb: str
 		Corpus database name.
-	mysql_host: str
-		Host that the mysql server runs on
 	encoding: str
 		MYSQL encoding
 	"""
 
-	def __init__(self, corpdb, mysql_host, encoding):
+	def __init__(self, corpdb, encoding):
 		super().__init__(corpdb)
-		(self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(corpdb, host=mysql_host, charset=encoding)
+		(self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(corpdb, charset=encoding)
 
 	def get_db_connection(self):
 		"""

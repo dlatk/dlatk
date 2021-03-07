@@ -29,7 +29,6 @@ MYSQL_ERROR_SLEEP = 4 #number of seconds to wait before trying a query again (in
 SQLITE_ERROR_SLEEP = 4
 MYSQL_BATCH_INSERT_SIZE = 10000 # how many rows are inserted into mysql at a time
 MAX_SQL_SELECT = 1000000 # how many rows are selected at a time
-MYSQL_HOST = '127.0.0.1'
 MYSQL_CONFIG_FILE = 'lib/.dlatk.cnf'
 VARCHAR_WORD_LENGTH = 36 #length to allocate var chars per words
 LOWERCASE_ONLY = True #if the db is case insensitive, set to True
@@ -38,7 +37,7 @@ MAX_SQL_PRINT_CHARS = 256
 
 ##Corpus Settings:
 DEF_CORPDB = 'dla_tutorial'
-DEF_CORPTABLE = ''
+DEF_CORPTABLE = 'msgs'
 DEF_CORREL_FIELD = 'user_id'
 DEF_MESSAGE_FIELD = 'message'
 DEF_MESSAGEID_FIELD = 'message_id'

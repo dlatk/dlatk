@@ -22,8 +22,6 @@ class DLAWorker(object):
         Corpus Table.
     correl_field : str
         Correlation Field (AKA Group Field): The field which features are aggregated over.
-    mysql_host : str
-        Host that the mysql server runs on.
     message_field : str
         The field where the text to be analyzed is located.
     messageid_field : str
@@ -42,18 +40,17 @@ class DLAWorker(object):
     DLAWorker object
     """
     
-    def __init__(self, corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb = dlac.DEF_LEXICON_DB, date_field=dlac.DEF_DATE_FIELD, wordTable=None):
+    def __init__(self, corpdb, corptable, correl_field, message_field, messageid_field, encoding, use_unicode, lexicondb = dlac.DEF_LEXICON_DB, date_field=dlac.DEF_DATE_FIELD, wordTable=None):
         self.corpdb = corpdb
         self.corptable = corptable
         self.correl_field = correl_field
-        self.mysql_host = mysql_host
         self.message_field = message_field
         self.messageid_field = messageid_field
         self.encoding = encoding
         self.use_unicode = use_unicode
 
         self.db_type = dlac.DB_TYPE
-        self.data_engine = DataEngine(corpdb, mysql_host, encoding, use_unicode, self.db_type)
+        self.data_engine = DataEngine(corpdb, encoding, use_unicode, self.db_type)
         (self.dbConn, self.dbCursor, self.dictCursor) = self.data_engine.connect()
 
         self.qb = QueryBuilder(self.data_engine)
@@ -105,7 +102,7 @@ class DLAWorker(object):
         if not messageTable: messageTable = self.corptable
         msql = """SELECT %s, %s FROM %s"""% (self.messageid_field, self.message_field, messageTable)
         if where: msql += " WHERE " + where
-        return mm.executeGetSSCursor(self.corpdb, msql, charset=self.encoding, host=self.mysql_host)
+        return mm.executeGetSSCursor(self.corpdb, msql, charset=self.encoding)
 
     def getMessagesForCorrelField(self, cf_id, messageTable = None, warnMsg = True):
         """?????
@@ -131,7 +128,6 @@ class DLAWorker(object):
             if self.correl_field != self.messageid_field:
                 self.checkIndices(messageTable, primary=False, correlField=self.correl_field)
             self.messageIdUniqueChecked = True
-        #return self._executeGetSSCursor(msql, warnMsg, host=self.mysql_host)
         where_conditions = """%s='%s'"""%(self.correl_field, cf_id)
         selectQuery = self.qb.create_select_query(messageTable).set_fields([self.messageid_field, self.message_field]).where(where_conditions)
         return selectQuery.execute_query()
@@ -280,7 +276,7 @@ class DLAWorker(object):
         wordTable = self.getWordTable() if not lexicon_count_table else lexicon_count_table
 
         assert self.data_engine.tableExists(wordTable), "Need to create word table to use current functionality: %s" % wordTable
-        return FeatureGetter(self.corpdb, self.corptable, self.correl_field, self.mysql_host, self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb, featureTable=wordTable, wordTable=wordTable)
+        return FeatureGetter(self.corpdb, self.corptable, self.correl_field, self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb, featureTable=wordTable, wordTable=wordTable)
     
     def getWordGetterPOcc(self, pocc):
         """Returns a FeatureGetter for given p_occ filter values used for getting word counts. Usually used for group_freq_thresh.
@@ -297,7 +293,7 @@ class DLAWorker(object):
         from .featureGetter import FeatureGetter
         wordTable = self.getWordTablePOcc(pocc)
         assert mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode), "Need to create word table to use current functionality"
-        return FeatureGetter(self.corpdb, self.corptable, self.correl_field, self.mysql_host,
+        return FeatureGetter(self.corpdb, self.corptable, self.correl_field,
                              self.message_field, self.messageid_field, self.encoding, self.use_unicode, 
                              self.lexicondb, featureTable=wordTable, wordTable = wordTable)
 

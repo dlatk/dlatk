@@ -64,7 +64,6 @@ class FeatureStar(object):
 		corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else dlac.DEF_CORPDB
 		corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else dlac.DEF_CORPTABLE
 		correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else dlac.DEF_CORREL_FIELD
-		mysql_host = parser.get('constants','mysql_host') if parser.has_option('constants','mysql_host') else dlac.MYSQL_HOST
 		message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else dlac.DEF_MESSAGE_FIELD
 		messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else dlac.DEF_MESSAGEID_FIELD
 		encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else dlac.DEF_ENCODING
@@ -98,9 +97,9 @@ class FeatureStar(object):
 			init = initList
 		else:
 			init = [o.strip() for o in parser.get('constants','init').split(",")] if parser.has_option('constants','init') else ['fw', 'fg', 'fe', 'fr', 'og', 'oa', 'rp', 'cp']
-		return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, date_field=date_field, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, group_freq_thresh=group_freq_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable, model=model, feature_selection=feature_selection, feature_selection_string = feature_selection_string, init=init)
+		return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, date_field=date_field, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, group_freq_thresh=group_freq_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable, model=model, feature_selection=feature_selection, feature_selection_string = feature_selection_string, init=init)
 	
-	def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_host=dlac.MYSQL_HOST, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb=dlac.DEF_LEXICON_DB, featureTable=dlac.DEF_FEAT_TABLE, featNames=dlac.DEF_FEAT_NAMES, date_field=dlac.DEF_DATE_FIELD, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls = dlac.DEF_OUTCOME_CONTROLS, outcome_interaction = dlac.DEF_OUTCOME_CONTROLS, cattobinfields=[], cattointfields=[], group_freq_thresh = None, featureMappingTable='', featureMappingLex='',  output_name='', wordTable=None, model=dlac.DEF_MODEL, feature_selection='', feature_selection_string = '', init=None):
+	def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb=dlac.DEF_LEXICON_DB, featureTable=dlac.DEF_FEAT_TABLE, featNames=dlac.DEF_FEAT_NAMES, date_field=dlac.DEF_DATE_FIELD, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls = dlac.DEF_OUTCOME_CONTROLS, outcome_interaction = dlac.DEF_OUTCOME_CONTROLS, cattobinfields=[], cattointfields=[], group_freq_thresh = None, featureMappingTable='', featureMappingLex='',  output_name='', wordTable=None, model=dlac.DEF_MODEL, feature_selection='', feature_selection_string = '', init=None):
 		
 		if feature_selection_string or feature_selection:
 			RegressionPredictor.featureSelectionString = feature_selection if feature_selection else feature_selection_string
@@ -109,26 +108,26 @@ class FeatureStar(object):
 		if init:
 			if 'fg' in init:
 				if isinstance(featureTable, str):
-					self.fg = FeatureGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable)
+					self.fg = FeatureGetter(corpdb, corptable, correl_field, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable)
 				else:
-					self.fg = [FeatureGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, ft, featNames, wordTable) for ft in featureTable]
+					self.fg = [FeatureGetter(corpdb, corptable, correl_field, message_field, messageid_field, encoding, use_unicode, lexicondb, ft, featNames, wordTable) for ft in featureTable]
 			else:
 				None
-			self.fe = FeatureExtractor(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable=wordTable) if 'fe' in init else None
-			self.fr = FeatureRefiner(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable) if 'fr' in init else None
-			self.og = OutcomeGetter("aaa", corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, cattobinfields, cattointfields, group_freq_thresh, featureMappingTable, featureMappingLex, wordTable) if 'og' in init else None
-			self.oa = OutcomeAnalyzer(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, cattobinfields, cattointfields, group_freq_thresh, featureMappingTable, featureMappingLex, output_name, wordTable) if 'oa' in init else None
+			self.fe = FeatureExtractor(corpdb, corptable, correl_field, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable=wordTable) if 'fe' in init else None
+			self.fr = FeatureRefiner(corpdb, corptable, correl_field, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable) if 'fr' in init else None
+			self.og = OutcomeGetter("aaa", corptable, correl_field, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, cattobinfields, cattointfields, group_freq_thresh, featureMappingTable, featureMappingLex, wordTable) if 'og' in init else None
+			self.oa = OutcomeAnalyzer(corpdb, corptable, correl_field, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, cattobinfields, cattointfields, group_freq_thresh, featureMappingTable, featureMappingLex, output_name, wordTable) if 'oa' in init else None
 			self.rp = RegressionPredictor(self.og, self.fg, model) if 'rp' in init else None
 			self.cp = ClassifyPredictor(self.og, self.fg, model) if 'cp' in init else None
 		else: 
 			if isinstance(featureTable, str):
-				self.fg = FeatureGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable)
+				self.fg = FeatureGetter(corpdb, corptable, correl_field, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable)
 			else:
-				self.fg = [FeatureGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, ft, featNames, wordTable) for ft in featureTable]
-			self.fe = FeatureExtractor(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable=wordTable)
-			self.fr = FeatureRefiner(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable)
-			self.og = OutcomeGetter(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, group_freq_thresh, featureMappingTable, featureMappingLex, wordTable)
-			self.oa = OutcomeAnalyzer(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, group_freq_thresh, featureMappingTable, featureMappingLex, output_name, wordTable)
+				self.fg = [FeatureGetter(corpdb, corptable, correl_field, message_field, messageid_field, encoding, use_unicode, lexicondb, ft, featNames, wordTable) for ft in featureTable]
+			self.fe = FeatureExtractor(corpdb, corptable, correl_field, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable=wordTable)
+			self.fr = FeatureRefiner(corpdb, corptable, correl_field, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable)
+			self.og = OutcomeGetter(corpdb, corptable, correl_field, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, group_freq_thresh, featureMappingTable, featureMappingLex, wordTable)
+			self.oa = OutcomeAnalyzer(corpdb, corptable, correl_field, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, group_freq_thresh, featureMappingTable, featureMappingLex, output_name, wordTable)
 			self.rp = RegressionPredictor(self.og, self.fg, model)
 			self.cp = ClassifyPredictor(self.og, self.fg, model)
 		

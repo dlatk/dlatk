@@ -86,7 +86,7 @@ To add packaged data to mysql and text with it:
 
 ```sh
 mysql -e 'CREATE DATABASE dla_tutorial'; cat dlatk/data/dla_tutorial.sql | mysql dla_tutorial
-mysql -e 'CREATE DATABASE dlatk_lexica'; cat dlatk/data/dlatk_lexica.sql | mysql dlark_lexica
+mysql -e 'CREATE DATABASE dlatk_lexica'; cat dlatk/data/dlatk_lexica.sql | mysql dlatk_lexica
 
 python3 dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_ngrams -n 1 --add_lex -l dd_intAff --weighted_lex
 ```

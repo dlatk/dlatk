@@ -430,7 +430,7 @@ enabled, so the total word count for your groups might be off
                 groups = groups & set(outcomes[k].keys()) #always intersect with controls
             if self.outcome_categories:
                 for cat in cat_label_list:
-                    if all(outcomes[cat][group] == 0 for group in groups):
+                    if all(outcomes[cat][group] == 0 for group in groups) or all(outcomes[cat][group] == 1 for group in groups):
                         del outcomes[cat]
                         dlac.warn("Removing %s, no non-zero instances" % cat)
                         if cat in self.outcome_value_fields:

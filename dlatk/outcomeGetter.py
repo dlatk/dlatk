@@ -333,7 +333,7 @@ enabled, so the total word count for your groups might be off
                             to_remove.append(outcomeField)
                             continue
                     except TypeError:
-                        dlac.warn("TypeError during variance check for %s, skipping step." % (outcomeField))
+                        dlac.warn("WARNING: Could not determine variance of %s. Skipping variance check." % (outcomeField))
                         outcomeVariance = 1
                     if isclose(outcomeVariance, 0.0) or outcomeVariance < self.low_variance_thresh:
                         del outcomes[outcomeField]

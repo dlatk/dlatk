@@ -13,6 +13,7 @@ from pprint import pprint
 from numpy import isnan, sqrt, log
 from configparser import SafeConfigParser
 import gzip
+from pathlib import Path
 
 import dlatk.dlaWorker as dlaWorker
 import dlatk.dlaConstants as dlac
@@ -104,6 +105,8 @@ def main(fn_args = None):
     group.add_argument('-c', '-g', '--correl_field', '--group', '--group_by_field', metavar='FIELD', dest='correl_field',
                        default=getInitVar('correl_field', conf_parser, dlac.DEF_CORREL_FIELD),
                         help='Correlation Field (AKA Group Field): The field which features are aggregated over.')
+    group.add_argument('--conf', '--mysql_config', '--mysql_config_file', metavar='HOST', dest='mysqlconfigfile', default="",
+                       help='Configuration file for MySQL connection settings (default: ~/.my.cnf or dlatk/lib/.dlatk.cnf)')
     group.add_argument('--message_field', metavar='FIELD', dest='message_field', default=getInitVar('message_field', conf_parser, dlac.DEF_MESSAGE_FIELD),
                         help='The field where the text to be analyzed is located.')
     group.add_argument('--messageid_field', metavar='FIELD', dest='messageid_field', default=getInitVar('messageid_field', conf_parser, dlac.DEF_MESSAGEID_FIELD),
@@ -189,18 +192,29 @@ def main(fn_args = None):
                        help='range of group id\'s to include in binning.')
     group.add_argument('--mask_table', type=str, metavar='TABLE', dest='masktable', default=None,
                        help='Table containing which groups run in various bins (for ttest).')
-    group.add_argument('--bert_model', type=str, metavar='NAME', dest='bertmodel', default=dlac.DEF_BERT_MODEL,
-                       help='BERT model to use if extracting bert features.')
-    group.add_argument('--bert_msg_aggregation', '--bert_aggregations', type=str, metavar='AGG', nargs='+', dest='bertaggs', default=dlac.DEF_BERT_AGGREGATION,
-                       help='Aggregations to use with Bert (e.g. mean, min, max).')
-    group.add_argument('--bert_layer_aggregation', '--layer_aggregation', type=str, metavar='AGG', nargs='+', dest='bertlayeraggs', default=dlac.DEF_BERT_LAYER_AGGREGATION,
-                       help='Aggregations to use with Bert (e.g. mean, min, max).')
-    group.add_argument('--bert_word_aggregation', '--word_aggregation', type=str, metavar='AGG', nargs='+', dest='transwordaggs', default=dlac.DEF_TRANS_WORD_AGGREGATION,
+    group.add_argument('--embedding_model', '--emb_model', '--bert_model', type=str, metavar='NAME', dest='embmodel', default=dlac.DEF_EMB_MODEL,
+                       help='Contextual Embedding model to use for extracting features.')
+    group.add_argument('--emb_class', type=str, metavar='NAME', dest='embclass', default=None,
+                       help='Contextual Embedding model class to use for extracting features.', choices=dlac.EMB_CLASS)
+    group.add_argument('--tokenizer_model', type=str, dest='tokenizermodel', default=None,
+                       help='Tokenizer model to use for tokenizing.')
+    group.add_argument('--embedding_msg_aggregation', '--embedding_aggregations', '--emb_msg_aggregation', '--emb_aggregations', '--bert_msg_aggregation', '--bert_aggregations', 
+                       type=str, metavar='AGG', nargs='+', dest='embaggs', default=dlac.DEF_EMB_AGGREGATION,
+                       help='Aggregations to use with Contextual embedding model (e.g. mean, min, max).')
+    group.add_argument('--embedding_layer_aggregation', '--layer_aggregation', '--bert_layer_aggregation', type=str, metavar='AGG', nargs='+', dest='emblayeraggs', default=dlac.DEF_EMB_LAYER_AGGREGATION,
+                       help='Aggregations to use with Contextual embedding model (e.g. mean, min, max).')
+    group.add_argument('--embedding_word_aggregation', '--word_aggregation', '--bert_word_aggregation', type=str, metavar='AGG', nargs='+', dest='transwordaggs', default=dlac.DEF_TRANS_WORD_AGGREGATION,
                        help='Aggregations to use for words (e.g. mean or concatenate).')
-    group.add_argument('--bert_layers', type=int, metavar='LAYER', nargs='+', dest='bertlayers', default=dlac.DEF_BERT_LAYERS,
-                       help='layers from Bert to keep.')
-    group.add_argument('--bert_no_context', action='store_true', dest='bertnocontext', default=False,
+    group.add_argument('--embedding_layers', '--emb_layers', '--bert_layers', type=int, metavar='LAYER', nargs='+', dest='emblayers', default=dlac.DEF_EMB_LAYERS,
+                       help='layers from Contextual model to keep.')
+    group.add_argument('--embedding_no_context', '--emb_no_context', '--bert_no_context', action='store_true', dest='embnocontext', default=False,
                        help='encoded without considering context.')
+    group.add_argument('--embedding_table_name', '--emb_table_name', dest='embtablename', default=None,
+                       help='custom table name')                       
+    group.add_argument('--batch_size', dest='batchsize', default=dlac.GPU_BATCH_SIZE, type=int, 
+                       help='Specify the batch size for generating the embeddings.')
+    group.add_argument('--embedding_keep_msg', '--emb_keep_msg', action='store_true', dest='embkeepmsg', default=False,
+                       help='store embeddings as message_level feature table instead.')
 
 
 
@@ -452,7 +466,7 @@ def main(fn_args = None):
                        help='add flesch-kincaid scores, averaged per group.')
     group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
-    group.add_argument('--add_bert', action='store_true', dest='addbert',
+    group.add_argument('--add_embedding', '--add_emb_feat',  '--add_bert', action='store_true', dest='embaddfeat',
                        help='add BERT mean features (optionally add min, max, --bert_model large)')
     group.add_argument('--lexicon_normalization', '--lex_norm', '--dict_norm', action='store_true', help='Use weighting over lexicon terms (instead of over all terms).')
 
@@ -764,6 +778,13 @@ def main(fn_args = None):
       sys.exit(1)
 
     ##Argument adjustments:
+    if not args.mysqlconfigfile:
+        mycnf_file = Path("~/.my.cnf")
+        if mycnf_file.is_file():
+            args.mysqlconfigfile = "~/.my.cnf"
+        else:
+            args.mysqlconfigfile = dlac.MYSQL_CONFIG_FILE
+
     if not args.valuefunc: args.valuefunc = lambda d: d
     if not args.lexvaluefunc: args.lexvaluefunc = lambda d: d
 
@@ -1049,10 +1070,10 @@ def main(fn_args = None):
         if not fe: fe = FE()
         args.feattable = fe.addPosTable(valueFunc = args.valuefunc, keep_words = args.pos_ngram)
 
-    if args.addbert:
+    if args.embaddfeat:
         if not fe: fe = FE()
-        args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=args.bertaggs, layersToKeep=args.bertlayers, noContext=args.bertnocontext, layerAggregations = args.bertlayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc)
-
+        args.feattable = fe.addEmbTable(modelName = args.embmodel, tokenizerName=args.tokenizermodel, modelClass = args.embclass, batchSize=args.batchsize, aggregations=args.embaggs, layersToKeep=args.emblayers, noContext=args.embnocontext, layerAggregations = args.emblayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc, customTableName = args.embtablename, keepMsgFeats = args.embkeepmsg)
+    
     if args.addldafeattable:
         if not fe: fe = FE()
         args.feattable = fe.addLDAFeatTable(args.addldafeattable, valueFunc = args.valuefunc)

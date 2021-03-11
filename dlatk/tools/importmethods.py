@@ -2,8 +2,11 @@ import csv
 import json
 import os, sys
 import argparse
-from MySQLdb import Warning
-from MySQLdb.cursors import SSCursor
+try:
+    from MySQLdb import Warning
+    from MySQLdb.cursors import SSCursor
+except:
+    pass
 import sqlite3
 from pathlib import Path
 

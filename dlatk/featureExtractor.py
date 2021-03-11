@@ -23,7 +23,7 @@ try:
     from nltk.tree import ParentedTree
     from nltk.corpus import wordnet as wn
 except ImportError:
-    print("warning: unable to import nltk.tree or nltk.corpus or nltk.data")
+    print("Warning: unable to import nltk.tree or nltk.corpus or nltk.data")
 
     
 #infrastructure
@@ -44,7 +44,7 @@ try:
     from simplejson import loads
     import jsonrpclib
 except ImportError:
-    print("warning from FeatureExtractor: unable to import jsonrpclib or simplejson")
+    print("Warning: unable to import jsonrpclib or simplejson")
     pass
 try:
     from textstat.textstat import textstat

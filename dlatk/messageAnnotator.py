@@ -13,7 +13,7 @@ from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 try:
     from langid.langid import LanguageIdentifier, model
 except ImportError:
-    dlac.warn("Cannot import langid (cannot use addLanguageFilterTable)")
+    dlac.warn("Warning: Cannot import langid (cannot use addLanguageFilterTable)")
     pass
 
 class MessageAnnotator(DLAWorker):

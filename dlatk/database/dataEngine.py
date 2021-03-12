@@ -11,15 +11,18 @@ class DataEngine(object):
 	-------------
 	corpdb: str
 		Corpus Database name.
+	mysql_config_file : str
+		Location of MySQL configuration file
 	encoding: str
 		MySQL encoding
 	db_type: str
 		Type of the database being used (mysql, sqlite).
 	
 	"""
-	def __init__(self, corpdb=dlac.DEF_CORPDB, encoding=dlac.DEF_ENCODING,use_unicode=dlac.DEF_UNICODE_SWITCH, db_type=dlac.DB_TYPE):
+	def __init__(self, corpdb=dlac.DEF_CORPDB, mysql_config_file=dlac.MYSQL_CONFIG_FILE, encoding=dlac.DEF_ENCODING,use_unicode=dlac.DEF_UNICODE_SWITCH, db_type=dlac.DB_TYPE):
 		self.encoding = encoding
 		self.corpdb = corpdb
+		self.mysql_config_file = mysql_config_file
 		self.use_unicode = use_unicode
 		self.db_type = db_type
 		self.dataEngine = None
@@ -33,7 +36,7 @@ class DataEngine(object):
 		Database connection objects
 		"""
 		if self.db_type == "mysql":
-			self.dataEngine = MySqlDataEngine(self.corpdb, self.encoding)
+			self.dataEngine = MySqlDataEngine(self.corpdb, self.mysql_config_file, self.encoding)
 		if self.db_type == "sqlite":
 			self.dataEngine = SqliteDataEngine(self.corpdb)
 		return self.dataEngine.get_db_connection()
@@ -209,13 +212,15 @@ class MySqlDataEngine(DataEngine):
 	------------
 	corpdb: str
 		Corpus database name.
+	mysql_config_file : str
+		Location of MySQL configuration file
 	encoding: str
 		MYSQL encoding
 	"""
 
-	def __init__(self, corpdb, encoding):
+	def __init__(self, corpdb, mysql_config_file, encoding):
 		super().__init__(corpdb)
-		(self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(corpdb, charset=encoding)
+		(self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(corpdb, charset=encoding, mysql_config_file=mysql_config_file)
 
 	def get_db_connection(self):
 		"""
@@ -239,7 +244,7 @@ class MySqlDataEngine(DataEngine):
 		Results as list of lists
 
 		"""
-		return mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)
+		return mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicod, mysql_config_file=self.mysql_config_file)
 
 
 	def execute_get_SSCursor(self, usql):
@@ -256,13 +261,13 @@ class MySqlDataEngine(DataEngine):
 		Results as list of lists
 
 		"""
-		return mm.executeGetSSCursor(self.corpdb, usql, charset=self.encoding, use_unicode=self.use_unicode)
+		return mm.executeGetSSCursor(self.corpdb, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
 	def disable_table_keys(self, featureTableName):
 		"""
 		Disable keys: good before doing a lot of inserts.
 		"""
-		mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)
+		mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
 	def enable_table_keys(self, featureTableName):
 		"""
@@ -273,7 +278,7 @@ class MySqlDataEngine(DataEngine):
 		featureTableName: str
 			Name of the feature table
 		"""
-		mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)
+		mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
 	def execute_write_many(self, wsql, insert_rows):
 		"""
@@ -287,7 +292,7 @@ class MySqlDataEngine(DataEngine):
 			List of rows to insert into table 
 		
 		"""
-		mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, insert_rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+		mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, insert_rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
 	def execute(self, sql):
 		"""
@@ -301,7 +306,7 @@ class MySqlDataEngine(DataEngine):
 		------------
 		True or False depending on the success of query execution
 		"""
-		return mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+		return mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
 	def standardizeTable(self, table, collate, engine, charset, use_unicode):
 		"""
@@ -324,7 +329,7 @@ class MySqlDataEngine(DataEngine):
 		------------
 		True if the query execution is successful 
 		"""
-		return mm.standardizeTable(self.corpdb, self.dbCursor, table, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+		return mm.standardizeTable(self.corpdb, self.dbCursor, table, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
 	def tableExists(self, table_name):
 		"""
@@ -338,7 +343,7 @@ class MySqlDataEngine(DataEngine):
 		------------
 		True or False
 		"""
-		return mm.tableExists(self.corpdb, self.dbCursor, table_name, charset=self.encoding, use_unicode=self.use_unicode)
+		return mm.tableExists(self.corpdb, self.dbCursor, table_name, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
 	def primaryKeyExists(self, table_name, column_name):
 		"""
@@ -354,7 +359,7 @@ class MySqlDataEngine(DataEngine):
 		------------
 		True or False
 		"""
-		return mm.primaryKeyExists(self.corpdb, self.dbCursor, table_name, column_name)
+		return mm.primaryKeyExists(self.corpdb, self.dbCursor, table_name, column_name, mysql_config_file=self.mysql_config_file)
 
 	def indexExists(self, table_name, column_name):
 		"""
@@ -370,7 +375,7 @@ class MySqlDataEngine(DataEngine):
 		------------
 		True or False
 		"""
-		return mm.indexExists(self.corpdb, self.dbCursor, table_name, column_name)
+		return mm.indexExists(self.corpdb, self.dbCursor, table_name, column_name, mysql_config_file=self.mysql_config_file)
 
 	def getTableColumnNameTypes(self, table_name):
 		"""
@@ -384,7 +389,7 @@ class MySqlDataEngine(DataEngine):
 		-------------
 		Dict
 		"""
-		return mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, table_name)
+		return mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, table_name, mysql_config_file=self.mysql_config_file)
 
 class SqliteDataEngine(DataEngine):
 	def __init__(self, corpdb):

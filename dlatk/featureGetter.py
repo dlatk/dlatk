@@ -63,6 +63,7 @@ class FeatureGetter(DLAWorker):
         corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else dlac.DEF_CORPDB
         corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else dlac.DEF_CORPTABLE
         correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else dlac.DEF_CORREL_FIELD
+        mysql_config_file = parser.get('constants','mysql_config_file') if parser.has_option('constants','mysql_config_file') else dlac.MYSQL_CONFIG_FILE
         message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else dlac.DEF_MESSAGE_FIELD
         messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else dlac.DEF_MESSAGEID_FIELD
         encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else dlac.DEF_ENCODING
@@ -74,11 +75,11 @@ class FeatureGetter(DLAWorker):
         featureTable = parser.get('constants','feattable') if parser.has_option('constants','feattable') else dlac.DEF_FEAT_TABLE
         featNames = parser.get('constants','featnames') if parser.has_option('constants','featnames') else dlac.DEF_FEAT_NAMES
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
-        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, wordTable = None)
+        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_config_file=mysql_config_file, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, wordTable = None)
 
 
-    def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb = dlac.DEF_LEXICON_DB, featureTable=dlac.DEF_FEAT_TABLE, featNames=dlac.DEF_FEAT_NAMES, wordTable = None):
-        super(FeatureGetter, self).__init__(corpdb, corptable, correl_field, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable=wordTable)
+    def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_config_file=dlac.MYSQL_CONFIG_FILE, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb = dlac.DEF_LEXICON_DB, featureTable=dlac.DEF_FEAT_TABLE, featNames=dlac.DEF_FEAT_NAMES, wordTable = None):
+        super(FeatureGetter, self).__init__(corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable=wordTable)
         self.featureTable = featureTable    
         self.featNames = featNames
 
@@ -86,15 +87,15 @@ class FeatureGetter(DLAWorker):
 
     def optimizeFeatTable(self):
         """Optimizes the table -- good after a lot of deletes"""
-        return mm.optimizeTable(self.corpdb, self.dbCursor, self.featureTable, charset=self.encoding, use_unicode=self.use_unicode)
+        return mm.optimizeTable(self.corpdb, self.dbCursor, self.featureTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
     def disableFeatTableKeys(self):
         """Disable keys: good before doing a lot of inserts"""
-        return mm.disableTableKeys(self.corpdb, self.dbCursor, self.featureTable, charset=self.encoding, use_unicode=self.use_unicode)
+        return mm.disableTableKeys(self.corpdb, self.dbCursor, self.featureTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
     def enableFeatTableKeys(self):
         """Enables the keys, for use after inserting (and with keys disabled)"""
-        return mm.enableTableKeys(self.corpdb, self.dbCursor, self.featureTable, charset=self.encoding, use_unicode=self.use_unicode)
+        return mm.enableTableKeys(self.corpdb, self.dbCursor, self.featureTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
     ## Getters ##
 
@@ -169,13 +170,13 @@ class FeatureGetter(DLAWorker):
         """returns a distinct list of (feature) tuples given the name of the feature value field (either value, group_norm, or feat_norm)"""
         sql = "select feat, zero_feat_norm from %s"%('mean_'+self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
     def getValues(self, where = ''):
         """returns a list of (group_id, feature, value) triples"""
         sql = """select group_id, feat, value from %s"""%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode) 
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file) 
 
     def getSumValue(self, where = ''):
         """returns the sum of all values"""
@@ -266,7 +267,7 @@ class FeatureGetter(DLAWorker):
         if not featName: featName = self.featNames[0]
         sql = "select group_id, group_norm from %s WHERE feat = '%s'"%(self.featureTable, featName)
         if (where): sql += ' AND ' + where
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
     def getGroupsAndFeats(self, where=''):
         dlac.warn("Loading Features and Getting Groups.")
@@ -584,13 +585,13 @@ class FeatureGetter(DLAWorker):
         """returns a list of (group_id, feature, feat_norm) triples"""
         sql = """select group_id, feat, feat_norm from %s"""%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode) 
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file) 
 
     def getFeatNormsSS(self, where = ''):
         """returns a server-side cursor pointing to (group_id, feature, feat_norm) triples"""
         sql = """select group_id, feat, feat_norm from %s"""%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return mm.executeGetSSCursor(self.corpdb, sql, charset=self.encoding, use_unicode=self.use_unicode) 
+        return mm.executeGetSSCursor(self.corpdb, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file) 
 
     def getFeatNormsWithZeros(self, groups = [], where = ''):
         """returns a dict of (group_id => feature => feat_norm) """
@@ -622,7 +623,7 @@ class FeatureGetter(DLAWorker):
         meanTable = 'mean_'+self.featureTable
         sql = """select feat, mean, std, zero_feat_norm from %s"""%(meanTable)
         if (where): sql += ' WHERE ' + where
-        mList = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode) 
+        mList = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file) 
         meanData = dict()
         for tup in mList: #feat : (mean, std, zero_feat_norm)
             meanData[tup[0]] = tup[1:]
@@ -677,7 +678,7 @@ class FeatureGetter(DLAWorker):
         """returns a list of (group_id, feature, value, group_norm) tuples"""
         sql = """select group_id, feat, value, group_norm from %s"""%(self.featureTable)
         if (where): sql += ' WHERE ' + where
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode) 
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file) 
 
     def getFeatAllSS(self, where = '', featNorm=True):
         """returns a list of (group_id, feature, value, group_norm) tuples"""
@@ -703,7 +704,7 @@ class FeatureGetter(DLAWorker):
         """Returns the distinct group ids that are in the feature table"""
         sql = "select distinct group_id from %s" % self.featureTable
         if (where): sql += ' WHERE ' + where
-        return [l[0] for l in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)]
+        return [l[0] for l in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)]
 
 
     def getDistinctGroups(self, where=''):
@@ -719,7 +720,7 @@ class FeatureGetter(DLAWorker):
         #read mask table and figure out groups for each mask:
         masks = {'no mask': set()}
         if maskTable:
-            maskList = mm.getTableColumnNameList(self.corpdb, self.dbCursor, maskTable, charset=self.encoding, use_unicode=self.use_unicode)
+            maskList = mm.getTableColumnNameList(self.corpdb, self.dbCursor, maskTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
             print(maskList)
             assert self.correl_field in maskList, "group field, %s, not in mask table" % self.correl_field
             maskToIndex = dict([(maskList[i], i) for i in range(len(maskList))])
@@ -727,7 +728,7 @@ class FeatureGetter(DLAWorker):
 
             #get data:
             sql = """SELECT %s FROM %s""" % (', '.join(maskList), maskTable)
-            maskData = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+            maskData = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
             for maskId in maskList:
                 if not maskId == self.correl_field:
                     masks[maskId] = set()
@@ -799,7 +800,7 @@ class FeatureGetter(DLAWorker):
         """returns a dataframe of (group_id, feature, group_norm)"""
         """default index is on group_id and feat"""
         index=['group_id','feat']
-        db_eng = mif.get_db_engine(self.corpdb)
+        db_eng = mif.get_db_engine(self.corpdb, mysql_config_file=self.mysql_config_file)
         sql = """SELECT group_id, feat, group_norm from %s""" % (self.featureTable)
         if (where): sql += ' WHERE ' + where
         return pd.read_sql(sql=sql, con=db_eng, index_col=index)
@@ -808,7 +809,7 @@ class FeatureGetter(DLAWorker):
         """returns a dataframe of (group_id, feature, value)"""
         """default index is on group_id and feat"""
         index=['group_id','feat']
-        db_eng = mif.get_db_engine(self.corpdb)
+        db_eng = mif.get_db_engine(self.corpdb, mysql_config_file=self.mysql_config_file)
         sql = """SELECT group_id, feat, value from %s""" % (self.featureTable)
         if (where): sql += ' WHERE ' + where
         return pd.read_sql(sql=sql, con=db_eng, index_col=index)
@@ -817,7 +818,7 @@ class FeatureGetter(DLAWorker):
         """returns a dict of (group_id => feature => group_norm)"""
         """default index is on group_id and feat"""
         index=['group_id','feat']
-        db_eng = mif.get_db_engine(self.corpdb)
+        db_eng = mif.get_db_engine(self.corpdb, mysql_config_file=self.mysql_config_file)
         sql = """SELECT group_id, feat, group_norm from %s""" % (self.featureTable)
         if groups:
             gCond = " group_id in ('%s')" % "','".join(str(g) for g in groups)
@@ -843,15 +844,15 @@ class FeatureGetter(DLAWorker):
         """returns a dataframe of (group_id, feature, value, group_norm)"""
         """default index is on group_id and feat"""
         index=['group_id','feat']
-        db_eng = mif.get_db_engine(self.corpdb)
+        db_eng = mif.get_db_engine(self.corpdb, mysql_config_file=self.mysql_config_file)
         sql = """SELECT group_id, feat, value, group_norm from %s""" % (self.featureTable)
         if (where): sql += ' WHERE ' + where
         return pd.read_sql(sql=sql, con=db_eng, index_col=index)
 
     def getTopMessages(self, lex_tbl, outputfile, lim_num, whitelist, group_freq_thresh=0):
         """"""
-        assert mm.tableExists(self.corpdb, self.dbCursor, self.featureTable, charset=self.encoding, use_unicode=self.use_unicode), 'feature table does not exist (make sure to quote it)'
-        assert mm.tableExists(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode), 'message table does not exist (make sure to quote it)'
+        assert mm.tableExists(self.corpdb, self.dbCursor, self.featureTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file), 'feature table does not exist (make sure to quote it)'
+        assert mm.tableExists(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file), 'message table does not exist (make sure to quote it)'
         # if lex_tbl:
         #     assert mm.tableExists(self.lexicondb, self.dbCursor, ".".join([self.lexicondb, lex_tbl]), charset=self.encoding, use_unicode=self.use_unicode), 'lex table does not exist (make sure to quote it)'
         
@@ -863,7 +864,7 @@ class FeatureGetter(DLAWorker):
             feat_sql = """SELECT DISTINCT feat FROM {db}.{tbl}""".format(db=self.corpdb, tbl=self.featureTable)
             if whitelist:
                 feat_sql += """ where feat in ({whitelist})""".format(whitelist="'" + "', '".join(whitelist) + "'")
-        features = mm.executeGetList(self.corpdb, self.dbCursor, feat_sql, charset=self.encoding, use_unicode=self.use_unicode)
+        features = mm.executeGetList(self.corpdb, self.dbCursor, feat_sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         if group_freq_thresh > 0:
             msg_ids_gft = frozenset([k for k,v in self.getGroupWordCounts().items() if v >= group_freq_thresh])
 
@@ -882,7 +883,7 @@ class FeatureGetter(DLAWorker):
                 if lex_tbl:
                     cat_sql = """SELECT term FROM {db}.{tbl} WHERE category = '{cat}' 
                         ORDER BY weight DESC LIMIT 15""".format(db=self.lexicondb, tbl=lex_tbl, cat=feat)
-                    data =  mm.executeGetList(self.corpdb, self.dbCursor, cat_sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode)
+                    data =  mm.executeGetList(self.corpdb, self.dbCursor, cat_sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                     words = ", ".join([str(row[0]) for row in data])
                     feat_to_search = feat
                 else:
@@ -892,7 +893,7 @@ class FeatureGetter(DLAWorker):
                 gid_sql = """SELECT group_id FROM {db}.{tbl}
                     WHERE feat = {cat} ORDER BY group_norm DESC""".format(db=self.corpdb, tbl=self.featureTable, cat=feat_to_search)
 
-                msg_ids =  mm.executeGetList(self.corpdb, self.dbCursor, gid_sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode)
+                msg_ids =  mm.executeGetList(self.corpdb, self.dbCursor, gid_sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                 msg_ids = [msgs_id[0] for msgs_id in msg_ids]
                 if group_freq_thresh > 0:
                     msg_ids = [m for m in msg_ids if m in msg_ids_gft]
@@ -904,7 +905,7 @@ class FeatureGetter(DLAWorker):
                 msg_sql = """SELECT message_id, message FROM {db}.{tbl} WHERE message_id in ('{msg_ids}')""" \
                     .format(db=self.corpdb, tbl=self.corptable, msg_ids="', '".join(msg_ids))
 
-                msgs =  mm.executeGetList(self.corpdb, self.dbCursor, msg_sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode)
+                msgs =  mm.executeGetList(self.corpdb, self.dbCursor, msg_sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                 for msg in msgs:
                     tup = [msg[0], msg[1], feat]
                     if words: tup.append(words)

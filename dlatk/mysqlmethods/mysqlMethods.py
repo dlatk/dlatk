@@ -11,35 +11,9 @@ import csv
 from random import sample
 from math import floor
 
-from dlatk.dlaConstants import MAX_ATTEMPTS, MYSQL_ERROR_SLEEP, DEF_ENCODING, MAX_SQL_PRINT_CHARS, DEF_UNICODE_SWITCH, DEF_MYSQL_ENGINE, warn
+from dlatk.dlaConstants import MAX_ATTEMPTS, MYSQL_ERROR_SLEEP, DEF_ENCODING, MAX_SQL_PRINT_CHARS, DEF_UNICODE_SWITCH, DEF_MYSQL_ENGINE, MYSQL_CONFIG_FILE, warn
 
-#DB INFO:
-PASSWD = ''
-
-def executeGetSSCursor(db, sql, warnMsg = True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
-    """Executes a given query (ss cursor is good to iterate over for large returns)"""
-    if warnMsg: 
-        warn("SQL (SSCursor) QUERY: %s"% sql[:MAX_SQL_PRINT_CHARS])
-    ssCursor = dbConnect(db, 
-                         charset=charset, 
-                         use_unicode=use_unicode,
-                         )[0].cursor(MySQLdb.cursors.SSCursor)
-    data = []
-    attempts = 0;
-    while (1):
-        try:
-            ssCursor.execute(sql)
-            break
-        except MySQLdb.Error as e:
-            attempts += 1
-            warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
-            time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
-            ssCursor = dbConnect(db, charset=charset, use_unicode=use_unicode)[0].cursor(MySQLdb.cursors.SSCursor)
-            if (attempts > MAX_ATTEMPTS):
-                sys.exit(1)
-    return ssCursor
-
-def dbConnect(db, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def dbConnect(db, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """ Connects to specified database. Returns tuple of (dbConn, dbCursor, dictCursor) """
     dbConn = None
     attempts = 0;
@@ -49,7 +23,7 @@ def dbConnect(db, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
                 db = db,
                 charset = charset,
                 use_unicode = use_unicode, 
-                read_default_file = "~/.my.cnf"
+                read_default_file = mysql_config_file
             )
             break
         except MySQLdb.Error as e:
@@ -62,23 +36,47 @@ def dbConnect(db, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
     dictCursor = dbConn.cursor(MySQLdb.cursors.DictCursor)
     return dbConn, dbCursor, dictCursor
 
-def abstractDBConnect(db):
-    dbConn = MySQLdb.connect (
-                          read_default_file = "~/.my.cnf",
-                          db = db)
+def executeGetSSCursor(db, sql, warnMsg = True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
+    """Executes a given query (ss cursor is good to iterate over for large returns)"""
+    if warnMsg: 
+        warn("SQL (SSCursor) QUERY: %s"% sql[:MAX_SQL_PRINT_CHARS])
+    ssCursor = dbConnect(db, 
+                         charset=charset, 
+                         use_unicode=use_unicode,
+                         mysql_config_file=mysql_config_file,
+                         )[0].cursor(MySQLdb.cursors.SSCursor)
+    data = []
+    attempts = 0;
+    while (1):
+        try:
+            ssCursor.execute(sql)
+            break
+        except MySQLdb.Error as e:
+            attempts += 1
+            warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
+            time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
+            ssCursor = dbConnect(db, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)[0].cursor(MySQLdb.cursors.SSCursor)
+            if (attempts > MAX_ATTEMPTS):
+                sys.exit(1)
+    return ssCursor
+
+def abstractDBConnect(db, mysql_config_file):
+    dbConn = MySQLdb.connect (db = db,
+                          read_default_file = mysql_config_file
+                          )
     dbCursor = dbConn.cursor()
     return (dbConn, dbCursor)
 
-def getTableColumnNames(db, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def getTableColumnNames(db, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """Returns a list of column names from a db table"""
-    (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)
+    (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)
     sql = "SELECT column_name FROM information_schema.columns WHERE table_schema='%s' AND table_name='%s'"%(db, table)
     columnNamesOfTable = executeGetList(db, dbCursor, sql)
     return [x[0] for x in columnNamesOfTable]
 
-def getTableColumnNamesTypes(db, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def getTableColumnNamesTypes(db, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """Returns a list of column names and types from a db table"""
-    (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)
+    (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)
     sql = "SELECT column_name, column_type FROM information_schema.columns WHERE table_schema='%s' AND table_name='%s'"%(db, table)
     return executeGetList(db, dbCursor, sql, charset=charset, use_unicode=use_unicode)
 
@@ -96,7 +94,7 @@ def getTableColumnNameIndices(db, table, colNamesOfNote):
         kk += 1
     return indexList
 
-def execute( db, dbCursor, sql, warnQuery=True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def execute( db, dbCursor, sql, warnQuery=True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """Executes a given query"""
     if warnQuery:
         warn("SQL QUERY: %s"% sql[:MAX_SQL_PRINT_CHARS])
@@ -109,17 +107,17 @@ def execute( db, dbCursor, sql, warnQuery=True, charset=DEF_ENCODING, use_unicod
             attempts += 1
             warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
             time.sleep(MYSQL_ERROR_SLEEP)
-            (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)
+            (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)
             if (attempts > MAX_ATTEMPTS):
                 sys.exit(1)
     return True
 
-def qExecute( db, sql, warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def qExecute( db, sql, warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """performs the db connect and execute in the same call"""
-    (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)    
-    return execute( db, dbCursor, sql, warnQuery, charset=charset, use_unicode=use_unicode)
+    (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)    
+    return execute( db, dbCursor, sql, warnQuery, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)
 
-def executeGetDict( db, dictCursor, sql, warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def executeGetDict( db, dictCursor, sql, warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """Executes a given query, returns results as a list of dicts"""
     if warnQuery:
         warn("SQL (DictCursor) QUERY: %s"% sql[:MAX_SQL_PRINT_CHARS])
@@ -134,12 +132,12 @@ def executeGetDict( db, dictCursor, sql, warnQuery=False, charset=DEF_ENCODING, 
             attempts += 1
             warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
             time.sleep(MYSQL_ERROR_SLEEP)
-            (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)
+            (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)
             if (attempts > MAX_ATTEMPTS):
                 sys.exit(1)
     return data
 
-def executeGetList( db, dbCursor, sql, warnQuery=True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def executeGetList( db, dbCursor, sql, warnQuery=True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """Executes a given query, returns results as a list of lists"""
     warnQuery = False
     if warnQuery:
@@ -155,7 +153,7 @@ def executeGetList( db, dbCursor, sql, warnQuery=True, charset=DEF_ENCODING, use
             attempts += 1
             warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
             time.sleep(MYSQL_ERROR_SLEEP)
-            (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)
+            (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)
             if (attempts > MAX_ATTEMPTS):
                 sys.exit(1)
     return data
@@ -164,17 +162,17 @@ def executeGetList1( db, dbCursor, sql, warnQuery=False, charset=DEF_ENCODING, u
     """Executes a given query, expecting one resulting column. Returns results as a list"""
     return [x[0] for x in executeGetList( db, dbCursor, sql, warnQuery, charset=charset, use_unicode=use_unicode)]
 
-def qExecuteGetList( db, sql, warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def qExecuteGetList( db, sql, warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """performs the db connect and execute in the same call"""
-    (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)    
+    (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)    
     return executeGetList( db, dbCursor, sql, warnQuery, charset=charset, use_unicode=use_unicode)
 
-def qExecuteGetList1( db, sql, warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def qExecuteGetList1( db, sql, warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """performs the db connect and execute in the same call, equivalent to executeGetList1"""
     (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)    
-    return executeGetList1( db, dbCursor, sql, warnQuery, charset=charset, use_unicode=use_unicode)
+    return executeGetList1( db, dbCursor, sql, warnQuery, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)
 
-def executeWrite( db, dbConn, sql, row, writeCursor=None , warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def executeWrite( db, dbConn, sql, row, writeCursor=None , warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """Executes a write query"""
     if warnQuery:
         warn("SQL (write many) QUERY: %s"% sql)                                                 
@@ -189,18 +187,18 @@ def executeWrite( db, dbConn, sql, row, writeCursor=None , warnQuery=False, char
             attempts += 1
             warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
             time.sleep(MYSQL_ERROR_SLEEP)
-            (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)
+            (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)
             writeCursor = dbConn.cursor()
             if (attempts > MAX_ATTEMPTS):
                 sys.exit(1)
     return writeCursor
 
-def doesTableExist( db, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def doesTableExist( db, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     sql = 'show tables in %s'%db
-    tables = qExecuteGetList1(db, sql, charset=charset, use_unicode=use_unicode)
+    tables = qExecuteGetList1(db, sql, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)
     return table in tables
 
-def executeWriteMany( db, dbConn, sql, rows, writeCursor=None, warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def executeWriteMany( db, dbConn, sql, rows, writeCursor=None, warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """Executes a write query"""
     if warnQuery:
         warn("SQL (write many) QUERY: %s"% sql)                                                 
@@ -215,16 +213,16 @@ def executeWriteMany( db, dbConn, sql, rows, writeCursor=None, warnQuery=False, 
             attempts += 1
             warn(" *MYSQL Corpus DB ERROR on %s:\n%s (%d attempt)"% (sql, e, attempts))
             time.sleep(MYSQL_ERROR_SLEEP)
-            (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)
+            (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)
             writeCursor = dbConn.cursor()
             if (attempts > MAX_ATTEMPTS):
                 sys.exit(1)
     return writeCursor
 
-def qExecuteWriteMany(db, sql, rows, writeCursor=None, warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def qExecuteWriteMany(db, sql, rows, writeCursor=None, warnQuery=False, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """Executes a write query"""
-    (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)
-    return executeWriteMany(db, dbConn, sql, rows, writeCursor, warnQuery, charset=charset, use_unicode=use_unicode)
+    (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)
+    return executeWriteMany(db, dbConn, sql, rows, writeCursor, warnQuery, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)
 
 def gen_clone_query(conn, src_tbl, dst_tbl):
     try:
@@ -248,19 +246,19 @@ def getColumnNamesAndTypes( db, table, charset=DEF_ENCODING, use_unicode=DEF_UNI
     sql = """SELECT column_name, column_type FROM information_schema.columns where TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s'"""%(db, table)
     return dict(qExecuteGetList(db, sql, charset=charset, use_unicode=use_unicode))
 
-def getTableEncoding(db, table=None, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def getTableEncoding(db, table=None, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """returns the encoding of a given table as a string"""
     if table: 
         sql = """SELECT CCSA.character_set_name FROM information_schema.`TABLES` T, information_schema.`COLLATION_CHARACTER_SET_APPLICABILITY` CCSA WHERE CCSA.collation_name = T.table_collation AND T.table_schema = '%s' AND T.table_name = '%s' """ % (db, table)
     else:
         sql = """SELECT default_character_set_name FROM information_schema.SCHEMATA WHERE schema_name = '%s'""" % (db)
-    return str(qExecuteGetList1(db, sql, charset=charset, use_unicode=use_unicode)[0])
+    return str(qExecuteGetList1(db, sql, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)[0])
 
-def cloneExactTable(db, sourceTableName, destinationTableName, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def cloneExactTable(db, sourceTableName, destinationTableName, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     warn("making TABLE %s, an exact copy of TABLE %s..."%(destinationTableName, sourceTableName))
 
     warn("connecting to DATABASE %s..."%(db))
-    (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)
+    (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)
 
     warn("cloning structure of table...")
     cloneQuery = gen_clone_query( dbConn, sourceTableName, destinationTableName )
@@ -272,11 +270,11 @@ def cloneExactTable(db, sourceTableName, destinationTableName, charset=DEF_ENCOD
 
     warn("finished cloning table!")
 
-def randomSubsetTable( db, sourceTableName, destinationTableName, keyField, percentToSubset=.10, distinct=True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def randomSubsetTable( db, sourceTableName, destinationTableName, keyField, percentToSubset=.10, distinct=True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     warn("making TABLE %s, a %2.2f percent random subset of TABLE %s on unique key %s..."%(destinationTableName, percentToSubset, sourceTableName, keyField))
 
     warn("connecting to DATABASE %s..."%(db))
-    (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode)
+    (dbConn, dbCursor, dictCursor) = dbConnect(db, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)
 
     warn("removing destination table if it exists...")
     sql = 'DROP TABLE IF EXISTS %s'%(destinationTableName)
@@ -303,8 +301,8 @@ def randomSubsetTable( db, sourceTableName, destinationTableName, keyField, perc
     warn("finished making TABLE %s, a %2.2f percent random subset of TABLE %s on unique key %s!"%(destinationTableName, percentToSubset, sourceTableName, keyField)) 
     
 
-def writeTableToCSV(db, tableName, outputfile, sql_extra=None, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
-    (cur, conn, dcur) = dbConnect(db, charset=charset, use_unicode=use_unicode)
+def writeTableToCSV(db, tableName, outputfile, sql_extra=None, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
+    (cur, conn, dcur) = dbConnect(db, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)
     sql = 'SELECT * FROM %s'%tableName
     if sql_extra:
         sql += ' ' + sql_extra
@@ -318,69 +316,69 @@ def writeTableToCSV(db, tableName, outputfile, sql_extra=None, charset=DEF_ENCOD
         raise Exception('No Results Returned From SQL Query, no output generated.')
 
 ## TABLE MAINTENANCE ##
-def optimizeTable(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def optimizeTable(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """Optimizes the table -- good after a lot of deletes"""
     sql = """OPTIMIZE TABLE %s """%(table)
-    return execute(db, dbCursor, sql, charset=charset, use_unicode=use_unicode) 
+    return execute(db, dbCursor, sql, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file) 
 
-def disableTableKeys(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def disableTableKeys(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """Disable keys: good before doing a lot of inserts"""
     sql = """ALTER TABLE %s DISABLE KEYS"""%(table)
-    return execute(db, dbCursor, sql, charset=charset, use_unicode=use_unicode) 
+    return execute(db, dbCursor, sql, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file) 
 
-def enableTableKeys(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def enableTableKeys(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """Enables the keys, for use after inserting (and with keys disabled)"""
     sql = """ALTER TABLE %s ENABLE KEYS"""%(table)
-    return execute(db, dbCursor, sql, charset=charset, use_unicode=use_unicode) 
+    return execute(db, dbCursor, sql, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file) 
 
-def standardizeTable(db, dbCursor, table, collate='', engine=DEF_MYSQL_ENGINE, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def standardizeTable(db, dbCursor, table, collate='', engine=DEF_MYSQL_ENGINE, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """Sets character set, collate and engine"""
     if not collate: collate = DEF_COLLATIONS[charset.lower()]
     sql = """ALTER TABLE %s CHARACTER SET %s COLLATE %s ENGINE=%s""" % (table, charset, collate, engine)
-    return execute(db, dbCursor, sql, charset=charset, use_unicode=use_unicode) 
+    return execute(db, dbCursor, sql, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file) 
 
 ## Table Meta Info ##
-def tableExists(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def tableExists(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     sql = """show tables like '%s'""" % table
-    if executeGetList(db, dbCursor, sql, charset=charset, use_unicode=use_unicode):
+    if executeGetList(db, dbCursor, sql, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file):
         return True
     else:
         return False
 
-def primaryKeyExists(db, dbCursor, table, column_name='', charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def primaryKeyExists(db, dbCursor, table, column_name='', charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     sql = """show indexes from %s where Key_name='PRIMARY'""" % table
     if column_name: sql += """ and Column_name='%s'""" % column_name
-    if executeGetList(db, dbCursor, sql, warnQuery=False, charset=charset, use_unicode=use_unicode):
+    if executeGetList(db, dbCursor, sql, warnQuery=False, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file):
         return True
     else:
         return False
 
-def indexExists(db, dbCursor, table, column_name='', charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def indexExists(db, dbCursor, table, column_name='', charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     sql = """show indexes from %s where Key_name!='PRIMARY'""" % table
     if column_name: sql += """ and Column_name='%s'""" % column_name
-    if executeGetList(db, dbCursor, sql, warnQuery=False, charset=charset, use_unicode=use_unicode):
+    if executeGetList(db, dbCursor, sql, warnQuery=False, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file):
         return True
     else:
         return False
 
-def getTableDataLength(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def getTableDataLength(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """Returns the data length for the given table"""
     sql = """SELECT DATA_LENGTH FROM information_schema.tables where TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s'""" % (db, table)
-    return executeGetList(db, dbCursor, sql, charset=charset, use_unicode=use_unicode)[0]
+    return executeGetList(db, dbCursor, sql, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)[0]
 
-def getTableIndexLength(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def getTableIndexLength(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """Returns the data length for the given table"""
     sql = """SELECT INDEX_LENGTH FROM information_schema.tables where TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s'""" % (db, table)
-    return executeGetList(db, dbCursor, sql, charset=charset, use_unicode=use_unicode)[0]
+    return executeGetList(db, dbCursor, sql, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)[0]
 
-def getTableColumnNameTypes(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def getTableColumnNameTypes(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """returns a dict of column names mapped to types"""
     sql = """SELECT column_name, column_type FROM information_schema.columns where TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s'"""%(db, table)
-    return dict(executeGetList(db, dbCursor, sql, charset=charset, use_unicode=use_unicode))
+    return dict(executeGetList(db, dbCursor, sql, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file))
 
 
-def getTableColumnNameList(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH):
+def getTableColumnNameList(db, dbCursor, table, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
     """returns a dict of column names mapped to types"""
     sql = """SELECT column_name FROM information_schema.columns where TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s' ORDER BY ORDINAL_POSITION"""%(db, table)
-    return [x[0] for x in executeGetList(db, dbCursor, sql, charset=charset, use_unicode=use_unicode)]
+    return [x[0] for x in executeGetList(db, dbCursor, sql, charset=charset, use_unicode=use_unicode, mysql_config_file=mysql_config_file)]
 

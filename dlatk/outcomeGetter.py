@@ -85,6 +85,7 @@ class OutcomeGetter(DLAWorker):
         corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else dlac.DEF_CORPDB
         corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else dlac.DEF_CORPTABLE
         correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else dlac.DEF_CORREL_FIELD
+        mysql_config_file = parser.get('constants','mysql_config_file') if parser.has_option('constants','mysql_config_file') else dlac.MYSQL_CONFIG_FILE
         message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else dlac.DEF_MESSAGE_FIELD
         messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else dlac.DEF_MESSAGEID_FIELD
         encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else dlac.DEF_ENCODING
@@ -104,11 +105,11 @@ class OutcomeGetter(DLAWorker):
         featureMappingTable = parser.get('constants','featlabelmaptable') if parser.has_option('constants','featlabelmaptable') else ''
         featureMappingLex = parser.get('constants','featlabelmaplex') if parser.has_option('constants','featlabelmaplex') else ''
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
-        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, outcome_categories=outcome_categories, multiclass_outcome=multiclass_outcome, group_freq_thresh=group_freq_thresh, low_variance_thresh=low_variance_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex, wordTable=wordTable)
+        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_config_file=mysql_config_file, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, outcome_categories=outcome_categories, multiclass_outcome=multiclass_outcome, group_freq_thresh=group_freq_thresh, low_variance_thresh=low_variance_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex, wordTable=wordTable)
     
 
-    def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb = dlac.DEF_LEXICON_DB, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls = dlac.DEF_OUTCOME_CONTROLS, outcome_interaction = dlac.DEF_OUTCOME_CONTROLS, outcome_categories = [], multiclass_outcome = [], group_freq_thresh = None, low_variance_thresh = dlac.DEF_LOW_VARIANCE_THRESHOLD, featureMappingTable='', featureMappingLex='', wordTable = None, fold_column = None):
-        super(OutcomeGetter, self).__init__(corpdb, corptable, correl_field, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable = wordTable)
+    def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_config_file=dlac.MYSQL_CONFIG_FILE, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb = dlac.DEF_LEXICON_DB, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls = dlac.DEF_OUTCOME_CONTROLS, outcome_interaction = dlac.DEF_OUTCOME_CONTROLS, outcome_categories = [], multiclass_outcome = [], group_freq_thresh = None, low_variance_thresh = dlac.DEF_LOW_VARIANCE_THRESHOLD, featureMappingTable='', featureMappingLex='', wordTable = None, fold_column = None):
+        super(OutcomeGetter, self).__init__(corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable = wordTable)
         self.outcome_table = outcome_table
 
         if isinstance(outcome_value_fields, str):
@@ -116,7 +117,7 @@ class OutcomeGetter(DLAWorker):
 
         if outcome_value_fields and len(outcome_value_fields) > 0 and outcome_value_fields[0] == '*':#handle wildcard fields
             newOutcomeFields = []
-            for name, typ in mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, outcome_table).items():
+            for name, typ in mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, outcome_table, mysql_config_file=self.mysql_config_file).items():
                 typ = re.sub(r'\([0-9\,]*\)\s*$', '', typ)
                 if typ.split()[0].upper() in self._mysqlNumeric:
                     newOutcomeFields.append(name)
@@ -124,7 +125,7 @@ class OutcomeGetter(DLAWorker):
 
         if outcome_controls and len(outcome_controls) > 0 and outcome_controls[0] == '*':#handle wildcard fields
             newOutcomeFields = []
-            for name, typ in mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, outcome_table).items():
+            for name, typ in mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, outcome_table, mysql_config_file=self.mysql_config_file).items():
                 typ = re.sub(r'\([0-9\,]*\)\s*$', '', typ)
                 if typ.split()[0].upper() in self._mysqlNumeric:
                     newOutcomeFields.append(name)
@@ -152,7 +153,7 @@ class OutcomeGetter(DLAWorker):
 
     def copy(self):
         self.__dict__
-        newObj = OutcomeGetter(self.corpdb, self.corptable, self.correl_field, self.message_field, self.messageid_field)
+        newObj = OutcomeGetter(self.corpdb, self.corptable, self.correl_field, self.mysql_config_file, self.message_field, self.messageid_field)
         for k, v in self.__dict__.items():
             newObj.__dict__[k] = v
         return newObj
@@ -172,7 +173,7 @@ class OutcomeGetter(DLAWorker):
         return feat_to_label
 
     def createOutcomeTable(self, tablename, dataframe, ifExists='fail'):
-        eng = get_db_engine(self.corpdb)
+        eng = get_db_engine(self.corpdb, mysql_config_file=self.mysql_config_file)
         dtype ={}
         if isinstance(dataframe.index[0], str):
             import sqlalchemy
@@ -193,7 +194,7 @@ class OutcomeGetter(DLAWorker):
             if not includeNull:
                 wheres.append("%s IS NOT NULL" % outcome)
             sql += ' WHERE ' + ' AND '.join(wheres)
-        return [v[0] for v in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding)]
+        return [v[0] for v in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, mysql_config_file=self.mysql_config_file)]
 
     def getDistinctOutcomeValueCounts(self, outcome = None, requireControls = False, includeNull = True, where = ''):
         """returns a dict of (outcome_value, count)"""
@@ -211,7 +212,7 @@ class OutcomeGetter(DLAWorker):
             sql += ' WHERE ' + ' AND '.join(wheres)
             
         sql += ' group by %s ' % outcome
-        return dict(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
+        return dict(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))
 
     def getDistinctOutcomeAndControlValueCounts(self, outcome = None, control = None, includeNull = True, where = ''):
         """returns a dict of (outcome_value, count)"""
@@ -232,7 +233,7 @@ class OutcomeGetter(DLAWorker):
             
         sql += ' group by %s, %s ' % (outcome, control)
         countDict = dict()
-        for (outcome, control, count) in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode):
+        for (outcome, control, count) in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file):
             if not outcome in countDict:
                 countDict[outcome] = dict()
             countDict[outcome][control] = count
@@ -297,7 +298,7 @@ class OutcomeGetter(DLAWorker):
 
         # finish the original query with the updated feature table
         sql += "FROM %s AS updatedFeatures GROUP BY %s"%(sql_filtered_feature_table_2, fg.correl_field)
-        return [distinctFeatureList, mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)]
+        return [distinctFeatureList, mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)]
 
     def makeBinnedOutcomeTable(self, buckets, mid_aom_list):
         """buckets is a list of tuples"""
@@ -485,7 +486,7 @@ enabled, so the total word count for your groups might be off
     def getGroupAndOutcomeValuesAsDF(self, outcomeField = None, where=''):
         """returns a dataframe of (group_id, outcome_value)"""
         if not outcomeField: outcomeField = self.outcome_value_fields[0]
-        db_eng = get_db_engine(self.corpdb)
+        db_eng = get_db_engine(self.corpdb, mysql_config_file=self.mysql_config_file)
         sql = "select %s, %s from `%s` WHERE %s IS NOT NULL" % (self.correl_field, outcomeField, self.outcome_table, outcomeField)
         if (where): sql += ' WHERE ' + where
         index = self.correl_field

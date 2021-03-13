@@ -520,7 +520,7 @@ class FeatureRefiner(FeatureGetter):
                   (dayDiff, self.correl_field, days, str(minIntersectDT.date()), maxDiffPerUnit, str(maxIntersectDT.date()))
 
         ## 3. Get Features x SubIds (in Sparse X form):
-        oldFeatures = FeatureGetter(self.dbengine, self.corpdb, self.corptable, oldGroupField, self.mysql_config_file, self.message_field, self.messageid_field, self.encoding, True, self.lexicondb, featureTable)
+        oldFeatures = FeatureGetter(self.db_type, self.corpdb, self.corptable, oldGroupField, self.mysql_config_file, self.message_field, self.messageid_field, self.encoding, True, self.lexicondb, featureTable)
         dateWhere = "%s >= DATE('%s') AND %s <= DATE('%s')" % (dateField, dtClosestToMin.date(), dateField, dtClosestToMax.date()) #used when querying mids + dates
         groupsWhere = "group_id in (SELECT %s FROM %s WHERE "%(oldGroupField, self.corptable) +dateWhere+" AND %s in ('%s'))" %(self.correl_field, gList)
         #print("groupsWhere", groupsWhere)#debug

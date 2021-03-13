@@ -277,7 +277,7 @@ class DLAWorker(object):
         wordTable = self.getWordTable() if not lexicon_count_table else lexicon_count_table
 
         assert self.data_engine.tableExists(wordTable), "Need to create word table to use current functionality: %s" % wordTable
-        return FeatureGetter(self.dbengine, self.corpdb, self.corptable, self.correl_field, self.mysql_config_file, self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb, featureTable=wordTable, wordTable=wordTable)
+        return FeatureGetter(self.db_type, self.corpdb, self.corptable, self.correl_field, self.mysql_config_file, self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb, featureTable=wordTable, wordTable=wordTable)
     
     def getWordGetterPOcc(self, pocc):
         """Returns a FeatureGetter for given p_occ filter values used for getting word counts. Usually used for group_freq_thresh.
@@ -294,7 +294,7 @@ class DLAWorker(object):
         from .featureGetter import FeatureGetter
         wordTable = self.getWordTablePOcc(pocc)
         assert mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file), "Need to create word table to use current functionality"
-        return FeatureGetter(self.dbengine, self.corpdb, self.corptable, self.correl_field, self.mysql_config_file,
+        return FeatureGetter(self.db_type, self.corpdb, self.corptable, self.correl_field, self.mysql_config_file,
                              self.message_field, self.messageid_field, self.encoding, self.use_unicode, 
                              self.lexicondb, featureTable=wordTable, wordTable = wordTable)
 

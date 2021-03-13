@@ -2114,7 +2114,7 @@ def main(fn_args = None):
       with open(init_args.toinitfile, 'w') as init_file:
         init_file.write("[constants]\n")
 
-        if (args.dbengine and args.dbengine != dlac.DB_TYPE): init_file.write("dbengine = " + str(args.dbengine)+"\n")
+        if (args.dbengine and args.dbengine != dlac.DB_TYPE): init_file.write("db_type = " + str(args.dbengine)+"\n")
         if (args.corpdb and args.corpdb != dlac.DEF_CORPDB): init_file.write("corpdb = " + str(args.corpdb)+"\n")
         if (args.corptable and args.corptable != dlac.DEF_CORPTABLE): init_file.write("corptable = " + str(args.corptable)+"\n")
         if (args.correl_field): init_file.write("correl_field = " + str(args.correl_field)+"\n")

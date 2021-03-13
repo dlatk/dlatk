@@ -25,9 +25,9 @@ def _warn(string):
 
 class SemanticsExtractor(FeatureExtractor):
 
-    def __init__(self, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, corpdir):
+    def __init__(self, dbengine, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, corpdir):
         #corptable = "_".join(corpdir.split('/')[-2:])
-        super(FeatureExtractor, self).__init__(corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field)
+        super(FeatureExtractor, self).__init__(dbengine, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field)
         self.corpdir = corpdir
 
 

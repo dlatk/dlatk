@@ -3,6 +3,21 @@
 Changelog
 =========
 
+1.2.0 (2021-03-11)
+------------------
+  - New feature: Huggingface interface with --add_embedding (Bert, Roberta, XLNet, GPT2, etc.)
+  - New feature: pymallet interface for creating LDA topics
+  - New feature: optional sqlite backend
+  - New feature: MySQL configuration read from config files (~/.my.cnf) instead of command line
+  - Improving feature: dropped the 16to16 notation for default encoding (i.e., non-transformed) feature tables
+  - Improving feature: new notation for group flag (--group or -g), in addition to previous version (--correl_field or -c)
+  - Improving feature: default for running n-fold cross validation is to use all controls, use --all_control_combinations for all combinations
+  - Improving feature: additional classification metrics printed to terminal
+  - Improving feature: support for chinese segmentation in mallet
+  - Improving feature: normalize lexicon scores by words with category (rather than all words), --lexicon_weighting
+  - Improving feature: all external tools moved to ~/dlatk_tools
+  - Bug: fixed bugs in --regression_to_lex
+
 1.1.6 (2019-07-31)
 ------------------
   - New feature: bert feature extraction v1 ready
@@ -73,7 +88,7 @@ Changelog
 1.1.0 (2017-06-29)
 ------------------
   - New feature: added --n_components / --num_factors flag to --fit_reducer
-  - New feature: --clean_cloud flag working for n_gram correlatin, all clouds, and topic clouds
+  - New feature: --clean_cloud flag working for n_gram correlation, all clouds, and topic clouds
   - New feature: added p correction to correlate --auc
   - New feature: messageAnnotator and messageTransformer classes added
   - New feature: clustering.py changed to dimensionReducer.py

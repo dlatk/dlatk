@@ -244,7 +244,7 @@ class MySqlDataEngine(DataEngine):
 		Results as list of lists
 
 		"""
-		return mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicod, mysql_config_file=self.mysql_config_file)
+		return mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
 
 	def execute_get_SSCursor(self, usql):

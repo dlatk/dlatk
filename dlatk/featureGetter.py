@@ -60,6 +60,7 @@ class FeatureGetter(DLAWorker):
 
         parser = SafeConfigParser()
         parser.read(initFile)
+        dbengine = parser.get('constants','dbengine') if parser.has_option('constants','dbengine') else dlac.DB_TYPE
         corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else dlac.DEF_CORPDB
         corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else dlac.DEF_CORPTABLE
         correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else dlac.DEF_CORREL_FIELD
@@ -75,11 +76,11 @@ class FeatureGetter(DLAWorker):
         featureTable = parser.get('constants','feattable') if parser.has_option('constants','feattable') else dlac.DEF_FEAT_TABLE
         featNames = parser.get('constants','featnames') if parser.has_option('constants','featnames') else dlac.DEF_FEAT_NAMES
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
-        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_config_file=mysql_config_file, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, wordTable = None)
+        return cls(dbengine=dbengine, corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_config_file=mysql_config_file, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, wordTable = None)
 
 
-    def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_config_file=dlac.MYSQL_CONFIG_FILE, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb = dlac.DEF_LEXICON_DB, featureTable=dlac.DEF_FEAT_TABLE, featNames=dlac.DEF_FEAT_NAMES, wordTable = None):
-        super(FeatureGetter, self).__init__(corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable=wordTable)
+    def __init__(self, dbengine=dlac.DB_TYPE, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_config_file=dlac.MYSQL_CONFIG_FILE, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb = dlac.DEF_LEXICON_DB, featureTable=dlac.DEF_FEAT_TABLE, featNames=dlac.DEF_FEAT_NAMES, wordTable = None):
+        super(FeatureGetter, self).__init__(dbengine, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable=wordTable)
         self.featureTable = featureTable    
         self.featNames = featNames
 

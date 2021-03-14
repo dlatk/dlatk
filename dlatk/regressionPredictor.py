@@ -430,9 +430,9 @@ class RegressionPredictor:
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 60000
-    backOffPerc = .001 #when the num_featrue / training_insts is less than this backoff to backoffmodel
-    #backOffModel = 'ridge10'
-    backOffModel = 'linear'
+    backOffPerc = .01 #when the num_featrue / training_insts is less than this backoff to backoffmodel
+    backOffModel = 'ridge10'
+    #backOffModel = 'linear'
 
     # feature selection:
     featureSelectionString = None

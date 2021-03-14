@@ -499,8 +499,10 @@ class FeatureRefiner(FeatureGetter):
 
         ## 2. Get the minimum and maximum dates:
         dlac.warn("""  [Finding good date range]""" )
-        minIntersectDT, maxIntersectDT, minUnionDT, maxUnionDT  = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT max(min_date), min(max_date), min(min_date), max(max_date) FROM (SELECT %s, MIN(%s) as min_date, MAX(%s) as max_date FROM %s where %s in ('%s') group by %s) as a " % \
-                                         (self.correl_field, dateField, dateField, self.corptable, self.correl_field, gList, self.correl_field))[0]
+        minMaxQuery = "SELECT max(min_date), min(max_date), min(min_date), max(max_date) FROM (SELECT %s, MIN(%s) as min_date, MAX(%s) as max_date FROM %s where %s in ('%s') group by %s) as a " % \
+                                         (self.correl_field, dateField, dateField, self.corptable, self.correl_field, gList, self.correl_field)
+        dlac.warn("MinMaxQuery: " + minMaxQuery)
+        minIntersectDT, maxIntersectDT, minUnionDT, maxUnionDT  = mm.executeGetList(self.corpdb, self.dbCursor, minMaxQuery)[0]
         dtClosestToMin = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT min(max_date) FROM (SELECT %s, MAX(%s) as max_date FROM %s where %s in ('%s') AND %s <= '%s' group by %s) as a " % \
                                          (self.correl_field, dateField, self.corptable, self.correl_field, gList, dateField, minIntersectDT, self.correl_field))[0][0]
         dtClosestToMax = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT max(min_date) FROM (SELECT %s, MIN(%s) as min_date FROM %s where %s in ('%s') AND %s >= '%s' group by %s) as a " % \

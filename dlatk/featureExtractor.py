@@ -1322,9 +1322,6 @@ class FeatureExtractor(DLAWorker):
                 message_id = messageRow[0]
                 try:
                     messageSents = loads(messageRow[1])
-                    print (messageSents)
-                    import sys
-                    sys.exit(0)
                 except NameError: 
                     dlac.warn("Eror: Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
                     sys.exit(1)

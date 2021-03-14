@@ -685,7 +685,6 @@ class FeatureGetter(DLAWorker):
         """returns a list of (group_id, feature, value, group_norm) tuples"""
         sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "feat", "value", "group_norm"]) if featNorm else self.qb.create_select_query(self.featureTable).set_fields(["group_id", "feat", "value", "group_norm"])
         if (where): sql.where(where)
-        print("\n****\nmysql config file from getfeatallss:", self.data_engine.mysql_config_file, "\n****\n")#debug
         return self.data_engine.execute_get_SSCursor(sql.toString())
 
     def countGroups(self, groupThresh = 0, where=''):

@@ -140,7 +140,7 @@ def main(fn_args = None):
                         help='Table that holds a list of collocations to be used as features.')
     group.add_argument('--colloc_column', metavar='COLUMN', dest='colloc_column', default=dlac.DEF_COLUMN_COLLOC,
                         help='Column giving collocations to be used as features.')
-    group.add_argument('--create_collocation_scores', dest='createcollocscores', const=True, nargs='?', default=False,
+    group.add_argument('--create_collocation_scores', '--create_collocs', dest='createcollocscores', const=True, nargs='?', default=False,
                         help='Create ufeat table and annotate with pocc and npmi.')
     group.add_argument('--feature_type_name', metavar='STRING', dest='feature_type_name',
                         help='Customize the name of output features.')
@@ -1352,7 +1352,6 @@ def main(fn_args = None):
     if args.createcollocscores:
         if not fr: fr=FR()
         fr.creatCollocScores(args.createcollocscores)
-
 
     #if args.addmean: #works, but excessive option
     #    if not fr: fr=FR()

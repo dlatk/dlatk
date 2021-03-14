@@ -40,6 +40,7 @@ def executeGetSSCursor(db, sql, warnMsg = True, charset=DEF_ENCODING, use_unicod
     """Executes a given query (ss cursor is good to iterate over for large returns)"""
     if warnMsg: 
         warn("SQL (SSCursor) QUERY: %s"% sql[:MAX_SQL_PRINT_CHARS])
+    print("\n\nmysql config file from mm:", mysql_config_file)#debug
     ssCursor = dbConnect(db, 
                          charset=charset, 
                          use_unicode=use_unicode,

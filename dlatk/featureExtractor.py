@@ -1180,10 +1180,27 @@ class FeatureExtractor(DLAWorker):
         '''
 
         '''
+        def addSentTokenized(messageRows):
+
+            try:
+                import nltk.data
+                import sys
+            except ImportError:
+                print("warning: unable to import nltk.tree or nltk.corpus or nltk.data")
+            sentDetector = nltk.data.load('tokenizers/punkt/english.pickle')
+            messages = list(map(lambda x: x[1], messageRows))
+            parses = []
+            for m_id, message in messageRows:
+                parses.append([m_id, json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(message.strip()))))])
+            return parses
+
         dlac.warn("WARNING: new version of BERT and transformer models starts at layer 1 rather than layer 0. Layer 0 is now the input embedding. For example, if you were using layer 10 for the second to last layer of bert-base that is now considered layer 11.")
         ##FIRST MAKE SURE SENTENCE TOKENIZED TABLE EXISTS:
-        sentTable = self.corptable+'_stoks'
-        assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with Bert featrue extraction (run --add_sent_tokenized)" % sentTable
+        #sentTable = self.corptable+'_stoks' 
+        #assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with Bert featrue extraction (run --add_sent_tokenized)" % sentTable
+        sentTok_onthefly = False if mm.tableExists(self.corpdb, self.dbCursor, self.corptable+'_stoks', charset=self.encoding, use_unicode=self.use_unicode) else True
+        sentTable = self.corptable if sentTok_onthefly else self.corptable+'_stoks'
+        print (sentTable, sentTok_onthefly)
         #if len(layerAggregations) > 1:
         #    dlac.warn("AddBert: !!Does not currently support more than one layer aggregation; only using first aggregation!!")
         #    layerAggregations = layerAggregations[:1]
@@ -1293,6 +1310,8 @@ class FeatureExtractor(DLAWorker):
 
             #grab sents by messages for that correl field:
             messageRows = self.getMessagesForCorrelField(cf_id, messageTable = sentTable, warnMsg=True)
+            if sentTok_onthefly:
+                messageRows = addSentTokenized(messageRows)
             input_ids = []
             token_type_ids = []
             attention_mask = []
@@ -1303,10 +1322,13 @@ class FeatureExtractor(DLAWorker):
                 message_id = messageRow[0]
                 try:
                     messageSents = loads(messageRow[1])
+                    print (messageSents)
+                    import sys
+                    sys.exit(0)
                 except NameError: 
                     dlac.warn("Eror: Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
                     sys.exit(1)
-                except JSONDecodeError:
+                except json.JSONDecodeError:
                     dlac.warn("WARNING: JSONDecodeError on %s. Skipping Message"%str(messageRow))
                     continue
 

@@ -1678,7 +1678,7 @@ class RegressionPredictor:
             print("[Inserting Predictions as Feature values for %s]" % feat)
             wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
             rows = [(k, v, v) for k, v in preds.items()] #adds group_norm and applies freq filter
-            mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+            mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
 
     def predictToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = ''):
         if not fe:
@@ -1750,13 +1750,13 @@ class RegressionPredictor:
                 for k, v in preds.items():
                     rows.append((k, v, v))
                     if len(rows) >  self.maxPredictAtTime or len(rows) >= len(preds):
-                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
                         written += len(rows)
                         print("   %d feature rows written" % written)
                         rows = []
             # if there's rows left
             if rows:
-                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
                 written += len(rows)
                 print("   %d feature rows written" % written)
         return
@@ -1943,7 +1943,7 @@ class RegressionPredictor:
 
         lex_dict = dict()
         sql = """SELECT term, category, weight from {lexDB}.{lexTable}""".format(lexDB=featureGetter.lexicondb, lexTable=topicTable)
-        rows = mm.executeGetList(featureGetter.corpdb, featureGetter.dbCursor, sql, charset=featureGetter.encoding, use_unicode=featureGetter.use_unicode)
+        rows = mm.executeGetList(featureGetter.corpdb, featureGetter.dbCursor, sql, charset=featureGetter.encoding, use_unicode=featureGetter.use_unicode, mysql_config_file=featureGetter.mysql_config_file)
         for row in rows:
             term, category, weight = str(row[0]).strip(), str(row[1]).strip(), float(row[2])
             if term not in lex_dict:

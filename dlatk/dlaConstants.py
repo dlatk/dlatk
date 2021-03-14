@@ -29,8 +29,7 @@ MYSQL_ERROR_SLEEP = 4 #number of seconds to wait before trying a query again (in
 SQLITE_ERROR_SLEEP = 4
 MYSQL_BATCH_INSERT_SIZE = 10000 # how many rows are inserted into mysql at a time
 MAX_SQL_SELECT = 1000000 # how many rows are selected at a time
-MYSQL_HOST = '127.0.0.1'
-MYSQL_CONFIG_FILE = 'lib/.dlatk.cnf'
+MYSQL_CONFIG_FILE = os.path.dirname(os.path.realpath(__file__)) + '/lib/.dlatk.cnf'
 VARCHAR_WORD_LENGTH = 36 #length to allocate var chars per words
 LOWERCASE_ONLY = True #if the db is case insensitive, set to True
 MAX_TO_DISABLE_KEYS = 100000 #number of groups * n must be less than this to disable keys
@@ -38,7 +37,7 @@ MAX_SQL_PRINT_CHARS = 256
 
 ##Corpus Settings:
 DEF_CORPDB = 'dla_tutorial'
-DEF_CORPTABLE = ''
+DEF_CORPTABLE = 'msgs'
 DEF_CORREL_FIELD = 'user_id'
 DEF_MESSAGE_FIELD = 'message'
 DEF_MESSAGEID_FIELD = 'message_id'
@@ -127,12 +126,18 @@ DEF_P_MAPPING = { # maps old R method names to statsmodel names
 DEF_CONF_INT = 0.95
 DEF_TOP_MESSAGES = 10
 
-DEF_BERT_MODEL='base-uncased'
-DEF_BERT_AGGREGATION=['mean']
-DEF_BERT_LAYER_AGGREGATION=['concatenate']
-DEF_BERT_LAYERS=[10]
+DEF_EMB_MODEL='bert-base-uncased'
+DEF_EMB_AGGREGATION=['mean']
+DEF_EMB_LAYER_AGGREGATION=['concatenate']
+DEF_EMB_LAYERS=[10]
 DEF_TRANS_WORD_AGGREGATION = ['mean']
-
+GPU_BATCH_SIZE = 32
+EMB_OPTIONS = ['bert-base-uncased', 'bert-large-uncased', 'bert-base-cased', 'bert-large-cased', 'SpanBERT/spanbert-base-cased', 'SpanBERT/spanbert-large-cased', 
+            'allenai/scibert_scivocab_cased', 'allenai/scibert_scivocab_uncased', 'xlnet-base-cased', 'xlnet-large-cased', 'roberta-base', 'roberta-large', 
+            'roberta-large-mnli', 'distilroberta-base', 'roberta-base-openai-detector', 'roberta-large-openai-detector', 'distilbert-base-uncased', 
+            'distilbert-base-cased', 'distilbert-base-multilingual-cased', 'distilbert-base-cased-distilled-squad', 'albert-base-v2', 'albert-large-v2', 
+            'albert-xlarge-v2', 'albert-xxlarge-v2', 'xlm-roberta-base', 'xlm-roberta-large', 'gpt2', 'gpt2-medium', 'gpt2-large', 'gpt2-xl']
+EMB_CLASS = ['bert', 'XLNet', 'Roberta', 'GPT2', 'DistilBert', 'XLMRoberta', 'Albert', None]
 
 ##Prediction Settings:
 DEF_MODEL = 'ridgecv'

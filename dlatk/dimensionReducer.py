@@ -488,13 +488,13 @@ class DimensionReducer:
                         for k, v in preds.items():
                             rows.append((k, v, v))
                             if len(rows) >  60000 or len(rows) >= len(preds):
-                                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
                                 written += len(rows)
                                 print("   %d feature rows written" % written)
                                 rows = []
                     # if there's rows left
                     if rows:
-                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
                         written += len(rows)
                         print("   %d feature rows written" % written)
 

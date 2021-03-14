@@ -15,12 +15,22 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/dlatk/Lexi
 from dlatk.featureExtractor import FeatureExtractor
 from dlatk import dlaConstants as dlac
 
-from gensim import corpora
-from gensim.models.wrappers import LdaMallet
+try:
+    from gensim import corpora
+    from gensim.models.wrappers import LdaMallet
+except:
+    LdaMallet = object
+    dlac.warn("Warning: Cannot import gensim (cannot run LDA)")
+    pass
 
 from numpy import log2, isnan
-from pymallet import defaults
-from pymallet.lda import estimate_topics
+
+try:
+    from pymallet import defaults
+    from pymallet.lda import estimate_topics
+except:
+    dlac.warn("Warning: Cannot import pymallet (cannot run LDA)")
+    pass
 
 from json import loads
 
@@ -28,9 +38,9 @@ from json import loads
 class TopicExtractor(FeatureExtractor):
 
     def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD,
-                 mysql_host = "localhost", message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD,
+                 mysql_config_file=dlac.MYSQL_CONFIG_FILE, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD,
                  encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, ldaMsgTable =dlac.DEF_LDA_MSG_TABLE):
-        super(TopicExtractor, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode)
+        super(TopicExtractor, self).__init__(corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode)
         self.ldaMsgTable = ldaMsgTable
 
 

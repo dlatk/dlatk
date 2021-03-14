@@ -17,17 +17,17 @@ try:
 except:
     pass
 
-from dlatk.dlaConstants import DEF_ENCODING, MYSQL_ERROR_SLEEP, MYSQL_HOST, MAX_ATTEMPTS, warn
+from dlatk.dlaConstants import DEF_ENCODING, MYSQL_ERROR_SLEEP, MAX_ATTEMPTS, MYSQL_CONFIG_FILE, warn
 
-def get_db_engine(db_schema, db_host = MYSQL_HOST, charset=DEF_ENCODING, db_config = '~/.my.cnf', port=3306, stream=False):
+def get_db_engine(db_schema, charset=DEF_ENCODING, mysql_config_file = MYSQL_CONFIG_FILE, port=3306, stream=False):
     eng = None
     attempts = 0;
     while (1):
         try:
-            db_url = URL(drivername='mysql', host=db_host, port=port,
+            db_url = URL(drivername='mysql', port=port,
                 database=db_schema,
                 query={
-                    'read_default_file' : db_config,
+                    'read_default_file' : mysql_config_file,
                     'charset': charset
                 })
             if stream:

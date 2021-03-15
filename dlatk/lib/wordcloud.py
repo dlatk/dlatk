@@ -933,10 +933,10 @@ def getFeatWithLimit(schema, table, group = '', amount = 50, orderBy = 'group_no
     return mm.executeGetList(schema, dbCursor, query)
 
 # wordcloud print methods
-def makeLexiconTopicWordclouds(lexdb, lextable, output, color, max_words=15, cleanCloud=False, censor_dict=dlac.DEF_CENSOR_DICT):
+def makeLexiconTopicWordclouds(lexdb, lextable, output, color, max_words=15, cleanCloud=False, censor_dict=dlac.DEF_CENSOR_DICT,mysql_config_file = None):
     if not os.path.exists(output):
         os.makedirs(output)
-    (dbConn, dbCursor, dictCursor) = mm.dbConnect(lexdb)
+    (dbConn, dbCursor, dictCursor) = mm.dbConnect(lexdb, mysql_config_file=mysql_config_file)
     query = """SELECT distinct(category) FROM %s.%s""" % (lexdb, lextable)
     categories = map(lambda x: x[0], mm.executeGetList(lexdb, dbCursor, query))
 

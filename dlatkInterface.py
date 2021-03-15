@@ -2047,6 +2047,8 @@ def main(fn_args = None):
     ##Plot Actions:
     if args.makealltopicwordclouds:
         outputFile = makeOutputFilename(args, None, None, suffix="_alltopics/")
+        if args.tagcloudcolorscheme == 'multi':#make sure not to use multi
+            args.tagcloudcolorscheme = 'blue'
         wordcloud.makeLexiconTopicWordclouds(lexdb=args.lexicondb, lextable=args.topiclexicon, output=outputFile, color=args.tagcloudcolorscheme, max_words=args.numtopicwords, cleanCloud=args.cleancloud,mysql_config_file=args.mysqlconfigfile)
     if args.barplot:
         outputFile = makeOutputFilename(args, fg, oa, "barplot")

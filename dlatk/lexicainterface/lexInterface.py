@@ -386,7 +386,7 @@ class Lexicon(object):
     currentLexicon = None
 
     def __init__(self, lex = None, mysql_config_file=dlac.MYSQL_CONFIG_FILE, lexicon_db=dlac.DEF_LEXICON_DB):
-        print("***\nmcf from lex init: " , mysql_config_file, "\n***")
+        print("***\nmcf from lex init: " , mysql_config_file, "\n***") #DEBUG
         (self.dbConn, self.dbCursor, self.dictCursor) = dbConnect(db=lexicon_db, mysql_config_file=mysql_config_file)
         self.lexicon_db = lexicon_db
         self.currentLexicon = lex
@@ -930,9 +930,11 @@ class Lexicon(object):
 
 class WeightedLexicon(Lexicon):
     """WeightedLexicons have an additional dictionary with weights for each term in the regular lexicon"""
-    def __init__(self, weightedLexicon=None, lex=None, mysql_config_file=dlac.MYSQL_CONFIG_FILE, lexicon_db=dlac.DEF_LEXICON_DB):
+    def __init__(self, weightedLexicon=None, lex=None, lexicon_db=dlac.DEF_LEXICON_DB, mysql_config_file=dlac.MYSQL_CONFIG_FILE):
+        print("***\nmcf from lex init: " , mysql_config_file, "\n***") #DEBUG
         super(WeightedLexicon, self).__init__(lex, mysql_config_file = mysql_config_file, lexicon_db = lexicon_db)
         self.weightedLexicon = weightedLexicon
+        self.mysql_config_file = mysql_config_file
      
     def isTableLexiconWeighted(self, tablename):
         sql = "SHOW COLUMNS from %s"%tablename
@@ -1207,10 +1209,11 @@ class WeightedLexicon(Lexicon):
 
 class LexInterfaceParser(ArgumentParser):
 
-    def __init__(self, description="On Features Class.", prefix_chars='-+', formatter_class=ArgumentDefaultsHelpFormatter, parents=None):
+    def __init__(self, description="On Features Class.", prefix_chars='-+', formatter_class=ArgumentDefaultsHelpFormatter, parents=None,mysql_config_file=dlac.MYSQL_CONFIG_FILE):
         ## Argument Parser ##
 
         super(LexInterfaceParser,self).__init__(description=description, prefix_chars=prefix_chars, formatter_class=formatter_class)
+        self.mysql_config_file = mysql_config_file
 
         group = self.add_argument_group('', '')
         group.add_argument("-f", "--file", dest="filename",
@@ -1305,47 +1308,47 @@ class LexInterfaceParser(ArgumentParser):
         ##Add Argument Processing here
         
         if args.name:
-            self.lexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            self.lexicon = WeightedLexicon(mysql_config_file=self.mysql_config_file,lexicon_db=args.lexicondb)
             self.lexicon.loadLexicon(args.name, args.where)
         if args.filename:
-            self.lexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            self.lexicon = WeightedLexicon(mysql_config_file=self.mysql_config_file,lexicon_db=args.lexicondb)
             self.lexicon.setLexicon(loadLexiconFromFile(args.filename))
         if args.gfile:
-            self.lexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            self.lexicon = WeightedLexicon(mysql_config_file=self.mysql_config_file,lexicon_db=args.lexicondb)
             self.lexicon.setLexicon(loadLexiconFromGFile(args.gfile, args.using_filter))
         if args.sparsefile:
-            self.lexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            self.lexicon = WeightedLexicon(mysql_config_file=self.mysql_config_file,lexicon_db=args.lexicondb)
             self.lexicon.setLexicon(loadLexiconFromSparse(args.sparsefile))
         if args.dicfile:
-            self.lexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            self.lexicon = WeightedLexicon(mysql_config_file=self.mysql_config_file,lexicon_db=args.lexicondb)
             self.lexicon.setLexicon(loadLexiconFromDic(args.dicfile))
         if args.weightedsparsefile:
-            self.lexicon = WeightedLexicon(loadWeightedLexiconFromSparse(args.weightedsparsefile), lexicon_db=args.lexicondb)
+            self.lexicon = WeightedLexicon(mysql_config_file=self.mysql_config_file, weightedLexicon = loadWeightedLexiconFromSparse(args.weightedsparsefile), lexicon_db=args.lexicondb)
         if args.topicfile:
-            self.lexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            self.lexicon = WeightedLexicon(mysql_config_file=self.mysql_config_file,lexicon_db=args.lexicondb)
             if args.topiccsv:
-                self.lexicon = WeightedLexicon(loadWeightedLexiconFromTopicCSV(args.topicfile, args.topicthreshold, keep_underscores=args.keepunderscores), lexicon_db=args.lexicondb)
+                self.lexicon = WeightedLexicon(mysql_config_file=self.mysql_config_file, weightedLexicon = loadWeightedLexiconFromTopicCSV(args.topicfile, args.topicthreshold, keep_underscores=args.keepunderscores), lexicon_db=args.lexicondb)
             else:
                 self.lexicon.setLexicon(loadLexiconFromTopicFile(args.topicfile))
         if args.corpuslex:
-            self.lexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            self.lexicon = WeightedLexicon(mysql_config_file=self.mysql_config_file,lexicon_db=args.lexicondb)
             self.lexicon.createLexiconFromCorpus(args.corpdb, args.corptable, args.messagefield, args.messageidfield, args.minwordfreq)
         if args.union:
             if not self.lexicon:
                 print("Must load a lexicon, either from a file (-f), or from another table (-n)")
                 sys.exit()
-            otherLexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            otherLexicon = WeightedLexicon(mysql_config_file=self.mysql_config_file,lexicon_db=args.lexicondb)
             otherLexicon.loadLexicon(args.union)
             self.lexicon = self.lexicon.union(otherLexicon)
         if args.intersect:
             if not self.lexicon:
                 print("Must load a lexicon, either from a file (-f), or from another table (-n)")
                 sys.exit()
-            otherLexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            otherLexicon = WeightedLexicon(mysql_config_file=self.mysql_config_file,lexicon_db=args.lexicondb)
             otherLexicon.loadLexicon(args.intersect)
             self.lexicon = self.lexicon.intersect(otherLexicon)
         if args.supertopic:
-            superLexiconMapping = WeightedLexicon(lexicon_db=args.lexicondb)
+            superLexiconMapping = WeightedLexicon(mysql_config_file=self.mysql_config_file,lexicon_db=args.lexicondb)
             superLexiconMapping.loadLexicon(args.supertopic)
             self.lexicon = self.lexicon.mapToSuperLexicon(superLexiconMapping)
         if args.randomize:
@@ -1367,7 +1370,7 @@ class LexInterfaceParser(ArgumentParser):
             if not self.lexicon:
                 print("Must load a lexicon, either from a file (-f), or from another table (-n)")
                 sys.exit()
-            otherLexicon = WeightedLexicon(lexicon_db=args.lexicondb)
+            otherLexicon = WeightedLexicon(mysql_config_file=self.mysql_config_file,lexicon_db=args.lexicondb)
             otherLexicon.loadLexicon(args.compare)
             pprint.PrettyPrinter().pprint(self.lexicon.compare(otherLexicon))
 

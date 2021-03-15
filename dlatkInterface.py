@@ -83,7 +83,7 @@ def main(fn_args = None):
     init_args, remaining_argv = init_parser.parse_known_args()
 
     if init_args.lexinterface:
-        lex_parser = LexInterfaceParser(parents=[init_parser])
+        lex_parser = LexInterfaceParser(parents=[init_parser],mysql_config_file=args.mysqlconfigfile)
         lex_parser.processArgs(args=remaining_argv, parents=True)
         sys.exit()
     elif init_args.frominitfile:
@@ -1245,7 +1245,7 @@ def main(fn_args = None):
 
     if args.estimate_lda_topics:
         if not args.no_lda_lexicon:
-            lex_interface = LexInterfaceParser()
+            lex_interface = LexInterfaceParser(mysql_config_file=args.mysqlconfigfile)
 
             topic_file = os.path.join(args.save_lda_files, 'lda.topicGivenWord.csv')
             create_name = '{}_cp'.format(args.lda_lexicon_name)

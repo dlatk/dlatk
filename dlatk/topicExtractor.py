@@ -297,6 +297,7 @@ class LDAEstimator(object):
     def estimate_topics(self, feature_lines_file, mallet_path=None):
         if not mallet_path:
             print('Estimating LDA topics using PyMallet.')
+            assert(estimate_topics, "pyMallet not installed.")
             estimate_topics(feature_lines_file, num_topics=self.num_topics, alpha=self.alpha, beta=self.beta,
                             iterations=self.iterations, stoplist=self.stopwords)
             state_file = defaults.OUTPUT_STATE_FILE

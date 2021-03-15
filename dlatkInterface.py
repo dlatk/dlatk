@@ -1148,7 +1148,7 @@ def main(fn_args = None):
         writeFile.write(stateFile.readline().decode())
         writeFile.write(stateFile.readline().decode())
         writeFile.write(stateFile.readline().decode())
-        error = open('error.log.txt', 'w+')
+        error = sys.stderr #open('error.log.txt', 'w+')
 
         currentindex = -1
         messageid = -1

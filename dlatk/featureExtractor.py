@@ -1202,6 +1202,7 @@ class FeatureExtractor(DLAWorker):
         
         sentTok_onthefly = False if self.data_engine.tableExists(self.corptable+'_stoks') else True
         sentTable = self.corptable if sentTok_onthefly else self.corptable+'_stoks'
+        if sentTok_onthefly: dlac.warn("WARNING: run --add_sent_tokenized on the message table to avoid tokenizing it every time you generate embeddings")
         
 
         
@@ -1524,7 +1525,7 @@ class FeatureExtractor(DLAWorker):
                         insert_idx_start = 0
                         insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
                         query = self.qb.create_insert_query(embTableName).set_values([("group_id",str(cf_id)),("feat",""),("value",""),("group_norm","")])
-                        embRows = [(k, v, valueFunc(v)) for k, v in embFeats.items()] #adds group_norm and applies freq filter
+                        embRows = [(k, float(v), valueFunc(float(v))) for k, v in embFeats.items()] #adds group_norm and applies freq filter
                         while insert_idx_start < len(embRows):
                             insert_rows = embRows[insert_idx_start:min(insert_idx_end, len(embRows))]
                             query.execute_query(insert_rows)

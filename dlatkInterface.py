@@ -83,7 +83,7 @@ def main(fn_args = None):
     init_args, remaining_argv = init_parser.parse_known_args()
 
     if init_args.lexinterface:
-        lex_parser = LexInterfaceParser(parents=[init_parser])
+        lex_parser = LexInterfaceParser(parents=[init_parser],mysql_config_file=args.mysqlconfigfile)
         lex_parser.processArgs(args=remaining_argv, parents=True)
         sys.exit()
     elif init_args.frominitfile:
@@ -1148,7 +1148,7 @@ def main(fn_args = None):
         writeFile.write(stateFile.readline().decode())
         writeFile.write(stateFile.readline().decode())
         writeFile.write(stateFile.readline().decode())
-        error = open('error.log.txt', 'w+')
+        error = sys.stderr #open('error.log.txt', 'w+')
 
         currentindex = -1
         messageid = -1
@@ -1237,7 +1237,7 @@ def main(fn_args = None):
         if args.estimate_lda_topics:
             dist_file_output_name = os.path.join(args.save_lda_files, 'lda')
             args.ldamsgtbl = '{}_lda${}'.format(args.corptable, lda_state_name)
-            te = TopicExtractor(args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field,
+            te = TopicExtractor(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field,
                                 args.messageid_field, dlac.DEF_ENCODING, dlac.DEF_UNICODE_SWITCH, args.ldamsgtbl)
         elif not te:
             te = TE()
@@ -1245,7 +1245,7 @@ def main(fn_args = None):
 
     if args.estimate_lda_topics:
         if not args.no_lda_lexicon:
-            lex_interface = LexInterfaceParser()
+            lex_interface = LexInterfaceParser(mysql_config_file=args.mysqlconfigfile)
 
             topic_file = os.path.join(args.save_lda_files, 'lda.topicGivenWord.csv')
             create_name = '{}_cp'.format(args.lda_lexicon_name)
@@ -2047,7 +2047,9 @@ def main(fn_args = None):
     ##Plot Actions:
     if args.makealltopicwordclouds:
         outputFile = makeOutputFilename(args, None, None, suffix="_alltopics/")
-        wordcloud.makeLexiconTopicWordclouds(lexdb=args.lexicondb, lextable=args.topiclexicon, output=outputFile, color=args.tagcloudcolorscheme, max_words=args.numtopicwords, cleanCloud=args.cleancloud)
+        if args.tagcloudcolorscheme == 'multi':#make sure not to use multi
+            args.tagcloudcolorscheme = 'blue'
+        wordcloud.makeLexiconTopicWordclouds(lexdb=args.lexicondb, lextable=args.topiclexicon, output=outputFile, color=args.tagcloudcolorscheme, max_words=args.numtopicwords, cleanCloud=args.cleancloud,mysql_config_file=args.mysqlconfigfile)
     if args.barplot:
         outputFile = makeOutputFilename(args, fg, oa, "barplot")
         oa.barPlot(correls, outputFile)

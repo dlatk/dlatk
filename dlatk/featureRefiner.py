@@ -1229,7 +1229,7 @@ class FeatureRefiner(FeatureGetter):
         total_count = db_eng.execute("SELECT sum(value) FROM {}".format(self.wordTable)).first()[0]
 
         ###AHHHH this MUST be grouped!!!!
-        onegram_counts_iter =  db_eng.execute("SELECT id, feat, SUM(value) as count FROM {} GROUP BY feat".format(self.wordTable))
+        onegram_counts_iter =  db_eng.execute("SELECT feat, SUM(value) as count FROM {} GROUP BY feat".format(self.wordTable))
         multigram_counts_iter =  db_eng.execute("SELECT id, feat, count FROM {} WHERE pmi IS NULL AND feat LIKE '% %' AND count > 1".format(ufeat_multigram_table))
 
         pmi_iter = self._calc_pmi_iter(multigram_counts_iter, onegram_counts_iter, total_count)

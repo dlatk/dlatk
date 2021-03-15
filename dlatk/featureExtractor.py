@@ -1181,10 +1181,30 @@ class FeatureExtractor(DLAWorker):
         '''
 
         '''
+        def addSentTokenized(messageRows):
+
+            try:
+                import nltk.data
+                import sys
+            except ImportError:
+                print("warning: unable to import nltk.tree or nltk.corpus or nltk.data")
+            sentDetector = nltk.data.load('tokenizers/punkt/english.pickle')
+            messages = list(map(lambda x: x[1], messageRows))
+            parses = []
+            for m_id, message in messageRows:
+                parses.append([m_id, json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(message.strip()))))])
+            return parses
+
         dlac.warn("WARNING: new version of BERT and transformer models starts at layer 1 rather than layer 0. Layer 0 is now the input embedding. For example, if you were using layer 10 for the second to last layer of bert-base that is now considered layer 11.")
         ##FIRST MAKE SURE SENTENCE TOKENIZED TABLE EXISTS:
-        sentTable = self.corptable+'_stoks'
-        assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file), "Need %s table to proceed with Bert featrue extraction (run --add_sent_tokenized)" % sentTable
+        #sentTable = self.corptable+'_stoks' 
+        #assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with Bert featrue extraction (run --add_sent_tokenized)" % sentTable
+        
+        sentTok_onthefly = False if self.data_engine.tableExists(self.corptable+'_stoks') else True
+        sentTable = self.corptable if sentTok_onthefly else self.corptable+'_stoks'
+        
+
+        
         #if len(layerAggregations) > 1:
         #    dlac.warn("AddBert: !!Does not currently support more than one layer aggregation; only using first aggregation!!")
         #    layerAggregations = layerAggregations[:1]
@@ -1279,11 +1299,11 @@ class FeatureExtractor(DLAWorker):
         #SELECT / LOOP ON CORREL FIELD FIRST:
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
         msgs = 0#keeps track of the number of messages read
-        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))#SSCursor woudl be better, but it loses connection
+        cfRows = FeatureExtractor.noneToNull(self.data_engine.execute_get_list(usql))#SSCursor woudl be better, but it loses connection
 
         ##iterate through correl_ids (group id):
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        mm.disableTableKeys(self.corpdb, self.dbCursor, embTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
+        self.data_engine.disable_table_keys(embTableName)#for faster, when enough space for repair by sorting
         lengthWarned = False #whether the length warning has been printed yet
         #Each User: ( #message aggregations, #layers, #Word aggregations, hidden size)
         for cfRow in cfRows:
@@ -1294,6 +1314,8 @@ class FeatureExtractor(DLAWorker):
 
             #grab sents by messages for that correl field:
             messageRows = self.getMessagesForCorrelField(cf_id, messageTable = sentTable, warnMsg=True)
+            if sentTok_onthefly:
+                messageRows = addSentTokenized(messageRows)
             input_ids = []
             token_type_ids = []
             attention_mask = []
@@ -1498,13 +1520,21 @@ class FeatureExtractor(DLAWorker):
                         thisAg = eval("np."+ag+"(user_rep, axis=0)")
                         embFeats.update([(str(k)+ag[:2], v) for (k, v) in enumerate(thisAg)])
                 
-                        wsql = """INSERT INTO """+embTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                        #wsql = """INSERT INTO """+embTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                        insert_idx_start = 0
+                        insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
+                        query = self.qb.create_insert_query(embTableName).set_values([("group_id",str(cf_id)),("feat",""),("value",""),("group_norm","")])
                         embRows = [(k, v, valueFunc(v)) for k, v in embFeats.items()] #adds group_norm and applies freq filter
-                        mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, embRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                        while insert_idx_start < len(embRows):
+                            insert_rows = embRows[insert_idx_start:min(insert_idx_end, len(embRows))]
+                            query.execute_query(insert_rows)
+                            insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
+                            insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
+                        #self.data_engine.execute_write_many(wsql, embRows)
             
         dlac.warn("Done Reading / Inserting.")
         dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-        mm.enableTableKeys(self.corpdb, self.dbCursor, embTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
+        self.data_engine.enable_table_keys(embTableName)#rebuilds keys
         dlac.warn("Done\n")
         return embTableName;       
 

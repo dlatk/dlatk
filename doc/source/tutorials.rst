@@ -40,6 +40,10 @@ LDA with Mallet
 * :doc:`tutorials/tut_lda`
 * :doc:`tutorials/tut_lda_full`
 
+Data Engines
+------------
+* :doc:`tutorials/tut_dataengine`
+
 Other Topics
 ------------
 * :doc:`tutorials/tut_import_methods`

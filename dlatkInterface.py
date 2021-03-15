@@ -1237,7 +1237,7 @@ def main(fn_args = None):
         if args.estimate_lda_topics:
             dist_file_output_name = os.path.join(args.save_lda_files, 'lda')
             args.ldamsgtbl = '{}_lda${}'.format(args.corptable, lda_state_name)
-            te = TopicExtractor(args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field,
+            te = TopicExtractor(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field,
                                 args.messageid_field, dlac.DEF_ENCODING, dlac.DEF_UNICODE_SWITCH, args.ldamsgtbl)
         elif not te:
             te = TE()

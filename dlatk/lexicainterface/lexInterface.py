@@ -386,7 +386,6 @@ class Lexicon(object):
     currentLexicon = None
 
     def __init__(self, lex = None, mysql_config_file=dlac.MYSQL_CONFIG_FILE, lexicon_db=dlac.DEF_LEXICON_DB):
-        print("***\nmcf from lex init: " , mysql_config_file, "\n***") #DEBUG
         (self.dbConn, self.dbCursor, self.dictCursor) = dbConnect(db=lexicon_db, mysql_config_file=mysql_config_file)
         self.lexicon_db = lexicon_db
         self.currentLexicon = lex
@@ -931,7 +930,6 @@ class Lexicon(object):
 class WeightedLexicon(Lexicon):
     """WeightedLexicons have an additional dictionary with weights for each term in the regular lexicon"""
     def __init__(self, weightedLexicon=None, lex=None, lexicon_db=dlac.DEF_LEXICON_DB, mysql_config_file=dlac.MYSQL_CONFIG_FILE):
-        print("***\nmcf from lex init: " , mysql_config_file, "\n***") #DEBUG
         super(WeightedLexicon, self).__init__(lex, mysql_config_file = mysql_config_file, lexicon_db = lexicon_db)
         self.weightedLexicon = weightedLexicon
         self.mysql_config_file = mysql_config_file

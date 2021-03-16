@@ -1890,8 +1890,13 @@ class FeatureExtractor(DLAWorker):
         #1. word -> set(category) dict
         #2. Get length for varchar column
         feat_cat_weight = dict()
-        sql = "SELECT * FROM %s.%s"%(self.lexicondb, lexiconTableName)
-        rows = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+        if self.db_type == "sqlite":
+            self.data_engine.execute("attach '%s.db' as lexiconDB"%(self.lexicondb))
+            sql = "SELECT * FROM lexiconDB.%s"%(lexiconTableName)
+        else:
+            sql = "SELECT * FROM %s.%s"%(self.lexicondb, lexiconTableName)
+        rows = self.data_engine.execute_get_list(sql)
+        #rows = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         categories = set()
         lexiconHasWildCard = False
         warnedAboutWeights = False
@@ -1946,18 +1951,23 @@ class FeatureExtractor(DLAWorker):
         wordTable = self.getWordTable()
         dlac.warn("WORD TABLE %s"%(wordTable,))
 
-        assert mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file), "Need to create word table to extract the lexicon: %s" % wordTable
+        assert self.data_engine.tableExists(wordTable), "Need to create word table to extract the lexicon: %s" % wordTable
+        #assert mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file), "Need to create word table to extract the lexicon: %s" % wordTable
         sql = "SELECT DISTINCT group_id FROM %s" % wordTable
-        groupIdRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+        groupIdRows = self.data_engine.execute_get_list(sql)
+        #groupIdRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         #5. disable keys on that table if we have too many entries
         #if (len(categories)* len(groupIdRows)) < dlac.MAX_TO_DISABLE_KEYS:
-        mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file) #for faster, when enough space for repair by sorting
+        self.data_engine.disable_table_keys(tableName)
+        #mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file) #for faster, when enough space for repair by sorting
 
         #6. iterate through source feature table by group_id (fixed, column name will always be group_id)
         rowsToInsert = []
 
-        isql = "INSERT IGNORE INTO "+tableName+" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"
+        isql = self.qb.create_insert_query(tableName).set_values([("group_id",""),("feat",""),("value",""),("group_norm","")])
+        #isql = "INSERT IGNORE INTO "+tableName+" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"
+
         reporting_percent = 0.01
         reporting_int = max(floor(reporting_percent * len(groupIdRows)), 1)
         groupIdCounter = 0
@@ -1975,7 +1985,8 @@ class FeatureExtractor(DLAWorker):
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id = %d"%(wordTable, groupId)
 
             try:
-                attributeRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                attributeRows = self.data_engine.execute_get_list(sql)
+                #attributeRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
             except:
                 print(groupId)
                 sys.exit()
@@ -2056,7 +2067,9 @@ class FeatureExtractor(DLAWorker):
             # Check if size is big enough for a batch insertion (10,000?), if so insert and clear list
             rowsToInsert.extend(rows)
             if len(rowsToInsert) > dlac.MYSQL_BATCH_INSERT_SIZE:
-                mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                isql.execute_query(rowsToInsert)
+                #self.data_engine.execute_write_many(isql, rowsToInsert)
+                #mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                 rowsToInsert = []
             groupIdCounter += 1
             if groupIdCounter % reporting_int == 0:
@@ -2064,13 +2077,15 @@ class FeatureExtractor(DLAWorker):
 
         #7. if any data in the data_to_insert rows, insert the data and clear the list
         if len(rowsToInsert) > 0:
-            mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+            isql.execute_query(rowsToInsert)
+            #mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
             rowsToInsert = []
             dlac.warn("%d out of %d group Id's processed; %2.2f complete"%(groupIdCounter, len(groupIdRows), float(groupIdCounter)/len(groupIdRows)))
 
         #8. enable keys on the new feature table
         #if (len(categories)* len(groupIdRows)) < dlac.MAX_TO_DISABLE_KEYS:
-        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
+        self.data_engine.enable_table_keys(tableName)
+        #mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
 
         #9. exit with success, return the newly created feature table
         return tableName

@@ -347,7 +347,7 @@ class MessageTransformer(DLAWorker):
 
         return tableName
 
-    def addSentTokenizedMessages(self, sentPerRow = False, cleanMessages = None):
+    def addSentTokenizedMessages(self, sentPerRow = False, cleanMessages = None, newlinesToPeriods=True):
         """Creates a sentence tokenized version of message table
 
         Returns
@@ -402,17 +402,26 @@ class MessageTransformer(DLAWorker):
                 insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
                 #tokenize msgs:
                 # parses = map(lambda m: json.dumps(sentDetector.tokenize(tc.removeNonAscii(tc.treatNewlines(m.strip())))), messages)
-                parses = None
-                if self.use_unicode:
+                parses = []
+                for m in messages:
+                    parse = m.strip()
                     if cleanMessages:
-                        parses = [json.dumps(sentDetector.tokenize((tc.sentenceNormalization(m.strip(), normalizeDict, self.use_unicode)))) for m in messages]
-                    else:
-                        parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(m.strip())))) for m in messages]
-                        #parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(m.strip()))) for m in messages]
-                else:
-                    parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(m.strip())))) for m in messages]
-                    #parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(m.strip()))) for m in messages]
-                    #parses = [json.dumps(sentDetector.tokenize(tc.removeNonAscii(tc.treatNewlines(m.strip())))) for m in messages]
+                        parse = tc.sentenceNormalization(parse, normalizeDict, self.use_unicode)
+                    parse = tc.removeNonUTF8(tc.treatNewlines(parse))
+                    if newlinesToPeriods:
+                        parse = parse.replace('<NEWLINE>', '.')
+                    parse = sentDetector.tokenize((parse))
+                    parses.append(json.dumps(parse))
+                # if self.use_unicode:
+                #     if cleanMessages:
+                #         parses = [json.dumps(sentDetector.tokenize((tc.sentenceNormalization(m.strip(), normalizeDict, self.use_unicode)))) for m in messages]
+                #     else:
+                #         parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(m.strip())))) for m in messages]
+                #         #parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(m.strip()))) for m in messages]
+                # else:
+                #     parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(m.strip())))) for m in messages]
+                #     #parses = [json.dumps(sentDetector.tokenize(tc.removeNonUTF8(m.strip()))) for m in messages]
+                #     #parses = [json.dumps(sentDetector.tokenize(tc.removeNonAscii(tc.treatNewlines(m.strip())))) for m in messages]
 
                 #add msgs into new tables
                 sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
@@ -439,9 +448,9 @@ class MessageTransformer(DLAWorker):
                         #         print("!NO PARSE!")
                         # sys.exit(1)
 
-                while insert_idx_start < len(rows):
-                    dataToWrite = sentRows[insert_idx_start:min(insert_idx_end, len(rows))]
-                    #_warn("Inserting rows %d to %d... " % (insert_idx_start, insert_idx_end))
+                while insert_idx_start < len(sentRows):
+                    dataToWrite = sentRows[insert_idx_start:min(insert_idx_end, len(sentRows))]
+                    #dlac.warn("Inserting rows %d to %d... " % (insert_idx_start, insert_idx_end))
                     mm.executeWriteMany(self.corpdb, self.dbCursor, sql, dataToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                     insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
                     insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE

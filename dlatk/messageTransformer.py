@@ -359,7 +359,7 @@ class MessageTransformer(DLAWorker):
 
         #Create Table:
         if sentPerRow:
-            modify = 'VARCHAR(64)'
+            modify = 'VARCHAR(255)'
         else:
             modify = ''
         columnNames, messageIndex, messageIdIndex = self._createTable(tableName, modify)

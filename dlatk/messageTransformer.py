@@ -48,7 +48,7 @@ class MessageTransformer(DLAWorker):
 
     groupsAtTime = 100
 
-    def _createTable(self, tableName, modify=''):
+    def _createTable(self, tableName, modify='', modify_id=''):
         drop = """DROP TABLE IF EXISTS %s""" % (tableName)
         mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
@@ -58,7 +58,11 @@ class MessageTransformer(DLAWorker):
         if modify:
             alter = """ALTER TABLE %s MODIFY %s %s""" % (tableName, self.message_field, modify)
             mm.execute(self.corpdb, self.dbCursor, alter, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
-        
+
+        if modify_id:#modify message id field:
+            alter = """ALTER TABLE %s MODIFY %s %s""" % (tableName, self.messageid_field, modify_id)
+            mm.execute(self.corpdb, self.dbCursor, alter, charset=self.encoding, use_unicode=self.use_unicode)
+
         mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
@@ -359,11 +363,13 @@ class MessageTransformer(DLAWorker):
 
         #Create Table:
         if sentPerRow:
-            modify = 'VARCHAR(255)'
+            modify = ''#don't modify message_column
+            modify_id = 'VARCHAR(128)'#modify id column
         else:
             modify = ''
-        columnNames, messageIndex, messageIdIndex = self._createTable(tableName, modify)
-        
+            modify_id = ''
+        columnNames, messageIndex, messageIdIndex = self._createTable(tableName, modify, modify_id)
+                                                                    
         if cleanMessages:
 
             ### get lexical normalization dictionaries

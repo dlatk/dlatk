@@ -416,7 +416,7 @@ class MessageTransformer(DLAWorker):
                     if sentPerRow:
                         for j, parse in enumerate(ast.literal_eval(parses[i]), 1):
                             sentRows.append(list(rows[i]))
-                            sentRows[-1][messageIDIndex] = str(rows[i][messageIDIndex]) + "_" + str(j).zfill(2)
+                            sentRows[-1][messageIdIndex] = str(rows[i][messageIdIndex]) + "_" + str(j).zfill(2)
                             sentRows[-1][messageIndex] = parse
                     elif i < len(parses):
                         sentRows.append(rows[i])#debug: take out copy if eveyrthing ok to run faster

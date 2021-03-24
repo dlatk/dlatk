@@ -37,7 +37,11 @@ The following versions are known to work with DLATK v1.2.0 in Python 3.8:
 	pip install 'mysqlclient==2.0.1'
 	pip install 'SQLAlchemy==1.3.20'
 
+Note, that if the file ``~/.my.cnf`` does not exist then MySQL will use the following defaults:
 
+* User: your current system-level username
+* Password: No password
+* Host: ``localhost``
 
 SQLite
 ======
@@ -61,7 +65,7 @@ In order switch from the default MySQL to SQLite you need to add the following f
 
 .. code-block:: bash
 
-	dlatkInterface.p  --db_engine sqlite -d /path/to/dlatk/data/dla_tutorial  
+	dlatkInterface.py --db_engine sqlite -d /path/to/dlatk/data/dla_tutorial  
 
 
 The Python dependency for SQLite (``sqlite3``) is part of the standard library, so no additional packages are necessary. 

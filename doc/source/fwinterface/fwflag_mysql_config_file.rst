@@ -17,6 +17,12 @@ Argument and Default Value
 
 Default value: ~/.my.cnf
 
+Note, that if the file ``~/.my.cnf`` does not exist and you do not use this flag, then MySQL will use the following defaults:
+
+* User: your current system-level username
+* Password: No password
+* Host: ``localhost``
+
 Details
 =======
 

@@ -783,7 +783,7 @@ def main(fn_args = None):
     if not args.mysqlconfigfile:
         mycnf_file = Path(str(Path.home()) + "/.my.cnf")
         if mycnf_file.is_file():
-            args.mysqlconfigfile = string(mycnf_file)
+            args.mysqlconfigfile = str(mycnf_file)
         else:
             args.mysqlconfigfile = dlac.MYSQL_CONFIG_FILE
 

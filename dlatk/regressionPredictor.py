@@ -36,7 +36,7 @@ from sklearn.feature_selection import f_regression, RFE, SelectPercentile, Selec
 from sklearn.utils import shuffle
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model.base import LinearModel
+from sklearn.linear_model import LinearRegression
 from sklearn.base import RegressorMixin
 from sklearn.exceptions import NotFittedError
 
@@ -2879,7 +2879,7 @@ class ClassifyToRegressionPredictor:
         return rPreds
        
 
-class RPCRidgeCV(LinearModel, RegressorMixin):
+class RPCRidgeCV(LinearRegression, RegressorMixin):
     """Randomized PCA Ridge Regression with built-in cross-validation
 
     To set the RPCA number of components, it uses a train(80%) and dev-set(20%). 
@@ -3128,7 +3128,7 @@ class VERPCA(PCA):
 
          
 
-class SpamsGroupLasso(LinearModel, RegressorMixin):
+class SpamsGroupLasso(LinearRegression, RegressorMixin):
     """interfaces with the spams implementation of group lasso"""
 
     #Vars
@@ -3213,7 +3213,7 @@ def r2simple(ytrue, ypred):
     r2 = 1 - (ss_err/ss_tot)
     return r2
     ###Deprecated:
-#     def trainLinearModel(self, groupFreqThresh = 0, standardize = True):
+#     def trainLinearRegression(self, groupFreqThresh = 0, standardize = True):
 #         """Trains a linear regression model"""
         
 #         #1. get data possible ys (outcomes)

@@ -859,13 +859,12 @@ class RegressionPredictor:
         savedTrues = set()#stores outcomeNames that have already been saved
         if savePredictions: 
             scores['controls'] = allControls
-
         if not comboSizes:
             if numOfFactors is not None and len(numOfFactors)>0:
                 comboSizes = [len(controlKeys)]
             else:
                 comboSizes = range(len(controlKeys)+1)
-            if allControlsOnly:
+            if allControlsOnly and len(controlKeys) > 0:
                 comboSizes = [0, len(controlKeys)]
         for r in comboSizes:
             for controlKeyCombo in combinations(controlKeys, r):

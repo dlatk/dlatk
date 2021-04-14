@@ -2056,11 +2056,20 @@ class FeatureExtractor(DLAWorker):
             # Using the value and applying the featValueFunction to the value and the UWT separately
             # rows = [(gid, k.encode('utf-8'), cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+(v / totalFunctionSumForThisGroupId))) for k, v in cat_to_function_summed_weight.iteritems()]
 
+            
+            if _intercepts:
+                for k, v in _intercepts.items():
+                    try:
+                        cat_to_function_summed_weight_gn[k] += v
+                    except KeyError:
+                        cat_to_summed_value[k] = 0
+                        cat_to_function_summed_weight_gn[k] = v
+
             # Applying the featValueFunction to the group_norm,
             if self.use_unicode:
-                rows = [(gid, k, cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+v)) for k, v in cat_to_function_summed_weight_gn.items()]
+                rows = [(gid, k, cat_to_summed_value[k], valueFunc(v)) for k, v in cat_to_function_summed_weight_gn.items()]
             else:
-                rows = [(gid, k.encode('utf-8'), cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+v)) for k, v in cat_to_function_summed_weight_gn.items()]
+                rows = [(gid, k.encode('utf-8'), cat_to_summed_value[k], valueFunc(v)) for k, v in cat_to_function_summed_weight_gn.items()]
             
             # if lex has *no* intercept, add '_intercept' for each group_id
             if not _intercepts: rows.append((gid, '_intercept', 1, 1.0))

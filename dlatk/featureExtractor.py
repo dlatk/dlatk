@@ -1903,7 +1903,7 @@ class FeatureExtractor(DLAWorker):
         categories = set()
         lexiconHasWildCard = False
         warnedAboutWeights = False
-        max_category_string_length = -1
+        max_category_string_length = len("_intercept") # previously -1
         for row in rows:
             #e.g. (2, "bored", "E-")
             #OR   (2, "bored", "E-", "1")

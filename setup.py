@@ -171,7 +171,7 @@ EXTRAS_REQUIRE = {
   'rpy2': ['rpy2'],
   'simplejson': ['simplejson>=3.3.1'],
   'textstat': ['textstat>=0.6.1'],
-  'wordcloud':  ['wordcloud==1.1.3']
+  'wordcloud':  ['wordcloud']
 }
 
 SCRIPTS = ['dlatkInterface.py']

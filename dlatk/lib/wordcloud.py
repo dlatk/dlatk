@@ -253,7 +253,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
                     color_func=color_func,
                     prefer_horizontal=1.0,
                     background_color=background_color,
-                    mask=img_array).generate_from_frequencies(word_freq_tup)
+                    mask=img_array).generate_from_frequencies(dict(word_freq_tup))
 
         if output_prefix:
             #TODO: pdf output?

@@ -7,7 +7,7 @@ DLATK can perform:
 - linguistic feature extraction (i.e. turning text into variables)
 - differential language analysis (i.e. finding the language that is most associated with psychological or health variables)
 - wordcloud visualization
-- statistical- and machine learning-based supervised prediction (regresion and classification)
+- statistical- and machine learning-based supervised prediction (regression and classification)
 - statistical- and machine learning-based dimensionality reduction and clustering
 - mediation analysis
 - contextual embeddings: using deep learning transformers message, user, or group embeddings

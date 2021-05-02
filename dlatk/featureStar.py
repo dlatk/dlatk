@@ -10,6 +10,8 @@ from .outcomeGetter import OutcomeGetter
 from .outcomeAnalyzer import OutcomeAnalyzer
 from .regressionPredictor import RegressionPredictor
 from .classifyPredictor import ClassifyPredictor
+from .messageTransformer import MessageTransformer
+
 
 class FeatureStar(object):
 	"""Generic class for importing an instance of each class in DLATK
@@ -115,6 +117,7 @@ class FeatureStar(object):
 					self.fg = [FeatureGetter(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, ft, featNames, wordTable) for ft in featureTable]
 			else:
 				None
+                        self.mt = MessageTransformer(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable = wordTable) if 'mt' in init else None
 			self.fe = FeatureExtractor(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable=wordTable) if 'fe' in init else None
 			self.fr = FeatureRefiner(corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable) if 'fr' in init else None
 			self.og = OutcomeGetter(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, cattobinfields, cattointfields, group_freq_thresh, featureMappingTable, featureMappingLex, wordTable) if 'og' in init else None
@@ -126,6 +129,7 @@ class FeatureStar(object):
 				self.fg = FeatureGetter(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable)
 			else:
 				self.fg = [FeatureGetter(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, ft, featNames, wordTable) for ft in featureTable]
+                        self.mt = MessageTransformer(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable = wordTable)
 			self.fe = FeatureExtractor(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable=wordTable)
 			self.fr = FeatureRefiner(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable)
 			self.og = OutcomeGetter(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, group_freq_thresh, featureMappingTable, featureMappingLex, wordTable)
@@ -135,6 +139,7 @@ class FeatureStar(object):
 		
 		self.allDLATK = {
 				"FeatureGetter": self.fg,
+				"MessageTransformer": self.mt,
 				"FeatureExtractor": self.fe,
 				"FeatureRefiner": self.fr,
 				"OutcomeGetter": self.og,

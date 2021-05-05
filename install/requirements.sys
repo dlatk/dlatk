@@ -4,7 +4,7 @@ libmysqlclient-dev
 libxaw7-dev
 libxt-dev
 python-dev
-python-pip
+python3-pip
 python-singledispatch
 python3-tk
 r-base

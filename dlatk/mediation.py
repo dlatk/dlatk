@@ -111,7 +111,7 @@ class MediationAnalysis:
 				
 		header = ["Path Start", "Outcome", "Mediator"]
 		if self.baron_and_kenny:
-			header = header + ["c-c'", "sobel_P", "alpha", "beta", "c'"]
+			header = header + ["c", "c-c'", "sobel_P", "alpha", "beta", "c'"]
 		if self.imai_and_keele: 
 			header = header + ["Prop_mediated_average_Estimate", "Prop_mediated_average_P_value", 
 				"ACME_average_Estimate", "ACME_average_P_value"] 
@@ -124,7 +124,7 @@ class MediationAnalysis:
 					if sobel_p <= self.sig_level:
 						results = [path_start, outcome, mediator]
 						if self.baron_and_kenny:
-							results = results + [self.output_sobel[path_start][outcome][mediator].tolist()[4] , sobel_p] + \
+							results = results + [self.output_sobel[path_start][outcome][mediator][0], self.output_sobel[path_start][outcome][mediator].tolist()[4] , sobel_p] + \
 								[self.output_sobel[path_start][outcome][mediator].tolist()[6], 
 								self.output_sobel[path_start][outcome][mediator].tolist()[9], 
 								self.output_sobel[path_start][outcome][mediator].tolist()[2]]
@@ -152,6 +152,8 @@ class MediationAnalysis:
 	def print_csv(self, output_name=''):
 		if output_name:
 			csv_name = output_name
+			if not csv_name.endswith(".csv"):
+				csv_name = csv_name + "_fullresults.csv"
 		else:
 			csv_name = "mediation.csv"
 				

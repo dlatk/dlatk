@@ -1777,7 +1777,7 @@ def main(fn_args = None):
 
         # print mediation results
         if args.mediationsummary: mg.print_summary(args.outputname)
-        if args.mediationcsv: mg.print_csv(args.outputname)
+        if args.mediationcsv or args.csv: mg.print_csv(args.outputname)
 
     ##Prediction methods:
     rp = None #regression predictor

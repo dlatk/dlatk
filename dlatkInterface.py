@@ -36,7 +36,7 @@ from dlatk.semanticsExtractor import SemanticsExtractor
 try:
     from dlatk.topicExtractor import TopicExtractor, LDAEstimator
 except ImportError:
-    print("Unable to import topic extractor; topic extraction disabled")
+    print("Warning: Unable to import topic extractor; creating topics with LDA is disabled")
 
 try:
     from dlatk.lib import wordcloud

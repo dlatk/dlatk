@@ -278,6 +278,7 @@ class ClassifyPredictor:
             #{'C':[100], 'penalty':['l1'], 'dual':[False]} # gender prediction
             #{'C':[.01], 'penalty':['elasticnet'], 'dual':[False], 'random_state': [42], 'l1_ratio': [.8], 'solver': ['saga']},
             ],
+        'lr1': [{'C':[1], 'penalty':['l2'], 'dual':[False], 'random_state': [42]}],
 
         'etc': [ 
             #{'n_jobs': [10], 'n_estimators': [250], 'criterion':['gini']}, 
@@ -319,6 +320,7 @@ class ClassifyPredictor:
 
     modelToClassName = {
         'lr' : 'LogisticRegression',
+        'lr1' : 'LogisticRegression',
         'linear-svc' : 'LinearSVC',
         'svc' : 'SVC',
         'etc' : 'ExtraTreesClassifier',
@@ -348,7 +350,7 @@ class ClassifyPredictor:
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 30000
     backOffPerc = .05 #when the num_featrue / training_insts is less than this backoff to backoffmodel
-    backOffModel = 'lr'
+    backOffModel = 'lr1'
 
     # feature selection:
     featureSelectionString = None

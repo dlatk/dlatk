@@ -36,7 +36,7 @@ from dlatk.semanticsExtractor import SemanticsExtractor
 try:
     from dlatk.topicExtractor import TopicExtractor, LDAEstimator
 except ImportError:
-    print("Unable to import topic extractor; topic extraction disabled")
+    print("Warning: Unable to import topic extractor; creating topics with LDA is disabled")
 
 try:
     from dlatk.lib import wordcloud
@@ -1777,7 +1777,7 @@ def main(fn_args = None):
 
         # print mediation results
         if args.mediationsummary: mg.print_summary(args.outputname)
-        if args.mediationcsv: mg.print_csv(args.outputname)
+        if args.mediationcsv or args.csv: mg.print_csv(args.outputname)
 
     ##Prediction methods:
     rp = None #regression predictor

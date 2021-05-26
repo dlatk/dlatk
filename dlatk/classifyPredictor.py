@@ -276,14 +276,17 @@ class ClassifyPredictor:
             #{'C':[0.01, 0.1, 0.001, 0.0001, 0.00001], 'penalty':['l1'], 'dual':[False]}
             #{'C':[0.1, 1, 10], 'penalty':['l1'], 'dual':[False]} #timex l2 rpca....
             #{'C':[100], 'penalty':['l1'], 'dual':[False]} # gender prediction
+            #{'C':[.01], 'penalty':['elasticnet'], 'dual':[False], 'random_state': [42], 'l1_ratio': [.8], 'solver': ['saga']},
             ],
 
         'etc': [ 
             #{'n_jobs': [10], 'n_estimators': [250], 'criterion':['gini']}, 
-            {'n_jobs': [10], 'n_estimators': [1000], 'criterion':['gini']}, 
-            #{'n_jobs': [10], 'n_estimators': [100], 'criterion':['entropy']}, 
-            #{'n_jobs': [12], 'n_estimators': [50], 'max_features': ["sqrt", "log2", None], 'criterion':['gini'], 'min_samples_split': [1]},
+            #{'n_jobs': [10], 'n_estimators': [1000], 'criterion':['gini']}, 
+            #{'n_jobs': [10], 'n_estimators': [100], 'criterion':['gini']}, 
+            #{'n_jobs': [12], 'n_estimators': [50], 'max_features': ["sqrt", "log2", None], 'criterion':['gini', 'entropy'], 'min_samples_split': [2]},
             #{'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced_subsample']},
+            {'n_jobs': [12], 'n_estimators': [1000], 'max_features': [None], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced_subsample']},
+            #{'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2]},
             #{'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced']}, 
             #{'n_jobs': [12], 'n_estimators': [200], 'max_features': ["sqrt"], 'critearion':['gini'], 'min_samples_split': [2]}, 
             ],
@@ -660,7 +663,7 @@ class ClassifyPredictor:
         scores = dict() #outcome => control_tuple => [0],[1] => scores= {R2, R, r, r-p, rho, rho-p, MSE, train_size, test_size, num_features,yhats}
         if not comboSizes:
             comboSizes = range(len(controlKeys)+1)
-            if allControlsOnly:
+            if allControlsOnly  and len(controlKeys) > 0:
                 #if len(controlKeys) > 1: 
                 #    comboSizes = [0, 1, len(controlKeys)]
                 #else:

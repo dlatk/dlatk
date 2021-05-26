@@ -157,7 +157,7 @@ INSTALL_REQUIRES = [
   'pandas>=0.20.3', 
   'patsy>=0.2.1', 
   'python-dateutil>=2.5.0', 
-  'scikit-learn>=0.17.1', 
+  'scikit-learn<0.24.0', 
   'scipy>=0.13.3', 
   'SQLAlchemy>=0.9.9', 
   'statsmodels>=0.5.0', 

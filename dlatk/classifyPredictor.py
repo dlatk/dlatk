@@ -1867,7 +1867,7 @@ class ClassifyPredictor:
             
                 gs = GridSearchCV(OneVsRestClassifier(eval(self.modelToClassName[modelName]+'()')), 
                                   param_grid=parameters, n_jobs = self.cvJobs,
-                                  cv=ShuffleSplit(len(y), n_iter=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
+                                  cv=ShuffleSplit(len(y), n_splits=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
             else:
                 gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
                                   self.cvParams[modelName], n_jobs = self.cvJobs,

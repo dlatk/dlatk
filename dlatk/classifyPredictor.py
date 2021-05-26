@@ -338,6 +338,7 @@ class ClassifyPredictor:
         'linear-svc' : 'coef_',
         'svc' : 'coef_',
         'lr': 'coef_',
+        'lr1': 'coef_',
         'mnb': 'coef_',
         'bnb' : 'feature_log_prob_',
         }

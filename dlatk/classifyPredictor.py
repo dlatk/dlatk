@@ -262,7 +262,7 @@ class ClassifyPredictor:
             #{'C':[1, 10, 0.1, 0.01, 0.05, 0.005], 'penalty':['l1'], 'dual':[False]} #swl/perma message-level
             ],
         'lr': [
-            {'C':[.01], 'penalty':['l2'], 'dual':[False], 'random_state': [42]},#DEFAULT
+            {'C':[0.01], 'penalty':['l2'], 'dual':[False], 'random_state': [42]},#DEFAULT
             #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l2'], 'dual':[False]}, 
             #{'C':[0.01, 0.1, 0.001, 1, .0001], 'penalty':['l2'], 'dual':[False]}, 
             #{'C':[0.00001], 'penalty':['l2']} # UnivVsMultiv choice Maarten

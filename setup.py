@@ -140,7 +140,7 @@ CLASSIFIERS = [
   'Programming Language :: Python :: 3.5',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '1.2.0'
+VERSION = '1.2.1'
 PACKAGE_DATA = {
   'dlatk': ['data/*.sql'],
   'dlatk.lib': ['lib/meloche_bd.ttf', 'lib/oval_big_mask.png', 'lib/oval_mask.png'],
@@ -161,10 +161,10 @@ INSTALL_REQUIRES = [
   'scipy>=0.13.3', 
   'SQLAlchemy>=0.9.9', 
   'statsmodels>=0.5.0', 
-  'gensim==3.8.3',
-  'dlatk-pymallet==1.0.0'
+  'gensim==3.8.3'
 ]
 EXTRAS_REQUIRE = {
+  'dlatk-pymallet': ['dlatk-pymallet==1.0.0'],
   'image': ['image'],
   'jsonrpclib-pelix': ['jsonrpclib-pelix>=0.2.8'],
   'langid': ['langid>=1.1.4'],
@@ -186,7 +186,7 @@ if __name__ == "__main__":
       package_data=PACKAGE_DATA,
       include_package_data=INCLUDE_PACKAGE_DATA,
       description=DESCRIPTION,
-      long_description=LONG_DESCRIPTION,
+      #long_description=LONG_DESCRIPTION,
       license=LICENSE,
       url=URL,
       download_url=DOWNLOAD_URL,
@@ -195,6 +195,6 @@ if __name__ == "__main__":
       extras_require=EXTRAS_REQUIRE,
       install_requires=INSTALL_REQUIRES,
       scripts = SCRIPTS,
-      long_description_content_type ='text/markdown'
+      #long_description_content_type ='text/markdown'
   )
 

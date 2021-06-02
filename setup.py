@@ -140,7 +140,7 @@ CLASSIFIERS = [
   'Programming Language :: Python :: 3.5',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '1.2.2'
+VERSION = '1.2.0'
 PACKAGE_DATA = {
   'dlatk': ['data/*.sql'],
   'dlatk.lib': ['lib/meloche_bd.ttf', 'lib/oval_big_mask.png', 'lib/oval_mask.png'],
@@ -159,11 +159,11 @@ INSTALL_REQUIRES = [
   'scikit-learn<0.24.0', 
   'scipy>=0.13.3', 
   'SQLAlchemy>=0.9.9', 
-  'statsmodels>=0.5.0', 
-  'gensim==3.8.3'
+  'statsmodels>=0.5.0'
 ]
 EXTRAS_REQUIRE = {
   'dlatk-pymallet': ['dlatk-pymallet==1.0.0'],
+  'gensim': ['gensim==3.8.3'],
   'image': ['image'],
   'jsonrpclib-pelix': ['jsonrpclib-pelix>=0.2.8'],
   'langid': ['langid>=1.1.4'],

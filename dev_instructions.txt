@@ -23,6 +23,9 @@ Protocols for editing:
 4. Add to the package documentation for new options that have been added (i.e. anytime there is a new -- option). 
 
 5. Send a pull request to the public branch when ready for main-stream. 
+ -- first make sure to push to github: git push origin new_branch_name
+ -- go to https://github.com/dlatk/dlatk, switch to your branch, and click "Compare & pull request" -> "Create pull request"
+ 
 
 A majority of this package is maintained at the level of prototyping new techniques; The "Suggested Unit Tests" below are the pieces we plan to maintain consistency. With current resources, it should not be considered on a "mature" update cycle. 
 The process that the maintainers take to update public (and pip..etc...) consists of:

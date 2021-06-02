@@ -137,20 +137,15 @@ If you use DLATK in your work please cite the following [paper](http://aclweb.or
 
 ```
 @InProceedings{DLATKemnlp2017,
-  author =  "Schwartz, H. Andrew
-    and Giorgi, Salvatore
-    and Sap, Maarten
-    and Crutchley, Patrick
-    and Eichstaedt, Johannes
-    and Ungar, Lyle",
-      title =   "DLATK: Differential Language Analysis ToolKit",
-        booktitle =   "Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing: System Demonstrations",
-	  year =  "2017",
-	    publisher =   "Association for Computational Linguistics",
-	      pages =   "55--60",
-	        location =  "Copenhagen, Denmark",
-		  url =   "http://aclweb.org/anthology/D17-2010"
-		  }
+  author =  "Schwartz, H. Andrew and Giorgi, Salvatore and Sap, Maarten and Crutchley, Patrick and Eichstaedt, Johannes and Ungar, Lyle",
+  title =   "DLATK: Differential Language Analysis ToolKit",
+  booktitle =   "Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing: System Demonstrations",
+  year =  "2017",
+  publisher =   "Association for Computational Linguistics",
+  pages =   "55--60",
+  location =  "Copenhagen, Denmark",
+  url =   "http://aclweb.org/anthology/D17-2010"
+}
 
 ```
 

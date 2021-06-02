@@ -1,13 +1,13 @@
 # Differential Language Analysis ToolKit
 
-DLATK is an end to end human text analysis package for Python 3. It is specifically *suited for social media, Psychology, and health research*, developed originally for projects out of the University of Pennsylvania and Stony Brook University.  Currently, it has been used in over 75 peer-reviewed publicaitons (many from before there was an article to reference). 
+DLATK is an end to end human text analysis package for Python 3. It is specifically *suited for social media, Psychology, and health research*, developed originally for projects out of the University of Pennsylvania and Stony Brook University.  Currently, it has been used in over 75 peer-reviewed publicaitons (many from before there was an article to reference).
 
 DLATK can perform:
 
 - linguistic feature extraction (i.e. turning text into variables)
 - differential language analysis (i.e. finding the language that is most associated with psychological or health variables)
 - wordcloud visualization
-- statistical- and machine learning-based supervised prediction (regresion and classification)
+- statistical- and machine learning-based supervised prediction (regression and classification)
 - statistical- and machine learning-based dimensionality reduction and clustering
 - mediation analysis
 - contextual embeddings: using deep learning transformers message, user, or group embeddings
@@ -29,7 +29,12 @@ Functions of DLATK use:
 DLATK is available via any of four popular installation platforms: conda, pip, github, or Docker:
 
 #### New to installing Python packages?
-It is recommended that you see the [full installation instructions](http://dlatk.wwbp.org/install.html#dependencies). 
+It is recommended that you see the [full installation instructions](http://dlatk.wwbp.org/install.html#dependencies).
+
+### 0. Make sure you have python3-mysqldb:
+```sh
+sudo apt-get install python3-mysqldb
+```
 
 ### 0. Make sure you have python3-mysqldb:
 ```sh
@@ -143,14 +148,14 @@ If you use DLATK in your work please cite the following [paper](http://aclweb.or
     and Crutchley, Patrick
     and Eichstaedt, Johannes
     and Ungar, Lyle",
-  title =   "DLATK: Differential Language Analysis ToolKit",
-  booktitle =   "Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing: System Demonstrations",
-  year =  "2017",
-  publisher =   "Association for Computational Linguistics",
-  pages =   "55--60",
-  location =  "Copenhagen, Denmark",
-  url =   "http://aclweb.org/anthology/D17-2010"
-}
+      title =   "DLATK: Differential Language Analysis ToolKit",
+        booktitle =   "Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing: System Demonstrations",
+	  year =  "2017",
+	    publisher =   "Association for Computational Linguistics",
+	      pages =   "55--60",
+	        location =  "Copenhagen, Denmark",
+		  url =   "http://aclweb.org/anthology/D17-2010"
+		  }
 
 ```
 

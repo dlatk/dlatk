@@ -16,7 +16,7 @@ Every feature table has the same structure: `id`, `group_id`, `feat`, `value` an
 
 .. code-block:: mysql 
 
-   	mysql> describe feat$1gram$msgs$message_id$16to16;
+   	mysql> describe feat$1gram$msgs$message_id;
 	+------------+---------------------+------+-----+---------+----------------+
 	| Field      | Type                | Null | Key | Default | Extra          |
 	+------------+---------------------+------+-----+---------+----------------+
@@ -48,10 +48,10 @@ These tables are generally created with the :doc:`../fwinterface/fwflag_add_ngra
 
 .. code-block:: bash
 
-	feat$1to3gram$statuses_er1$user_id$16to16$0_01$pmi3_0
+	feat$1to3gram$statuses_er1$user_id$16to1$0_01$pmi3_0
 	| f0 |field 1 |  field 2   |field3 |field4| f5 |field 6|
 
-**Field 0** Specifies this as a feature table
+**Field 0** Specifies this as a feature table. All feature tables begin with the word "feat".
 
 **Field 1** Specifies kinds of features; these are 1-, 2-, and 3-grams, the result of running :doc:`../fwinterface/fwflag_combine_feat_tables` after :doc:`../fwinterface/fwflag_add_ngrams`
 
@@ -59,9 +59,8 @@ These tables are generally created with the :doc:`../fwinterface/fwflag_add_ngra
 
 **Field 3** Gives the group ID (:doc:`../fwinterface/fwflag_c`) that features were grouped by
 
-**Field 4** Specifies scaling on features:
+**Field 4** Specifies scaling on features. The default (or unscaled) feature tables do not include this field.
 
-* *16to16*: Unscaled
 * *16to8*: :doc:`../fwinterface/fwflag_anscombe`
 * *16to4*: :doc:`../fwinterface/fwflag_sqrt`
 * *16to3*: :doc:`../fwinterface/fwflag_log`

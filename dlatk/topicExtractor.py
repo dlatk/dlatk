@@ -1,21 +1,46 @@
 #!/usr/bin/env python
 #########################################
-from numpy import log2, isnan
+import random
+import re
+
 import csv
 import os, sys
+import shutil
+from subprocess import check_output
+
+from dlatk.messageTransformer import MessageTransformer
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/dlatk/LexicaInterface",""))
 
 from dlatk.featureExtractor import FeatureExtractor
 from dlatk import dlaConstants as dlac
 
+try:
+    from gensim import corpora
+    from gensim.models.wrappers import LdaMallet
+except:
+    LdaMallet = object
+    dlac.warn("Warning: Cannot import gensim (cannot run LDA)")
+    pass
+
+from numpy import log2, isnan
+
+try:
+    from pymallet import defaults
+    from pymallet.lda import estimate_topics
+except:
+    dlac.warn("Warning: Cannot import pymallet (cannot run LDA)")
+    pass
+
 from json import loads
+
 
 class TopicExtractor(FeatureExtractor):
 
-    def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, 
-                 mysql_host = "localhost", message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, 
+    def __init__(self, db_type, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD,
+                 mysql_config_file=dlac.MYSQL_CONFIG_FILE, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD,
                  encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, ldaMsgTable =dlac.DEF_LDA_MSG_TABLE):
-        super(TopicExtractor, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode)
+        super(TopicExtractor, self).__init__(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode)
         self.ldaMsgTable = ldaMsgTable
 
 
@@ -150,7 +175,7 @@ class TopicExtractor(FeatureExtractor):
         cfRows = self._executeGetList(usql)#SSCursor woudl be better, but it loses connection
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
         self._disableTableKeys(featureTableName)#for faster, when enough space for repair by sorting
-        for cfRow in cfRows: 
+        for cfRow in cfRows:
             cf_id = cfRow[0]
             mids = set() #currently seen message ids
             freqs = dict() #holds frequency of n-grams
@@ -172,7 +197,7 @@ class TopicExtractor(FeatureExtractor):
                         topicId = topic['topic_id']
                         if not topicId in freqs:
                             freqs[topicId] = 1
-                        else: 
+                        else:
                             freqs[topicId] += 1
                     mids.add(message_id)
 
@@ -181,7 +206,7 @@ class TopicExtractor(FeatureExtractor):
             totalInsts = float(totalInsts) #to avoid casting each time below
             rows = [(k, v, valueFunc((v / totalInsts))) for k, v in freqs.items() ] #adds group_norm and applies freq filter
             self._executeWriteMany(wsql, rows)
-        
+
         dlac.warn("Done Reading / Inserting.")
 
         dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
@@ -190,3 +215,104 @@ class TopicExtractor(FeatureExtractor):
         return featureTableName;
 
 
+token_regexes = {
+    'en': r'(#|@)?(?!(\W)\2+)([a-zA-Z\_\-\'0-9\(-\@]{2,})',
+    'zh': r'([\p{L}\p{M}]+|[\p{IsHan}]+)'
+}
+
+
+class OurLdaMallet(LdaMallet):
+    def set_language(self, lang):
+        self._lang = lang
+
+    @property
+    def token_regex(self):
+        if not hasattr(self, '_lang'):
+            self.set_language('en')
+        return token_regexes[self._lang]
+
+    def set_stopwords(self, stopwords):
+        stopwords_file = self.prefix + 'stopwords'
+        with open(stopwords_file, 'w') as fout:
+            for stopword in stopwords:
+                print(stopword, file=fout)
+        self.stopwords = stopwords_file
+
+    def convert_input(self, corpus, infer=False, serialize_corpus=True):
+        """
+        Converts input our way:
+          - uses the already-generated corpus txt file instead of the gensim corpus object
+          - our token regex
+          - without removing stopwords
+        """
+        cmd = \
+            self.mallet_path + \
+            " import-file --preserve-case --keep-sequence " \
+            "--token-regex \"{}\" --input %s --output %s".format(self.token_regex)
+        stopwords = getattr(self, 'stopwords', None)
+        if stopwords:
+            cmd += " --stoplist-file {}".format(stopwords)
+        cmd = cmd % (corpus, self.fcorpusmallet())
+        check_output(args=cmd, shell=True)
+
+
+class LDAEstimator(object):
+    def __init__(self, feature_getter, num_topics, alpha, beta, iterations, num_stopwords=dlac.DEF_NUM_STOPWORDS,
+                 no_stopping=False, files_dir=None, num_threads=dlac.DEF_NUM_THREADS, extra_stopwords_file=None,
+                 language=dlac.DEF_LANG):
+        self.feature_getter = feature_getter
+        self.num_topics = num_topics
+        self.alpha = alpha
+        self.beta = beta
+        self.iterations = iterations
+        self.num_stopwords = num_stopwords
+        self.extra_stopwords_file = extra_stopwords_file
+        self.no_stopping = no_stopping
+        self.files_dir = files_dir
+        self.num_threads = num_threads
+        self.language = language
+
+        self._stopwords = None
+
+    @property
+    def stopwords(self):
+        if self._stopwords is None:
+            self._stopwords = set()
+            if not self.no_stopping:
+                top_feats = self.feature_getter.getTopFeats(n=self.num_stopwords)
+                for top_feat_row in top_feats:
+                    self._stopwords.add(top_feat_row[0])
+                print('Automatically removed stopwords: {}'.format(str(self._stopwords)))
+                if self.extra_stopwords_file is not None:
+                    try:
+                        with open(self.extra_stopwords_file) as f:
+                            extra_stopwords = set(f.read().split())
+                        extra_stopwords = set(extra_stopwords)
+                        self._stopwords = self._stopwords.union(extra_stopwords)
+                        print('Removed an additional {} extra stopwords: {}'.format(str(len(extra_stopwords)), str(extra_stopwords)))
+                    except FileNotFoundError:
+                        print('Error loading extra stopwords. Skipping.')
+        return self._stopwords
+
+    def estimate_topics(self, feature_lines_file, mallet_path=None):
+        if not mallet_path:
+            print('Estimating LDA topics using PyMallet.')
+            assert(estimate_topics, "pyMallet not installed.")
+            estimate_topics(feature_lines_file, num_topics=self.num_topics, alpha=self.alpha, beta=self.beta,
+                            iterations=self.iterations, stoplist=self.stopwords)
+            state_file = defaults.OUTPUT_STATE_FILE
+            keys_file = defaults.OUTPUT_TOPIC_KEYS_FILE
+        else:
+            print('Estimating LDA topics using Mallet.')
+            prefix = os.path.join(self.files_dir, hex(random.randint(0, 0xffffff))[2:] + '_')
+            mallet = OurLdaMallet(mallet_path, id2word=corpora.Dictionary([["dummy"]]),
+                                  num_topics=self.num_topics, alpha=self.alpha, iterations=self.iterations,
+                                  workers=self.num_threads, prefix=prefix)
+            mallet.set_language(self.language)
+            if not self.no_stopping:
+                mallet.set_stopwords(self.stopwords)
+            mallet.train(feature_lines_file)
+            state_file = mallet.fstate()
+            keys_file = mallet.ftopickeys()
+
+        return state_file

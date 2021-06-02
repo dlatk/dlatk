@@ -5,25 +5,29 @@ MySQL interface methods based on the SQLAlchemy package
 import socket
 import logging
 import itertools
-from sqlalchemy import create_engine
-from sqlalchemy.engine.url import URL
 import pandas as pd
 import warnings
 import sys
 import time
-import MySQLdb.cursors
 
-from dlatk.dlaConstants import DEF_ENCODING, MYSQL_ERROR_SLEEP, MYSQL_HOST, MAX_ATTEMPTS, warn
+try:
+    import MySQLdb.cursors
+    from sqlalchemy import create_engine
+    from sqlalchemy.engine.url import URL
+except:
+    pass
 
-def get_db_engine(db_schema, db_host = MYSQL_HOST, charset=DEF_ENCODING, db_config = '~/.my.cnf', port=3306, stream=False):
+from dlatk.dlaConstants import DEF_ENCODING, MYSQL_ERROR_SLEEP, MAX_ATTEMPTS, MYSQL_CONFIG_FILE, warn
+
+def get_db_engine(db_schema, charset=DEF_ENCODING, mysql_config_file = MYSQL_CONFIG_FILE, port=3306, stream=False):
     eng = None
     attempts = 0;
     while (1):
         try:
-            db_url = URL(drivername='mysql', host=db_host, port=port,
+            db_url = URL(drivername='mysql', port=port,
                 database=db_schema,
                 query={
-                    'read_default_file' : db_config,
+                    'read_default_file' : mysql_config_file,
                     'charset': charset
                 })
             if stream:

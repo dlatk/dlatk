@@ -20,16 +20,16 @@ from sklearn.metrics import roc_auc_score
 from sklearn.linear_model import LogisticRegression
 import statsmodels.stats.multitest as mt
 
-#DB INFO:
-USER = getpass.getuser()
+DB_TYPE = "mysql"
 
 MAX_ATTEMPTS = 5 #max number of times to try a query before exiting
 PROGRESS_AFTER_ROWS = 5000 #the number of rows to process between each progress updated
 FEATURE_TABLE_PREFIX = 'feats_'
 MYSQL_ERROR_SLEEP = 4 #number of seconds to wait before trying a query again (incase there was a server restart
+SQLITE_ERROR_SLEEP = 4
 MYSQL_BATCH_INSERT_SIZE = 10000 # how many rows are inserted into mysql at a time
 MAX_SQL_SELECT = 1000000 # how many rows are selected at a time
-MYSQL_HOST = '127.0.0.1'
+MYSQL_CONFIG_FILE = ''
 VARCHAR_WORD_LENGTH = 36 #length to allocate var chars per words
 LOWERCASE_ONLY = True #if the db is case insensitive, set to True
 MAX_TO_DISABLE_KEYS = 100000 #number of groups * n must be less than this to disable keys
@@ -37,7 +37,7 @@ MAX_SQL_PRINT_CHARS = 256
 
 ##Corpus Settings:
 DEF_CORPDB = 'dla_tutorial'
-DEF_CORPTABLE = ''
+DEF_CORPTABLE = 'msgs'
 DEF_CORREL_FIELD = 'user_id'
 DEF_MESSAGE_FIELD = 'message'
 DEF_MESSAGEID_FIELD = 'message_id'
@@ -72,6 +72,24 @@ DEF_MAX_TOP_TC_WORDS = 15
 DEF_TC_FILTER = True
 DEF_WEIGHTS = ''
 DEF_LOW_VARIANCE_THRESHOLD = 0.0
+
+
+##TODO: move elsewhere; quick hack for last minute EMNLP2020
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import MinMaxScaler
+class MinScaler(MinMaxScaler, BaseEstimator):
+    def fit(self, X, y=None):
+        self.minX = X.min()
+
+    def transform(self, X):
+        #make sure non-negative
+        X = X + (self.minX*-1)
+        return X.clip(0)
+
+    def fit_transform(self, X, y=None):
+        self.fit(X)
+        return self.transform(X)
+    
 
 ##Feature Settings:
 DEF_N = int(1)
@@ -108,12 +126,18 @@ DEF_P_MAPPING = { # maps old R method names to statsmodel names
 DEF_CONF_INT = 0.95
 DEF_TOP_MESSAGES = 10
 
-DEF_BERT_MODEL='base-uncased'
-DEF_BERT_AGGREGATION=['mean']
-DEF_BERT_LAYER_AGGREGATION=['concatenate']
-DEF_BERT_LAYERS=[10]
+DEF_EMB_MODEL='bert-base-uncased'
+DEF_EMB_AGGREGATION=['mean']
+DEF_EMB_LAYER_AGGREGATION=['concatenate']
+DEF_EMB_LAYERS=[10]
 DEF_TRANS_WORD_AGGREGATION = ['mean']
-
+GPU_BATCH_SIZE = 32
+EMB_OPTIONS = ['bert-base-uncased', 'bert-large-uncased', 'bert-base-cased', 'bert-large-cased', 'SpanBERT/spanbert-base-cased', 'SpanBERT/spanbert-large-cased', 
+            'allenai/scibert_scivocab_cased', 'allenai/scibert_scivocab_uncased', 'xlnet-base-cased', 'xlnet-large-cased', 'roberta-base', 'roberta-large', 
+            'roberta-large-mnli', 'distilroberta-base', 'roberta-base-openai-detector', 'roberta-large-openai-detector', 'distilbert-base-uncased', 
+            'distilbert-base-cased', 'distilbert-base-multilingual-cased', 'distilbert-base-cased-distilled-squad', 'albert-base-v2', 'albert-large-v2', 
+            'albert-xlarge-v2', 'albert-xxlarge-v2', 'xlm-roberta-base', 'xlm-roberta-large', 'gpt2', 'gpt2-medium', 'gpt2-large', 'gpt2-xl']
+EMB_CLASS = ['bert', 'XLNet', 'Roberta', 'GPT2', 'DistilBert', 'XLMRoberta', 'Albert', None]
 
 ##Prediction Settings:
 DEF_MODEL = 'ridgecv'
@@ -141,6 +165,10 @@ DEF_RP_FEATURE_SELECTION_MAPPING = {
     'univariatefwe': 'SelectFwe(f_regression, alpha=60.0)',
 
     'pca': 'PCA(n_components=max(min(int(X.shape[1]*.5), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
+    'k_pca': 'PCA(n_components=int(self.n_components), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
+    'k_pca_ppa': 'Pipeline([ ("1_PCA", PCA(n_components=int(self.n_components), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")), ("2_PPA", PPA()) ])',
+    'k_fa': 'FactorAnalysis(n_components=int(self.n_components), random_state=42, iterated_power=3, svd_method="randomized")',
+    'k_nmf': 'Pipeline([("1_min", MinScaler()), ("2_nmf", NMF(n_components=int(self.n_components), init="nndsvd", random_state=42))])',
     'none': None,
 }
 DEF_CP_FEATURE_SELECTION_MAPPING = {
@@ -150,6 +178,9 @@ DEF_CP_FEATURE_SELECTION_MAPPING = {
     'univariatefwe10': 'SelectFwe(f_classif, alpha=10.0)',
     'univariatefwe60': 'SelectFwe(f_classif, alpha=60.0)',
     'pca': 'PCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
+    'k_pca': 'PCA(n_components=int(self.n_components), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized")',
+    'k_fa': 'FactorAnalysis(n_components=int(self.n_components), random_state=42, iterated_power=3, svd_method="randomized")',
+    'k_nmf': 'Pipeline([("1_min", MinScaler()), ("2_nmf", NMF(n_components=int(self.n_components), init="nndsvd", random_state=42))])',
     'none': None,
 }
 DEFAULT_MAX_PREDICT_AT_A_TIME = 100000
@@ -178,7 +209,7 @@ DEF_LANG_FILTER_CONF = .80
 DEF_SPAM_FILTER = 0.2 # threshold for removing spam users
 
 ## Other tools
-DEF_TOOLS_PATH = str(Path.home()) + '/dlatk_tools'
+DEF_TOOLS_PATH = str(Path.home()) + '/dlatk_lib'
 
 DEF_STANFORD_SEGMENTER = DEF_TOOLS_PATH + '/stanford-segmenter/segment.sh'
 DEF_STANFORD_POS_MODEL = DEF_TOOLS_PATH + '/stanford-postagger/models/english-bidirectional-distsim.tagger'
@@ -246,6 +277,16 @@ POSSIBLE_VALUE_FUNCS = [
     lambda d: log2(float(d) + 1),
     lambda d: 2*sqrt(d+3/float(8))
 ]
+
+## PyMallet defaults
+DEF_NUM_TOPICS = 100
+DEF_NUM_ITERATIONS = 1000
+DEF_NUM_STOPWORDS = 50
+DEF_ALPHA = 5.0
+DEF_BETA = 0.01
+DEF_NUM_THREADS = 4
+DEF_LANG = 'en'
+
 
 ##Meta settings
 DEF_INIT_FILE = 'initFile.ini'

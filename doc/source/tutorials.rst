@@ -18,6 +18,7 @@ Feature Extraction
 ------------------
 * :doc:`tutorials/tut_feat_tables`
 * :doc:`tutorials/tut_adv_fe`
+* :doc:`tutorials/tut_bert`
 
 Viewing your data and output
 ----------------------------
@@ -34,9 +35,18 @@ Clustering
 ----------
 * :doc:`tutorials/tut_clustering`
 
+LDA with Mallet
+---------------
+* :doc:`tutorials/tut_lda`
+* :doc:`tutorials/tut_lda_full`
+
+Data Engines
+------------
+* :doc:`tutorials/tut_dataengine`
+
 Other Topics
 ------------
-* :doc:`tutorials/tut_lda`
+* :doc:`tutorials/tut_import_methods`
 * :doc:`tutorials/tut_dla_rot`
 * :doc:`tutorials/tut_classes`
 * :doc:`tutorials/tut_pandas`

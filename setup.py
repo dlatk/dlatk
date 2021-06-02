@@ -140,7 +140,7 @@ CLASSIFIERS = [
   'Programming Language :: Python :: 3.5',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '1.2.1'
+VERSION = '1.2.2'
 PACKAGE_DATA = {
   'dlatk': ['data/*.sql'],
   'dlatk.lib': ['lib/meloche_bd.ttf', 'lib/oval_big_mask.png', 'lib/oval_mask.png'],
@@ -150,7 +150,6 @@ SETUP_REQUIRES = [
   'numpy',
 ]
 INSTALL_REQUIRES = [
-  'matplotlib>=1.3.1', 
   'mysqlclient', 
   'nltk>=3.2.1', 
   'numpy', 
@@ -168,6 +167,7 @@ EXTRAS_REQUIRE = {
   'image': ['image'],
   'jsonrpclib-pelix': ['jsonrpclib-pelix>=0.2.8'],
   'langid': ['langid>=1.1.4'],
+  'matplotlib': ['matplotlib>=1.3.1'],
   'rpy2': ['rpy2'],
   'simplejson': ['simplejson>=3.3.1'],
   'textstat': ['textstat>=0.6.1'],

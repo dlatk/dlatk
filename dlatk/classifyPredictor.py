@@ -2122,7 +2122,7 @@ class ClassifyPredictor:
         try:
             pp = PdfPages(output_name+'.pdf' if output_name[-4:] != '.pdf' else output_name)
         except NameError:
-            warn("matplotlib PdfPages or plt cannot be imported")
+            warn("WARNING: matplotlib PdfPages or plt cannot be imported")
             sys.exit(1)
 
         # Compute ROC curve and ROC area for each class

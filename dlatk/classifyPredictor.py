@@ -21,28 +21,26 @@ import pandas as pd
 
 from collections import defaultdict, Counter
 
-#scikit-learn imports
-from sklearn.svm import SVC, LinearSVC 
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV 
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score, precision_score, recall_score, roc_curve, auc, roc_auc_score, matthews_corrcoef
-from sklearn.feature_selection import f_classif, SelectPercentile, SelectKBest, SelectFdr, SelectFpr, SelectFwe
-
-from sklearn.preprocessing import StandardScaler, label_binarize, MinMaxScaler
-from sklearn.linear_model import PassiveAggressiveClassifier, LogisticRegression, Lasso
-from sklearn.svm import SVR
-from sklearn.multiclass import OneVsRestClassifier
+#scikit-learn classifier imports
+from sklearn.svm import SVC, LinearSVC, SVR
+from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier, GradientBoostingClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.linear_model.base import LinearModel
+from sklearn.linear_model import PassiveAggressiveClassifier, LogisticRegression, Lasso, SGDClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB, BernoulliNB
 
+#scikit learn feature selection and reduction:
+from sklearn.feature_selection import f_classif, SelectPercentile, SelectKBest, SelectFdr, SelectFpr, SelectFwe
 from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF, FactorAnalysis
-#from sklearn.lda import LDA #linear descriminant analysis
-from sklearn import metrics
 
+#scikit-learn model helping: 
+from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV 
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score, precision_score, recall_score, roc_curve, auc, roc_auc_score, matthews_corrcoef
+from sklearn import metrics
+from sklearn.preprocessing import StandardScaler, label_binarize, MinMaxScaler
+from sklearn.multiclass import OneVsRestClassifier
 from sklearn.utils import shuffle
-from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier, GradientBoostingClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model.base import LinearModel
-from sklearn.linear_model import SGDClassifier
 from sklearn.base import ClassifierMixin
 
 #scipy
@@ -315,7 +313,11 @@ class ClassifyPredictor:
             ], 
         'bnb': [
             {'alpha': [1.0], 'fit_prior': [False], 'binarize':[True]},
-            ], 
+            ],
+        'mlp': [ #multi-layer perceptron
+            {'alpha': [0.01, 0.1, 0.001, 1.0], 'solver': ['lbfgs'], 'hidden_layer_sizes':[(15,)], 'random_state': [DEFAULT_RANDOM_SEED]},
+            ],
+        
         }
 
     modelToClassName = {
@@ -331,6 +333,7 @@ class ClassifyPredictor:
         'mnb' : 'MultinomialNB',
         'gnb' : 'GaussianNB', 
         'bnb' : 'BernoulliNB',
+        'mlp' : 'MLPClassifier',
         }
     
     modelToCoeffsName = {
@@ -341,6 +344,7 @@ class ClassifyPredictor:
         'lr1': 'coef_',
         'mnb': 'coef_',
         'bnb' : 'feature_log_prob_',
+        'mlp' : 'coefs_',
         }
 
     #cvJobs = 3 #when lots of data 

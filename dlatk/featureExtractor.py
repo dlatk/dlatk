@@ -217,13 +217,14 @@ class FeatureExtractor(DLAWorker):
                     sys.exit()
                 while insert_idx_start < len(rows):
                     insert_rows = rows[insert_idx_start:min(insert_idx_end, len(rows))]
-                    #_warn("Inserting rows %d to %d... " % (insert_idx_start, insert_idx_end))
+                    #dlac.warn("Inserting rows %d to %d... " % (insert_idx_start, insert_idx_end)) #debug
+                    #dlac.warn(insert_rows) #debug
                     query.execute_query(insert_rows)
                     insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
                     insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
 
 
-
+                #meta feature table: 
                 query = self.qb.create_insert_query(featureTableName).set_values([("group_id",str(cf_id)),("feat",""),("value",""),("group_norm","")])
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:

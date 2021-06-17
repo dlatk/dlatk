@@ -315,7 +315,7 @@ class ClassifyPredictor:
             {'alpha': [1.0], 'fit_prior': [False], 'binarize':[True]},
             ],
         'mlp': [ #multi-layer perceptron
-            {'alpha': [0.01, 0.1, 0.001, 1.0], 'solver': ['lbfgs'], 'hidden_layer_sizes':[(15,)], 'random_state': [DEFAULT_RANDOM_SEED]},
+            {'alpha': [0.1, 0.001, 1.0, 0.01, 10, 100], 'solver': ['lbfgs'], 'hidden_layer_sizes':[(15,)], 'random_state': [DEFAULT_RANDOM_SEED]},
             ],
         
         }

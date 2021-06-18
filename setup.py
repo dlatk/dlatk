@@ -121,6 +121,7 @@ PACKAGES = ['dlatk',
   'dlatk.lib',
   'dlatk.lexicainterface',
   'dlatk.mysqlmethods',
+  'dlatk.sqlitemethods',
   'dlatk.tools'
 ]
 LICENSE = 'GNU General Public License v3 (GPLv3)'
@@ -141,7 +142,7 @@ CLASSIFIERS = [
   'Programming Language :: Python :: 3.5',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '1.2.4'
+VERSION = '1.2.5'
 PACKAGE_DATA = {
   'dlatk': ['data/*.sql'],
   'dlatk.lib': ['lib/meloche_bd.ttf', 'lib/oval_big_mask.png', 'lib/oval_mask.png'],

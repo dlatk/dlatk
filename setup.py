@@ -117,6 +117,7 @@ Developed by the [World Well-Being Project](http://www.wwbp.org) based out of th
 """
 DISTNAME = 'dlatk'
 PACKAGES = ['dlatk',
+  'dlatk.database',
   'dlatk.lib',
   'dlatk.lexicainterface',
   'dlatk.mysqlmethods',
@@ -140,7 +141,7 @@ CLASSIFIERS = [
   'Programming Language :: Python :: 3.5',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '1.2.3'
+VERSION = '1.2.4'
 PACKAGE_DATA = {
   'dlatk': ['data/*.sql'],
   'dlatk.lib': ['lib/meloche_bd.ttf', 'lib/oval_big_mask.png', 'lib/oval_mask.png'],

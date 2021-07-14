@@ -107,7 +107,7 @@ def main(fn_args = None):
     group.add_argument('-c', '-g', '--correl_field', '--group', '--group_by_field', metavar='FIELD', dest='correl_field',
                        default=getInitVar('correl_field', conf_parser, dlac.DEF_CORREL_FIELD),
                         help='Correlation Field (AKA Group Field): The field which features are aggregated over.')
-    group.add_argument('--conf', '--mysql_config', '--mysql_config_file', metavar='HOST', dest='mysqlconfigfile', default="",
+    group.add_argument('--conf', '--mysql_config', '--mysql_config_file', metavar='HOST', dest='mysqlconfigfile', default=dlac.MYSQL_CONFIG_FILE,
                        help='Configuration file for MySQL connection settings (default: ~/.my.cnf or dlatk/lib/.dlatk.cnf)')
     group.add_argument('--message_field', metavar='FIELD', dest='message_field', default=getInitVar('message_field', conf_parser, dlac.DEF_MESSAGE_FIELD),
                         help='The field where the text to be analyzed is located.')
@@ -780,13 +780,6 @@ def main(fn_args = None):
       sys.exit(1)
 
     ##Argument adjustments:
-    if not args.mysqlconfigfile:
-        mycnf_file = Path(str(Path.home()) + "/.my.cnf")
-        if mycnf_file.is_file():
-            args.mysqlconfigfile = str(mycnf_file)
-        else:
-            args.mysqlconfigfile = dlac.MYSQL_CONFIG_FILE
-
     if not args.valuefunc: args.valuefunc = lambda d: d
     if not args.lexvaluefunc: args.lexvaluefunc = lambda d: d
 

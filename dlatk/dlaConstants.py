@@ -22,6 +22,11 @@ import statsmodels.stats.multitest as mt
 
 DB_TYPE = "mysql"
 
+MYSQL_CONFIG_FILE = ""
+mycnf_file = Path(str(Path.home()) + "/.my.cnf")
+if mycnf_file.is_file():
+    MYSQL_CONFIG_FILE = str(mycnf_file)
+
 MAX_ATTEMPTS = 5 #max number of times to try a query before exiting
 PROGRESS_AFTER_ROWS = 5000 #the number of rows to process between each progress updated
 FEATURE_TABLE_PREFIX = 'feats_'
@@ -29,7 +34,6 @@ MYSQL_ERROR_SLEEP = 4 #number of seconds to wait before trying a query again (in
 SQLITE_ERROR_SLEEP = 4
 MYSQL_BATCH_INSERT_SIZE = 10000 # how many rows are inserted into mysql at a time
 MAX_SQL_SELECT = 1000000 # how many rows are selected at a time
-MYSQL_CONFIG_FILE = ''
 VARCHAR_WORD_LENGTH = 36 #length to allocate var chars per words
 LOWERCASE_ONLY = True #if the db is case insensitive, set to True
 MAX_TO_DISABLE_KEYS = 100000 #number of groups * n must be less than this to disable keys

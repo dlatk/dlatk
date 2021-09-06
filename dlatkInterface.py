@@ -1852,7 +1852,7 @@ def main(fn_args = None):
         if args.csv:
             outputStream = sys.stdout
             if args.outputname:
-                outputStream = open(args.outputname+'.variance_data.csv', 'w')
+                outputStream = open(args.outputname+'.accuracy_data.csv', 'w')
             RegressionPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
             if args.outputname:
@@ -1919,8 +1919,8 @@ def main(fn_args = None):
         if args.csv:
             outputStream = sys.stdout
             if args.outputname:
-                outputStream = open(args.outputname+'.variance_data.csv', 'w')
-            ClassifyPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
+                outputStream = open(args.outputname+'.accuracy_data.csv', 'w')
+            ClassifyPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
             outputStream.close()
         #else:
@@ -1949,14 +1949,14 @@ def main(fn_args = None):
             outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.predicted_data.csv', 'w')
-            ClassifyPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
+            ClassifyPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
             outputStream.close()
         if args.prob_csv:
             outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.prediction_probabilities.csv', 'w')
-            ClassifyPredictor.printComboControlPredictionProbsToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
+            ClassifyPredictor.printComboControlPredictionProbsToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
             outputStream.close()
 

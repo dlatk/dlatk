@@ -277,6 +277,8 @@ class ClassifyPredictor:
             #{'C':[.01], 'penalty':['elasticnet'], 'dual':[False], 'random_state': [42], 'l1_ratio': [.8], 'solver': ['saga']},
             ],
         'lr1': [{'C':[1], 'penalty':['l2'], 'dual':[False], 'random_state': [42]}],
+        #unpenalized logistic regression:
+        'lrnone': [{'C':[1000000], 'penalty':['l2'], 'dual':[False], 'random_state': [42]}],
 
         'etc': [ 
             #{'n_jobs': [10], 'n_estimators': [250], 'criterion':['gini']}, 
@@ -316,7 +318,7 @@ class ClassifyPredictor:
             ],
         'mlp': [ #multi-layer perceptron
             #{'alpha': [0.1, 0.001, 1.0, 0.01, 10, 100], 'solver': ['lbfgs'], 'hidden_layer_sizes':[(30,10)], 'random_state': [DEFAULT_RANDOM_SEED]},
-            {'alpha': np.logspace(-1.5, 1.5, 7), 'solver': ['sgd'], 'hidden_layer_sizes':[(10,10)], 'max_iter': [500], 'random_state': [DEFAULT_RANDOM_SEED]},
+            {'alpha': np.logspace(-1.5, 1.5, 5), 'learning_rate_init': [0.001], 'solver': ['sgd'], 'hidden_layer_sizes':[(10,10)], 'max_iter': [500], 'n_iter_no_change': [10], 'random_state': [DEFAULT_RANDOM_SEED]},
             ],
         
         }
@@ -324,6 +326,7 @@ class ClassifyPredictor:
     modelToClassName = {
         'lr' : 'LogisticRegression',
         'lr1' : 'LogisticRegression',
+        'lrnone' : 'LogisticRegression',
         'linear-svc' : 'LinearSVC',
         'svc' : 'SVC',
         'etc' : 'ExtraTreesClassifier',
@@ -343,6 +346,7 @@ class ClassifyPredictor:
         'svc' : 'coef_',
         'lr': 'coef_',
         'lr1': 'coef_',
+        'lrnone': 'coef_',
         'mnb': 'coef_',
         'bnb' : 'feature_log_prob_',
         'mlp' : 'coefs_',
@@ -356,7 +360,7 @@ class ClassifyPredictor:
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 30000
     backOffPerc = .05 #when the num_featrue / training_insts is less than this backoff to backoffmodel
-    backOffModel = 'lr1' #'lr'
+    backOffModel = 'lrnone' #'lr'
 
     # feature selection:
     featureSelectionString = None

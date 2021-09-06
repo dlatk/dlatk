@@ -2765,8 +2765,23 @@ def easyNFoldAUCWeight(X, y, folds):
     return newyscores
 
 def paired_t_1tail_on_errors(newprobs, oldprobs, ytrue):
-    #checks if
+    #computes paired t-test on error (not clear if valid for classification)
     n = len(ytrue)
+    newprobs_res_abs = np.absolute(array(ytrue) - array(newprobs))
+    oldprobs_res_abs = np.absolute(array(ytrue) - array(oldprobs))
+    ypp_diff = newprobs_res_abs - oldprobs_res_abs #old should be smaller
+    ypp_diff_mean, ypp_sd = np.mean(ypp_diff), np.std(ypp_diff)
+    ypp_diff_t = ypp_diff_mean / (ypp_sd / sqrt(n))
+    ypp_diff_p = t.sf(np.absolute(ypp_diff_t), n-1)
+    return ypp_diff_t, ypp_diff_p
+
+def paired_permutation_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None):
+    #computes p-value based on permutation test (an exact test)
+    n = len(ytrue)
+    target_auc = computeAUC(ytrue, newProbs, multiclass,  classes = classes)
+
+    
+    
     newprobs_res_abs = np.absolute(array(ytrue) - array(newprobs))
     oldprobs_res_abs = np.absolute(array(ytrue) - array(oldprobs))
     ypp_diff = newprobs_res_abs - oldprobs_res_abs #old should be smaller

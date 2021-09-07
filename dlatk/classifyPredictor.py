@@ -862,10 +862,15 @@ class ClassifyPredictor:
                         reportStats['mfclass_acc'] = testCounter[mfclass] / float(len(ytrue))
 
                         if controlCombineProbs:#ensemble with controls (AUC weighted)
+                            reportStats['auc_p'] = 1.0
                             reportStats['auc_cntl_comb2'] = 0.0#add columns so csv always has same
                             reportStats['auc_cntl_comb2_t'] = 0.0
                             reportStats['auc_cntl_comb2_p'] = 1.0
                             if withLanguage and savedControlYpp is not None:
+                                #straight up auc, p value:
+                                cntrlYtrue, YPredProbs, YCntrlProbs = alignDictsAsy(outcomes, predictionProbs, savedControlPProbs)
+                                reportStats['auc_p'] = paired_permutation_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)
+                                #ensemble auc: 
                                 newProbsDict = ensembleNFoldAUCWeight(outcomes, [predictionProbs, savedControlPProbs], groupFolds)
                                 ensYtrue, ensYPredProbs, ensYCntrlProbs = alignDictsAsy(outcomes, newProbsDict, savedControlPProbs)
                                 #reportStats['auc_cntl_comb2'] = pos_neg_auc(ensYtrue, np.array(ensYPredProbs)[:,-1])

@@ -869,6 +869,7 @@ class ClassifyPredictor:
                             if withLanguage and savedControlYpp is not None:
                                 #straight up auc, p value:
                                 cntrlYtrue, YPredProbs, YCntrlProbs = alignDictsAsy(outcomes, predictionProbs, savedControlPProbs)
+                                print(cntrlYtrue, YPredProbs, YCntrlProbs)#debug
                                 reportStats['auc_p'] = paired_permutation_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)
                                 #ensemble auc: 
                                 newProbsDict = ensembleNFoldAUCWeight(outcomes, [predictionProbs, savedControlPProbs], groupFolds)

@@ -870,7 +870,8 @@ class ClassifyPredictor:
                                 ensYtrue, ensYPredProbs, ensYCntrlProbs = alignDictsAsy(outcomes, newProbsDict, savedControlPProbs)
                                 #reportStats['auc_cntl_comb2'] = pos_neg_auc(ensYtrue, np.array(ensYPredProbs)[:,-1])
                                 reportStats['auc_cntl_comb2'] = computeAUC(ensYtrue, np.array(ensYPredProbs), multiclass,  classes = classes)
-                                reportStats['auc_cntl_comb2_t'], reportStats['auc_cntl_comb2_p'] = paired_t_1tail_on_errors(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue)
+                                #reportStats['auc_cntl_comb2_t'], reportStats['auc_cntl_comb2_p'] = paired_t_1tail_on_errors(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue)
+                                reportStats['auc_cntl_comb2_p'] = paired_permutation_1tail_on_aucs(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue, multiclass, classes)
                                 ## TODO: finish this and add flag: --ensemble_controls
                                 # predictions = #todo:dictionary
                                 # predictionProbs = newProbsDict
@@ -2775,17 +2776,39 @@ def paired_t_1tail_on_errors(newprobs, oldprobs, ytrue):
     ypp_diff_p = t.sf(np.absolute(ypp_diff_t), n-1)
     return ypp_diff_t, ypp_diff_p
 
-def paired_permutation_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None):
+def paired_permutation_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 5000):
     #computes p-value based on permutation test (an exact test)
     n = len(ytrue)
-    target_auc = computeAUC(ytrue, newProbs, multiclass,  classes = classes)
+    target_auc = computeAUC(ytrue, newprobs, multiclass,  classes = classes)
 
-    
-    
-    newprobs_res_abs = np.absolute(array(ytrue) - array(newprobs))
-    oldprobs_res_abs = np.absolute(array(ytrue) - array(oldprobs))
-    ypp_diff = newprobs_res_abs - oldprobs_res_abs #old should be smaller
-    ypp_diff_mean, ypp_sd = np.mean(ypp_diff), np.std(ypp_diff)
-    ypp_diff_t = ypp_diff_mean / (ypp_sd / sqrt(n))
-    ypp_diff_p = t.sf(np.absolute(ypp_diff_t), n-1)
-    return ypp_diff_t, ypp_diff_p
+    criteria_met = 0 #counts how frequent auc surpassed
+    if len(newprobs.shape) < 2:
+        newprobs = newprobs.reshape((n, 1))
+    if len(oldprobs.shape) < 2:
+        oldprobs = oldprobs.reshape((n, 1))
+    for i in range(iters):
+        mask = np.random.randint(2, size=n).reshape((n, 1))#does random permutation of what is in new versus old
+        this_newprobs = newprobs*mask + oldprobs*(1-mask)
+        this_auc = computeAUC(ytrue, this_newprobs, multiclass,  classes = classes)
+        if this_auc > target_auc:
+            criteria_met += 1
+    p = criteria_met / float(iters)
+    #print("\n-----\n", p, bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass, classes, iters))
+    return p
+
+def bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 3000):
+    #computes p-value based on bootstrap which generally is less ideal than permutation test
+    n = len(ytrue)
+    target_auc = computeAUC(ytrue, newprobs, multiclass,  classes = classes)
+    ytrue = np.array(ytrue)
+
+    criteria_met = 0 #counts how frequent auc surpassed
+    for i in range(iters):
+        ids = np.random.randint(n, size=n)
+        this_ytrue = ytrue[ids]
+        this_oldprobs = oldprobs[ids]
+        this_auc = computeAUC(this_ytrue, this_oldprobs.reshape([n,1]), multiclass,  classes = classes)
+        if this_auc > target_auc:
+            criteria_met += 1
+    return criteria_met / float(iters)
+

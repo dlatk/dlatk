@@ -44,7 +44,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.base import ClassifierMixin
 
 #scipy
-from scipy.stats import zscore, t
+from scipy.stats import zscore, t, wilcoxon
 from scipy.stats.stats import pearsonr, spearmanr
 from scipy.sparse import csr_matrix, vstack, hstack, spmatrix
 import numpy as np
@@ -869,14 +869,14 @@ class ClassifyPredictor:
                             if withLanguage and savedControlYpp is not None:
                                 #straight up auc, p value:
                                 cntrlYtrue, YPredProbs, YCntrlProbs = alignDictsAsy(outcomes, predictionProbs, savedControlPProbs)
-                                reportStats['auc_p'] = paired_permutation_1tail_on_aucs(np.array(YPredProbs), np.array(YCntrlProbs), cntrlYtrue, multiclass, classes)
+                                reportStats['auc_p'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)
                                 #ensemble auc: 
                                 newProbsDict = ensembleNFoldAUCWeight(outcomes, [predictionProbs, savedControlPProbs], groupFolds)
                                 ensYtrue, ensYPredProbs, ensYCntrlProbs = alignDictsAsy(outcomes, newProbsDict, savedControlPProbs)
                                 #reportStats['auc_cntl_comb2'] = pos_neg_auc(ensYtrue, np.array(ensYPredProbs)[:,-1])
                                 reportStats['auc_cntl_comb2'] = computeAUC(ensYtrue, np.array(ensYPredProbs), multiclass,  classes = classes)
                                 #reportStats['auc_cntl_comb2_t'], reportStats['auc_cntl_comb2_p'] = paired_t_1tail_on_errors(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue)
-                                reportStats['auc_cntl_comb2_p'] = paired_permutation_1tail_on_aucs(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue, multiclass, classes)
+                                reportStats['auc_cntl_comb2_p'] = paired_bootstrap_1tail_on_aucs(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue, multiclass, classes)
                                 ## TODO: finish this and add flag: --ensemble_controls
                                 # predictions = #todo:dictionary
                                 # predictionProbs = newProbsDict
@@ -2781,7 +2781,16 @@ def paired_t_1tail_on_errors(newprobs, oldprobs, ytrue):
     ypp_diff_p = t.sf(np.absolute(ypp_diff_t), n-1)
     return ypp_diff_t, ypp_diff_p
 
-def paired_permutation_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 5000):
+def paired_wilcoxon_on_errors(newprobs, oldprobs, ytrue):
+    #computes paired wilcoxon on errors (not clear if valid for classification)
+    newprobs_res_abs = np.absolute(array(ytrue) - array(newprobs))
+    oldprobs_res_abs = np.absolute(array(ytrue) - array(oldprobs))
+    print(newprobs_res_abs)
+    stat, p = wilcoxon(newprobs_res_abs, oldprobs_res_abs, alternative="greater")
+    print(stat, p)
+    return p
+
+def paired_permutation_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 3000):
     #computes p-value based on permutation test (an exact test)
     n = len(ytrue)
     target_auc = computeAUC(ytrue, newprobs, multiclass,  classes = classes)
@@ -2798,22 +2807,22 @@ def paired_permutation_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False
         if this_auc > target_auc:
             criteria_met += 1
     p = criteria_met / float(iters)
-    #print("\n-----\n", p, bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass, classes, iters))
+    #print("\n-----\n", p, bootstrap_1tail_on_aucs_bothprobs(newprobs[:,-1], oldprobs[:,-1], ytrue, multiclass, classes, iters))
     return p
 
-def bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 3000):
+def paired_bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 10000):
     #computes p-value based on bootstrap which generally is less ideal than permutation test
     n = len(ytrue)
-    target_auc = computeAUC(ytrue, newprobs, multiclass,  classes = classes)
     ytrue = np.array(ytrue)
-
-    criteria_met = 0 #counts how frequent auc surpassed
+    criteria_met = 0 #counts how frequent old auc surpassed new auc
+    allids = np.random.randint(n, size=(iters, n))
     for i in range(iters):
-        ids = np.random.randint(n, size=n)
+        ids = allids[i]
         this_ytrue = ytrue[ids]
+        this_newprobs = newprobs[ids]
         this_oldprobs = oldprobs[ids]
-        this_auc = computeAUC(this_ytrue, this_oldprobs.reshape([n,1]), multiclass,  classes = classes)
-        if this_auc > target_auc:
+        this_newauc = computeAUC(this_ytrue, this_newprobs.reshape([n,1]), multiclass,  classes = classes)
+        this_oldauc = computeAUC(this_ytrue, this_oldprobs.reshape([n,1]), multiclass,  classes = classes)
+        if this_newauc < this_oldauc:
             criteria_met += 1
     return criteria_met / float(iters)
-

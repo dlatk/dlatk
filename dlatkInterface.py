@@ -1923,8 +1923,8 @@ def main(fn_args = None):
             ClassifyPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
             outputStream.close()
-        #else:
-        pprint(comboScores, compact=True)
+        if not (args.pred_csv or args.prob_csv):
+            pprint(comboScores, compact=True)
         for outcome, cData in sorted(comboScores.items()):
             print("\n["+outcome+"]")
             mfc = 0.0
@@ -1939,11 +1939,10 @@ def main(fn_args = None):
                         print("     + LANG: acc: %.3f, f1: %.3f, auc: %.3f, auc ensemble: %.3f (p = %.4f)" %\
                               tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc', 'auc_cntl_comb2', 'auc_cntl_comb2_p']]))
                     else:
-                        print("     + LANG: acc: %.3f, f1: %.3f, auc: %.3f" %\
-                              tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc']]))
+                        print("     + LANG: acc: %.3f, f1: %.3f, auc: %.3f (p_vs_controls = %.4f)" %\
+                              tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc', 'auc_p']]))
                         mfc = wLangData[1]['mfclass_acc']
             print("   (mfc_acc: %.3f)"%mfc)
-
 
         if args.pred_csv:
             outputStream = sys.stdout

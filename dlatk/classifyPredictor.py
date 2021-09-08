@@ -867,6 +867,14 @@ class ClassifyPredictor:
                             reportStats['auc_cntl_comb2_t'] = 0.0
                             reportStats['auc_cntl_comb2_p'] = 1.0
                             if withLanguage and savedControlYpp is not None:
+                                print("\n    calculating p-values versus controls...")
+                                #add lang only auc-p to top result
+                                try:
+                                    langOnlyScores = scores[outcomeName][()][1]
+                                    cntrlYtrue, YPredProbs, YCntrlProbs = alignDictsAsy(outcomes, langOnlyScores['predictionProbs'], savedControlPProbs)
+                                    langOnlyScores['auc_p'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)
+                                except KeyError:
+                                    print("unable to find saved lang only probabilities")
                                 #straight up auc, p value:
                                 cntrlYtrue, YPredProbs, YCntrlProbs = alignDictsAsy(outcomes, predictionProbs, savedControlPProbs)
                                 reportStats['auc_p'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)
@@ -883,7 +891,6 @@ class ClassifyPredictor:
                             else: #save probs for next round
                                 savedControlYpp = ypredProbs[:,-1]
                                 savedControlPProbs = predictionProbs
-
 
                         if savePredictions: 
                             reportStats['predictions'] = predictions
@@ -2810,7 +2817,7 @@ def paired_permutation_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False
     #print("\n-----\n", p, bootstrap_1tail_on_aucs_bothprobs(newprobs[:,-1], oldprobs[:,-1], ytrue, multiclass, classes, iters))
     return p
 
-def paired_bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 10000):
+def paired_bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 8000):
     #computes p-value based on bootstrap which generally is less ideal than permutation test
     n = len(ytrue)
     ytrue = np.array(ytrue)

@@ -236,6 +236,9 @@ class RegressionPredictor:
         'ridge': [
             {'alpha': [1]}, 
         ],
+        'ridge100000': [
+            {'alpha': [100000]},
+        ],
         'ridge10000': [
             {'alpha': [10000]}, #topics age
         ],
@@ -405,6 +408,10 @@ class RegressionPredictor:
         'ridge100000' : 'coef_',
         'ridge1000' : 'coef_',
         'ridge100' : 'coef_',
+        'ridge10' : 'coef_',
+        'ridge1' : 'coef_',
+        'ridge1m' : 'coef_',
+        'ridge10m' : 'coef_',
         'ridgecv' : 'coef_',
         'ridgefirstpasscv' : 'coef_',
         'ridgehighcv' : 'coef_',
@@ -423,9 +430,9 @@ class RegressionPredictor:
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 60000
-    backOffPerc = .001 #when the num_featrue / training_insts is less than this backoff to backoffmodel
-    #backOffModel = 'ridge10'
-    backOffModel = 'linear'
+    backOffPerc = .01 #when the num_featrue / training_insts is less than this backoff to backoffmodel
+    backOffModel = 'ridge10'
+    #backOffModel = 'linear'
 
     # feature selection:
     featureSelectionString = None
@@ -852,13 +859,12 @@ class RegressionPredictor:
         savedTrues = set()#stores outcomeNames that have already been saved
         if savePredictions: 
             scores['controls'] = allControls
-
         if not comboSizes:
             if numOfFactors is not None and len(numOfFactors)>0:
                 comboSizes = [len(controlKeys)]
             else:
                 comboSizes = range(len(controlKeys)+1)
-            if allControlsOnly:
+            if allControlsOnly and len(controlKeys) > 0:
                 comboSizes = [0, len(controlKeys)]
         for r in comboSizes:
             for controlKeyCombo in combinations(controlKeys, r):
@@ -1466,6 +1472,8 @@ class RegressionPredictor:
                                                     multiScalers = self.multiScalers[bsModelName], \
                                                     multiFSelectors = self.multiFSelectors[bsModelName], sparse = True)
                         currentResults.append(self.regressionMetrics(ytest, ypred))
+                        #Saving the predictions to the feature table
+                        predictions[bsModelName] = dict(list(zip(thisTestGroupsOrder,ypred)))
                     resultsPerN[n] = self.averageMetrics(currentResults)
                 print(" [Done. Results:]")
                 pprint(resultsPerN)
@@ -1669,7 +1677,7 @@ class RegressionPredictor:
             print("[Inserting Predictions as Feature values for %s]" % feat)
             wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
             rows = [(k, v, v) for k, v in preds.items()] #adds group_norm and applies freq filter
-            mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+            mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
 
     def predictToFeatureTable(self, standardize = True, sparse = False, fe = None, name = None, groupsWhere = ''):
         if not fe:
@@ -1736,18 +1744,21 @@ class RegressionPredictor:
                 preds = chunkPredictions[feat]
                 
                 print("[Inserting Predictions as Feature values for feature: %s]" % feat)
-                wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
+                #wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
+                query = fe.qb.create_insert_query(featureTableName).set_values([("group_id",""),("feat",feat),("value",""),("group_norm","")])
                 
                 for k, v in preds.items():
-                    rows.append((k, v, v))
+                    rows.append((k, float(v), float(v)))
                     if len(rows) >  self.maxPredictAtTime or len(rows) >= len(preds):
-                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                        query.execute_query(rows)
+                        #mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
                         written += len(rows)
                         print("   %d feature rows written" % written)
                         rows = []
             # if there's rows left
             if rows:
-                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                query.execute_query(rows)
+                #mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
                 written += len(rows)
                 print("   %d feature rows written" % written)
         return
@@ -1796,12 +1807,12 @@ class RegressionPredictor:
         """
 
         weights_dict = dict()
-        unpackTopicWeights = [] 
+        unpackTopicWeights = dict()
         intercept_dict = dict()
         featTables = [fg.featureTable for fg in self.featureGetters]
         for i, featTableFeats in enumerate(self.featureNamesList):
             if "cat_" in featTables[i]:
-                unpackTopicWeights.append(featTables[i])
+                unpackTopicWeights[i] = featTables[i]
 
             weights_dict[featTables[i]] = dict()
             for outcome, model in self.regressionModels.items():
@@ -1860,8 +1871,11 @@ class RegressionPredictor:
                 # multiple topic tables
                 else:
                     weights_dict['words'] = dict()
-                    for idx, topicFeatTable in enumerate(unpackTopicWeights):
-                        if idx == 0: weights_dict['words'] = {o: dict() for o in weights_dict[topicFeatTable].keys()}
+                    first = True
+                    for idx, topicFeatTable in unpackTopicWeights.items():
+                        if first: 
+                            weights_dict['words'] = {o: dict() for o in weights_dict[topicFeatTable].keys()}
+                            first = False
                         print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
                         weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[idx], topicFeatTable, weights_dict)
                         for outcome, wordDict in weights_dict[topicFeatTable].items():
@@ -1870,14 +1884,15 @@ class RegressionPredictor:
                                     weights_dict['words'][outcome][word] += weight
                                 else:
                                     weights_dict['words'][outcome][word] = weight
-                        print("Combining %s with %s." % (topicFeatTable, '"words"'))
+                        print(" * Combining %s with %s." % (topicFeatTable, '"words"'))
                         del weights_dict[topicFeatTable]
                         
             # mixed tables
             else:
-                for idx, topicFeatTable in enumerate(unpackTopicWeights):
+                for idx, topicFeatTable in unpackTopicWeights.items():
                     print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
                     weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[idx], topicFeatTable, weights_dict)
+
                     for featTable in weights_dict:
                         if featTable.split("$")[1].startswith(buildTable):
                             for outcome, wordDict in weights_dict[topicFeatTable].items():
@@ -1886,7 +1901,7 @@ class RegressionPredictor:
                                         weights_dict[featTable][outcome][word] += weight
                                     else:
                                         weights_dict[featTable][outcome][word] = weight
-                            print("Combining %s with %s." % (topicFeatTable, featTable))
+                            print(" * Combining %s with %s." % (topicFeatTable, featTable))
                             del weights_dict[topicFeatTable]
                             break
 
@@ -1930,7 +1945,7 @@ class RegressionPredictor:
 
         lex_dict = dict()
         sql = """SELECT term, category, weight from {lexDB}.{lexTable}""".format(lexDB=featureGetter.lexicondb, lexTable=topicTable)
-        rows = mm.executeGetList(featureGetter.corpdb, featureGetter.dbCursor, sql, charset=featureGetter.encoding, use_unicode=featureGetter.use_unicode)
+        rows = mm.executeGetList(featureGetter.corpdb, featureGetter.dbCursor, sql, charset=featureGetter.encoding, use_unicode=featureGetter.use_unicode, mysql_config_file=featureGetter.mysql_config_file)
         for row in rows:
             term, category, weight = str(row[0]).strip(), str(row[1]).strip(), float(row[2])
             if term not in lex_dict:

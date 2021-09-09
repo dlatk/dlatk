@@ -13,6 +13,7 @@ from pprint import pprint
 from numpy import isnan, sqrt, log
 from configparser import SafeConfigParser
 import gzip
+from pathlib import Path
 
 import dlatk.dlaWorker as dlaWorker
 import dlatk.dlaConstants as dlac
@@ -35,7 +36,7 @@ from dlatk.semanticsExtractor import SemanticsExtractor
 try:
     from dlatk.topicExtractor import TopicExtractor, LDAEstimator
 except ImportError:
-    print("Unable to import topic extractor; topic extraction disabled")
+    print("Warning: Unable to import topic extractor; creating topics with LDA is disabled")
 
 try:
     from dlatk.lib import wordcloud
@@ -82,7 +83,7 @@ def main(fn_args = None):
     init_args, remaining_argv = init_parser.parse_known_args()
 
     if init_args.lexinterface:
-        lex_parser = LexInterfaceParser(parents=[init_parser])
+        lex_parser = LexInterfaceParser(parents=[init_parser],mysql_config_file=args.mysqlconfigfile)
         lex_parser.processArgs(args=remaining_argv, parents=True)
         sys.exit()
     elif init_args.frominitfile:
@@ -97,6 +98,8 @@ def main(fn_args = None):
 
     group = parser.add_argument_group('Corpus Variables', 'Defining the data from which features are extracted.')
 
+    group.add_argument('-e', '--engine', '--db_engine', metavar='DB', dest='dbengine', default=getInitVar('dbengine', conf_parser, dlac.DB_TYPE),
+                        help='Database engine: mysql or sqlite.')
     group.add_argument('-d', '--corpdb', metavar='DB', dest='corpdb', default=getInitVar('corpdb', conf_parser, dlac.DEF_CORPDB),
                         help='Corpus Database Name.')
     group.add_argument('-t', '--corptable', metavar='TABLE', dest='corptable', default=getInitVar('corptable', conf_parser, dlac.DEF_CORPTABLE),
@@ -104,8 +107,8 @@ def main(fn_args = None):
     group.add_argument('-c', '-g', '--correl_field', '--group', '--group_by_field', metavar='FIELD', dest='correl_field',
                        default=getInitVar('correl_field', conf_parser, dlac.DEF_CORREL_FIELD),
                         help='Correlation Field (AKA Group Field): The field which features are aggregated over.')
-    group.add_argument('-H', '--host', metavar='HOST', dest='mysql_host', default=getInitVar('mysql_host', conf_parser, dlac.MYSQL_HOST),
-                       help='Host that the mysql server runs on (default: %s)' % dlac.MYSQL_HOST)
+    group.add_argument('--conf', '--mysql_config', '--mysql_config_file', metavar='HOST', dest='mysqlconfigfile', default=dlac.MYSQL_CONFIG_FILE,
+                       help='Configuration file for MySQL connection settings (default: ~/.my.cnf or dlatk/lib/.dlatk.cnf)')
     group.add_argument('--message_field', metavar='FIELD', dest='message_field', default=getInitVar('message_field', conf_parser, dlac.DEF_MESSAGE_FIELD),
                         help='The field where the text to be analyzed is located.')
     group.add_argument('--messageid_field', metavar='FIELD', dest='messageid_field', default=getInitVar('messageid_field', conf_parser, dlac.DEF_MESSAGEID_FIELD),
@@ -137,7 +140,7 @@ def main(fn_args = None):
                         help='Table that holds a list of collocations to be used as features.')
     group.add_argument('--colloc_column', metavar='COLUMN', dest='colloc_column', default=dlac.DEF_COLUMN_COLLOC,
                         help='Column giving collocations to be used as features.')
-    group.add_argument('--create_collocation_scores', dest='createcollocscores', const=True, nargs='?', default=False,
+    group.add_argument('--create_collocation_scores', '--create_collocs', dest='createcollocscores', const=True, nargs='?', default=False,
                         help='Create ufeat table and annotate with pocc and npmi.')
     group.add_argument('--feature_type_name', metavar='STRING', dest='feature_type_name',
                         help='Customize the name of output features.')
@@ -191,29 +194,30 @@ def main(fn_args = None):
                        help='range of group id\'s to include in binning.')
     group.add_argument('--mask_table', type=str, metavar='TABLE', dest='masktable', default=None,
                        help='Table containing which groups run in various bins (for ttest).')
-    group.add_argument('--bert_model', '--emb_model', type=str, metavar='NAME', dest='embmodel', default=dlac.DEF_EMB_MODEL,
+    group.add_argument('--embedding_model', '--emb_model', '--bert_model', type=str, metavar='NAME', dest='embmodel', default=dlac.DEF_EMB_MODEL,
                        help='Contextual Embedding model to use for extracting features.')
     group.add_argument('--emb_class', type=str, metavar='NAME', dest='embclass', default=None,
                        help='Contextual Embedding model class to use for extracting features.', choices=dlac.EMB_CLASS)
     group.add_argument('--tokenizer_model', type=str, dest='tokenizermodel', default=None,
                        help='Tokenizer model to use for tokenizing.')
-    group.add_argument('--bert_msg_aggregation', '--bert_aggregations', '--emb_msg_aggregation', '--emb_aggregations', type=str, metavar='AGG', nargs='+', dest='embaggs', default=dlac.DEF_EMB_AGGREGATION,
+    group.add_argument('--embedding_msg_aggregation', '--embedding_aggregations', '--emb_msg_aggregation', '--emb_aggregations', '--bert_msg_aggregation', '--bert_aggregations', 
+                       type=str, metavar='AGG', nargs='+', dest='embaggs', default=dlac.DEF_EMB_AGGREGATION,
                        help='Aggregations to use with Contextual embedding model (e.g. mean, min, max).')
-    group.add_argument('--bert_layer_aggregation', '--layer_aggregation', type=str, metavar='AGG', nargs='+', dest='emblayeraggs', default=dlac.DEF_EMB_LAYER_AGGREGATION,
+    group.add_argument('--embedding_layer_aggregation', '--layer_aggregation', '--bert_layer_aggregation', type=str, metavar='AGG', nargs='+', dest='emblayeraggs', default=dlac.DEF_EMB_LAYER_AGGREGATION,
                        help='Aggregations to use with Contextual embedding model (e.g. mean, min, max).')
-    group.add_argument('--bert_word_aggregation', '--word_aggregation', type=str, metavar='AGG', nargs='+', dest='transwordaggs', default=dlac.DEF_TRANS_WORD_AGGREGATION,
+    group.add_argument('--embedding_word_aggregation', '--word_aggregation', '--bert_word_aggregation', type=str, metavar='AGG', nargs='+', dest='transwordaggs', default=dlac.DEF_TRANS_WORD_AGGREGATION,
                        help='Aggregations to use for words (e.g. mean or concatenate).')
-    group.add_argument('--bert_layers', '--emb_layers', type=int, metavar='LAYER', nargs='+', dest='emblayers', default=dlac.DEF_EMB_LAYERS,
+    group.add_argument('--embedding_layers', '--emb_layers', '--bert_layers', type=int, metavar='LAYER', nargs='+', dest='emblayers', default=dlac.DEF_EMB_LAYERS,
                        help='layers from Contextual model to keep.')
-    group.add_argument('--bert_no_context', '--emb_no_context', action='store_true', dest='embnocontext', default=False,
+    group.add_argument('--embedding_no_context', '--emb_no_context', '--bert_no_context', action='store_true', dest='embnocontext', default=False,
                        help='encoded without considering context.')
-    group.add_argument('--emb_table_name', dest='embtablename', default=None,
+    group.add_argument('--embedding_table_name', '--emb_table_name', dest='embtablename', default=None,
                        help='custom table name')                       
     group.add_argument('--batch_size', dest='batchsize', default=dlac.GPU_BATCH_SIZE, type=int, 
                        help='Specify the batch size for generating the embeddings.')
-    group.add_argument('--emb_keep_msg', action='store_true', dest='embkeepmsg', default=False,
+    group.add_argument('--embedding_keep_msg', '--emb_keep_msg', action='store_true', dest='embkeepmsg', default=False,
                        help='store embeddings as message_level feature table instead.')
-    
+
 
 
     group = parser.add_argument_group('MySQL Interactoins', '')
@@ -296,7 +300,7 @@ def main(fn_args = None):
                        help='Uses feat_blacklist or --lex_table and --categories.')
     group.add_argument('--spearman', action='store_true', dest='spearman',
                        help='Use Spearman R instead of Pearson.')
-    group.add_argument('--logistic_reg', action='store_true', dest='logisticReg', default=False,
+    group.add_argument('--logistic_reg', '--logistic', '--logistic_regression', action='store_true', dest='logisticReg', default=False,
                        help='Use logistic regression instead of linear regression. This is better for binary outcomes.')
     group.add_argument('--cohens_d', action='store_true', dest='cohensd', default=False,
                        help='Report Cohen\'s D with logistic regression instead coefficients (B\'s).')
@@ -383,8 +387,10 @@ def main(fn_args = None):
                         help='')
     group.add_argument('--picklefile', type=str, metavar='filename', dest='picklefile', default='',
                        help='Name of file to save or load pickle of model')
-    group.add_argument('--all_controls_only', action='store_true', dest='allcontrolsonly', default=False,
+    group.add_argument('--all_controls_only', action='store_true', dest='allcontrolsonly', default=True,
                        help='Only uses all controls when prediction doing test_combo_regression')
+    group.add_argument('--all_control_combinations', action='store_false', dest='allcontrolsonly', default=True,
+                       help='Run all control combinations when prediction doing test_combo_regression')
     group.add_argument('--no_lang', action='store_true', dest='nolang', default=False,
                        help='Runs with language features excluded')
     group.add_argument('--control_combo_sizes', '--combo_sizes', type=int, metavar="index", nargs='+', dest='controlcombosizes',
@@ -462,8 +468,8 @@ def main(fn_args = None):
                        help='add flesch-kincaid scores, averaged per group.')
     group.add_argument('--add_pnames', type=str, nargs=2, dest='addpnames',
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
-    group.add_argument('--add_bert', '--add_emb_feat', action='store_true', dest='embaddfeat', 
-                       help='add embeddings mean features (optionally add min, max)')
+    group.add_argument('--add_embedding', '--add_emb_feat',  '--add_bert', action='store_true', dest='embaddfeat',
+                       help='add BERT mean features (optionally add min, max, --bert_model large)')
     group.add_argument('--lexicon_normalization', '--lex_norm', '--dict_norm', action='store_true', help='Use weighting over lexicon terms (instead of over all terms).')
 
 
@@ -849,33 +855,33 @@ def main(fn_args = None):
 
     ##Process Arguments
     def DLAW():
-        return DLAWorker(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
+        return DLAWorker(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
 
     def MA():
-        return MessageAnnotator(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
+        return MessageAnnotator(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
 
     def MT():
-        return MessageTransformer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
+        return MessageTransformer(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
 
     def FE():
-        return FeatureExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
+        return FeatureExtractor(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
 
     def SE():
-        return SemanticsExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.corpdir, wordTable = args.wordTable)
+        return SemanticsExtractor(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.corpdir, wordTable = args.wordTable)
 
     def OG():
-        return OutcomeGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, fold_column = args.fold_column)
+        return OutcomeGetter(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, fold_column = args.fold_column)
 
     def OA():
-        return OutcomeAnalyzer(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
+        return OutcomeAnalyzer(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname)
 
     def FR():
-        return FeatureRefiner(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
+        return FeatureRefiner(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
 
     def FG(featTable = None):
         if not featTable:
             featTable = args.feattable
-        return FeatureGetter(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, featTable, args.featnames, wordTable = args.wordTable)
+        return FeatureGetter(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, featTable, args.featnames, wordTable = args.wordTable)
 
     def FGs(featTable = None):
         if not featTable:
@@ -885,10 +891,11 @@ def main(fn_args = None):
                 sys.exit(1)
         if isinstance(featTable, str):
             featTable = [featTable]
-        return [FeatureGetter(args.corpdb,
+        return [FeatureGetter(args.dbengine, 
+                              args.corpdb,
                               args.corptable,
                               args.correl_field,
-                              args.mysql_host,
+                              args.mysqlconfigfile, 
                               args.message_field,
                               args.messageid_field,
                               args.encoding,
@@ -898,7 +905,7 @@ def main(fn_args = None):
                               wordTable = args.wordTable)
                 for featTable in featTable]
     def TE():
-        return TopicExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field, args.messageid_field, dlac.DEF_ENCODING, dlac.DEF_UNICODE_SWITCH, args.ldamsgtbl)
+        return TopicExtractor(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, dlac.DEF_ENCODING, dlac.DEF_UNICODE_SWITCH, args.ldamsgtbl)
 
     dlaw = None
     ma = None
@@ -1063,17 +1070,16 @@ def main(fn_args = None):
     if args.embaddfeat:
         if not fe: fe = FE()
         args.feattable = fe.addEmbTable(modelName = args.embmodel, tokenizerName=args.tokenizermodel, modelClass = args.embclass, batchSize=args.batchsize, aggregations=args.embaggs, layersToKeep=args.emblayers, noContext=args.embnocontext, layerAggregations = args.emblayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc, customTableName = args.embtablename, keepMsgFeats = args.embkeepmsg)
-        #args.feattable = fe.addBERTTable(modelName = args.bertmodel, aggregations=args.bertaggs, layersToKeep=args.bertlayers, noContext=args.bertnocontext, layerAggregations = args.bertlayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc)
-
+    
     if args.addldafeattable:
         if not fe: fe = FE()
         args.feattable = fe.addLDAFeatTable(args.addldafeattable, valueFunc = args.valuefunc)
 
     if args.addpnames:
         if not fe: fe = FE()
-        namesLex = lexInterface.Lexicon(mysql_host = args.mysql_host)
+        namesLex = lexInterface.Lexicon(mysql_config_file=args.mysqlconfigfile)
         namesLex.loadLexicon(args.addpnames[0])
-        langLex = lexInterface.Lexicon(mysql_host = args.mysql_host)
+        langLex = lexInterface.Lexicon(mysql_config_file=args.mysqlconfigfile)
         langLex.loadLexicon(args.addpnames[1])
         args.feattable = fe.addPNamesTable(namesLex.getLexicon(), langLex.getLexicon(),  valueFunc = args.valuefunc)
 
@@ -1135,7 +1141,7 @@ def main(fn_args = None):
         writeFile.write(stateFile.readline().decode())
         writeFile.write(stateFile.readline().decode())
         writeFile.write(stateFile.readline().decode())
-        error = open('error.log.txt', 'w+')
+        error = sys.stderr #open('error.log.txt', 'w+')
 
         currentindex = -1
         messageid = -1
@@ -1224,7 +1230,7 @@ def main(fn_args = None):
         if args.estimate_lda_topics:
             dist_file_output_name = os.path.join(args.save_lda_files, 'lda')
             args.ldamsgtbl = '{}_lda${}'.format(args.corptable, lda_state_name)
-            te = TopicExtractor(args.corpdb, args.corptable, args.correl_field, args.mysql_host, args.message_field,
+            te = TopicExtractor(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field,
                                 args.messageid_field, dlac.DEF_ENCODING, dlac.DEF_UNICODE_SWITCH, args.ldamsgtbl)
         elif not te:
             te = TE()
@@ -1232,7 +1238,7 @@ def main(fn_args = None):
 
     if args.estimate_lda_topics:
         if not args.no_lda_lexicon:
-            lex_interface = LexInterfaceParser()
+            lex_interface = LexInterfaceParser(mysql_config_file=args.mysqlconfigfile)
 
             topic_file = os.path.join(args.save_lda_files, 'lda.topicGivenWord.csv')
             create_name = '{}_cp'.format(args.lda_lexicon_name)
@@ -1339,7 +1345,6 @@ def main(fn_args = None):
     if args.createcollocscores:
         if not fr: fr=FR()
         fr.creatCollocScores(args.createcollocscores)
-
 
     #if args.addmean: #works, but excessive option
     #    if not fr: fr=FR()
@@ -1765,7 +1770,7 @@ def main(fn_args = None):
 
         # print mediation results
         if args.mediationsummary: mg.print_summary(args.outputname)
-        if args.mediationcsv: mg.print_csv(args.outputname)
+        if args.mediationcsv or args.csv: mg.print_csv(args.outputname)
 
     ##Prediction methods:
     rp = None #regression predictor
@@ -2002,7 +2007,7 @@ def main(fn_args = None):
         lex_dict_with_name = {args.classToLex: v for featTableName,v in lexicon_dict.items()} if args.classToLex else {args.regrToLex: v for featTableName,v in lexicon_dict.items()}
         # print lex_dict_with_name.items()
         for lexName, lexicon in lex_dict_with_name.items():
-            lex = lexInterface.WeightedLexicon(lexicon, mysql_host = args.mysql_host)
+            lex = lexInterface.WeightedLexicon(lexicon, mysql_config_file=args.mysqlconfigfile)
             lex.createWeightedLexiconTable('dd_'+lexName)
 
     if args.fitreducer:
@@ -2021,12 +2026,12 @@ def main(fn_args = None):
               lexiconName = args.reducertolexicon if args.reducertolexicon else args.reducedlexicon
               if outcomeName != 'noOutcome':
                   lexiconName += '_'+outcomeName
-              lexicon = lexInterface.WeightedLexicon(lexDict, mysql_host = args.mysql_host)
+              lexicon = lexInterface.WeightedLexicon(lexDict, mysql_config_file=args.mysqlconfigfile)
               lexicon.createLexiconTable(lexiconName)
               if args.supertopics:
                   lexicon.createSuperTopicTable(args.supertopics, lexiconName, args.lextable)
         else:
-            lexicon = lexInterface.WeightedLexicon("", mysql_host = args.mysql_host)
+            lexicon = lexInterface.WeightedLexicon("", mysql_config_file=args.mysqlconfigfile)
             lexicon.createSuperTopicTable(args.supertopics, args.reducedlexicon, args.lextable)
 
     if args.savemodels and dr:
@@ -2035,7 +2040,9 @@ def main(fn_args = None):
     ##Plot Actions:
     if args.makealltopicwordclouds:
         outputFile = makeOutputFilename(args, None, None, suffix="_alltopics/")
-        wordcloud.makeLexiconTopicWordclouds(lexdb=args.lexicondb, lextable=args.topiclexicon, output=outputFile, color=args.tagcloudcolorscheme, max_words=args.numtopicwords, cleanCloud=args.cleancloud)
+        if args.tagcloudcolorscheme == 'multi':#make sure not to use multi
+            args.tagcloudcolorscheme = 'blue'
+        wordcloud.makeLexiconTopicWordclouds(lexdb=args.lexicondb, lextable=args.topiclexicon, output=outputFile, color=args.tagcloudcolorscheme, max_words=args.numtopicwords, cleanCloud=args.cleancloud,mysql_config_file=args.mysqlconfigfile)
     if args.barplot:
         outputFile = makeOutputFilename(args, fg, oa, "barplot")
         oa.barPlot(correls, outputFile)
@@ -2101,10 +2108,11 @@ def main(fn_args = None):
       with open(init_args.toinitfile, 'w') as init_file:
         init_file.write("[constants]\n")
 
+        if (args.dbengine and args.dbengine != dlac.DB_TYPE): init_file.write("db_type = " + str(args.dbengine)+"\n")
         if (args.corpdb and args.corpdb != dlac.DEF_CORPDB): init_file.write("corpdb = " + str(args.corpdb)+"\n")
         if (args.corptable and args.corptable != dlac.DEF_CORPTABLE): init_file.write("corptable = " + str(args.corptable)+"\n")
         if (args.correl_field): init_file.write("correl_field = " + str(args.correl_field)+"\n")
-        if (args.mysql_host and args.mysql_host != dlac.MYSQL_HOST): init_file.write("mysql_host = " + str(args.mysql_host)+"\n")
+        if (args.mysqlconfigfile and args.mysqlconfigfile != dlac.MYSQL_CONFIG_FILE): init_file.write("mysql_config_file = " + str(args.mysqlconfigfile)+"\n")
         if (args.message_field and args.message_field != dlac.DEF_MESSAGE_FIELD): init_file.write("message_field = " + str(args.message_field)+"\n")
         if (args.messageid_field and args.messageid_field != dlac.DEF_MESSAGEID_FIELD): init_file.write("messageid_field = " + str(args.messageid_field)+"\n")
         if (args.encoding and args.encoding != dlac.DEF_ENCODING): init_file.write("encoding = " + str(args.encoding)+"\n")

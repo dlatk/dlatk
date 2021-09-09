@@ -1,6 +1,9 @@
 import sys
 import time
-import MySQLdb
+try:
+    import MySQLdb
+except:
+    pass
 
 from .database.dataEngine import DataEngine
 from .database.query import QueryBuilder
@@ -19,8 +22,8 @@ class DLAWorker(object):
         Corpus Table.
     correl_field : str
         Correlation Field (AKA Group Field): The field which features are aggregated over.
-    mysql_host : str
-        Host that the mysql server runs on.
+    mysql_config_file : str
+        path to MySQL config file, for example ~/.my.cnf
     message_field : str
         The field where the text to be analyzed is located.
     messageid_field : str
@@ -39,24 +42,30 @@ class DLAWorker(object):
     DLAWorker object
     """
     
-    def __init__(self, corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb = dlac.DEF_LEXICON_DB, date_field=dlac.DEF_DATE_FIELD, wordTable=None):
+    def __init__(self, db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb = dlac.DEF_LEXICON_DB, date_field=dlac.DEF_DATE_FIELD, wordTable=None):
         self.corpdb = corpdb
         self.corptable = corptable
         self.correl_field = correl_field
-        self.mysql_host = mysql_host
         self.message_field = message_field
         self.messageid_field = messageid_field
         self.encoding = encoding
         self.use_unicode = use_unicode
 
-        self.db_type = dlac.DB_TYPE
-        self.data_engine = DataEngine(corpdb, mysql_host, encoding, use_unicode, self.db_type)
+        self.db_type = db_type
+        self.mysql_config_file = mysql_config_file
+        self.data_engine = DataEngine(corpdb, mysql_config_file, encoding, use_unicode, self.db_type)
         (self.dbConn, self.dbCursor, self.dictCursor) = self.data_engine.connect()
 
         self.qb = QueryBuilder(self.data_engine)
 
         self.lexicondb = lexicondb
-        self.wordTable = wordTable if wordTable else "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
+        if wordTable:
+            self.wordTable = wordTable
+        else:
+            wordTable = "feat$1gram$%s$%s"%(self.corptable, self.correl_field)
+            if not self.data_engine.tableExists(wordTable):
+                wordTable = "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
+            self.wordTable = wordTable
         self.messageIdUniqueChecked = False
 
     ##PUBLIC METHODS#
@@ -96,7 +105,7 @@ class DLAWorker(object):
         if not messageTable: messageTable = self.corptable
         msql = """SELECT %s, %s FROM %s"""% (self.messageid_field, self.message_field, messageTable)
         if where: msql += " WHERE " + where
-        return mm.executeGetSSCursor(self.corpdb, msql, charset=self.encoding, host=self.mysql_host)
+        return mm.executeGetSSCursor(self.corpdb, msql, charset=self.encoding, mysql_config_file=self.mysql_config_file)
 
     def getMessagesForCorrelField(self, cf_id, messageTable = None, warnMsg = True):
         """?????
@@ -122,7 +131,6 @@ class DLAWorker(object):
             if self.correl_field != self.messageid_field:
                 self.checkIndices(messageTable, primary=False, correlField=self.correl_field)
             self.messageIdUniqueChecked = True
-        #return self._executeGetSSCursor(msql, warnMsg, host=self.mysql_host)
         where_conditions = """%s='%s'"""%(self.correl_field, cf_id)
         selectQuery = self.qb.create_select_query(messageTable).set_fields([self.messageid_field, self.message_field]).where(where_conditions)
         return selectQuery.execute_query()
@@ -149,8 +157,7 @@ class DLAWorker(object):
         if not messageTable: messageTable = self.corptable
         msql = """SELECT %s, %s, %s FROM %s WHERE %s = '%s'""" % (
             self.messageid_field, self.message_field, extraField, messageTable, self.correl_field, cf_id)
-        #return self._executeGetSSCursor(msql, showQuery)
-        return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding)
+        return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding, mysql_config_file=self.mysql_config_file)
 
     def getMidAndExtraForCorrelField(self, cf_id, extraField, messageTable = None, where = None, warnMsg = True):
         """?????
@@ -176,8 +183,7 @@ class DLAWorker(object):
             self.messageid_field, extraField, messageTable, self.correl_field, cf_id)
         if where:
             msql += ' AND '+where
-        #return self._executeGetSSCursor(msql, showQuery)
-        return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding)
+        return mm.executeGetList(self.corpdb, self.dbCursor, msql, warnMsg, charset=self.encoding, mysql_config_file=self.mysql_config_file)
 
     
     def getNumWordsByCorrelField(self, where = ''):
@@ -199,7 +205,7 @@ class DLAWorker(object):
         if (where): sql += ' WHERE ' + where  
         sql += """ GROUP BY %s) as a """ % self.messageid_field 
         sql += """ GROUP BY %s """ % self.correl_field
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
     def getWordTable(self, corptable = None):
         """?????
@@ -217,7 +223,11 @@ class DLAWorker(object):
         if self.wordTable: return self.wordTable
         if not corptable:
             corptable  = self.corptable
-        return "feat$1gram$%s$%s$16to16"%(corptable, self.correl_field)
+        
+        wordTable = "feat$1gram$%s$%s"%(corptable, self.correl_field)
+        if not self.data_engine.tableExists(wordTable):
+            wordTable = "feat$1gram$%s$%s$16to16"%(corptable, self.correl_field)
+        return wordTable
 
     def get1gramTable(self):
         """?????
@@ -227,7 +237,10 @@ class DLAWorker(object):
         str
             Name of word table (1gram table) for a given corptable and correl field.
         """
-        return "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
+        wordTable = "feat$1gram$%s$%s"%(self.corptable, self.correl_field)
+        if not self.data_engine.tableExists(wordTable):
+            wordTable = "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
+        return wordTable
         
     def getWordTablePOcc(self, pocc):
         """This function does something.
@@ -242,7 +255,10 @@ class DLAWorker(object):
         str
             A word table (1gram table) for a given corptable, correl field and p occurrence value.
         """
-        return "feat$1gram$%s$%s$16to16$%s"%(self.corptable, self.correl_field, str(pocc).replace('.', '_'))
+        wordTable = "feat$1gram$%s$%s$%s"%(self.corptable, self.correl_field, str(pocc).replace('.', '_'))
+        if not self.data_engine.tableExists(wordTable):
+            wordTable = "feat$1gram$%s$%s$16to16$%s"%(self.corptable, self.correl_field, str(pocc).replace('.', '_'))
+        return wordTable
 
     def getWordGetter(self, lexicon_count_table=None):
         """Returns a FeatureGetter used for getting word counts. Usually used for group_freq_thresh.
@@ -261,7 +277,7 @@ class DLAWorker(object):
         wordTable = self.getWordTable() if not lexicon_count_table else lexicon_count_table
 
         assert self.data_engine.tableExists(wordTable), "Need to create word table to use current functionality: %s" % wordTable
-        return FeatureGetter(self.corpdb, self.corptable, self.correl_field, self.mysql_host, self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb, featureTable=wordTable, wordTable=wordTable)
+        return FeatureGetter(self.db_type, self.corpdb, self.corptable, self.correl_field, self.mysql_config_file, self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb, featureTable=wordTable, wordTable=wordTable)
     
     def getWordGetterPOcc(self, pocc):
         """Returns a FeatureGetter for given p_occ filter values used for getting word counts. Usually used for group_freq_thresh.
@@ -277,8 +293,8 @@ class DLAWorker(object):
         """
         from .featureGetter import FeatureGetter
         wordTable = self.getWordTablePOcc(pocc)
-        assert mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode), "Need to create word table to use current functionality"
-        return FeatureGetter(self.corpdb, self.corptable, self.correl_field, self.mysql_host,
+        assert mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file), "Need to create word table to use current functionality"
+        return FeatureGetter(self.db_type, self.corpdb, self.corptable, self.correl_field, self.mysql_config_file,
                              self.message_field, self.messageid_field, self.encoding, self.use_unicode, 
                              self.lexicondb, featureTable=wordTable, wordTable = wordTable)
 
@@ -321,7 +337,7 @@ class DLAWorker(object):
         else:
             sql = """SHOW TABLES FROM %s where Tables_in_%s NOT LIKE 'feat%%' """ % (self.corpdb, self.corpdb)
             if isinstance(like, str): sql += """ AND Tables_in_%s like '%s'""" % (self.corpdb, like)
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
     def describeTable(self, table_name):
         """
@@ -337,7 +353,7 @@ class DLAWorker(object):
             
         """
         sql = """DESCRIBE %s""" % (table_name)
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
     def viewTable(self, table_name):
         """
@@ -354,9 +370,9 @@ class DLAWorker(object):
         """
         col_sql = """select column_name from information_schema.columns 
             where table_schema = '%s' and table_name='%s'""" % (self.corpdb, table_name)
-        col_names = [col[0] for col in mm.executeGetList(self.corpdb, self.dbCursor, col_sql, charset=self.encoding, use_unicode=self.use_unicode)]
+        col_names = [col[0] for col in mm.executeGetList(self.corpdb, self.dbCursor, col_sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)]
         sql = """SELECT * FROM %s LIMIT 10""" % (table_name)
-        return [col_names] + list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode))
+        return [col_names] + list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))
 
 
     def createRandomSample(self, percentage, random_seed = dlac.DEFAULT_RANDOM_SEED, where = ''):
@@ -378,25 +394,25 @@ class DLAWorker(object):
         new_table = self.corptable + "_rand"
 
         rows_sql = """SELECT count(*) from %s""" % (self.corptable)
-        n_old_rows = mm.executeGetList1(self.corpdb, self.dbCursor, rows_sql, charset=self.encoding, use_unicode=self.use_unicode)[0]
+        n_old_rows = mm.executeGetList1(self.corpdb, self.dbCursor, rows_sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)[0]
         n_new_rows = round(percentage*n_old_rows)
 
         drop_sql = """DROP TABLE IF EXISTS %s""" % (new_table)
-        mm.execute(self.corpdb, self.dbCursor, drop_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, drop_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         create_sql = """CREATE TABLE %s LIKE %s""" % (new_table, self.corptable)
-        mm.execute(self.corpdb, self.dbCursor, create_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, create_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         
         disable_sql = """ALTER TABLE %s DISABLE KEYS""" % (new_table)
-        mm.execute(self.corpdb, self.dbCursor, disable_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, disable_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         
         insert_sql = """INSERT INTO %s SELECT * FROM %s where RAND(%s) < %s""" % (new_table, self.corptable, random_seed, percentage*1.1)
         if where: insert_sql += " AND %s" % (where)
         insert_sql += " LIMIT %s" % (n_new_rows)
-        mm.execute(self.corpdb, self.dbCursor, insert_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, insert_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         
         enable_sql = """ALTER TABLE %s ENABLE KEYS""" % (new_table)
-        mm.execute(self.corpdb, self.dbCursor, enable_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, enable_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         return new_table
 
@@ -420,17 +436,17 @@ class DLAWorker(object):
         #mm.execute(self.corpdb, self.dbCursor, drop_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
 
         create_sql = """CREATE TABLE %s LIKE %s""" % (new_table, old_table)
-        mm.execute(self.corpdb, self.dbCursor, create_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, create_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         
         disable_sql = """ALTER TABLE %s DISABLE KEYS""" % (new_table)
-        mm.execute(self.corpdb, self.dbCursor, disable_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, disable_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         
         insert_sql = """INSERT INTO %s SELECT * FROM %s""" % (new_table, old_table)
         if where: insert_sql += " WHERE %s" % (where)
-        mm.execute(self.corpdb, self.dbCursor, insert_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, insert_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         
         enable_sql = """ALTER TABLE %s ENABLE KEYS""" % (new_table)
-        mm.execute(self.corpdb, self.dbCursor, enable_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, enable_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         return new_table
 
@@ -462,12 +478,12 @@ class DLAWorker(object):
         else:
             print("making black or white list: [%s] [%s] [%s]" %([feat if isinstance(feat, str) else feat for feat in args_featlist], args_lextable, args_categories))
         if args_lextable:
-            (conn, cur, dcur) = mm.dbConnect(args_lexdb, charset=dlac.DEF_ENCODING, use_unicode=args_use_unicode)
+            (conn, cur, dcur) = mm.dbConnect(args_lexdb, charset=dlac.DEF_ENCODING, use_unicode=args_use_unicode, mysql_config_file=self.mysql_config_file)
             sql = 'SELECT term FROM %s' % (args_lextable)
             if (len(args_categories) > 0) and args_categories[0] != '*':
                 sql = 'SELECT term FROM %s WHERE category in (%s)'%(args_lextable, ','.join(['\''+str(x)+'\'' for x in args_categories]))
 
-            rows = mm.executeGetList(args_lexdb, cur, sql, charset=dlac.DEF_ENCODING, use_unicode=args_use_unicode)
+            rows = mm.executeGetList(args_lexdb, cur, sql, charset=dlac.DEF_ENCODING, use_unicode=args_use_unicode, mysql_config_file=self.mysql_config_file)
             for row in rows:
                 newlist.add(row[0])
         elif args_featlist:

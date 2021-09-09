@@ -262,7 +262,7 @@ class ClassifyPredictor:
             #{'C':[1, 10, 0.1, 0.01, 0.05, 0.005], 'penalty':['l1'], 'dual':[False]} #swl/perma message-level
             ],
         'lr': [
-            {'C':[.01], 'penalty':['l2'], 'dual':[False], 'random_state': [42]},#DEFAULT
+            {'C':[0.01], 'penalty':['l2'], 'dual':[False], 'random_state': [42]},#DEFAULT
             #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l2'], 'dual':[False]}, 
             #{'C':[0.01, 0.1, 0.001, 1, .0001], 'penalty':['l2'], 'dual':[False]}, 
             #{'C':[0.00001], 'penalty':['l2']} # UnivVsMultiv choice Maarten
@@ -276,14 +276,18 @@ class ClassifyPredictor:
             #{'C':[0.01, 0.1, 0.001, 0.0001, 0.00001], 'penalty':['l1'], 'dual':[False]}
             #{'C':[0.1, 1, 10], 'penalty':['l1'], 'dual':[False]} #timex l2 rpca....
             #{'C':[100], 'penalty':['l1'], 'dual':[False]} # gender prediction
+            #{'C':[.01], 'penalty':['elasticnet'], 'dual':[False], 'random_state': [42], 'l1_ratio': [.8], 'solver': ['saga']},
             ],
+        'lr1': [{'C':[1], 'penalty':['l2'], 'dual':[False], 'random_state': [42]}],
 
         'etc': [ 
             #{'n_jobs': [10], 'n_estimators': [250], 'criterion':['gini']}, 
-            #{'n_jobs': [10], 'n_estimators': [1000], 'criterion':['gini']}, 
-            #{'n_jobs': [10], 'n_estimators': [100], 'criterion':['entropy']}, 
-            #{'n_jobs': [12], 'n_estimators': [50], 'max_features': ["sqrt", "log2", None], 'criterion':['gini'], 'min_samples_split': [1]},
-            {'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced_subsample']},
+            #{'n_jobs': [10], 'n_estimators': [1000], 'criterion':['gini']},  #DEFAULT
+            #{'n_jobs': [10], 'n_estimators': [100], 'criterion':['gini']}, 
+            #{'n_jobs': [12], 'n_estimators': [50], 'max_features': ["sqrt", "log2", None], 'criterion':['gini', 'entropy'], 'min_samples_split': [2]},
+            {'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced_subsample']},#BEST
+            #{'n_jobs': [12], 'n_estimators': [1000], 'max_features': [None], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced_subsample']},
+            #{'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2]},
             #{'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced']}, 
             #{'n_jobs': [12], 'n_estimators': [200], 'max_features': ["sqrt"], 'critearion':['gini'], 'min_samples_split': [2]}, 
             ],
@@ -316,6 +320,7 @@ class ClassifyPredictor:
 
     modelToClassName = {
         'lr' : 'LogisticRegression',
+        'lr1' : 'LogisticRegression',
         'linear-svc' : 'LinearSVC',
         'svc' : 'SVC',
         'etc' : 'ExtraTreesClassifier',
@@ -333,6 +338,7 @@ class ClassifyPredictor:
         'linear-svc' : 'coef_',
         'svc' : 'coef_',
         'lr': 'coef_',
+        'lr1': 'coef_',
         'mnb': 'coef_',
         'bnb' : 'feature_log_prob_',
         }
@@ -345,7 +351,7 @@ class ClassifyPredictor:
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 30000
     backOffPerc = .05 #when the num_featrue / training_insts is less than this backoff to backoffmodel
-    backOffModel = 'lr'
+    backOffModel = 'lr1' #'lr'
 
     # feature selection:
     featureSelectionString = None
@@ -660,7 +666,7 @@ class ClassifyPredictor:
         scores = dict() #outcome => control_tuple => [0],[1] => scores= {R2, R, r, r-p, rho, rho-p, MSE, train_size, test_size, num_features,yhats}
         if not comboSizes:
             comboSizes = range(len(controlKeys)+1)
-            if allControlsOnly:
+            if allControlsOnly  and len(controlKeys) > 0:
                 #if len(controlKeys) > 1: 
                 #    comboSizes = [0, 1, len(controlKeys)]
                 #else:
@@ -832,6 +838,11 @@ class ClassifyPredictor:
                         reportStats['auc']= computeAUC(ytrue, ypredProbs, multiclass,  classes = classes)
                         reportStats['precision'] = precision_score(ytrue, ypred, average='macro')
                         reportStats['recall'] = recall_score(ytrue, ypred, average='macro')
+                        reportStats['recall_micro'] = recall_score(ytrue, ypred, average='micro')
+                        if not multiclass:
+                            reportStats['recall_sensitivity'] = recall_score(ytrue, ypred, average='binary')
+                            reportStats['recall_specificity'] = recall_score(np.abs(np.array(ytrue) - 1), np.abs(np.array(ypred)-1), average='binary')
+                        
                         
                         try:
                             reportStats['matt_ccoef'] = matthews_corrcoef(ytrue, ypred)
@@ -997,10 +1008,15 @@ class ClassifyPredictor:
                 auc = computeAUC(ytest, ypredProbs, multiclass, negatives=False,  classes = classes)
                 print(" *AUC: %.4f" % auc)
 
-            print(" *f1: %.4f " % (f1))
+            print(" *f1 (macro): %.4f " % (f1))
             print(" *matt_ccoef: %.4f " % (matt_ccoef))
             print(" *precision: %.4f " % (precision))
             print(" *recall: %.4f " % (recall))
+            if not multiclass:
+                recall_sensitivity = recall_score(ytest, ypred, average='binary')
+                recall_specificity = recall_score(np.abs(np.array(ytest) - 1), np.abs(np.array(ypred)-1), average='binary')
+                print("  *sensitivity: %.4f (at default class split)" % (recall_sensitivity))
+                print("  *specificity: %.4f (at default class split)" % (recall_specificity))
             #print(" *specificity: %.4f " % (specificity))
             
             mse = metrics.mean_squared_error(ytest, ypred)
@@ -1203,19 +1219,19 @@ class ClassifyPredictor:
                 #pprint(preds)#DEBUG
                 print("[Inserting Predictions as Feature values for feature: %s]" % feat)
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
-                wCursor = mm.dbConnect(self.corpdb, host=self.mysql_host, charset=self.encoding, use_unicode=self.use_unicode)[1]
+                wCursor = mm.dbConnect(self.corpdb, host=self.mysql_host, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)[1]
                 
                 for k, v in preds.items():
                     rows.append((k, v, v))
                     if len(rows) >  self.maxPredictAtTime or len(rows) >= len(preds):
-                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=wCursor, charset=fe.encoding, use_unicode=fe.use_unicode)
+                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=wCursor, charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
                         written += len(rows)
                         print("   %d feature rows written" % written)
                         rows = []
             # if there's rows left
             if rows:
-                wCursor = mm.dbConnect(self.corpdb, host=self.mysql_host, charset=self.encoding, use_unicode=self.use_unicode)[1]
-                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=wCursor, charset=fe.encoding, use_unicode=fe.use_unicode)
+                wCursor = mm.dbConnect(self.corpdb, host=self.mysql_host, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)[1]
+                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=wCursor, charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
                 written += len(rows)
                 print("   %d feature rows written" % written)
         return
@@ -1438,18 +1454,21 @@ class ClassifyPredictor:
                 preds = chunkPredictions[feat]
                 #pprint(preds)#DEBUG
                 print("[Inserting Predictions as Feature values for feature: %s]" % feat)
-                wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
+                #wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
+                query = fe.qb.create_insert_query(featureTableName).set_values([("group_id",""),("feat",feat),("value",""),("group_norm","")])
                 
                 for k, v in preds.items():
-                    rows.append((k, v, v))
+                    rows.append((k, float(v), float(v)))
                     if len(rows) >  self.maxPredictAtTime or len(rows) >= len(preds):
-                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                        query.execute_query(rows)
+                        #mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
                         written += len(rows)
                         print("   %d feature rows written" % written)
                         rows = []
             # if there's rows left
             if rows:
-                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                query.execute_query(rows)
+                #mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
                 written += len(rows)
                 print("   %d feature rows written" % written)
         return
@@ -1465,12 +1484,12 @@ class ClassifyPredictor:
         """
 
         weights_dict = dict()
-        unpackTopicWeights = [] 
+        unpackTopicWeights = dict()
         intercept_dict = dict()
         featTables = [fg.featureTable for fg in self.featureGetters]
         for i, featTableFeats in enumerate(self.featureNamesList):
             if "cat_" in featTables[i]:
-                unpackTopicWeights.append(featTables[i])
+                unpackTopicWeights[i] = featTables[i]
 
             weights_dict[featTables[i]] = dict()
             for outcome, model in self.classificationModels.items():
@@ -1526,14 +1545,17 @@ class ClassifyPredictor:
             if len(unpackTopicWeights) == len(weights_dict):
                 # single topic table
                 if len(unpackTopicWeights) == 1:
-                    topicFeatTable = unpackTopicWeights[0]
+                    topicFeatTable = unpackTopicWeights[list(unpackTopicWeights)[0]]
                     print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
                     weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[0], topicFeatTable, weights_dict)
                 # multiple topic tables
                 else:
                     weights_dict['words'] = dict()
-                    for idx, topicFeatTable in enumerate(unpackTopicWeights):
-                        if idx == 0: weights_dict['words'] = {o: dict() for o in weights_dict[topicFeatTable].keys()}
+                    first = True
+                    for idx, topicFeatTable in unpackTopicWeights.items():
+                        if first: 
+                            weights_dict['words'] = {o: dict() for o in weights_dict[topicFeatTable].keys()}
+                            first = False
                         print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
                         weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[idx], topicFeatTable, weights_dict)
                         for outcome, wordDict in weights_dict[topicFeatTable].items():
@@ -1547,7 +1569,7 @@ class ClassifyPredictor:
                         
             # mixed tables
             else:
-                for idx, topicFeatTable in enumerate(unpackTopicWeights):
+                for idx, topicFeatTable in unpackTopicWeights.items():
                     print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
                     weights_dict, buildTable = self.unpackTopicTables(self.featureGetters[idx], topicFeatTable, weights_dict)
                     for featTable in weights_dict:
@@ -1602,7 +1624,7 @@ class ClassifyPredictor:
 
         lex_dict = dict()
         sql = """SELECT term, category, weight from {lexDB}.{lexTable}""".format(lexDB=featureGetter.lexicondb, lexTable=topicTable)
-        rows = mm.executeGetList(featureGetter.corpdb, featureGetter.dbCursor, sql, charset=featureGetter.encoding, use_unicode=featureGetter.use_unicode)
+        rows = mm.executeGetList(featureGetter.corpdb, featureGetter.dbCursor, sql, charset=featureGetter.encoding, use_unicode=featureGetter.use_unicode, mysql_config_file=featureGetter.mysql_config_file)
         for row in rows:
             term, category, weight = str(row[0]).strip(), str(row[1]).strip(), float(row[2])
             if term not in lex_dict:
@@ -1848,7 +1870,7 @@ class ClassifyPredictor:
             
                 gs = GridSearchCV(OneVsRestClassifier(eval(self.modelToClassName[modelName]+'()')), 
                                   param_grid=parameters, n_jobs = self.cvJobs,
-                                  cv=ShuffleSplit(len(y), n_iter=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
+                                  cv=ShuffleSplit(len(y), n_splits=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
             else:
                 gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
                                   self.cvParams[modelName], n_jobs = self.cvJobs,
@@ -2100,7 +2122,7 @@ class ClassifyPredictor:
         try:
             pp = PdfPages(output_name+'.pdf' if output_name[-4:] != '.pdf' else output_name)
         except NameError:
-            warn("matplotlib PdfPages or plt cannot be imported")
+            warn("WARNING: matplotlib PdfPages or plt cannot be imported")
             sys.exit(1)
 
         # Compute ROC curve and ROC area for each class

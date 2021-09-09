@@ -2,8 +2,11 @@ import csv
 import json
 import os, sys
 import argparse
-from MySQLdb import Warning
-from MySQLdb.cursors import SSCursor
+try:
+    from MySQLdb import Warning
+    from MySQLdb.cursors import SSCursor
+except:
+    pass
 import sqlite3
 from pathlib import Path
 
@@ -36,7 +39,8 @@ def appendCSVtoMySQL(csvFile, database, table, ignoreLines=0, dbCursor=None):
     dbCursor.execute(disableSQL)
     print("""Importing data, reading {csvFile} file""".format(csvFile=csvFile))
     importSQL = """LOAD DATA LOCAL INFILE '{csvFile}' INTO TABLE {table} 
-        FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
+        CHARACTER SET utf8mb4
+        FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' 
         LINES TERMINATED BY '{lineTermination}' IGNORE {ignoreLines} LINES""".format(csvFile=csvFile, table=table, ignoreLines=ignoreLines, lineTermination=line_termination)
     dbCursor.execute(importSQL)
     enableSQL = """ALTER TABLE {table} ENABLE KEYS""".format(table=table)
@@ -53,7 +57,7 @@ def csvToMySQL(csvFile, database, table, columnDescription, ignoreLines=0):
         print("A table by that name already exists in the database. Please use appendCSVtoMySQL or choose a new name.")
         sys.exit(1)
 
-    createSQL = """CREATE TABLE {table} {colDesc}""".format(table=table, colDesc=columnDescription)
+    createSQL = """CREATE TABLE {table} {colDesc} CHARACTER SET utf8mb4""".format(table=table, colDesc=columnDescription)
     print(createSQL)
     dbCursor.execute(createSQL)
     appendCSVtoMySQL(csvFile, database, table, ignoreLines, dbCursor)

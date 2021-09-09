@@ -49,6 +49,7 @@ from sklearn.utils import shuffle
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model.base import LinearModel
+from sklearn.cluster import SpectralClustering
 
 from scipy.stats import zscore
 from scipy.stats.stats import pearsonr, spearmanr
@@ -138,6 +139,9 @@ class DimensionReducer:
 
             'rpca': {'n_components':15, 'random_state':42, 'whiten':False, 'iterated_power':3, 'svd_solver':'randomized'},
 
+            'spectralclustering': {'n_clusters': 2},
+            'sc': {'n_clusters': 2},
+
             'fa': {'n_components': 10, 'random_state': 42},
 
             'ppa': {'D': 1}, #None defaults to original dimensions / 100
@@ -156,7 +160,9 @@ class DimensionReducer:
         'rpca' : 'PCA',#TODO: somehow update to use rpca
         'fa' : 'FactorAnalysis',
         'ppa': 'PPA',
-        'ae': 'AE'
+        'ae': 'AE',
+        'spectralclustering': 'SpectralClustering',
+        'sc': 'SpectralClustering',
         }
 
     def __init__(self, fg, modelName='nmf', og=None, n_components=None):
@@ -456,7 +462,12 @@ class DimensionReducer:
                         n_components = self.clusterModels[outcomeName].n_components_            
                     except:
                         #FA didnt have n_components_ in its class. Handling those cases
-                        n_components = len(self.clusterModels[outcomeName].components_)
+                        try:
+                            n_components = len(self.clusterModels[outcomeName].components_)
+                        except AttributeError:
+                            #must be single component (or clustering)
+                            n_components = 1
+                        
                     featNames = ["COMPONENT_"+str(i) for i in range(n_components)]
                     #featNames = list(chunkPredictions.keys())
                     featLength = max([len(s) for s in featNames])
@@ -472,18 +483,20 @@ class DimensionReducer:
                         preds = transformedX[outcomeName][feat]
 
                         print("[Inserting Predictions as Feature values for feature: %s]" % feat)
-                        wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
-
+                        #wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
+                        query = fe.qb.create_insert_query(featureTableName).set_values([("group_id",""),("feat",feat),("value",""),("group_norm","")])
                         for k, v in preds.items():
                             rows.append((k, v, v))
                             if len(rows) >  60000 or len(rows) >= len(preds):
-                                mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                                query.execute_query(rows)
+                                #mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
                                 written += len(rows)
                                 print("   %d feature rows written" % written)
                                 rows = []
                     # if there's rows left
                     if rows:
-                        mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode)
+                        #mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
+                        query.execute_query(rows)
                         written += len(rows)
                         print("   %d feature rows written" % written)
 
@@ -503,8 +516,17 @@ class DimensionReducer:
             X = fSelector.transform(X)
 
         print("[ Running dim reducer]:%s\n"%str(cluster))
-        
-        return cluster.transform(X)
+
+        try:
+            return cluster.transform(X)
+        except AttributeError:
+            try: 
+                return cluster.predict(X)
+            except AttributeError:
+                warn("Warning: Refitting model before predicting")
+                preds = cluster.fit_predict(X)
+                #print(preds) #DEBUG
+                return preds.reshape((len(preds), 1))
     
     def modelToLexicon(self):
         lexicons = dict()

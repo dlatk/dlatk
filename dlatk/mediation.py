@@ -111,7 +111,7 @@ class MediationAnalysis:
 				
 		header = ["Path Start", "Outcome", "Mediator"]
 		if self.baron_and_kenny:
-			header = header + ["c-c'", "sobel_P", "alpha", "beta", "c'"]
+			header = header + ["perc_mediation", "c", "c-c'", "sobel_P", "alpha", "beta", "c'"]
 		if self.imai_and_keele: 
 			header = header + ["Prop_mediated_average_Estimate", "Prop_mediated_average_P_value", 
 				"ACME_average_Estimate", "ACME_average_P_value"] 
@@ -124,7 +124,9 @@ class MediationAnalysis:
 					if sobel_p <= self.sig_level:
 						results = [path_start, outcome, mediator]
 						if self.baron_and_kenny:
-							results = results + [self.output_sobel[path_start][outcome][mediator].tolist()[4] , sobel_p] + \
+							results = results + [1 - self.output_sobel[path_start][outcome][mediator][2] / float(self.output_sobel[path_start][outcome][mediator][0]), 
+								self.output_sobel[path_start][outcome][mediator][0], 
+								self.output_sobel[path_start][outcome][mediator].tolist()[4] , sobel_p] + \
 								[self.output_sobel[path_start][outcome][mediator].tolist()[6], 
 								self.output_sobel[path_start][outcome][mediator].tolist()[9], 
 								self.output_sobel[path_start][outcome][mediator].tolist()[2]]
@@ -152,12 +154,14 @@ class MediationAnalysis:
 	def print_csv(self, output_name=''):
 		if output_name:
 			csv_name = output_name
+			if not csv_name.endswith(".csv"):
+				csv_name = csv_name + "_fullresults.csv"
 		else:
 			csv_name = "mediation.csv"
 				
 		header = ["Path Start", "Outcome", "Mediator"]
 		if self.baron_and_kenny:
-			header = header + ["c", "c_p", "c'", "c'_p", "c-c'", "alpha*beta", "alpha", "alpha_error", "alpha_p", 
+			header = header + ["perc_mediation", "c", "c_p", "c'", "c'_p", "c-c'", "alpha*beta", "alpha", "alpha_error", "alpha_p", 
 				"beta", "beta_error", "beta_p", "sobel", "sobel_SE", "sobel_P"]
 		if self.imai_and_keele: 
 			header = header + ["Prop_mediated_average_Estimate", "Prop_mediated_average_P_value", 
@@ -185,7 +189,8 @@ class MediationAnalysis:
 						med_rearranged = []
 						p_list = self.output_p[path_start][outcome][mediator]
 						if self.baron_and_kenny:
-							bk_rearranged = [self.output_sobel[path_start][outcome][mediator][0], p_list[0], self.output_sobel[path_start][outcome][mediator][2], p_list[1],
+							bk_rearranged = [1 - self.output_sobel[path_start][outcome][mediator][2] / float(self.output_sobel[path_start][outcome][mediator][0]),
+											self.output_sobel[path_start][outcome][mediator][0], p_list[0], self.output_sobel[path_start][outcome][mediator][2], p_list[1],
 											self.output_sobel[path_start][outcome][mediator][4], self.output_sobel[path_start][outcome][mediator][5], 
 											self.output_sobel[path_start][outcome][mediator][6], self.output_sobel[path_start][outcome][mediator][7], p_list[2],
 											self.output_sobel[path_start][outcome][mediator][9], self.output_sobel[path_start][outcome][mediator][10], p_list[3], 

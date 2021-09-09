@@ -23,7 +23,7 @@ try:
     from nltk.tree import ParentedTree
     from nltk.corpus import wordnet as wn
 except ImportError:
-    print("warning: unable to import nltk.tree or nltk.corpus or nltk.data")
+    print("Warning: unable to import nltk.tree or nltk.corpus or nltk.data")
 
     
 #infrastructure
@@ -44,7 +44,7 @@ try:
     from simplejson import loads
     import jsonrpclib
 except ImportError:
-    print("warning from FeatureExtractor: unable to import jsonrpclib or simplejson")
+    print("Warning: unable to import jsonrpclib or simplejson")
     pass
 try:
     from textstat.textstat import textstat
@@ -130,13 +130,14 @@ class FeatureExtractor(DLAWorker):
             Name of n-gram table: feat%ngram%corptable%correl_field%transform
         """
         ##NOTE: correl_field should have an index for this to be quick
-        tokenizer = Tokenizer(use_unicode=self.use_unicode)
+        tokenizer = Tokenizer(preserve_case = not lowercase_only, use_unicode=self.use_unicode)
 
         #debug:
         #print "valueFunc(30) = %f" % valueFunc(float(30)) #debug
 
         #CREATE TABLE:
         featureName = str(n)+'gram'
+        if not lowercase_only: featureName += 'Up'
         varcharLength = min((dlac.VARCHAR_WORD_LENGTH-(n-1))*n, 255)
         featureTableName = self.createFeatureTable(featureName, "VARCHAR(%d)"%varcharLength, 'INTEGER', tableName, valueFunc, extension = extension)
 
@@ -217,13 +218,14 @@ class FeatureExtractor(DLAWorker):
                     sys.exit()
                 while insert_idx_start < len(rows):
                     insert_rows = rows[insert_idx_start:min(insert_idx_end, len(rows))]
-                    #_warn("Inserting rows %d to %d... " % (insert_idx_start, insert_idx_end))
+                    #dlac.warn("Inserting rows %d to %d... " % (insert_idx_start, insert_idx_end)) #debug
+                    #dlac.warn(insert_rows) #debug
                     query.execute_query(insert_rows)
                     insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
                     insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
 
 
-
+                #meta feature table: 
                 query = self.qb.create_insert_query(featureTableName).set_values([("group_id",str(cf_id)),("feat",""),("value",""),("group_norm","")])
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:
@@ -297,9 +299,9 @@ class FeatureExtractor(DLAWorker):
         usql = """SELECT %s FROM %s GROUP BY %s""" % (
             self.correl_field, self.corptable, self.correl_field)
         msgs = 0 # keeps track of the number of messages read
-        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
+        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))#SSCursor woudl be better, but it loses connection
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        if len(cfRows)*n < dlac.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        if len(cfRows)*n < dlac.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
 
         #warnedMaybeForeignLanguage = False
         for cfRow in cfRows:
@@ -362,7 +364,7 @@ class FeatureExtractor(DLAWorker):
                 while insert_idx_start < len(rows):
                     insert_rows = rows[insert_idx_start:min(insert_idx_end, len(rows))]
                     #_warn("Inserting rows %d to %d... " % (insert_idx_start, insert_idx_end))
-                    mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, insert_rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode);
+                    mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, insert_rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file);
                     insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
                     insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
 
@@ -382,7 +384,7 @@ class FeatureExtractor(DLAWorker):
                     mfRows.append( ('_avg'+str(n)+'gramLength', avgGramLength, valueFunc(avgGramLength)) )
                     mfRows.append( ('_avg'+str(n)+'gramsPerMsg', avgGramsPerMsg, valueFunc(avgGramsPerMsg)) )
                     mfRows.append( ('_total'+str(n)+'grams', totalGrams, valueFunc(totalGrams)) )
-                    mm.executeWriteMany(self.corpdb, self.dbCursor, mfwsql, mfRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                    mm.executeWriteMany(self.corpdb, self.dbCursor, mfwsql, mfRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
                 # mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
 
@@ -390,7 +392,7 @@ class FeatureExtractor(DLAWorker):
 
         if len(cfRows)*n < dlac.MAX_TO_DISABLE_KEYS:
             dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
         dlac.warn("Done\n")
         return featureTableName
 
@@ -439,9 +441,9 @@ class FeatureExtractor(DLAWorker):
         usql = """SELECT %s FROM %s GROUP BY %s""" % (
             self.correl_field, self.corptable, self.correl_field)
         msgs = 0 # keeps track of the number of messages read
-        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
+        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))#SSCursor woudl be better, but it loses connection
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        if len(cfRows)*n < dlac.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        if len(cfRows)*n < dlac.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
 
         for cfRow in cfRows:
             cf_id = cfRow[0]
@@ -503,16 +505,16 @@ class FeatureExtractor(DLAWorker):
                     mfRows.append( ('_avg'+str(n)+'gramLength', avgGramLength, valueFunc(avgGramLength)) )
                     mfRows.append( ('_avg'+str(n)+'gramsPerMsg', avgGramsPerMsg, valueFunc(avgGramsPerMsg)) )
                     mfRows.append( ('_total'+str(n)+'grams', totalGrams, valueFunc(totalGrams)) )
-                    mm.executeWriteMany(self.corpdb, self.dbCursor, mfwsql, mfRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                    mm.executeWriteMany(self.corpdb, self.dbCursor, mfwsql, mfRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                 #print "\n\n\nROWS TO ADD!!"
                 #pprint(rows) #DEBUG
-                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
+                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, mysql_config_file=self.mysql_config_file)
 
         dlac.warn("Done Reading / Inserting.")
 
         if len(cfRows)*n < dlac.MAX_TO_DISABLE_KEYS:
             dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
         dlac.warn("Done\n")
         return featureTableName
 
@@ -527,13 +529,13 @@ class FeatureExtractor(DLAWorker):
             raise "Invalid collocation table name."
 
         has_column_query = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '{}' AND TABLE_NAME = '{}' AND COLUMN_NAME = '{}'".format(colloc_schema, colloc_table, pmi_filter_column)
-        res = mm.executeGetList(self.corpdb, self.dbCursor, has_column_query, charset=self.encoding, use_unicode=self.use_unicode)
+        res = mm.executeGetList(self.corpdb, self.dbCursor, has_column_query, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         has_pmi_column = len(res) > 0
         if has_pmi_column:
-            res = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT {} FROM {}.{} WHERE {} < {}".format(colloc_column, colloc_schema, colloc_table, pmi_filter_thresh, pmi_filter_column), charset=self.encoding, use_unicode=self.use_unicode)
+            res = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT {} FROM {}.{} WHERE {} < {}".format(colloc_column, colloc_schema, colloc_table, pmi_filter_thresh, pmi_filter_column), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         else:
             dlac.warn("No column named {} found.  Using all collocation in table.".format(pmi_filter_column))
-            res = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT {} FROM {}.{}".format(colloc_column, colloc_schema, colloc_table), charset=self.encoding, use_unicode=self.use_unicode)
+            res = mm.executeGetList(self.corpdb, self.dbCursor, "SELECT {} FROM {}.{}".format(colloc_column, colloc_schema, colloc_table), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         return [row[0] for row in res]
 
     def _countFeatures(self, collocSet, maxCollocSizeByFirstWord, message, tokenizer, freqs, lowercase_only=dlac.LOWERCASE_ONLY, includeSubCollocs=False):
@@ -654,9 +656,9 @@ class FeatureExtractor(DLAWorker):
         usql = """SELECT %s FROM %s GROUP BY %s""" % (
             self.correl_field, self.corptable, self.correl_field)
         msgs = 0 # keeps track of the number of messages read
-        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
+        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))#SSCursor woudl be better, but it loses connection
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
 
         for cfRow in cfRows:
             cf_id = cfRow[0]
@@ -698,13 +700,13 @@ class FeatureExtractor(DLAWorker):
                 else:
                     rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
 
-                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         dlac.warn("Done Reading / Inserting.")
 
         if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS:
             dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
         dlac.warn("Done\n")
         return featureTableName
 
@@ -747,7 +749,7 @@ class FeatureExtractor(DLAWorker):
 
         featureTableName = self.createFeatureTable(featureName, "VARCHAR(%d)"%varcharLength, 'INTEGER', tableName, valueFunc, correlField="INT(8)")
 
-        mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
         dlac.warn("extracting ngrams...")
 
         with gzip.open(gzCsv, 'rb') as gzFile:
@@ -821,7 +823,7 @@ class FeatureExtractor(DLAWorker):
             while insert_idx_start < len(rows):
                 insert_rows = rows[insert_idx_start:min(insert_idx_end, len(rows))]
                 dlac.warn( "Inserting rows %d to %d..."%(insert_idx_start, insert_idx_end) )
-                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, insert_rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, insert_rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                 insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
                 insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
 
@@ -830,7 +832,7 @@ class FeatureExtractor(DLAWorker):
         # _warn("This tokenizer took %d seconds"%((datetime.utcnow()-t1).seconds,))
 
         dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-        mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
         dlac.warn("Done\n")
 
         return featureTableName;
@@ -862,9 +864,9 @@ class FeatureExtractor(DLAWorker):
         usql = """SELECT %s FROM %s GROUP BY %s""" % (
             self.correl_field, self.corptable, self.correl_field)
         msgs = 0#keeps track of the number of messages read
-        cfRows = mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)#SSCursor woudl be better, but it loses connection
+        cfRows = mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#SSCursor woudl be better, but it loses connection
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
         for cfRow in cfRows:
             cf_id = cfRow[0]
             mids = set() #currently seen message ids
@@ -895,12 +897,12 @@ class FeatureExtractor(DLAWorker):
             wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
             totalInsts = float(totalInsts) #to avoid casting each time below
             rows = [(k, v, valueFunc((v / totalInsts))) for k, v in freqs.items() ] #adds group_norm and applies freq filter
-            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         dlac.warn("Done Reading / Inserting.")
 
         dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-        mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
         dlac.warn("Done\n")
         return featureTableName;
 
@@ -929,13 +931,13 @@ class FeatureExtractor(DLAWorker):
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
         parseTable = self.corptable+'_const'
-        assert mm.tableExists(self.corpdb, self.dbCursor, parseTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with phrase featrue extraction " % parseTable
+        assert mm.tableExists(self.corpdb, self.dbCursor, parseTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file), "Need %s table to proceed with phrase featrue extraction " % parseTable
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, parseTable, self.correl_field)
         msgs = 0#keeps track of the number of messages read
-        cfRows = mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)#SSCursor woudl be better, but it loses connection
+        cfRows = mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#SSCursor woudl be better, but it loses connection
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        mm.disableTableKeys(self.corpdb, self.dbCursor, taggedTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
-        mm.disableTableKeys(self.corpdb, self.dbCursor, phraseTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        mm.disableTableKeys(self.corpdb, self.dbCursor, taggedTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
+        mm.disableTableKeys(self.corpdb, self.dbCursor, phraseTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
         for cfRow in cfRows:
             cf_id = cfRow[0]
             mids = set() #currently seen message ids
@@ -978,17 +980,17 @@ class FeatureExtractor(DLAWorker):
 
             wsql = """INSERT INTO """+phraseTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
             phraseRows = [(k, v, valueFunc((v / totalPhrases))) for k, v in freqsPhrases.items()] #adds group_norm and applies freq filter
-            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, phraseRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, phraseRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
             wsql = """INSERT INTO """+taggedTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
             taggedRows = [(k, v, valueFunc((v / totalPhrases))) for k, v in freqsTagged.items()] #adds group_norm and applies freq filter
-            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, taggedRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, taggedRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         dlac.warn("Done Reading / Inserting.")
 
         dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-        mm.enableTableKeys(self.corpdb, self.dbCursor, taggedTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
-        mm.enableTableKeys(self.corpdb, self.dbCursor, phraseTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        mm.enableTableKeys(self.corpdb, self.dbCursor, taggedTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
+        mm.enableTableKeys(self.corpdb, self.dbCursor, phraseTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
         dlac.warn("Done\n")
         return phraseTableName;
 
@@ -1085,9 +1087,9 @@ class FeatureExtractor(DLAWorker):
         usql = """SELECT %s FROM %s GROUP BY %s""" % (
             self.correl_field, self.corptable, self.correl_field)
         msgs = 0 # keeps track of the number of messages read
-        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
+        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))#SSCursor woudl be better, but it loses connection
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
         for cfRow in cfRows:
             cf_id = cfRow[0]
 
@@ -1166,15 +1168,16 @@ class FeatureExtractor(DLAWorker):
                 else:
                     rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items()] #adds group_norm and applies freq filter
 
-                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         dlac.warn("Done Reading / Inserting.")
 
         if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS:
             dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
         dlac.warn("Done\n")
         return featureTableName
+
 
     def addEmbTable(self, modelName, tokenizerName, modelClass=None, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], keepMsgFeats = False, customTableName = None, valueFunc = lambda d: d):
         '''
@@ -1198,9 +1201,13 @@ class FeatureExtractor(DLAWorker):
         ##FIRST MAKE SURE SENTENCE TOKENIZED TABLE EXISTS:
         #sentTable = self.corptable+'_stoks' 
         #assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with Bert featrue extraction (run --add_sent_tokenized)" % sentTable
-        sentTok_onthefly = False if mm.tableExists(self.corpdb, self.dbCursor, self.corptable+'_stoks', charset=self.encoding, use_unicode=self.use_unicode) else True
+        
+        sentTok_onthefly = False if self.data_engine.tableExists(self.corptable+'_stoks') else True
         sentTable = self.corptable if sentTok_onthefly else self.corptable+'_stoks'
-        print (sentTable, sentTok_onthefly)
+        if sentTok_onthefly: dlac.warn("WARNING: run --add_sent_tokenized on the message table to avoid tokenizing it every time you generate embeddings")
+        
+
+        
         #if len(layerAggregations) > 1:
         #    dlac.warn("AddBert: !!Does not currently support more than one layer aggregation; only using first aggregation!!")
         #    layerAggregations = layerAggregations[:1]
@@ -1295,11 +1302,11 @@ class FeatureExtractor(DLAWorker):
         #SELECT / LOOP ON CORREL FIELD FIRST:
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
         msgs = 0#keeps track of the number of messages read
-        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
+        cfRows = FeatureExtractor.noneToNull(self.data_engine.execute_get_list(usql))#SSCursor woudl be better, but it loses connection
 
         ##iterate through correl_ids (group id):
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        mm.disableTableKeys(self.corpdb, self.dbCursor, embTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        self.data_engine.disable_table_keys(embTableName)#for faster, when enough space for repair by sorting
         lengthWarned = False #whether the length warning has been printed yet
         #Each User: ( #message aggregations, #layers, #Word aggregations, hidden size)
         for cfRow in cfRows:
@@ -1323,10 +1330,13 @@ class FeatureExtractor(DLAWorker):
                 try:
                     messageSents = loads(messageRow[1])
                 except NameError: 
-                    dlac.warn("Eror: Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
+                    dlac.warn("Error: Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
                     sys.exit(1)
                 except json.JSONDecodeError:
                     dlac.warn("WARNING: JSONDecodeError on %s. Skipping Message"%str(messageRow))
+                    continue
+                except:
+                    dlac.warn("Warning: cannot load message, skipping")
                     continue
 
                 if ((message_id not in mids) and (len(messageSents) > 0)):
@@ -1509,258 +1519,30 @@ class FeatureExtractor(DLAWorker):
                     for mid, msg in zip(midList, user_rep):
                         embRows.extend([(str(mid), str(k), v, valueFunc(v)) for (k, v) in enumerate(msg)])
                     wsql = """INSERT INTO """+embTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
-                    mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, embRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                    mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, embRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                     
                 else:#Applying message aggregations
                     for ag in aggregations:
                         thisAg = eval("np."+ag+"(user_rep, axis=0)")
                         embFeats.update([(str(k)+ag[:2], v) for (k, v) in enumerate(thisAg)])
                 
-                        wsql = """INSERT INTO """+embTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
-                        embRows = [(k, v, valueFunc(v)) for k, v in embFeats.items()] #adds group_norm and applies freq filter
-                        mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, embRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                        #wsql = """INSERT INTO """+embTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                        insert_idx_start = 0
+                        insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
+                        query = self.qb.create_insert_query(embTableName).set_values([("group_id",str(cf_id)),("feat",""),("value",""),("group_norm","")])
+                        embRows = [(k, float(v), valueFunc(float(v))) for k, v in embFeats.items()] #adds group_norm and applies freq filter
+                        while insert_idx_start < len(embRows):
+                            insert_rows = embRows[insert_idx_start:min(insert_idx_end, len(embRows))]
+                            query.execute_query(insert_rows)
+                            insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
+                            insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
+                        #self.data_engine.execute_write_many(wsql, embRows)
             
         dlac.warn("Done Reading / Inserting.")
         dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-        mm.enableTableKeys(self.corpdb, self.dbCursor, embTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        self.data_engine.enable_table_keys(embTableName)#rebuilds keys
         dlac.warn("Done\n")
-        return embTableName;            
-
-
-
-    # def addBERTTable(self, modelName = 'bert-base-uncased', aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], tableName = None, valueFunc = lambda d: d):
-    #     """Creates feature tuples (correl_field, feature, values) table where features are parsed phrases
-
-    #     Parameters
-    #     ----------
-    #     modelName : :obj:`str`, optional
-    #         name of the model to use.
-    #     aggregations : :obj:`lambda`, optional
-    #         Scales the features by the function given
-
-    #     Returns
-    #     -------
-    #     featTableName : str
-    #         Name of the Feature table
-    #     """
-    #     ##FIRST MAKE SURE SENTENCE TOKENIZED TABLE EXISTS:
-    #     sentTable = self.corptable+'_stoks'
-    #     assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with feature extraction (run --add_sent_tokenized)" % sentTable
-    #     if len(layerAggregations) > 1:
-    #         dlac.warn("AddFeat: !!Does not currently support more than one layer aggregation; only using first aggregation!!")
-    #         layerAggregations = layerAggregations[:1]
-
-        
-    #     #LOAD hugging face's pretrained Google Bert
-    #     try: 
-    #         import torch
-    #         from pytorch_transformers import BertTokenizer, BertModel, BertForMaskedLM, BertConfig, XLNetConfig, XLNetTokenizer, XLNetModel
-    #     except ImportError:
-    #         dlac.warn("warning: unable to import torch or pytorch_transformers")
-    #         dlac.warn("Please install pytorch and pytorch_transformers.")
-    #         sys.exit(1)
-
-    #     MODEL_CLASSES = {
-    #         'bert': (BertTokenizer, BertModel, BertConfig),
-    #         'xlnet': (XLNetTokenizer, XLNetModel, XLNetConfig)
-    #     }
-
-    #     # Extracting model type from model name
-    #     modelType = modelName.split('-')[0]
-    #     if MODEL_CLASSES.get(modelType) == None:
-    #         dlac.warn("Please select a valid model name")
-    #         sys.exit(1)
-
-    #     # Load pre-trained model tokenizer (vocabulary)
-    #     modelNameFull = modelName
-    #     modelName = modelName.strip('/').split('/')[-1]
-    #     if modelName[:3] == 'bas' or modelName[:3] == 'lar':
-    #         modelName = 'bert-'+modelName
-    #     layersToKeep = np.array(layersToKeep, dtype='int')
-    #     dlac.warn("Loading %s..." % modelName)
-
-    #     tokenizer_class, model_class, config_class = MODEL_CLASSES[modelType]
-    #     tokenizer = tokenizer_class.from_pretrained(modelName)
-
-    #     model = model_class.from_pretrained(modelName, output_hidden_states=True)
-    #     model.eval()
-
-    #     cuda = True
-    #     try:
-    #         model.to('cuda')
-    #     except:
-    #         dlac.warn("  unable to use CUDA (GPU) for BERT")
-    #         cuda = False
-    #     dlac.warn("Done.")
-        
-    #     #CREATE TABLEs and Names:
-    #     noc = ''
-    #     if noContext: noc = 'noc_'#adds noc to name if no context
-    #     modelPieces = modelName.split('-')
-    #     modelNameShort = modelPieces[0] + '_' + '_'.join([s[:2] for s in modelPieces[1:]])\
-    #                      + '_' + noc+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep])+''.join([str(ag[:2]) for ag in layerAggregations])
-    #     featTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', tableName, valueFunc)
-
-    #     #SELECT / LOOP ON CORREL FIELD FIRST:
-    #     usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
-    #     msgs = 0#keeps track of the number of messages read
-    #     cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
-
-    #     ##iterate through correl_ids (group id):
-    #     dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-    #     mm.disableTableKeys(self.corpdb, self.dbCursor, featTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
-    #     lengthWarned = False #whether the length warning has been printed yet
-    #     for cfRow in cfRows:
-    #         cf_id = cfRow[0]
-    #         mids = set() #currently seen message ids
-    #         bertMessageVectors = [] #holds the aggregated BERT features per message (to be aggregated further)
-
-    #         #grab sents by messages for that correl field:
-    #         for messageRow in self.getMessagesForCorrelField(cf_id, messageTable = sentTable, warnMsg=True):
-    #             message_id = messageRow[0]
-    #             try:
-    #                 messageSents = loads(messageRow[1])
-    #             except NameError: 
-    #                 dlac.warn("Eror: Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
-    #                 sys.exit(1)
-    #             except JSONDecodeError:
-    #                 dlac.warn("WARNING: JSONDecodeError on %s. Skipping Message"%str(messageRow))
-    #                 next
-
-    #             if not message_id in mids and len(messageSents) > 0:
-    #                 msgs+=1
-    #                 subMessages = []
-    #                 if noContext:#break up to run on one word at a time:               
-    #                     for s in messageSents:
-    #                         subMessages.extend([[word] for word in tokenizer.tokenize(s)])
-    #                 else: #keep context; one submessage
-    #                     subMessages=[messageSents]
-
-    #                 for sents in subMessages: #only matters for noContext)
-
-    #                     #Add tokens to BERT:
-    #                     sents[0] = '[CLS] ' + sents[0]
-    #                     #TODO: preprocess to remove newlines
-    #                     sentsTok = [bTokenizer.tokenize(s+' [SEP]') for s in sents]
-    #                     #print(sentsTok)#debug
-
-    #                     #check for overlength:
-    #                     i = 0
-    #                     while (i < len(sentsTok)):#while instead of for since array may change size
-    #                         if len(sentsTok[i]) > maxTokensPerSeg:
-    #                             newSegs = [sentsTok[i][j:j+maxTokensPerSeg]+['[SEP]'] for j in range(0, len(sentsTok[i]), maxTokensPerSeg)]
-    #                             newSegs[-1] = newSegs[-1][:-1] #remove last seperator
-    #                             if not lengthWarned:
-    #                                 dlac.warn("AddFeat: Some segments are too long; splitting up; first example: %s" % str(newSegs))
-    #                                 #lengthWarned = True
-    #                             sentsTok = sentsTok[:i] + newSegs + sentsTok[i+1:]
-    #                             i+=(len(newSegs) - 1)#skip ahead new segments
-    #                         i+=1
-
-    #                     #calculate for all pairs:
-    #                     encsPerSent = [[] for i in range(len(sentsTok))]#holds multiple encodings per sentence (based on first/second)
-    #                     for i in range(len(sentsTok)):
-    #                         thisPair = sentsTok[i:i+2]
-    #                         thisPairFlat = [t for s in thisPair for t in s]
-
-    #                         # Convert token to vocabulary indices
-    #                         indexedToks = tokenizer.convert_tokens_to_ids(thisPairFlat)
-    #                         # Define segs:
-    #                         segIds = [j for j in range(len(thisPair)) for x in thisPair[j]]
-    #                         #print(segIds) #debug
-
-    #                         # Convert inputs to PyTorch tensors
-    #                         toksTens = torch.tensor([indexedToks])
-    #                         segsTens = torch.tensor([segIds])
-                        
-    #                         if cuda: 
-    #                             try:
-    #                                 toksTens = toksTens.to('cuda')
-    #                                 segsTens = segsTens.to('cuda')
-    #                             except:
-    #                                 dlac.warn("! unable to use CUDA (gpus) for tensors even though it worked for model.")
-    #                         #print (toksTens, segsTens) #debug
-
-    #                         # Combine vectors of each select layers; store as first sent and second sent:
-    #                         with torch.no_grad():
-    #                             output = model(toksTens, token_type_ids=segsTens)
-    #                             encAllLayers = output[2]
-                                
-    #                             #save layers:
-    #                             encSelectLayers = []
-    #                             for lyr in layersToKeep:
-    #                                 encSelectLayers.append(encAllLayers[int(lyr)].detach().cpu().numpy())
-
-    #                             #aggregate layers:
-    #                             for lagg in layerAggregations: #TODO: support more than one
-    #                                 if lagg == 'concatenate':#axis 2
-    #                                     #concatenate (this may have a bug?):
-    #                                     twoSentEnc = np.concatenate(encSelectLayers, axis=2) 
-    #                                 else: #along axis 0
-    #                                     twoSentEnc = eval("np."+lagg+"(encSelectLayers, axis=0)")
-
-    #                                 if (i < (len(sentsTok) - 1)) or (len(sentsTok) == 1):
-    #                                     sent1enc = twoSentEnc[:,:len(thisPair[0])]
-    #                                     encsPerSent[i].append(sent1enc)
-    #                                 if (i+1) < len(sentsTok):
-    #                                     sent2enc = twoSentEnc[:,len(thisPair[0]):]
-    #                                     encsPerSent[i+1].append(sent2enc)
-
-    #                     #Aggregate the (up to 2; one as first; one as second) vectors per sentence
-    #                     sentEncs = []
-    #                     #print(encsPerSent)#debug
-    #                     for i in range(len(sentsTok)):
-    #                         sentEncPerWord = np.mean(encsPerSent[i], axis=0)[0]
-
-
-    #                         #aggregate words into setence:
-    #                         #TODO: ADD option to use CLS token instead (first token)
-    #                         #sentEncs.append(np.mean(sentEncPerWord, axis=0)) #TODO: consider more than mean?
-    #                         singleSentEnc = np.array([[]])
-    #                         for wAgg in wordAggregations:
-    #                             #print(wAgg, "  sentEncPerWord", sentEncPerWord.shape)#debug
-    #                             if wAgg == 'concatenate':
-    #                                 assert (len(wordAggregations)<2), "can't use multiple word aggs with concat"
-    #                                 singleSentEnc = np.append(singleSentEnc, np.concatenate(sentEncPerWord))
-    #                             else:
-    #                                 #print("BEFORE singleSentEnc", singleSentEnc.shape)#debug
-    #                                 singleSentEnc = np.append(singleSentEnc, eval("np."+wAgg+"(sentEncPerWord, axis=0)"))
-    #                                 #print("AFTER singleSentEnc", singleSentEnc.shape)#debug
-    #                         sentEncs.append(singleSentEnc)
-    #                     #print([(p[0], p[1].shape) for p in zip(sentsTok, sentEncs)])#debug
-
-    #                     #Aggregate across sentences:
-    #                     #print(sentEncs)#debug
-    #                     if wordAggregations == ['concatenate']:
-    #                         bertMessageVectors.append(np.concatenate(sentEncs, axis=0)) 
-    #                     else:
-    #                         bertMessageVectors.append(np.mean(sentEncs, axis=0)) #TODO: consider more than mean?
-
-
-    #                     if msgs % int(dlac.PROGRESS_AFTER_ROWS/5) == 0: #progress update
-    #                         dlac.warn("Messages Read: %.2f k" % (msgs/1000.0))
-    #                     mids.add(message_id)
-
-
-    #         #Aggregate message vectors:
-    #         if len(bertMessageVectors) > 0:
-    #             embFeats = dict()
-    #             for ag in aggregations:
-    #                 thisAg = eval("np."+ag+"(bertMessageVectors, axis=0)")
-    #                 embFeats.update([(str(k)+ag[:2], v) for (k, v) in enumerate(thisAg)])
-
-    #             #print(embFeats)#debug            
-    #             #write phrases to database (no need for "REPLACE" because we are creating the table)
-    #             wsql = """INSERT INTO """+featTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
-    #             embRows = [(k, v, valueFunc(v)) for k, v in embFeats.items()] #adds group_norm and applies freq filter
-    #             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, embRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
-
-    #     dlac.warn("Done Reading / Inserting.")
-
-    #     dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-    #     mm.enableTableKeys(self.corpdb, self.dbCursor, featTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
-    #     dlac.warn("Done\n")
-    #     return featTableName;
+        return embTableName;       
 
     
     def addFleschKincaidTable(self, tableName = None, valueFunc = lambda d: d, removeXML = True, removeURL = True):
@@ -1800,9 +1582,9 @@ class FeatureExtractor(DLAWorker):
         usql = """SELECT %s FROM %s GROUP BY %s""" % (
             self.correl_field, self.corptable, self.correl_field)
         msgs = 0 # keeps track of the number of messages read
-        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
+        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))#SSCursor woudl be better, but it loses connection
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
 
         for cfRow in cfRows:
             cf_id = cfRow[0]
@@ -1836,13 +1618,13 @@ class FeatureExtractor(DLAWorker):
                 avg_score = mean(scores)
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
                 rows = [("m_fk_score", avg_score, valueFunc(avg_score))] #adds group_norm and applies freq filter
-                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         dlac.warn("Done Reading / Inserting.")
 
         if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS:
             dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
         dlac.warn("Done\n")
         return featureTableName
 
@@ -1881,7 +1663,7 @@ class FeatureExtractor(DLAWorker):
         correlField : :obj:`str`, optional
             Correlation Field (AKA Group Field): The field which features are aggregated over
         extension : :obj:`str`, optional
-            ?????
+            Sting appended to end of table name
 
         """
         if not correlField:
@@ -1904,7 +1686,7 @@ class FeatureExtractor(DLAWorker):
                     warn("feature extractor: unable to check if category name can support _intercept")
 
             else:
-                if valueFunc:
+                if valueFunc and round(valueFunc(16)) != 16:
                     tableName += '$' + str(16)+'to'+"%d"%round(valueFunc(16))
             if extension:
                 tableName += '$' + extension
@@ -1981,8 +1763,8 @@ class FeatureExtractor(DLAWorker):
         sql = """CREATE TABLE IF NOT EXISTS %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
                 term VARCHAR(140), category ENUM(%s), weight DOUBLE, INDEX(term), INDEX(category)) CHARACTER SET %s COLLATE %s ENGINE=%s""" % (tableName, enumCats, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()], dlac.DEF_MYSQL_ENGINE)
         #run sql
-        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode)
-        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         return tableName
 
@@ -2013,7 +1795,7 @@ class FeatureExtractor(DLAWorker):
 
         feat_cat_weight = dict()
         sql = "SELECT * FROM %s.%s"%(self.lexicondb, lexiconTableName)
-        rows = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        rows = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         categories = set()
         lexiconHasWildCard = False
         warnedAboutWeights = False
@@ -2062,21 +1844,21 @@ class FeatureExtractor(DLAWorker):
 
         for feat in feat_cat_weight:
             sql = """SELECT feat, avg(group_norm) FROM %s WHERE feat LIKE "%s" """ % (wordTable, mm.MySQLdb.escape_string(feat))
-            attributeRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)[0]
+            attributeRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)[0]
             if attributeRows[0]:
                 rows = [(feat, topic, str(feat_cat_weight[feat][topic]*attributeRows[1])) for topic in feat_cat_weight[feat]]
 
             rowsToInsert.extend(rows)
 
             if len(rowsToInsert) > dlac.MYSQL_BATCH_INSERT_SIZE:
-                mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                 rowsToInsert = []
             featIdCounter += 1
             if featIdCounter % reporting_int == 0:
                 dlac.warn("%d out of %d features processed; %2.2f complete"%(featIdCounter, len(feat_cat_weight), float(featIdCounter)/len(feat_cat_weight)))
 
         if len(rowsToInsert) > 0:
-            mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
             rowsToInsert = []
             dlac.warn("%d out of %d features processed; %2.2f complete"%(featIdCounter, len(feat_cat_weight), float(featIdCounter)/len(feat_cat_weight)))
 
@@ -2116,12 +1898,17 @@ class FeatureExtractor(DLAWorker):
         #1. word -> set(category) dict
         #2. Get length for varchar column
         feat_cat_weight = dict()
-        sql = "SELECT * FROM %s.%s"%(self.lexicondb, lexiconTableName)
-        rows = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        if self.db_type == "sqlite":
+            self.data_engine.execute("attach '%s.db' as lexiconDB"%(self.lexicondb))
+            sql = "SELECT * FROM lexiconDB.%s"%(lexiconTableName)
+        else:
+            sql = "SELECT * FROM %s.%s"%(self.lexicondb, lexiconTableName)
+        rows = self.data_engine.execute_get_list(sql)
+        #rows = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         categories = set()
         lexiconHasWildCard = False
         warnedAboutWeights = False
-        max_category_string_length = -1
+        max_category_string_length = len("_intercept") # previously -1
         for row in rows:
             #e.g. (2, "bored", "E-")
             #OR   (2, "bored", "E-", "1")
@@ -2172,18 +1959,23 @@ class FeatureExtractor(DLAWorker):
         wordTable = self.getWordTable()
         dlac.warn("WORD TABLE %s"%(wordTable,))
 
-        assert mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode), "Need to create word table to extract the lexicon: %s" % wordTable
+        assert self.data_engine.tableExists(wordTable), "Need to create word table to extract the lexicon: %s" % wordTable
+        #assert mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file), "Need to create word table to extract the lexicon: %s" % wordTable
         sql = "SELECT DISTINCT group_id FROM %s" % wordTable
-        groupIdRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
+        groupIdRows = self.data_engine.execute_get_list(sql)
+        #groupIdRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         #5. disable keys on that table if we have too many entries
         #if (len(categories)* len(groupIdRows)) < dlac.MAX_TO_DISABLE_KEYS:
-        mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode) #for faster, when enough space for repair by sorting
+        self.data_engine.disable_table_keys(tableName)
+        #mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file) #for faster, when enough space for repair by sorting
 
         #6. iterate through source feature table by group_id (fixed, column name will always be group_id)
         rowsToInsert = []
 
-        isql = "INSERT IGNORE INTO "+tableName+" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"
+        isql = self.qb.create_insert_query(tableName).set_values([("group_id",""),("feat",""),("value",""),("group_norm","")])
+        #isql = "INSERT IGNORE INTO "+tableName+" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"
+
         reporting_percent = 0.01
         reporting_int = max(floor(reporting_percent * len(groupIdRows)), 1)
         groupIdCounter = 0
@@ -2201,7 +1993,8 @@ class FeatureExtractor(DLAWorker):
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id = %d"%(wordTable, groupId)
 
             try:
-                attributeRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
+                attributeRows = self.data_engine.execute_get_list(sql)
+                #attributeRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
             except:
                 print(groupId)
                 sys.exit()
@@ -2268,11 +2061,20 @@ class FeatureExtractor(DLAWorker):
             # Using the value and applying the featValueFunction to the value and the UWT separately
             # rows = [(gid, k.encode('utf-8'), cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+(v / totalFunctionSumForThisGroupId))) for k, v in cat_to_function_summed_weight.iteritems()]
 
+            
+            if _intercepts:
+                for k, v in _intercepts.items():
+                    try:
+                        cat_to_function_summed_weight_gn[k] += v
+                    except KeyError:
+                        cat_to_summed_value[k] = 0
+                        cat_to_function_summed_weight_gn[k] = v
+
             # Applying the featValueFunction to the group_norm,
             if self.use_unicode:
-                rows = [(gid, k, cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+v)) for k, v in cat_to_function_summed_weight_gn.items()]
+                rows = [(gid, k, cat_to_summed_value[k], valueFunc(v)) for k, v in cat_to_function_summed_weight_gn.items()]
             else:
-                rows = [(gid, k.encode('utf-8'), cat_to_summed_value[k], valueFunc(_intercepts.get(k,0)+v)) for k, v in cat_to_function_summed_weight_gn.items()]
+                rows = [(gid, k.encode('utf-8'), cat_to_summed_value[k], valueFunc(v)) for k, v in cat_to_function_summed_weight_gn.items()]
             
             # if lex has *no* intercept, add '_intercept' for each group_id
             if not _intercepts: rows.append((gid, '_intercept', 1, 1.0))
@@ -2282,7 +2084,9 @@ class FeatureExtractor(DLAWorker):
             # Check if size is big enough for a batch insertion (10,000?), if so insert and clear list
             rowsToInsert.extend(rows)
             if len(rowsToInsert) > dlac.MYSQL_BATCH_INSERT_SIZE:
-                mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                isql.execute_query(rowsToInsert)
+                #self.data_engine.execute_write_many(isql, rowsToInsert)
+                #mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                 rowsToInsert = []
             groupIdCounter += 1
             if groupIdCounter % reporting_int == 0:
@@ -2290,13 +2094,15 @@ class FeatureExtractor(DLAWorker):
 
         #7. if any data in the data_to_insert rows, insert the data and clear the list
         if len(rowsToInsert) > 0:
-            mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+            isql.execute_query(rowsToInsert)
+            #mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
             rowsToInsert = []
             dlac.warn("%d out of %d group Id's processed; %2.2f complete"%(groupIdCounter, len(groupIdRows), float(groupIdCounter)/len(groupIdRows)))
 
         #8. enable keys on the new feature table
         #if (len(categories)* len(groupIdRows)) < dlac.MAX_TO_DISABLE_KEYS:
-        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        self.data_engine.enable_table_keys(tableName)
+        #mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
 
         #9. exit with success, return the newly created feature table
         return tableName
@@ -2331,12 +2137,12 @@ class FeatureExtractor(DLAWorker):
         #3. grab all distinct group ids
         wordTable = self.getWordTable()
         dlac.warn("WORD TABLE %s"%(wordTable,))
-        assert mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode), "Need to create word table to apply groupThresh: %s" % wordTable
+        assert mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file), "Need to create word table to apply groupThresh: %s" % wordTable
         sql = "SELECT DISTINCT group_id FROM %s"%wordTable
-        groupIdRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
+        groupIdRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         #4. disable keys on that table if we have too many entries
-        mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
 
         #5. iterate through source feature table by group_id (fixed, column name will always be group_id)
         rowsToInsert = []
@@ -2357,7 +2163,7 @@ class FeatureExtractor(DLAWorker):
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id LIKE '%s'"%(wordTable, groupId)
             else:
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id = %d"%(wordTable, groupId)
-            attributeRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
+            attributeRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
             totalFunctionSumForThisGroupId = float(0.0)
             for (gid, feat, value, group_norm) in attributeRows:
@@ -2400,7 +2206,7 @@ class FeatureExtractor(DLAWorker):
                 rows = [(gid, k.encode('utf-8'), cncpt_to_summed_value[k], valueFunc((v / totalFunctionSumForThisGroupId))) for k, v in cncpt_to_function_summed_value.items()]
             rowsToInsert.extend(rows)
             if len(rowsToInsert) > dlac.MYSQL_BATCH_INSERT_SIZE:
-                mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                 rowsToInsert = []
             groupIdCounter += 1
             if groupIdCounter % reporting_int == 0:
@@ -2408,11 +2214,11 @@ class FeatureExtractor(DLAWorker):
 
         #6. if any data in the data_to_insert rows, insert the data and clear the list
         if len(rowsToInsert) > 0:
-            mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
             rowsToInsert = []
 
         #7. enable keys on the new feature table
-        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
 
         #8. exit with success, return the newly created feature table
         return tableName
@@ -2448,18 +2254,20 @@ class FeatureExtractor(DLAWorker):
         #3. grab all distinct group ids
         wordTable = self.getWordTable()
         dlac.warn("WORD TABLE %s"%(wordTable,))
-        assert mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode), "Need to create 1gram 16to16 table to apply groupThresh: %s" % wordTable
+        assert mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file), "Need to create 1gram with default scaling (16to16) table to apply groupThresh: %s" % wordTable
 
         #3.2 check that the POS table exists
         if not pos_table:
-            pos_table = "feat$1gram_pos$%s$%s$16to16" %(self.corptable, self.correl_field)
+            pos_table = "feat$1gram_pos$%s$%s" %(self.corptable, self.correl_field)
+            if not mm.tableExists(self.corpdb, self.dbCursor, wordTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file):
+                pos_table = "feat$1gram_pos$%s$%s$16to16" %(self.corptable, self.correl_field)
         dlac.warn("POS TABLE: %s"%(pos_table,))
-        assert mm.tableExists(self.corpdb, self.dbCursor, pos_table, charset=self.encoding, use_unicode=self.use_unicode), "Need to create POS table to apply functionality: %s" % pos_table
+        assert mm.tableExists(self.corpdb, self.dbCursor, pos_table, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file), "Need to create POS table to apply functionality: %s" % pos_table
         sql = "SELECT DISTINCT group_id FROM %s"%pos_table
-        groupIdRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
+        groupIdRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         #4. disable keys on that table if we have too many entries
-        mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
 
         #5. iterate through source feature table by group_id (fixed, column name will always be group_id)
         rowsToInsert = []
@@ -2480,7 +2288,7 @@ class FeatureExtractor(DLAWorker):
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id LIKE '%s'"%(pos_table, groupId)
             else:
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id = %d"%(pos_table, groupId)
-            attributeRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode)
+            attributeRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
             totalFunctionSumForThisGroupId = float(0.0)
             for (gid, feat, value, group_norm) in attributeRows:
@@ -2533,7 +2341,7 @@ class FeatureExtractor(DLAWorker):
             rowsToInsert.extend(rows)
 
             if len(rowsToInsert) > dlac.MYSQL_BATCH_INSERT_SIZE:
-                mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                 rowsToInsert = []
             groupIdCounter += 1
             if groupIdCounter % reporting_int == 0:
@@ -2541,11 +2349,11 @@ class FeatureExtractor(DLAWorker):
 
         #6. if any data in the data_to_insert rows, insert the data and clear the list
         if len(rowsToInsert) > 0:
-            mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, isql, rowsToInsert, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
             rowsToInsert = []
 
         #7. enable keys on the new feature table
-        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
 
         #8. exit with success, return the newly created feature table
         return tableName
@@ -2586,12 +2394,12 @@ class FeatureExtractor(DLAWorker):
         posMessageTable = self.corptable
         if posMessageTable[-4:] != '_pos':
             posMessageTable = self.corptable+'_pos'
-        assert mm.tableExists(self.corpdb, self.dbCursor, posMessageTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with pos featrue extraction " % posMessageTable
+        assert mm.tableExists(self.corpdb, self.dbCursor, posMessageTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file), "Need %s table to proceed with pos featrue extraction " % posMessageTable
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, posMessageTable, self.correl_field)
         msgs = 0#keeps track of the number of messages read
-        cfRows = mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode)#SSCursor woudl be better, but it loses connection
+        cfRows = mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#SSCursor woudl be better, but it loses connection
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        mm.disableTableKeys(self.corpdb, self.dbCursor, posFeatTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        mm.disableTableKeys(self.corpdb, self.dbCursor, posFeatTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
         for cfRow in cfRows:
             cf_id = cfRow[0]
             mids = set() #currently seen message ids
@@ -2614,7 +2422,10 @@ class FeatureExtractor(DLAWorker):
                         if keep_words:
                             dlac.warn("keep words not implemented yet for tweetpos tags")
                         else:##TODO: Debug; make sure this works
-                            pos_list = loads(pos_message)['tags']
+                            try:
+                                pos_list = loads(pos_message)['tags'] 
+                            except:
+                                pos_list = []
                     else:
                         #find poses in message
                         if keep_words:
@@ -2649,14 +2460,14 @@ class FeatureExtractor(DLAWorker):
             if alter_table:
                 dlac.warn("WARNING: varchar length of feat column is too small, adjusting table.")
                 alter_sql = """ALTER TABLE %s CHANGE COLUMN `feat` `feat` VARCHAR(%s)""" %(posFeatTableName, min_varchar_length)
-                mm.execute(self.corpdb, self.dbCursor, alter_sql, charset=self.encoding, use_unicode=self.use_unicode)
+                mm.execute(self.corpdb, self.dbCursor, alter_sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                 alter_table = False
-            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, phraseRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, phraseRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         dlac.warn("Done Reading / Inserting.")
 
         dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-        mm.enableTableKeys(self.corpdb, self.dbCursor, posFeatTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        mm.enableTableKeys(self.corpdb, self.dbCursor, posFeatTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
         dlac.warn("Done\n")
         return posFeatTableName;
 
@@ -2692,17 +2503,17 @@ class FeatureExtractor(DLAWorker):
         outcomeFeatTableName = self.createFeatureTable(name, "VARCHAR(24)", 'DOUBLE', tableName, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
-        mm.disableTableKeys(self.corpdb, self.dbCursor, outcomeFeatTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        mm.disableTableKeys(self.corpdb, self.dbCursor, outcomeFeatTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
         for outcome, values in allOutcomes.items():
             dlac.warn("  On %s"%outcome)
             wsql = """INSERT INTO """+outcomeFeatTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
             phraseRows = [(k, outcome, v, valueFunc(v)) for k, v in values.items()] #adds group_norm and applies freq filter
-            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, phraseRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, phraseRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         dlac.warn("Done Inserting.")
 
         dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-        mm.enableTableKeys(self.corpdb, self.dbCursor, outcomeFeatTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+        mm.enableTableKeys(self.corpdb, self.dbCursor, outcomeFeatTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
         dlac.warn("Done\n")
         return outcomeFeatTableName;
 
@@ -2745,9 +2556,9 @@ class FeatureExtractor(DLAWorker):
             self.correl_field, self.corptable, self.correl_field)
         msgs = 0#keeps track of the number of messages read
         toWrite = [] #group_id, feat, value(and groupnorm)
-        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
+        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))#SSCursor woudl be better, but it loses connection
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
+        if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
         written = 0
         for cfRow in cfRows:
             cf_id = cfRow[0]
@@ -2822,21 +2633,21 @@ class FeatureExtractor(DLAWorker):
             #write if enough
             if len(toWrite) > 1000:
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
-                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                 written += len(toWrite)
                 toWrite = []
                 print("  added %d timex mean or std offsets" % written)
 
         if len(toWrite) > 0:
             wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
-            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
             written += len(toWrite)
             print("  added %d timex mean or std offsets" % written)
         dlac.warn("Done Reading / Inserting.")
 
         if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS:
             dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
         dlac.warn("Done\n")
         return featureTableName;
 
@@ -2880,11 +2691,11 @@ class FeatureExtractor(DLAWorker):
         msgs = 0#keeps track of the number of messages read
         toWrite = [] #group_id, feat, value(and groupnorm)
         posToWrite = [] #group_id, feat, value(and groupnorm)
-        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode))#SSCursor woudl be better, but it loses connection
+        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))#SSCursor woudl be better, but it loses connection
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
         if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS:
-            mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#for faster, when enough space for repair by sorting
-            mm.disableTableKeys(self.corpdb, self.dbCursor, posTableName, charset=self.encoding, use_unicode=self.use_unicode)
+            mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
+            mm.disableTableKeys(self.corpdb, self.dbCursor, posTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         written = 0
         posWritten = 0
         cfs = 0
@@ -2981,14 +2792,14 @@ class FeatureExtractor(DLAWorker):
             #write if enough
             if len(toWrite) > 200:
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
-                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                 written += len(toWrite)
                 toWrite = []
                 print("  TIMEX: added %d records (%d %ss)" % (written, cfs, self.correl_field))
 
             if len(posToWrite) > 2000:
                 wsql = """INSERT INTO """+posTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
-                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, posToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, posToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                 posWritten += len(posToWrite)
                 posToWrite = []
                 print("  TPOS: added %d records (%d %ss)" % (posWritten, cfs, self.correl_field))
@@ -2997,22 +2808,22 @@ class FeatureExtractor(DLAWorker):
         #WRITE Remaining:
         if len(toWrite) > 0:
             wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
-            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, toWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
             written += len(toWrite)
             print("  TIMEX: added %d records (%d %ss)" % (written, cfs, self.correl_field))
         dlac.warn("Done Reading / Inserting.")
 
         if len(posToWrite) > 0:
             wsql = """INSERT INTO """+posTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
-            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, posToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode)
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, posToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
             posWritten += len(posToWrite)
             posToWrite = []
             print("  TPOS: added %d records (%d %ss)" % (posWritten, cfs, self.correl_field))
 
         if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS:
             dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
-            mm.enableTableKeys(self.corpdb, self.dbCursor, posTableName, charset=self.encoding, use_unicode=self.use_unicode)#rebuilds keys
+            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
+            mm.enableTableKeys(self.corpdb, self.dbCursor, posTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
         dlac.warn("Done\n")
         return featureTableName;
 

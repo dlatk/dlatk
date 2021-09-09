@@ -51,19 +51,19 @@ This step generates a quantitative summary of a body of text.  It basically does
 .. code-block:: bash
 
 	##EXPECTED OUTPUT TABLES 
-	#feat$1gram$msgs_xxx$user_id$16to16
-	#feat$2gram$msgs_xxx$user_id$16to16
-	#feat$3gram$msgs_xxx$user_id$16to16
-	#feat$1to3gram$msgs_xxx$user_id$16to16
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_ngrams -n 1 2 3 --combine_feat_tables 1to3gram
+	#feat$1gram$msgs_xxx$user_id
+	#feat$2gram$msgs_xxx$user_id
+	#feat$3gram$msgs_xxx$user_id
+	#feat$1to3gram$msgs_xxx$user_id
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -g user_id --add_ngrams -n 1 2 3 --combine_feat_tables 1to3gram
 
 The above command will produce four tables: one for each 'n' and then a table which combines everything (the 1gram, 2gram and 3gram tables). Next we will remove rare features from the combined table using the following:
 
 .. code-block:: bash
 
 	##EXPECTED OUTPUT TABLES 
-	#feat$1to3gram$msgs_xxx$user_id$16to16$0_05
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id -f 'feat$1to3gram$msgs_xxx$user_id$16to16' --feat_occ_filter --set_p_occ 0.05 --group_freq_thresh 500
+	#feat$1to3gram$msgs_xxx$user_id$0_05
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -g user_id -f 'feat$1to3gram$msgs_xxx$user_id' --feat_occ_filter --set_p_occ 0.05 --group_freq_thresh 500
 
 This command removes any feature used by less than 5% of groups. Note that we are using the :doc:`../fwinterface/fwflag_group_freq_thresh` flag as well which says we are only looking at groups with at least 500 words.
 
@@ -82,7 +82,7 @@ To view the columns in your feature table use the following **mysql** command:
 
 .. code-block:: mysql
 
-	describe feat$1gram$msgs_xxx$user_id$16to16;
+	describe feat$1gram$msgs_xxx$user_id;
 
 This will give you the following output
 
@@ -110,7 +110,7 @@ To view the features tables use the following command in **mysql**. This will sh
 
 .. code-block:: mysql
 
-	mysql> select * from dla_tutorial.feat$1gram$msgs_xxx$user_id$16to16 limit 10;
+	mysql> select * from dla_tutorial.feat$1to3gram$msgs_xxx$user_id limit 10;
 	+----+----------------------------------+-----------+-------+----------------------+
 	| id | group_id                         | feat      | value | group_norm           |
 	+----+----------------------------------+-----------+-------+----------------------+
@@ -130,14 +130,14 @@ You can also compare the sizes of the two tables to see the effect of --feat_occ
 
 .. code-block:: mysql
 
-	mysql> select count(distinct feat) from dla_tutorial.feat$1gram$msgs_xxx$user_id$16to16;
+	mysql> select count(distinct feat) from dla_tutorial.feat$1to3gram$msgs_xxx$user_id;
 	+----------------------+
 	| count(distinct feat) |
 	+----------------------+
 	|                65593 |
 	+----------------------+
 
-	mysql> select count(distinct feat) from dla_tutorial.feat$1gram$msgs_xxx$user_id$16to16$0_1;
+	mysql> select count(distinct feat) from dla_tutorial.feat$1to3gram$msgs_xxx$user_id$0_05;
 	+----------------------+
 	| count(distinct feat) |
 	+----------------------+
@@ -150,7 +150,7 @@ Given the definition of group norm above, what would you expect to get if you su
 
 .. code-block:: mysql
 
-	select group_id, sum(group_norm) from dla_tutorial.feat$1gram$msgs_xxx$user_id$16to16 group by group_id limit 10;
+	select group_id, sum(group_norm) from dla_tutorial.feat$1gram$msgs_xxx$user_id group by group_id limit 10;
 
 Generate 1to3-gram Features
 ---------------------------
@@ -160,13 +160,13 @@ Now we will generate a 1-3 gram table which will contain all 1grams, 2grams 3gra
 .. code-block:: bash
 
 	##EXPECTED OUTPUT TABLES 
-	#feat$1gram$msgs_xxx$user_id$16to16
-	#feat$2gram$msgs_xxx$user_id$16to16
-	#feat$3gram$msgs_xxx$user_id$16to16
-	#feat$1to3gram$msgs_xxx$user_id$16to16
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_ngrams -n 1 2 3 --combine_feat_tables 1to3gram
+	#feat$1gram$msgs_xxx$user_id
+	#feat$2gram$msgs_xxx$user_id
+	#feat$3gram$msgs_xxx$user_id
+	#feat$1to3gram$msgs_xxx$user_id
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -g user_id --add_ngrams -n 1 2 3 --combine_feat_tables 1to3gram
 
-The argument to the :doc:`../fwinterface/fwflag_combine_feat_tables` flag is used to name the combined table. We used 1to3gram which have us the feature table feat$1to3gram$msgs_xxx$user_id$16to16. 
+The argument to the :doc:`../fwinterface/fwflag_combine_feat_tables` flag is used to name the combined table. We used 1to3gram which have us the feature table feat$1to3gram$msgs_xxx$user_id. 
 
 Generate Lexicon (topic) Features
 ---------------------------------
@@ -198,7 +198,7 @@ Since this lexica was produced using a data driven approach we make no attempt t
 
 	# EXPECTED OUTPUT TABLE
 	# feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_lex_table -l met_a30_2000_cp --weighted_lexicon
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -g user_id --add_lex_table -l met_a30_2000_cp --weighted_lexicon
 
 Brief descriptions of the flags:
 
@@ -206,7 +206,7 @@ Brief descriptions of the flags:
 * :doc:`../fwinterface/fwflag_l`: 
 * :doc:`../fwinterface/fwflag_weighted_lexicon`: 
 
-Note - dlatk pieces together the expected name of the 1gram table using the information you give it in the -d, -t, and -c options 
+Note - dlatk pieces together the expected name of the 1gram table using the information you give it in the -d, -t, and -g options 
 Note - in the table name *met_a30_2000_cp*, met stands for messages english tokenizen, a30 stands for alpha = 30 (a tuning parameter in the LDA process) and 2000 means there are 2000 topics.
 
 In general use the following syntax (*dlatk_lexica* is a database where all of our lexica are stored):
@@ -214,7 +214,7 @@ In general use the following syntax (*dlatk_lexica* is a database where all of o
 .. code-block:: bash
 
 	## GENERAL SYNTAX FOR CREATING LEXICON FEATURE TABLES
-	dlatkInterface.py -d <db> -t <msg_tbl> -c <grp_col> --add_lex_table -l <topic_tbl_from_dlatk_lexica> [--weighted_lexicon]
+	dlatkInterface.py -d <database> -t <message_table> -g <group_column> --add_lex_table -l <topic_tbl_from_dlatk_lexica> [--weighted_lexicon]
 
 Again, you can view the tables with the following **mysql** commands:
 
@@ -236,7 +236,7 @@ Before we take a look at language correlates we first look at our outcomes and t
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs -c user_id \
+	dlatkInterface.py -d dla_tutorial -t msgs -g user_id \
 	--correlate --csv --rmatrix --sort --outcome_table blog_outcomes \
 	--outcomes age gender is_student is_education is_technology \
 	--outcome_with_outcome_only --output ~/correlations
@@ -284,8 +284,8 @@ Next we look at language correlates and begin with 1to3grams:
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
-	-f 'feat$1to3gram$msgs_xxx$user_id$16to16$0_05' \ 
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -g user_id \ 
+	-f 'feat$1to3gram$msgs_xxx$user_id$0_05' \ 
 	--outcome_table blog_outcomes  --group_freq_thresh 500 \ 
 	--outcomes age gender --output_name xxx_output \ 
 	--tagcloud --make_wordclouds
@@ -306,7 +306,7 @@ Finally using the Facebook topics and creating topic tag clouds:
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -g user_id \ 
 	-f 'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra' \ 
 	--outcome_table blog_outcomes  --group_freq_thresh 500 \ 
 	--outcomes age gender --output_name fbtopic_output \ 
@@ -326,7 +326,7 @@ The following line will be printed to the screen:
 
 	Yielding norms with zeros (1000 groups * 2000 feats).
 
-This tells us that we have 1000 users (since our -c field is user_id) each with 2000 features. The 2000 features comes from the fact that we are working with 2000 Facebook topics.  Looking in MySQL we see that we have 500 users total in our dataset:
+This tells us that we have 1000 users (since our -g field is user_id) each with 2000 features. The 2000 features comes from the fact that we are working with 2000 Facebook topics.  Looking in MySQL we see that we have 500 users total in our dataset:
 
 .. code-block:: mysql
 

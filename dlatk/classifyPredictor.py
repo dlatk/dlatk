@@ -845,6 +845,7 @@ class ClassifyPredictor:
                         reportStats['acc'] = accuracy_score(ytrue, ypred)
                         reportStats['f1'] = f1_score(ytrue, ypred, average='macro')
                         reportStats['auc']= computeAUC(ytrue, ypredProbs, multiclass,  classes = classes)
+                        reportStats['auc_p'] = permutation_1tail_on_aucs(ytrue, np.array(ypredProbs), multiclass, classes)
                         reportStats['precision'] = precision_score(ytrue, ypred, average='macro')
                         reportStats['recall'] = recall_score(ytrue, ypred, average='macro')
                         reportStats['recall_micro'] = recall_score(ytrue, ypred, average='micro')
@@ -862,7 +863,7 @@ class ClassifyPredictor:
                         reportStats['mfclass_acc'] = testCounter[mfclass] / float(len(ytrue))
 
                         if controlCombineProbs:#ensemble with controls (AUC weighted)
-                            reportStats['auc_p'] = 1.0
+                            reportStats['auc_p_v_cntrls'] = 1.0
                             reportStats['auc_cntl_comb2'] = 0.0#add columns so csv always has same
                             reportStats['auc_cntl_comb2_t'] = 0.0
                             reportStats['auc_cntl_comb2_p'] = 1.0
@@ -872,12 +873,12 @@ class ClassifyPredictor:
                                 try:
                                     langOnlyScores = scores[outcomeName][()][1]
                                     cntrlYtrue, YPredProbs, YCntrlProbs = alignDictsAsy(outcomes, langOnlyScores['predictionProbs'], savedControlPProbs)
-                                    langOnlyScores['auc_p'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)
+                                    langOnlyScores['auc_p_v_cntrls'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)
                                 except KeyError:
                                     print("unable to find saved lang only probabilities")
                                 #straight up auc, p value:
                                 cntrlYtrue, YPredProbs, YCntrlProbs = alignDictsAsy(outcomes, predictionProbs, savedControlPProbs)
-                                reportStats['auc_p'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)
+                                reportStats['auc_p_v_cntrls'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)
                                 #ensemble auc: 
                                 newProbsDict = ensembleNFoldAUCWeight(outcomes, [predictionProbs, savedControlPProbs], groupFolds)
                                 ensYtrue, ensYPredProbs, ensYCntrlProbs = alignDictsAsy(outcomes, newProbsDict, savedControlPProbs)
@@ -2799,6 +2800,7 @@ def paired_wilcoxon_on_errors(newprobs, oldprobs, ytrue):
 
 def paired_permutation_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 3000):
     #computes p-value based on permutation test (an exact test)
+    #this is not correct; do not use. 
     n = len(ytrue)
     target_auc = computeAUC(ytrue, newprobs, multiclass,  classes = classes)
 
@@ -2817,8 +2819,24 @@ def paired_permutation_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False
     #print("\n-----\n", p, bootstrap_1tail_on_aucs_bothprobs(newprobs[:,-1], oldprobs[:,-1], ytrue, multiclass, classes, iters))
     return p
 
+def permutation_1tail_on_aucs(ytrue, ypredProbs, multiclass=False, classes=None, iters=8000):
+    #computes p-value based on permuation
+    n = len(ytrue) 
+    ytrue = np.array(ytrue)
+    target_auc = computeAUC(ytrue, ypredProbs, multiclass,  classes = classes)
+    criteria_met = 0 #counts how frequent old auc surpassed new auc
+    allids = np.random.randint(n, size=(iters, n))
+    for i in range(iters):
+        this_probs = np.random.permutation(ypredProbs)
+        this_newauc = computeAUC(ytrue, this_probs, multiclass,  classes = classes)
+        if this_newauc > target_auc:
+            criteria_met += 1
+    return criteria_met / float(iters)
+
+    
+
 def paired_bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 8000):
-    #computes p-value based on bootstrap which generally is less ideal than permutation test
+    #computes p-value based on paired bootstrap 
     n = len(ytrue)
     ytrue = np.array(ytrue)
     criteria_met = 0 #counts how frequent old auc surpassed new auc

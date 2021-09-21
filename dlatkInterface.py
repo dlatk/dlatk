@@ -1940,7 +1940,7 @@ def main(fn_args = None):
                               tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc', 'auc_cntl_comb2', 'auc_cntl_comb2_p']]))
                     else:
                         print("     + LANG: acc: %.3f, f1: %.3f, auc: %.3f (p_vs_controls = %.4f)" %\
-                              tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc', 'auc_p']]))
+                              tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc', 'auc_p_v_cntrls']]))
                         mfc = wLangData[1]['mfclass_acc']
             print("   (mfc_acc: %.3f)"%mfc)
 

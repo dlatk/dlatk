@@ -37,7 +37,7 @@ def get_db_engine(db_schema, charset=DEF_ENCODING, mysql_config_file = MYSQL_CON
             break
         except Exception as e:
             attempts += 1
-            warn(" *MYSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db, e, attempts))
+            warn(" *MYSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db_schema, e, attempts))
             time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
             if (attempts > MAX_ATTEMPTS):
                 sys.exit(1)

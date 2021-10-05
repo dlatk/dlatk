@@ -14,6 +14,8 @@ try:
     import MySQLdb.cursors
     from sqlalchemy import create_engine
     from sqlalchemy.engine.url import URL
+    import sqlalchemy 
+    sqlalchemy_version = sqlalchemy.__version__
 except:
     pass
 
@@ -24,17 +26,30 @@ def get_db_engine(db_schema, charset=DEF_ENCODING, mysql_config_file = MYSQL_CON
     attempts = 0;
     while (1):
         try:
-            db_url = URL.create(drivername='mysql', port=port,
-                database=db_schema,
-                query={
-                    'read_default_file' : mysql_config_file,
-                    'charset': charset
-                })
-            if stream:
-                eng = create_engine(url=db_url, connect_args={'cursorclass': MySQLdb.cursors.SSCursor}, pool_recycle=600)
+            if sqlalchemy_version >= '1.4':
+                db_url = URL.create(drivername='mysql', port=port,
+                    database=db_schema,
+                    query={
+                        'read_default_file' : mysql_config_file,
+                        'charset': charset
+                    })
+                if stream:
+                    eng = create_engine(url=db_url, connect_args={'cursorclass': MySQLdb.cursors.SSCursor}, pool_recycle=600)
+                else:
+                    eng = create_engine(url=db_url)
+                break
             else:
-                eng = create_engine(url=db_url)
-            break
+                db_url = URL(drivername='mysql', port=port,
+                    database=db_schema,
+                    query={
+                        'read_default_file' : mysql_config_file,
+                        'charset': charset
+                    })
+                if stream:
+                    eng = create_engine(name_or_url=db_url, connect_args={'cursorclass': MySQLdb.cursors.SSCursor}, pool_recycle=600)
+                else:
+                    eng = create_engine(name_or_url=db_url)
+                break
         except Exception as e:
             attempts += 1
             warn(" *MYSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db_schema, e, attempts))

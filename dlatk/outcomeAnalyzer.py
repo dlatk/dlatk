@@ -2607,7 +2607,14 @@ class OutcomeAnalyzer(OutcomeGetter):
         output += "</tr></table>\n"
         output += '<a href="#top">Back to top</a>'
         output += '</div>'
-        print(output.encode("utf-8"), file=outputFilePtr)
+        
+        try:
+            print(output, file=outputFilePtr)
+        except:
+            try:
+                print(output.encode("utf-8"), file=outputFilePtr)
+            except Exception as e:
+                warn("ERROR in printing html: ", e)
 
     @staticmethod
     def outputSortedCorrelHTML(correlMatrix, pValue = True, nValue = True, cInt = True, freq=False, outputFilePtr = sys.stdout, metric = 'r'):
@@ -2713,8 +2720,16 @@ class OutcomeAnalyzer(OutcomeGetter):
         output += "</table>\n"
         output += '<div id="bottomSorted"><a href="#top">Back to top</a> or go <a href="#sorted">back to top of sorted features</a></div>'
         output += '</div>'
-        print(output.encode("utf-8"), file=outputFilePtr)
-        print("</p>", file=outputFilePtr)
+
+        try:
+            print(output, file=outputFilePtr)
+            print("</p>", file=outputFilePtr)
+        except:
+            try:
+                print(output.encode("utf-8"), file=outputFilePtr)
+                print("</p>", file=outputFilePtr)
+            except Exception as e:
+                warn("ERROR in printing html: ", e)
 
     def printSignificantCoeffs(self, coeffs, outputFile = None, outputFormat='tsv', sort = False, pValue = True, nValue = False, maxP = dlac.DEF_P, paramString = None):
         dlac.warn("Generating Significant Coeffs.")

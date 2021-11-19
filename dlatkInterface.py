@@ -1244,14 +1244,14 @@ def main(fn_args = None):
             create_name = '{}_cp'.format(args.lda_lexicon_name)
 
             print('Adding topic lexicon: {}'.format(create_name))
-            lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name])
+            lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name, '--lexicondb', args.lexicondb])
             lex_interface.processArgs(lex_interface_args)
 
             topic_file = os.path.join(args.save_lda_files, 'lda.freq.threshed50.loglik.csv')
             create_name = '{}_freq_t50ll'.format(args.lda_lexicon_name)
 
             print('Adding topic lexicon: {}'.format(create_name))
-            lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name])
+            lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name, '--lexicondb', args.lexicondb])
             lex_interface.processArgs(lex_interface_args)
         print('LDA topics estimated. Files saved in {}.'.format(args.save_lda_files))
 

@@ -471,6 +471,7 @@ def main(fn_args = None):
     group.add_argument('--add_embedding', '--add_emb_feat',  '--add_bert', action='store_true', dest='embaddfeat',
                        help='add BERT mean features (optionally add min, max, --bert_model large)')
     group.add_argument('--lexicon_normalization', '--lex_norm', '--dict_norm', action='store_true', help='Use weighting over lexicon terms (instead of over all terms).')
+    group.add_argument('--multicategory_normalization', '--liwc_normalization', '--liwc_norm', action='store_true', help='Use weighting over lexicon terms across terms in all categories. Similar to --lexicon_normalization but totals are across all lexicon categories.')
 
 
     group = parser.add_argument_group('Messages Transformation Actions', '')
@@ -1047,10 +1048,12 @@ def main(fn_args = None):
 
     if args.addlextable:
         if not fe: fe = FE()
+        if args.multicategory_normalization and not args.lexicon_normalization:
+            args.lexicon_normalization = True
         args.feattable = fe.addLexiconFeat(args.lextable, lowercase_only=args.lowercaseonly,
                                            valueFunc=args.valuefunc, isWeighted=args.weightedlexicon,
                                            featValueFunc=args.lexvaluefunc, extension=args.extension,
-                                           lexicon_weighting=args.lexicon_normalization)
+                                           lexicon_weighting=args.lexicon_normalization, multicategory_weighting=args.multicategory_normalization)
 
     if args.addcorplextable:
         if not args.lextable:

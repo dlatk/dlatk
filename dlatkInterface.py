@@ -2003,8 +2003,16 @@ def main(fn_args = None):
             print("----- Detected a classifier")
             lexicon_dict = cp.getWeightsForFeaturesAsADict()  #returns featTable -> category -> term -> weight
 
-        lex_dict_with_name = {args.classToLex: v for featTableName,v in lexicon_dict.items()} if args.classToLex else {args.regrToLex: v for featTableName,v in lexicon_dict.items()}
-        # print lex_dict_with_name.items()
+        lexicon_name = args.classToLex if args.classToLex else args.regrToLex
+        lex_dict_with_name = dict()
+        for featTableName, v in lexicon_dict.items():
+            for outcome, coefs in v.items():
+                if lexicon_name not in lex_dict_with_name:
+                    lex_dict_with_name[lexicon_name] = dict()
+                outcomes_dict = lex_dict_with_name[lexicon_name]
+                if outcome not in outcomes_dict:
+                    outcomes_dict[outcome] = dict()
+                outcomes_dict[outcome].update(coefs)
         for lexName, lexicon in lex_dict_with_name.items():
             lex = lexInterface.WeightedLexicon(lexicon, mysql_config_file=args.mysqlconfigfile)
             lex.createWeightedLexiconTable('dd_'+lexName)

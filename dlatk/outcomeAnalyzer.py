@@ -1986,7 +1986,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             tw = topicWords.get(topic)
             if not tw:
                 print("**The following topic had no words from the topic lexicion**")
-                print(("[Topic Id: %s, %s: %.3f, p: %.4f, N: %d, CI: (%.4f, %.4f), Freq: %d]" % (topic, metric, r, p, n, ci[0], ci[1], freq)).decode("utf-8"))
+                print(("[Topic Id: %s, %s: %.3f, p: %.4f, N: %d, CI: (%.4f, %.4f), Freq: %d]" % (topic, metric, r, p, n, ci[0], ci[1], freq)))
                 continue
 
             if duplicateFilter:

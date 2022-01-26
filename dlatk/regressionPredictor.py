@@ -28,7 +28,7 @@ from sklearn.linear_model import Ridge, RidgeCV, LinearRegression, Lasso, LassoC
     ElasticNet, ElasticNetCV, Lars, LassoLars, LassoLarsCV, SGDRegressor,  \
     PassiveAggressiveRegressor
 from sklearn.svm import SVR
-from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV 
+from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV
 from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF, FactorAnalysis
 from sklearn import metrics
 from sklearn.feature_selection import f_regression, RFE, SelectPercentile, SelectKBest, \
@@ -39,8 +39,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.linear_model.base import LinearModel
 from sklearn.base import RegressorMixin
 from sklearn.exceptions import NotFittedError
+from sklearn.neural_network import MLPClassifier
 
-#modified sklearns: 
+#modified sklearns:
 from .occurrenceSelection import OccurrenceThreshold
 #from .pca_mod import RandomizedPCA #allows percentage input
 
@@ -64,7 +65,7 @@ from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, DEFAULT_RANDOM_SEED, wa
 
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
-    if not keys: 
+    if not keys:
         keys = frozenset(list(y.keys()))
         if sparse:
             keys = keys.intersection([item for sublist in X for item in sublist]) #union X keys
@@ -101,8 +102,8 @@ def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
             return (sparseX, array(listy), keys)
         else:
             return (sparseX, array(listy))
-        
-    else: 
+
+    else:
         listX = [[x[k] for x in X] for k in keys]
         if returnKeyList:
             return (array(listX), array(listy), keys)
@@ -111,7 +112,7 @@ def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
 
 def alignDictsAsXyz(X, y, z, sparse = False, returnKeyList = False, keys = None):
     """turns a list of dicts for x and a dict for y and z into a matrix X and vectors y and z"""
-    if not keys: 
+    if not keys:
         keys = frozenset(list(set(y.keys()).union(z.keys())))
         if sparse:
             keys = keys.intersection([item for sublist in X for item in sublist]) #union X keys
@@ -156,8 +157,8 @@ def alignDictsAsXyz(X, y, z, sparse = False, returnKeyList = False, keys = None)
             return (sparseX, array(listy), array(listz), keys)
         else:
             return (sparseX, array(listy), array(listz))
-        
-    else: 
+
+    else:
         listX = [[x[k] for x in X] for k in keys]
         if returnKeyList:
             return (array(listX), array(listy), array(listz), keys)
@@ -166,7 +167,7 @@ def alignDictsAsXyz(X, y, z, sparse = False, returnKeyList = False, keys = None)
 
 def alignDictsAsy(y, *yhats, **kwargs):
     keys = None
-    if not keys in kwargs: 
+    if not keys in kwargs:
         keys = frozenset(list(y.keys()))
         for yhat in yhats:
             keys = keys.intersection(list(yhat.keys()))
@@ -174,13 +175,13 @@ def alignDictsAsy(y, *yhats, **kwargs):
         keys = kwargs['keys']
     listy = [y[k] for k in keys]
     listyhats = []
-    for yhat in yhats: 
+    for yhat in yhats:
         listyhats.append([yhat[k] for k in keys])
     return tuple([listy]) + tuple(listyhats)
 
 class RegressionPredictor:
     """Handles prediction of continuous outcomes
-    
+
     Attributes
     ----------
     cvParams : dict
@@ -190,16 +191,16 @@ class RegressionPredictor:
     modelToCoeffsName : dict
 
     cvJobs : int
-    
+
     cvFolds : int
-    
+
     chunkPredictions : boolean
         whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
-    maxPredictAtTime : int 
+    maxPredictAtTime : int
 
     backOffPerc : float
         when the num_featrue / training_insts is less than this backoff to backoffmodel
-    
+
     backOffModel : str
 
     featureSelectionString : str or None
@@ -230,11 +231,11 @@ class RegressionPredictor:
     """
 
     #cross validation parameters:
-    # Model Parameters 
+    # Model Parameters
     cvParams = {
         'linear': [{'fit_intercept':[True]}],
         'ridge': [
-            {'alpha': [1]}, 
+            {'alpha': [1]},
         ],
         'ridge100000': [
             {'alpha': [100000]},
@@ -249,16 +250,16 @@ class RegressionPredictor:
             {'alpha': [250]}, #PCA counties
         ],
         'ridge1m': [
-            {'alpha': [1000000]}, 
+            {'alpha': [1000000]},
         ],
         'ridge10m': [
-            {'alpha': [10000000]}, 
+            {'alpha': [10000000]},
         ],
         'ridge100': [{'alpha': [100]}],
         'ridge10': [{'alpha': [10]}],
         'ridge1': [{'alpha': [1]}],
         'ridgecv': [
-            #{'alphas': np.array([100000, 500000, 250000, 25000, 10000, 2500, 1000, 100, 10])}, 
+            #{'alphas': np.array([100000, 500000, 250000, 25000, 10000, 2500, 1000, 100, 10])},
             #{'alphas': np.array([100000, 500000, 250000, 25000, 10000])},
             #{'alphas': np.array([250000, 100000, 1000000, 2500000, 10000000, 25000000, 100000000])}, #personality, n-grams + 2000 topics
             #{'alphas': np.array([1, .01, .0001, 100, 10000, 1000000])}, #first-pass
@@ -267,7 +268,7 @@ class RegressionPredictor:
             #{'alphas': np.array([1000, 10000, 100000, 1000000])}, #user-level low num users (~5k) or counties
             #{'alphas': np.array([1000, 100, 10000, 10, 1])}, #county achd (need low for controls)
             #{'alphas': np.array([10000, 100000, 1000, 1000000, 100])}, #message quality
-            #{'alphas': np.array([1, .1, .01, .001, .0001, .00001, .000001])} 
+            #{'alphas': np.array([1, .1, .01, .001, .0001, .00001, .000001])}
             #{'alphas': np.array([.01, .001, .1, 1, 10, .0001])} #message-level rel_freq no std
             #{'alphas': np.array([.001])},
             #{'alphas': np.array([100, 1000, 10])},
@@ -285,16 +286,16 @@ class RegressionPredictor:
             ],
 
         'ridgefirstpasscv': [
-            {'alphas': np.array([1, .01, .0001, 100, 10000, 1000000])}, 
+            {'alphas': np.array([1, .01, .0001, 100, 10000, 1000000])},
             ],
         'ridgehighcv': [
-            {'alphas': np.array([10,100, 1.0, 1000, 10000, 100000, 1000000])}, 
+            {'alphas': np.array([10,100, 1.0, 1000, 10000, 100000, 1000000])},
         ],
         'ridgelowcv': [
-            {'alphas': np.array([.01, .1, .001, 1, .0001, .00001])}, 
+            {'alphas': np.array([.01, .1, .001, 1, .0001, .00001])},
         ],
         'ridgeveryhighcv': [
-            {'alphas': np.array([100000, 1000000, 10000, 10000000, 100000000, 1000000000])}, 
+            {'alphas': np.array([100000, 1000000, 10000, 10000000, 100000000, 1000000000])},
         ],
         'rpcridgecv': [
             #{'alphas': np.array([100, 1000, 10000]), 'component_percs':np.array([.01, .02154, .0464, .1, .2154, .464, 1])}, #standard
@@ -303,44 +304,44 @@ class RegressionPredictor:
             {'alphas': np.array([.00001]), 'component_percs': np.array([.01, .02154, .0464, .1, .2154, .464, 1])}, #one penalization
             ],
         'lasso': [
-            #{'alpha': [10000, 25000, 1000, 2500, 100, 250, 1, 25, .01, 2.5, .01, .25, .001, .025, .0001, .0025, .00001, .00025, 100000, 250000, 1000000]}, 
-            #{'alpha': [0.1, 0.01, 0.001, 0.0001], 'max_iter':[1500]}, 
-           #{'alpha': [10000, 100, 1, 0.1, 0.01, 0.001, 0.0001]}, 
+            #{'alpha': [10000, 25000, 1000, 2500, 100, 250, 1, 25, .01, 2.5, .01, .25, .001, .025, .0001, .0025, .00001, .00025, 100000, 250000, 1000000]},
+            #{'alpha': [0.1, 0.01, 0.001, 0.0001], 'max_iter':[1500]},
+           #{'alpha': [10000, 100, 1, 0.1, 0.01, 0.001, 0.0001]},
             {'alpha': [0.001], 'max_iter':[1500]}, #1to3gram, personality (best => 0.01, fi=true: .158)
             ],
         'lassocv': [
-            #{'alpha': [10000, 25000, 1000, 2500, 100, 250, 1, 25, .01, 2.5, .01, .25, .001, .025, .0001, .0025, .00001, .00025, 100000, 250000, 1000000]}, 
+            #{'alpha': [10000, 25000, 1000, 2500, 100, 250, 1, 25, .01, 2.5, .01, .25, .001, .025, .0001, .0025, .00001, .00025, 100000, 250000, 1000000]},
             #{'n_alphas': [24], 'max_iter':[2200]}, #final county-level prediction
-            #{'n_alphas': [15], 'max_iter':[1500]}, 
+            #{'n_alphas': [15], 'max_iter':[1500]},
             #{'n_alphas': [12], 'max_iter':[1300]}, #message-level perma/swl
             {'n_alphas': [12], 'max_iter':[2200]},
             #{'n_alphas': [9], 'max_iter':[1100]}, #min-decent results
             #{'n_alphas': [4], 'max_iter':[800]}, #quick test
             ],
         'elasticnet': [
-            #{'alpha': [10000, 25000, 1000, 2500, 100, 250, 1, 25, .01, 2.5, .01, .25, .001, .025, .0001, .0025, .00001, .00025, 100000, 250000, 1000000]}, 
-            #{'alpha': [10000, 100, 1, 0.1, 0.01, 0.001, 0.0001], 'max_iter' : [2000]}, 
-            #{'alpha': [0.01], 'max_iter' : [1500]}, 
-            #{'alpha': [0.1, 0.01, 0.001], 'max_iter' : [1500]}, 
-            {'alpha': [0.001], 'max_iter' : [1500], 'l1_ratio': [0.8]}, 
+            #{'alpha': [10000, 25000, 1000, 2500, 100, 250, 1, 25, .01, 2.5, .01, .25, .001, .025, .0001, .0025, .00001, .00025, 100000, 250000, 1000000]},
+            #{'alpha': [10000, 100, 1, 0.1, 0.01, 0.001, 0.0001], 'max_iter' : [2000]},
+            #{'alpha': [0.01], 'max_iter' : [1500]},
+            #{'alpha': [0.1, 0.01, 0.001], 'max_iter' : [1500]},
+            {'alpha': [0.001], 'max_iter' : [1500], 'l1_ratio': [0.8]},
             ],
         'elasticnetcv': [
-            #{'alpha': [10000, 25000, 1000, 2500, 100, 250, 1, 25, .01, 2.5, .01, .25, .001, .025, .0001, .0025, .00001, .00025, 100000, 250000, 1000000]}, 
-            #{'n_alphas': [10], 'max_iter':[1600], 'l1_ratio' : [.1, .5, .7, .9, .95, .99, 1]}, 
-            #{'n_alphas': [11], 'max_iter':[1300], 'l1_ratio' : [.95], 'n_jobs': [10]}, 
-            {'n_alphas': [100], 'max_iter':[5000], 'l1_ratio':np.array([1., .99, 0.975, .95, .9, .75, .5, .1, .05, 0.025, .01, 0.]), 'n_jobs':[10], 'verbose':[1], 'cv':[10]}, 
-            #{'n_alphas': [9], 'max_iter':[1100], 'l1_ratio' : [.95], 'n_jobs': [6]}, 
-            #{'n_alphas': [7], 'max_iter':[1100], 'l1_ratio' : [.95], 'n_jobs': [6]}, 
+            #{'alpha': [10000, 25000, 1000, 2500, 100, 250, 1, 25, .01, 2.5, .01, .25, .001, .025, .0001, .0025, .00001, .00025, 100000, 250000, 1000000]},
+            #{'n_alphas': [10], 'max_iter':[1600], 'l1_ratio' : [.1, .5, .7, .9, .95, .99, 1]},
+            #{'n_alphas': [11], 'max_iter':[1300], 'l1_ratio' : [.95], 'n_jobs': [10]},
+            {'n_alphas': [100], 'max_iter':[5000], 'l1_ratio':np.array([1., .99, 0.975, .95, .9, .75, .5, .1, .05, 0.025, .01, 0.]), 'n_jobs':[10], 'verbose':[1], 'cv':[10]},
+            #{'n_alphas': [9], 'max_iter':[1100], 'l1_ratio' : [.95], 'n_jobs': [6]},
+            #{'n_alphas': [7], 'max_iter':[1100], 'l1_ratio' : [.95], 'n_jobs': [6]},
             ],
         'lars': [
-            {}, 
+            {},
             ],
         'lassolars': [
-            #{'alpha': [10000, 100, 1, 0.1, 0.01, 0.001, 0.0001]}, 
-            {'alpha': [1, 0.1, 0.01, 0.001, 0.0001]}, 
+            #{'alpha': [10000, 100, 1, 0.1, 0.01, 0.001, 0.0001]},
+            {'alpha': [1, 0.1, 0.01, 0.001, 0.0001]},
             ],
         'lassolarscv': [
-            {'max_n_alphas': [60], 'max_iter':[1000]}, 
+            {'max_n_alphas': [60], 'max_iter':[1000]},
             ],
 
         'svr': [
@@ -361,7 +362,11 @@ class RegressionPredictor:
             #{'C': [.01], 'random_state': [DEFAULT_RANDOM_SEED], 'verbose': [1], 'shuffle': [False], 'epsilon': [0.01], 'n_iter': [10]},
             {'C': [.01, .1, .001], 'random_state': [DEFAULT_RANDOM_SEED], 'verbose': [1], 'shuffle': [False], 'epsilon': [0.01, .1, 1], 'n_iter': [10]},
             ],
-        
+        'mlp': [ #multi-layer perceptron
+            #{'alpha': [0.1, 0.001, 1.0, 0.01, 10, 100], 'solver': ['lbfgs'], 'hidden_layer_sizes':[(30,10)], 'random_state': [DEFAULT_RANDOM_SEED]},
+            {'alpha': np.logspace(-1.5, 1.5, 5), 'learning_rate_init': [0.001], 'solver': ['sgd'], 'hidden_layer_sizes':[(10,10)], 'max_iter': [500], 'n_iter_no_change': [10], 'random_state': [DEFAULT_RANDOM_SEED]},
+            ],
+
        }
     modelToClassName = {
         'lasso' : 'Lasso',
@@ -392,8 +397,9 @@ class RegressionPredictor:
         'sgdregressor': 'SGDRegressor',
         'extratrees': 'ExtraTreesRegressor',
         'par': 'PassiveAggressiveRegressor',
+        'mlp' : 'MLPRegressor',
         }
-    
+
     modelToCoeffsName = {
         'lasso' : 'coef_',
         'lassocv' : 'coef_',
@@ -423,8 +429,9 @@ class RegressionPredictor:
         'extratrees': 'feature_importances_',
         'par': 'coef_',
         'randomizedlasso': 'scores_'
+        'mlp' : 'coefs_',
         }
-    #cvJobs = 3 #when lots of data 
+    #cvJobs = 3 #when lots of data
     #cvJobs = 6 #normal
     cvJobs = 8 #resource-heavy
     cvFolds = 3
@@ -448,7 +455,7 @@ class RegressionPredictor:
     #featureSelectionString = 'OccurrenceThreshold(threshold=1.5)'
     #featureSelectionString = 'Pipeline([("univariate_select", SelectPercentile(f_regression, 33)), ("L1_select", RandomizedLasso(random_state=42, n_jobs=self.cvJobs))])'
     #featureSelectionString = 'Pipeline([("1_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("2_rpca", RandomizedPCA(n_components=max(min(int(X.shape[1]*.10), int(X.shape[0]/max(1.5,len(self.featureGetters)))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3))])'
-    
+
 
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=max(int(X.shape[0]/max(1.5,len(self.featureGetters))), min(50, X.shape[1])), random_state=42, whiten=False, iterated_power=3, svd_solver="randomized"))])'
     #featureSelectionString = 'Pipeline([("1_mean_value_filter", OccurrenceThreshold(threshold=(X.shape[0]/100.0))), ("2_univariate_select", SelectFwe(f_regression, alpha=60.0)), ("3_rpca", RandomizedPCA(n_components=(X.shape[0]/4), random_state=42, whiten=False, iterated_power=3))])'
@@ -467,7 +474,7 @@ class RegressionPredictor:
     #featureSelectionString = 'PCA(n_components=0.99, whiten=False)'
     #featureSelectionString = 'PCA(n_components=0.95, whiten=False)'
     #featureSelectionString = 'VERPCA(n_components=0.999, whiten=False, max_components_ratio = min(1, X.shape[0]/float(X.shape[1])))'
-    #featureSelectionString = 'KernelPCA(n_components=int(X.shape[1]*.02), kernel="rbf", degree=3, eigen_solver="auto")'  
+    #featureSelectionString = 'KernelPCA(n_components=int(X.shape[1]*.02), kernel="rbf", degree=3, eigen_solver="auto")'
     #featureSelectionString = \
     #    'MiniBatchSparsePCA(n_components=int(X.shape[1]*.05), random_state=42, alpha=0.01, chunk_size=20, n_jobs=self.cvJobs)'
 
@@ -479,7 +486,7 @@ class RegressionPredictor:
     randomState = DEFAULT_RANDOM_SEED #percentage of sample to use as test set (the rest is training)
     #randomState = 64 #percentage of sample to use as test set (the rest is training)
 
-    trainingSize = 1000000 #if this is smaller than the training set, then it will be reduced to this. 
+    trainingSize = 1000000 #if this is smaller than the training set, then it will be reduced to this.
 
     def __init__(self, og, fgs, modelName = 'ridge', outliersToMean = None, n_components=None):
         #initialize regression predictor
@@ -507,11 +514,11 @@ class RegressionPredictor:
 
         self.n_components = n_components #number of components for feature selection
         """int: Docstring *after* attribute, with type specified."""
-        
-        self.outcomeNames = [] 
+
+        self.outcomeNames = []
         """list: Holds a list of the outcomes in sorted order."""
 
-        self.featureNames = [] 
+        self.featureNames = []
         """list: Holds the order the features are expected in."""
 
         self.featureLengthDict = dict()
@@ -581,7 +588,7 @@ class RegressionPredictor:
                 #potential source of bug: if a sparse feature table doesn't have all the groups it should
         #XGroups = XGroups & groups #probably unnecessary since groups was given when grabbing features (in which case one could just use groups)
         XGroups = XGroups.union(groups) #probably unnecessary since groups was given when grabbing features (in which case one could just use groups)
-        
+
         ################################
         #2b) setup control data:
         controlValues = list(allControls.values())
@@ -619,7 +626,7 @@ class RegressionPredictor:
 
             #############
             #4) fit model
-            if saveFeatures: 
+            if saveFeatures:
                 (self.regressionModels[outcomeName], self.multiScalers[outcomeName], self.multiFSelectors[outcomeName], featureX) = \
                                                                                                                                     self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights, returnX=True)
                 csvFeatureFile = outputName+'.'+outcomeName+'.train.features.csv'
@@ -628,7 +635,7 @@ class RegressionPredictor:
                 np.savetxt(csvFeatureFile, featureXwithGroups, delimiter=",") #TO EXPORT FEATURE SELECTED FEATURES
                 featureX = None #allow to clear memory, just in case
 
-            else: 
+            else:
                 (self.regressionModels[outcomeName], self.multiScalers[outcomeName], self.multiFSelectors[outcomeName]) = \
                                                                                                                           self._multiXtrain(multiXtrain, ytrain, standardize, sparse = sparse, weightedSample = sampleWeights)
             if trainBootstraps:
@@ -649,7 +656,7 @@ class RegressionPredictor:
                         (self.regressionModels[bsOutcomeName], self.multiScalers[bsOutcomeName], self.multiFSelectors[bsOutcomeName]) = \
                                                                                                                             self._multiXtrain(bsMultiX, bsY, standardize, sparse = False, weightedSample = None)
                         bsi += 1
-                    
+
 
         print("\n[TRAINING COMPLETE]\n")
         self.featureNamesList = featureNamesList
@@ -659,7 +666,7 @@ class RegressionPredictor:
     ## Old testing Method (random split rather than cross-val)
     def test(self, standardize = True, sparse = False, saveModels = False, blacklist = None, groupsWhere = ''):
         """Tests classifier, by pulling out random testPerc percentage as a test set"""
-        
+
         print()
         print("USING BLACKLIST: %s" %str(blacklist))
         #1. get data possible ys (outcomes)
@@ -668,7 +675,7 @@ class RegressionPredictor:
 
         #2. get data for X:
         (groupNorms, featureNames) = (None, None)
-        if len(self.featureGetters) > 1: 
+        if len(self.featureGetters) > 1:
             print("\n!!! WARNING: multiple feature tables passed in rp.test only handles one for now.\n        try --combo_test_regression or --predict_regression !!!\n")
         if sparse:
             if blacklist:
@@ -705,7 +712,7 @@ class RegressionPredictor:
             mse = metrics.mean_squared_error(ytest, ypred)
             print("*Mean Squared Error:                 %.4f"% mse)
             #print "*Root Mean Squared Error:            %.5f"% sqrt(float(mse))
-            if saveModels: 
+            if saveModels:
                 (self.regressionModels[outcomeName], self.scalers[outcomeName], self.fSelectors[outcomeName]) = (regressor, scaler, fSelector)
 
         print("\n[TEST COMPLETE]\n")
@@ -720,16 +727,16 @@ class RegressionPredictor:
             result_output_s.close()
 
     def selectAdaptationFactors(self, allFactors, groupsOrder, outcomes,  nFactors, factorSelectionType='rfe', pairedFactors='False', sparse = False, report = True, outputName=''):
-        
+
         factorNames = list(allFactors.keys())
-        factorValues = list(allFactors.values()) 
+        factorValues = list(allFactors.values())
         (Xdicts, ydict) = (factorValues, outcomes)
         (XAll, yAll) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = groupsOrder)
         if not sparse:
             XAll = XAll.todense()
         XAll = self.transform(XAll)
         factors_df = pd.DataFrame(data = XAll , columns = factorNames )
-        
+
 
         if pairedFactors:
             factors_df = self.multiply(factors_df , factors_df , inclusive = True )
@@ -754,7 +761,7 @@ class RegressionPredictor:
             print ( 'selected factors ' , selected)
             if report: self.addToReport(filename=outputName+'_.report', Str = "\n  Ranking:  \n%s \n_"%( str(selected)))
 
-        if report: 
+        if report:
             self.addToReport(filename=outputName+'_.result', Str = "\n  selection type , selection size:  \n%s , %s\n_"%( factorSelectionType, str(nFactors) ))
             self.addToReport(filename=outputName+'_.report', Str = "\n  selection type , selection size:  \n%s , %s\n_"%( factorSelectionType , str(nFactors) ))
         features = fit.transform(XAll)
@@ -764,18 +771,18 @@ class RegressionPredictor:
             for k in range(len(groupsOrder)):
                 dict_g [groupsOrder[k]] = features[k,g]
             feats.append(dict_g)
-        return feats 
+        return feats
 
     #####################################################
     ####### Main Testing Method ########################
-    def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False, 
+    def testControlCombos(self, standardize = True, sparse = False, saveModels = False, blacklist = None, noLang = False,
                           allControlsOnly = False, comboSizes = None, nFolds = 3, savePredictions = False,\
                           weightedEvalOutcome = None, residualizedControls = False, groupsWhere = '',\
                           weightedSample = '', adaptationFactorsName=[], featureSelectionParameters=None,\
                           numOfFactors = [] , factorSelectionType='rfe' , pairedFactors=False, outputName='',\
                           report=True, integrationMethod=''):
         """Tests regressors, by cross-validating over folds with different combinations of controls"""
-        
+
         ###################################
         #1. setup groups for random folds
         if blacklist: print("USING BLACKLIST: %s" %str(blacklist))
@@ -793,13 +800,13 @@ class RegressionPredictor:
             random.shuffle(groupList)
             groupFolds =  [x for x in foldN(groupList, nFolds)]
         print("[number of groups: %d (%d Folds)]" % (len(groups), nFolds))
-        
+
 
         ####
         #1a: setup weightedEval
         wOutcome = None
         if weightedEvalOutcome:
-            try: 
+            try:
                 wOutcome = allOutcomes[weightedEvalOutcome]
                 del allOutcomes[weightedEvalOutcome]
             except KeyError:
@@ -851,13 +858,13 @@ class RegressionPredictor:
                 XGroups = XGroups & getGroupsFromGroupNormValues(groupNormValues) #intersect groups from all feature tables
                 #potential source of bug: if a sparse feature table doesn't have all the groups it should
         XGroups = XGroups & groups #probably unnecessary since groups was given when grabbing features (in which case one could just use groups)
-        
+
         ################################
         #2b) setup control combinations:
         controlKeys = list(allControls.keys())
         scores = dict() #outcome => control_tuple => [0],[1] => scores= {R2, R, r, r-p, rho, rho-p, MSE, train_size, test_size, num_features,yhats}
         savedTrues = set()#stores outcomeNames that have already been saved
-        if savePredictions: 
+        if savePredictions:
             scores['controls'] = allControls
         if not comboSizes:
             if numOfFactors is not None and len(numOfFactors)>0:
@@ -874,10 +881,10 @@ class RegressionPredictor:
                     if numOfFactors is None:
                         factorsRange = [len(allFactors.keys())]
                     elif len(numOfFactors) == 1 and  numOfFactors[0] == 0:
-                        factorsRange = range(1,len(allFactors.keys())+1) 
+                        factorsRange = range(1,len(allFactors.keys())+1)
                     else:
                         factorsRange = numOfFactors
-                for nFactors in factorsRange:  
+                for nFactors in factorsRange:
                     controls = dict()
                     if len(controlKeyCombo) > 0:
                         controls = dict([(k, allControls[k]) for k in controlKeyCombo])
@@ -894,27 +901,27 @@ class RegressionPredictor:
                     for outcomeName, outcomes in sorted(allOutcomes.items()):
                         originalGroupNormsList = copy.copy(thisGroupNormsList)
                         thisOutcomeGroups = set(outcomes.keys()) & XGroups
-                        #### factors selection, using rfe or pca and from a pool of single factors or paired factors                    
+                        #### factors selection, using rfe or pca and from a pool of single factors or paired factors
                         if factorAdaptation or factorAddition:
                             groupsOrder = list(thisOutcomeGroups)
-                            factorsList = self.selectAdaptationFactors(allFactors, groupsOrder, outcomes, nFactors = nFactors, factorSelectionType=factorSelectionType , pairedFactors=pairedFactors, sparse = sparse, outputName = outputName) 
+                            factorsList = self.selectAdaptationFactors(allFactors, groupsOrder, outcomes, nFactors = nFactors, factorSelectionType=factorSelectionType , pairedFactors=pairedFactors, sparse = sparse, outputName = outputName)
                             thisGroupNormsList.insert(0,factorsList)
-                            #### copy selected factors into controls 
+                            #### copy selected factors into controls
                             if controlValues and r>0:
-                                controlValues = factorsList 
+                                controlValues = factorsList
                                 thisGroupNormsList[len(thisGroupNormsList)-1] = controlValues
 
                         if not outcomeName in scores:
                             scores[outcomeName] = dict()
                         for withLanguage in range(2):
-                            if withLanguage: 
+                            if withLanguage:
                                 if noLang or (allControlsOnly and (r > 1) and (r < len(controlKeys))):#skip to next
                                     continue
                                 print("\n= %s (w/ lang.)=\n%s"%(outcomeName, '-'*(len(outcomeName)+14)))
                                 if report:
                                     self.addToReport(outputName+'_.result',  Str = "\n= %s (w/ lang.) (r: %d)=\n%s\n_"%(outcomeName, r, '-'*(len(outcomeName)+14)))
                                     self.addToReport(outputName+'_.report',  Str = "\n= %s (w/ lang.) (r: %d)=\n%s\n_"%(outcomeName, r, '-'*(len(outcomeName)+14)))
-                            elif controlValues: 
+                            elif controlValues:
                                 print("\n= %s (NO lang.)=\n%s"%(outcomeName, '-'*(len(outcomeName)+14)))
                                 if report:
                                     self.addToReport(outputName+'_.result' , Str = "\n= %s (NO lang.) (r: %d)=\n%s\n_"%(outcomeName, r, '-'*(len(outcomeName)+14)))
@@ -931,7 +938,7 @@ class RegressionPredictor:
                             ## 2 f) calculate residuals, if applicable:
                             nonresOutcomes = dict(outcomes) #backup for accuracy calc. #new outcomes become residuals
                             resControlPreds = {} #predictions form controls only
-                            resControlAllPreds = {} 
+                            resControlAllPreds = {}
                             newOutcomes = []
                             if residualizedControls and controlValues and withLanguage:
                                 #TODO: make this and below a function:
@@ -958,7 +965,7 @@ class RegressionPredictor:
                                         sampleWeights = None
                                         (Xtrain, ytrain) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = trainGroupsOrder)
                                     (Xtest, ytest) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = testGroupsOrder)
-                                    
+
                                     assert len(ytest) == testSize, "ytest not the right size"
                                     if len(ytrain) > self.trainingSize:
                                         Xtrain, Xthrowaway, ytrain, ythrowaway = train_test_split(Xtrain, ytrain, test_size=len(ytrain) - self.trainingSize, random_state=self.randomState)
@@ -972,7 +979,7 @@ class RegressionPredictor:
 
                                     allGroups = set()
                                     for chunk in groupFolds:
-                                        for c in chunk:  
+                                        for c in chunk:
                                             allGroups.add(c)
                                     allGroupsOrder = list(thisOutcomeGroups & allGroups)
                                     (Xall, yall) = alignDictsAsXy(Xdicts, ydict, sparse=True, keys = allGroupsOrder)
@@ -1001,7 +1008,7 @@ class RegressionPredictor:
 
                                 #update outcomes to be residuals:
                                 for gid, value in list(outcomes.items()):
-                                    try: 
+                                    try:
                                         #print "true outcome: %.4f, controlPred: %.4f" % (value, resControlPreds[gid])#debug
                                         outcomes[gid] = value - resControlPreds[gid]
                                         #print " new value %.4f" % outcomes[gid] #debug
@@ -1009,10 +1016,10 @@ class RegressionPredictor:
                                         print(" warn: no control prediction found for gid %s, removing from outcomes" % str(gid))
                                         del outcomes[gid]
                                 print("DONE CREATING RESIDUALS for %s %s\n" % (outcomeName, str(controlKeyCombo)))
-                            
+
                             ###############################
                             #3a) iterate over nfold groups:
-                          
+
                             for testChunk in range(0, len(groupFolds)):
                                 trainGroups = set()
                                 for chunk in (groupFolds[:testChunk]+groupFolds[(testChunk+1):]):
@@ -1031,7 +1038,7 @@ class RegressionPredictor:
                                 num_feats = 0;
                                 #get the group order across all
                                 #### setting factor_addition & factor_adaptation for this round of run
-                                (factorTrain, factorTest) = ( None , None ) 
+                                (factorTrain, factorTest) = ( None , None )
                                 if withLanguage:
                                     factor_addition = factorAddition
                                     factor_adaptation = factorAdaptation
@@ -1039,8 +1046,8 @@ class RegressionPredictor:
                                     factor_addition = False
                                     factor_adaptation = False
 
-                                gnListIndices = list(range(len(thisGroupNormsList))) 
-                                if residualizedControls and controlValues and withLanguage: 
+                                gnListIndices = list(range(len(thisGroupNormsList)))
+                                if residualizedControls and controlValues and withLanguage:
                                     gnListIndices = gnListIndices[:-1]
                                 elif not withLanguage:
                                     gnListIndices = [gnListIndices[-1]]
@@ -1050,7 +1057,7 @@ class RegressionPredictor:
                                     if residualizedControls and controlValues and withLanguage:
                                         (Xdicts, ydict) = (groupNormValues, newOutcomes[testChunk])
                                     else:
-                                        (Xdicts, ydict) = (groupNormValues, outcomes)                                
+                                        (Xdicts, ydict) = (groupNormValues, outcomes)
                                     print("   (feature group: %d): [Initial size: %d]" % (i, len(ydict)))
                                     if wSample:
                                         (Xtrain, ytrain, sampleWeights) = alignDictsAsXyz(Xdicts, ydict, wSample, sparse=True, keys = trainGroupsOrder)
@@ -1081,10 +1088,10 @@ class RegressionPredictor:
                                     ypred = self._multiXpredict(regressor, multiXtest, multiScalers = multiScalers, multiFSelectors = multiFSelectors, sparse = sparse)
                                 predictions.update(dict(zip(testGroupsOrder,ypred)))
                                 #pprint(ypred[:10])
-                                    
+
                                 ##4 a) save accuracy stats:
                                   ## TODO: calculate all this at end instead
-                                
+
                                 R2 = metrics.r2_score(ytest, ypred)
                                 mse = metrics.mean_squared_error(ytest, ypred)
                                 mae = metrics.mean_absolute_error(ytest, ypred)
@@ -1099,7 +1106,7 @@ class RegressionPredictor:
                                 testStats['train_mean_mae_folds'].append(train_mean_mae)
                                 testStats['mse_folds'].append(mse)
                                 testStats['mae_folds'].append(mae)
-                                testStats.update({'train_size': len(ytrain), 'test_size': len(ytest), 'num_features' : num_feats, 
+                                testStats.update({'train_size': len(ytrain), 'test_size': len(ytest), 'num_features' : num_feats,
                                  '{model_desc}': str(regressor).replace('\t', "  ").replace('\n', " ").replace('  ', " "),
                                  '{modelFS_desc}': str(multiFSelectors[0]).replace('\t', "  ").replace('\n', " ").replace('  ', " "),
                                                   })
@@ -1158,9 +1165,9 @@ class RegressionPredictor:
                                 #print "z: %.6f" % z
                                 z2 = abs(z);
                                 p2tail =(((((.000005383*z2+.0000488906)*z2+.0000380036)*z2+.0032776263)*z2+.0211410061)*z2+.049867347)*z2+1;
-                                #print "p2tail-1: %.6f" % p2tail 
+                                #print "p2tail-1: %.6f" % p2tail
                                 p2tail = p2tail**-16
-                                #print "p2tail-2: %.6f" % p2tail 
+                                #print "p2tail-2: %.6f" % p2tail
                                 p1tail = p2tail/2;
                                 (reportStats['fisher_z_z'], reportStats['fisher_z_p1tail']) = (z, p1tail)
 
@@ -1188,16 +1195,16 @@ class RegressionPredictor:
                                 print("*Paired T-test p:       %.5f (t: %.4f)"% (reportStats['paired_ttest_p1tail'], reportStats['paired_ttest_t']))
                                 print("*Fisher r-to-z p:       %.5f (z: %.4f)"% (reportStats['fisher_z_p1tail'], reportStats['fisher_z_z']))
 
-                            if report: self.addToReport(outputName+'_.report' ,Str = "*Overall R^2:          %.4f\n_" % (reportStats['R2'])) 
+                            if report: self.addToReport(outputName+'_.report' ,Str = "*Overall R^2:          %.4f\n_" % (reportStats['R2']))
                             Str = "_*Overall R^2:          %.4f    \n_*Overall FOLDS R^2:    %.4f (+- %.4f)    \n_*R (sqrt R^2):         %.4f    \n_*Pearson r:            %.4f (p = %.5f)    \n_*Folds Pearson r:      %.4f (p = %.5f)    \n_*Spearman rho:         %.4f (p = %.5f)    \n_*Mean Squared Error:   %.4f    \n_*Mean Absolute Error:  %.4f    \n_*Train_Mean MAE:       %.4f\n\n" % (reportStats['R2'], reportStats['R2_folds'], reportStats['se_R2_folds'], reportStats['R'], reportStats['r'], reportStats['r_p'], reportStats['r_folds'], reportStats['r_p_folds'], reportStats['rho'], reportStats['rho_p'], reportStats['mse'], reportStats['mae'], reportStats['train_mean_mae'])
-                            if report: self.addToReport(outputName+'_.result', Str = Str,) 
+                            if report: self.addToReport(outputName+'_.result', Str = Str,)
 
-                            if savePredictions: 
+                            if savePredictions:
                                 reportStats['predictions'] = predictions
-                                if not outcomeName in savedTrues: 
+                                if not outcomeName in savedTrues:
                                     reportStats['trues'] = outcomes
                                     savedTrues.add(outcomeName)
-                            if saveModels: 
+                            if saveModels:
                                 print("!!SAVING MODELS NOT IMPLEMENTED FOR testControlCombos!!")
                             try:
                                 scores[outcomeName][controlKeyCombo][withLanguage] = reportStats
@@ -1209,7 +1216,7 @@ class RegressionPredictor:
 
     def adjustOutcomesFromControls(self, standardize = True, sparse = False, saveModels = False, allControlsOnly = False, comboSizes = None, nFolds = 2, savePredictions = True, groupsWhere = ''):
         """Produces adjusted outcomes given the controls"""
-        
+
         ###################################
         #1. setup groups for random folds
         (groups, allOutcomes, allControls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
@@ -1219,7 +1226,7 @@ class RegressionPredictor:
         random.shuffle(groupList)
         groupFolds =  [x for x in foldN(groupList, nFolds)]
         XGroups = groups
-        
+
         ################################
         #2b) setup control combinations:
         controlKeys = list(allControls.keys())
@@ -1294,7 +1301,7 @@ class RegressionPredictor:
                     #update outcomes to be residuals:
                     meanOutcome = mean(list(outcomes.values()))
                     for gid, value in list(outcomes.items()):
-                        try: 
+                        try:
                             #print "true outcome: %.4f, controlPred: %.4f" % (value, resControlPreds[gid])#debug
                             outcomes[gid] = (value - resControlPreds[gid]) + meanOutcome
                             #print " new value %.4f" % outcomes[gid] #debug
@@ -1317,9 +1324,9 @@ class RegressionPredictor:
                     print("*Mean Absolute Error:  %.4f"% reportStats['mae'])
                     print("*Train_Mean MAE:       %.4f"% reportStats['train_mean_mae'])
 
-                    if savePredictions: 
+                    if savePredictions:
                         reportStats['predictions'] = outcomes
-                    if saveModels: 
+                    if saveModels:
                         print("!!SAVING MODELS NOT IMPLEMENTED FOR testControlCombos!!")
                     try:
                         scores[outcomeName][controlKeyCombo][0] = reportStats
@@ -1399,10 +1406,10 @@ class RegressionPredictor:
                 XGroups = XGroups & getGroupsFromGroupNormValues(groupNormValues) #intersect groups from all feature tables
                 # potential source of bug: if a sparse feature table doesn't have all of the groups which it should
         #XGroups = XGroups & groups #this should be needed
-        if len(XGroups) < len(groups): 
+        if len(XGroups) < len(groups):
             print(" Different number of groups available for different outcomes (or feature tables).")
             print("   %d groups -> %d groups" % (len(groups), len(XGroups)))
-        
+
         ################################
         #2b) setup control data:
         controlValues = list(allControls.values())
@@ -1412,7 +1419,7 @@ class RegressionPredictor:
         #########################################
         #3. predict for all possible outcomes
         predictions = dict()
-        testGroupsOrder = list(XGroups) 
+        testGroupsOrder = list(XGroups)
         for outcomeName, outcomes in sorted(allOutcomes.items()):
             print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
             if isinstance(restrictToGroups, dict): #outcome specific restrictions:
@@ -1444,7 +1451,7 @@ class RegressionPredictor:
                 np.savetxt(csvFeatureFile, featureXwithGroups, delimiter=",") #TO EXPORT FEATURE SELECTED FEATURES
                 featureX = None #allow to clear memory, just in case
 
-            else: 
+            else:
                 ypred = self._multiXpredict(self.regressionModels[outcomeName], multiXtest, \
                                             multiScalers = self.multiScalers[outcomeName], \
                                             multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
@@ -1458,7 +1465,7 @@ class RegressionPredictor:
             print("*Mean Squared Error:                 %.4f"% mse)
             mae = metrics.mean_absolute_error(ytest, ypred)
             print("*Mean Absolute Error:                %.4f"% mae)
-            assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups" 
+            assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups"
             predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder,ypred)))
 
             if self.trainBootstrapNames and outcomeName in self.trainBootstrapNames:
@@ -1477,7 +1484,7 @@ class RegressionPredictor:
                     resultsPerN[n] = self.averageMetrics(currentResults)
                 print(" [Done. Results:]")
                 pprint(resultsPerN)
-                
+
         print("[Prediction Complete]")
 
         return predictions
@@ -1488,7 +1495,7 @@ class RegressionPredictor:
         for metric, data in resultsD.items():
             meanSDs[metric] = (np.mean(data), np.std(data))
         return meanSDs
-    
+
     def regressionMetrics(self, ytrue, ypred):
         R2 = metrics.r2_score(ytrue, ypred)
         return {'R2': R2,
@@ -1497,7 +1504,7 @@ class RegressionPredictor:
                 'rho': spearmanr(ytrue, ypred)[0],
                 'mse': metrics.mean_squared_error(ytrue, ypred),
                 'mae': metrics.mean_absolute_error(ytrue, ypred)}
-    
+
     def predictToOutcomeTable(self, standardize = True, sparse = False, name = None, nFolds = 10, groupsWhere = ''):
 
         warn("WARNING! Predict to outcome table sometimes excludes groups if not in a feature table.")
@@ -1511,17 +1518,17 @@ class RegressionPredictor:
             numChunks = int(len(groups) / float(self.maxPredictAtTime)) + 1
             print("TOTAL GROUPS (%d) TOO LARGE. Breaking up to run in %d chunks." % (len(groups), numChunks))
             random.seed(self.randomState)
-            random.shuffle(groups)        
+            random.shuffle(groups)
             chunks =  [x for x in foldN(groups, numChunks)]
 
-        predictions = dict() #outcomes->groups->prediction               
+        predictions = dict() #outcomes->groups->prediction
 
         totalPred = 0
         for c,chunk in enumerate(chunks):
             print("\n\n**CHUNK %d\n" % c)
 
             # 3: predict for each chunk for each outcome
-            
+
             chunkPredictions = self.predictNoOutcomeGetter(chunk, standardize, sparse)
             #predictions is now outcomeName => group_id => value (outcomeName can become feat)
             #merge chunk predictions into predictions:
@@ -1544,7 +1551,7 @@ class RegressionPredictor:
         self.outcomeGetter.createOutcomeTable(name, predDF, 'replace')
 
     def predictNoOutcomeGetter(self, groups, standardize = True, sparse = False, restrictToGroups = None):
-        
+
         outcomes = list(self.regressionModels.keys())
 
         ####################
@@ -1555,10 +1562,10 @@ class RegressionPredictor:
         for i in range(len(self.featureGetters)):
             fg = self.featureGetters[i]
             (groupNorms, newFeatureNames) = fg.getGroupNormsSparseFeatsFirst(groups)
-            
+
             print(" [Aligning current X with training X: feature group: %d]" %i)
             groupNormValues = []
-            
+
             for feat in self.featureNamesList[i]:
                 # groupNormValues is a list in order of featureNamesList of all the group_norms
                 groupNormValues.append(groupNorms.get(feat, {}))
@@ -1576,26 +1583,26 @@ class RegressionPredictor:
                 XGroups = XGroups & fgGroups #intersect groups from all feature tables
                 UGroups = UGroups | fgGroups #intersect groups from all feature tables
                 #potential source of bug: if a sparse feature table doesn't have all the groups it should
-                #TODO: fill these in with zeros but print an obvious warning because it could also be a sign of 
+                #TODO: fill these in with zeros but print an obvious warning because it could also be a sign of
                 #      non-english messages which aren't triggering any feautres
         #XGroups = XGroups & groups #this should not be needed
-        if len(XGroups) < len(UGroups): 
+        if len(XGroups) < len(UGroups):
             print(" !! Different number of groups available for different feature tables. (%d, %d)\n this may cause problems down the line" % (len(XGroups), len(groups)))
-        
+
 
         #########################################
         #3. predict for all possible outcomes
         predictions = dict()
         #testGroupsOrder = list(UGroups) #use the union of feature tables (may cause null issue)
         testGroupsOrder = list(XGroups)#use the intersection only
-        
+
         for outcomeName in sorted(outcomes):
             print("\n= %s =\n%s"%(outcomeName, '-'*(len(outcomeName)+4)))
             thisTestGroupsOrder = testGroupsOrder
 
             multiXtest = []
             for i in range(len(groupNormsList)): #get each feature group data (i.e. feature table)
-                
+
                 groupNormValues = groupNormsList[i] # basically a feature table in list(dict) form
                 # We want the dictionaries to turn into a list that is aligned
                 gns = dict(list(zip(self.featureNamesList[i], groupNormValues)))
@@ -1615,7 +1622,7 @@ class RegressionPredictor:
                                             multiFSelectors = self.multiFSelectors[outcomeName], sparse = sparse)
             print("[Done.]")
 
-            assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups" 
+            assert len(thisTestGroupsOrder) == len(ypred), "can't line predictions up with groups"
             predictions[outcomeName] = dict(list(zip(thisTestGroupsOrder,ypred)))
 
         print("[Prediction Complete]")
@@ -1633,16 +1640,16 @@ class RegressionPredictor:
             sys.exit(0)
 
         #1. get all groups
-        
+
         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
-        
+
         #split groups into n chunks (same as comboControlTest)
         random.seed(self.randomState)
         groupList = sorted(list(groups), reverse=True)
         random.shuffle(groupList)
         groupFolds =  [x for x in foldN(groupList, nFolds)]
         chunks =  [x for x in foldN(groupList, nFolds)]
-        predictions = dict() #outcomes->groups->prediction               
+        predictions = dict() #outcomes->groups->prediction
         #for loop over testChunks, changing which one is teh test (not test = training)
         for testChunk in range(0, len(chunks)):
             trainGroups = set()
@@ -1697,12 +1704,12 @@ class RegressionPredictor:
 
         groups = list(groups)
         # groups contains all groups that are in the outcome table and that have outcome values not null
-        
+
         chunks = [groups]
         #split groups into chunks
         if len(groups) > self.maxPredictAtTime:
             random.seed(self.randomState)
-            random.shuffle(groups)        
+            random.shuffle(groups)
             chunks =  [x for x in foldN(groups, int(ceil(len(groups) / self.maxPredictAtTime)))]
         predictions = dict()
         totalPred = 0
@@ -1727,7 +1734,7 @@ class RegressionPredictor:
                     predictions[outcomeName] = chunkPredictions[outcomeName]
             totalPred += len(chunk)
             print(" Total Predicted: %d" % totalPred)
-            
+
             # INSERTING the chunk into MySQL
             #Creating table if not done yet
             if not featNames:
@@ -1742,11 +1749,11 @@ class RegressionPredictor:
             rows = []
             for feat in featNames:
                 preds = chunkPredictions[feat]
-                
+
                 print("[Inserting Predictions as Feature values for feature: %s]" % feat)
                 #wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
                 query = fe.qb.create_insert_query(featureTableName).set_values([("group_id",""),("feat",feat),("value",""),("group_norm","")])
-                
+
                 for k, v in preds.items():
                     rows.append((k, float(v), float(v)))
                     if len(rows) >  self.maxPredictAtTime or len(rows) >= len(preds):
@@ -1762,8 +1769,8 @@ class RegressionPredictor:
                 written += len(rows)
                 print("   %d feature rows written" % written)
         return
-                
-                
+
+
 
         # write n-grams to database (no need for "REPLACE" because we are creating the table)
         # for feat in featNames:
@@ -1786,7 +1793,7 @@ class RegressionPredictor:
            #     print "   %d feature rows written" % written
            #     rows = []
 
-    def getWeightsForFeaturesAsADict(self): 
+    def getWeightsForFeaturesAsADict(self):
         """Creates a lexicon from a topic file
 
         Parameters
@@ -1821,7 +1828,7 @@ class RegressionPredictor:
 
                 coeff_iter = iter(coefficients.flatten())
                 coefficients  = np.asarray([list(islice(coeff_iter, 0, j)) for j in self.featureLengthDict[outcome]][i])
-                
+
                 # Inverting Feature Selection
                 if self.multiFSelectors[outcome][i]:
                     print("Inverting the feature selection: %s" % self.multiFSelectors[outcome][i])
@@ -1845,7 +1852,7 @@ class RegressionPredictor:
                 if 'mean_' in dir(self.multiFSelectors[outcome][i]):
                     print("RPCA mean: ", self.multiFSelectors[outcome][i].mean_)
 
-                # featTableFeats contains the list of features 
+                # featTableFeats contains the list of features
                 if len(coefficients) != len(featTableFeats):
                     print("length of coefficients (%d) does not match number of features (%d)" % (len(coefficients), len(featTableFeats)))
                     sys.exit(1)
@@ -1873,7 +1880,7 @@ class RegressionPredictor:
                     weights_dict['words'] = dict()
                     first = True
                     for idx, topicFeatTable in unpackTopicWeights.items():
-                        if first: 
+                        if first:
                             weights_dict['words'] = {o: dict() for o in weights_dict[topicFeatTable].keys()}
                             first = False
                         print("Unpacking {topicFeatTable}".format(topicFeatTable=topicFeatTable))
@@ -1886,7 +1893,7 @@ class RegressionPredictor:
                                     weights_dict['words'][outcome][word] = weight
                         print(" * Combining %s with %s." % (topicFeatTable, '"words"'))
                         del weights_dict[topicFeatTable]
-                        
+
             # mixed tables
             else:
                 for idx, topicFeatTable in unpackTopicWeights.items():
@@ -1917,7 +1924,7 @@ class RegressionPredictor:
         Parameters
         ----------
         featureGetter : obj
-            
+
         topicFeatTable : str
             New (topic) lexicon name.
         weights_dict : dict
@@ -1940,7 +1947,7 @@ class RegressionPredictor:
             sys.exit(1)
 
         buildTable = '1gram'
-        if "16to" not in transform: 
+        if "16to" not in transform:
             buildTable = transform
 
         lex_dict = dict()
@@ -1961,7 +1968,7 @@ class RegressionPredictor:
                         this_sum += weightsDict[topicFeatTable][outcome][category]*lex_dict[term][category]
                 summedWordWeights[term] = this_sum
             weightsDict[topicFeatTable][outcome] = summedWordWeights
-            
+
 
         return weightsDict, buildTable
 
@@ -2008,7 +2015,7 @@ class RegressionPredictor:
 
         if hasMultValuesPerItem(self.cvParams[modelName]) and modelName[-2:] != 'cv':
             #grid search for classifier params:
-            gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
+            gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'),
                               self.cvParams[modelName], n_jobs = self.cvJobs)
             print("  [Performing grid search for parameters over training]")
             gs.fit(X, y, cv=ShuffleSplit(len(y), n_iterations=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
@@ -2062,7 +2069,7 @@ class RegressionPredictor:
             dim = dim * 2
         if dim <= 1:
             self.featureSelectionString = None
-            return 
+            return
         k = fsparams['kbest']
         n = fsparams['pca']
         self.featureSelectionString = []
@@ -2089,7 +2096,7 @@ class RegressionPredictor:
         X = None #to avoid errors
         scaledFactors = None
         multiAdaptedX = list(multiX)
-        scaledFactors, standardizedFactors, factorScalers = self.scale(factors, sparse = sparse, scalers = factorScalers)        
+        scaledFactors, standardizedFactors, factorScalers = self.scale(factors, sparse = sparse, scalers = factorScalers)
         for i in range(len(multiX)):
             X = multiX[i]
             if not sparse:
@@ -2110,10 +2117,10 @@ class RegressionPredictor:
         for i in range(N):
             *newMultiX, newY = resample(*multiX, y, random_state=rs, n_samples = sampleN)
             yield newMultiX, newY
-            
-    
 
-    def _multiXtrain(self, X, y, standardize = True, sparse = False, weightedSample = None, factorAdaptation=False, featureSelectionParameters=None, factorAddition=False, 
+
+
+    def _multiXtrain(self, X, y, standardize = True, sparse = False, weightedSample = None, factorAdaptation=False, featureSelectionParameters=None, factorAddition=False,
                      outputName = '', report=False, factors=None, returnX=False):
         """does the actual regression training, first feature selection: can be used by both train and test
            create multiple scalers and feature selectors
@@ -2126,17 +2133,17 @@ class RegressionPredictor:
         X = None #to avoid errors
         multiScalers = []
         multiFSelectors = []
-       
+
         #### applying feature selection using the passed parameters
         if featureSelectionParameters:
             self.buildFeatureSelectionString( factorAdaptation = factorAdaptation , fsparams = featureSelectionParameters, dim= len(multiX))
-        
+
         factorScalers = None
         scaledFactors = None
         if factorAdaptation:
             multiX, scaledFactors, standardizedFactors, factorScalers = self.adaptMultiX(multiX, factors, sparse = sparse)
         elif factorAddition:
-            scaledFactors, standardizedFactors, factorScalers = self.scale(factors, sparse = sparse ) 
+            scaledFactors, standardizedFactors, factorScalers = self.scale(factors, sparse = sparse )
 
         try:
             self.featureLengthDict[self.outcomeNames[-1]] = list()
@@ -2167,9 +2174,9 @@ class RegressionPredictor:
             #Feature Selection
             fSelector = None
             if self.featureSelectionString and X.shape[1] >= self.featureSelectMin:
-                if isinstance(self.featureSelectionString, list):  
+                if isinstance(self.featureSelectionString, list):
                     fSelector = eval(self.featureSelectionString[i])
-                else: 
+                else:
                     fSelector = eval(self.featureSelectionString)
                 if self.featureSelectPerc < 1.0:
                     print("  [Applying Feature Selection to %d perc of X: %s]" % (int(self.featureSelectPerc*100), str(fSelector)))
@@ -2189,7 +2196,7 @@ class RegressionPredictor:
                         print("  >> No features selected, so using original full X")
                 print("  >> After feature selection: (N, features): %s" % str(X.shape))
                 if report: self.addToReport(outputName+'_.result', Str = " after feature selection: (N, features): %s\n_" % str(X.shape))
-            
+
             try:
                 self.featureLengthDict[self.outcomeNames[-1]].append(X.shape[1])
             except:
@@ -2198,17 +2205,17 @@ class RegressionPredictor:
             multiScalers.append(scaler)
             multiFSelectors.append(fSelector)
 
-        #combine all multiX into one X:                
+        #combine all multiX into one X:
         if factorAddition:
             X = standardizedFactors
             startIndex = 0
-        else: 
+        else:
             X = multiX[0]
             startIndex = 1
         for nextX in multiX[startIndex:]:
             X = np.append(X, nextX, 1)
         print("[COMBINED FEATS (from multiX)] Combined size: %s" % str(X.shape))
-        
+
         modelName = self.modelName.lower()
         #totalFeats = 0
         #for Xi in multiX[0]:
@@ -2220,7 +2227,7 @@ class RegressionPredictor:
 
         if hasMultValuesPerItem(self.cvParams[modelName]) and modelName[-2:] != 'cv':
             #grid search for classifier params:
-            gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
+            gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'),
                               self.cvParams[modelName], n_jobs = self.cvJobs)
             print("[COMBINED FEATS: Performing grid search for parameters over training]")
             #gs.fit(X, y, cv=ShuffleSplit(len(y), n_iterations=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
@@ -2232,9 +2239,9 @@ class RegressionPredictor:
             # no grid search
             print("[COMBINED FEATS: Training regression model: %s]" % modelName)
             regressor = eval(self.modelToClassName[modelName]+'()')
-            try: 
+            try:
                 regressor.set_params(**dict((k, v[0] if isinstance(v, list) else v) for k,v in self.cvParams[modelName][0].items()))
-            except IndexError: 
+            except IndexError:
                 print(" >>No CV parameters available")
                 raise IndexError
             #print dict(self.cvParams[modelName][0])
@@ -2247,8 +2254,8 @@ class RegressionPredictor:
             except LinAlgError:
                 print("  >>Lin Algebra error, X:")
                 pprint(X)
-                
-    
+
+
             print("model: %s " % str(regressor))
             if modelName[-2:] == 'cv' and 'alphas' in regressor.get_params():
                 print("  selected alpha: %f" % regressor.alpha_)
@@ -2257,9 +2264,9 @@ class RegressionPredictor:
             else:
                 if returnX:
                     return regressor, multiScalers, multiFSelectors, X
-                else: 
+                else:
                     return regressor, multiScalers, multiFSelectors
-    
+
     def _predict(self, regressor, X, scaler = None, fSelector = None, y = None):
         if scaler:
             X = scaler.transform(X)
@@ -2272,7 +2279,7 @@ class RegressionPredictor:
 
         return regressor.predict(X)
 
-    def _multiXpredict(self, regressor, X, multiScalers = None, multiFSelectors = None, y = None, sparse = False, 
+    def _multiXpredict(self, regressor, X, multiScalers = None, multiFSelectors = None, y = None, sparse = False,
                         factorAdaptation = False, factorScalers = None, factorAddition = False, factors = None, returnX=False):
         if not isinstance(X, (list, tuple)):
             X = [X]
@@ -2294,7 +2301,7 @@ class RegressionPredictor:
             if not sparse and not factorAdaptation:
                 X = X.todense()
             (scaler, fSelector) = (None, None)
-            if multiScalers: 
+            if multiScalers:
                 scaler = multiScalers[i]
             if multiFSelectors:
                 fSelector = multiFSelectors[i]
@@ -2335,13 +2342,13 @@ class RegressionPredictor:
         for nextX in multiX[startIndex:]:
             X = np.append(X, nextX, 1)
 
-        print("[PREDICT] combined X shape: %s" % str(X.shape)) 
+        print("[PREDICT] combined X shape: %s" % str(X.shape))
 
         print("[PREDICT] regressor: %s\nsettings: " %
               str(regressor), str([i for i in regressor.__dict__.items() if not isinstance(i[1], Iterable)]))
         if returnX:
             return regressor.predict(X), X
-        else: 
+        else:
             return regressor.predict(X)
 
 
@@ -2356,7 +2363,7 @@ class RegressionPredictor:
                 sys.modules['FeatureWorker.occurrenceSelection'] = occurrenceSelection
                 sys.modules['FeatureWorker.pca_mod'] = pca_mod
             tmp_dict = pickle.load(f, encoding='latin1')
-            f.close()          
+            f.close()
         try:
             print("Outcomes in loaded model:", list(tmp_dict['regressionModels'].keys()))
         except KeyError:
@@ -2367,16 +2374,16 @@ class RegressionPredictor:
                 warn("No regression models found in the pickle.")
             sys.exit()
 
-        tmp_dict['outcomes'] = list(tmp_dict['regressionModels'].keys()) 
+        tmp_dict['outcomes'] = list(tmp_dict['regressionModels'].keys())
         self.__dict__.update(tmp_dict)
 
     def save(self, filename):
         print("[Saving %s]" % filename)
         f = open(filename,'wb')
-        toDump = {'modelName': self.modelName, 
+        toDump = {'modelName': self.modelName,
                   'regressionModels': self.regressionModels,
                   'multiScalers': self.multiScalers,
-                  'scalers' : self.scalers, 
+                  'scalers' : self.scalers,
                   'multiFSelectors': self.multiFSelectors,
                   'fSelectors' : self.fSelectors,
                   'featureNames' : self.featureNames,
@@ -2389,17 +2396,17 @@ class RegressionPredictor:
         f.close()
 
     ########################
-    @staticmethod 
+    @staticmethod
     def printComboControlScoresToCSV(scores, outputstream = sys.stdout, paramString = None, delimiter=','):
         """prints scores with all combinations of controls to csv)"""
-        if paramString: 
+        if paramString:
             print(paramString+"\n", file=outputstream)
         i = 0
         outcomeKeys = sorted(scores.keys())
         previousColumnNames = []
         ignoreKeys = set(['predictions','controls','trues'])
         for outcomeName in outcomeKeys:
-         
+
             outcomeScores = scores[outcomeName]
             #setup column and row names:
             controlNames = sorted(list(set([controlName for controlTuple in list(outcomeScores.keys()) for controlName in controlTuple])))
@@ -2414,7 +2421,7 @@ class RegressionPredictor:
                 firstRow = dict([(str(k), str(k)) for k in columnNames if not k in ignoreKeys])
                 csvOut.writerow(firstRow)
                 previousColumnNames = columnNames
-            for rk in rowKeys: 
+            for rk in rowKeys:
                 if not rk in ignoreKeys:
                     for withLang, sc in outcomeScores[rk].items():
                         i+=1
@@ -2439,11 +2446,11 @@ class RegressionPredictor:
         previousColumnNames = []
         if 'controls' in outcomeKeys:#print controls first
             outcomeKeys.remove('controls')
-            for c, s in scores['controls'].items(): 
+            for c, s in scores['controls'].items():
                 columns.append('control_'+str(c))
                 predictionData['control_'+str(c)] = s
                 for k,v in s.items():
-                    data[k].append(v )               
+                    data[k].append(v )
 
         for outcomeName in outcomeKeys:
             outcomeScores = scores[outcomeName]
@@ -2464,13 +2471,13 @@ class RegressionPredictor:
                         predictionData[str(i)+'_'+outcomeName+'_trues'] = s['predictions']
                         for k,v in s['trues'].items():
                             data[k].append(v)
-        
+
         writer = csv.writer(outputstream)
         writer.writerow(columns)
         for k,v in data.items():
-           v.insert(0,k)  
+           v.insert(0,k)
            writer.writerow(v)
-        
+
     #################
     ## Deprecated:
     def old_train(self, standardize = True, sparse = False, restrictToGroups = None):
@@ -2493,7 +2500,7 @@ class RegressionPredictor:
 
         #2. get data for X:
         (groupNorms, featureNames) = (None, None)
-        if len(self.featureGetters) > 1: 
+        if len(self.featureGetters) > 1:
             print("WARNING: multiple feature tables passed in rp.train only handles one for now.")
         if sparse:
             (groupNorms, featureNames) = self.featureGetter.getGroupNormsSparseFeatsFirst(groups)
@@ -2535,7 +2542,7 @@ class RegressionPredictor:
 
         #2. get data for X:
         (groupNorms, featureNames) = (None, None)
-        if len(self.featureGetters) > 1: 
+        if len(self.featureGetters) > 1:
             print("WARNING: multiple feature tables passed in rp.predict only handles one for now.")
         if sparse:
             (groupNorms, featureNames) = self.featureGetter.getGroupNormsSparseFeatsFirst(groups)
@@ -2593,7 +2600,7 @@ class RegressionPredictor:
         return predictions
 
 
-            
+
 ####################################################################
 ##
 #
@@ -2614,7 +2621,7 @@ class CombinedRegressionPredictor(RegressionPredictor):
         }
     cvJobs = 6 #normal
     cvFolds = 3
-    maxPredictAtTime = DEFAULT_MAX_PREDICT_AT_A_TIME 
+    maxPredictAtTime = DEFAULT_MAX_PREDICT_AT_A_TIME
     maxPredictAtTime = maxPredictAtTime*100 #DELETE THIS - MAARTEN
 
     testPerc = .20 #percentage of sample to use as test set (the rest is training)
@@ -2623,7 +2630,7 @@ class CombinedRegressionPredictor(RegressionPredictor):
 
     def __init__(self, og, fgs, modelNames = ['ridge'], combinedModelName = 'ridgecv'):
         #initialize combined regression predictor vars:
-        self.outcomeGetter = og 
+        self.outcomeGetter = og
         self.modelName = combinedModelName
         self.combinedModels = []#stores combined models (not implemented yet)
         #no scaler needed.. ys from other models shoudl be the same self.scalers = dict()
@@ -2653,7 +2660,7 @@ class CombinedRegressionPredictor(RegressionPredictor):
         #1. get data possible ys (outcomes)
         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
         print("[combined regression: number of groups: %d]" % len(groups))
-        
+
         #2: pick trainModels/traincombined / test split based only on groups:
         testSize = int(self.testPerc*len(groups))
         groups = list(groups)
@@ -2713,26 +2720,26 @@ class CombinedRegressionPredictor(RegressionPredictor):
     def predict(self, standardize = True, testPerc = 0.25, sparse = False):
         #predict works with all sklearn models
         raise NotImplementedError
-         
+
     def predictToFeatureTable(self, standardize = True, testPerc = 0.25, sparse = False, fe = None, name = None):
         raise NotImplementedError
-            
+
 
     ######################
     def load(self, filename):
         print("[Loading %s]" % filename)
         f = open(filename,'rb')
         tmp_dict = pickle.load(f)
-        f.close()          
+        f.close()
 
-        self.__dict__.update(tmp_dict) 
+        self.__dict__.update(tmp_dict)
 
     def save(self, filename):
         print("[Saving %s]" % filename)
         f = open(filename,'wb')
-        toDump = {'modelName': self.modelName, 
+        toDump = {'modelName': self.modelName,
                   'regressionModels': self.regressionModels,
-                  'scalers' : self.scalers, 
+                  'scalers' : self.scalers,
                   'fSelectors' : self.fSelectors,
                   'featureNames' : self.featureNames
                   }
@@ -2767,7 +2774,7 @@ class ClassifyToRegressionPredictor:
     def train(self, standardize = True, sparse = False, restrictToGroups = None, nFolds = 4, trainRegOnAll = True, classifierAsFeat = True, groupsWhere = ''):
 
         #1. get groups for both:
-        print("[ClassifytoRegression: Getting all Groups]")            
+        print("[ClassifytoRegression: Getting all Groups]")
         (classifyGroups, _, _) = self.classifyPredictor.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
         (regressionGroups, _, _) = self.regressionPredictor.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
         if restrictToGroups:
@@ -2781,7 +2788,7 @@ class ClassifyToRegressionPredictor:
         random.shuffle(groups)
 
         #2. use nFold cross-validation to train / predict every portion for classification
-        print("[ClassifytoRegression: Training / Predicting with Classifiers to get Regressor Groups]")            
+        print("[ClassifytoRegression: Training / Predicting with Classifiers to get Regressor Groups]")
         restrictedTrainGroups = dict() #outcme->list of group_ids
         if not trainRegOnAll:
             subGroups = [x for x in foldN(groups, nFolds)]
@@ -2799,7 +2806,7 @@ class ClassifyToRegressionPredictor:
                         restrictedTrainGroups[outcome] = set(newKeeps)
 
         #3. train the classifier on all data
-        print("[ClassifytoRegression: Training Full Classifiers]")            
+        print("[ClassifytoRegression: Training Full Classifiers]")
         self.classifyPredictor.train(standardize, sparse, restrictToGroups = groups)
 
         #4. train regression on all keeps from step2
@@ -2810,11 +2817,11 @@ class ClassifyToRegressionPredictor:
             self.regressionPredictor.train(standardize, sparse, restrictToGroups = restrictedTrainGroups)
 
         print("[DONE TRAINING C2R MODELS]")
-        
+
 
     def test(self, standardize = True, sparse = False, saveModels = False, groupsWhere = ''):
         #1. get groups for both
-        print("[ClassifytoRegression: Getting all Groups]")            
+        print("[ClassifytoRegression: Getting all Groups]")
         (classifyGroups, _, _) = self.classifyPredictor.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
         (regressionGroups, _, _) = self.regressionPredictor.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere)
         groups = list(set(classifyGroups) & set(regressionGroups))
@@ -2879,12 +2886,12 @@ class ClassifyToRegressionPredictor:
             print("*Mean Squared Error:                 %.4f"% mse)
 
         return rPreds
-       
+
 
 class RPCRidgeCV(LinearModel, RegressorMixin):
     """Randomized PCA Ridge Regression with built-in cross-validation
 
-    To set the RPCA number of components, it uses a train(80%) and dev-set(20%). 
+    To set the RPCA number of components, it uses a train(80%) and dev-set(20%).
 
     For ridge, it performs Generalized Cross-Validation, which is a form of
     efficient Leave-One-Out cross-validation.
@@ -2958,7 +2965,7 @@ class RPCRidgeCV(LinearModel, RegressorMixin):
 
     def __init__(self, component_percs = [0.01, 0.0316, 0.1, 0.316, 1],
                  alphas=np.array([0.1, 1.0, 10.0]),
-                 fit_intercept=True, normalize=False, 
+                 fit_intercept=True, normalize=False,
                  cv=None, gcv_mode=None):
         self.component_percs = sorted(component_percs)
         self.reducer = None #stores the chosen reducer
@@ -3073,8 +3080,8 @@ class VERPCA(PCA):
         numpy.random singleton.
 
     max_components_ratio : float
-        Maximum number of components in terms of their ratio to the number 
-        of features. Default is 0.25 (1/4). 
+        Maximum number of components in terms of their ratio to the number
+        of features. Default is 0.25 (1/4).
     """
 
     #Vars
@@ -3086,7 +3093,7 @@ class VERPCA(PCA):
             self.variance_explained = n_components
             n_components = None
         else:
-            self.variance_explained = None 
+            self.variance_explained = None
         self.max_components_ratio = max_components_ratio
         super(VERPCA, self).__init__(n_components, copy, iterated_power, whiten, random_state)
 
@@ -3128,7 +3135,7 @@ class VERPCA(PCA):
 
         return self
 
-         
+
 
 class SpamsGroupLasso(LinearModel, RegressorMixin):
     """interfaces with the spams implementation of group lasso"""
@@ -3171,7 +3178,7 @@ def chunks(X, y, size):
     if not isinstance(X, csr_matrix):
         assert len(X) == len(y), "chunks: size of X and y don't match"
     size = max(len(y), size)
-    
+
     for i in range(0, len(y), size):
         yield X[i:i+size], y[i:i+size]
 
@@ -3189,7 +3196,7 @@ def foldN(l, folds):
         if i+n+last >= len(l):
             yield l[i:i+n+last]
             break
-        else: 
+        else:
             yield l[i:i+n]
 
 def hasMultValuesPerItem(listOfD):
@@ -3217,14 +3224,14 @@ def r2simple(ytrue, ypred):
     ###Deprecated:
 #     def trainLinearModel(self, groupFreqThresh = 0, standardize = True):
 #         """Trains a linear regression model"""
-        
+
 #         #1. get data possible ys (outcomes)
 #         (groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes(groupFreqThresh)
 #   #     - this will give you 3 values: groups, outcomes, and controls
 #         #       groups lists all of the groups (i.e. users) who meet groupFreqThresh criteria
 #         #       outcomes is a dictionary(hashtable) of dictionaries
 #         #       you can ignore controls
-#         #       
+#         #
 
 #         #2. get data for X:
 #         langFeatures = self.featureGetter.getGroupNormsWithZeros(groups)
@@ -3260,7 +3267,7 @@ def r2simple(ytrue, ypred):
 # #    print 'Shape of feature selected x test', X_test.shape
 #      predictors[outcomeName] = linear_model.Ridge(alpha=0.1)
 #            predictors[outcomeName].fit(X_train,y_train)
-           
+
 #      #Debugging information
 #            predictedY = predictors[outcomeName].predict(X_test)
 #      #print "[%s] Mean error rate on test data: %.4f" % (outcomeName, predictors[outcomeName].score(X_test,y_test))

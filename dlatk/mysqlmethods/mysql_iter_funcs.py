@@ -33,9 +33,9 @@ def get_db_engine(db_schema, charset=DEF_ENCODING, mysql_config_file = MYSQL_CON
                                     'charset': charset
                                 })
             if stream:
-                eng = create_engine(url=url, connect_args={'cursorclass': MySQLdb.cursors.SSCursor}, pool_recycle=600)
+                eng = create_engine(db_url, connect_args={'cursorclass': MySQLdb.cursors.SSCursor}, pool_recycle=600)
             else:
-                eng = create_engine(url)
+                eng = create_engine(db_url)
             break
         except Exception as e:
             attempts += 1

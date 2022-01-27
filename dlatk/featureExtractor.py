@@ -154,6 +154,10 @@ class FeatureExtractor(DLAWorker):
         if len(cfRows)*n < dlac.MAX_TO_DISABLE_KEYS: self.data_engine.disable_table_keys(featureTableName) #for faster, when enough space for repair by sorting
 
         #warnedMaybeForeignLanguage = False
+        totalInserts = 0
+        totalCFIDinserts = 0
+        totalCFIDs = len(cfRows)
+        cfpsDone = set()
         for cfRow in cfRows:
             cf_id = cfRow[0]
 
@@ -204,7 +208,6 @@ class FeatureExtractor(DLAWorker):
             #write n-grams to database (no need for "REPLACE" because we are creating the table)
             if totalGrams:
                 insert_idx_start = 0
-                insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
                 query = self.qb.create_insert_query(featureTableName).set_values([("group_id",str(cf_id)),("feat",""),("value",""),("group_norm","")])
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 try:
@@ -215,15 +218,22 @@ class FeatureExtractor(DLAWorker):
                 except:
                     print([k for k, v in freqs.items()])
                     sys.exit()
+                insert_idx_end = min(dlac.MYSQL_BATCH_INSERT_SIZE, len(rows))
                 while insert_idx_start < len(rows):
-                    insert_rows = rows[insert_idx_start:min(insert_idx_end, len(rows))]
-                    dlac.warn("Inserting rows %d to %d for group id: %s" % (insert_idx_start, insert_idx_end, str(cf_id)))
-                    # dlac.warn(insert_rows) #debug
-                    # print(query)#debug
+                    insert_rows = rows[insert_idx_start:insert_idx_end]
+                    if len(rows) > dlac.MYSQL_BATCH_INSERT_SIZE:
+                        dlac.warn("Inserting rows %d to %d for group id: %s" % (insert_idx_start, insert_idx_end, str(cf_id)))#DEBUG
                     query.execute_query(insert_rows)
                     insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
-                    insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
-                    
+                    insert_idx_end = min(insert_idx_end + dlac.MYSQL_BATCH_INSERT_SIZE, len(rows))
+                #insert progress: 
+                totalInserts += len(rows)
+                totalCFIDinserts += 1
+                cfPerc = int((totalCFIDinserts / float(totalCFIDs)) * 100)
+                if cfPerc % 5 == 0 and cfPerc not in cfpsDone:
+                    dlac.warn(" [%d"%(cfPerc)+'%'+"] Inserted %d total ngram rows covering %d %ss" % (totalInserts, totalCFIDinserts, self.correl_field))
+                    cfpsDone.add(cfPerc)
+                
                 #meta table:
                 query = self.qb.create_insert_query(featureTableName).set_values([("group_id",str(cf_id)),("feat",""),("value",""),("group_norm","")])
                 totalGrams = float(totalGrams) # to avoid casting each time below

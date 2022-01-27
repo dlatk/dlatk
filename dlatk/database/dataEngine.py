@@ -108,6 +108,7 @@ class DataEngine(object):
 			List of rows to insert into table 
 		
 		"""
+		#print(usql) #DEBUG
 		self.dataEngine.execute_write_many(usql, insert_rows)
 
 	def execute(self, sql):

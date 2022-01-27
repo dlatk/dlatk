@@ -174,6 +174,7 @@ class OutcomeGetter(DLAWorker):
         return feat_to_label
 
     def createOutcomeTable(self, tablename, dataframe, ifExists='fail'):
+        print("DEBUG", self.corpdb, self.mysql_config_file)#DEBUG
         eng = get_db_engine(self.corpdb, mysql_config_file=self.mysql_config_file)
         dtype ={}
         if isinstance(dataframe.index[0], str):

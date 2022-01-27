@@ -21,32 +21,30 @@ import pandas as pd
 
 from collections import defaultdict, Counter
 
-#scikit-learn imports
-from sklearn.svm import SVC, LinearSVC 
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV 
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score, precision_score, recall_score, roc_curve, auc, roc_auc_score, matthews_corrcoef
-from sklearn.feature_selection import f_classif, SelectPercentile, SelectKBest, SelectFdr, SelectFpr, SelectFwe
-
-from sklearn.preprocessing import StandardScaler, label_binarize, MinMaxScaler
-from sklearn.linear_model import PassiveAggressiveClassifier, LogisticRegression, Lasso
-from sklearn.svm import SVR
-from sklearn.multiclass import OneVsRestClassifier
+#scikit-learn classifier imports
+from sklearn.svm import SVC, LinearSVC, SVR
+from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier, GradientBoostingClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.linear_model.base import LinearModel
+from sklearn.linear_model import PassiveAggressiveClassifier, LogisticRegression, Lasso, SGDClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB, BernoulliNB
 
+#scikit learn feature selection and reduction:
+from sklearn.feature_selection import f_classif, SelectPercentile, SelectKBest, SelectFdr, SelectFpr, SelectFwe
 from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF, FactorAnalysis
-#from sklearn.lda import LDA #linear descriminant analysis
-from sklearn import metrics
 
+#scikit-learn model helping: 
+from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV 
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score, precision_score, recall_score, roc_curve, auc, roc_auc_score, matthews_corrcoef
+from sklearn import metrics
+from sklearn.preprocessing import StandardScaler, label_binarize, MinMaxScaler
+from sklearn.multiclass import OneVsRestClassifier
 from sklearn.utils import shuffle
-from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier, GradientBoostingClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model.base import LinearModel
-from sklearn.linear_model import SGDClassifier
 from sklearn.base import ClassifierMixin
 
 #scipy
-from scipy.stats import zscore, t
+from scipy.stats import zscore, t, wilcoxon
 from scipy.stats.stats import pearsonr, spearmanr
 from scipy.sparse import csr_matrix, vstack, hstack, spmatrix
 import numpy as np
@@ -279,6 +277,8 @@ class ClassifyPredictor:
             #{'C':[.01], 'penalty':['elasticnet'], 'dual':[False], 'random_state': [42], 'l1_ratio': [.8], 'solver': ['saga']},
             ],
         'lr1': [{'C':[1], 'penalty':['l2'], 'dual':[False], 'random_state': [42]}],
+        #unpenalized logistic regression:
+        'lrnone': [{'C':[1000000], 'penalty':['l2'], 'dual':[False], 'random_state': [42]}],
 
         'etc': [ 
             #{'n_jobs': [10], 'n_estimators': [250], 'criterion':['gini']}, 
@@ -315,12 +315,18 @@ class ClassifyPredictor:
             ], 
         'bnb': [
             {'alpha': [1.0], 'fit_prior': [False], 'binarize':[True]},
-            ], 
+            ],
+        'mlp': [ #multi-layer perceptron
+            #{'alpha': [0.1, 0.001, 1.0, 0.01, 10, 100], 'solver': ['lbfgs'], 'hidden_layer_sizes':[(30,10)], 'random_state': [DEFAULT_RANDOM_SEED]},
+            {'alpha': np.logspace(-1.5, 1.5, 5), 'learning_rate_init': [0.001], 'solver': ['sgd'], 'hidden_layer_sizes':[(10,10)], 'max_iter': [500], 'n_iter_no_change': [10], 'random_state': [DEFAULT_RANDOM_SEED]},
+            ],
+        
         }
 
     modelToClassName = {
         'lr' : 'LogisticRegression',
         'lr1' : 'LogisticRegression',
+        'lrnone' : 'LogisticRegression',
         'linear-svc' : 'LinearSVC',
         'svc' : 'SVC',
         'etc' : 'ExtraTreesClassifier',
@@ -331,6 +337,7 @@ class ClassifyPredictor:
         'mnb' : 'MultinomialNB',
         'gnb' : 'GaussianNB', 
         'bnb' : 'BernoulliNB',
+        'mlp' : 'MLPClassifier',
         }
     
     modelToCoeffsName = {
@@ -339,8 +346,10 @@ class ClassifyPredictor:
         'svc' : 'coef_',
         'lr': 'coef_',
         'lr1': 'coef_',
+        'lrnone': 'coef_',
         'mnb': 'coef_',
         'bnb' : 'feature_log_prob_',
+        'mlp' : 'coefs_',
         }
 
     #cvJobs = 3 #when lots of data 
@@ -351,7 +360,7 @@ class ClassifyPredictor:
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 30000
     backOffPerc = .05 #when the num_featrue / training_insts is less than this backoff to backoffmodel
-    backOffModel = 'lr1' #'lr'
+    backOffModel = 'lrnone' #'lr'
 
     # feature selection:
     featureSelectionString = None
@@ -836,6 +845,7 @@ class ClassifyPredictor:
                         reportStats['acc'] = accuracy_score(ytrue, ypred)
                         reportStats['f1'] = f1_score(ytrue, ypred, average='macro')
                         reportStats['auc']= computeAUC(ytrue, ypredProbs, multiclass,  classes = classes)
+                        reportStats['auc_p'] = permutation_1tail_on_aucs(ytrue, np.array(ypredProbs), multiclass, classes)
                         reportStats['precision'] = precision_score(ytrue, ypred, average='macro')
                         reportStats['recall'] = recall_score(ytrue, ypred, average='macro')
                         reportStats['recall_micro'] = recall_score(ytrue, ypred, average='micro')
@@ -853,22 +863,35 @@ class ClassifyPredictor:
                         reportStats['mfclass_acc'] = testCounter[mfclass] / float(len(ytrue))
 
                         if controlCombineProbs:#ensemble with controls (AUC weighted)
+                            reportStats['auc_p_v_cntrls'] = 1.0
                             reportStats['auc_cntl_comb2'] = 0.0#add columns so csv always has same
                             reportStats['auc_cntl_comb2_t'] = 0.0
                             reportStats['auc_cntl_comb2_p'] = 1.0
                             if withLanguage and savedControlYpp is not None:
+                                print("\n    calculating p-values versus controls...")
+                                #add lang only auc-p to top result
+                                try:
+                                    langOnlyScores = scores[outcomeName][()][1]
+                                    cntrlYtrue, YPredProbs, YCntrlProbs = alignDictsAsy(outcomes, langOnlyScores['predictionProbs'], savedControlPProbs)
+                                    langOnlyScores['auc_p_v_cntrls'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)
+                                except KeyError:
+                                    print("unable to find saved lang only probabilities")
+                                #straight up auc, p value:
+                                cntrlYtrue, YPredProbs, YCntrlProbs = alignDictsAsy(outcomes, predictionProbs, savedControlPProbs)
+                                reportStats['auc_p_v_cntrls'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)
+                                #ensemble auc: 
                                 newProbsDict = ensembleNFoldAUCWeight(outcomes, [predictionProbs, savedControlPProbs], groupFolds)
                                 ensYtrue, ensYPredProbs, ensYCntrlProbs = alignDictsAsy(outcomes, newProbsDict, savedControlPProbs)
                                 #reportStats['auc_cntl_comb2'] = pos_neg_auc(ensYtrue, np.array(ensYPredProbs)[:,-1])
                                 reportStats['auc_cntl_comb2'] = computeAUC(ensYtrue, np.array(ensYPredProbs), multiclass,  classes = classes)
-                                reportStats['auc_cntl_comb2_t'], reportStats['auc_cntl_comb2_p'] = paired_t_1tail_on_errors(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue)
+                                #reportStats['auc_cntl_comb2_t'], reportStats['auc_cntl_comb2_p'] = paired_t_1tail_on_errors(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue)
+                                reportStats['auc_cntl_comb2_p'] = paired_bootstrap_1tail_on_aucs(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue, multiclass, classes)
                                 ## TODO: finish this and add flag: --ensemble_controls
                                 # predictions = #todo:dictionary
                                 # predictionProbs = newProbsDict
                             else: #save probs for next round
                                 savedControlYpp = ypredProbs[:,-1]
                                 savedControlPProbs = predictionProbs
-
 
                         if savePredictions: 
                             reportStats['predictions'] = predictions
@@ -2756,7 +2779,7 @@ def easyNFoldAUCWeight(X, y, folds):
     return newyscores
 
 def paired_t_1tail_on_errors(newprobs, oldprobs, ytrue):
-    #checks if
+    #computes paired t-test on error (not clear if valid for classification)
     n = len(ytrue)
     newprobs_res_abs = np.absolute(array(ytrue) - array(newprobs))
     oldprobs_res_abs = np.absolute(array(ytrue) - array(oldprobs))
@@ -2765,3 +2788,66 @@ def paired_t_1tail_on_errors(newprobs, oldprobs, ytrue):
     ypp_diff_t = ypp_diff_mean / (ypp_sd / sqrt(n))
     ypp_diff_p = t.sf(np.absolute(ypp_diff_t), n-1)
     return ypp_diff_t, ypp_diff_p
+
+def paired_wilcoxon_on_errors(newprobs, oldprobs, ytrue):
+    #computes paired wilcoxon on errors (not clear if valid for classification)
+    newprobs_res_abs = np.absolute(array(ytrue) - array(newprobs))
+    oldprobs_res_abs = np.absolute(array(ytrue) - array(oldprobs))
+    print(newprobs_res_abs)
+    stat, p = wilcoxon(newprobs_res_abs, oldprobs_res_abs, alternative="greater")
+    print(stat, p)
+    return p
+
+def paired_permutation_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 3000):
+    #computes p-value based on permutation test (an exact test)
+    #this is not correct; do not use. 
+    n = len(ytrue)
+    target_auc = computeAUC(ytrue, newprobs, multiclass,  classes = classes)
+
+    criteria_met = 0 #counts how frequent auc surpassed
+    if len(newprobs.shape) < 2:
+        newprobs = newprobs.reshape((n, 1))
+    if len(oldprobs.shape) < 2:
+        oldprobs = oldprobs.reshape((n, 1))
+    for i in range(iters):
+        mask = np.random.randint(2, size=n).reshape((n, 1))#does random permutation of what is in new versus old
+        this_newprobs = newprobs*mask + oldprobs*(1-mask)
+        this_auc = computeAUC(ytrue, this_newprobs, multiclass,  classes = classes)
+        if this_auc > target_auc:
+            criteria_met += 1
+    p = criteria_met / float(iters)
+    #print("\n-----\n", p, bootstrap_1tail_on_aucs_bothprobs(newprobs[:,-1], oldprobs[:,-1], ytrue, multiclass, classes, iters))
+    return p
+
+def permutation_1tail_on_aucs(ytrue, ypredProbs, multiclass=False, classes=None, iters=8000):
+    #computes p-value based on permuation
+    n = len(ytrue) 
+    ytrue = np.array(ytrue)
+    target_auc = computeAUC(ytrue, ypredProbs, multiclass,  classes = classes)
+    criteria_met = 0 #counts how frequent old auc surpassed new auc
+    allids = np.random.randint(n, size=(iters, n))
+    for i in range(iters):
+        this_probs = np.random.permutation(ypredProbs)
+        this_newauc = computeAUC(ytrue, this_probs, multiclass,  classes = classes)
+        if this_newauc > target_auc:
+            criteria_met += 1
+    return criteria_met / float(iters)
+
+    
+
+def paired_bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 8000):
+    #computes p-value based on paired bootstrap 
+    n = len(ytrue)
+    ytrue = np.array(ytrue)
+    criteria_met = 0 #counts how frequent old auc surpassed new auc
+    allids = np.random.randint(n, size=(iters, n))
+    for i in range(iters):
+        ids = allids[i]
+        this_ytrue = ytrue[ids]
+        this_newprobs = newprobs[ids]
+        this_oldprobs = oldprobs[ids]
+        this_newauc = computeAUC(this_ytrue, this_newprobs.reshape([n,1]), multiclass,  classes = classes)
+        this_oldauc = computeAUC(this_ytrue, this_oldprobs.reshape([n,1]), multiclass,  classes = classes)
+        if this_newauc < this_oldauc:
+            criteria_met += 1
+    return criteria_met / float(iters)

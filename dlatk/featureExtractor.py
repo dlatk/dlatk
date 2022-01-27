@@ -1864,7 +1864,7 @@ class FeatureExtractor(DLAWorker):
 
     def addLexiconFeat(self, lexiconTableName, lowercase_only=dlac.LOWERCASE_ONLY, tableName=None,
                        valueFunc=lambda x: float(x), isWeighted=False, featValueFunc=lambda d: float(d),
-                       extension=None, lexicon_weighting=False):
+                       extension=None, lexicon_weighting=False, multicategory_weighting=False):
         """Creates a feature table given a 1gram feature table name, a lexicon table / database name
 
         Parameters
@@ -2001,17 +2001,28 @@ class FeatureExtractor(DLAWorker):
             totalWordsInLexForThisGroupId = float(0.0)
 
             if lexicon_weighting:
-                totals = collections.defaultdict(lambda: collections.defaultdict(float))
+                if multicategory_weighting:
+                    totals = collections.defaultdict(float)
+                else:
+                    totals = collections.defaultdict(lambda: collections.defaultdict(float))
                 for gid, feat, value, _ in attributeRows:
                     if feat in feat_cat_weight:
                         for category in feat_cat_weight[feat]:
-                            totals[gid][category] += value
+                            if multicategory_weighting:
+                                totals[gid] += value
+                                break  # don't double count words that appear in multiple categories
+                            else:
+                                totals[gid][category] += value
                     if lexiconHasWildCard:  # check wildcard matches
                         for endI in range(3, len(feat) + 1):
                             featWild = feat[0:endI] + '*'
                             if featWild in feat_cat_weight:
                                 for category in feat_cat_weight[featWild]:
-                                    totals[gid][category] += value
+                                    if multicategory_weighting:
+                                        totals[gid] += value
+                                        break  # don't double count words that appear in multiple categories
+                                    else:
+                                        totals[gid][category] += value
 
             for (gid, feat, value, group_norm) in attributeRows:
                 #e.g. (69L, 8476L, 'spent', 1L, 0.00943396226415094, None),
@@ -2032,7 +2043,10 @@ class FeatureExtractor(DLAWorker):
                 #update all cats:
                 for category in cat_to_weight:
                     try:
-                        group_norm = value / float(totals[gid][category])
+                        if multicategory_weighting:
+                            group_norm = value / float(totals[gid])
+                        else:
+                            group_norm = value / float(totals[gid][category])
                     except NameError:  # not using lexicon_weighting
                         pass
                     except ZeroDivisionError:  # should be impossible; a cat w/o a total shouldn't have this feat in it

@@ -79,11 +79,13 @@ def main(fn_args = None):
                       help='write flag values to text file')
     group.add_argument('--from_file', type=str, dest='frominitfile', default='',
                        help='reads flag values from file')
+    group.add_argument('--conf', '--mysql_config', '--mysql_config_file', metavar='HOST', dest='mysqlconfigfile', default=dlac.MYSQL_CONFIG_FILE,
+                       help='Configuration file for MySQL connection settings (default: ~/.my.cnf or dlatk/lib/.dlatk.cnf)')
 
     init_args, remaining_argv = init_parser.parse_known_args()
 
     if init_args.lexinterface:
-        lex_parser = LexInterfaceParser(parents=[init_parser],mysql_config_file=args.mysqlconfigfile)
+        lex_parser = LexInterfaceParser(parents=[init_parser], mysql_config_file=init_args.mysqlconfigfile)
         lex_parser.processArgs(args=remaining_argv, parents=True)
         sys.exit()
     elif init_args.frominitfile:
@@ -107,8 +109,6 @@ def main(fn_args = None):
     group.add_argument('-c', '-g', '--correl_field', '--group', '--group_by_field', metavar='FIELD', dest='correl_field',
                        default=getInitVar('correl_field', conf_parser, dlac.DEF_CORREL_FIELD),
                         help='Correlation Field (AKA Group Field): The field which features are aggregated over.')
-    group.add_argument('--conf', '--mysql_config', '--mysql_config_file', metavar='HOST', dest='mysqlconfigfile', default="",
-                       help='Configuration file for MySQL connection settings (default: ~/.my.cnf or dlatk/lib/.dlatk.cnf)')
     group.add_argument('--message_field', metavar='FIELD', dest='message_field', default=getInitVar('message_field', conf_parser, dlac.DEF_MESSAGE_FIELD),
                         help='The field where the text to be analyzed is located.')
     group.add_argument('--messageid_field', metavar='FIELD', dest='messageid_field', default=getInitVar('messageid_field', conf_parser, dlac.DEF_MESSAGEID_FIELD),
@@ -471,6 +471,7 @@ def main(fn_args = None):
     group.add_argument('--add_embedding', '--add_emb_feat',  '--add_bert', action='store_true', dest='embaddfeat',
                        help='add BERT mean features (optionally add min, max, --bert_model large)')
     group.add_argument('--lexicon_normalization', '--lex_norm', '--dict_norm', action='store_true', help='Use weighting over lexicon terms (instead of over all terms).')
+    group.add_argument('--multicategory_normalization', '--liwc_normalization', '--liwc_norm', action='store_true', help='Use weighting over lexicon terms across terms in all categories. Similar to --lexicon_normalization but totals are across all lexicon categories.')
 
 
     group = parser.add_argument_group('Messages Transformation Actions', '')
@@ -780,13 +781,6 @@ def main(fn_args = None):
       sys.exit(1)
 
     ##Argument adjustments:
-    if not args.mysqlconfigfile:
-        mycnf_file = Path(str(Path.home()) + "/.my.cnf")
-        if mycnf_file.is_file():
-            args.mysqlconfigfile = str(mycnf_file)
-        else:
-            args.mysqlconfigfile = dlac.MYSQL_CONFIG_FILE
-
     if not args.valuefunc: args.valuefunc = lambda d: d
     if not args.lexvaluefunc: args.lexvaluefunc = lambda d: d
 
@@ -1054,10 +1048,12 @@ def main(fn_args = None):
 
     if args.addlextable:
         if not fe: fe = FE()
+        if args.multicategory_normalization and not args.lexicon_normalization:
+            args.lexicon_normalization = True
         args.feattable = fe.addLexiconFeat(args.lextable, lowercase_only=args.lowercaseonly,
                                            valueFunc=args.valuefunc, isWeighted=args.weightedlexicon,
                                            featValueFunc=args.lexvaluefunc, extension=args.extension,
-                                           lexicon_weighting=args.lexicon_normalization)
+                                           lexicon_weighting=args.lexicon_normalization, multicategory_weighting=args.multicategory_normalization)
 
     if args.addcorplextable:
         if not args.lextable:
@@ -1251,14 +1247,14 @@ def main(fn_args = None):
             create_name = '{}_cp'.format(args.lda_lexicon_name)
 
             print('Adding topic lexicon: {}'.format(create_name))
-            lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name])
+            lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name, '--lexicondb', args.lexicondb])
             lex_interface.processArgs(lex_interface_args)
 
             topic_file = os.path.join(args.save_lda_files, 'lda.freq.threshed50.loglik.csv')
             create_name = '{}_freq_t50ll'.format(args.lda_lexicon_name)
 
             print('Adding topic lexicon: {}'.format(create_name))
-            lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name])
+            lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name, '--lexicondb', args.lexicondb])
             lex_interface.processArgs(lex_interface_args)
         print('LDA topics estimated. Files saved in {}.'.format(args.save_lda_files))
 
@@ -1852,7 +1848,7 @@ def main(fn_args = None):
         if args.csv:
             outputStream = sys.stdout
             if args.outputname:
-                outputStream = open(args.outputname+'.variance_data.csv', 'w')
+                outputStream = open(args.outputname+'.accuracy_data.csv', 'w')
             RegressionPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
             if args.outputname:
@@ -1919,12 +1915,12 @@ def main(fn_args = None):
         if args.csv:
             outputStream = sys.stdout
             if args.outputname:
-                outputStream = open(args.outputname+'.variance_data.csv', 'w')
-            ClassifyPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
+                outputStream = open(args.outputname+'.accuracy_data.csv', 'w')
+            ClassifyPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
             outputStream.close()
-        #else:
-        pprint(comboScores, compact=True)
+        if not (args.pred_csv or args.prob_csv):
+            pprint(comboScores, compact=True)
         for outcome, cData in sorted(comboScores.items()):
             print("\n["+outcome+"]")
             mfc = 0.0
@@ -1939,24 +1935,23 @@ def main(fn_args = None):
                         print("     + LANG: acc: %.3f, f1: %.3f, auc: %.3f, auc ensemble: %.3f (p = %.4f)" %\
                               tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc', 'auc_cntl_comb2', 'auc_cntl_comb2_p']]))
                     else:
-                        print("     + LANG: acc: %.3f, f1: %.3f, auc: %.3f" %\
-                              tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc']]))
+                        print("     + LANG: acc: %.3f, f1: %.3f, auc: %.3f (p_vs_controls = %.4f)" %\
+                              tuple([wLangData[1][k] for k in ['acc', 'f1', 'auc', 'auc_p_v_cntrls']]))
                         mfc = wLangData[1]['mfclass_acc']
             print("   (mfc_acc: %.3f)"%mfc)
-
 
         if args.pred_csv:
             outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.predicted_data.csv', 'w')
-            ClassifyPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
+            ClassifyPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
             outputStream.close()
         if args.prob_csv:
             outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.prediction_probabilities.csv', 'w')
-            ClassifyPredictor.printComboControlPredictionProbsToCSV(comboScores, outputStream, paramString=str(args), delimiter='|')
+            ClassifyPredictor.printComboControlPredictionProbsToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
             outputStream.close()
 
@@ -2011,8 +2006,16 @@ def main(fn_args = None):
             print("----- Detected a classifier")
             lexicon_dict = cp.getWeightsForFeaturesAsADict()  #returns featTable -> category -> term -> weight
 
-        lex_dict_with_name = {args.classToLex: v for featTableName,v in lexicon_dict.items()} if args.classToLex else {args.regrToLex: v for featTableName,v in lexicon_dict.items()}
-        # print lex_dict_with_name.items()
+        lexicon_name = args.classToLex if args.classToLex else args.regrToLex
+        lex_dict_with_name = dict()
+        for featTableName, v in lexicon_dict.items():
+            for outcome, coefs in v.items():
+                if lexicon_name not in lex_dict_with_name:
+                    lex_dict_with_name[lexicon_name] = dict()
+                outcomes_dict = lex_dict_with_name[lexicon_name]
+                if outcome not in outcomes_dict:
+                    outcomes_dict[outcome] = dict()
+                outcomes_dict[outcome].update(coefs)
         for lexName, lexicon in lex_dict_with_name.items():
             lex = lexInterface.WeightedLexicon(lexicon, mysql_config_file=args.mysqlconfigfile)
             lex.createWeightedLexiconTable('dd_'+lexName)

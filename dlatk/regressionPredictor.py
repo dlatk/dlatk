@@ -39,7 +39,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.linear_model.base import LinearModel
 from sklearn.base import RegressorMixin
 from sklearn.exceptions import NotFittedError
-from sklearn.neural_network import MLPClassifier
+from sklearn.neural_network import MLPRegressor
 
 #modified sklearns:
 from .occurrenceSelection import OccurrenceThreshold
@@ -428,7 +428,7 @@ class RegressionPredictor:
         'sgdregressor': 'coef_',
         'extratrees': 'feature_importances_',
         'par': 'coef_',
-        'randomizedlasso': 'scores_'
+        'randomizedlasso': 'scores_',
         'mlp' : 'coefs_',
         }
     #cvJobs = 3 #when lots of data

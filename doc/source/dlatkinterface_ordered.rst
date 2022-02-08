@@ -27,6 +27,7 @@ Setup
 * :doc:`fwinterface/fwflag_no_unicode`
 * :doc:`fwinterface/fwflag_where`
 * :doc:`fwinterface/fwflag_ls`
+* :doc:`fwinterface/fwflag_colabify`
 
 Preprocessing
 =============

@@ -1179,6 +1179,94 @@ class FeatureExtractor(DLAWorker):
         return featureTableName
 
 
+    def add_emb_table(self, modelName, tokenizerName, modelClass=None, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], keepMsgFeats = False, customTableName = None, valueFunc = lambda d: d):
+
+        dlac.warn("WARNING: new version of BERT and transformer models starts at layer 1 rather than layer 0. Layer 0 is now the input embedding. For example, if you were using layer 10 for the second to last layer of bert-base that is now considered layer 11.")
+
+        
+        ##FIRST MAKE SURE SENTENCE TOKENIZED TABLE EXISTS:
+        sentTable = self.corptable+'_stoks' 
+        #assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with Bert featrue extraction (run --add_sent_tokenized)" % sentTable
+
+        sent_tok_onthefly = False if self.data_engine.tableExists(self.corptable+'_stoks') else True
+        sent_table = self.corptable if sentTok_onthefly else self.corptable+'_stoks'
+        if sent_tok_onthefly: dlac.warn("WARNING: run --add_sent_tokenized on the message table to avoid tokenizing it every time you generate embeddings")
+
+        cf_embedding_generator = transformer_embedding(modelName=modelName, tokenizerName=tokenizerName, layersToKeep=layersToKeep, aggregations=aggregations, layerAggregations=layerAggregations, wordAggregations=wordAggregations, maxTokensPerSeg=maxTokensPerSeg, batchSize=batchSize, noContext=noContext, customTableName=customTableName)
+
+        
+        #TODO: Change the model name later
+        #Need to test noc
+        noc = ''
+        if noContext: noc = 'noc_' #adds noc to name if no context
+        if customTableName is None:
+            modelName = modelName.split('/')[-1] if '/' in modelName else modelName
+            modelPieces = modelName.split('-')
+            modelNameShort = modelPieces[0] + '_' + '_'.join([s[:2] for s in modelPieces[1:]])\
+                            + '_' + noc+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep])+''.join([str(ag[:2]) for ag in layerAggregations]) + 'n'
+        else:
+            modelNameShort = customTableName
+
+        #keepMsgFeats flag to generate embedings at message level
+        if keepMsgFeats:
+            embTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', None, valueFunc, correlField='message_id')
+        else:
+            embTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', None, valueFunc)
+
+        #TODO: Change made in the SQL query here. Make changes to the subsequent code accessing this variable. 
+        #usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
+        usql = """SELECT %s, COUNT(1) AS count FROM %s GROUP BY %s ORDER BY count DESC"""% (self.correl_field, sentTable, self.correl_field)
+        msgs = 0 #keeps track of the number of messages read
+        cfRows = FeatureExtractor.noneToNull(self.data_engine.execute_get_list(usql)) #SSCursor woudl be better, but it loses connection
+        #TODO: Use Total messages to display percentages
+        totalMessages = sum(map(lambda x: x[1], cfRows))
+
+        ##iterate through correl_ids (group id):
+        dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
+        self.data_engine.disable_table_keys(embTableName)#for faster, when enough space for repair by sorting
+        lengthWarned = False #whether the length warning has been printed yet
+        #Each User: ( #message aggregations, #layers, #Word aggregations, hidden size)
+
+        #TODO
+        #1. Make a list of list of users based on the messages they contain. The inner list contains the user ids that needs to be retrieved for messages at once (this is based on whether the user ids satisfy the message count.)
+        #2. Send this list to a handler that runs a loop on this List[List[(user_id, message)]] and passes it to the embedding_generator class for generating transformer representations, aggregating it and send it back here for dumping to a table
+
+        #TODO: Wrap this in a custom sampler method/class for more research surrounding this
+        msgsInBatch = 0
+        cfGroups = [[]]
+        for cfRow in cfRows:
+            cfId = cfRow[0] #correl field id
+            cfNumMsgs = cfRow[1] #Number of messages
+            if msgsInBatch + cfNumMsgs > batchSize:
+                cfGroups.append([])
+                msgsInBatch = 0
+            cfGroups[-1].append(cfId)
+            msgsInBatch += cfNumMsgs
+
+        
+        for cfRow in cfGroups:
+            mIdSeen = set() #currently seen message ids
+            mIdList = [] #only for keepMsgFeats
+
+            msgRows = [] #List[CF IDs, List[messages]]
+            for cfId in cfRow:  
+                #grab sents by messages for that correl field:
+                cfMsgRows = self.getMessagesForCorrelField(cfId, messageTable = sentTable, warnMsg=True)
+                msgRows.append([cfId, cfMsgRows])
+
+            #TODO: write method for prepare messages
+            #prepare_messages() should take into account context, no context and other possible modes.
+            #prepare_messages() can parallelize the message tokenization.
+            #TODO: add num_parallel_workers for above
+            cf_embedding_generator.prepare_messages(msgRows, sent_tok_onthefly)   
+
+            #TODO: Function call to embedding generation
+            #TODO: Function call to embedding aggregation
+            #TODO: dumping embeddings to table/file. 
+        
+        return
+
+    
     def addEmbTable(self, modelName, tokenizerName, modelClass=None, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], keepMsgFeats = False, customTableName = None, valueFunc = lambda d: d):
         '''
 
@@ -1206,7 +1294,6 @@ class FeatureExtractor(DLAWorker):
         sentTable = self.corptable if sentTok_onthefly else self.corptable+'_stoks'
         if sentTok_onthefly: dlac.warn("WARNING: run --add_sent_tokenized on the message table to avoid tokenizing it every time you generate embeddings")
         
-
         
         #if len(layerAggregations) > 1:
         #    dlac.warn("AddBert: !!Does not currently support more than one layer aggregation; only using first aggregation!!")
@@ -1302,7 +1389,7 @@ class FeatureExtractor(DLAWorker):
         #SELECT / LOOP ON CORREL FIELD FIRST:
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
         msgs = 0#keeps track of the number of messages read
-        cfRows = FeatureExtractor.noneToNull(self.data_engine.execute_get_list(usql))#SSCursor woudl be better, but it loses connection
+        cfRows = FeatureExtractor.noneToNull(self.data_engine.execute_get_list(usql)) #SSCursor woudl be better, but it loses connection
 
         ##iterate through correl_ids (group id):
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))

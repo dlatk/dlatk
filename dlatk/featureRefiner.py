@@ -96,7 +96,7 @@ class FeatureRefiner(FeatureGetter):
         valueFunc = None
         if toNum:
             for func in dlac.POSSIBLE_VALUE_FUNCS:
-                if float(func(16)) == float(toNum):
+                if round(float(func(16))) == float(toNum):
                     valueFunc = func
                     break     
         pocc = None

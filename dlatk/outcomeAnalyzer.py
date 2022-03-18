@@ -1820,7 +1820,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             fsock.close()
             sys.stdout = sys.__stdout__
 
-    def printTopicTagCloudData(self, correls, topicLex, maxP = dlac.DEF_P, paramString = None, maxWords = 15, maxTopics = 100, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False, cleanCloud=False, metric='R'):
+    def printTopicTagCloudData(self, correls, topicLex, maxP = dlac.DEF_P, paramString = None, maxWords = 15, maxTopics = 100, duplicateFilter=False, colorScheme='multi', outputFile='', useFeatTableFeats=False, cleanCloud=False, metric='R', minAbsEffectSize = 0.0):
         """
         Prints Topic Tag Cloud data to text file
 
@@ -1847,6 +1847,8 @@ class OutcomeAnalyzer(OutcomeGetter):
         useFeatTableFeats : :obj:`boolean`, optional
         cleanCloud : :obj:`boolean`, optional
             if true replace explatives with *** in center of word, ex: f**k
+        minAbsEffectSize: :int:, optional 
+            minimum effect size to bother generating data
 
 
         """
@@ -1881,7 +1883,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             print("\n==============================\nTopic Tag Cloud Data for %s\n--------------------------------" % outcomeField)
             sigRs = dict()
             for k, v in sorted(list(rs.items()), key = lambda r: abs(r[1][self.r_idx]) if not isnan(r[1][self.r_idx]) else 0, reverse=True):
-                if v[self.p_idx] < maxP:
+                if v[self.p_idx] < maxP and abs(v[self.r_idx]) >= minAbsEffectSize:
                     sigRs[k] = v
                 else:
                     break

@@ -326,11 +326,13 @@ def main(fn_args = None):
     group.add_argument('--tagcloud_colorscheme', '--wordcloud_colorscheme', type=str, dest='tagcloudcolorscheme', default=getInitVar('tagcloudcolorscheme', conf_parser, 'multi'),
                        help='specify a color scheme to use for tagcloud generation. Default: multi, also accepts red, blue, red-random, redblue, bluered')
     group.add_argument('--clean_cloud', action='store_true', dest='cleancloud', default=False,
-                   help='Replaces characters in the middle of explatives/slurs with ***. ex: f**k')
+                       help='Replaces characters in the middle of explatives/slurs with ***. ex: f**k')
     group.add_argument('--weighted_sample', dest='weightedsample', default=dlac.DEF_WEIGHTS,
-                        help='Field in outcome table to use as weights for correlation(regression).')
+                       help='Field in outcome table to use as weights for correlation(regression).')
     group.add_argument('--keep_low_variance_outcomes', '--keep_low_variance', dest='low_variance_thresh', action='store_false', default=dlac.DEF_LOW_VARIANCE_THRESHOLD,
-                        help='Does not remove low variance outcomes and controls from analysis')
+                       help='Does not remove low variance outcomes and controls from analysis')
+    group.add_argument("--min_abs_effect_size", "--min_es", type=float, metavar='r', dest="minabseffectsize", default = 0.0,
+                       help="Minimum effect size to add to tagcloud. Default = 0.0.")
 
 
 
@@ -1634,7 +1636,7 @@ def main(fn_args = None):
         metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
         outputFile = makeOutputFilename(args, fg, oa, suffix='_topic_tagcloud')
         # use plottingWhitelistPickle to link to a pickle file containing the words driving the categories
-        oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats, maxWords=args.numtopicwords, cleanCloud=args.cleancloud, metric=metric)
+        oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats, maxWords=args.numtopicwords, cleanCloud=args.cleancloud, metric=metric, minAbsEffectSize=args.minabseffectsize)
         # don't want to base on this: maxWords = args.maxtcwords)
     if args.maketopicwordclouds:
         if not args.topictc and not args.corptopictc:

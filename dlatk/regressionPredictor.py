@@ -236,6 +236,15 @@ class RegressionPredictor:
         'ridge': [
             {'alpha': [1]}, 
         ],
+        'ridge.01': [
+            {'alpha': [.01]}, 
+        ],
+        'ridge.001': [
+            {'alpha': [.001]}, 
+        ],
+        'ridge100k': [
+            {'alpha': [100000]},
+        ],
         'ridge100000': [
             {'alpha': [100000]},
         ],
@@ -372,9 +381,12 @@ class RegressionPredictor:
         'lassolarscv' : 'LassoLarsCV',
         'lars' : 'Lars',
         'ridge' : 'Ridge',
+        'ridge.01' : 'Ridge',
+        'ridge.001' : 'Ridge',
         'ridge250' : 'Ridge',
         'ridge10000' : 'Ridge',
         'ridge100000' : 'Ridge',
+        'ridge100k' : 'Ridge',
         'ridge1000' : 'Ridge',
         'ridge100' : 'Ridge',
         'ridge10' : 'Ridge',

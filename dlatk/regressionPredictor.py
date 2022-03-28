@@ -60,7 +60,7 @@ from .classifyPredictor import ClassifyPredictor
 from .dimensionReducer import PPA
 from .mysqlmethods import mysqlMethods as mm
 from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, DEFAULT_RANDOM_SEED, warn, MinScaler
-
+from .wrappedPCA import WrappedPCA
 
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""

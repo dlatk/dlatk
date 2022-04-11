@@ -1181,19 +1181,22 @@ class FeatureExtractor(DLAWorker):
 
     def add_emb_table(self, modelName, tokenizerName, modelClass=None, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], keepMsgFeats = False, customTableName = None, valueFunc = lambda d: d):
 
+        from dlatk.transformer_embs import transformer_embeddings
+        
         dlac.warn("WARNING: new version of BERT and transformer models starts at layer 1 rather than layer 0. Layer 0 is now the input embedding. For example, if you were using layer 10 for the second to last layer of bert-base that is now considered layer 11.")
 
         
         ##FIRST MAKE SURE SENTENCE TOKENIZED TABLE EXISTS:
-        sentTable = self.corptable+'_stoks' 
+        sentTable = self.corptable#+'_stoks' 
         #assert mm.tableExists(self.corpdb, self.dbCursor, sentTable, charset=self.encoding, use_unicode=self.use_unicode), "Need %s table to proceed with Bert featrue extraction (run --add_sent_tokenized)" % sentTable
 
-        sent_tok_onthefly = False if self.data_engine.tableExists(self.corptable+'_stoks') else True
-        sent_table = self.corptable if sentTok_onthefly else self.corptable+'_stoks'
+        sent_tok_onthefly = True #False if self.data_engine.tableExists(self.corptable+'_stoks') else True
+        sent_table = self.corptable if sent_tok_onthefly else self.corptable+'_stoks'
         if sent_tok_onthefly: dlac.warn("WARNING: run --add_sent_tokenized on the message table to avoid tokenizing it every time you generate embeddings")
 
-        cf_embedding_generator = transformer_embedding(modelName=modelName, tokenizerName=tokenizerName, layersToKeep=layersToKeep, aggregations=aggregations, layerAggregations=layerAggregations, wordAggregations=wordAggregations, maxTokensPerSeg=maxTokensPerSeg, batchSize=batchSize, noContext=noContext, customTableName=customTableName)
+        cf_embedding_generator = transformer_embeddings(modelName=modelName, tokenizerName=tokenizerName, layersToKeep=layersToKeep, aggregations=aggregations, layerAggregations=layerAggregations, wordAggregations=wordAggregations, maxTokensPerSeg=maxTokensPerSeg, batchSize=batchSize, noContext=noContext, customTableName=customTableName)
 
+        layersToKeep = cf_embedding_generator.layersToKeep.tolist()
         
         #TODO: Change the model name later
         #Need to test noc
@@ -1218,9 +1221,12 @@ class FeatureExtractor(DLAWorker):
         usql = """SELECT %s, COUNT(1) AS count FROM %s GROUP BY %s ORDER BY count DESC"""% (self.correl_field, sentTable, self.correl_field)
         msgs = 0 #keeps track of the number of messages read
         cfRows = FeatureExtractor.noneToNull(self.data_engine.execute_get_list(usql)) #SSCursor woudl be better, but it loses connection
+        print (f"Total number of correl field: {len(cfRows)}")
+
         #TODO: Use Total messages to display percentages
         totalMessages = sum(map(lambda x: x[1], cfRows))
-
+        print (f"Total number of messages: {totalMessages}")
+        
         ##iterate through correl_ids (group id):
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
         self.data_engine.disable_table_keys(embTableName)#for faster, when enough space for repair by sorting
@@ -1232,39 +1238,96 @@ class FeatureExtractor(DLAWorker):
         #2. Send this list to a handler that runs a loop on this List[List[(user_id, message)]] and passes it to the embedding_generator class for generating transformer representations, aggregating it and send it back here for dumping to a table
 
         #TODO: Wrap this in a custom sampler method/class for more research surrounding this
+        #TODO: Introduce block_size -> Minimum number of messages that needs to be processed together (Should be bigger than batch size)
         msgsInBatch = 0
-        cfGroups = [[]]
+        cfGroups = [[]] #holds the list of cfIds that needs to batched together 1
+        #Handle None here to maximise performance. 
         for cfRow in cfRows:
             cfId = cfRow[0] #correl field id
             cfNumMsgs = cfRow[1] #Number of messages
-            if msgsInBatch + cfNumMsgs > batchSize:
+            if msgsInBatch + cfNumMsgs > batchSize and len(cfGroups[-1])>=1:
                 cfGroups.append([])
                 msgsInBatch = 0
             cfGroups[-1].append(cfId)
             msgsInBatch += cfNumMsgs
 
-        
-        for cfRow in cfGroups:
+        cfGroups = [cfGrp for cfGrp in cfGroups if cfGrp]
+
+        num_cfs = 0
+            
+        for cfGrp in cfGroups:
             mIdSeen = set() #currently seen message ids
             mIdList = [] #only for keepMsgFeats
 
-            msgRows = [] #List[CF IDs, List[messages]]
-            for cfId in cfRow:  
+            groupedMessageRows = [] #List[CF IDs, List[messages]]
+            for cfId in cfGrp:  
                 #grab sents by messages for that correl field:
+                #Some messages might be None. Handled during tokenization
                 cfMsgRows = self.getMessagesForCorrelField(cfId, messageTable = sentTable, warnMsg=True)
-                msgRows.append([cfId, cfMsgRows])
-
+                groupedMessageRows.append([cfId, cfMsgRows])
+            
             #TODO: write method for prepare messages
             #prepare_messages() should take into account context, no context and other possible modes.
             #prepare_messages() can parallelize the message tokenization.
             #TODO: add num_parallel_workers for above
-            cf_embedding_generator.prepare_messages(msgRows, sent_tok_onthefly)   
-
+            tokenIdsDict, (cfId_seq, msgId_seq) = cf_embedding_generator.prepare_messages(groupedMessageRows, sent_tok_onthefly, noContext)
+            if len(tokenIdsDict["input_ids"]) == 0:
+                continue
+            
             #TODO: Function call to embedding generation
+            encSelectedLayers = cf_embedding_generator.generate_transformer_embeddings(tokenIdsDict)
+
+            if encSelectedLayers is None:
+                continue
+            
             #TODO: Function call to embedding aggregation
-            #TODO: dumping embeddings to table/file. 
+            cf_reps, cfIds = cf_embedding_generator.aggregate(encSelectedLayers, msgId_seq, cfId_seq)
+            #print ([i.shape for i in cf_reps], len(cfIds))
+            #print (cfIds)
+            
+            #sys.exit()
+
+            for idx, cfId in enumerate(cfIds):
+                embFeats = dict()
+
+                if keepMsgFeats:
+                    """
+                    embRows = []
+                    for mid, msg in zip(midList, cf_reps):
+                        embRows.extend([(str(mid), str(k), v, valueFunc(v)) for (k, v) in enumerate(msg)])
+                    wsql = "INSERT INTO "+embTableName+" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"
+                    mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, embRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                    """
+                    print ("Need to fix keepMsgFeats")
+                    sys.exit()
+
+                else:
+                    for ag in aggregations:
+                        #Flatten the features [layer aggregations] to a single dimension.
+                        thisAg = eval("np."+ag+"(cf_reps[idx].reshape(cf_reps[idx].shape[0], -1), axis=0)")
+                        embFeats.update([(str(k)+ag[:2],  v) for (k, v) in enumerate(thisAg)])
+                        insert_idx_start = 0
+                        insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
+                        query = self.qb.create_insert_query(embTableName).set_values([("group_id",str(cfId)),("feat",""),("value",""),("group_norm","")])
+                        embRows = [(k, float(v), valueFunc(float(v))) for k, v in embFeats.items()] #adds group_norm and applies freq filter
+                        while insert_idx_start < len(embRows):
+                            insert_rows = embRows[insert_idx_start:min(insert_idx_end, len(embRows))]
+                            query.execute_query(insert_rows)
+                            insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
+                            insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
+
+            num_cfs += len(set(cfIds))
+            print (num_cfs," cfs finished processing...")
+
+            #cf_reps = np.array(cf_reps)
+            #if cf_reps.shape[0] == 0:
+                #continue
+
+            #TODO: dumping embeddings to table/file.
+
+            #TODO: Add progress bar for user and messages processed.
         
-        return
+        return embTableName
 
     
     def addEmbTable(self, modelName, tokenizerName, modelClass=None, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], keepMsgFeats = False, customTableName = None, valueFunc = lambda d: d):
@@ -1435,13 +1498,13 @@ class FeatureExtractor(DLAWorker):
                     else: #keep context; one submessage; subMessages: [[Msg1, Msg2...]]
                         subMessages=[messageSents]
 
-                    for sents in subMessages: #only matters for noContext)
+                    for sents in subMessages: #only matters for noContext
                         #TODO: preprocess to remove newlines
                         sentsTok = [tokenizer.tokenize(s) for s in sents]
                         #print(sentsTok)#debug
                         #check for overlength:
                         i = 0
-                        while (i < len(sentsTok)):#while instead of for since array may change size
+                        while (i < len(sentsTok)):#while-loop instead of for-loop since array size may change
                             if len(sentsTok[i]) > maxTokensPerSeg: #If the number of tokens is greater than maxTokenPerSeg in a Sentence, split it
                                 newSegs = [sentsTok[i][j:j+maxTokensPerSeg] for j in range(0, len(sentsTok[i]), maxTokensPerSeg)]    
                                 if not lengthWarned:

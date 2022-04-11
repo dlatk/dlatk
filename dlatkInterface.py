@@ -60,7 +60,7 @@ def getInitVar(variable, parser, default, varList=False):
 def colabify():
 
     dlatk_path = dlatk.__path__[0]
-    subprocess.call(['bash', os.path.join(dlatk_path, 'colabify.sh'), dlatk_path])
+    subprocess.call(['bash', os.path.join(dlatk_path, 'tools', 'colabify.sh'), dlatk_path])
 
     return
 
@@ -1480,7 +1480,6 @@ def main(fn_args = None):
     if not args.compTagcloud and not args.cca and (args.correlate or args.rmatrix or args.tagcloud or args.topictc or args.corptopictc or args.barplot or args.featcorrelfilter or args.makewordclouds or args.maketopicwordclouds or args.outcomeWithOutcomeOnly or args.interactionDdla):
         if not oa: oa = OA()
         if not fg: fg = FG()
-
         if args.interactionDdla:
             # if len(args.outcomefieldsprint "There were no features with significant interactions") > 1: raise NotImplementedError("Multiple outcomes with DDLA not yet implemented")
             # Step 1 Interaction

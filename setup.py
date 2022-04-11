@@ -144,7 +144,7 @@ CLASSIFIERS = [
 ]
 VERSION = '1.2.5'
 PACKAGE_DATA = {
-  'dlatk': ['data/*.sql', 'colabify.sh'],
+  'dlatk': ['data/*.sql', 'tools/colabify.sh'],
   'dlatk.lib': ['lib/meloche_bd.ttf', 'lib/oval_big_mask.png', 'lib/oval_mask.png'],
 }
 INCLUDE_PACKAGE_DATA = True

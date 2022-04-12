@@ -16,7 +16,7 @@ fi
 if ! mysql --version | grep -q "5.7" 
 then 
   echo "MySQL 5.7 not found. Installing it now..."
-  apt-get install mysql-server-5.7 mysql-client-5.7
+  apt-get install mysql-server-5.7 mysql-client-5.7 -y
   service mysql start
 fi
 

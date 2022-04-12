@@ -6,9 +6,15 @@
 #Install Python 3.6 if not installed already
 if ! python --version | grep -q "3.6" 
 then 
-  echo "Python 3.6 not found. Installing it now..."
-  update-alternatives --install /usr/local/bin/python python /usr/bin/python3.6 1
-  update-alternatives --set python /usr/bin/python3.6
+  
+  echo "Default Python not 3.6."
+  if ! [ -f /usr/bin/python3.6 ]; then
+    apt-get install python3.6 -y
+  else
+    echo "Python 3.6 exists in /usr/bin. Updating alternatives." 
+  fi
+
+  update-alternatives --install /usr/local/bin/python python /usr/bin/python3.6 1 --force  
   python --version
 fi
 

@@ -1843,15 +1843,16 @@ class FeatureExtractor(DLAWorker):
 
         rowsToInsert = []
 
-        isql = "INSERT IGNORE INTO "+tableName+" (term, category, weight) values (%s, %s, %s)"
+        isql = "INSERT IGNORE INTO "+tableName+" (id, term, category, weight) values (%s, %s, %s, %s)"
         reporting_percent = 0.01
         reporting_int = max(floor(reporting_percent * len(feat_cat_weight)), 1)
         featIdCounter = 0
 
+        i = 0
         for feat in feat_cat_weight:
-            sql = """SELECT feat, avg(group_norm) FROM %s WHERE feat LIKE "%s" """ % (wordTable, mm.MySQLdb.escape_string(feat))
-            attributeRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)[0]
-            if attributeRows[0]:
+            sql = """SELECT feat, avg(group_norm) FROM {} WHERE feat LIKE "%s" GROUP BY feat""".format(wordTable)
+            attributeRows = mm.executeGetList(self.corpdb, self.dbCursor, sql, True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file, query_params=[feat])
+            if len(attributeRows) > 0:
                 rows = [(feat, topic, str(feat_cat_weight[feat][topic]*attributeRows[1])) for topic in feat_cat_weight[feat]]
 
             rowsToInsert.extend(rows)

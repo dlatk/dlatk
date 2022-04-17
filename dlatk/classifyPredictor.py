@@ -1706,7 +1706,7 @@ class ClassifyPredictor:
                     print("No features selected, so using original full X")
             print(" after feature selection: (N, features): %s" % str(X.shape))
         modelName = self.modelName.lower()
-        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
+        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc and modelName != self.backOffModel.lower(): #backoff to simpler model:
             print("number of features is small enough, backing off to %s" % self.backOffModel)
             modelName = self.backOffModel.lower()
 
@@ -1882,7 +1882,7 @@ class ClassifyPredictor:
                 print("couldn't append arrays: perhaps one is sparse and one dense")
                 sys.exit(0)
         modelName = self.modelName.lower()
-        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
+        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc and modelName != self.backOffModel.lower(): #backoff to simpler model:
             print(("number of features is small enough, backing off to %s" % self.backOffModel))
             modelName = self.backOffModel.lower()
 
@@ -2079,7 +2079,7 @@ class ClassifyPredictor:
                 print("couldn't append arrays: perhaps one is sparse and one dense")
                 sys.exit(0)
         modelName = self.modelName.lower()
-        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
+        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc and modelName != self.backOffModel.lower(): #backoff to simpler model:
             print("number of features is small enough, backing off to %s" % self.backOffModel)
             modelName = self.backOffModel.lower()
 

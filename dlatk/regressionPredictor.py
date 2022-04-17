@@ -2002,7 +2002,7 @@ class RegressionPredictor:
             print("  >> after feature selection: (N, features): %s" % str(X.shape))
 
         modelName = self.modelName.lower()
-        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
+        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc and modelName != self.backOffModel.lower(): #backoff to simpler model:
             print("number of features is small enough, backing off to %s" % self.backOffModel)
             modelName = self.backOffModel.lower()
 
@@ -2213,7 +2213,7 @@ class RegressionPredictor:
         #totalFeats = 0
         #for Xi in multiX[0]:
         #    totalFeats += X.shape[1]
-        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
+        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc and modelName != self.backOffModel.lower(): #backoff to simpler model:
             print("![COMBINED FEATS] number of features is small enough (feats: %d, observations: %d), backing off to: '%s'!" %\
                   (X.shape[1], X.shape[0], self.backOffModel))
             modelName = self.backOffModel.lower()

@@ -9,6 +9,7 @@ import sys
 import pdb
 import argparse
 import time
+import subprocess
 from pprint import pprint
 from numpy import isnan, sqrt, log
 from configparser import SafeConfigParser
@@ -18,6 +19,7 @@ from pathlib import Path
 import dlatk.dlaWorker as dlaWorker
 import dlatk.dlaConstants as dlac
 
+import dlatk
 from dlatk import DDLA
 from dlatk.classifyPredictor import ClassifyPredictor
 from dlatk.dimensionReducer import DimensionReducer, CCA
@@ -54,6 +56,14 @@ def getInitVar(variable, parser, default, varList=False):
     else:
         return default
 
+
+def colabify():
+
+    dlatk_path = dlatk.__path__[0]
+    subprocess.call(['bash', os.path.join(dlatk_path, 'tools', 'colabify.sh'), dlatk_path])
+
+    return
+
 #################################################################
 ### Main / Command-Line Processing:
 ##
@@ -81,9 +91,17 @@ def main(fn_args = None):
                        help='reads flag values from file')
     group.add_argument('--conf', '--mysql_config', '--mysql_config_file', metavar='HOST', dest='mysqlconfigfile', default=dlac.MYSQL_CONFIG_FILE,
                        help='Configuration file for MySQL connection settings (default: ~/.my.cnf or dlatk/lib/.dlatk.cnf)')
+    group.add_argument('--colabify', dest='colabify', action='store_true', default=False, help='Flag for post-installtion Colab script')
 
     init_args, remaining_argv = init_parser.parse_known_args()
-
+    
+    if init_args.colabify:
+        try:
+            import google.colab
+            colabify()
+        except ImportError:
+            print('warning: not a Colab environment.')
+    
     if init_args.lexinterface:
         lex_parser = LexInterfaceParser(parents=[init_parser], mysql_config_file=init_args.mysqlconfigfile)
         lex_parser.processArgs(args=remaining_argv, parents=True)
@@ -379,6 +397,8 @@ def main(fn_args = None):
                         help='NOT IMPLEMENTED: Controls to be used for adaptation.')
     group.add_argument('--model', type=str, metavar='name', dest='model', default=getInitVar('model', conf_parser, dlac.DEF_MODEL),
                        help='Model to use when predicting: svc, linear-svc, ridge, linear.')
+    group.add_argument('--turn_off_backoff_model', action='store_true', dest='turn_off_backoff_model', default=False,
+                       help='Turn off backoff model (logistic or linear) when using a small number of features (uses --model instead)')
     group.add_argument('--combined_models', type=str, nargs='+', metavar='name', dest='combmodels', default=dlac.DEF_COMB_MODELS,
                        help='Model to use when predicting: svc, linear-svc, ridge, linear.')
     group.add_argument('--sparse', action='store_true', dest='sparse', default=False,
@@ -1791,7 +1811,10 @@ def main(fn_args = None):
             RegressionPredictor.featureSelectionString = args.featureselectionstring
         elif args.featureselection:
             RegressionPredictor.featureSelectionString = dlac.DEF_RP_FEATURE_SELECTION_MAPPING[args.featureselection]
+        if args.turn_off_backoff_model:
+            ClassifyPredictor.backOffModel = args.model
         rp = RegressionPredictor(og, fgs, args.model, args.outlier_to_mean, n_components = args.n_components)
+
     if args.testcombregression:
         if not og: og = OG()
         if not fgs: fgs = FGs() #all feature getters
@@ -1894,6 +1917,8 @@ def main(fn_args = None):
             ClassifyPredictor.featureSelectionString = args.featureselectionstring
         elif args.featureselection:
             ClassifyPredictor.featureSelectionString = dlac.DEF_CP_FEATURE_SELECTION_MAPPING[args.featureselection]
+        if args.turn_off_backoff_model:
+            ClassifyPredictor.backOffModel = args.model
         cp = ClassifyPredictor(og, fgs, args.model, args.outlier_to_mean, n_components = args.n_components) #todo change to a method variables (like og...etc..)
 
 

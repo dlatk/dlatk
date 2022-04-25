@@ -60,7 +60,7 @@ from .classifyPredictor import ClassifyPredictor
 from .dimensionReducer import PPA
 from .mysqlmethods import mysqlMethods as mm
 from .dlaConstants import DEFAULT_MAX_PREDICT_AT_A_TIME, DEFAULT_RANDOM_SEED, warn, MinScaler
-
+from .wrappedPCA import WrappedPCA
 
 def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
     """turns a list of dicts for x and a dict for y into a matrix X and vector y"""
@@ -2014,7 +2014,7 @@ class RegressionPredictor:
             print("  >> after feature selection: (N, features): %s" % str(X.shape))
 
         modelName = self.modelName.lower()
-        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
+        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc and modelName != self.backOffModel.lower(): #backoff to simpler model:
             print("number of features is small enough, backing off to %s" % self.backOffModel)
             modelName = self.backOffModel.lower()
 
@@ -2225,7 +2225,7 @@ class RegressionPredictor:
         #totalFeats = 0
         #for Xi in multiX[0]:
         #    totalFeats += X.shape[1]
-        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc: #backoff to simpler model:
+        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc and modelName != self.backOffModel.lower(): #backoff to simpler model:
             print("![COMBINED FEATS] number of features is small enough (feats: %d, observations: %d), backing off to: '%s'!" %\
                   (X.shape[1], X.shape[0], self.backOffModel))
             modelName = self.backOffModel.lower()

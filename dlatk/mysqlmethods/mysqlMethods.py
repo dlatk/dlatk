@@ -23,6 +23,7 @@ def dbConnect(db, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_co
                 db = db,
                 charset = charset,
                 use_unicode = use_unicode, 
+                local_infile=True,
                 read_default_file = mysql_config_file
             )
             break
@@ -138,7 +139,7 @@ def executeGetDict( db, dictCursor, sql, warnQuery=False, charset=DEF_ENCODING, 
                 sys.exit(1)
     return data
 
-def executeGetList( db, dbCursor, sql, warnQuery=True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE):
+def executeGetList( db, dbCursor, sql, warnQuery=True, charset=DEF_ENCODING, use_unicode=DEF_UNICODE_SWITCH, mysql_config_file=MYSQL_CONFIG_FILE, query_params=None):
     """Executes a given query, returns results as a list of lists"""
     warnQuery = False
     if warnQuery:
@@ -147,7 +148,10 @@ def executeGetList( db, dbCursor, sql, warnQuery=True, charset=DEF_ENCODING, use
     attempts = 0;
     while (1):
         try:
-            dbCursor.execute(sql)
+            if query_params is None:
+                dbCursor.execute(sql)
+            else:
+                dbCursor.execute(sql, query_params)
             data = dbCursor.fetchall()
             break
         except MySQLdb.Error as e:

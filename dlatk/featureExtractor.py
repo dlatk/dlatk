@@ -221,8 +221,8 @@ class FeatureExtractor(DLAWorker):
                 insert_idx_end = min(dlac.MYSQL_BATCH_INSERT_SIZE, len(rows))
                 while insert_idx_start < len(rows):
                     insert_rows = rows[insert_idx_start:insert_idx_end]
-                    if len(rows) > dlac.MYSQL_BATCH_INSERT_SIZE:
-                        dlac.warn("Inserting rows %d to %d for group id: %s" % (insert_idx_start, insert_idx_end, str(cf_id)))#DEBUG
+                    #if len(rows) > dlac.MYSQL_BATCH_INSERT_SIZE:
+                    #    dlac.warn("Inserting rows %d to %d for group id: %s" % (insert_idx_start, insert_idx_end, str(cf_id)))#DEBUG
                     query.execute_query(insert_rows)
                     insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
                     insert_idx_end = min(insert_idx_end + dlac.MYSQL_BATCH_INSERT_SIZE, len(rows))

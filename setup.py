@@ -142,7 +142,7 @@ CLASSIFIERS = [
   'Programming Language :: Python :: 3.5',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '1.2.5'
+VERSION = '1.2.6'
 PACKAGE_DATA = {
   'dlatk': ['data/*.sql', 'tools/colabify.sh'],
   'dlatk.lib': ['lib/meloche_bd.ttf', 'lib/oval_big_mask.png', 'lib/oval_mask.png'],

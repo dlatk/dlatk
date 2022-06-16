@@ -1,4 +1,4 @@
-#/bin/python
+#!/bin/python
 """
 Classify Predictor
 
@@ -145,11 +145,11 @@ def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True, classes = No
         fpr = dict()
         tpr = dict()
         roc_auc = dict()
-        print("Muti-AUCs:")
+        #print("Muti-AUCs:")
         for i in range(n_classes):
             fpr[i], tpr[i], _ = roc_curve(ytrue[:, i], ypredProbs[:, i])
             roc_auc[i] = auc(fpr[i], tpr[i])
-            print("  ", i, ": %.4f" % roc_auc[i]) 
+            #print("  ", i, ": %.4f" % roc_auc[i]) 
 
         # Compute micro-average ROC curve and ROC area
         fpr["micro"], tpr["micro"], _ = roc_curve(ytrue.ravel(), ypredProbs.ravel())
@@ -260,9 +260,9 @@ class ClassifyPredictor:
             #{'C':[1, 10, 0.1, 0.01, 0.05, 0.005], 'penalty':['l1'], 'dual':[False]} #swl/perma message-level
             ],
         'lr': [
-            {'C':[0.01], 'penalty':['l2'], 'dual':[False], 'random_state': [42]},#DEFAULT
-            #{'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l2'], 'dual':[False]}, 
-            #{'C':[0.01, 0.1, 0.001, 1, .0001], 'penalty':['l2'], 'dual':[False]}, 
+            {'C':[0.1], 'penalty':['l2'], 'dual':[False], 'random_state': [42]},#DEFAULT
+            #{'C':[0.01, 0.1, 1, 10], 'penalty':['l2'], 'dual':[False]}, 
+            #{'C':[0.01, 0.1, 0.001, 1], 'penalty':['l2'], 'dual':[False]}, 
             #{'C':[0.00001], 'penalty':['l2']} # UnivVsMultiv choice Maarten
             #{'C':[1000000], 'penalty':['l2'], 'dual':[False]} # for a l0 penalty approximation
             #{'C':[1000000000000], 'penalty':['l2'], 'dual':[False]} # for a l0 penalty approximation
@@ -283,9 +283,9 @@ class ClassifyPredictor:
         'etc': [ 
             #{'n_jobs': [10], 'n_estimators': [250], 'criterion':['gini']}, 
             #{'n_jobs': [10], 'n_estimators': [1000], 'criterion':['gini']},  #DEFAULT
-            #{'n_jobs': [10], 'n_estimators': [100], 'criterion':['gini']}, 
+            {'n_jobs': [10], 'n_estimators': [250], 'max_features':['log2'],'criterion':['gini']}, 
             #{'n_jobs': [12], 'n_estimators': [50], 'max_features': ["sqrt", "log2", None], 'criterion':['gini', 'entropy'], 'min_samples_split': [2]},
-            {'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced_subsample']},#BEST
+           # {'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced_subsample']},#BEST
             #{'n_jobs': [12], 'n_estimators': [1000], 'max_features': [None], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced_subsample']},
             #{'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2]},
             #{'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced']}, 
@@ -1036,8 +1036,8 @@ class ClassifyPredictor:
             print(" *precision: %.4f " % (precision))
             print(" *recall: %.4f " % (recall))
             if not multiclass:
-                recall_sensitivity = recall_score(ytest, ypred, average='binary')
-                recall_specificity = recall_score(np.abs(np.array(ytest) - 1), np.abs(np.array(ypred)-1), average='binary')
+                recall_sensitivity = recall_score(ytest, ypred, average='macro')
+                recall_specificity = recall_score(np.abs(np.array(ytest) - 1), np.abs(np.array(ypred)-1), average='macro')
                 print("  *sensitivity: %.4f (at default class split)" % (recall_sensitivity))
                 print("  *specificity: %.4f (at default class split)" % (recall_specificity))
             #print(" *specificity: %.4f " % (specificity))
@@ -1111,7 +1111,7 @@ class ClassifyPredictor:
             
             print(" [Aligning current X with training X: feature group: %d]" %i)
             groupNormValues = []
-            
+
             for feat in self.featureNamesList[i]:
                 # groupNormValues is a list in order of featureNamesList of all the group_norms
                 groupNormValues.append(groupNorms.get(feat, {}))
@@ -1893,7 +1893,7 @@ class ClassifyPredictor:
             
                 gs = GridSearchCV(OneVsRestClassifier(eval(self.modelToClassName[modelName]+'()')), 
                                   param_grid=parameters, n_jobs = self.cvJobs,
-                                  cv=ShuffleSplit(len(y), n_splits=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
+                                  cv=ShuffleSplit(n_splits=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
             else:
                 gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
                                   self.cvParams[modelName], n_jobs = self.cvJobs,

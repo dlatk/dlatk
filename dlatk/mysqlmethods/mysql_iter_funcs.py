@@ -26,7 +26,15 @@ def get_db_engine(db_schema, charset=DEF_ENCODING, mysql_config_file = MYSQL_CON
     attempts = 0;
     while (1):
         try:
-            db_url = URL.create(drivername='mysql', port=port,
+            if hasattr(URL, "create"):
+                db_url = URL.create(drivername='mysql', port=port,
+                                database=db_schema,
+                                query={
+                                    'read_default_file' : mysql_config_file,
+                                    'charset': charset
+                                })
+            else:
+                db_url = URL(drivername='mysql', port=port,
                                 database=db_schema,
                                 query={
                                     'read_default_file' : mysql_config_file,

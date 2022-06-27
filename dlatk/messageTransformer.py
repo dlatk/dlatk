@@ -117,7 +117,7 @@ class MessageTransformer(DLAWorker):
 
             if messages:
                 #tokenize msgs:
-                parses = [json.dumps(transformation_func(m)) if len(m) > 0 and not m.isspace() else '' for m in messages]
+                parses = [json.dumps(transformation_func(m)) if len(m) > 0 and not m.isspace() and len(m.replace('&nbsp;', '').strip()) > 0 else '' for m in messages]
                 self._writeMsgsForGroups(rows, parses, messageIndex, tableName, columnNames)
 
                 groupsWritten += self.groupsAtTime

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-# /bin/python
-=======
 #!/bin/python
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
 """
 Classify Predictor
 
@@ -23,14 +19,7 @@ import pandas as pd
 
 from collections import defaultdict, Counter
 
-<<<<<<< HEAD
 # scikit-learn imports
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.model_selection import (
-    ShuffleSplit,
-    train_test_split,
-    GridSearchCV,
-)
 from sklearn.metrics import (
     classification_report,
     confusion_matrix,
@@ -43,17 +32,11 @@ from sklearn.metrics import (
     roc_auc_score,
     matthews_corrcoef,
 )
+from sklearn import metrics
 
 from sklearn.preprocessing import StandardScaler, label_binarize
 from sklearn.multiclass import OneVsRestClassifier
 
-# from sklearn.lda import LDA #linear descriminant analysis
-from sklearn import metrics
-
-
-# scipy
-from scipy.stats import zscore, t
-=======
 #scikit-learn classifier imports
 from sklearn.svm import SVC, LinearSVC, SVR
 from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier, GradientBoostingClassifier
@@ -78,7 +61,7 @@ from sklearn.base import ClassifierMixin
 
 #scipy
 from scipy.stats import zscore, t, wilcoxon
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
+
 from scipy.stats.stats import pearsonr, spearmanr
 from scipy.sparse import csr_matrix, hstack, spmatrix
 import numpy as np
@@ -186,11 +169,7 @@ def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True, classes=None
         for i in range(n_classes):
             fpr[i], tpr[i], _ = roc_curve(ytrue[:, i], ypredProbs[:, i])
             roc_auc[i] = auc(fpr[i], tpr[i])
-<<<<<<< HEAD
-            print("  ", i, ": %.4f" % roc_auc[i])
-=======
             #print("  ", i, ": %.4f" % roc_auc[i]) 
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
 
         # Compute micro-average ROC curve and ROC area
         fpr["micro"], tpr["micro"], _ = roc_curve(ytrue.ravel(), ypredProbs.ravel())
@@ -257,91 +236,6 @@ class ClassifyPredictor:
 
     # cross validation parameters:
     cvParams = {
-<<<<<<< HEAD
-        "svc": [
-            {
-                "kernel": ["rbf"],
-                "gamma": [0.001, 0.01, 0.0001, 0.1, 0.00001, 1],
-                "C": [1, 10, 100, 1000, 10000, 0.1],
-            },
-            # {'kernel': ['rbf'], 'gamma': [0.001, 0.0001, 0.00001], 'C': [1, 10, 100, 1000, 0.1]},  #msg-level
-            # {'kernel': ['rbf'], 'gamma': [0.001, 0.0001, 0.01, .1, 0.00001, 0.000001], 'C': [10, 100, 1000, 10000]},  #msg-level timediffonly
-            # {'kernel': ['rbf'], 'gamma': [0.0001, 0.00001, 0.000001], 'C': [10, 1, 100]},  #swl
-            # {'kernel': ['rbf'], 'gamma': [0.0001, 0.00001, 0.000001], 'C': [10, 1, 100]},  #swl
-            # {'kernel': ['rbf'], 'gamma': [0.00001], 'C': [10]}, #msg-level ppf
-            # {'kernel': ['rbf']},
-            # {'kernel': ['sigmoid'], 'C': [0.01, 0.001, .1, .0001, 10, 1]},
-            # {'kernel': ['linear'], 'C': [100, 10, 1000, 1], 'random_state': [42]}
-        ],
-        "linear-svc": [
-            # {'C':[0.01], 'penalty':['l2'], 'dual':[True]} #timex message-level
-            # {'C':[10, 1, 0.1, 0.01, 0.001, 0.0001, 0.0025, 0.00025, 0.00001, 0.000001, 0.000025, 0.0000001, 0.0000025, 0.00000001, 0.00000025], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]}, #swl
-            # {'C':[100, 10, 1, 500, 1000, 5000, 10000, 25000, 0.1, 0.01, 0.001, 0.0001], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]}
-            # {'C':[0.0001, 0.001, 0.00001, 0.01], 'penalty':['l2'], 'dual':[True]}
-            # {'C':[0.01, 0.1, 0.001, 1, 0.0001, 10, 0.00001, 0.000001, 0.0000001], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]} #swl user
-            # {'C':[0.01, 0.1, 0.001, 1, 0.0001, 10], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]} #depression user
-            # {'C':[0.01, 0.1, 0.001, 0.0001, 0.00001, 0.000001], 'loss':['l2'], 'penalty':['l2'], 'dual':[False]} #depression user lots o feats
-            # {'C':[1, 100, 10, 5, 2, 0.1], 'loss':['l2'], 'penalty':['l2'], 'dual':[True]}, #topics, personality
-            # {'C':[100, 10, 1000, 10000], 'loss':['l1'], 'penalty':['l2'], 'dual':[True]},
-            # {'C':[1000], 'loss':['l1'], 'penalty':['l2'], 'dual':[True]},
-            # {'C':[100, 10, 1000, 10000], 'loss':['l2'], 'penalty':['l1'], 'dual':[False]},
-            # {'C':[100, 10, 1000, 1, 10000], 'penalty':['l1'], 'dual':[False]},
-            # {'C':[100, 10, 1000, 1, 10000, .1], 'penalty':['l1'], 'dual':[False]},
-            # {'C':[100, 500, 10, 1000, 5000, 1, 10000], 'loss': ['l2'], 'penalty':['l2'], 'dual':[True]},
-            # {'C':[5000]},
-            # {'C':[100],'penalty':['l1'], 'dual':[False]} # 1gram gender classification no standardize no featureSelection
-            # {'C':[100, 10, 1000], 'penalty':['l1'], 'dual':[False]},
-            # {'C':1.0, 'fit_intercept':True, 'loss':'l2', penalty:'l2'}, #if not centered data, use fit_intercept
-            # {'C':1.0, 'dual':False}, #when N_samples > n_features
-            # {'C':[0.01, 0.1, 1, 10, 0.001], 'penalty':['l2'], 'dual':[True]} #timex message-level
-            # with l1 feature selection:
-            {
-                "C": [0.01],
-                "penalty": ["l1"],
-                "dual": [False],
-                "class_weight": ["balanced"],
-            }  # age, general sparse setting #words n phrases, gender (best 0.01=> 91.4 )
-            # {'C':[0.01, 0.1, 0.001], 'penalty':['l1'], 'dual':[False], 'class_weight':['balanced']}, #FIRST PASS l1 OPTION; swl message-level
-            # {'C':[10, 1, 0.1, 0.01, 0.001, 0.0001, 0.0025, 0.00025, 0.00001, 0.000001, 0.000025, 0.0000001, 0.0000025, 0.00000001, 0.00000025], 'penalty':['l1'], 'dual':[False]} #swl
-            # {'C':[0.1], 'penalty':['l1'], 'dual':[False], 'multi_class':['crammer_singer']} #
-            # {'C':[0.01, 0.1, 1, 10, 0.001], 'penalty':['l1'], 'dual':[False]} #timex message-level
-            # {'C':[0.000001], 'penalty':['l2']}, # UnivVsMultiv choice Maarten
-            # {'C':[0.001], 'penalty':['l1'], 'dual':[False]}, # UnivVsMultiv choice Maarten
-            # {'C':[1000000], 'penalty':['l2'], 'dual':[False]} #simulate l0
-            # {'C':[1, 10, 0.1, 0.01, 0.05, 0.005], 'penalty':['l1'], 'dual':[False]} #swl/perma message-level
-        ],
-        "lr": [
-            {"C": [0.01], "penalty": ["l2"], "dual": [False], "random_state": [42]},  # DEFAULT
-            # {'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l2'], 'dual':[False]},
-            # {'C':[0.01, 0.1, 0.001, 1, .0001], 'penalty':['l2'], 'dual':[False]},
-            # {'C':[0.00001], 'penalty':['l2']} # UnivVsMultiv choice Maarten
-            # {'C':[1000000], 'penalty':['l2'], 'dual':[False]} # for a l0 penalty approximation
-            # {'C':[1000000000000], 'penalty':['l2'], 'dual':[False]} # for a l0 penalty approximation
-            ##L1
-            # {'C':[0.01], 'penalty':['l1']} # DEFAULT L1
-            # {'C':[0.01, 0.1, 0.001, 1, .0001, 10], 'penalty':['l1'], 'dual':[False]},
-            # {'C':[0.1, 1, 0.01], 'penalty':['l1'], 'dual':[False]} #timex message-level
-            # {'C':[10, 1, 100, 1000], 'penalty':['l1'], 'dual':[False]}
-            # {'C':[0.01, 0.1, 0.001, 0.0001, 0.00001], 'penalty':['l1'], 'dual':[False]}
-            # {'C':[0.1, 1, 10], 'penalty':['l1'], 'dual':[False]} #timex l2 rpca....
-            # {'C':[100], 'penalty':['l1'], 'dual':[False]} # gender prediction
-        ],
-        "etc": [
-            # {'n_jobs': [10], 'n_estimators': [250], 'criterion':['gini']},
-            {"n_jobs": [10], "n_estimators": [1000], "criterion": ["gini"]},
-            # {'n_jobs': [10], 'n_estimators': [100], 'criterion':['entropy']},
-            # {'n_jobs': [12], 'n_estimators': [50], 'max_features': ["sqrt", "log2", None], 'criterion':['gini'], 'min_samples_split': [1]},
-            # {'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced_subsample']},
-            # {'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced']},
-            # {'n_jobs': [12], 'n_estimators': [200], 'max_features': ["sqrt"], 'critearion':['gini'], 'min_samples_split': [2]},
-        ],
-        "rfc": [
-            {"n_jobs": [10], "n_estimators": [1000]},
-        ],
-        "pac": [
-            {"n_jobs": [10], "C": [1, 0.1, 10]},
-        ],
-=======
         'svc': [
             {'kernel': ['rbf'], 'gamma': [0.001, 0.01, 0.0001, 0.1, 0.00001, 1], 'C': [1, 10, 100, 1000, 10000, 0.1]}, 
             #{'kernel': ['rbf'], 'gamma': [0.001, 0.0001, 0.00001], 'C': [1, 10, 100, 1000, 0.1]},  #msg-level
@@ -424,7 +318,6 @@ class ClassifyPredictor:
         'pac': [
             {'n_jobs': [10], 'C': [1, .1, 10]}, 
             ],
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
         # 'lda': [
         #     {},
         #     ],
@@ -444,36 +337,6 @@ class ClassifyPredictor:
         "gnb": [
             {},
             # {'priors': [None]}, # 'priors' becomes a parameter in sklearn 0.18
-<<<<<<< HEAD
-        ],
-        "bnb": [
-            {"alpha": [1.0], "fit_prior": [False], "binarize": [True]},
-        ],
-    }
-
-    modelToClassName = {
-        "lr": "LogisticRegression",
-        "linear-svc": "LinearSVC",
-        "svc": "SVC",
-        "etc": "ExtraTreesClassifier",
-        "rfc": "RandomForestClassifier",
-        "pac": "PassiveAggressiveClassifier",
-        #'lda' : 'LDA', #linear discriminant analysis
-        "gbc": "GradientBoostingClassifier",
-        "mnb": "MultinomialNB",
-        "gnb": "GaussianNB",
-        "bnb": "BernoulliNB",
-    }
-
-    modelToCoeffsName = {
-        ##TODO##
-        "linear-svc": "coef_",
-        "svc": "coef_",
-        "lr": "coef_",
-        "mnb": "coef_",
-        "bnb": "feature_log_prob_",
-    }
-=======
             ], 
         'bnb': [
             {'alpha': [1.0], 'fit_prior': [False], 'binarize':[True]},
@@ -513,7 +376,6 @@ class ClassifyPredictor:
         'bnb' : 'feature_log_prob_',
         'mlp' : 'coefs_',
         }
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
 
     # cvJobs = 3 #when lots of data
     # cvJobs = 6 #normal
@@ -522,15 +384,8 @@ class ClassifyPredictor:
     cvFolds = 3
     chunkPredictions = False  # whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 30000
-<<<<<<< HEAD
-    backOffPerc = (
-        0.05  # when the num_featrue / training_insts is less than this backoff to backoffmodel
-    )
-    backOffModel = "lr"
-=======
     backOffPerc = .05 #when the num_featrue / training_insts is less than this backoff to backoffmodel
     backOffModel = 'lrnone' #'lr'
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
 
     # feature selection:
     featureSelectionString = None
@@ -935,15 +790,9 @@ class ClassifyPredictor:
             dict()
         )  # outcome => control_tuple => [0],[1] => scores= {R2, R, r, r-p, rho, rho-p, MSE, train_size, test_size, num_features,yhats}
         if not comboSizes:
-<<<<<<< HEAD
-            comboSizes = range(len(controlKeys) + 1)
-            if allControlsOnly:
-                # if len(controlKeys) > 1:
-=======
             comboSizes = range(len(controlKeys)+1)
             if allControlsOnly  and len(controlKeys) > 0:
                 #if len(controlKeys) > 1: 
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
                 #    comboSizes = [0, 1, len(controlKeys)]
                 # else:
                 comboSizes = [0, len(controlKeys)]
@@ -1214,16 +1063,6 @@ class ClassifyPredictor:
                             outcomes, predictions, predictionProbs
                         )
                         ypredProbs = array(ypredProbs)
-<<<<<<< HEAD
-                        reportStats["acc"] = accuracy_score(ytrue, ypred)
-                        reportStats["f1"] = f1_score(ytrue, ypred, average="macro")
-                        reportStats["auc"] = computeAUC(
-                            ytrue, ypredProbs, multiclass, classes=classes
-                        )
-                        reportStats["precision"] = precision_score(ytrue, ypred, average="macro")
-                        reportStats["recall"] = recall_score(ytrue, ypred, average="macro")
-                        reportStats["recall_micro"] = recall_score(ytrue, ypred, average="micro")
-=======
                         reportStats['acc'] = accuracy_score(ytrue, ypred)
                         reportStats['f1'] = f1_score(ytrue, ypred, average='macro')
                         reportStats['auc']= computeAUC(ytrue, ypredProbs, multiclass,  classes = classes)
@@ -1231,7 +1070,6 @@ class ClassifyPredictor:
                         reportStats['precision'] = precision_score(ytrue, ypred, average='macro')
                         reportStats['recall'] = recall_score(ytrue, ypred, average='macro')
                         reportStats['recall_micro'] = recall_score(ytrue, ypred, average='micro')
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
                         if not multiclass:
                             reportStats["recall_sensitivity"] = recall_score(
                                 ytrue, ypred, average="binary"
@@ -1248,35 +1086,6 @@ class ClassifyPredictor:
                             warn("matt_ccoef: %s" % e)
                             reportStats["matt_ccoef"] = "multiclass"
                         testCounter = Counter(ytrue)
-<<<<<<< HEAD
-                        reportStats["mfclass_acc"] = testCounter[mfclass] / float(len(ytrue))
-
-                        if controlCombineProbs:  # ensemble with controls (AUC weighted)
-                            reportStats[
-                                "auc_cntl_comb2"
-                            ] = 0.0  # add columns so csv always has same
-                            reportStats["auc_cntl_comb2_t"] = 0.0
-                            reportStats["auc_cntl_comb2_p"] = 1.0
-                            if withLanguage and savedControlYpp is not None:
-                                newProbsDict = ensembleNFoldAUCWeight(
-                                    outcomes, [predictionProbs, savedControlPProbs], groupFolds
-                                )
-                                ensYtrue, ensYPredProbs, ensYCntrlProbs = alignDictsAsy(
-                                    outcomes, newProbsDict, savedControlPProbs
-                                )
-                                # reportStats['auc_cntl_comb2'] = pos_neg_auc(ensYtrue, np.array(ensYPredProbs)[:,-1])
-                                reportStats["auc_cntl_comb2"] = computeAUC(
-                                    ensYtrue, np.array(ensYPredProbs), multiclass, classes=classes
-                                )
-                                (
-                                    reportStats["auc_cntl_comb2_t"],
-                                    reportStats["auc_cntl_comb2_p"],
-                                ) = paired_t_1tail_on_errors(
-                                    np.array(ensYPredProbs)[:, -1],
-                                    np.array(ensYCntrlProbs)[:, -1],
-                                    ensYtrue,
-                                )
-=======
                         reportStats['mfclass_acc'] = testCounter[mfclass] / float(len(ytrue))
 
                         if controlCombineProbs:#ensemble with controls (AUC weighted)
@@ -1303,7 +1112,6 @@ class ClassifyPredictor:
                                 reportStats['auc_cntl_comb2'] = computeAUC(ensYtrue, np.array(ensYPredProbs), multiclass,  classes = classes)
                                 #reportStats['auc_cntl_comb2_t'], reportStats['auc_cntl_comb2_p'] = paired_t_1tail_on_errors(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue)
                                 reportStats['auc_cntl_comb2_p'] = paired_bootstrap_1tail_on_aucs(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue, multiclass, classes)
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
                                 ## TODO: finish this and add flag: --ensemble_controls
                                 # predictions = #todo:dictionary
                                 # predictionProbs = newProbsDict
@@ -1311,19 +1119,11 @@ class ClassifyPredictor:
                                 savedControlYpp = ypredProbs[:, -1]
                                 savedControlPProbs = predictionProbs
 
-<<<<<<< HEAD
-                        if savePredictions:
-                            reportStats["predictions"] = predictions
-                            # reportStats['predictionProbs'] = {k:v[-1] for k,v in predictionProbs.items()}
-                            reportStats["predictionProbs"] = predictionProbs
-                        # pprint(reportStats) #debug
-=======
                         if savePredictions: 
                             reportStats['predictions'] = predictions
                             #reportStats['predictionProbs'] = {k:v[-1] for k,v in predictionProbs.items()}
                             reportStats['predictionProbs'] = predictionProbs
                         #pprint(reportStats) #debug
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
                         mfclass = Counter(ytest).most_common(1)[0][0]
                         print(
                             "* Overall Fold Acc: %.4f (+- %.4f) vs. MFC Accuracy: %.4f (based on test rather than train)"
@@ -1502,15 +1302,8 @@ class ClassifyPredictor:
             print(" *precision: %.4f " % (precision))
             print(" *recall: %.4f " % (recall))
             if not multiclass:
-<<<<<<< HEAD
-                recall_sensitivity = recall_score(ytest, ypred, average="binary")
-                recall_specificity = recall_score(
-                    np.abs(np.array(ytest) - 1), np.abs(np.array(ypred) - 1), average="binary"
-                )
-=======
                 recall_sensitivity = recall_score(ytest, ypred, average='macro')
                 recall_specificity = recall_score(np.abs(np.array(ytest) - 1), np.abs(np.array(ypred)-1), average='macro')
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
                 print("  *sensitivity: %.4f (at default class split)" % (recall_sensitivity))
                 print("  *specificity: %.4f (at default class split)" % (recall_specificity))
             # print(" *specificity: %.4f " % (specificity))
@@ -1734,34 +1527,6 @@ class ClassifyPredictor:
                 preds = chunkPredictions[feat]
                 # pprint(preds)#DEBUG
                 print("[Inserting Predictions as Feature values for feature: %s]" % feat)
-<<<<<<< HEAD
-                wsql = (
-                    """INSERT INTO """
-                    + featureTableName
-                    + """ (group_id, feat, value, group_norm) values (%s, '"""
-                    + feat
-                    + """', %s, %s)"""
-                )
-                wCursor = mm.dbConnect(
-                    self.corpdb,
-                    host=self.mysql_host,
-                    charset=self.encoding,
-                    use_unicode=self.use_unicode,
-                )[1]
-
-                for k, v in preds.items():
-                    rows.append((k, v, v))
-                    if len(rows) > self.maxPredictAtTime or len(rows) >= len(preds):
-                        mm.executeWriteMany(
-                            fe.corpdb,
-                            fe.dbCursor,
-                            wsql,
-                            rows,
-                            writeCursor=wCursor,
-                            charset=fe.encoding,
-                            use_unicode=fe.use_unicode,
-                        )
-=======
                 wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
                 wCursor = mm.dbConnect(self.corpdb, host=self.mysql_host, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)[1]
                 
@@ -1769,32 +1534,13 @@ class ClassifyPredictor:
                     rows.append((k, v, v))
                     if len(rows) >  self.maxPredictAtTime or len(rows) >= len(preds):
                         mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=wCursor, charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
                         written += len(rows)
                         print("   %d feature rows written" % written)
                         rows = []
             # if there's rows left
             if rows:
-<<<<<<< HEAD
-                wCursor = mm.dbConnect(
-                    self.corpdb,
-                    host=self.mysql_host,
-                    charset=self.encoding,
-                    use_unicode=self.use_unicode,
-                )[1]
-                mm.executeWriteMany(
-                    fe.corpdb,
-                    fe.dbCursor,
-                    wsql,
-                    rows,
-                    writeCursor=wCursor,
-                    charset=fe.encoding,
-                    use_unicode=fe.use_unicode,
-                )
-=======
                 wCursor = mm.dbConnect(self.corpdb, host=self.mysql_host, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)[1]
                 mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=wCursor, charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
                 written += len(rows)
                 print("   %d feature rows written" % written)
         return
@@ -2036,28 +1782,6 @@ class ClassifyPredictor:
                 preds = chunkPredictions[feat]
                 # pprint(preds)#DEBUG
                 print("[Inserting Predictions as Feature values for feature: %s]" % feat)
-<<<<<<< HEAD
-                wsql = (
-                    """INSERT INTO """
-                    + featureTableName
-                    + """ (group_id, feat, value, group_norm) values (%s, '"""
-                    + feat
-                    + """', %s, %s)"""
-                )
-
-                for k, v in preds.items():
-                    rows.append((k, v, v))
-                    if len(rows) > self.maxPredictAtTime or len(rows) >= len(preds):
-                        mm.executeWriteMany(
-                            fe.corpdb,
-                            fe.dbCursor,
-                            wsql,
-                            rows,
-                            writeCursor=fe.dbConn.cursor(),
-                            charset=fe.encoding,
-                            use_unicode=fe.use_unicode,
-                        )
-=======
                 #wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
                 query = fe.qb.create_insert_query(featureTableName).set_values([("group_id",""),("feat",feat),("value",""),("group_norm","")])
                 
@@ -2066,26 +1790,13 @@ class ClassifyPredictor:
                     if len(rows) >  self.maxPredictAtTime or len(rows) >= len(preds):
                         query.execute_query(rows)
                         #mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
                         written += len(rows)
                         print("   %d feature rows written" % written)
                         rows = []
             # if there's rows left
             if rows:
-<<<<<<< HEAD
-                mm.executeWriteMany(
-                    fe.corpdb,
-                    fe.dbCursor,
-                    wsql,
-                    rows,
-                    writeCursor=fe.dbConn.cursor(),
-                    charset=fe.encoding,
-                    use_unicode=fe.use_unicode,
-                )
-=======
                 query.execute_query(rows)
                 #mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
                 written += len(rows)
                 print("   %d feature rows written" % written)
         return
@@ -2267,21 +1978,8 @@ class ClassifyPredictor:
             buildTable = transform
 
         lex_dict = dict()
-<<<<<<< HEAD
-        sql = """SELECT term, category, weight from {lexDB}.{lexTable}""".format(
-            lexDB=featureGetter.lexicondb, lexTable=topicTable
-        )
-        rows = mm.executeGetList(
-            featureGetter.corpdb,
-            featureGetter.dbCursor,
-            sql,
-            charset=featureGetter.encoding,
-            use_unicode=featureGetter.use_unicode,
-        )
-=======
         sql = """SELECT term, category, weight from {lexDB}.{lexTable}""".format(lexDB=featureGetter.lexicondb, lexTable=topicTable)
         rows = mm.executeGetList(featureGetter.corpdb, featureGetter.dbCursor, sql, charset=featureGetter.encoding, use_unicode=featureGetter.use_unicode, mysql_config_file=featureGetter.mysql_config_file)
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
         for row in rows:
             term, category, weight = str(row[0]).strip(), str(row[1]).strip(), float(row[2])
             if term not in lex_dict:
@@ -2346,11 +2044,7 @@ class ClassifyPredictor:
                     print("No features selected, so using original full X")
             print(" after feature selection: (N, features): %s" % str(X.shape))
         modelName = self.modelName.lower()
-<<<<<<< HEAD
-        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc:  # backoff to simpler model:
-=======
         if (X.shape[1] / float(X.shape[0])) < self.backOffPerc and modelName != self.backOffModel.lower(): #backoff to simpler model:
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
             print("number of features is small enough, backing off to %s" % self.backOffModel)
             modelName = self.backOffModel.lower()
 
@@ -2551,38 +2245,17 @@ class ClassifyPredictor:
                 print("couldn't append arrays: perhaps one is sparse and one dense")
                 sys.exit(0)
         modelName = self.modelName.lower()
-<<<<<<< HEAD
-        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc:  # backoff to simpler model:
-=======
         if (X.shape[1] / float(X.shape[0])) < self.backOffPerc and modelName != self.backOffModel.lower(): #backoff to simpler model:
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
             print(("number of features is small enough, backing off to %s" % self.backOffModel))
             modelName = self.backOffModel.lower()
 
         if hasMultValuesPerItem(self.cvParams[modelName]) and modelName[-2:] != "cv":
             # grid search for classifier params:
             if len(classes) > 2:
-<<<<<<< HEAD
-                parameters = {"estimator__" + k: v for k, v in self.cvParams[modelName][0].items()}
-
-                gs = GridSearchCV(
-                    OneVsRestClassifier(eval(self.modelToClassName[modelName] + "()")),
-                    param_grid=parameters,
-                    n_jobs=self.cvJobs,
-                    cv=ShuffleSplit(
-                        len(y),
-                        n_iter=(self.cvFolds + 1),
-                        test_size=1 / float(self.cvFolds),
-                        random_state=0,
-                    ),
-                )
-=======
                 parameters = {'estimator__' + k: v for k,v in self.cvParams[modelName][0].items()}
-            
                 gs = GridSearchCV(OneVsRestClassifier(eval(self.modelToClassName[modelName]+'()')), 
                                   param_grid=parameters, n_jobs = self.cvJobs,
                                   cv=ShuffleSplit(n_splits=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
             else:
                 gs = GridSearchCV(
                     eval(self.modelToClassName[modelName] + "()"),
@@ -2816,11 +2489,7 @@ class ClassifyPredictor:
                 print("couldn't append arrays: perhaps one is sparse and one dense")
                 sys.exit(0)
         modelName = self.modelName.lower()
-<<<<<<< HEAD
-        if (X.shape[1] / float(X.shape[0])) < self.backOffPerc:  # backoff to simpler model:
-=======
         if (X.shape[1] / float(X.shape[0])) < self.backOffPerc and modelName != self.backOffModel.lower(): #backoff to simpler model:
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
             print("number of features is small enough, backing off to %s" % self.backOffModel)
             modelName = self.backOffModel.lower()
 
@@ -3656,11 +3325,7 @@ def easyNFoldAUCWeight(X, y, folds):
 
 
 def paired_t_1tail_on_errors(newprobs, oldprobs, ytrue):
-<<<<<<< HEAD
-    # checks if
-=======
     #computes paired t-test on error (not clear if valid for classification)
->>>>>>> 0afdcb27744015c46417197a30278e2337474da1
     n = len(ytrue)
     newprobs_res_abs = np.absolute(array(ytrue) - array(newprobs))
     oldprobs_res_abs = np.absolute(array(ytrue) - array(oldprobs))

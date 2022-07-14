@@ -790,7 +790,7 @@ def main(fn_args = None):
 
     if len(sys.argv)==1:
         parser.print_help()
-        sys.exit(1)
+        sys.exit(0)
 
     if fn_args:
         args = parser.parse_args(fn_args.split())

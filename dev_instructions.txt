@@ -1,7 +1,7 @@
 Welcome as a developer of DLATK! 
 
 DLATK is an open source package. Our typical development is motivated by rapid prototyping 
-of new techniques. However, there are several corse pieces of DLATK that need to be reliable: 
+of new techniques. However, there are several core pieces of DLATK that need to be reliable: 
 running DLA on words, topic extraction, and running ridge regression, logistic regression 
 and/or extra tree classifiers. We rely on developers making clear commit statements documenting 
 their process, as well as contributing to the overall documentation for more significant 
@@ -11,18 +11,21 @@ it easy to update and insure reliability of our core functionality.
 
 Protocols for editing:
 ======================
-1. Create a new branch for your edit. 
+1. Create a new branch for your edit: git checkout -b new_branch_name
 
-2. Commit often (i.e. every 30 minutes)
+2. Commit often (i.e. every 30 minutes): git commit -am "ADDED FEATURE: double tokenizer"; git push origin new_branch_name
 
 3. Make sure to include a commit message that breifly describes the update:
  -- if it's a bug fix, prepend message with "FIXED BUG:"
  -- if it's a feature addition, prepend message with "ADDED FEATURE:"
  These can be short but to the point, e.g. "BUG FIX: regressionPredictor working with sklearn v0.22)
 
-4. Add documentation for significant new features. 
+4. Add to the package documentation for new options that have been added (i.e. anytime there is a new -- option). 
 
 5. Send a pull request to the public branch when ready for main-stream. 
+ -- first make sure to push to github: git push origin new_branch_name
+ -- go to https://github.com/dlatk/dlatk, switch to your branch, and click "Compare & pull request" -> "Create pull request"
+ 
 
 A majority of this package is maintained at the level of prototyping new techniques; The "Suggested Unit Tests" below are the pieces we plan to maintain consistency. With current resources, it should not be considered on a "mature" update cycle. 
 The process that the maintainers take to update public (and pip..etc...) consists of:
@@ -32,12 +35,10 @@ The process that the maintainers take to update public (and pip..etc...) consist
    4. Make sure setup.py runs
    5. Make sure dlatk webserver get updated with source
 
-Suggested Unit Tests:
+Suggested Unit Tests (using age and occupation as outcomes):
 --ngram extraction, feat_combine, p_occ
 --topic extraction
---rmatrix
---print_csv
---tagclouds
---topic_tagclouds
+--rmatrix --print_csv --tagclouds (ngrams)  --cat_to_bin occupation)
+--topic_tagclouds --topic_lex
 --nfold_test_regression --model ridgecv
---nfold_test_classif --model lr
+--nfold_test_classif --model lr --cat_to_bin occupation

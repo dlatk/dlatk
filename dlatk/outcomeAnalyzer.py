@@ -74,10 +74,11 @@ class OutcomeAnalyzer(OutcomeGetter):
         """
         parser = SafeConfigParser()
         parser.read(initFile)
+        db_type = parser.get('constants','db_type') if parser.has_option('constants','db_type') else dlac.DB_TYPE
         corpdb = parser.get('constants','corpdb') if parser.has_option('constants','corpdb') else dlac.DEF_CORPDB
         corptable = parser.get('constants','corptable') if parser.has_option('constants','corptable') else dlac.DEF_CORPTABLE
         correl_field = parser.get('constants','correl_field') if parser.has_option('constants','correl_field') else dlac.DEF_CORREL_FIELD
-        mysql_host = parser.get('constants','mysql_host') if parser.has_option('constants','mysql_host') else dlac.MYSQL_HOST
+        mysql_config_file = parser.get('constants','mysql_config_file') if parser.has_option('constants','mysql_config_file') else dlac.MYSQL_CONFIG_FILE
         message_field = parser.get('constants','message_field') if parser.has_option('constants','message_field') else dlac.DEF_MESSAGE_FIELD
         messageid_field = parser.get('constants','messageid_field') if parser.has_option('constants','messageid_field') else dlac.DEF_MESSAGEID_FIELD
         encoding = parser.get('constants','encoding') if parser.has_option('constants','encoding') else dlac.DEF_ENCODING
@@ -95,10 +96,10 @@ class OutcomeAnalyzer(OutcomeGetter):
         featureMappingLex = parser.get('constants','featlabelmaplex') if parser.has_option('constants','featlabelmaplex') else ''
         output_name = parser.get('constants','output_name') if parser.has_option('constants','output_name') else ''
         wordTable = parser.get('constants','wordTable') if parser.has_option('constants','wordTable') else None
-        return cls(corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_host=mysql_host, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, outcome_categories=outcome_categories, multiclass_outcome=multiclass_outcome, group_freq_thresh=group_freq_thresh, low_variance_thresh=low_variance_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable)
+        return cls(db_type=db_type, corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_config_file=mysql_config_file, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, outcome_categories=outcome_categories, multiclass_outcome=multiclass_outcome, group_freq_thresh=group_freq_thresh, low_variance_thresh=low_variance_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable)
 
-    def __init__(self, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_host=dlac.MYSQL_HOST, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb=dlac.DEF_LEXICON_DB, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls=dlac.DEF_OUTCOME_CONTROLS, outcome_interaction=dlac.DEF_OUTCOME_CONTROLS, outcome_categories = [], multiclass_outcome = [], group_freq_thresh=None, low_variance_thresh=dlac.DEF_LOW_VARIANCE_THRESHOLD, featureMappingTable='', featureMappingLex='',  output_name='', wordTable = None):
-        super(OutcomeAnalyzer, self).__init__(corpdb, corptable, correl_field, mysql_host, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, outcome_categories, multiclass_outcome, group_freq_thresh, low_variance_thresh, featureMappingTable, featureMappingLex,  wordTable)
+    def __init__(self, db_type=dlac.DB_TYPE, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_config_file=dlac.MYSQL_CONFIG_FILE, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb=dlac.DEF_LEXICON_DB, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls=dlac.DEF_OUTCOME_CONTROLS, outcome_interaction=dlac.DEF_OUTCOME_CONTROLS, outcome_categories = [], multiclass_outcome = [], group_freq_thresh=None, low_variance_thresh=dlac.DEF_LOW_VARIANCE_THRESHOLD, featureMappingTable='', featureMappingLex='',  output_name='', wordTable = None):
+        super(OutcomeAnalyzer, self).__init__(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, outcome_categories, multiclass_outcome, group_freq_thresh, low_variance_thresh, featureMappingTable, featureMappingLex,  wordTable)
         self.output_name = output_name
 
     def printGroupsAndOutcomesToCSV(self, featGetter, outputfile, where = '', freqs = False):
@@ -130,7 +131,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         >>> oa.printGroupsAndOutcomesToCSV(fg, args.printcsv)
 
         """
-        assert mm.tableExists(self.corpdb, self.dbCursor, featGetter.featureTable, charset=self.encoding, use_unicode=self.use_unicode), 'feature table does not exist (make sure to quote it)'
+        assert mm.tableExists(self.corpdb, self.dbCursor, featGetter.featureTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file), 'feature table does not exist (make sure to quote it)'
 
         #get outcome data to work with
         (groups, allOutcomes, controls) = self.getGroupsAndOutcomes()
@@ -327,9 +328,9 @@ class OutcomeAnalyzer(OutcomeGetter):
         groups = []
         if self.group_freq_thresh:
             wordTable = self.getWordTable()
-            groups = [str(i[1]) for i in mm.executeGetList(self.corpdb, self.dbCursor, "select sum(value), group_id from %s group by group_id" % wordTable, charset=self.encoding, use_unicode=self.use_unicode) if int(i[0]) >= self.group_freq_thresh]
+            groups = [str(i[1]) for i in mm.executeGetList(self.corpdb, self.dbCursor, "select sum(value), group_id from %s group by group_id" % wordTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file) if int(i[0]) >= self.group_freq_thresh]
         else:
-            groups = [str(i[0]) for i in mm.executeGetList(self.corpdb, self.dbCursor, "select distinct group_id from %s" % wordTable, charset=self.encoding, use_unicode=self.use_unicode)]
+            groups = [str(i[0]) for i in mm.executeGetList(self.corpdb, self.dbCursor, "select distinct group_id from %s" % wordTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)]
 
         # Checking for group wildcards in the samples
         if sample1 == ['*']:
@@ -379,12 +380,12 @@ class OutcomeAnalyzer(OutcomeGetter):
             if i == 0:
                 sql = "select feat, sum(value), sum(group_norm) from %s where group_id in ('%s') group by feat" % (featGetter.featureTable, "', '".join(str(i) for i in gs))
                 # fill in dictionary for 1st time
-                res = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+                res = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                 values = {feat: [float(gn)] for feat, freq, gn in res}
                 freqsDict = {feat: int(freq) for feat, freq, gn in res}
             else:
                 sql = "select feat, sum(group_norm) from %s where group_id in ('%s') group by feat" % (featGetter.featureTable, "', '".join(str(i) for i in gs))
-                new_values = {feat: gn for feat, gn in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)}
+                new_values = {feat: gn for feat, gn in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)}
                 for feat, gnList in values.items():
                     gnList.append(new_values.get(feat, 0))
 
@@ -450,7 +451,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                     sys.stderr.write("regexp isn't valid: %s\n" % term)
 
         sql = "select feat, sum(value), sum(group_norm) from %s group by feat" % (featGetter.featureTable)
-        counts_list = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        counts_list = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         (groups, allOutcomes, controls) = self.getGroupsAndOutcomes()
         # groups = set of group_id's that have a non null outcome (for all outcomes ever) aka is useless
@@ -466,7 +467,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                 good_groups = [i for i in outcome_groups if allOutcomes[outcome][i]==value]
                 sql = "select feat, sum(value), sum(group_norm) from %s where group_id in ('%s')" % (featGetter.featureTable, "','".join([str(i) for i in good_groups]))
                 sql += " group by feat"
-                value_dict = {feat : {'value': int(value), 'group_norm': group_norm} for feat, value, group_norm in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)}
+                value_dict = {feat : {'value': int(value), 'group_norm': group_norm} for feat, value, group_norm in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)}
 
                 for feat, value_group_norm_dict in counts_dict.items():
                     try:
@@ -489,7 +490,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             if counts.shape[1] < 2:
                 print("Your outcomes table is empty!(probably)")
                 raise IndexError
-            print(counts)
+            #print(counts)
             results['1'] = counts[:,1]
             results['2'] = counts[:,2]
             results['all'] = counts[:,0]
@@ -1449,7 +1450,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         """
 
         sql = 'SELECT term, weight from %s WHERE category = \'%s\''%(topicLexicon, feat)
-        rows = mm.qExecuteGetList('permaLexicon', sql)
+        rows = mm.qExecuteGetList('permaLexicon', sql, mysql_config_file=self.mysql_config_file)
         top_n_rows = sorted(rows, key=lambda x:x[1], reverse=True)
         terms = [x[0] for x in top_n_rows]
         label = ' '.join(map(str, terms[0:numTopicTerms]))
@@ -1606,9 +1607,9 @@ class OutcomeAnalyzer(OutcomeGetter):
             a label map based on a lexicon. labelmap is {feat:concatenated_categories}
 
         """
-        (conn, cur, curD) = mm.dbConnect(self.lexicondb, charset=self.encoding, use_unicode=self.use_unicode)
+        (conn, cur, curD) = mm.dbConnect(self.lexicondb, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         sql = 'SELECT * FROM %s'%(lexicon_table)
-        rows = mm.executeGetList(self.lexicondb, cur, sql, True, charset=self.encoding, use_unicode=self.use_unicode) #returns list of [id, feat, cat, ...] entries
+        rows = mm.executeGetList(self.lexicondb, cur, sql, True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file) #returns list of [id, feat, cat, ...] entries
 
         feat_to_label = {}
         for row in rows:
@@ -1645,9 +1646,9 @@ class OutcomeAnalyzer(OutcomeGetter):
         elif not labelmap_table:
             raise Exception("must specify labelmap_table or lda_id")
 
-        (conn, cur, curD) = mm.dbConnect(self.lexicondb, charset=self.encoding, use_unicode=self.use_unicode)
+        (conn, cur, curD) = mm.dbConnect(self.lexicondb, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         sql = 'SELECT * FROM %s'%(labelmap_table)
-        rows = mm.executeGetList(self.lexicondb, cur, sql, True, charset=self.encoding, use_unicode=self.use_unicode) #returns list of [feat, label, ...] entries
+        rows = mm.executeGetList(self.lexicondb, cur, sql, True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file) #returns list of [feat, label, ...] entries
 
         feat_to_label = {}
         for row in rows:
@@ -1866,7 +1867,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             print('Using words from featuretable for visualization')
             sql = "SELECT feat, sum(value) FROM %s group by feat"%(self.getWordTable())
             # words = {word: int(freq), ...}
-            wordFreqs = {t[0]: int(t[1]) for t in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)}
+            wordFreqs = {t[0]: int(t[1]) for t in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)}
             words = set(wordFreqs.keys())
             newTopicWords = dict()
             for cat, tw in topicWords.items():
@@ -1929,7 +1930,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             dlac.warn("No topic lexicon selected, please specify it with --topic_lexicon TOP_LEX")
             exit(2)
         sql = "SELECT term, category, weight FROM %s.%s"%(self.lexicondb, topicLex)
-        catList = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        catList = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         topicWords = dict()
         for (term, cat, w) in catList:
             stripped_cat = cat.strip() #thank you Daniel, love Johannes
@@ -1985,7 +1986,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             tw = topicWords.get(topic)
             if not tw:
                 print("**The following topic had no words from the topic lexicion**")
-                print(("[Topic Id: %s, %s: %.3f, p: %.4f, N: %d, CI: (%.4f, %.4f), Freq: %d]" % (topic, metric, r, p, n, ci[0], ci[1], freq)).decode("utf-8"))
+                print(("[Topic Id: %s, %s: %.3f, p: %.4f, N: %d, CI: (%.4f, %.4f), Freq: %d]" % (topic, metric, r, p, n, ci[0], ci[1], freq)))
                 continue
 
             if duplicateFilter:
@@ -2096,7 +2097,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             output file name
 
         """
-        (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding, use_unicode=self.use_unicode)
+        (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         outputfile = '/tmp/flexiplot.csv'
         if topicList:
             from collections import OrderedDict
@@ -2107,7 +2108,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         else:
             csvOut = csv.DictWriter(open(outputfile, 'w'), fieldnames=['title_name', 'feat'])
             sql = 'SELECT DISTINCT feat FROM %s'%featTable
-            feats = mm.executeGetList1(corpdb, cur, sql, True, charset=self.encoding, use_unicode=self.use_unicode)
+            feats = mm.executeGetList1(corpdb, cur, sql, True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
             for feat in feats:
                 csvOut.writerow({'title_name':feat, 'feat':feat})
         return outputfile
@@ -2132,37 +2133,37 @@ class OutcomeAnalyzer(OutcomeGetter):
 
 
         """
-        (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding, use_unicode=self.use_unicode)
-        (pconn, pcur, pcurD) = mm.dbConnect(self.lexicondb, charset=self.encoding, use_unicode=self.use_unicode)
+        (conn, cur, curD) = mm.dbConnect(corpdb, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+        (pconn, pcur, pcurD) = mm.dbConnect(self.lexicondb, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         if not feat_to_label:
             sql = 'SELECT DISTINCT(feat) FROM %s'%flexiTable
-            feats = mm.executeGetList(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)[0]
+            feats = mm.executeGetList(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)[0]
             feat_to_label = dict([(x,x) for x in feats])
 
         temp_table = 'feat_to_label_temp'
         biggest_feat = max(list(map(len, list(feat_to_label.keys()))))
         biggest_label = max(list(map(len, list(feat_to_label.values()))))
         sql = 'DROP TABLE IF EXISTS %s'%temp_table
-        mm.execute(self.lexicondb, pcur, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.lexicondb, pcur, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         sql = 'CREATE TABLE %s (feat varchar(%d), label varchar(%d))'%(temp_table, biggest_feat, biggest_label)
-        mm.execute(self.lexicondb, pcur, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.lexicondb, pcur, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         rows = []
         for feat, label in feat_to_label.items():
             rows.append((feat, label))
         sql = 'INSERT INTO %s VALUES(%s)'%(temp_table, '%s, %s')
-        mm.executeWriteMany(self.lexicondb, pconn, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding)
+        mm.executeWriteMany(self.lexicondb, pconn, sql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, mysql_config_file=self.mysql_config_file)
         #pprint(mm.executeGetList(self.lexicondb, pcur, 'SELECT * FROM %s'%temp_table))
         cmd = "/usr/bin/Rscript plotbot.R 'from.file' '%s' '%s' 'feat_to_label_temp' '%s'"%(corpdb, flexiTable, featureFile)
         os.system(cmd)
 
         sql = 'DROP TABLE IF EXISTS feat_to_label_temp'
-        mm.execute(self.lexicondb, pcur, sql, charset=self.encoding, use_unicode=self.use_unicode)
+        mm.execute(self.lexicondb, pcur, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         # pprint(mm.executeGetList(corpdb, cur, 'SELECT group_id, N FROM %s GROUP BY group_id'%flexiTable))
-        print((mm.executeGetList(corpdb, cur, 'SELECT group_id FROM %s GROUP BY group_id'%flexiTable, charset=self.encoding, use_unicode=self.use_unicode)))
+        print((mm.executeGetList(corpdb, cur, 'SELECT group_id FROM %s GROUP BY group_id'%flexiTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)))
         if not preserveBinTable:
             sql = 'DROP TABLE %s'%flexiTable
-            mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode)
+            mm.execute(corpdb, cur, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
     @staticmethod
     def printTagCloudFromTuples(rList, maxWords, rankOrderFreq = True, rankOrderR = False, colorScheme='multi', use_unicode=True, cleanCloud=False, censor_dict=dlac.DEF_CENSOR_DICT, metric='R', topic_cloud=False):
@@ -2606,7 +2607,14 @@ class OutcomeAnalyzer(OutcomeGetter):
         output += "</tr></table>\n"
         output += '<a href="#top">Back to top</a>'
         output += '</div>'
-        print(output.encode("utf-8"), file=outputFilePtr)
+        
+        try:
+            print(output, file=outputFilePtr)
+        except:
+            try:
+                print(output.encode("utf-8"), file=outputFilePtr)
+            except Exception as e:
+                warn("ERROR in printing html: ", e)
 
     @staticmethod
     def outputSortedCorrelHTML(correlMatrix, pValue = True, nValue = True, cInt = True, freq=False, outputFilePtr = sys.stdout, metric = 'r'):
@@ -2712,8 +2720,16 @@ class OutcomeAnalyzer(OutcomeGetter):
         output += "</table>\n"
         output += '<div id="bottomSorted"><a href="#top">Back to top</a> or go <a href="#sorted">back to top of sorted features</a></div>'
         output += '</div>'
-        print(output.encode("utf-8"), file=outputFilePtr)
-        print("</p>", file=outputFilePtr)
+
+        try:
+            print(output, file=outputFilePtr)
+            print("</p>", file=outputFilePtr)
+        except:
+            try:
+                print(output.encode("utf-8"), file=outputFilePtr)
+                print("</p>", file=outputFilePtr)
+            except Exception as e:
+                warn("ERROR in printing html: ", e)
 
     def printSignificantCoeffs(self, coeffs, outputFile = None, outputFormat='tsv', sort = False, pValue = True, nValue = False, maxP = dlac.DEF_P, paramString = None):
         dlac.warn("Generating Significant Coeffs.")
@@ -2813,11 +2829,11 @@ class OutcomeAnalyzer(OutcomeGetter):
             output_csv_filename = 'dense.{db}.{table}.{row}-by-{col}.{value}.csv'.format(db=self.corpdb, table=self.corptable, row=row_column, col=col_column, value=value_column)
 
         row_sql = 'SELECT DISTINCT {row} FROM {table} ORDER BY {row}'.format(row=row_column, table=self.corptable)
-        sorted_row_values = list(mm.executeGetList1(self.corpdb, self.dbCursor, row_sql, charset=self.encoding, use_unicode=self.use_unicode))
+        sorted_row_values = list(mm.executeGetList1(self.corpdb, self.dbCursor, row_sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))
         col_sql = 'SELECT DISTINCT {col} FROM {table} ORDER BY {col}'.format(col=col_column, table=self.corptable)
-        sorted_col_values = list(mm.executeGetList1(self.corpdb, self.dbCursor, col_sql, charset=self.encoding, use_unicode=self.use_unicode))
+        sorted_col_values = list(mm.executeGetList1(self.corpdb, self.dbCursor, col_sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))
         value_sql = 'SELECT {row}, {col}, {value} FROM {table} ORDER BY {row}, {col}'.format(row=row_column, col=col_column, value=value_column, table=self.corptable)
-        sorted_values = mm.executeGetList(self.corpdb, self.dbCursor, value_sql, charset=self.encoding, use_unicode=self.use_unicode)
+        sorted_values = mm.executeGetList(self.corpdb, self.dbCursor, value_sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
         N = len(sorted_row_values)
         M = len(sorted_col_values)

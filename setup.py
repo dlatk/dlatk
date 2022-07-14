@@ -117,9 +117,11 @@ Developed by the [World Well-Being Project](http://www.wwbp.org) based out of th
 """
 DISTNAME = 'dlatk'
 PACKAGES = ['dlatk',
+  'dlatk.database',
   'dlatk.lib',
   'dlatk.lexicainterface',
   'dlatk.mysqlmethods',
+  'dlatk.sqlitemethods',
   'dlatk.tools'
 ]
 LICENSE = 'GNU General Public License v3 (GPLv3)'
@@ -140,9 +142,9 @@ CLASSIFIERS = [
   'Programming Language :: Python :: 3.5',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '1.1.8'
+VERSION = '1.2.6'
 PACKAGE_DATA = {
-  'dlatk': ['data/*.sql'],
+  'dlatk': ['data/*.sql', 'tools/colabify.sh'],
   'dlatk.lib': ['lib/meloche_bd.ttf', 'lib/oval_big_mask.png', 'lib/oval_mask.png'],
 }
 INCLUDE_PACKAGE_DATA = True
@@ -150,28 +152,28 @@ SETUP_REQUIRES = [
   'numpy',
 ]
 INSTALL_REQUIRES = [
-  'matplotlib>=1.3.1', 
   'mysqlclient', 
   'nltk>=3.2.1', 
   'numpy', 
   'pandas>=0.20.3', 
   'patsy>=0.2.1', 
   'python-dateutil>=2.5.0', 
-  'scikit-learn>=0.17.1', 
+  'scikit-learn<0.24.0', 
   'scipy>=0.13.3', 
   'SQLAlchemy>=0.9.9', 
-  'statsmodels>=0.5.0', 
-  'gensim==3.8.3',
-  'dlatk-pymallet==1.0.0'
+  'statsmodels>=0.5.0'
 ]
 EXTRAS_REQUIRE = {
+  'dlatk-pymallet': ['dlatk-pymallet==1.0.0'],
+  'gensim': ['gensim==3.8.3'],
   'image': ['image'],
   'jsonrpclib-pelix': ['jsonrpclib-pelix>=0.2.8'],
   'langid': ['langid>=1.1.4'],
+  'matplotlib': ['matplotlib>=1.3.1'],
   'rpy2': ['rpy2'],
   'simplejson': ['simplejson>=3.3.1'],
   'textstat': ['textstat>=0.6.1'],
-  'wordcloud':  ['wordcloud==1.1.3']
+  'wordcloud':  ['wordcloud']
 }
 
 SCRIPTS = ['dlatkInterface.py']
@@ -186,7 +188,7 @@ if __name__ == "__main__":
       package_data=PACKAGE_DATA,
       include_package_data=INCLUDE_PACKAGE_DATA,
       description=DESCRIPTION,
-      long_description=LONG_DESCRIPTION,
+      #long_description=LONG_DESCRIPTION,
       license=LICENSE,
       url=URL,
       download_url=DOWNLOAD_URL,
@@ -195,6 +197,6 @@ if __name__ == "__main__":
       extras_require=EXTRAS_REQUIRE,
       install_requires=INSTALL_REQUIRES,
       scripts = SCRIPTS,
-      long_description_content_type ='text/markdown'
+      #long_description_content_type ='text/markdown'
   )
 

@@ -532,40 +532,29 @@ class DimensionReducer:
                         preds = transformedX[outcomeName][feat]
 
                         print("[Inserting Predictions as Feature values for feature: %s]" % feat)
-                        wsql = (
-                            """INSERT INTO """
-                            + featureTableName
-                            + """ (group_id, feat, value, group_norm) values (%s, '"""
-                            + feat
-                            + """', %s, %s)"""
-                        )
-
+                        #wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
+                        query = fe.qb.create_insert_query(featureTableName).set_values([("group_id",""),("feat",feat),("value",""),("group_norm","")])
                         for k, v in preds.items():
                             rows.append((k, v, v))
-                            if len(rows) > 60000 or len(rows) >= len(preds):
-                                mm.executeWriteMany(
-                                    fe.corpdb,
-                                    fe.dbCursor,
-                                    wsql,
-                                    rows,
-                                    writeCursor=fe.dbConn.cursor(),
-                                    charset=fe.encoding,
-                                    use_unicode=fe.use_unicode,
-                                )
+                            if len(rows) >  60000 or len(rows) >= len(preds):
+                                query.execute_query(rows)
+                                #mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
                                 written += len(rows)
                                 print("   %d feature rows written" % written)
                                 rows = []
                     # if there's rows left
                     if rows:
-                        mm.executeWriteMany(
-                            fe.corpdb,
-                            fe.dbCursor,
-                            wsql,
-                            rows,
-                            writeCursor=fe.dbConn.cursor(),
-                            charset=fe.encoding,
-                            use_unicode=fe.use_unicode,
-                        )
+                        # mm.executeWriteMany(
+                        #     fe.corpdb,
+                        #     fe.dbCursor,
+                        #     wsql,
+                        #     rows,
+                        #     writeCursor=fe.dbConn.cursor(),
+                        #     charset=fe.encoding,
+                        #     use_unicode=fe.use_unicode,
+                        # )
+                        #mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
+                        query.execute_query(rows)
                         written += len(rows)
                         print("   %d feature rows written" % written)
 

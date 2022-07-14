@@ -280,23 +280,3 @@ class StatsPlotter(object):
             ro.r.barplot(ro_counts, main = "Category Histogram, N=%d"%(total_count), beside=True, horiz=True, col='royalblue4', **{"names.arg":ro_labels})
             self.grdevices.dev_off()
 
-if __name__=="__main__":
-    sp = StatsPlotter()
-    #floatCols = [2, 3, 4] + range(6,14) + [23] + [28]
-    #prefix = '600_'
-    #sp.getFloatColStats("userstats_en", floatCols, "plots/%sdesc"%prefix)
-    #sp.getCategoricalColStats("userstats_en", range(14, 23), "plots/%srelnbins"%prefix)
-    (conn, cur, dcur) = mm.dbConnect('fb20')
-    #sp.getCategoricalColStats('fb20', cur, "userstats_en",  range(24, 28), '/data/ml/plots/fb20/age_category')
-    #sp.getCategoricalColStats('fb20', cur, "userstats_en",  range(14, 23), '/data/ml/plots/fb20/reln_category')
-    # N=100000
-    # d1 = list(rand.normal(0,2,N))
-    # d2 = list(rand.normal(0,1,N))
-    # d3 = list(rand.normal(0,17,N))
-    # d_all = {"d1":d1, "d2":d2, "d3":d3}
-    # e1 = list(rand.exponential(2,N))
-    # e2 = list(rand.exponential(14,N))
-    # e_all = {'e1':e1, 'e2':e2}
-    # sp.plot2dHist('d1', d1, 'd2', d2)
-    # sp.plot2dHistGeneralized(d_all, e_all, 'plots/samba')
-    mm.warn("descStats.py exits with success :)")

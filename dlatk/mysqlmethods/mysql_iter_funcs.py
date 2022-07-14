@@ -14,30 +14,40 @@ try:
     import MySQLdb.cursors
     from sqlalchemy import create_engine
     from sqlalchemy.engine.url import URL
+    import sqlalchemy 
+    sqlalchemy_version = sqlalchemy.__version__
 except:
     pass
 
-from dlatk.dlaConstants import DEF_ENCODING, MYSQL_ERROR_SLEEP, MYSQL_HOST, MAX_ATTEMPTS, warn
+from dlatk.dlaConstants import DEF_ENCODING, MYSQL_ERROR_SLEEP, MAX_ATTEMPTS, MYSQL_CONFIG_FILE, warn
 
-def get_db_engine(db_schema, db_host = MYSQL_HOST, charset=DEF_ENCODING, db_config = '~/.my.cnf', port=3306, stream=False):
+def get_db_engine(db_schema, charset=DEF_ENCODING, mysql_config_file = MYSQL_CONFIG_FILE, port=3306, stream=False):
     eng = None
     attempts = 0;
     while (1):
         try:
-            db_url = URL(drivername='mysql', host=db_host, port=port,
-                database=db_schema,
-                query={
-                    'read_default_file' : db_config,
-                    'charset': charset
-                })
-            if stream:
-                eng = create_engine(name_or_url=db_url, connect_args={'cursorclass': MySQLdb.cursors.SSCursor}, pool_recycle=600)
+            if hasattr(URL, "create"):
+                db_url = URL.create(drivername='mysql', port=port,
+                                database=db_schema,
+                                query={
+                                    'read_default_file' : mysql_config_file,
+                                    'charset': charset
+                                })
             else:
-                eng = create_engine(name_or_url=db_url)
+                db_url = URL(drivername='mysql', port=port,
+                                database=db_schema,
+                                query={
+                                    'read_default_file' : mysql_config_file,
+                                    'charset': charset
+                                })
+            if stream:
+                eng = create_engine(db_url, connect_args={'cursorclass': MySQLdb.cursors.SSCursor}, pool_recycle=600)
+            else:
+                eng = create_engine(db_url)
             break
         except Exception as e:
             attempts += 1
-            warn(" *MYSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db, e, attempts))
+            warn(" *MYSQL Connect ERROR on db:%s\n%s\n (%d attempt)"% (db_schema, e, attempts))
             time.sleep(MYSQL_ERROR_SLEEP*attempts**2)
             if (attempts > MAX_ATTEMPTS):
                 sys.exit(1)

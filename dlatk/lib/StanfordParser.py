@@ -116,7 +116,7 @@ class StanfordParser:
 
 
 def shortenToNWords(sent, n):
-    words = removeNonAscii(sent)
+    words = removeNonAscii(sent).split(' ')
     return ' '.join(words[:int(n)])
 
 if __name__ == "__main__":

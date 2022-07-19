@@ -2439,7 +2439,7 @@ class FeatureExtractor(DLAWorker):
 
 
                     pos_list = []
-                    if posMessageTable[-4:] != 'tpos':
+                    if posMessageTable[-4:] == 'tpos':
                         if keep_words:
                             dlac.warn("keep words not implemented yet for tweetpos tags")
                         else:##TODO: Debug; make sure this works

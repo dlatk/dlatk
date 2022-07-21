@@ -41,7 +41,6 @@ from sklearn.multiclass import OneVsRestClassifier
 from sklearn.svm import SVC, LinearSVC, SVR
 from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier, GradientBoostingClassifier
 from sklearn.neural_network import MLPClassifier
-from sklearn.linear_model.base import LinearModel
 from sklearn.linear_model import PassiveAggressiveClassifier, LogisticRegression, Lasso, SGDClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB, BernoulliNB
 

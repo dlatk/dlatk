@@ -6,4 +6,4 @@ __version__ = "1.1.4"
 __maintainer__ = "Salvatore Giorgi, Andy Schwartz"
 __email__ = "sgiorgi@sas.upenn.edu, has@cs.stonybrook.edu"
 
-from dlatk.tools.importmethods import mySQLToCSV, jsonToMySQL, csvToMySQL, appendCSVtoMySQL
+from dlatk.tools.importmethods import mySQLToCSV, jsonToMySQL, csvToMySQL, appendCSVtoMySQL, csvToSQLite, appendCSVtoSQLite, sqliteToCSV

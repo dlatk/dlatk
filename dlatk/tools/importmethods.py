@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/dlatk/tools",""))
 from dlatk.mysqlmethods import mysqlMethods as mm
-from dlatk.mysqlmethods import mysqlMethods as sm
+from dlatk.sqlitemethods import sqliteMethods as sm
 
 from warnings import filterwarnings
 filterwarnings('ignore', category = Warning)
@@ -91,7 +91,7 @@ def csvToSQLite(csvFile, database, table, columnDescription, ignoreLines=0):
     if tables:
         print("A table by that name already exists in the database. Please use appendCSVtoSQLite or choose a new name.")
         sys.exit(1)
-    createSQL = """CREATE TABLE {table} {colDesc}""".format(table=table, colDesc=columnDescription)
+    createSQL = """CREATE TABLE {table} ({colDesc})""".format(table=table, colDesc=columnDescription)
     print(createSQL)
     dbCursor.execute(createSQL)
     appendCSVtoSQLite(csvFile, database, table, ignoreLines, dbCursor, dbConn)

@@ -69,6 +69,7 @@ from numpy import sqrt, array, std, mean, int64, ceil
 # infrastructure
 from .mysqlmethods import mysqlMethods as mm
 from .dlaConstants import DEFAULT_RANDOM_SEED, warn
+from .wrappedPCA import WrappedPCA
 
 # For ROC curves
 try:
@@ -2876,7 +2877,7 @@ class ClassifyPredictor:
                         {
                             (k, v)
                             for (k, v) in list(sc.items())
-                            if ((k is not "predictions") and k is not "predictionProbs")
+                            if ((k != "predictions") and k != "predictionProbs")
                         }
                     )
                     csvOut.writerow(rowDict)

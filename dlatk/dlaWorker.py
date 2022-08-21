@@ -208,7 +208,7 @@ class DLAWorker(object):
         return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
     def getWordTable(self, corptable = None):
-        """?????
+        """returns the table to use for word counts
  
         Parameters
         ----------
@@ -226,7 +226,7 @@ class DLAWorker(object):
         
         wordTable = "feat$1gram$%s$%s"%(corptable, self.correl_field)
         if not self.data_engine.tableExists(wordTable):
-            wordTable = "feat$1gram$%s$%s$16to16"%(corptable, self.correl_field)
+            wordTable = "feat$1gram$%s$%s"%(corptable, self.correl_field)
         return wordTable
 
     def get1gramTable(self):

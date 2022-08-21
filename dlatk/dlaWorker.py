@@ -64,7 +64,7 @@ class DLAWorker(object):
         else:
             wordTable = "feat$1gram$%s$%s"%(self.corptable, self.correl_field)
             if not self.data_engine.tableExists(wordTable):
-                wordTable = "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
+                wordTable = "feat$1gram$%s$%s"%(self.corptable, self.correl_field)
             self.wordTable = wordTable
         self.messageIdUniqueChecked = False
 
@@ -239,7 +239,7 @@ class DLAWorker(object):
         """
         wordTable = "feat$1gram$%s$%s"%(self.corptable, self.correl_field)
         if not self.data_engine.tableExists(wordTable):
-            wordTable = "feat$1gram$%s$%s$16to16"%(self.corptable, self.correl_field)
+            wordTable = "feat$1gram$%s$%s"%(self.corptable, self.correl_field)
         return wordTable
         
     def getWordTablePOcc(self, pocc):
@@ -257,7 +257,7 @@ class DLAWorker(object):
         """
         wordTable = "feat$1gram$%s$%s$%s"%(self.corptable, self.correl_field, str(pocc).replace('.', '_'))
         if not self.data_engine.tableExists(wordTable):
-            wordTable = "feat$1gram$%s$%s$16to16$%s"%(self.corptable, self.correl_field, str(pocc).replace('.', '_'))
+            wordTable = "feat$1gram$%s$%s$%s"%(self.corptable, self.correl_field, str(pocc).replace('.', '_'))
         return wordTable
 
     def getWordGetter(self, lexicon_count_table=None):

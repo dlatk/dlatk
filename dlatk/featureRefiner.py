@@ -106,8 +106,8 @@ class FeatureRefiner(FeatureGetter):
         
         #CREATE TABLE:
         if not featureName:
-            featNameGrabber = re.compile(r'^feat\$([^\$]+)\$')
             names = []
+            featNameGrabber = re.compile(r'^feat\$([^\$]+)\$')
             for table in featureTables:
                 names.append(featNameGrabber.match(table).group(1))
             featureName = '_'.join(names)

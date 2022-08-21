@@ -119,7 +119,7 @@ class FeatureStar(object):
 				None
 			self.mt = MessageTransformer(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable = wordTable) if 'mt' in init else None
 			self.fe = FeatureExtractor(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable=wordTable) if 'fe' in init else None
-			self.fr = FeatureRefiner(corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable) if 'fr' in init else None
+			self.fr = FeatureRefiner(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable=wordTable) if 'fr' in init else None
 			self.og = OutcomeGetter(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, cattobinfields, cattointfields, group_freq_thresh, featureMappingTable, featureMappingLex, wordTable) if 'og' in init else None
 			self.oa = OutcomeAnalyzer(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, cattobinfields, cattointfields, group_freq_thresh, featureMappingTable, featureMappingLex, output_name, wordTable) if 'oa' in init else None
 			self.rp = RegressionPredictor(self.og, self.fg, model) if 'rp' in init else None

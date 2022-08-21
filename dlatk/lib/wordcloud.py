@@ -215,7 +215,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
                 color_string_list = ["rgb(%d,%d,%d)" % (x[0], x[1], x[2]) for x in color_list]
                 #print color_string_list
             else:
-                color_string_list = color_list #assume that the color list already has usable color strings
+                color_string_list = ['#'+c if c[0] != '#' else c for c in color_list] #assume that the color list already has usable color strings
                 if not random_colors: ordered_colors = True
 
         else:
@@ -954,7 +954,7 @@ def makeLexiconTopicWordclouds(lexdb, lextable, output, color, max_words=15, cle
 
 
         output_name = os.path.join(output, 'topic_' + str(category))
-        wordcloud(word_list, ranked_freq_list, color_list = color_list, output_prefix = output_name)
+        wordcloud(word_list, ranked_freq_list, rgb=False, color_list = color_list, output_prefix = output_name, random_colors=False)
 
 
 

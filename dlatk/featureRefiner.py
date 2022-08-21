@@ -100,7 +100,7 @@ class FeatureRefiner(FeatureGetter):
                     valueFunc = func
                     break     
         pocc = None
-        poccmatch = re.search(r'\$([_0-9]+)\s*$', featureTables[0])
+        poccmatch = re.search(r'\$([_0-9]+)\s*($|\$)', featureTables[0])
         if poccmatch:
             pocc = poccmatch.group(1)
         
@@ -323,8 +323,9 @@ class FeatureRefiner(FeatureGetter):
         featureTable = self.featureTable
         totalGroups = self.countGroups(groupFreqThresh)
         assert totalGroups > 0, 'NO GROUPS TO FILTER BASED ON (LIKELY group_freq_thresh IS TOO HIGH)'
-        assert p <= 1, 'p_occ > 1 not implemented yet'
-        threshold = int(round(p*totalGroups))
+        #assert p <= 1, 'p_occ > 1 not implemented yet'
+        threshold = p
+        if p < 1: threshold = int(round(p*totalGroups))
         dlac.warn (" %s [threshold: %d]" %(featureTable, threshold))
 
         #acquire counts per feature (each row will come from a different correl_field)

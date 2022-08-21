@@ -190,7 +190,7 @@ def main(fn_args = None):
                        help='The probability of occurence of either a feature or group (altnernatively if > 1, then limits to top p_occ features instead).')
     group.add_argument('--set_pmi_threshold', metavar='PMI', dest='pmi', type=float, default=dlac.DEF_PMI,
                        help='The threshold for the feat_colloc_filter.')
-    group.add_argument('--set_min_feat_sum', metavar='N', dest='minfeatsum', type=int, default=dlac.DEF_MIN_FEAT_SUM,
+    group.add_argument('--set_min_feat_sum', metavar='N', dest='minfeatsum', type=int, default=dlac.DEF_MIN_FEAT_SUM,#TODO: Deprecate?
                        help='The minimum a feature must occur across all groups, to be kept.')
     group.add_argument('--topic_file', type=str, dest='topicfile', default='',
                        help='Name of topic file to use to build the topic lexicon.')

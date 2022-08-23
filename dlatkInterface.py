@@ -1122,7 +1122,7 @@ def main(fn_args = None):
 
     if args.estimate_lda_topics:
         if not args.feattable:
-            raise Exception('LDA topic estimation requires a 1gram feature table.')
+            raise Exception('LDA topic estimation requires a feature table.')
         if not args.lda_lexicon_name and not args.no_lda_lexicon:
             raise Exception('Must specify an LDA lexicon name with --lda_lexicon_name or disable topic-lexicon with '
                             '--no_lda_lexicon.')

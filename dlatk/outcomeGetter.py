@@ -507,7 +507,7 @@ enabled, so the total word count for your groups might be off
             df.index.names = ['group_id']
             return df
 
-    def numGroupsPerOutcome(self, featGetter, outputfile, where = ''):
+    def numGroupsPerOutcome(self, featGetter, outputfile=None, where = ''):
         """prints sas-style csv file output"""
         #get outcome data to work with
         (groups, allOutcomes, controls) = self.getGroupsAndOutcomes()
@@ -519,7 +519,7 @@ enabled, so the total word count for your groups might be off
 
         return countGroups
 
-    def getGroupsPerOutcome(self, featGetter, outputfile, where = ''):
+    def getGroupsPerOutcome(self, featGetter, outputfile=None, where = ''):
         """prints sas-style csv file output"""
         #get outcome data to work with
         (groups, allOutcomes, controls) = self.getGroupsAndOutcomes()

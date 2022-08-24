@@ -1250,6 +1250,7 @@ def main(fn_args = None):
         if not ma: ma = MA()
         ma.addAnonymizedTable()
 
+    #LDA
     if args.createdists and not args.no_lda_lexicon:
         dist_file_output_name = None
         if args.estimate_lda_topics:
@@ -1261,6 +1262,7 @@ def main(fn_args = None):
             te = TE()
         te.createDistributions(dist_file_output_name)
 
+    #LDA
     if args.estimate_lda_topics:
         if not args.no_lda_lexicon:
             lex_interface = LexInterfaceParser(mysql_config_file=args.mysqlconfigfile)

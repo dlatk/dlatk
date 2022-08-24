@@ -518,3 +518,15 @@ enabled, so the total word count for your groups might be off
             countGroups[outcomeField] = len(outcomes)
 
         return countGroups
+
+    def getGroupsPerOutcome(self, featGetter, outputfile, where = ''):
+        """prints sas-style csv file output"""
+        #get outcome data to work with
+        (groups, allOutcomes, controls) = self.getGroupsAndOutcomes()
+
+        #adjust keys for outcomes and controls:
+        outGroups = dict()
+        for outcomeField, outcomes in allOutcomes.items():
+            outGroups[outcomeField] = set(outcomes.keys())
+
+        return outGroups

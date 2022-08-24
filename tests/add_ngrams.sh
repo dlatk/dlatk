@@ -3,7 +3,8 @@
 #https://stackoverflow.com/questions/402377/using-getopts-to-process-long-and-short-command-line-options
 while getopts "hd:t:c:-:" opt; do
     case $opt in
-	h) echo "Usage - bash add_ngrams.sh -d <DB> -t <TABLE> -c <GROUP_FIELD> --group_freq_thresh <GFT> --set_p_occ <OCC> --set_pmi_threshold <PMI>" ;;
+	h) echo "Usage - bash add_ngrams.sh -d <DB> -t <TABLE> -c <GROUP_FIELD> --group_freq_thresh <GFT> --set_p_occ <OCC> --set_pmi_threshold <PMI>" >&2
+	   exit 2 ;;
         d) DATABASE=$OPTARG ;;
 	t) TABLE=$OPTARG ;;
 	c) GROUP_FIELD=$OPTARG ;;

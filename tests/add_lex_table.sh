@@ -2,7 +2,7 @@
 
 while getopts "hd:t:c:l:-:" opt; do
     case $opt in
-	h) echo "Usage - bash add_ngrams.sh -d <DB> -t <TABLE> -c <GROUP_FIELD> --group_freq_thresh <GFT> --set_p_occ <OCC> --set_pmi_threshold <PMI>" >&2
+	h) echo "Usage - bash add_lex_table.sh -d <DB> -t <TABLE> -c <GROUP_FIELD> -l <LEX_TABLE> --group_freq_thresh <GFT>" >&2
 	   exit 2 ;;
         d) DATABASE=$OPTARG ;;
 	t) TABLE=$OPTARG ;;

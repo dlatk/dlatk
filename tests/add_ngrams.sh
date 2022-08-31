@@ -26,5 +26,4 @@ while getopts "hd:t:c:-:" opt; do
     esac
 done
 
-#Call dlatkInterface.py with appropriate flags and values.
 dlatkInterface.py -d $DATABASE -t $TABLE -c $GROUP_FIELD --add_ngrams -n 1 2 3 --group_freq_thresh $GFT --combine_feat_tables 1to3gram --feat_occ_filter --set_p_occ $OCC --feat_colloc_filter --set_pmi_threshold $PMI

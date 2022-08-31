@@ -2,7 +2,7 @@
 
 while getopts "hd:t:c:f:l:-:" opt; do
     case $opt in
-	h) echo "Usage - bash unit_tests.sh -d <DB> -t <TABLE> -c <GROUP_FIELD> -l <LEX_TABLE> -o <OUTPUT>" >&2
+	h) echo "Usage - bash unit_tests.sh -d <DB> -t <TABLE> -c <GROUP_FIELD> -f <FEAT_TABLE> -l <LEX_TABLE> --outcome_table <OUTCOME_TABLE> --classification_outcome '<CATEGORICAL_OUTCOMES>' --regression_outcome '<REAL_VALUED_OUTCOMES>' --output_folder <OUTPUT_FOLDER>" >&2
 	   exit 2 ;;
         d) DATABASE=$OPTARG ;;
 	t) TABLE=$OPTARG ;;
@@ -29,7 +29,7 @@ while getopts "hd:t:c:f:l:-:" opt; do
 done
 
 #Test ngram extraction, where n is upto 3.
-bash add_ngrams.sh -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh 500 --feat_occ_filter --set_p_occ 0.05 --feat_colloc_filter --set_pmi_threshold 3
+bash add_ngrams.sh -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh 500 --set_p_occ 0.05 --set_pmi_threshold 3
 
 #Test lexicon feature extraction
 bash add_lex_table.sh -d $DATABASE -t $TABLE -c $GROUP_FIELD -l $LEX_TABLE --group_freq_thresh 500
@@ -42,13 +42,13 @@ bash make_all_topic_wordclouds.sh --topic_lexicon $TABLE --group_freq_thresh 500
 #Test feature correlation and wordcloud creation
 CORREL_OUTPUT=$OUTPUT/correlations
 mkdir -p $CORREL_OUTPUT
-bash correlate.sh -d $DATABASE -t $TABLE -c $GROUP_FIELD -f $FEAT_TABLE --group_freq_thresh $GFT --outcome_table $OT --outcomes $CO --controls $RO --categories_to_binary $CO --output_name $CORREL_OUTPUT
+bash correlate.sh -d $DATABASE -t $TABLE -c $GROUP_FIELD -f $FEAT_TABLE --group_freq_thresh 500 --outcome_table $OT --outcomes $CO --controls $RO --categories_to_binary $CO --output_name $CORREL_OUTPUT
 
 PREDICT_OUTPUT=$OUTPUT/predictions
 mkdir -p $PREDICT_OUTPUT
 
 #Test regression
-bash regression.sh -d $DATABASE -t $TABLE -c $GROUP_FIELD --outcome_table $OT --outcomes $OC  --group_freq_thresh $GFT -f $FEAT_TABLE --output_name ${PREDICT_OUTPUT}/regression --feature_selection magic_sauce
+bash regression.sh -d $DATABASE -t $TABLE -c $GROUP_FIELD --outcome_table $OT --outcomes $RO  --group_freq_thresh 500 -f $FEAT_TABLE --output_name ${PREDICT_OUTPUT}/regression --feature_selection magic_sauce
 
 #Test classification
-bash classification.sh -d $DATABASE -t $TABLE -c $GROUP_FIELD --outcome_table $OT --outcomes $OC  --group_freq_thresh $GFT -f $FEAT_TABLE --output_name ${PREDICT_OUTPUT}/classification --feature_selection magic_sauce
+bash classification.sh -d $DATABASE -t $TABLE -c $GROUP_FIELD --outcome_table $OT --outcomes $CO  --group_freq_thresh 500 -f $FEAT_TABLE --output_name ${PREDICT_OUTPUT}/classification --feature_selection magic_sauce

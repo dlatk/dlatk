@@ -145,23 +145,23 @@ CLASSIFIERS = [
 VERSION = '1.2.6'
 PACKAGE_DATA = {
   'dlatk': ['data/*.sql', 'tools/colabify.sh'],
-  'dlatk.lib': ['lib/meloche_bd.ttf', 'lib/oval_big_mask.png', 'lib/oval_mask.png'],
+  'dlatk.lib': ['meloche_bd.ttf', 'oval_big_mask.png', 'oval_mask.png'],
 }
 INCLUDE_PACKAGE_DATA = True
 SETUP_REQUIRES = [
   'numpy',
 ]
 INSTALL_REQUIRES = [
-  'mysqlclient', 
-  'nltk>=3.2.1', 
-  'numpy', 
-  'pandas>=0.20.3', 
-  'patsy>=0.2.1', 
-  'python-dateutil>=2.5.0', 
-  'scikit-learn<0.24.0', 
-  'scipy>=0.13.3', 
-  'SQLAlchemy>=0.9.9', 
-  'statsmodels>=0.5.0'
+  'mysqlclient==2.1.1', 
+  'nltk==3.7', 
+  'numpy==1.23.1', 
+  'pandas==1.4.3', 
+  'patsy==0.5.2', 
+  'python-dateutil==2.8.2', 
+  'scikit-learn==1.1.1', 
+  'scipy==1.8.1', 
+  'SQLAlchemy==1.4.39', 
+  'statsmodels==0.13.2'
 ]
 EXTRAS_REQUIRE = {
   'dlatk-pymallet': ['dlatk-pymallet==1.0.0'],

@@ -2,7 +2,7 @@
 
 while getopts "hd:t:c:f:l:-:" opt; do
     case $opt in
-	h) echo "Usage - bash unit_tests.sh -d <DB> -t <TABLE> -c <GROUP_FIELD> -f <FEAT_TABLE> -l <LEX_TABLE> --outcome_table <OUTCOME_TABLE> --classification_outcome '<CATEGORICAL_OUTCOMES>' --regression_outcome '<REAL_VALUED_OUTCOMES>' --output_folder <OUTPUT_FOLDER>" >&2
+	h) echo "Usage - bash unit_tests.sh -d <DB> -t <TABLE> -c <GROUP_FIELD> -f <FEAT_TABLE> -l <LEX_TABLE> --outcome_table <OUTCOME_TABLE> --freq_table <TOPIC_FREQ_TABLE> --classification_outcome '<CATEGORICAL_OUTCOMES>' --regression_outcome '<REAL_VALUED_OUTCOMES>' --output_folder <OUTPUT_FOLDER>" >&2
 	   exit 2 ;;
         d) DATABASE=$OPTARG ;;
 	t) TABLE=$OPTARG ;;
@@ -12,6 +12,7 @@ while getopts "hd:t:c:f:l:-:" opt; do
 	-)
             case $OPTARG in
                 outcome_table) OT="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 )) ;;
+                freq_table) FT="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 )) ;;
                 classification_outcome) CO="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 )) ;;
                 regression_outcome) RO="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 )) ;;
                 output_folder) OUTPUT="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 )) ;;
@@ -36,13 +37,12 @@ bash add_lex_table.sh -d $DATABASE -t $TABLE -c $GROUP_FIELD -l $LEX_TABLE --gro
 
 #Test topic wordcloud creation
 TOPIC_OUTPUT=$OUTPUT/topic_wordclouds
-mkdir -p $TOPIC_OUTPUT
-bash make_all_topic_wordclouds.sh --topic_lexicon $TABLE --group_freq_thresh 500 --output $OUTPUT/topic_wordclouds
+bash make_all_topic_wordclouds.sh --topic_lexicon $FT --group_freq_thresh 500 --output $TOPIC_OUTPUT
 
 #Test feature correlation and wordcloud creation
 CORREL_OUTPUT=$OUTPUT/correlations
 mkdir -p $CORREL_OUTPUT
-bash correlate.sh -d $DATABASE -t $TABLE -c $GROUP_FIELD -f $FEAT_TABLE --group_freq_thresh 500 --outcome_table $OT --outcomes $CO --controls $RO --categories_to_binary $CO --output_name $CORREL_OUTPUT
+bash correlate.sh -d $DATABASE -t $TABLE -c $GROUP_FIELD -f $FEAT_TABLE --group_freq_thresh 500 --outcome_table $OT --outcomes $CO --controls $RO --categories_to_binary $CO --output_name $CORREL_OUTPUT/correlations
 
 PREDICT_OUTPUT=$OUTPUT/predictions
 mkdir -p $PREDICT_OUTPUT

@@ -91,7 +91,7 @@ def csvToSQLite(csvFile, database, table, columnDescription, ignoreLines=0):
     if tables:
         print("A table by that name already exists in the database. Please use appendCSVtoSQLite or choose a new name.")
         sys.exit(1)
-    createSQL = """CREATE TABLE {table} ({colDesc})""".format(table=table, colDesc=columnDescription)
+    createSQL = """CREATE TABLE {table} {colDesc}""".format(table=table, colDesc=columnDescription)
     print(createSQL)
     dbCursor.execute(createSQL)
     appendCSVtoSQLite(csvFile, database, table, ignoreLines, dbCursor, dbConn)
@@ -159,6 +159,7 @@ def main():
     parser.add_argument('--append_csv_to_mysql', action='store_true', dest='append_csv_to_mysql', default=False, help='Append CSV to MySQL table')
     parser.add_argument('--json_to_mysql', action='store_true', dest='json_to_mysql', default=False, help='Import JSON to MySQL')
     parser.add_argument('--mysql_to_csv', action='store_true', dest='mysql_to_csv', default=False, help='Export MySQL table to CSV')
+    parser.add_argument('--csv_to_sqlite', action='store_true', dest='csv_to_sqlite', default=False, help='Import CSV to SQLite')
     
     # other flags
     parser.add_argument('--column_description', dest='column_description', default=DEFAULT_CSV_FILE, help='Description of MySQL table.')
@@ -175,13 +176,13 @@ def main():
         print("You must choose a table -t")
         sys.exit(1)
 
-    if not (args.csv_to_mysql or args.json_to_mysql or args.mysql_to_csv or args.append_csv_to_mysql):
-        print("You must choose some action: --csv_to_mysql, --append_csv_to_mysql, --json_to_mysql or --mysql_to_csv")
+    if not (args.csv_to_mysql or args.json_to_mysql or args.mysql_to_csv or args.append_csv_to_mysql or args.csv_to_sqlite):
+        print("You must choose some action: --csv_to_mysql, --append_csv_to_mysql, --json_to_mysql or --mysql_to_csv or --csv_to_sqlite")
         sys.exit() 
 
     ### perform actions
-    # export actions
-    if args.csv_to_mysql or args.append_csv_to_mysql:
+    # import
+    if args.csv_to_mysql or args.append_csv_to_mysql or args.csv_to_sqlite:
         if not args.csv_file:
             print("You must specify a csv file --csv_file")
             sys.exit(1)
@@ -195,6 +196,12 @@ def main():
 
             print("Importing {csv} to {db}.{table}".format(db=args.db, table=args.table, csv=args.csv_file))
             csvToMySQL(args.csv_file, args.db, args.table, args.column_description, ignoreLines=args.ignore_lines)
+        elif args.csv_to_sqlite:
+            if not args.column_description:
+                print("You must specify a column description --column_description")
+                sys.exit(1)
+            print("Importing {csv} to {db}.{table}".format(db=args.db, table=args.table, csv=args.csv_file))
+            csvToSQLite(args.csv_file, args.db, args.table, args.column_description, ignoreLines=args.ignore_lines)
         else:
             print("Appending {csv} to {db}.{table}".format(db=args.db, table=args.table, csv=args.csv_file))
             appendCSVtoMySQL(args.csv_file, args.db, args.table, ignoreLines=args.ignore_lines)        
@@ -203,7 +210,7 @@ def main():
         print("--json_to_mysql is not implemented")
         jsonToMySQL(args.json_file, args.db, args.table, args.column_description)
 
-    # import actions
+    # export actions
     elif args.mysql_to_csv:
         if not args.csv_file:
             print("You must specify a csv file --csv_file")

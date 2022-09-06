@@ -41,7 +41,6 @@ from sklearn.multiclass import OneVsRestClassifier
 from sklearn.svm import SVC, LinearSVC, SVR
 from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier, GradientBoostingClassifier
 from sklearn.neural_network import MLPClassifier
-from sklearn.linear_model.base import LinearModel
 from sklearn.linear_model import PassiveAggressiveClassifier, LogisticRegression, Lasso, SGDClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB, BernoulliNB
 
@@ -70,6 +69,7 @@ from numpy import sqrt, array, std, mean, int64, ceil
 # infrastructure
 from .mysqlmethods import mysqlMethods as mm
 from .dlaConstants import DEFAULT_RANDOM_SEED, warn
+from .wrappedPCA import WrappedPCA
 
 # For ROC curves
 try:
@@ -2877,7 +2877,7 @@ class ClassifyPredictor:
                         {
                             (k, v)
                             for (k, v) in list(sc.items())
-                            if ((k is not "predictions") and k is not "predictionProbs")
+                            if ((k != "predictions") and k != "predictionProbs")
                         }
                     )
                     csvOut.writerow(rowDict)

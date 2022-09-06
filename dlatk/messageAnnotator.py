@@ -1,6 +1,6 @@
 import re
 import sys
-from html.parser import HTMLParser
+import html
 from pprint import pprint
 
 #infrastructure
@@ -316,7 +316,6 @@ class MessageAnnotator(DLAWorker):
         print("Reading %s messages" % ",".join([str(totalMessagesInTable)[::-1][i:i+3] for i in range(0,len(str(totalMessagesInTable)),3)])[::-1])
         memory_limit = dlac.MYSQL_BATCH_INSERT_SIZE if dlac.MYSQL_BATCH_INSERT_SIZE < totalMessagesInTable else totalMessagesInTable/20
 
-        html = HTMLParser()
         for messageRow in self.yieldMessages(self.corptable, totalMessagesInTable):
             messageRow = list(messageRow)
             totalMessages+=1

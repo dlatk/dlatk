@@ -2,7 +2,7 @@
 
 while getopts "hd:t:c:f:-:" opt; do
     case $opt in
-	h) echo "Usage - bash add_ngrams.sh -d <DB> -t <TABLE> -c <GROUP_FIELD> --group_freq_thresh <GFT> --set_p_occ <OCC> --set_pmi_threshold <PMI>" >&2
+	h) echo "Usage - bash classification.sh -d <DB> -t <TABLE> -c <GROUP_FIELD> -f <FEAT_TABLE> --group_freq_thresh <GFT> --outcome_table <OUTCOME_TABLE> --outcomes <OUTCOME> --feature_selection <FS_ALGORITHM> --output_name <OUTPUT>" >&2
 	   exit 2 ;;
         d) DATABASE=$OPTARG ;;
 	t) TABLE=$OPTARG ;;

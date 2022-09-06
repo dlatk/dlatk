@@ -2,7 +2,7 @@
 
 while getopts "hd:t:c:f:-:" opt; do
     case $opt in
-	h) echo "Usage bash correlate.sh -d <DB> -t <TABLE> -c <GROUP_FIELD> -f <FEAT_TABLE> --group_freq_thresh <GFT> --outcome_table <OUTCOME_TABLE> --outcomes <OUTCOME> --output_name <OUTPUT>" >&2
+	h) echo "Usage - bash regression.sh -d <DB> -t <TABLE> -c <GROUP_FIELD> -f <FEAT_TABLE> --group_freq_thresh <GFT> --outcome_table <OUTCOME_TABLE> --outcomes <OUTCOME> --feature_selection <FS_ALGORITHM> --output_name <OUTPUT>" >&2
 	   exit 2 ;;
         d) DATABASE=$OPTARG ;;
 	t) TABLE=$OPTARG ;;

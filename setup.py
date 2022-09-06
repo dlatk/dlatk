@@ -140,6 +140,10 @@ CLASSIFIERS = [
   'Programming Language :: Python',
   'Programming Language :: Python :: 3',
   'Programming Language :: Python :: 3.5',
+  'Programming Language :: Python :: 3.6',
+  'Programming Language :: Python :: 3.7',
+  'Programming Language :: Python :: 3.8',
+  'Programming Language :: Python :: 3.9',
   'Topic :: Scientific/Engineering',
 ]
 VERSION = '1.2.6'
@@ -152,28 +156,28 @@ SETUP_REQUIRES = [
   'numpy',
 ]
 INSTALL_REQUIRES = [
-  'mysqlclient==2.1.1', 
-  'nltk==3.7', 
-  'numpy==1.23.1', 
-  'pandas==1.4.3', 
-  'patsy==0.5.2', 
-  'python-dateutil==2.8.2', 
-  'scikit-learn==1.1.1', 
-  'scipy==1.8.1', 
-  'SQLAlchemy==1.4.39', 
-  'statsmodels==0.13.2'
+  'mysqlclient<=2.1.1', 
+  'nltk>=3.1,<=3.7', 
+  'numpy<=1.23.1', 
+  'pandas>=0.17.1,<=1.4.3', 
+  'patsy>=0.2.1,<=0.5.2', 
+  'python-dateutil>=2.5.0,<=2.8.2', 
+  'scikit-learn<=1.1.1', 
+  'scipy>=0.13.3,<=1.8.1', 
+  'SQLAlchemy>=0.9.9,<=1.4.39', 
+  'statsmodels>=0.5.0,<=0.13.2'
 ]
 EXTRAS_REQUIRE = {
   'dlatk-pymallet': ['dlatk-pymallet==1.0.0'],
   'gensim': ['gensim==3.8.3'],
-  'image': ['image'],
+  'image': ['image<=1.5.33'],
   'jsonrpclib-pelix': ['jsonrpclib-pelix>=0.2.8'],
-  'langid': ['langid>=1.1.4'],
-  'matplotlib': ['matplotlib>=1.3.1'],
-  'rpy2': ['rpy2'],
+  'langid': ['langid>=1.1.4,<=1.1.6'],
+  'matplotlib': ['matplotlib>=1.3.1,<=3.5.2'],
+  'rpy2': ['rpy2<=3.5.2'],
   'simplejson': ['simplejson>=3.3.1'],
   'textstat': ['textstat>=0.6.1'],
-  'wordcloud':  ['wordcloud']
+  'wordcloud':  ['wordcloud>=1.1.3,<=1.8.2.2']
 }
 
 SCRIPTS = ['dlatkInterface.py']

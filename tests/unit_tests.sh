@@ -29,6 +29,9 @@ while getopts "hd:t:c:f:l:-:" opt; do
     esac
 done
 
+#Test message table cleaning.
+bash clean_messages.sh -d $DATABASE -t $TABLE -c $GROUP_FIELD --language_filter en
+
 #Test ngram extraction, where n is upto 3.
 bash add_ngrams.sh -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh 500 --set_p_occ 0.05 --set_pmi_threshold 3
 

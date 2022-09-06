@@ -1,6 +1,7 @@
 ﻿# Unit Testing
 Above collection of test scripts are divided based on the components of DLA pipeline, and named after their respective switches in DLATK - 
-
+ 
+ - Data cleaning - `clean_messages.sh`
  - N-gram extraction - `add_ngrams.sh` 
  - Lexicon feature extraction - `add_lex_table.sh` 
  - Feature correlations against outcomes - `correlate.sh`

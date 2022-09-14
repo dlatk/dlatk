@@ -64,9 +64,8 @@ class textTransformerInterface:
         
     def context_preparation(self, groupedMessageRows):
         """
-
+        groupedMessageRows: List[correl field id, List[List[Message Id, message]]]
         """
-        #groupedMessageRows: List[correl field id, List[List[Message Id, message]]]
         
         input_ids = []
         token_type_ids = []
@@ -83,7 +82,7 @@ class textTransformerInterface:
 ######################
 ######################
 
-class transformer_embeddings:
+class hart_embeddings:
     """
     Class to retrieve transformer embeddings. Supply table name, model name, layer numbers, aggregation methods, [device numbers], [output table name]
     """
@@ -147,7 +146,11 @@ class transformer_embeddings:
 
         return layers
 
-    def prepare_messages(self, groupedMessageRows ):
+    def prepare_messages(self, groupedMessageRows):
+        """
+        Prepare the messages for the transformer model input.
+        groupedMessageRows: List[correl field id, List[List[Message Id, message]]]
+        """
 
         tokenIdsDict, (cfId_seq, msgId_seq) = self.textToTokensInterface.context_preparation(groupedMessageRows)
             
@@ -155,7 +158,7 @@ class transformer_embeddings:
         #print ("Num unique cfs/message Ids: ", np.unique(cfId_seq), len(set(map(lambda x: x[0], msgId_seq))))
         return tokenIdsDict, (cfId_seq, msgId_seq)
 
-    def generate_transformer_embeddings(self, tokenIdsDict):
+    def generate_hart_embeddings(self, tokenIdsDict):
 
         #Number of Batches
         num_batches = int(np.ceil(len(tokenIdsDict["input_ids"])/float(self.batchSize)))

@@ -1701,9 +1701,14 @@ class FeatureExtractor(DLAWorker):
         #find correl_field type:
         where_conditions = """table_schema='%s' AND table_name='%s' AND column_name='%s'"""%(self.corpdb, self.corptable, self.correl_field if correlField is None else correlField)
         query = self.qb.create_select_query("information_schema.columns").set_fields(["column_type"]).where(where_conditions)
+        print ("query: {}".format(query.build_query()))
         try:
-            correl_field = self.getCorrelFieldType(self.correl_field) if not correlField else correlField 
-            correl_fieldType = query.execute_query()[0][0] if correlField is not None else correl_field
+            print ("self.correl_field type: {}".format(self.correl_field))
+            print ("correlField: {}".format(correlField))
+            correl_field = self.getCorrelFieldType(self.correl_field) if correlField is None else correlField 
+            print ("correl_field type: {}".format(correl_field))
+            correl_fieldType = query.execute_query()[0][0] #if correlField is not None else correl_field
+            print ("correl_fieldType: {}".format(correl_fieldType))
         except IndexError:
             dlac.warn("Your message table '%s' (or the group field, '%s') probably doesn't exist (or the group field)!" %(self.corptable, self.correl_field))
             raise IndexError("Your message table '%s' probably doesn't exist!" % self.corptable)

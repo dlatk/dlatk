@@ -3,7 +3,10 @@
 
 import numpy as np
 from sklearn.base import BaseEstimator
-from sklearn.feature_selection import SelectorMixin
+try: 
+    from sklearn.feature_selection import SelectorMixin
+except ImportError: #older sklearn
+    from sklearn.feature_selection.base import SelectorMixin    
 from sklearn.utils import check_array
 
 # from sklearn.utils.sparsefuncs_fast import csr_mean_variance_axis0

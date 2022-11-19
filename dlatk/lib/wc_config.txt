@@ -1,4 +1,4 @@
-font: /users/has/Research/dlatk/dlatk/lib/meloche_bd.ttf
+font: /users/has/dlatk_new/dlatk/dlatk/lib/meloche_bd.ttf
 format: tab
 inputencoding: UTF-8
 firstline: data

@@ -450,8 +450,7 @@ class DLAWorker(object):
 
         return new_table
 
-    @staticmethod
-    def makeBlackWhiteList(args_featlist, args_lextable, args_categories, args_lexdb, args_use_unicode):
+    def makeBlackWhiteList(self, args_featlist, args_lextable, args_categories):
         """?????
  
         Parameters
@@ -462,10 +461,6 @@ class DLAWorker(object):
             ?????
         args_categories : str
             ?????
-        args_lexdb : str
-            ?????
-        args_use_unicode : boolean
-            ?????
      
         Returns
         -------
@@ -473,27 +468,27 @@ class DLAWorker(object):
             ?????
         """
         newlist = set()
-        if args_use_unicode:
+        if self.use_unicode:
             print("making black or white list: [%s] [%s] [%s]" %([feat if isinstance(feat, str) else feat for feat in args_featlist], args_lextable, args_categories))
         else:
             print("making black or white list: [%s] [%s] [%s]" %([feat if isinstance(feat, str) else feat for feat in args_featlist], args_lextable, args_categories))
         if args_lextable:
-            (conn, cur, dcur) = mm.dbConnect(args_lexdb, charset=dlac.DEF_ENCODING, use_unicode=args_use_unicode, mysql_config_file=self.mysql_config_file)
+            (conn, cur, dcur) = mm.dbConnect(self.lexicondb, charset=dlac.DEF_ENCODING, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
             sql = 'SELECT term FROM %s' % (args_lextable)
             if (len(args_categories) > 0) and args_categories[0] != '*':
                 sql = 'SELECT term FROM %s WHERE category in (%s)'%(args_lextable, ','.join(['\''+str(x)+'\'' for x in args_categories]))
 
-            rows = mm.executeGetList(args_lexdb, cur, sql, charset=dlac.DEF_ENCODING, use_unicode=args_use_unicode, mysql_config_file=self.mysql_config_file)
+            rows = mm.executeGetList(self.lexicondb, cur, sql, charset=dlac.DEF_ENCODING, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
             for row in rows:
                 newlist.add(row[0])
         elif args_featlist:
             for feat in args_featlist:
-                if args_use_unicode:
+                if self.use_unicode:
                     feat = feat if isinstance(feat, str) else feat
                 else:
                     feat = feat if isinstance(feat, str) else feat
                 # newlist.add(feat.lower())
-                if args_use_unicode:
+                if self.use_unicode:
                     newlist.add(feat.upper() if sum(map(str.isupper, feat)) > (len(feat)/2) else feat.lower())
                 else:
                     newlist.add(feat.upper() if sum(map(str.isupper, feat)) > (len(feat)/2) else feat.lower())

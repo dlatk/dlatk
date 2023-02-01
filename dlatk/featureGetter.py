@@ -892,7 +892,7 @@ class FeatureGetter(DLAWorker):
                     feat_to_search = "'" + feat + "'"
 
                 gid_sql = """SELECT group_id FROM {db}.{tbl}
-                    WHERE feat = {cat} ORDER BY group_norm DESC""".format(db=self.corpdb, tbl=self.featureTable, cat=feat_to_search)
+                    WHERE feat = '{cat}' ORDER BY group_norm DESC""".format(db=self.corpdb, tbl=self.featureTable, cat=feat_to_search)
 
                 msg_ids =  mm.executeGetList(self.corpdb, self.dbCursor, gid_sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
                 msg_ids = [msgs_id[0] for msgs_id in msg_ids]

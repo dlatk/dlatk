@@ -127,6 +127,10 @@ Interface Runtime: 167.67 seconds
 DLATK exits with success! A good day indeed  ¯\_(ツ)_/¯.
 ```
 
+## Testing
+
+Unit testing for various components are supported by the scripts in `tests/`. Their usage is described in [the README](tests/README.md).
+
 ## Documentation
 
 The documentation for the latest release is at [dlatk.wwbp.org](dlatk.wwbp.org).

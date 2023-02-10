@@ -27,7 +27,7 @@ Protocols for editing:
  -- go to https://github.com/dlatk/dlatk, switch to your branch, and click "Compare & pull request" -> "Create pull request"
  
 
-A majority of this package is maintained at the level of prototyping new techniques; The "Suggested Unit Tests" below are the pieces we plan to maintain consistency. With current resources, it should not be considered on a "mature" update cycle. 
+A majority of this package is maintained at the level of prototyping new techniques; The suggested unit tests below are the pieces we plan to maintain consistency. With current resources, it should not be considered on a "mature" update cycle. 
 The process that the maintainers take to update public (and pip..etc...) consists of:
    1. Running unit tests that cover word DLA, topic DLA, and regression and classification
    2. A look through of the commit log to pull out key peices for change log
@@ -35,10 +35,13 @@ The process that the maintainers take to update public (and pip..etc...) consist
    4. Make sure setup.py runs
    5. Make sure dlatk webserver get updated with source
 
-Suggested Unit Tests (using age and occupation as outcomes):
---ngram extraction, feat_combine, p_occ
---topic extraction
---rmatrix --print_csv --tagclouds (ngrams)  --cat_to_bin occupation)
---topic_tagclouds --topic_lex
---nfold_test_regression --model ridgecv
---nfold_test_classif --model lr --cat_to_bin occupation
+Unit testing:
+=============
+Below are the suggested unit tests, which are covered by the respective scripts in the folder tests/, with their usage described in tests/README.md. 
+    
+   1. tests/add_ngrams.sh:  --ngram extraction, feat_combine, p_occ
+   2. tests/add_lex_table.sh: lexicon extraction (dictionary or topics)
+   3. tests/correlation.sh: --rmatrix --print_csv --tagclouds (ngrams)  --cat_to_bin occupation)
+   4. tests/make_all_topic_wordclouds.sh: --topic_tagclouds --topic_lex
+   5. tests/regression.sh: --nfold_test_regression --model ridgecv
+   6. tests/classification.sh: --nfold_test_classif --model lr --cat_to_bin occupation

@@ -1253,6 +1253,7 @@ class FeatureExtractor(DLAWorker):
 
         MODEL_DICT = {
             #'transfoXL': [TransfoXLModel, TransfoXLTokenizer], #Need to look into tokenization
+            'auto': [AutoModel, AutoTokenizer],
             'bert' : [BertModel, BertTokenizer],
             'XLNet': [XLNetModel, XLNetTokenizer], 
             #'OpenAIGPT': [OpenAIGPTModel,  OpenAIGPTTokenizer], # Need to fix tokenization [Token type Ids], Doesn't have CLS or SEP

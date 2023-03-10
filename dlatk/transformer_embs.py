@@ -19,7 +19,8 @@ try:
     import torch
     from torch.nn.utils.rnn import pad_sequence
     from transformers import AutoConfig, AutoTokenizer, AutoModel
-    #TODO: assert transformer minimum version
+    from transformers.utils import check_min_version
+    check_min_version("4.18.0")
 except ImportError:
     print ("transformers library not present. Install transformers (github.com/huggingface/transformers) to run transformer embeddings command")
     sys.exit()
@@ -75,15 +76,27 @@ class textTransformerInterface:
         self.tokenizationRule = self.findRule()
 
     def findRule(self):
+        """Finds the numner of tokens to be removed from the beginning end, [and middle] of the tokenized sequence for single [and pair inputs] to model
+        """
 
-        tokenizationRule = {"single":{}, "pair":{}}
+        tokenizationRule = {"single":{"first":None, "last": None}, "pair":{"first":None, "middle":None, "last": None}}
 
-        sample_data = ["1 2 3 4", "5 6 7 8 9"]
+        sample_data = ["1", "5"]
         special_tokens_map = self.transformerTokenizer.special_tokens_map
         special_tokens_id = {self.transformerTokenizer.convert_tokens_to_ids(i) for i in special_tokens_map.values()}
-        sample_data_ids = self.transformerTokenizer(*sample_data)
         
-        return
+        sample_data_ids_single = self.transformerTokenizer(sample_data[0])["input_ids"]
+        sample_data_tokens_single = self.transformerTokenizer.convert_tokens_to_ids(self.transformerTokenizer.tokenize(sample_data[0]))
+        tokenizationRule["single"]["first"] = sample_data_ids_single.index(sample_data_tokens_single[0])
+        tokenizationRule["single"]["last"] = len(sample_data_ids_single) - sample_data_ids_single.index(sample_data_tokens_single[-1])
+        
+        sample_data_ids_pair = self.transformerTokenizer(*sample_data)["input_ids"]
+        sample_data_tokens_pair = self.transformerTokenizer.convert_tokens_to_ids(self.transformerTokenizer.tokenize(sample_data))
+        tokenizationRule["pair"]["first"] = sample_data_ids_pair.index(sample_data_tokens_pair[0])
+        tokenizationRule["pair"]["last"] = len(sample_data_ids_pair) - sample_data_ids_pair.index(sample_data_tokens_pair[-1])
+        tokenizationRule["pair"]["middle"] = len(sample_data_ids_pair) - tokenizationRule["pair"]["first"] - tokenizationRule["pair"]["last"]
+        
+        return tokenizationRule
 
     def context_preparation(self, groupedMessageRows, sent_tok_onthefly):
         #groupedMessageRows: List[correl field id, List[List[Message Id, message]]]

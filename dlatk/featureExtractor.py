@@ -1259,12 +1259,15 @@ class FeatureExtractor(DLAWorker):
             mIdSeen = set() #currently seen message ids
             mIdList = [] #only for keepMsgFeats
 
+            msgEmb, cfEmb, cfId_msgId_map = {}, {}, {}
             groupedMessageRows = [] #List[CF IDs, List[messages]]
             for cfId in cfGrp:  
                 #grab sents by messages for that correl field:
                 #Some messages might be None. Handled during tokenization
                 cfMsgRows = self.getMessagesForCorrelField(cfId, messageTable = sentTable, warnMsg=True)
+                # print (cfMsgRows)
                 groupedMessageRows.append([cfId, cfMsgRows])
+                cfId_msgId_map[cfId] = set([msgRow[0] for msgRow in cfMsgRows])
             
             #TODO: write method for prepare messages
             #prepare_messages() should take into account context, no context and other possible modes.
@@ -1281,43 +1284,59 @@ class FeatureExtractor(DLAWorker):
                 continue
             
             #TODO: Function call to embedding aggregation
-            cf_reps, cfIds = cf_embedding_generator.aggregate(encSelectedLayers, msgId_seq, cfId_seq)
-            #print ([i.shape for i in cf_reps], len(cfIds))
-            #print (cfIds)
+            msg_reps, msgIds_new, cfIds_new = cf_embedding_generator.message_aggregate(encSelectedLayers, msgId_seq, cfId_seq)
+            # cf_reps, cfIds = cf_embedding_generator.aggregate(encSelectedLayers, msgId_seq, cfId_seq)
+
+            msg_reps_dict = dict(zip([i for i in msgIds_new], [msg_reps[i] for i in range(len(msgIds_new))]))
+            msgEmb.update(msg_reps_dict)
+
+            cf_reps, cfIds_new = cf_embedding_generator.correl_field_aggregate(msg_reps_dict, cfId_msgId_map)
+            # cfEmb.update(dict(zip(cfIds_new, cf_reps)))
             
-            #sys.exit()
+            wsql = """INSERT INTO """ + embTableName + """ (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
+            insert_start_idx = 0
+            insert_end_idx = dlac.MYSQL_BATCH_INSERT_SIZE
+            query = self.qb.create_insert_query(embTableName).set_values([("group_id",""), ("feat",""), ("value",""), ("group_norm","")])
+            while insert_start_idx < len(cfIds_new):
+                rows = []
+                for cfId, cfRep in zip(cfIds_new[insert_start_idx:insert_end_idx], cf_reps[insert_start_idx:insert_end_idx]):
+                    # rows.extend([(cfId, str(k), v, v) for (k, v) in enumerate(cfRep)])
+                    rows.extend([(cfId, cfRep[idx].aggType+str(jdx), v, v) for idx in range(len(cfRep)) for jdx, v in enumerate(cfRep[idx].rep.flatten())])
+                query.execute_query(rows)
+                insert_start_idx = insert_end_idx
+                insert_end_idx += dlac.MYSQL_BATCH_INSERT_SIZE
+            
+            # for idx, cfId in enumerate(cfIds):
+            #     embFeats = dict()
 
-            for idx, cfId in enumerate(cfIds):
-                embFeats = dict()
+            #     if keepMsgFeats:
+            #         """
+            #         embRows = []
+            #         for mid, msg in zip(midList, cf_reps):
+            #             embRows.extend([(str(mid), str(k), v, valueFunc(v)) for (k, v) in enumerate(msg)])
+            #         wsql = "INSERT INTO "+embTableName+" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"
+            #         mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, embRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+            #         """
+            #         print ("Need to fix keepMsgFeats")
+            #         sys.exit()
 
-                if keepMsgFeats:
-                    """
-                    embRows = []
-                    for mid, msg in zip(midList, cf_reps):
-                        embRows.extend([(str(mid), str(k), v, valueFunc(v)) for (k, v) in enumerate(msg)])
-                    wsql = "INSERT INTO "+embTableName+" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"
-                    mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, embRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
-                    """
-                    print ("Need to fix keepMsgFeats")
-                    sys.exit()
+            #     else:
+            #         for ag in aggregations:
+            #             #Flatten the features [layer aggregations] to a single dimension.
+            #             thisAg = eval("np."+ag+"(cf_reps[idx].reshape(cf_reps[idx].shape[0], -1), axis=0)")
+            #             embFeats.update([(str(k)+ag[:2],  v) for (k, v) in enumerate(thisAg)])
+            #             insert_idx_start = 0
+            #             insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
+            #             query = self.qb.create_insert_query(embTableName).set_values([("group_id",str(cfId)),("feat",""),("value",""),("group_norm","")])
+            #             embRows = [(k, float(v), valueFunc(float(v))) for k, v in embFeats.items()] #adds group_norm and applies freq filter
+            #             while insert_idx_start < len(embRows):
+            #                 insert_rows = embRows[insert_idx_start:min(insert_idx_end, len(embRows))]
+            #                 query.execute_query(insert_rows)
+            #                 insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
+            #                 insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
 
-                else:
-                    for ag in aggregations:
-                        #Flatten the features [layer aggregations] to a single dimension.
-                        thisAg = eval("np."+ag+"(cf_reps[idx].reshape(cf_reps[idx].shape[0], -1), axis=0)")
-                        embFeats.update([(str(k)+ag[:2],  v) for (k, v) in enumerate(thisAg)])
-                        insert_idx_start = 0
-                        insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
-                        query = self.qb.create_insert_query(embTableName).set_values([("group_id",str(cfId)),("feat",""),("value",""),("group_norm","")])
-                        embRows = [(k, float(v), valueFunc(float(v))) for k, v in embFeats.items()] #adds group_norm and applies freq filter
-                        while insert_idx_start < len(embRows):
-                            insert_rows = embRows[insert_idx_start:min(insert_idx_end, len(embRows))]
-                            query.execute_query(insert_rows)
-                            insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
-                            insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
-
-            num_cfs += len(set(cfIds))
-            print (num_cfs," cfs finished processing...")
+            # num_cfs += len(set(cfIds))
+            # print (num_cfs," cfs finished processing...")
 
             #cf_reps = np.array(cf_reps)
             #if cf_reps.shape[0] == 0:

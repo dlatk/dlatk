@@ -15,6 +15,7 @@ import json
 from json import loads
 #from simplejson import loads
 import numpy as np
+from collections import namedtuple
 try:
     import torch
     from torch.nn.utils.rnn import pad_sequence
@@ -59,7 +60,7 @@ class sentenceTokenizer:
         messages = list(map(lambda x: x[1], messageRows))
         parses = []
         for m_id, message in messageRows:
-            if message is not None: parses.append([m_id, json.dumps(self.sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(message.strip()))))])
+            if message is not None and message.strip() is not None: parses.append([m_id, self.sentDetector.tokenize(message.strip())])
         return parses
         
 ######################
@@ -71,8 +72,8 @@ class textTransformerInterface:
         self.sentTokenizer = sentenceTokenizer()
         self.msgIdSeen = set()
         self.transformerTokenizer = transformerTokenizer
-        self.maxTokensPerSeg = self.transformerTokenizer.max_len_sentences_pair//2
-
+        self.maxSeqLen = self.transformerTokenizer.max_len_sentences_pair//2 
+        
         self.tokenizationRule = self.findRule()
 
     def findRule(self):
@@ -88,13 +89,13 @@ class textTransformerInterface:
         sample_data_ids_single = self.transformerTokenizer(sample_data[0])["input_ids"]
         sample_data_tokens_single = self.transformerTokenizer.convert_tokens_to_ids(self.transformerTokenizer.tokenize(sample_data[0]))
         tokenizationRule["single"]["first"] = sample_data_ids_single.index(sample_data_tokens_single[0])
-        tokenizationRule["single"]["last"] = len(sample_data_ids_single) - sample_data_ids_single.index(sample_data_tokens_single[-1])
+        tokenizationRule["single"]["last"] = len(sample_data_ids_single) - 1 - sample_data_ids_single.index(sample_data_tokens_single[-1])
         
         sample_data_ids_pair = self.transformerTokenizer(*sample_data)["input_ids"]
         sample_data_tokens_pair = self.transformerTokenizer.convert_tokens_to_ids(self.transformerTokenizer.tokenize(sample_data))
         tokenizationRule["pair"]["first"] = sample_data_ids_pair.index(sample_data_tokens_pair[0])
-        tokenizationRule["pair"]["last"] = len(sample_data_ids_pair) - sample_data_ids_pair.index(sample_data_tokens_pair[-1])
-        tokenizationRule["pair"]["middle"] = len(sample_data_ids_pair) - tokenizationRule["pair"]["first"] - tokenizationRule["pair"]["last"]
+        tokenizationRule["pair"]["last"] = len(sample_data_ids_pair) - 1 - sample_data_ids_pair.index(sample_data_tokens_pair[-1])
+        tokenizationRule["pair"]["middle"] = len(sample_data_ids_pair) - tokenizationRule["pair"]["first"] - tokenizationRule["pair"]["last"] - len(sample_data_tokens_pair)
         
         return tokenizationRule
 
@@ -107,11 +108,8 @@ class textTransformerInterface:
                 #sentTokenizer takes in lists of messageId, message pairs 
                 cfRows[1] = self.sentTokenizer(cfRows[1])
 
-        input_ids = []
-        token_type_ids = []
-        attention_mask = []
-        msgId_seq = []
-        cfId_seq = []
+        input_ids, token_type_ids, attention_mask = [], [], []
+        msgId_seq, cfId_seq = [], []
 
         #stores the sequence of message_id corresponding to the message embeddings for applying aggregation later 
         #along with the sentence 1 and sentence 2 lengths
@@ -125,15 +123,15 @@ class textTransformerInterface:
             for messageRow in cfRows[1]:
                 message_id = messageRow[0]
                 try:
-                    messageSents = loads(messageRow[1])
+                    messageSents = messageRow[1] if sent_tok_onthefly else loads(messageRow[1])
                 except NameError: 
                     print ("Error: Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
                     sys.exit(1)
                 except json.JSONDecodeError:
                     print ("WARNING: JSONDecodeError on %s. Skipping Message"%str(messageRow))
                     continue
-                except:
-                    print ("Warning: cannot load message, skipping")
+                except Exception as e:
+                    print ("Warning: cannot load message, skipping. Exception: %s"%str(e))
                     continue
 
                 #TODO: replace all mids with self.msgIdSeen
@@ -141,60 +139,37 @@ class textTransformerInterface:
                     #msgs+=1
                     subMessages = []
                     #keep context; one submessage; subMessages: [[Msg1, Msg2...]]
-                    subMessages=[messageSents]
-
-                    for sents in subMessages: #only matters for noContext
-                        #TODO: preprocess to remove newlines
-                        sentsTok = [self.transformerTokenizer.tokenize(s) for s in sents]
-                        #print(sentsTok)#debug
-                        #check for over the max length. Below code (loop) segments the messages based on the number of tokens
-                        i = 0
-                        while (i < len(sentsTok)):#while instead of for since array may change size
-                            if len(sentsTok[i]) > self.maxTokensPerSeg: #If the number of tokens is greater than maxTokenPerSeg in a Sentence, split it
-                                newSegs = [sentsTok[i][j:j+self.maxTokensPerSeg] for j in range(0, len(sentsTok[i]), self.maxTokensPerSeg)]
-                                #TODO: Change this to 1 update per user
-                                #if not lengthWarned:
-                                    #print ("AddEmb: Some segments are too long; splitting up; first example: %s" % str(newSegs))
-                                    #lengthWarned = True
-                                sentsTok = sentsTok[:i] + newSegs + sentsTok[i+1:]
-                                i+=(len(newSegs) - 1)#skip ahead new segments
-                            i+=1
-
-                        for i in range(len(sentsTok)):
-                            thisPair = sentsTok[i:i+2] #Give two sequences as input
-                            try:
-                                #thisPair = [self.transformerTokenizer.convert_tokens_to_string(i) for i in thisPair]
-                                encoded = self.transformerTokenizer.prepare_for_model(*[self.transformerTokenizer.convert_tokens_to_ids(i) for i in thisPair])
-                                #encoded = self.transformerTokenizer.encode_plus(thisPair[0], thisPair[1]) if len(thisPair)>1 else self.transformerTokenizer.encode_plus(thisPair[0])
-                            except:
-                                #print(thisPair, message_id)
-                                print ("Message pair/ message unreadable. Skipping this....")
-                                continue
-                                #sys.exit(0)
-                            
-                            indexedToks = encoded['input_ids']
-                            segIds = encoded['token_type_ids'] if 'token_type_ids' in encoded else None
-
-                            input_ids.append(torch.tensor(indexedToks, dtype=torch.long))
-                            if 'token_type_ids' in encoded:
-                                token_type_ids.append(torch.tensor(segIds, dtype=torch.long))
-                            attention_mask.append(torch.tensor([1]*len(indexedToks), dtype=torch.long))
-
-                            if len(thisPair)>1: #Collecting the sentence length of the pair along with their message IDs
-                                # If multiple sentences in a message, it will store the message_ids multiple times for aggregating emb later.
-                                msgId_seq.append([message_id, len(sentsTok[i]), len(sentsTok[i+1])])
-                            else:
-                                msgId_seq.append([message_id, len(sentsTok[i]), 0])
-
-                            cfId_seq.append(cfId)
-
-            #TODO move this to outer call ofor handling progress from DLATK
-                #if msgs % int(dlac.PROGRESS_AFTER_ROWS/5) == 0: #progress update
-                #    dlac.warn("Messages Read: %.2f k" % (msgs/1000.0))
+                    messageSents=[self.transformerTokenizer.tokenize(sents) for sents in messageSents]
+                    # messageSents: [[Msg1_tok1, Msg1_tok2...], [Msg2_tok1, Msg2_tok2...]]
+                    i = 0
+                    while (i < len(messageSents)):
+                        if len(messageSents[i]) > self.maxSeqLen:
+                            temp = [messageSents[i][j:j+self.maxSeqLen] for j in range(0, len(messageSents[i]), self.maxSeqLen)]
+                            messageSents = messageSents[:i] + temp + messageSents[i+1:]
+                            i += len(temp) - 1
+                        i += 1
+                    messageSents_ids = [self.transformerTokenizer.convert_tokens_to_ids(sents) for sents in messageSents]
+                    
+                    for idx in range(len(messageSents_ids)):
+                        thisPair = messageSents_ids[idx:idx+2]
+                        encoded = self.transformerTokenizer.prepare_for_model(*thisPair, is_split_into_words=True)
+                        indexedToks = encoded['input_ids']
+                        segIds = encoded['token_type_ids'] if 'token_type_ids' in encoded else None
+                        
+                        input_ids.append(torch.tensor(indexedToks, dtype=torch.long))
+                        if 'token_type_ids' in encoded: token_type_ids.append(torch.tensor(segIds, dtype=torch.long))
+                        attention_mask.append(torch.tensor([1]*len(indexedToks), dtype=torch.long))
+                        if len(thisPair) > 1:
+                            msgId_seq.append([message_id, len(thisPair[0]), len(thisPair[1])])
+                        else:
+                            msgId_seq.append([message_id, len(thisPair[0]), 0])
+                        
+                        cfId_seq.append(cfId)
+                        
                 self.msgIdSeen.add(message_id)
-            #midList.append(message_id)
-
-        return {"input_ids": input_ids, "attention_mask": attention_mask, "token_type_ids": token_type_ids}, (cfId_seq, msgId_seq)
+                
+        assert len(input_ids) == len(msgId_seq) == len(cfId_seq) == len(attention_mask), "lengths of input_ids, msgId_seq, cfId_seq, attention_mask are not equal"
+        return {"input_ids": input_ids, "attention_mask": attention_mask, "token_type_ids": token_type_ids}, (cfId_seq, msgId_seq) 
 
     def no_context_preparation(self, messageRows, sent_tok_onthefly):
 
@@ -233,11 +208,11 @@ class transformer_embeddings:
         except:
             print (" unable to use CUDA (GPU) for BERT")
             self.cuda = False
-        self.batchSize=batchSize
         
         layersToKeep = self.parse_layers(layersToKeep)
         self.layersToKeep = np.array(layersToKeep, dtype='int')
 
+        self.aggTypeTuple = namedtuple('AggTypeTuple', ['aggType', 'rep'])
         self.aggregations = aggregations
         self.layerAggregations = layerAggregations
         self.wordAggregations = wordAggregations #not being used right now
@@ -284,7 +259,7 @@ class transformer_embeddings:
         num_batches = int(np.ceil(len(tokenIdsDict["input_ids"])/float(self.batchSize)))
         encSelectLayers = []
         #print ('len(input_ids): ',len(tokens["input_ids"]))
-        print ('Num Batches:', num_batches)
+        # print ('Num Batches:', num_batches)
 
         if len(tokenIdsDict["input_ids"]) == 0:
             print ("No messages in this batch!!! Message table might be consisting NULLs")
@@ -337,12 +312,10 @@ class transformer_embeddings:
             
         return encSelectLayers
     
-    def _aggregate(self, msg_rep, msgId_seq=None):
-
-        #msg_rep = self.msg_level_agg(encSelectLayers, msgId_seq)
+    def submsg_aggregate(self, msg_rep, msgId_seq=None):
 
         #Layer aggregation followed by word aggregation
-        user_rep = [] #(num msgs, hidden_dim, lagg)
+        message_rep = [] 
         for i in range(len(msg_rep)):#Iterating through messages
             sent_rep = []
             for j in range(len(msg_rep[i])): #Iterate through the submessages to apply layer aggregation. 
@@ -353,9 +326,9 @@ class transformer_embeddings:
                         sub_msg_lagg.append(sub_msg) #(seq len, hidden dim, num layers)
                     else:
                         sub_msg_lagg.append(eval("np."+lagg+"(sub_msg, axis=-1)").reshape(sub_msg.shape[0], sub_msg.shape[1], 1) )#(seq len, hidden dim, 1)
-                    #Shape: (seq len, hidden dim, (num_layers*(concatenate==True)+(sum(other layer aggregations))))
-                    #Example: lagg = [mean, min, concatenate], layers = [8,9]; Shape: (seq len, hidden dim, 2 + 1 + 1)
-                    sub_msg_lagg_ = np.concatenate(sub_msg_lagg, axis=-1) 
+                # Shape: (seq len, hidden dim, (num_layers*(concatenate==True)+(sum(other layer aggregations))))
+                # Example: lagg = [mean, min, concatenate], layers = [8,9]; Shape: (seq len, hidden dim, 2 + 1 + 1)
+                sub_msg_lagg_ = np.concatenate(sub_msg_lagg, axis=-1) 
                 #Getting the mean of all tokens representation
                 #TODO: add word agg list and do eval
                 sub_msg_lagg_wagg = np.mean(sub_msg_lagg_, axis=0) #Shape: (hidden dim, lagg)
@@ -363,38 +336,74 @@ class transformer_embeddings:
                 sub_msg_lagg_wagg = sub_msg_lagg_wagg.reshape(1, sub_msg_lagg_wagg.shape[0], sub_msg_lagg_wagg.shape[1]) 
                 #Sentence representations
                 sent_rep.append(sub_msg_lagg_wagg)
-            #Accumulate all the sentence representation of a user
-            user_rep.append(np.mean(np.concatenate(sent_rep, axis=0), axis=0)) 
+            #Accumulate all the sentence representation of a message
+            message_rep.append(np.mean(np.concatenate(sent_rep, axis=0), axis=0)) 
 
-        user_rep = np.array(user_rep)
+        message_rep = np.array(message_rep)
+        return message_rep
+    
+    def correl_field_aggregate(self, msg_reps_dict, cfId_msgId_map):
         
-        return user_rep
+        cf_reps, cfIds_seq = [], []
+        for cfId, msgIds_set in cfId_msgId_map.items():
+            temp = [msg_reps_dict[msgId] for msgId in msgIds_set if msgId in msg_reps_dict.keys()]
+            temp = np.concatenate(temp, axis=0)
+            cf_rep = []
+            for agg in self.aggregations:
+                temp_agg = eval("np."+agg+"(temp, axis=0)")
+                temp_agg_tuple = self.aggTypeTuple(agg, temp_agg)
+                cf_rep.append(temp_agg_tuple)
 
-    def aggregate(self, encSelectLayers, msgId_seq, cfId_seq):
+            cf_reps.append(cf_rep)
+            cfIds_seq.append(cfId)
+            
+        return cf_reps, cfIds_seq
 
-        msg_rep, msgId_seq, cfId_seq = self.msg_level_agg(encSelectLayers, msgId_seq, cfId_seq)
+    def message_aggregate(self, encSelectLayers, msgId_seq, cfId_seq):
+        """Function that aggregates sub message representation into message representation
 
-        current_cfId = cfId_seq[0]
-        current_firstIdx = 0
-        cf_reps = []
-        cfIds = []
-        for idx, cfId in enumerate(cfId_seq):
-            if idx == len(cfId_seq)-1:
-                cf_reps.append(self._aggregate(msg_rep[current_firstIdx:idx+1]))
-                cfIds.append(current_cfId)
-            elif current_cfId != cfId:
-                cf_reps.append(self._aggregate(msg_rep[current_firstIdx:idx]))
-                cfIds.append(current_cfId)
-                current_cfId = cfId_seq[idx]
+        Args:
+            encSelectLayers (List): List of sub message representations returned by generate_embeddings method
+            msgId_seq (List): List of message ids
+            cfId_seq (List): List of correl field IDs
+
+        Returns:
+            Tuple(cf_reps:List, cfIds:List): Tuple of list of message representations and list of correl field ids
+        """
+
+        msg_rep, msgId_seq_new, cfId_seq_new = self.overlap_agg(encSelectLayers, msgId_seq, cfId_seq)
+
+        current_firstIdx = 0   # first index of the current msg Id
+        current_msgId = msgId_seq_new[current_firstIdx] # current msg Id
+        msg_reps, msgIds = [], []
+        for idx, msgId in enumerate(msgId_seq_new):
+            if current_msgId != msgId:
+                msg_reps.append(self.submsg_aggregate(msg_rep[current_firstIdx:idx]))
+                msgIds.append(current_msgId)
+                current_msgId = msgId_seq_new[idx]
                 current_firstIdx = idx
+                if idx == len(msgId_seq_new)-1:
+                    msg_reps.append(self.submsg_aggregate(msg_rep[current_firstIdx:]))
+                    msgIds.append(current_msgId)
 
-        return (cf_reps, cfIds)
+        return (msg_reps, msgIds, cfId_seq_new)
 
-    def msg_level_agg(self, encSelectLayers, msgId_seq, cfId_seq):
-        #Change function name to group_submsg_rep
+    def overlap_agg(self, encSelectLayers, msgId_seq, cfId_seq):
+        """Function that aggregates the representation of the same sub message from left and right context 
 
+        Args:
+            encSelectLayers (List): List of sub message representations returned by generate_embeddings method
+            msgId_seq (List): List of message ids
+            cfId_seq (List): List of correl field IDs
+
+        Returns:
+            Tuple(msg_rep:List, msgId_seq:List, cfId_seq:List): Returns the aggregated sub message representation along with the corresponding message ids and correl field ids
+        """
+
+        singleSent_start_idx = self.textToTokensInterface.tokenizationRule['single']['first']
+        pairSents_start_idx = self.textToTokensInterface.tokenizationRule['pair']['first']
+        pairSents_mid_idx = self.textToTokensInterface.tokenizationRule['pair']['middle']
         i = 0
-        j = 0
         msg_rep = [] #Shape: (num layers, seq Len, hidden_dim)
         msgId_seq_new = []
         cfId_seq_new = []
@@ -408,36 +417,35 @@ class transformer_embeddings:
                 # Process all sub messages pertaining to a single message at once
                 msg_rep_temp = []
                 # Store the first message's first sentence embedding followed by averaging the second sentence of that message and the first sentence of next message's embedding   
-                msg_rep_temp.append(encSelectLayers[i//self.batchSize][j%self.batchSize, :msgId_seq[i][1]])
+                msg_rep_temp.append(encSelectLayers[i//self.batchSize][i%self.batchSize, pairSents_start_idx+1:pairSents_start_idx+msgId_seq[i][1]+1])
                 while next_msg_same:
-                    enc_batch_number = i//self.batchSize
-                    next_enc_batch_number = (i+1)//self.batchSize
-                    seq_len1 = msgId_seq[i][1]
-                    seq_len2 = msgId_seq[i][2]
+                    enc_batch_number, next_enc_batch_number = i//self.batchSize, (i+1)//self.batchSize 
+                    seq_len1, seq_len2 = msgId_seq[i][1], msgId_seq[i][2]
                     #Shape: (seq2 len, hidden dim, num layers)
                     #Apply mean for the embedding of the sentence that appeared second in the current part and first in the next part
                     #print (msgId_seq[i][0], seq_len1, seq_len2, encSelectLayers[enc_batch_number].shape, encSelectLayers[next_enc_batch_number].shape)
-                    sent2enc = (encSelectLayers[enc_batch_number][j%self.batchSize, seq_len1:seq_len1+seq_len2] + encSelectLayers[next_enc_batch_number][(j+1)%self.batchSize, :seq_len2])/2
+                    sent2enc = (encSelectLayers[enc_batch_number][i%self.batchSize, pairSents_start_idx+seq_len1+pairSents_mid_idx+1:seq_len1+pairSents_start_idx+pairSents_mid_idx+1+seq_len2] + encSelectLayers[next_enc_batch_number][(i+1)%self.batchSize, pairSents_start_idx+1:pairSents_start_idx+1+seq_len2])/2
                     #Store the representation
                     msg_rep_temp.append(sent2enc)
                     #print (message_id_seq[i], sent2enc.shape) #debug
                     #Check if the next part of the message has single sentence, if yes, break
                     i+=1
-                    j+=1
                     if msgId_seq[i][2] == 0:
                         i+=1
-                        j+=1
                         break
                     next_msg_same = True if (msgId_seq[i][0] == msgId_seq[i+1][0]) else False
             else:
                 # Single message representations.
                 enc_batch_number = i//self.batchSize
-                seq_len = msgId_seq[i][1]
+                seq_len = msgId_seq[i][1] # msgId_seq[i][1]
                 #Store the message representation
                 #print (msgId_seq[i][0], enc_batch_number, i, j, seq_len, len(encSelectLayers), len(msg_rep))
-                sent2enc = encSelectLayers[enc_batch_number][j%self.batchSize, :seq_len] #Shape: (seq len, hidden dim, #layers)
+                try:
+                    sent2enc = encSelectLayers[enc_batch_number][i%self.batchSize, singleSent_start_idx+1:singleSent_start_idx+seq_len+1] #Shape: (seq len, hidden dim, #layers)
+                except:
+                    print (encSelectLayers[enc_batch_number].shape, i%self.batchSize, seq_len, msgId_seq[i][0])
+                    exit()
                 i+=1
-                j+=1
                 msg_rep_temp = [sent2enc]
 
             #Store all the representation as a list                
@@ -446,7 +454,9 @@ class transformer_embeddings:
             cfId_seq_new.append(cfId_seq[i-1])
 
         if not (len(msg_rep) == len(msgId_seq_new) == len(cfId_seq_new)):
+            print ("----------------------------------------------------------------")
             print ("not equal: ", len(msg_rep), len(msgId_seq_new), len(cfId_seq_new))
+            print ("----------------------------------------------------------------")
                 
         return msg_rep, msgId_seq_new, cfId_seq_new
 

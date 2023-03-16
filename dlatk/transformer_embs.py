@@ -92,7 +92,9 @@ class textTransformerInterface:
         tokenizationRule["single"]["last"] = len(sample_data_ids_single) - 1 - sample_data_ids_single.index(sample_data_tokens_single[-1])
         
         sample_data_ids_pair = self.transformerTokenizer(*sample_data)["input_ids"]
-        sample_data_tokens_pair = self.transformerTokenizer.convert_tokens_to_ids(self.transformerTokenizer.tokenize(sample_data))
+        sample_data_tokens_pair = []
+        for i in sample_data:
+            sample_data_tokens_pair.extend(self.transformerTokenizer.convert_tokens_to_ids(self.transformerTokenizer.tokenize(i)))
         tokenizationRule["pair"]["first"] = sample_data_ids_pair.index(sample_data_tokens_pair[0])
         tokenizationRule["pair"]["last"] = len(sample_data_ids_pair) - 1 - sample_data_ids_pair.index(sample_data_tokens_pair[-1])
         tokenizationRule["pair"]["middle"] = len(sample_data_ids_pair) - tokenizationRule["pair"]["first"] - tokenizationRule["pair"]["last"] - len(sample_data_tokens_pair)

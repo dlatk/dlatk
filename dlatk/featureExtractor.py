@@ -1182,6 +1182,7 @@ class FeatureExtractor(DLAWorker):
     def add_emb_table(self, modelName, tokenizerName, modelClass=None, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], keepMsgFeats = False, customTableName = None, valueFunc = lambda d: d):
 
         from dlatk.transformer_embs import transformer_embeddings
+        from tqdm import tqdm
         
         dlac.warn("WARNING: new version of BERT and transformer models starts at layer 1 rather than layer 0. Layer 0 is now the input embedding. For example, if you were using layer 10 for the second to last layer of bert-base that is now considered layer 11.")
 
@@ -1255,19 +1256,32 @@ class FeatureExtractor(DLAWorker):
 
         num_cfs = 0
             
-        for cfGrp in cfGroups:
+        for cfGrp in tqdm(cfGroups):
             mIdSeen = set() #currently seen message ids
             mIdList = [] #only for keepMsgFeats
 
             msgEmb, cfEmb, cfId_msgId_map = {}, {}, {}
-            groupedMessageRows = [] #List[CF IDs, List[messages]]
-            for cfId in cfGrp:  
-                #grab sents by messages for that correl field:
-                #Some messages might be None. Handled during tokenization
-                cfMsgRows = self.getMessagesForCorrelField(cfId, messageTable = sentTable, warnMsg=True)
-                # print (cfMsgRows)
-                groupedMessageRows.append([cfId, cfMsgRows])
-                cfId_msgId_map[cfId] = set([msgRow[0] for msgRow in cfMsgRows])
+            groupedMessageRows = {} # To be turned into List[CF IDs, List[messages]]
+            messageRows = self.getMessagesForCorrelFieldGroups(cfGrp, messageTable = sentTable, warnMsg=True)
+            
+            for cfId, msgId, msg in messageRows:
+                if cfId not in cfId_msgId_map: 
+                    cfId_msgId_map[cfId] = set()
+                    groupedMessageRows[cfId] = []
+                if msgId not in cfId_msgId_map[cfId]:
+                    cfId_msgId_map[cfId].add(msgId)
+                    groupedMessageRows[cfId].append([msgId, msg])
+            groupedMessageRows = [[cfId, groupedMessageRows[cfId]] for cfId in cfId_msgId_map]
+            
+            # for cfId in cfGrp:  
+            #     #grab sents by messages for that correl field:
+            #     #Some messages might be None. Handled during tokenization
+            #     cfMsgRows = self.getMessagesForCorrelField(cfId, messageTable = sentTable, warnMsg=True)
+            #     # print (cfMsgRows)
+            #     groupedMessageRows.append([cfId, cfMsgRows])
+            #     cfId_msgId_map[cfId] = set([msgRow[0] for msgRow in cfMsgRows])
+            
+            
             
             #TODO: write method for prepare messages
             #prepare_messages() should take into account context, no context and other possible modes.
@@ -1287,24 +1301,36 @@ class FeatureExtractor(DLAWorker):
             msg_reps, msgIds_new, cfIds_new = cf_embedding_generator.message_aggregate(encSelectedLayers, msgId_seq, cfId_seq)
             # cf_reps, cfIds = cf_embedding_generator.aggregate(encSelectedLayers, msgId_seq, cfId_seq)
 
-            msg_reps_dict = dict(zip([i for i in msgIds_new], [msg_reps[i] for i in range(len(msgIds_new))]))
-            msgEmb.update(msg_reps_dict)
-
-            cf_reps, cfIds_new = cf_embedding_generator.correl_field_aggregate(msg_reps_dict, cfId_msgId_map)
-            # cfEmb.update(dict(zip(cfIds_new, cf_reps)))
-            
-            wsql = """INSERT INTO """ + embTableName + """ (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
-            insert_start_idx = 0
-            insert_end_idx = dlac.MYSQL_BATCH_INSERT_SIZE
-            query = self.qb.create_insert_query(embTableName).set_values([("group_id",""), ("feat",""), ("value",""), ("group_norm","")])
-            while insert_start_idx < len(cfIds_new):
-                rows = []
-                for cfId, cfRep in zip(cfIds_new[insert_start_idx:insert_end_idx], cf_reps[insert_start_idx:insert_end_idx]):
-                    # rows.extend([(cfId, str(k), v, v) for (k, v) in enumerate(cfRep)])
-                    rows.extend([(cfId, cfRep[idx].aggType+str(jdx), v, v) for idx in range(len(cfRep)) for jdx, v in enumerate(cfRep[idx].rep.flatten())])
-                query.execute_query(rows)
-                insert_start_idx = insert_end_idx
-                insert_end_idx += dlac.MYSQL_BATCH_INSERT_SIZE
+            if keepMsgFeats:
+                insert_start_idx = 0
+                insert_end_idx = dlac.MYSQL_BATCH_INSERT_SIZE
+                query = self.qb.create_insert_query(embTableName).set_values([("group_id",""), ("feat",""), ("value",""), ("group_norm","")])
+                while insert_start_idx < len(msgIds_new):
+                    rows = []
+                    for msgId, msgRep in zip(msgIds_new[insert_start_idx:insert_end_idx], msg_reps[insert_start_idx:insert_end_idx]):
+                        # rows.extend([(msgId, str(k), v, v) for (k, v) in enumerate(msgRep)])
+                        rows.extend([(msgId, "FEAT"+str(k), v, v) for (k, v) in enumerate(msgRep.flatten())])
+                        # rows.extend([(message_id, "FEAT"+str(k), v, v) for message_id in msgEmb for (k, v) in enumerate(msgEmb[message_id].flatten())])
+                        # rows.extend([(msgId, msgRep[idx].aggType+str(jdx), v, v) for idx in range(len(msgRep)) for jdx, v in enumerate(msgRep[idx].aggValue)])
+                    query.execute_query(rows)
+                    insert_start_idx += dlac.MYSQL_BATCH_INSERT_SIZE
+                    insert_end_idx += dlac.MYSQL_BATCH_INSERT_SIZE
+            else:
+                msg_reps_dict = dict(zip([i for i in msgIds_new], [msg_reps[i] for i in range(len(msgIds_new))]))
+                # msgEmb.update(msg_reps_dict)
+                cf_reps, cfIds_new = cf_embedding_generator.correl_field_aggregate(msg_reps_dict, cfId_msgId_map)
+                wsql = """INSERT INTO """ + embTableName + """ (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
+                insert_start_idx = 0
+                insert_end_idx = dlac.MYSQL_BATCH_INSERT_SIZE
+                query = self.qb.create_insert_query(embTableName).set_values([("group_id",""), ("feat",""), ("value",""), ("group_norm","")])
+                while insert_start_idx < len(cfIds_new):
+                    rows = []
+                    for cfId, cfRep in zip(cfIds_new[insert_start_idx:insert_end_idx], cf_reps[insert_start_idx:insert_end_idx]):
+                        # rows.extend([(cfId, str(k), v, v) for (k, v) in enumerate(cfRep)])
+                        rows.extend([(cfId, cfRep[idx].aggType+str(jdx), v, v) for idx in range(len(cfRep)) for jdx, v in enumerate(cfRep[idx].rep.flatten())])
+                    query.execute_query(rows)
+                    insert_start_idx = insert_end_idx
+                    insert_end_idx += dlac.MYSQL_BATCH_INSERT_SIZE
             
             # for idx, cfId in enumerate(cfIds):
             #     embFeats = dict()

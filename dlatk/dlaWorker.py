@@ -135,6 +135,31 @@ class DLAWorker(object):
         selectQuery = self.qb.create_select_query(messageTable).set_fields([self.messageid_field, self.message_field]).where(where_conditions)
         return selectQuery.execute_query()
 
+    def getMessagesForCorrelFieldGroups(self, cf_ids, messageTable = None, warnMsg = True):
+        """Get messages for a list of correl field ids.
+
+        Parameters
+        ----------
+        cf_ids (list): A list of correl field ids.
+        messageTable (str, optional): Name of the message table. Defaults to None.
+        warnMsg (bool, optional): Defaults to True.
+        
+        Returns
+        -------
+        
+        """
+        if not messageTable: messageTable = self.corptable
+        # check that self.messageid_field is unique
+        if self.messageIdUniqueChecked == False:
+            self.checkIndices(messageTable, primary=True, correlField=self.messageid_field)
+            if self.correl_field != self.messageid_field:
+                self.checkIndices(messageTable, primary=False, correlField=self.correl_field)
+            self.messageIdUniqueChecked = True
+        cf_ids = ["'"+cf_id+"'" if isinstance(cf_id, str) else str(cf_id) for cf_id in cf_ids]
+        where_conditions = """%s IN (%s)"""%(self.correl_field, ",".join(cf_ids))
+        selectQuery = self.qb.create_select_query(messageTable).set_fields([self.correl_field, self.messageid_field, self.message_field]).where(where_conditions)
+        return selectQuery.execute_query()
+
     def getMessagesWithFieldForCorrelField(self, cf_id, extraField, messageTable = None, warnMsg = True):
         """?????
  

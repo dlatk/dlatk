@@ -1038,8 +1038,9 @@ def main(fn_args = None):
 
         else:
             ftables = list()
-            for n in args.n:
-                ftables.append(fe.addNGramTable(n, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc, metaFeatures = args.metafeats, extension = args.extension))
+            ftables = fe.addNGramTable_new(args.n, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc, metaFeatures = args.metafeats, extension = args.extension)
+            # for n in args.n:
+            #     ftables.append(fe.addNGramTable(n, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc, metaFeatures = args.metafeats, extension = args.extension))
             if len(ftables) > 1:
                 args.feattable = ftables;
             else:

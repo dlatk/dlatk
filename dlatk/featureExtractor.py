@@ -105,6 +105,154 @@ class FeatureExtractor(DLAWorker):
 
     ##Feature Tables ##
 
+    def addNGramTable_new(self, n, lowercase_only=dlac.LOWERCASE_ONLY, min_freq=1, tableName = None, valueFunc = lambda d: d, metaFeatures = True, extension = None):
+        """Creates feature tuples (correl_field, feature, values) table where features are ngrams
+
+        Parameters
+        ----------
+        n : List[int]
+            ?????
+        lowercase_only : boolean
+            use only lowercase charngrams if True
+        min_freq : :obj:`int`, optional
+            ?????
+        tableName : :obj:`str`, optional
+            ?????
+        valueFunc : :obj:`lambda`, optional
+            Scales the features by the function given
+        metaFeatures : :obj:`boolean`, optional
+            ?????
+
+        Returns
+        -------
+        featureTableName : str
+            Name of n-gram table: feat%ngram%corptable%correl_field%transform
+        """
+        n = sorted(n, reverse = True)
+        
+        print ("------------------------------------------------------")
+        print ("NEW SHERIFF IN TOWN \U0001F52B \U0001F52B \U0001F52B")
+        print ("------------------------------------------------------")
+        # Insert gun emoji here
+        
+        ##NOTE: correl_field should have an index for this to be quick
+        tokenizer = Tokenizer(preserve_case = not lowercase_only, use_unicode=self.use_unicode)
+
+        #debug:
+        #print "valueFunc(30) = %f" % valueFunc(float(30)) #debug
+
+        #CREATE TABLE:
+        featureNames = [str(i)+'grams' for i in n]
+        if not lowercase_only: featureNames = [name + "Up" for name in featureNames]
+        varcharLength = min((dlac.VARCHAR_WORD_LENGTH-(n[-1]-1))*n[-1], 255)
+        featureTableNames = [self.createFeatureTable(featureName, "VARCHAR(%d)"%varcharLength, 'INTEGER', tableName, valueFunc, extension = extension) for featureName in featureNames]
+
+        if metaFeatures:
+            # If metafeats is on, make a metafeature table as well
+            mfLength = 16
+            mfNames = ["meta_"+featureName for featureName in featureNames]
+            mfTableNames = [self.createFeatureTable(mfName, "VARCHAR(%d)" % mfLength, 'INTEGER', tableName, valueFunc, extension = extension) for mfName in mfNames]
+
+        #SELECT / LOOP ON CORREL FIELD FIRST:
+        query = self.qb.create_select_query(self.corptable).set_fields([self.correl_field]).group_by([self.correl_field])
+        msgs = 0 # keeps track of the number of messages read
+        cfRows = FeatureExtractor.noneToNull(query.execute_query() )#SSCursor woudl be better, but it loses connection
+        dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
+        for idx, ngram_len in enumerate(n):
+            if len(cfRows)*ngram_len < dlac.MAX_TO_DISABLE_KEYS: self.data_engine.disable_table_keys(featureTableNames[idx]) #for faster, when enough space for repair by sorting
+
+        #warnedMaybeForeignLanguage = False
+        totalInserts = dict([(i,0) for i in n])
+        totalCFIDinserts = 0
+        totalCFIDs = len(cfRows)
+        cfpsDone = set()
+        for cfRow in cfRows:
+            cf_id = cfRow[0]
+
+            mids = set() #currently seen message ids
+            freqs = dict([(i,dict()) for i in n]) #holds frequency of n-grams
+            totalGrams = dict([(i,0.0) for i in n]) #total number of (non-distinct) n-grams seen for this user
+            totalChars = dict([(i,0.0) for i in n])
+
+            #grab n-grams by messages for that cf:
+
+            for messageRow in self.getMessagesForCorrelField(cf_id, warnMsg = False):
+                message_id = messageRow[0]
+                message = messageRow[1]
+                if not message_id in mids and message:
+                    msgs+=1
+                    if msgs % dlac.PROGRESS_AFTER_ROWS == 0: #progress update
+                        dlac.warn("Messages Read: %dk" % int(msgs/1000))
+                    message = tc.treatNewlines(message)
+                    message = tc.shrinkSpace(message)
+
+                    #words = message.split()
+                    if not self.use_unicode:
+                        words = [tc.removeNonAscii(w) for w in tokenizer.tokenize(message)]
+                    else:
+                        words = [tc.removeNonUTF8(w) for w in tokenizer.tokenize(message)]
+
+                    for ngram_len in n:
+                        for idx in range(0, len(words) - ngram_len + 1):
+                            totalGrams[ngram_len] += 1
+                            gram = ' '.join(words[idx:idx+ngram_len])
+                            if lowercase_only: gram = gram.lower()
+                            gram = gram[:varcharLength]
+                            
+                            freqs[ngram_len][gram] = freqs[ngram_len].get(gram, 0) + 1
+                            
+                            if metaFeatures: totalChars[ngram_len] += len(gram)
+                    mids.add(message_id)
+                    
+            if any([totalGrams[ngram_len] > 0 for ngram_len in n]):
+                queries = [self.qb.create_insert_query(featureTableName).set_values([("group_id",str(cf_id)),("feat",""),("value",""),("group_norm","")]) for featureTableName in featureTableNames]
+                try:
+                    if self.use_unicode:
+                        rows = dict([(ngram_len, [(k, v, valueFunc((v/totalGrams[ngram_len]))) for k, v in freqs[ngram_len].items() if v >= min_freq]) for ngram_len in n])
+                    else:
+                        rows = dict([(ngram_len, [(k.encode('utf-8'), v, valueFunc((v/totalGrams[ngram_len]))) for k, v in freqs[ngram_len].items() if v >= min_freq]) for ngram_len in n])
+                except Exception as e:
+                    print([k for k, v in freqs.items()])
+                    raise e
+                
+                for jdx, ngram_len in enumerate(n):
+                    insert_idx_start = 0
+                    insert_idx_end = min(dlac.MYSQL_BATCH_INSERT_SIZE, len(rows[ngram_len]))
+                    
+                    while insert_idx_start < len(rows[ngram_len]):
+                        queries[jdx].execute_query(rows[ngram_len][insert_idx_start:insert_idx_end])
+                        insert_idx_start = insert_idx_end
+                        insert_idx_end = min(insert_idx_end + dlac.MYSQL_BATCH_INSERT_SIZE, len(rows[ngram_len]))
+
+                    totalInserts[ngram_len] += len(rows[ngram_len])
+                totalCFIDinserts += 1
+                cfPerc = int(100.0 * totalCFIDinserts / totalCFIDs)
+                if cfPerc % 5 == 0 and not cfPerc in cfpsDone:
+                    dlac.warn(" [%d"%(cfPerc)+'%'+"] Inserted %s (ngram, rows) covering %d %ss" % (totalInserts.items(), totalCFIDinserts, self.correl_field))
+                    cfpsDone.add(cfPerc)
+
+                if metaFeatures:
+                    mf_rows = {ngram_len: [] for ngram_len in n}
+                    queries = [self.qb.create_insert_query(mfTableName).set_values([("group_id",str(cf_id)),("feat",""),("value",""),("group_norm","")]) for mfTableName in mfTableNames]
+                    avgGramLength = dict([(ngram_len, totalChars[ngram_len]/totalGrams[ngram_len]) for ngram_len in n])
+                    lenmids = len(mids)
+                    avgGramsPerMsg = dict([(ngram_len, totalGrams[ngram_len]/lenmids) for ngram_len in n])
+                    for jdx, ngram_len in enumerate(n):
+                        mf_rows[ngram_len].append(("_avg"+str(ngram_len)+"gramLength", avgGramLength[ngram_len], valueFunc(avgGramLength[ngram_len])))
+                        mf_rows[ngram_len].append(("avgGramsPerMsg", avgGramsPerMsg[ngram_len], valueFunc(avgGramsPerMsg[ngram_len])))
+                        mf_rows[ngram_len].append(("numGrams", totalGrams[ngram_len], valueFunc(totalGrams[ngram_len])))
+                        mf_rows[ngram_len].append(("numMsgs", lenmids, valueFunc(lenmids)))
+                        queries[jdx].execute_query(mf_rows[ngram_len])
+
+        dlac.warn("Done Reading / Inserting.")
+
+        if len(cfRows)*n < dlac.MAX_TO_DISABLE_KEYS:
+            dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
+            for featureTableName in featureTableNames:
+                self.data_engine.enable_table_keys(featureTableName)
+        dlac.warn("Done\n")
+        return featureTableNames
+    
     def addNGramTable(self, n, lowercase_only=dlac.LOWERCASE_ONLY, min_freq=1, tableName = None, valueFunc = lambda d: d, metaFeatures = True, extension = None):
         """Creates feature tuples (correl_field, feature, values) table where features are ngrams
 

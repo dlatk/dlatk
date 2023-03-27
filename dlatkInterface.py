@@ -197,7 +197,7 @@ def main(fn_args = None):
     group.add_argument('--embedding_model', '--emb_model', '--bert_model', type=str, metavar='NAME', dest='embmodel', default=dlac.DEF_EMB_MODEL,
                        help='Contextual Embedding model to use for extracting features.')
     group.add_argument('--emb_class', type=str, metavar='NAME', dest='embclass', default=None,
-                       help='Contextual Embedding model class to use for extracting features.', choices=dlac.EMB_CLASS)
+                       help='Contextual Embedding model class to use for extracting features.')
     group.add_argument('--tokenizer_model', type=str, dest='tokenizermodel', default=None,
                        help='Tokenizer model to use for tokenizing.')
     group.add_argument('--embedding_msg_aggregation', '--embedding_aggregations', '--emb_msg_aggregation', '--emb_aggregations', '--bert_msg_aggregation', '--bert_aggregations', 

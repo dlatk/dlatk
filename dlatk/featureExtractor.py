@@ -246,10 +246,11 @@ class FeatureExtractor(DLAWorker):
 
         dlac.warn("Done Reading / Inserting.")
 
-        if len(cfRows)*n[-1] < dlac.MAX_TO_DISABLE_KEYS:
-            dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-            for featureTableName in featureTableNames:
+        for idx, featureTableName in enumerate(featureTableNames):
+            if len(cfRows)*n[idx] < dlac.MAX_TO_DISABLE_KEYS:
+                dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
                 self.data_engine.enable_table_keys(featureTableName)
+                
         dlac.warn("Done\n")
         return featureTableNames
     

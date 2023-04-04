@@ -620,7 +620,80 @@ class FeatureRefiner(FeatureGetter):
 
         return tableName
 
-
+    def aggregateFeaturesOverTime(self, windowLength = 1, timeField = 'created_at', where=None, agg='mean'):
+        """
+        Aggregates features over time
+        windowLength: number of time units (hours/days/weeks/months/years) to aggregate over
+        timeField: field to use for date
+        maxDaysUnitsEmpty: maximum number of days units to be empty before stopping aggregation
+        """
+        
+        featureTable = self.featureTable
+        (_, name, corpTable, oldGroupField) = featureTable.split('$')[:4]
+        assert oldGroupField == self.messageid_field, "Interpolate currently only works if interpolating message-level features"
+        theRest = featureTable.split('$')[4:]
+        feature_name = name[:11]+'_'+'_'.join([i[:3] for i in theRest])
+        newTable = 'feat$long_' + windowLength \
+                   + '_'+feature_name+'$'+corpTable+'$'+self.correl_field
+        dlac.warn("Aggregating features over time in '%s'."% newTable )
+        exit()
+                           
+        #Create longitudinal feature table
+        cols = [Column(column_name="id", datatype="BIGINT(16)", unsigned=True, primary_key=True, nullable=False, auto_increment=True), \
+                Column(column_name="group_id", datatype="VARCHAR(32)", nullable=False), \
+                Column(column_name="feat", datatype="VARCHAR(32)", nullable=False), \
+                Column(column_name="value", datatype="INT", nullable=False), \
+                Column(column_name="group_norm", datatype="FLOAT", nullable=False), \
+                Column(column_name="time_id", datatype="INT", nullable=False),
+                ]
+        key_dict = dict([("correl_field", "group_id"), ("feature", "feat")])
+        create_query = self.qb.create_createTable_query(table=newTable).add_columns(cols=cols).add_mul_keys(keys=key_dict).set_character_set(self.encoding).set_collation(dlac.DEF_COLLATIONS[self.encoding.lower()]).set_engine(dlac.DEF_MYSQL_ENGINE)
+        create_query.execute_query()
+        
+        # Get the message table and find the mapping between message ids, time field for each user id.
+        query = self.qb.create_select_query(from_table=self.corptable).set_fields(fields=[self.correl_field]).group_by(group_by_fields=[self.correl_field])
+        cfIds = query.execute_query()
+        
+        for cfId in cfIds:
+            
+            # Get the message ids, time field for each user id.
+            sub_query = self.qb.create_select_query(from_table=self.corptable).set_fields(fields=[self.messageid_field, timeField]).where(where_conditions=self.correl_field + " = " + str(cfId[0]) + " AND " + where)
+            rows = sub_query.execute_query()
+            rows = sorted(rows, key=lambda x: x[1], reverse=False)
+            
+            message_time_map = {}
+            for message_id, time_id in rows:
+                message_time_map[time_id] = message_time_map[time_id].add(message_id) if time_id in message_time_map else set().add(message_id)
+            
+            message_ids = list(map(lambda x: x[0], rows))
+            if not all(map(lambda x: x.isdigit(), message_ids)): message_ids = list(map(lambda x: "'" + x + "'", message_ids))
+            feature_getter_query = self.qb.create_select_query(from_table=featureTable).set_fields(fields=['feat', 'value', 'group_norm']).where(where_conditions=self.correl_field + " IN " + ",".join(message_ids))
+            feature_rows = feature_getter_query.execute_query()
+            
+            # Aggregate the features over time.
+            feature_time_map = {}
+            for feat, value, group_norm in feature_rows:
+                if feat not in feature_time_map: feature_time_map[feat] = {}
+                for time_id, message_ids in message_time_map.items():
+                    if time_id not in feature_time_map[feat]: feature_time_map[feat][time_id] = {"value": [], "group_norm": []}
+                    feature_time_map[feat][time_id]["value"].append(value)
+                    feature_time_map[feat][time_id]["group_norm"].append(group_norm)
+                    
+            # Write the aggregated features to the database. (TODO: aggregate and store as group norm)
+            for feat, time_value_map in feature_time_map.items():
+                for time_id, value_group_norm_map in time_value_map.items():
+                    value = value_group_norm_map["value"]
+                    group_norm = value_group_norm_map["group_norm"]
+                    try:
+                        value_agg = eval("np." + agg + "(value)")
+                        group_norm_agg = eval("np." + agg + "(group_norm)")
+                    except Exception as e:
+                        dlac.warn("Error aggregating feature %s for time %s: %s" % (feat, time_id, e))
+                        sys.exit(1)
+                        
+                    insert_query = self.qb.create_insert_query(from_table=featureTable).set_fields(fields=[self.correl_field, 'feat', 'value', 'group_norm', 'time']).set_values(values=[cfId[0], feat, value_agg, group_norm_agg, time_id])
+                    insert_query.execute_query()
+        
     
     def addFeatNorms(self, ReCompute = True, groupFreqThresh = 0, setGFTWarning=True):
         """Adds the mean normalization by feature (z-score) for each feature"""

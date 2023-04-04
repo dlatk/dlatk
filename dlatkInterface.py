@@ -572,7 +572,8 @@ def main(fn_args = None):
                        help='Aggregate feature table by group field (i.e. message_id features by user_ids). Specify new group with --group_by field; old group is whatever was used for the feature table.')
     group.add_argument('--interpolate_aggregated_feats', '--interpolate_feats', type=float, dest='interpolategroup', default=None,
                        help='Aggregates features from a lower level to new group by field, interpolating across specified amount of days.')
-
+    group.add_argument("--agg_temporal", action="store_true", dest="aggtemporal", default=False, help="Aggregate features by time period.")
+    group.add_argument("--time_field", type=str, dest="timefield", default=None, help="Time field to use for aggregation.")
 
 
     group = parser.add_argument_group('Outcome Actions', '')
@@ -1333,6 +1334,9 @@ def main(fn_args = None):
         if not fr: fr=FR()
         args.feattable = fr.createInterpolatedFeatTable(days = args.interpolategroup, dateField = args.date_field, groupFreqThresh = args.groupfreqthresh, where = args.groupswhere)
 
+    if args.agg_temporal:
+        if not fr: fr=FR()
+        args.feattable = fr.aggregateFeaturesOverTime(timeField=args.time_field)
 
     if args.featoccfilter:
         if args.use_collocs and not args.wordTable:

@@ -220,9 +220,9 @@ class MySqlDataEngine(DataEngine):
 	"""
 
 	def __init__(self, corpdb, mysql_config_file, encoding):
-                super().__init__(corpdb, mysql_config_file=mysql_config_file)
-                self.mysql_config_file = mysql_config_file
-                (self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(corpdb, charset=encoding, mysql_config_file=mysql_config_file)
+		super().__init__(corpdb, mysql_config_file=mysql_config_file)
+		self.mysql_config_file = mysql_config_file
+		(self.dbConn, self.dbCursor, self.dictCursor) = mm.dbConnect(corpdb, charset=encoding, mysql_config_file=mysql_config_file)
 
 	def get_db_connection(self):
 		"""
@@ -250,7 +250,7 @@ class MySqlDataEngine(DataEngine):
 
 
 	def execute_get_SSCursor(self, usql):
-                """
+		"""
 		Executes the given select query
 
 		Parameters
@@ -263,7 +263,7 @@ class MySqlDataEngine(DataEngine):
 		Results as list of lists
 
 		"""
-                return mm.executeGetSSCursor(self.corpdb, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+		return mm.executeGetSSCursor(self.corpdb, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
 	def disable_table_keys(self, featureTableName):
 		"""

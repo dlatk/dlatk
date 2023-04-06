@@ -1398,9 +1398,11 @@ def main(fn_args = None):
     (whitelist, blacklist) = (None, None)
     # Wildcards are not handled!!!
     if args.blacklist:
-        blacklist = DLAWorker.makeBlackWhiteList(args.feat_blacklist, args.lextable, args.categories, args.lexicondb, args.useunicode)
+        if not dlaw: dlaw = DLAW()
+        blacklist = dlaw.makeBlackWhiteList(args.feat_blacklist, args.lextable, args.categories)
     if args.whitelist:
-        whitelist = DLAWorker.makeBlackWhiteList(args.feat_whitelist, args.lextable, args.categories, args.lexicondb, args.useunicode)
+        if not dlaw: dlaw = DLAW()
+        whitelist = dlaw.makeBlackWhiteList(args.feat_whitelist, args.lextable, args.categories)
 
     def makeOutputFilename(args, fg=None, og=None, prefix=None, suffix=None):
         if args.outputname:
@@ -1490,6 +1492,7 @@ def main(fn_args = None):
         if not oa: oa = OA()
         if not fg: fg = FG()
         if args.interactionDdla:
+            if not dlaw: dlaw = DLAW()
             # if len(args.outcomefieldsprint "There were no features with significant interactions") > 1: raise NotImplementedError("Multiple outcomes with DDLA not yet implemented")
             # Step 1 Interaction
             if not args.outcomeinteraction:
@@ -1513,7 +1516,7 @@ def main(fn_args = None):
                     continue
                 out = out_name.split(" from ")[-1]
 
-                whitelist = DLAWorker.makeBlackWhiteList(ddla_whitelist, '', [], args.lexicondb, args.useunicode)
+                whitelist = dlaw.makeBlackWhiteList(ddla_whitelist, '', [])
 
                 # print str([i for j in correls.values() for i in j.iteritems() if i[1][0]*i[1][0] > 1])[:300]
                 # exit()

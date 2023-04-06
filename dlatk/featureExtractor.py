@@ -1190,7 +1190,18 @@ class FeatureExtractor(DLAWorker):
 
     def addEmbTable(self, modelName, tokenizerName, modelClass=None, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], keepMsgFeats = False, customTableName = None, valueFunc = lambda d: d):
         '''
-
+            Adds transformer embeddings
+            ---------------------------
+            Args:
+                modelName (str): model name or path of transformer (huggingface supported) model
+                tokenizerName (str): tokenizer name or path of the tokenizer (huggingface supported)
+                modelClass (str): The model class of the transformer model
+                aggregations (List[str]): Aggregation to apply on correl field level
+                layersToKeep (List[int]): Transformer Layers to extract the embeddings from
+                layerAggregations (List[str]): Aggregation to apply over transformer layers' representations
+                keepMsgFeats (bool): Store message level transformer representations
+                customTableName (str): custom feature table name (if None, then it will be generated automatically)
+                batchSize (int): batch size for GPU processing
         '''
         def addSentTokenized(messageRows):
 

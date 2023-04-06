@@ -622,10 +622,11 @@ class FeatureRefiner(FeatureGetter):
 
     def aggregateFeaturesOverTime(self, timeField = 'created_at', where=None, value_agg_fn='auto', norm_agg_fn="auto"):
         """
-        Aggregates features over time
-        windowLength: number of time units (hours/days/weeks/months/years) to aggregate over
+        Aggregates features over time dimension (i.e., a second dimension besides correl field) for an input feature table
         timeField: field to use for date
-        maxDaysUnitsEmpty: maximum number of days units to be empty before stopping aggregation
+        where: where condition to apply on the message table
+        value_agg_fn: aggregation function to apply on value field of feature table
+        norm_agg_fn: aggregation function to apply on group norm field of feature table
         """
         
         if value_agg_fn == "auto": value_agg_fn = "sum" 

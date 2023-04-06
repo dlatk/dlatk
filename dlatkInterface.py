@@ -1334,9 +1334,9 @@ def main(fn_args = None):
         if not fr: fr=FR()
         args.feattable = fr.createInterpolatedFeatTable(days = args.interpolategroup, dateField = args.date_field, groupFreqThresh = args.groupfreqthresh, where = args.groupswhere)
 
-    if args.agg_temporal:
+    if args.aggtemporal:
         if not fr: fr=FR()
-        args.feattable = fr.aggregateFeaturesOverTime(timeField=args.time_field)
+        args.feattable = fr.aggregateFeaturesOverTime(timeField=args.timefield)
 
     if args.featoccfilter:
         if args.use_collocs and not args.wordTable:

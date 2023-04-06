@@ -34,8 +34,6 @@ Optional Switches:
 * :doc:`fwflag_bert_layers`
 * :doc:`fwflag_bert_msg_aggregation`
 * :doc:`fwflag_bert_layer_aggregation` 
-* :doc:`fwflag_bert_word_aggregation` 
-* :doc:`fwflag_bert_no_context` 
 
 Example Commands
 ================

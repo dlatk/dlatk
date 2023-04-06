@@ -1,13 +1,14 @@
-.. _tut_bert:
+.. _tut_trns:
 =================================
-BERT in DLATK
+Transformers in DLATK
 =================================
 
-BERT is a contextual word embedding model. It converts words to numeric vectors that capture semantic information. Recommended reading about BERT:
+Transformers form the building blocks of many modern NLP models including ChatGPT and BARD. Modern language models are multiple layers of these transformers stacked on top of each other, and trained on huge corpora of texts.
+These transformers-based language models produce numeric vectors representing words. The word vectors have found to be capturing strong semantic information and syntactic information. 
 
-* `Illustrated BERT <https://jalammar.github.io/illustrated-bert/>`_
+Huggingface (an open source research community) hosts these transformers based language models which can be accessed through the `transformers` library. The catalog of transformers models available through huggingface can be found (here)[https://huggingface.co/models] 
 
-DLATK enables extraction of BERT features from messages. These features are stored, as you might expect, in feature tables!
+DLATK enables extraction of any huggingface transformers features from messages. These features are stored, as you might expect, in feature tables!
 
 Prerequisites
 -------------
@@ -20,25 +21,18 @@ You must also ensure that punkt is installed for NLTK. This can be accomplished 
 
 	python -m nltk.downloader punkt
 
-1. Preparing messages
----------------------
-
-Messages need to be split using :doc:`../fwinterface/fwflag_add_sent_tokenized`:
-
-.. code-block:: bash
-
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_sent_tokenized
-
-This will create the table ``msgs_xxx_stoks`` with a ``messages`` column containing arrays of messages. Remember to replace ``xxx`` with your initials!
-
-2. Adding BERT features
+1. Adding Transformers features
 -----------------------
 
-The simplest way to add BERT embeddings, accepting all defaults, is with the :doc:`../fwinterface/fwflag_add_bert` flag:
+For the purpose of this tutorial, we are going to extract BERT features. BERT is one of the first transformer-based language models which has been widely used for many tasks. Recommended reading about BERT:
+
+* `Illustrated BERT <https://jalammar.github.io/illustrated-bert/>`_
+
+The simplest way to add BERT embeddings, accepting all defaults, is with the :doc:`../fwinterface/fwflag_add_emb` flag:
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_bert
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_emb_feat --emb_model bert-base-uncased
 
 Note that the BERT features this adds will be aggregated at several levels:
 
@@ -50,67 +44,61 @@ BERT layers are aggregated to produce a single vector representation of a word. 
 
 This command uses all BERT defaults. However, it is possible to customize BERT features in a number of ways:
 
-* :doc:`../fwinterface/fwflag_bert_model`
-* :doc:`../fwinterface/fwflag_bert_layers`
-* :doc:`../fwinterface/fwflag_bert_layer_aggregation`
-* :doc:`../fwinterface/fwflag_bert_word_aggregation`
+* :doc:`../fwinterface/fwflag_emb_model`
+* :doc:`../fwinterface/fwflag_emb_layers`
+* :doc:`../fwinterface/fwflag_emb_layer_aggregation`
+* :doc:`../fwinterface/fwflag_emb_msg_aggregation`
 
 In the following subsections, we discuss these flags in more detail.
 
---bert_model
+--emb_model
 ^^^^^^^^^^^^
 
-The most important option for BERT is the choice of model using the :doc:`../fwinterface/fwflag_bert_model` flag. Any `Hugging Face pretrained models <https://huggingface.co/transformers/pretrained_models.html>`_ may be used here. By default, BERT features are extracted using the ``bert-base-uncased`` model; you can specify other models like so:
+The most important option for Transformers is the choice of model using the :doc:`../fwinterface/fwflag_emb_model` flag. Any `HuggingFace pretrained models <https://huggingface.co/transformers/models>`_ may be used here. By default, BERT features are extracted using the ``bert-base-uncased`` model; you can specify other models like so:
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_bert --bert_model large-uncased
-
-Note that the command above doesn't specify ``bert-``. If you use a model named ``base-*`` or ``large-*``, DLATK will assume you're referring to a BERT model. You can specify other models using the full name, for example:
-
-.. code-block:: bash
-
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_bert --bert_model cl-tohoku/bert-base-japanese
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_emb_feat --emb_model bert-large-uncased
 
 
---bert_layers
+--emb_layers
 ^^^^^^^^^^^^^
 
-BERT produces multiple layers of embeddings (because it is a *deep* network, so each network layer produces a layer of embeddings!). Roughly speaking, later layers embed more abstract representations of features, while earlier layers represent more concrete ones. It is typical to combine some or all of these layers in order to capture this breadth of representation:
+Transformers-based language models produces multiple layers of embeddings (because it is a *deep* network, so each network layer produces a layer of embeddings!). Roughly speaking, later layers embed more abstract representations of features, while earlier layers represent more concrete ones. It is typical to combine some or all of these layers in order to capture this breadth of representation:
 
 .. image:: ../_static/bert-layers.png
 
-To specify which layers you want to aggregate over, use the :doc:`../fwinterface/fwflag_bert_layers` flag. This flag takes as arguments the indexes of each layer you want to keep. For example, we might run the following to keep the last two layers:
+To specify which layers you want to aggregate over, use the :doc:`../fwinterface/fwflag_emb_layers` flag. This flag takes as arguments the indexes of each layer you want to keep. For example, we might run the following to keep the last two layers:
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_bert --bert_model large-uncased --bert_layers 10 11
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_emb_feat --emb_model bert-base-uncased --emb_layers 11 12
 
-Notice that layers are 0-indexed, i.e., the 0th layer is the earliest one, while the 11th is the last one.
+There are 12 layers in the bert-base-uncased model. The 0th index corresponds to the static word embeddings, while 1st through 12th index correspond to the respective layers.
 
 Aggregation
 ^^^^^^^^^^^
 
-As discussed above, there are two levels of aggregation when adding BERT features: layer and message. These can be specified with the following flags:
+As discussed above, there are two levels of aggregation when adding transformers features: layer, and message. These can be specified with the following flags:
 
-* :doc:`../fwinterface/fwflag_bert_layer_aggregation`
-* :doc:`../fwinterface/fwflag_bert_msg_aggregation`
+* :doc:`../fwinterface/fwflag_emb_layer_aggregation`
+* :doc:`../fwinterface/fwflag_emb_msg_aggregation`
 
 It is important when running these aggregations to remember that you're choosing a numpy method, and that it will be applied to the 0th axis (i.e., it will be applied across layers). Here's an example:
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_bert --bert_model large-uncased --bert_layer_aggregation mean --bert_msg_aggregation max
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_emb_feat --emb_model bert-large-uncased --emb_layer_aggregation mean --emb_msg_aggregation max
 
-It is also possible to specify multiple aggregations (though this currently does not work for layer aggregations). Aggregations will be applied in the order that you specify them.
+It is also possible to specify multiple aggregations. Aggregations will be applied in the order that you specify them.
 
 
-3. Understanding BERT Feature Table Names
+3. Understanding Transformers Feature Table Names
 -----------------------------------------
 
-BERT feature tables have names that might look confusing, but actually reveal all the details about how the features were computed. If you don't yet understand feature table naming conventions in DLATK, please read :doc:`tut_feat_tables` before continuing.
+Transformers feature tables have names that might look confusing, but actually reveal all the details about how the features were computed. If you don't yet understand feature table naming conventions in DLATK, please read :doc:`tut_feat_tables` before continuing.
 
-Let's say you have a BERT feature table called ``feat$bert_ba_un_meL10co$messages_en$user_id$16to16``. Here's how to interpret the segment ``bert_ba_un_meL10co``:
+Let's say you have a BERT feature table called ``feat$bert_ba_un_meL10con$messages_en$user_id$16to16``. Here's how to interpret the segment ``bert_ba_un_meL10co``:
 
 
 #. **bert**
@@ -119,24 +107,24 @@ Let's say you have a BERT feature table called ``feat$bert_ba_un_meL10co$message
 #. **L**\ ayer 10
 #. **con**\ catenated layers
 
-Some of these may be repeated: each layer selected with :doc:`../fwinterface/fwflag_bert_layers`, for example, will appear in the name.
+Some of these may be repeated: each layer selected with :doc:`../fwinterface/fwflag_emb_layers`, for example, will appear in the name.
 
-4. Using BERT features
+4. Using Transformers features
 ----------------------
 
 Let's say you've generated default BERT features with the following command:
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_bert
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_emb_feat --emb_model bert-base-uncased
 
-This will create the table ``feat$bert_ba_un_meL10con$msgs_xxx$user_id$16to16`` in the ``dla_tutorial`` database. How do you make use of these features?
+This will create the table ``feat$bert_ba_un_meL10con$msgs_xxx$user_id`` in the ``dla_tutorial`` database. How do you make use of these features?
 
 The answer is, essentially, like any other feature table in DLATK! (See :doc:`tut_pred` if you don't know how to use feature tables.) For example, let's say you want to predict age from the ``blog_outcomes`` table in the ``dla_tutorial`` database (just like in :doc:`tut_pred`). This would look like:
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id -f 'feat$bert_ba_un_meL10con$msgs_xxx$user_id$16to16' --outcome_table blog_outcomes --group_freq_thresh 500 --outcomes age --output_name xxx_age_output --nfold_test_regression --model ridgecv --folds 10
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id -f 'feat$bert_ba_un_meL10con$msgs_xxx$user_id' --outcome_table blog_outcomes --group_freq_thresh 500 --outcomes age --output_name xxx_age_output --nfold_test_regression --model ridgecv --folds 10
 
 This will run a ridge regression model through 10-fold cross validation, predicting age, and using BERT embeddings as features in the model. You should see lots of output, ending with something like this:
 
@@ -183,7 +171,7 @@ There's a natural question we've glossed over here: what exactly do the BERT fea
 
 .. code-block:: bash
 
-	mysql> SELECT * FROM feat$bert_ba_un_meL10con$msgs_xxx$user_id$16to16 LIMIT 10;
+	mysql> SELECT * FROM feat$bert_ba_un_meL10con$msgs_xxx$user_id LIMIT 10;
 	+----+----------+------+-----------------------+-----------------------+
         | id | group_id | feat | value                 | group_norm            |
         +----+----------+------+-----------------------+-----------------------+

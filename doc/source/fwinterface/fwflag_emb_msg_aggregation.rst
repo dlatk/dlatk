@@ -1,11 +1,11 @@
-.. _fwflag_bert_msg_aggregation:
+.. _fwflag_emb_msg_aggregation:
 ======================
---bert_msg_aggregation
+--emb_msg_aggregation
 ======================
 Switch
 ======
 
---bert_msg_aggregation aggregation_method
+--emb_msg_aggregation aggregation_method
 
 Description
 ===========
@@ -31,9 +31,9 @@ Required Switches:
 
 Optional Switches:
 
-* :doc:`fwflag_bert_model`
-* :doc:`fwflag_bert_layer_aggregation`
-* :doc:`fwflag_bert_layers` 
+* :doc:`fwflag_emb_model`
+* :doc:`fwflag_emb_layer_aggregation`
+* :doc:`fwflag_emb_layers` 
 
 Example Commands
 ================
@@ -42,4 +42,4 @@ Creates a BERT feature table with messages aggregated by selecting the median.
 
 .. code-block:: bash
 
-	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_bert --bert_model large-uncased --bert_msg_aggregation median
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_emb_feat --emb_model bert-large-uncased --emb_msg_aggregation median

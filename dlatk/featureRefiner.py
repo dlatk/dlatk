@@ -620,7 +620,7 @@ class FeatureRefiner(FeatureGetter):
 
         return tableName
 
-    def aggregateFeaturesOverTime(self, windowLength = 1, timeField = 'created_at', where=None, agg='mean'):
+    def aggregateFeaturesOverTime(self, timeField = 'created_at', where=None, value_agg_fn='auto', norm_agg_fn="auto"):
         """
         Aggregates features over time
         windowLength: number of time units (hours/days/weeks/months/years) to aggregate over
@@ -628,25 +628,40 @@ class FeatureRefiner(FeatureGetter):
         maxDaysUnitsEmpty: maximum number of days units to be empty before stopping aggregation
         """
         
+        if value_agg_fn == "auto": value_agg_fn = "sum" 
+        
         featureTable = self.featureTable
         (_, name, corpTable, oldGroupField) = featureTable.split('$')[:4]
         assert oldGroupField == self.messageid_field, "Interpolate currently only works if interpolating message-level features"
         theRest = featureTable.split('$')[4:]
-        feature_name = name[:11]+'_'+'_'.join([i[:3] for i in theRest])
-        newTable = 'feat$long_' + windowLength \
-                   + '_'+feature_name+'$'+corpTable+'$'+self.correl_field
+        feature_name = name[:11]+'_'+'_'.join([i[:3] for i in theRest]) if theRest else name[:11]
+        newTable = 'feat$long_' +  \
+                   feature_name+'$'+corpTable+'$'+self.correl_field
         dlac.warn("Aggregating features over time in '%s'."% newTable )
-        exit()
-                           
+        
+        # Retrieve dtype of messageid_field, correl_field from corptable and feat from feattable
+        where_conditions = """table_schema='%s' AND table_name='%s' AND column_name IN ('%s', '%s', '%s')"""%(self.corpdb, self.corptable, self.correl_field, self.messageid_field, timeField)
+        corptable_dtype_query = self.qb.create_select_query("information_schema.columns").set_fields(["column_type"]).where(where_conditions) 
+        dtypes = corptable_dtype_query.execute_query()
+        correl_dtype, messageid_dtype, timeid_dtype = dtypes[0][0], dtypes[1][0], dtypes[2][0]
+        
+        where_conditions = """table_schema='%s' AND table_name='%s' AND column_name IN ('%s')"""%(self.corpdb, self.featureTable, "feat")
+        feattable_dtype_query = self.qb.create_select_query("information_schema.columns").set_fields(["column_type"]).where(where_conditions)
+        feat_dtype = feattable_dtype_query.execute_query()[0][0]
+        
+        types_chk = [types in messageid_dtype.lower() for types in ['int', 'bigint', 'mediumint', 'smallint', 'tinyint'] ]
+        messageid_isstring = False if any(types_chk) else True
+        
+        self.qb.create_drop_query(table=newTable).execute_query()
         #Create longitudinal feature table
         cols = [Column(column_name="id", datatype="BIGINT(16)", unsigned=True, primary_key=True, nullable=False, auto_increment=True), \
-                Column(column_name="group_id", datatype="VARCHAR(32)", nullable=False), \
-                Column(column_name="feat", datatype="VARCHAR(32)", nullable=False), \
+                Column(column_name="group_id", datatype=correl_dtype, nullable=False), \
+                Column(column_name="feat", datatype=feat_dtype, nullable=False), \
                 Column(column_name="value", datatype="INT", nullable=False), \
                 Column(column_name="group_norm", datatype="FLOAT", nullable=False), \
-                Column(column_name="time_id", datatype="INT", nullable=False),
+                Column(column_name="time_id", datatype=timeid_dtype, nullable=False),
                 ]
-        key_dict = dict([("correl_field", "group_id"), ("feature", "feat")])
+        key_dict = [("correl_field", "group_id"), ("feature", "feat")]
         create_query = self.qb.create_createTable_query(table=newTable).add_columns(cols=cols).add_mul_keys(keys=key_dict).set_character_set(self.encoding).set_collation(dlac.DEF_COLLATIONS[self.encoding.lower()]).set_engine(dlac.DEF_MYSQL_ENGINE)
         create_query.execute_query()
         
@@ -654,20 +669,25 @@ class FeatureRefiner(FeatureGetter):
         query = self.qb.create_select_query(from_table=self.corptable).set_fields(fields=[self.correl_field]).group_by(group_by_fields=[self.correl_field])
         cfIds = query.execute_query()
         
+        where = " AND " + where if where else ""
+        
+        num_cfIds = 0
         for cfId in cfIds:
             
             # Get the message ids, time field for each user id.
-            sub_query = self.qb.create_select_query(from_table=self.corptable).set_fields(fields=[self.messageid_field, timeField]).where(where_conditions=self.correl_field + " = " + str(cfId[0]) + " AND " + where)
+            sub_query = self.qb.create_select_query(from_table=self.corptable).set_fields(fields=[self.messageid_field, timeField]).where(where_conditions=self.correl_field + " = " + str(cfId[0]) + where)
             rows = sub_query.execute_query()
             rows = sorted(rows, key=lambda x: x[1], reverse=False)
             
             message_time_map = {}
             for message_id, time_id in rows:
-                message_time_map[time_id] = message_time_map[time_id].add(message_id) if time_id in message_time_map else set().add(message_id)
+                if time_id not in message_time_map: message_time_map[time_id] = set()
+                message_time_map[time_id].add(message_id) 
             
-            message_ids = list(map(lambda x: x[0], rows))
-            if not all(map(lambda x: x.isdigit(), message_ids)): message_ids = list(map(lambda x: "'" + x + "'", message_ids))
-            feature_getter_query = self.qb.create_select_query(from_table=featureTable).set_fields(fields=['feat', 'value', 'group_norm']).where(where_conditions=self.correl_field + " IN " + ",".join(message_ids))
+            message_ids = list(map(lambda x: str(x[0]), rows))
+            if messageid_isstring: message_ids = list(map(lambda x: "'" + x + "'", message_ids))   
+            
+            feature_getter_query = self.qb.create_select_query(from_table=featureTable).set_fields(fields=['feat', 'value', 'group_norm']).where(where_conditions=" group_id IN (" + ",".join(message_ids) + ")")
             feature_rows = feature_getter_query.execute_query()
             
             # Aggregate the features over time.
@@ -685,14 +705,20 @@ class FeatureRefiner(FeatureGetter):
                     value = value_group_norm_map["value"]
                     group_norm = value_group_norm_map["group_norm"]
                     try:
-                        value_agg = eval("np." + agg + "(value)")
-                        group_norm_agg = eval("np." + agg + "(group_norm)")
+                        value_agg = eval("np." + value_agg_fn + "(value)")
+                        group_norm_agg = np.mean(value) if norm_agg_fn == "auto" else eval("np." + norm_agg_fn + "(group_norm)")
                     except Exception as e:
                         dlac.warn("Error aggregating feature %s for time %s: %s" % (feat, time_id, e))
                         sys.exit(1)
                         
-                    insert_query = self.qb.create_insert_query(from_table=featureTable).set_fields(fields=[self.correl_field, 'feat', 'value', 'group_norm', 'time']).set_values(values=[cfId[0], feat, value_agg, group_norm_agg, time_id])
-                    insert_query.execute_query()
+                    self.qb.create_insert_query(into_table=newTable).set_values(values=[('group_id', ""), ('feat', ""), ('value', ""), ('group_norm', ""), ('time_id', "")]).execute_query(insert_rows=[[cfId[0], feat, value_agg, group_norm_agg, time_id]])
+            
+            num_cfIds += 1
+            # Update on screen at every 10% of cfIds processed
+            if num_cfIds % (len(cfIds) // 10) == 0:
+                dlac.warn("Processed %s of %s cfIds" % (num_cfIds, len(cfIds))) 
+            
+        return newTable
         
     
     def addFeatNorms(self, ReCompute = True, groupFreqThresh = 0, setGFTWarning=True):

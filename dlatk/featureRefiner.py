@@ -623,10 +623,15 @@ class FeatureRefiner(FeatureGetter):
     def aggregateFeaturesOverTime(self, timeField = 'created_at', where=None, value_agg_fn='auto', norm_agg_fn="auto"):
         """
         Aggregates features over time dimension (i.e., a second dimension besides correl field) for an input feature table
-        timeField: field to use for date
-        where: where condition to apply on the message table
-        value_agg_fn: aggregation function to apply on value field of feature table
-        norm_agg_fn: aggregation function to apply on group norm field of feature table
+        Args:
+        -------------------------------
+            timeField: field to use for date
+            where: where condition to apply on the message table
+            value_agg_fn: aggregation function to apply on value field of feature table
+            norm_agg_fn: aggregation function to apply on group norm field of feature table
+        Returns:
+        -------------------------------
+            tableName: name of feature table with aggregated features
         """
         
         if value_agg_fn == "auto": value_agg_fn = "sum"
@@ -672,7 +677,6 @@ class FeatureRefiner(FeatureGetter):
         create_query.execute_query()
         
         self.data_engine.disable_table_keys(newTable) #for faster, when enough space for repair by sorting
-        
         
         # Get the message table and find the mapping between message ids, time field for each user id.
         query = self.qb.create_select_query(from_table=self.corptable).set_fields(fields=[self.correl_field]).group_by(group_by_fields=[self.correl_field])

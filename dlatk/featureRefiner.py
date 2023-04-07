@@ -629,7 +629,11 @@ class FeatureRefiner(FeatureGetter):
         norm_agg_fn: aggregation function to apply on group norm field of feature table
         """
         
-        if value_agg_fn == "auto": value_agg_fn = "sum" 
+        if value_agg_fn == "auto": value_agg_fn = "sum"
+        if isinstance(value_agg_fn, str): value_agg_fn = eval("np."+value_agg_fn) 
+        
+        if norm_agg_fn == "auto": norm_agg_fn = "mean"
+        if isinstance(norm_agg_fn, str): norm_agg_fn = eval("np."+norm_agg_fn)
         
         featureTable = self.featureTable
         (_, name, corpTable, oldGroupField) = featureTable.split('$')[:4]
@@ -637,7 +641,7 @@ class FeatureRefiner(FeatureGetter):
         theRest = featureTable.split('$')[4:]
         feature_name = name[:11]+'_'+'_'.join([i[:3] for i in theRest]) if theRest else name[:11]
         newTable = 'feat$long_' +  \
-                   feature_name+'$'+corpTable+'$'+self.correl_field
+                   feature_name+'$'+corpTable+'$'+self.correl_field + '_' + timeField
         dlac.warn("Aggregating features over time in '%s'."% newTable )
         
         # Retrieve dtype of messageid_field, correl_field from corptable and feat from feattable
@@ -656,15 +660,19 @@ class FeatureRefiner(FeatureGetter):
         self.qb.create_drop_query(table=newTable).execute_query()
         #Create longitudinal feature table
         cols = [Column(column_name="id", datatype="BIGINT(16)", unsigned=True, primary_key=True, nullable=False, auto_increment=True), \
-                Column(column_name="group_id", datatype=correl_dtype, nullable=False), \
+                Column(column_name="group_id", datatype="VARCHAR(50)", nullable=False), \
                 Column(column_name="feat", datatype=feat_dtype, nullable=False), \
                 Column(column_name="value", datatype="INT", nullable=False), \
                 Column(column_name="group_norm", datatype="FLOAT", nullable=False), \
-                Column(column_name="time_id", datatype=timeid_dtype, nullable=False),
+                Column(column_name="time_id", datatype=timeid_dtype, nullable=False), \
+                Column(column_name="orig_group_id", datatype=correl_dtype, nullable=False), \
                 ]
-        key_dict = [("correl_field", "group_id"), ("feature", "feat")]
+        key_dict = [("correl_field", "group_id"), ("feature", "feat"), ('time_field', 'time_id'), ('orig_group_field', 'orig_group_id')]
         create_query = self.qb.create_createTable_query(table=newTable).add_columns(cols=cols).add_mul_keys(keys=key_dict).set_character_set(self.encoding).set_collation(dlac.DEF_COLLATIONS[self.encoding.lower()]).set_engine(dlac.DEF_MYSQL_ENGINE)
         create_query.execute_query()
+        
+        self.data_engine.disable_table_keys(newTable) #for faster, when enough space for repair by sorting
+        
         
         # Get the message table and find the mapping between message ids, time field for each user id.
         query = self.qb.create_select_query(from_table=self.corptable).set_fields(fields=[self.correl_field]).group_by(group_by_fields=[self.correl_field])
@@ -701,23 +709,27 @@ class FeatureRefiner(FeatureGetter):
                     feature_time_map[feat][time_id]["group_norm"].append(group_norm)
                     
             # Write the aggregated features to the database. (TODO: aggregate and store as group norm)
+            out_features = []
             for feat, time_value_map in feature_time_map.items():
                 for time_id, value_group_norm_map in time_value_map.items():
                     value = value_group_norm_map["value"]
                     group_norm = value_group_norm_map["group_norm"]
                     try:
-                        value_agg = eval("np." + value_agg_fn + "(value)")
-                        group_norm_agg = np.mean(value) if norm_agg_fn == "auto" else eval("np." + norm_agg_fn + "(group_norm)")
+                        value_agg = value_agg_fn(value)
+                        group_norm_agg = norm_agg_fn(value) if norm_agg_fn == "auto" else norm_agg_fn(group_norm)
                     except Exception as e:
                         dlac.warn("Error aggregating feature %s for time %s: %s" % (feat, time_id, e))
                         sys.exit(1)
-                        
-                    self.qb.create_insert_query(into_table=newTable).set_values(values=[('group_id', ""), ('feat', ""), ('value', ""), ('group_norm', ""), ('time_id', "")]).execute_query(insert_rows=[[cfId[0], feat, value_agg, group_norm_agg, time_id]])
+                    out_features.append([str(cfId[0])+":"+str(time_id), feat, value_agg, group_norm_agg, time_id, cfId[0]])
+                    
+            self.qb.create_insert_query(into_table=newTable).set_values(values=[('group_id', ""), ('feat', ""), ('value', ""), ('group_norm', ""), ('time_id', ""), ('orig_group_id', "")]).execute_query(insert_rows=out_features)
             
             num_cfIds += 1
             # Update on screen at every 10% of cfIds processed
             if num_cfIds % (len(cfIds) // 10) == 0:
-                dlac.warn("Processed %s of %s cfIds" % (num_cfIds, len(cfIds))) 
+                dlac.warn("Processed %s of %s groups" % (num_cfIds, len(cfIds))) 
+        
+        self.data_engine.enable_table_keys(newTable) #for faster, when enough space for repair by sorting
             
         return newTable
         

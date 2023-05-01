@@ -10,6 +10,7 @@ import csv
 from numpy import zeros, sqrt, array, std, mean
 from scipy.stats import t as spt
 import numpy as np
+from collections import OrderedDict
 
 #infrastructure
 from . import dlaConstants as dlac
@@ -167,6 +168,12 @@ class FeatureGetter(DLAWorker):
         if (where): sql.where(where)
         return [l[0] for l in sql.execute_query()]
 
+    def getDistinctTimeIds(self, where=''):
+        """returns a distinct list of (time_id) tuples given the name of the feature value field (either value, group_norm, time_id or feat_norm)"""
+        sql = self.qb.create_select_query(self.featureTable).set_fields(["distinct time_id"])
+        if where: sql.where(where)
+        return [l[0] for l in sql.execute_query()]
+
     def getFeatureZeros(self, where=''):
         """returns a distinct list of (feature) tuples given the name of the feature value field (either value, group_norm, or feat_norm)"""
         sql = "select feat, zero_feat_norm from %s"%('mean_'+self.featureTable)
@@ -217,6 +224,12 @@ class FeatureGetter(DLAWorker):
         """returns a list of (group_id, feature, group_norm) triples"""
         sql = self.qb.create_select_query(self.featureTable).set_fields(["group_id", "feat", "group_norm"])
         if (where): sql.where(where)
+        return sql.execute_query()
+    
+    def getLongitudinalGroupNorms(self, where = ''):
+        """returns a list of (orig_group_id, time_id, feature, group_norm)"""
+        sql = self.qb.create_select_query(self.featureTable).set_fields(["orig_group_id", "time_id", "feat", "group_norm"])
+        if where: sql.where(where)
         return sql.execute_query()
 
     def getValuesAndGroupNorms(self, where = ''):
@@ -306,6 +319,41 @@ class FeatureGetter(DLAWorker):
             for feat in allFeats:
                 if not feat in gns[gid]: gns[gid][feat] = 0
         return gns, allFeats
+    
+    def getLongitudinalGroupNormsWithZeros(self, groups = [], time_where = '', where = '', time_infilling=0):
+        """
+            Gets group norms for a longitudinal feature table 
+            time_infilling is the group norm to fill in for missing time points
+            Returns a dict of (group_id => time => feature => group_norm)
+        """
+        gnlist = []
+        if groups: 
+            gCond = " group_id in ('%s')" % "','".join(str(g) for g in groups)
+            gCond = gCond + " AND " + time_where if time_where else gCond
+            # gCond = gCond + " AND " + where if where else gCond
+            gnlist = self.getLongitudinalGroupNorms(gCond) 
+        else:
+            gCond = time_where if time_where else ''
+            # gCond = gCond + " AND " + where if where else gCond
+            gnlist = self.getLongitudinalGroupNorms(gCond)
+        gns = dict()
+        for tup in gnlist:
+            orig_gid, time_id, feat, gn = tup
+            if not orig_gid in gns: gns[orig_gid] = dict()
+            if not time_id in gns[orig_gid]: gns[orig_gid][time_id] = dict()
+            gns[orig_gid][time_id][feat] = gn
+        
+        groups = self.getDistinctGroups(where)
+        allFeats = self.getDistinctFeatures()
+        allTimeId = sorted(self.getDistinctTimeIds(time_where), reverse=False)
+        for gid in groups:
+            if not gid in gns: gns[gid] = OrderedDict()
+            for time_id in allTimeId:
+                if not time_id in gns[gid]: gns[gid][time_id] = dict()
+                for feat in allFeats:
+                    if not feat in gns[gid][time_id]: gns[gid][time_id][feat] = time_infilling
+        
+        return gns, allFeats, allTimeId
 
     def getGroupNormsWithZerosFeatsFirst(self, groups = [], where = '', blacklist = None):
         """returns a dict of (feature => group_id => group_norm)"""

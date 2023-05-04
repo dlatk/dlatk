@@ -626,6 +626,14 @@ def main(fn_args = None):
     group.add_argument('--DDLA', dest='ddlaFiles', nargs=2, help="Compares two csv's that have come out of DLA. Requires --freq and --nvalue to have been used")
     group.add_argument('--DDLATagcloud', '--DDLAWordcloud', dest='ddlaTagcloud', action='store_true',
                        help="Makes a tagcloud file from the DDLA output. Uses deltaR as size, r_INDEX as color. ")
+    
+    group = parser.add_argument_group('longitudinal prediction actions', '')
+    group.add_argument('--longitudinal', action='store_true', dest='longitudinal', default=False,
+                       help='train/test a regression model to predict outcomes based on feature table')
+    group.add_argument('--time_where', '--longtudinal_where', dest='timeWhere', default='',
+                       help='where clause for longitudinal data to apply on time_id field in longitudinal feature table')
+    group.add_argument('--msg_where', dest='msgWhere', default='', 
+                       help='where clause for for aplying on the message table')
 
     group = parser.add_argument_group('Multiple Regression Actions', 'Find multiple relationships at once')
     group.add_argument('--multir', action='store_true', dest='multir',
@@ -1846,8 +1854,10 @@ def main(fn_args = None):
         print("WARNING: using an non 16to16 feature table")
 
     if args.trainregression:
-        rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample, outputName = args.outputname, saveFeatures = True if args.outputname else False, trainBootstraps = args.train_bootstraps, trainBootstrapsNs = args.train_bootstraps_ns)
-
+        rp.train(sparse = args.sparse,  standardize = args.standardize, groupsWhere = args.groupswhere, weightedSample=args.weightedsample,
+                outputName=args.outputname, saveFeatures = True if args.outputname else False, trainBootstraps = args.train_bootstraps,
+                trainBootstrapsNs=args.train_bootstraps_ns, longitudinal=args.longitudinal, time_where=args.timeWhere, where=args.msgWhere)
+        
     if args.testregression:
         rp.test(sparse = args.sparse, blacklist = blacklist,  standardize = args.standardize, groupsWhere = args.groupswhere)
 
@@ -1863,7 +1873,10 @@ def main(fn_args = None):
                                            noLang=args.nolang, allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,
                                            nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval,
                                            standardize = args.standardize, residualizedControls = args.res_controls, groupsWhere = args.groupswhere,
-                                           weightedSample = args.weightedsample, adaptationFactorsName = args.adaptationfactors, featureSelectionParameters=args.featureselectionparams , factorSelectionType=args.factorselectiontype, numOfFactors=args.numoffactors, pairedFactors=args.pairedfactors, outputName = args.outputname, report=args.report, integrationMethod = args.integrationmethod)
+                                           weightedSample = args.weightedsample, adaptationFactorsName = args.adaptationfactors, 
+                                           featureSelectionParameters=args.featureselectionparams , factorSelectionType=args.factorselectiontype, 
+                                           numOfFactors=args.numoffactors, pairedFactors=args.pairedfactors, outputName = args.outputname, report=args.report, 
+                                           integrationMethod = args.integrationmethod, longitudinal=args.longitudinal_prediction)
         elif args.controladjustreg:
             comboScores = rp.adjustOutcomesFromControls(standardize = args.standardize, sparse = args.sparse,
                                                         allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,

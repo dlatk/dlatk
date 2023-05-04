@@ -553,7 +553,7 @@ class RegressionPredictor:
 
         self.trainBootstrapNames = None
 
-    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', outputName = '', saveFeatures = False, trainBootstraps = None, trainBootstrapsNs = None):
+    def train(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', weightedSample = '', outputName = '', saveFeatures = False, trainBootstraps = None, trainBootstrapsNs = None, longitudinal=False, time_where='', where=''):
         """Train Regressors"""
         ################
         #1a. setup groups
@@ -584,8 +584,9 @@ class RegressionPredictor:
         (groupNormsList, featureNamesList, featureLengthList) = ([], [], [])
         XGroups = None #holds the set of X groups across all feature spaces and folds (intersect with this to get consistent keys across everything
         for fg in self.featureGetters:
-            (groupNorms, featureNames) = fg.getGroupNormsSparseFeatsFirst(groups)
-            groupNormValues = [groupNorms[feat] for feat in featureNames] #list of dictionaries of group_id => group_norm
+            (groupNorms, featureNames) = fg.getGroupNormsSparseFeatsFirst(groups) if not longitudinal else fg.getLongitudinalGroupNormsSparseFeatsFirst(groups, time_where=time_where, where=where, flatten=True)
+            # import pdb; pdb.set_trace()
+            groupNormValues = [groupNorms[feat] for feat in featureNames if feat in groupNorms] #list of dictionaries of group_id => group_norm
             groupNormsList.append(groupNormValues)
             # print featureNames[:10]#debug
             featureNamesList.append(featureNames)
@@ -2780,7 +2781,7 @@ class ClassifyToRegressionPredictor:
         self.regressionPredictor = RegressionPredictor(og, fg, modelR)
         self.keepClasses = DEF_KEEP_CLASSES
 
-    def train(self, standardize = True, sparse = False, restrictToGroups = None, nFolds = 4, trainRegOnAll = True, classifierAsFeat = True, groupsWhere = ''):
+    def train(self, standardize = True, sparse = False, restrictToGroups = None, nFolds = 4, trainRegOnAll = True, classifierAsFeat = True, groupsWhere = '', longitudinal=False, time_where=''):
 
         #1. get groups for both:
         print("[ClassifytoRegression: Getting all Groups]")            

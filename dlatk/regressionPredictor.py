@@ -585,7 +585,7 @@ class RegressionPredictor:
         XGroups = None #holds the set of X groups across all feature spaces and folds (intersect with this to get consistent keys across everything
         for fg in self.featureGetters:
             (groupNorms, featureNames) = fg.getGroupNormsSparseFeatsFirst(groups) if not longitudinal else fg.getLongitudinalGroupNormsSparseFeatsFirst(groups, time_where=time_where, where=where, flatten=True)
-            # import pdb; pdb.set_trace()
+            
             groupNormValues = [groupNorms[feat] for feat in featureNames if feat in groupNorms] #list of dictionaries of group_id => group_norm
             groupNormsList.append(groupNormValues)
             # print featureNames[:10]#debug
@@ -790,7 +790,7 @@ class RegressionPredictor:
                           weightedEvalOutcome = None, residualizedControls = False, groupsWhere = '',\
                           weightedSample = '', adaptationFactorsName=[], featureSelectionParameters=None,\
                           numOfFactors = [] , factorSelectionType='rfe' , pairedFactors=False, outputName='',\
-                          report=True, integrationMethod=''):
+                          report=True, integrationMethod='', longitudinal=False, time_where='', where=''):
         """Tests regressors, by cross-validating over folds with different combinations of controls"""
         
         ###################################
@@ -858,7 +858,7 @@ class RegressionPredictor:
             #(groupNorms, featureNames) = (None, None)
             if blacklist:
                 print("!!!WARNING: USING BLACKLIST WITH SPARSE IS NOT CURRENTLY SUPPORTED!!!")
-            (groupNorms, featureNames) = fg.getGroupNormsSparseFeatsFirst(groups)
+            (groupNorms, featureNames) = fg.getGroupNormsSparseFeatsFirst(groups) if not longitudinal else fg.getLongitudinalGroupNormsSparseFeatsFirst(groups, time_where=time_where, where=where, flatten=True)
             groupNormValues = list(groupNorms.values()) #list of dictionaries of group_id => group_norm
             groupNormsList.append(groupNormValues)
             featureNamesList.append(featureNames)
@@ -1396,7 +1396,7 @@ class RegressionPredictor:
         for i in range(len(self.featureGetters)):
             fg = self.featureGetters[i]
             (groupNorms, newFeatureNames) = fg.getGroupNormsSparseFeatsFirst(groups) if not longitudinal else fg.getLongitudinalGroupNormsSparseFeatsFirst(groups, time_where=time_where, where=msgWhere, flatten=True)
-
+            
             print(" [Aligning current X with training X: feature group: %d]" %i)
             groupNormValues = []
             #print self.featureNamesList[i][:10]#debug

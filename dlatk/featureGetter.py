@@ -320,7 +320,7 @@ class FeatureGetter(DLAWorker):
                 if not feat in gns[gid]: gns[gid][feat] = 0
         return gns, allFeats
     
-    def getLongitudinalGroupNormsWithZeros(self, groups = [], time_where = '', where = '', time_infilling=0):
+    def getLongitudinalGroupNormsWithZeros(self, groups = [], time_where = '', where = '', time_infilling=0, flatten=False):
         """
             Gets group norms for a longitudinal feature table 
             time_infilling is the group norm to fill in for missing time points
@@ -341,22 +341,35 @@ class FeatureGetter(DLAWorker):
         for tup in gnlist:
             orig_gid, time_id, feat, gn = tup
             if not orig_gid in gns: gns[orig_gid] = dict()
-            if not time_id in gns[orig_gid]: gns[orig_gid][time_id] = dict()
-            gns[orig_gid][time_id][feat] = gn
+            if flatten:
+                flatten_feature = str(feat)+":"+str(time_id)
+                if flatten_feature not in gns[orig_gid]: gns[orig_gid][flatten_feature] = gn
+            else:
+                if not time_id in gns[orig_gid]: gns[orig_gid][time_id] = dict()
+                gns[orig_gid][time_id][feat] = gn
         
-        groups = self.getDistinctGroups(where)
+        if not groups: groups = self.getDistinctGroups(where)
         allFeats = self.getDistinctFeatures()
         allTimeId = self.getDistinctTimeIds(time_where)
-        for gid in groups:
-            if not gid in gns: gns[gid] = dict()
-            for time_id in allTimeId:
-                if not time_id in gns[gid]: gns[gid][time_id] = dict()
-                for feat in allFeats:
-                    if not feat in gns[gid][time_id]: gns[gid][time_id][feat] = time_infilling
         
+        if flatten:
+            for gid in groups:
+                if not gid in gns: gns[gid] = dict()
+                for feat in allFeats:
+                    for time_id in allTimeId:
+                        flattened_feat = str(feat)+":"+str(time_id)
+                        if flattened_feat not in gns[gid]: gns[gid][flattened_feat] = time_infilling
+        else:
+            for gid in groups:
+                if not gid in gns: gns[gid] = dict()
+                for time_id in allTimeId:
+                    if not time_id in gns[gid]: gns[gid][time_id] = dict()
+                    for feat in allFeats:
+                        if not feat in gns[gid][time_id]: gns[gid][time_id][feat] = time_infilling
+            
         return gns, allFeats
 
-    def getLongitudinalGroupNormsWithZerosFeatsFirst(self, groups = [], time_where = '', where = '', time_infilling=0,  flatten=False):
+    def getLongitudinalGroupNormsWithZerosFeatsFirst(self, groups = [], time_where = '', where = '', time_infilling=0,  flatten=False, blacklist=[]):
         """
             Gets group norms for a longitudinal feature table
             time_infilling is the group norm to fill in for missing time points
@@ -375,6 +388,7 @@ class FeatureGetter(DLAWorker):
         gns = dict()
         for tup in gnlist:
             orig_gid, time_id, feat, gn = tup
+            if feat in blacklist: continue
             if flatten:
                 flatten_feat = str(feat)+":"+str(time_id)
                 if not flatten_feat in gns: gns[flatten_feat] = dict()
@@ -385,8 +399,9 @@ class FeatureGetter(DLAWorker):
                 gns[feat][orig_gid][time_id] = gn
 
         
-        groups = self.getDistinctGroups(where)
+        if not groups: groups = self.getDistinctGroups(where)
         allFeats = self.getDistinctFeatures()
+        if blacklist: allFeats = list(set(allFeats) - set(blacklist))
         allTimeId = self.getDistinctTimeIds(time_where)
         
         if flatten:
@@ -436,10 +451,23 @@ class FeatureGetter(DLAWorker):
                 if not orig_gid in gns[feat]: gns[feat][orig_gid] = dict()
                 gns[feat][orig_gid][time_id] = gn
         
-        groups = self.getDistinctGroups(where)
+        if not groups: groups = self.getDistinctGroups(where)
         allFeats = self.getDistinctFeatures()
         allTimeId = self.getDistinctTimeIds(time_where)
         allFeatsFlattened = [str(feat)+":"+str(time_id) for feat in allFeats for time_id in allTimeId]
+        
+        if flatten:
+            # The features should preseve over time. Hence the features that are missing are infilled with 0 to just one grp id in the sparse Feats 
+            grp_id = groups.pop()
+            for flattened_feat in allFeatsFlattened:
+                if feat not in gns:
+                    gns[flattened_feat] = dict()
+                    gns[flattened_feat][grp_id] = 0
+        # TODO: Handle else case for the non-flattened case
+        
+        print ("len of gns: ", len(gns))
+        print ("Input groups length: ", len(groups))
+        print ("Num grps in gns: ", len(set([gid for feat in gns for gid in gns[feat]])))
         
         return gns, allFeatsFlattened
     

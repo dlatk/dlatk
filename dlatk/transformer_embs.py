@@ -228,7 +228,7 @@ class transformer_embeddings:
         """
         for lyr in layers:
             if (lyr > self.transformerModel.config.num_hidden_layers):
-                print (f"You have supplied a layer number ({lyr}) greater than the total number of layers ({self.transformerModel.config.num_hidden_layers}) in the model. Retry with valid layer number(s).")
+                print ("You have supplied a layer number %s greater than the total number of layers (%s) in the model. Retry with valid layer number(s)."%(lyr, self.transformerModel.config.num_hidden_layers))
                 sys.exit()
 
         layers = [(lyr%self.transformerModel.config.num_hidden_layers)+1 if lyr<0 else lyr for lyr in layers]

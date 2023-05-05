@@ -1859,7 +1859,8 @@ def main(fn_args = None):
                 trainBootstrapsNs=args.train_bootstraps_ns, longitudinal=args.longitudinal, time_where=args.timeWhere, where=args.msgWhere)
         
     if args.testregression:
-        rp.test(sparse = args.sparse, blacklist = blacklist,  standardize = args.standardize, groupsWhere = args.groupswhere)
+        rp.test(sparse = args.sparse, blacklist = blacklist,  standardize = args.standardize, groupsWhere = args.groupswhere, 
+                longitudinal=args.longitudinal, time_where=args.timeWhere, where=args.msgWhere)
 
     comboScores = None
     if args.combotestregression or args.controladjustreg:
@@ -1908,7 +1909,7 @@ def main(fn_args = None):
         crp.test(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere)
 
     if args.predictregression:
-        rp.predict(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere, outputName = args.outputname)
+        rp.predict(sparse = args.sparse, standardize = args.standardize, groupsWhere = args.groupswhere, outputName = args.outputname, longitudinal=args.longitudinal, time_where=args.timeWhere, msgWhere=args.msgWhere)
 
     if args.predictrtofeats and rp:
         if not fe: fe = FE()

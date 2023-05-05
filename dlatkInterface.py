@@ -1877,7 +1877,7 @@ def main(fn_args = None):
                                            weightedSample = args.weightedsample, adaptationFactorsName = args.adaptationfactors, 
                                            featureSelectionParameters=args.featureselectionparams , factorSelectionType=args.factorselectiontype, 
                                            numOfFactors=args.numoffactors, pairedFactors=args.pairedfactors, outputName = args.outputname, report=args.report, 
-                                           integrationMethod = args.integrationmethod, longitudinal=args.longitudinal_prediction)
+                                           integrationMethod = args.integrationmethod, longitudinal=args.longitudinal, time_where=args.timeWhere, where=args.msgWhere)
         elif args.controladjustreg:
             comboScores = rp.adjustOutcomesFromControls(standardize = args.standardize, sparse = args.sparse,
                                                         allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,

@@ -1222,11 +1222,11 @@ class FeatureExtractor(DLAWorker):
         usql = """SELECT %s, COUNT(1) AS count FROM %s GROUP BY %s ORDER BY count DESC"""% (self.correl_field, sentTable, self.correl_field)
         msgs = 0 #keeps track of the number of messages read
         cfRows = FeatureExtractor.noneToNull(self.data_engine.execute_get_list(usql)) #SSCursor woudl be better, but it loses connection
-        print (f"Total number of correl field: {len(cfRows)}")
+        print ("Total number of correl field: %d"%(len(cfRows)))
 
         #TODO: Use Total messages to display percentages
         totalMessages = sum(map(lambda x: x[1], cfRows))
-        print (f"Total number of messages: {totalMessages}")
+        print ("Total number of messages: %d"%(totalMessages))
         
         ##iterate through correl_ids (group id):
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))

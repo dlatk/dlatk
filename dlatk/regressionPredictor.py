@@ -674,7 +674,7 @@ class RegressionPredictor:
 
     ##################
     ## Old testing Method (random split rather than cross-val)
-    def test(self, standardize = True, sparse = False, saveModels = False, blacklist = None, groupsWhere = ''):
+    def test(self, standardize = True, sparse = False, saveModels = False, blacklist = None, groupsWhere = '', longitudinal=False, time_where='', where=''):
         """Tests classifier, by pulling out random testPerc percentage as a test set"""
         
         print()
@@ -690,10 +690,10 @@ class RegressionPredictor:
         if sparse:
             if blacklist:
                 print("\n!!!WARNING: USING BLACKLIST WITH SPARSE IS NOT CURRENTLY SUPPORTED!!!\n")
-            (groupNorms, featureNames) = self.featureGetter.getGroupNormsSparseFeatsFirst(groups)
+            (groupNorms, featureNames) = self.featureGetter.getGroupNormsSparseFeatsFirst(groups) if not longitudinal else self.featureGetter.getLongitudinalGroupNormsSparseFeatsFirst(groups, time_where=time_where, where=where, flatten=True)
         else:
             if blacklist: print("USING BLACKLIST: %s" %str(blacklist))
-            (groupNorms, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups, blacklist = blacklist)
+            (groupNorms, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups, blacklist = blacklist) if not longitudinal else self.featureGetter.getLongitudinalGroupNormsWithZerosFeatsFirst(groups, time_where=time_where, where=where, flatten=True, blacklist=blacklist)
         groupNormValues = list(groupNorms.values()) #list of dictionaries of group => group_norm
         controlValues = list(controls.values()) #list of dictionaries of group=>group_norm
     #     this will return a dictionary of dictionaries
@@ -1368,7 +1368,7 @@ class RegressionPredictor:
     #################################################
     #################################################
 
-    def predict(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', outputName = '', saveFeatures = False):
+    def predict(self, standardize = True, sparse = False, restrictToGroups = None, groupsWhere = '', outputName = '', saveFeatures = False, longitudinal=False, time_where='', msgWhere=''):
         if not self.multiXOn:
             print("\n!! model trained without multiX, reverting to old predict !!\n")
             return self.old_predict(standardize, sparse, restrictToGroups)
@@ -1395,7 +1395,7 @@ class RegressionPredictor:
         XGroups = None #holds the set of X groups across all feature spaces and folds (intersect with this to get consistent keys across everything
         for i in range(len(self.featureGetters)):
             fg = self.featureGetters[i]
-            (groupNorms, newFeatureNames) = fg.getGroupNormsSparseFeatsFirst(groups)
+            (groupNorms, newFeatureNames) = fg.getGroupNormsSparseFeatsFirst(groups) if not longitudinal else fg.getLongitudinalGroupNormsSparseFeatsFirst(groups, time_where=time_where, where=msgWhere, flatten=True)
 
             print(" [Aligning current X with training X: feature group: %d]" %i)
             groupNormValues = []
@@ -1408,7 +1408,7 @@ class RegressionPredictor:
             groupNormsList.append(groupNormValues)
             print("  Features Aligned: %d" % len(groupNormValues))
 
-            print(" Groups in featureTable:", len(getGroupsFromGroupNormValues(groupNormValues)), "groups that have outcomes:", len(groups))
+            print(" Groups in featureTable:", len(getGroupsFromGroupNormValues(groupNormValues)), "\ngroups that have outcomes:", len(groups))
             if not XGroups:
                 XGroups = set(getGroupsFromGroupNormValues(groupNormValues))
             else:

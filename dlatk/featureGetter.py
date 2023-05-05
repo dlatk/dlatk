@@ -459,15 +459,12 @@ class FeatureGetter(DLAWorker):
         if flatten:
             # The features should preseve over time. Hence the features that are missing are infilled with 0 to just one grp id in the sparse Feats 
             grp_id = groups.pop()
+            groups.update([grp_id])
             for flattened_feat in allFeatsFlattened:
-                if feat not in gns:
+                if flattened_feat not in gns:
                     gns[flattened_feat] = dict()
                     gns[flattened_feat][grp_id] = 0
         # TODO: Handle else case for the non-flattened case
-        
-        print ("len of gns: ", len(gns))
-        print ("Input groups length: ", len(groups))
-        print ("Num grps in gns: ", len(set([gid for feat in gns for gid in gns[feat]])))
         
         return gns, allFeatsFlattened
     

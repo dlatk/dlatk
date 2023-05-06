@@ -1281,8 +1281,6 @@ class FeatureExtractor(DLAWorker):
             #     groupedMessageRows.append([cfId, cfMsgRows])
             #     cfId_msgId_map[cfId] = set([msgRow[0] for msgRow in cfMsgRows])
             
-            
-            
             #TODO: write method for prepare messages
             #prepare_messages() should take into account context, no context and other possible modes.
             #prepare_messages() can parallelize the message tokenization.

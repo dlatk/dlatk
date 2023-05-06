@@ -72,8 +72,14 @@ class textTransformerInterface:
         self.sentTokenizer = sentenceTokenizer()
         self.msgIdSeen = set()
         self.transformerTokenizer = transformerTokenizer
-        self.maxSeqLen = self.transformerTokenizer.max_len_sentences_pair//2 
+        self.maxSeqLen = self.transformerTokenizer.max_len_sentences_pair
+        if self.maxSeqLen > 1e6: #Some models like Bertweet-large have been accidentally set to a very large value. This fixes that issue
+            print ("MaxSeqLen is set to %d in the tokenizer object. Resetting to 500"%(self.maxSeqLen))
+            self.maxSeqLen = 500 
+        elif self.maxSeqLen > 1024:
+            print ("MaxSeqLen is %d"%(self.maxSeqLen))
         
+        self.maxSeqLen = self.maxSeqLen//2 # Divinding for "the pair of sentences DLATK embedding extraction method"  
         self.tokenizationRule = self.findRule()
 
     def findRule(self):

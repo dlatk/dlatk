@@ -667,7 +667,7 @@ class FeatureRefiner(FeatureGetter):
         cols = [Column(column_name="id", datatype="BIGINT(16)", unsigned=True, primary_key=True, nullable=False, auto_increment=True), \
                 Column(column_name="group_id", datatype="VARCHAR(50)", nullable=False), \
                 Column(column_name="feat", datatype=feat_dtype, nullable=False), \
-                Column(column_name="value", datatype="INT", nullable=False), \
+                Column(column_name="value", datatype="FLOAT", nullable=False), \
                 Column(column_name="group_norm", datatype="FLOAT", nullable=False), \
                 Column(column_name="time_id", datatype=timeid_dtype, nullable=False), \
                 Column(column_name="orig_group_id", datatype=correl_dtype, nullable=False), \
@@ -686,9 +686,9 @@ class FeatureRefiner(FeatureGetter):
         
         num_cfIds = 0
         for cfId in cfIds:
-            
+            if cfId[0] is None: continue
             # Get the message ids, time field for each user id.
-            sub_query = self.qb.create_select_query(from_table=self.corptable).set_fields(fields=[self.messageid_field, timeField]).where(where_conditions=self.correl_field + " = " + str(cfId[0]) + where)
+            sub_query = self.qb.create_select_query(from_table=self.corptable).set_fields(fields=[self.messageid_field, timeField]).where(where_conditions=self.correl_field + " = " + "'" + str(cfId[0]) + "'" + where)
             rows = sub_query.execute_query()
             rows = sorted(rows, key=lambda x: x[1], reverse=False)
             

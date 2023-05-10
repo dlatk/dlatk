@@ -298,6 +298,7 @@ class ClassifyPredictor:
             #{'C':[.01], 'penalty':['elasticnet'], 'dual':[False], 'random_state': [42], 'l1_ratio': [.8], 'solver': ['saga']},
             ],
         'lr1': [{'C':[1], 'penalty':['l2'], 'dual':[False], 'random_state': [42]}],
+        'lr_balanced': [{'C':[0.01], 'penalty':['l2'], 'dual':[False], 'random_state': [42], 'class_weight': ['balanced']}],
         #unpenalized logistic regression:
         'lrnone': [{'C':[1000000], 'penalty':['l2'], 'dual':[False], 'random_state': [42]}],
 
@@ -351,6 +352,7 @@ class ClassifyPredictor:
     modelToClassName = {
         'lr' : 'LogisticRegression',
         'lr1' : 'LogisticRegression',
+        'lr_balanced' : 'LogisticRegression',
         'lrnone' : 'LogisticRegression',
         'linear-svc' : 'LinearSVC',
         'svc' : 'SVC',
@@ -1065,6 +1067,7 @@ class ClassifyPredictor:
                         ypredProbs = array(ypredProbs)
                         reportStats['acc'] = accuracy_score(ytrue, ypred)
                         reportStats['f1'] = f1_score(ytrue, ypred, average='macro')
+                        reportStats['f1_weighted'] = f1_score(ytrue, ypred, average='weighted')
                         reportStats['auc']= computeAUC(ytrue, ypredProbs, multiclass,  classes = classes)
                         reportStats['auc_p'] = permutation_1tail_on_aucs(ytrue, np.array(ypredProbs), multiclass, classes)
                         reportStats['precision'] = precision_score(ytrue, ypred, average='macro')

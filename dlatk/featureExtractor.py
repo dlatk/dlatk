@@ -1316,7 +1316,11 @@ class FeatureExtractor(DLAWorker):
             else:
                 msg_reps_dict = dict(zip([i for i in msgIds_new], [msg_reps[i] for i in range(len(msgIds_new))]))
                 # msgEmb.update(msg_reps_dict)
-                cf_reps, cfIds_new = cf_embedding_generator.correl_field_aggregate(msg_reps_dict, cfId_msgId_map)
+                try:
+                    cf_reps, cfIds_new = cf_embedding_generator.correl_field_aggregate(msg_reps_dict, cfId_msgId_map)
+                except Exception as e:
+                    print ("Hit an exception! %s"%(e))
+                    import pdb; pdb.set_trace()
                 wsql = """INSERT INTO """ + embTableName + """ (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
                 insert_start_idx = 0
                 insert_end_idx = dlac.MYSQL_BATCH_INSERT_SIZE

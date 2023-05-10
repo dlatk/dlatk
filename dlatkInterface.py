@@ -574,6 +574,10 @@ def main(fn_args = None):
                        help='Aggregates features from a lower level to new group by field, interpolating across specified amount of days.')
     group.add_argument("--agg_temporal", action="store_true", dest="aggtemporal", default=False, help="Aggregate features by time period.")
     group.add_argument("--time_field", type=str, dest="timefield", default=None, help="Time field to use for aggregation.")
+    group.add_argument('--value_agg_fn', dest='valueAggFn', default='auto',
+                       help="Aggregation function for value while applying --agg_temporal to feature table. Auto corresponds to sum")
+    group.add_argument('--norm_agg_fn', dest='normAggFn', default='auto',
+                       help="Aggregation function for group norm while applying --agg_temporal to feature table. Auto corresponds to mean")
 
 
     group = parser.add_argument_group('Outcome Actions', '')
@@ -1344,7 +1348,7 @@ def main(fn_args = None):
 
     if args.aggtemporal:
         if not fr: fr=FR()
-        args.feattable = fr.aggregateFeaturesOverTime(timeField=args.timefield)
+        args.feattable = fr.aggregateFeaturesOverTime(timeField=args.timefield, value_agg_fn=args.valueAggFn, norm_agg_fn=args.normAggFn)
 
     if args.featoccfilter:
         if args.use_collocs and not args.wordTable:

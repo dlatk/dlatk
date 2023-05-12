@@ -66,7 +66,8 @@ More Information
 * `DLATK GitHub page <http://www.github.com/dlatk/dlatk>`_
 * `DLATK at DockerHub <https://hub.docker.com/r/dlatk/dlatk/>`_
 * `World Well-Being Project <http://www.wwbp.org>`_
-* `HLAB at Stoney Brook <http://hlab.cs.stonybrook.edu/>`_
+* `Human Language Analysis Beings (HLAB) at Stony Brook <http://hlab.cs.stonybrook.edu/>`_
+* `Computational Psychology & Well-Being Lab (CPWB) at Stanford University <https://cpwb.stanford.edu/>`_
 * :doc:`modules`
 * :doc:`changelog`
 

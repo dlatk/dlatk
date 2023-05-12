@@ -18,7 +18,7 @@ Feature Extraction
 ------------------
 * :doc:`tutorials/tut_feat_tables`
 * :doc:`tutorials/tut_adv_fe`
-* :doc:`tutorials/tut_bert`
+* :doc:`tutorials/tut_trns`
 
 Viewing your data and output
 ----------------------------

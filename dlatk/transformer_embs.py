@@ -355,7 +355,8 @@ class transformer_embeddings:
         cf_reps, cfIds_seq = [], []
         for cfId, msgIds_set in cfId_msgId_map.items():
             temp = [msg_reps_dict[msgId] for msgId in msgIds_set if msgId in msg_reps_dict.keys()]
-            if temp is None: 
+            if not len(temp):
+                # empty list - message might be an empty space that wouldn't be embedded by LMs
                 continue
             temp = np.concatenate(temp, axis=0)
             cf_rep = []

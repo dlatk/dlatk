@@ -71,7 +71,7 @@ docker run -it --rm --name dlatk_docker --link mysql_v5:mysql dlatk/dlatk bash
 ### Still didn't work? If using linux, Try this:
 ```sh
 sudo apt install python3-pip
-pip3 install numpy scipy scikit-learn statsmodels
+pip3 install numpy scipy scikit-learn statsmodels jsonrpclib simplejson nltk
 sudo apt-get install python3-mysqldb
 sudo apt install libmysqlclient-dev
 pip3 install mysqlclient

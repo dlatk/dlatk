@@ -31,29 +31,32 @@ DLATK is available via any of four popular installation platforms: conda, pip, g
 #### New to installing Python packages?
 It is recommended that you see the [full installation instructions](http://dlatk.wwbp.org/install.html#dependencies).
 
-### 0. Make sure you have python3-mysqldb:
+### STEP 1:  Make sure you have python3-mysqldb (if using mysql):
 ```sh
 sudo apt-get install python3-mysqldb
+sudo apt install libmysqlclient-dev
+pip3 install mysqlclient
 ```
 
-### 1. conda
-```sh
-conda install -c wwbp dlatk
-```
+### STEP 2: Install from one of these options:
 
-### 2. pip
-```sh
-pip install dlatk
-```
-
-### 3. GitHub
+#### A. GitHub
 ```sh
 git clone https://github.com/dlatk/dlatk.git
 cd dlatk
 python setup.py install
 ```
+#### B. pip
+```sh
+pip3 install dlatk
+```
 
-### 4. Docker (from 2018; may not work well for newer versions)
+#### C. conda
+```sh
+conda install -c wwbp dlatk
+```
+
+#### D. Docker (from 2018; may not work well for newer versions)
 Detailed Docker install instructions [here](http://dlatk.wwbp.org/tutorials/tut_docker.html).
 
 ```sh
@@ -63,6 +66,19 @@ docker run -it --rm --name dlatk_docker --link mysql_v5:mysql dlatk/dlatk bash
 
 - [DLATK at DockerHub](https://hub.docker.com/r/dlatk/dlatk/)
 - [DockerFile on GitHub](https://github.com/dlatk/dlatk-docker)
+
+
+### Still didn't work? If using linux, Try this:
+```sh
+sudo apt install python3-pip
+pip3 install numpy scipy scikit-learn statsmodels
+sudo apt-get install python3-mysqldb
+sudo apt install libmysqlclient-dev
+pip3 install mysqlclient
+git clone https://github.com/dlatk/dlatk.git
+cd dlatk
+python setup.py install
+```
 
 ## Dependencies
 - [mysqlclient](https://github.com/PyMySQL/mysqlclient-python)

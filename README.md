@@ -53,7 +53,7 @@ cd dlatk
 python setup.py install
 ```
 
-### 4. Docker
+### 4. Docker (from 2018; may not work well for newer versions)
 Detailed Docker install instructions [here](http://dlatk.wwbp.org/tutorials/tut_docker.html).
 
 ```sh
@@ -135,6 +135,9 @@ The documentation for the latest release is at [dlatk.wwbp.org](dlatk.wwbp.org).
 
 If you use DLATK in your work please cite the following [paper](http://aclweb.org/anthology/D17-2010):
 
+H. Andrew Schwartz, Salvatore Giorgi, Maarten Sap, Patrick Crutchley, Lyle Ungar, and Johannes Eichstaedt. 2017. DLATK: Differential Language Analysis ToolKit. In Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing: System Demonstrations, pages 55–60, Copenhagen, Denmark. Association for Computational Linguistics.
+
+### bibtex
 ```
 @InProceedings{DLATKemnlp2017,
   author =  "Schwartz, H. Andrew and Giorgi, Salvatore and Sap, Maarten and Crutchley, Patrick and Eichstaedt, Johannes and Ungar, Lyle",

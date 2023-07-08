@@ -17,6 +17,7 @@ import collections
 
 import pandas as pd
 
+from collections.abc import Iterable
 from collections import defaultdict, Counter
 
 # scikit-learn imports
@@ -436,7 +437,7 @@ class ClassifyPredictor:
 
         # setup feature getters:
 
-        if not isinstance(fgs, collections.Iterable):
+        if not isinstance(fgs, Iterable):
             fgs = [fgs]
         self.featureGetters = fgs
         self.featureGetter = fgs[0]  # legacy support

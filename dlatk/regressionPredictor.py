@@ -20,7 +20,8 @@ import operator
 from pprint import pprint
 import numbers
 
-from collections import defaultdict, Iterable
+from collections.abc import Iterable
+from collections import defaultdict
 
 #scikit-learn imports
 from sklearn.preprocessing import StandardScaler, MinMaxScaler

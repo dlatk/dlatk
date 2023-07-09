@@ -1,5 +1,6 @@
 import sys
 import time
+import csv
 try:
     import MySQLdb
 except:
@@ -413,11 +414,11 @@ class DLAWorker(object):
             A list of feature tables names
         """
         new_table = self.corptable + "_rand"
-
-        rows_sql = """SELECT count(*) from %s""" % (self.corptable)
-        #FIXME
-        n_old_rows = mm.executeGetList1(self.corpdb, self.dbCursor, rows_sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)[0]
-        n_new_rows = round(percentage*n_old_rows)
+        
+        fields = ["count(*)"]
+        selectQuery = self.qb.create_select_query(self.corptable).set_fields(fields)
+        n_old_rows = selectQuery.execute_query()
+        n_new_rows = round(percentage * n_old_rows)
 
         dropQuery = self.qb.create_drop_query(new_table)
         dropQuery.execute_query()
@@ -470,6 +471,12 @@ class DLAWorker(object):
         self.data_engine.enable_table_keys(new_table)
 
         return new_table
+    
+    def csvToTable(self, csv_path, table_name, column_description, ignoreLines=1):
+        self.data_engine.dataEngine.csvToTable(csv_path, table_name, column_description, ignoreLines)
+
+    def tableToCSV(self, table_name, csv_file, quoting=csv.QUOTE_ALL):
+        self.data_engine.dataEngine.tableToCSV(table_name, csv_file, quoting)
 
     def makeBlackWhiteList(self, args_featlist, args_lextable, args_categories):
         """?????

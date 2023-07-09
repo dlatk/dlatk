@@ -2,10 +2,11 @@ from ..mysqlmethods import mysqlMethods as mm
 from ..sqlitemethods import sqliteMethods as sm
 from .. import dlaConstants as dlac
 import sys
+import csv
 
 class DataEngine(object):
 	"""
-	Class for connecting with the database engine (based on the type of data engine being used) and executing querie.s
+	Class for connecting with the database engine (based on the type of data engine being used) and executing queries.
 
 	Parameters
 	-------------
@@ -467,7 +468,6 @@ class SqliteDataEngine(DataEngine):
 		"""
 		return sm.execute(self.corpdb, self.dbConn, sql)
 
-
 	def standardizeTable(self, table, collate, engine, charset, use_unicode):
 		"""
 		All of these (collation sequence, charset and unicode) are assigned when creating the sqlite database. No such thing as 'engine' in sqlite.
@@ -538,3 +538,74 @@ class SqliteDataEngine(DataEngine):
 		for row in data:
 			dictionary[row[1]] = row[2]
 		return dictionary	
+
+	def csvToTable(self, csv_file, table_name, column_description, ignoreLines=1):
+		"""
+		Loads a CSV file as a SQLite table to the database
+		
+		Parameters
+		------------
+		csv_file: str
+
+		table_name: str
+		
+		column_description: str
+		"""
+
+		if self.tableExists(table_name):
+			#FIXME - raise an exception instead
+			print("A table by that name already exists in the database")
+			sys.exit(1)
+
+		createSQL = "CREATE TABLE {} {}".format(table_name, column_description)
+		self.execute(createSQL)
+
+		print("Importing data, reading {} file".format(csv_file))
+
+		def chunks(data, rows=10000):
+			"Divides the data into 10000 rows each"
+			for i in range(0, len(data), rows):
+				yield data[i:i+rows]
+
+		with open(csv_file, 'r') as f:
+			reader = csv.reader(f, delimiter=',')
+			if ignoreLines > 0:
+				for i in range(0, ignoreLines): 
+					next(reader)
+			data = list(reader)
+			chunk_data = chunks(data) 
+			num_columns = None
+			for chunk in chunk_data:
+				if not num_columns:
+					num_columns = len(chunk[0])
+					values_str = "(" + ",".join(["?"] * num_columns) + ")"
+				insertQuery = "INSERT INTO {} VALUES {}".format(table_name, values_str)
+				self.execute_write_many(insertQuery, chunk)
+
+	def tableToCSV(self, table_name, csv_file, quoting=csv.QUOTE_ALL):
+		"""
+		Dumps the SQLite table into a CSV file.
+		
+		Parameters
+		------------
+		table_name: str
+
+		csv_file: str
+
+		quoting: [csv.QUOTE_ALL | csv.QUOTE_MINIMAL | csv.QUOTE_NONNUMERIC | csv.QUOTE_NONE]
+		"""
+
+		path = os.path.dirname(os.path.abspath(csv_file))
+		if not os.path.isdir(path):
+			print("Path {path} does not exist".format(path=path))
+			sys.exit(1)
+		
+		selectQuery = "SELECT * FROM {}".format(table)
+		self.dbCursor.execute(selectQuery)
+		header = [i[0] for i in self.dbCursor.description]
+		with open(csv_file, 'w') as f:
+			csv_writer = csv.writer(f, quoting=quoting)
+			csv_writer.writerow(header)
+			csv_writer.writerows(self.dbCursor)
+
+		return

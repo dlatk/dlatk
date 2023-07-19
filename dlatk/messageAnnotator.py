@@ -4,10 +4,10 @@ import html
 from pprint import pprint
 
 #infrastructure
+from .database.query import Column
 from .dlaWorker import DLAWorker
 from . import textCleaner as tc
 from . import dlaConstants as dlac
-from .mysqlmethods import mysqlMethods as mm
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 
 try:
@@ -39,7 +39,7 @@ class MessageAnnotator(DLAWorker):
         new_table = self.corptable + "_dedup"
 
         # Drop if the table exists, create a new table, and standardize it.
-        dropQuery = self.data_engine.create_drop_query(new_table)
+        dropQuery = self.qb.create_drop_query(new_table)
         dropQuery.execute_query()
 
         createQuery = self.qb.create_createTable_query(new_table).like(self.corptable)
@@ -53,7 +53,7 @@ class MessageAnnotator(DLAWorker):
             use_unicode=self.use_unicode)
 
         #Find column names:
-        columnNames = self.data_engine.getTableColumnNameTypes(self.corptable)
+        columnNames = list(self.data_engine.getTableColumnNameTypes(self.corptable))
         messageIndex = columnNames.index(self.message_field)
         try:
             retweetedStatusIdx = columnNames.index("retweeted_status_text")
@@ -79,7 +79,7 @@ class MessageAnnotator(DLAWorker):
 
             # get msgs for groups: 
             where_condition = "%s IN ('%s')" % (self.correl_field, "','".join(str(g) for g in groups))
-            selectQuery = self.qb.create_select_query(self.corptable).set_fields(columnNames)
+            selectQuery = self.qb.create_select_query(self.corptable).where(where_condition).set_fields(columnNames)
             rows = selectQuery.execute_query()
             rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
 
@@ -150,7 +150,7 @@ class MessageAnnotator(DLAWorker):
             use_unicode=self.use_unicode)
 
         #Find column names:
-        columnNames = self.data_engine.getTableColumnNameTypes(self.corptable)
+        columnNames = list(self.data_engine.getTableColumnNameTypes(self.corptable))
         messageIndex = columnNames.index(self.message_field)
         try:
             retweetedStatusIdx = columnNames.index("retweeted_status_text")
@@ -170,7 +170,7 @@ class MessageAnnotator(DLAWorker):
 
             # get msgs for groups:
             where_condition = "%s IN ('%s')" % (self.correl_field, "','".join(str(g) for g in groups))
-            selectQuery = self.qb.create_select_query(self.corptable).set_fields(columnNames)
+            selectQuery = self.qb.create_select_query(self.corptable).where(where_condition).set_fields(columnNames)
             rows = selectQuery.execute_query()
             rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
 
@@ -219,9 +219,8 @@ class MessageAnnotator(DLAWorker):
         createQuery = self.qb.create_createTable_query(new_table).like(self.corptable)
         createQuery.execute_query()
         
-        #FIXME - add column here
-        add_colum = """ALTER TABLE %s ADD COLUMN is_spam INT(2) NULL""" % (new_table)
-        mm.execute(self.corpdb, self.dbCursor, add_colum, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+        column = Column("is_spam", "INT(2)")
+        self.qb.create_createColumn_query(new_table, column).execute_query()
 
         self.data_engine.standardizeTable(
             new_table, 
@@ -231,7 +230,7 @@ class MessageAnnotator(DLAWorker):
             use_unicode=self.use_unicode)
 
         #Find column names:
-        columnNames = self.data_engine.getTableColumnNameTypes(self.corptable)
+        columnNames = list(self.data_engine.getTableColumnNameTypes(self.corptable))
         insertColumnNames = columnNames + ['is_spam']
         messageIndex = columnNames.index(self.message_field)
 
@@ -254,7 +253,7 @@ class MessageAnnotator(DLAWorker):
 
             # get msgs for groups:
             where_condition = "%s IN ('%s')" % (self.correl_field, "','".join(str(g) for g in groups))
-            selectQuery = self.qb.create_select_query(self.corptable).set_fields(columnNames)
+            selectQuery = self.qb.create_select_query(self.corptable).where(where_condition).set_fields(columnNames)
             rows = selectQuery.execute_query()
             rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
 
@@ -278,7 +277,7 @@ class MessageAnnotator(DLAWorker):
                 users_removed += 1
 
             if len(rows_to_write) >= dlac.MYSQL_BATCH_INSERT_SIZE:
-                insertQuery = self.qb.create_insert_query(new_table).set_values([(name, '') for name in columnNames])
+                insertQuery = self.qb.create_insert_query(new_table).set_values([(name, '') for name in insertColumnNames])
                 insertQuery.execute_query(rows_to_write)
                 rows_to_write = []
 
@@ -287,7 +286,7 @@ class MessageAnnotator(DLAWorker):
             counter += 1
 
         if rows_to_write:
-            insertQuery = self.qb.create_insert_query(new_table).set_values([(name, '') for name in columnNames])
+            insertQuery = self.qb.create_insert_query(new_table).set_values([(name, '') for name in insertColumnNames])
             insertQuery.execute_query(rows_to_write)
         print('%d users removed!' % (users_removed))
 
@@ -323,7 +322,7 @@ class MessageAnnotator(DLAWorker):
 
         new_table = self.corptable + "_%s"
 
-        columnNames = self.data_engine.getTableColumnNameTypes(self.corptable)
+        columnNames = list(self.data_engine.getTableColumnNameTypes(self.corptable))
         messageIndex = [i for i, col in enumerate(columnNames) if col.lower() == dlac.DEF_MESSAGE_FIELD.lower()][0]
         #messageIDindex = [i for i, col in enumerate(columnNames) if col.lower() == dlac.DEF_MESSAGEID_FIELD.lower()][0]
 
@@ -350,7 +349,7 @@ class MessageAnnotator(DLAWorker):
         totalMessages = 0
         totalMessagesKept = 0
         selectQuery = self.qb.create_select_query(self.corptable).set_fields(["COUNT(*)"])
-        totalMessagesInTable = selectQuery.execute()[0][0]
+        totalMessagesInTable = selectQuery.execute_query()[0][0]
 
         print("Reading %s messages" % ",".join([str(totalMessagesInTable)[::-1][i:i+3] for i in range(0,len(str(totalMessagesInTable)),3)])[::-1])
         memory_limit = dlac.MYSQL_BATCH_INSERT_SIZE if dlac.MYSQL_BATCH_INSERT_SIZE < totalMessagesInTable else totalMessagesInTable/20

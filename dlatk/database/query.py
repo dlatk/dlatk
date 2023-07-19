@@ -83,6 +83,8 @@ class QueryBuilder():
 		"""
 		return CreateTableQuery(table, self.data_engine)
 
+	def create_createColumn_query(self, table, column):
+		return CreateColumnQuery(table, column, self.data_engine)
 
 class SelectQuery(Query):
 	"""
@@ -654,3 +656,29 @@ class Column():
 		bool: True if column is unsigned
 		"""
 		return self.unsigned
+
+class CreateColumnQuery(Query):
+
+	def __init__(self, table, column, data_engine):
+		super().__init__()
+
+		self.data_engine = data_engine
+		self.table = table
+		self.column = column
+	
+	def build_query(self):
+
+		sql = "ALTER TABLE {} ADD COLUMN {}".format(self.table, self.column.get_name())
+		sql += " {}".format(self.column.get_datatype())
+		if self.column.is_unsigned():
+			sql += " UNSIGNED"
+		if not self.column.is_nullable():
+			sql += " NOT NULL"
+		
+		#FIXME - remove this print
+		print(sql)
+		return sql
+
+	def execute_query(self):
+		self.sql = self.build_query()
+		self.data_engine.execute(self.sql)

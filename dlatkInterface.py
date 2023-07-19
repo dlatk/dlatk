@@ -141,8 +141,6 @@ def main(fn_args = None):
                        help='Turn off unicode for reading/writing mysql and text processing.')
     group.add_argument('--language', '--lang', choices=['en', 'zh'], default=dlac.DEF_LANG,
                        help='Corpus language. Affects certain aspects of processing, like tokenization. Default: en.')
-    group.add_argument('--csv_to_table', dest='csv_to_table', default='', help='Import specified CSV as a table in the database')
-    group.add_argument('--column_description', dest='coldesc', default='', help='Description of the table to be created')
 
     group = parser.add_argument_group('Feature Variables', 'Use of these is dependent on the action.')
     group.add_argument('-f', '--feat_table', metavar='TABLE', dest='feattable', type=str, nargs='+', default=getInitVar('feattable', conf_parser, None, varList=True),
@@ -1020,11 +1018,6 @@ def main(fn_args = None):
             sys.exit(1)
         new_table = dlaw.createCopiedTable(args.createcopiedtable[0], args.createcopiedtable[1], where=args.groupswhere)
     
-    if args.csv_to_table:
-        if args.corptable:
-            if not dlaw: dlaw = DLAW()
-            dlaw.csvToTable(args.csv_to_table, args.corptable, args.coldesc)
-
     #Feature Extraction:
     if args.addngrams:
         if not fe: fe = FE()

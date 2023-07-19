@@ -51,16 +51,16 @@ class DLAWorker(object):
     def __init__(self, db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb = dlac.DEF_LEXICON_DB, date_field=dlac.DEF_DATE_FIELD, wordTable=None):
         self.corpdb = corpdb
         self.corptable = corptable
+        self.db_type = db_type.lower()
+        self.encoding = encoding
+        self.use_unicode = use_unicode
+        self.mysql_config_file = mysql_config_file
+
+        self.prepareDatabase()
+
         self.correl_field = correl_field
         self.message_field = message_field
         self.messageid_field = messageid_field
-        self.encoding = encoding
-        self.use_unicode = use_unicode
-
-        self.db_type = db_type
-        self.mysql_config_file = mysql_config_file
-        self.data_engine = DataEngine(corpdb, mysql_config_file, encoding, use_unicode, self.db_type)
-        (self.dbConn, self.dbCursor, self.dictCursor) = self.data_engine.connect()
 
         self.qb = QueryBuilder(self.data_engine)
 
@@ -73,6 +73,40 @@ class DLAWorker(object):
                 wordTable = "feat$1gram$%s$%s"%(self.corptable, self.correl_field)
             self.wordTable = wordTable
         self.messageIdUniqueChecked = False
+    
+    def prepareDatabase(self):
+    
+        if (".csv" in self.corptable) or (self.db_type == "sqlite"):
+
+            self.db_type = "sqlite"
+
+            if self.corpdb is None:
+                self.corpdb = self.corptable + ".db"
+   
+            self.data_engine = DataEngine(self.corpdb, self.mysql_config_file, self.encoding, self.use_unicode, self.db_type)
+            (self.dbConn, self.dbCursor, self.dictCursor) = self.data_engine.connect()
+
+            if not self.data_engine.tableExists(self.corptable):
+
+                if ".csv" in self.corptable:
+                    message_table = self.corptable.split('/')[-1].split('.')[0]
+                    column_description = "(message_id INT(10), user_id VARCHAR(10), date DATE, created_time DATETIME, message TEXT);"
+                    self.data_engine.dataEngine.csvToTable(self.corptable, message_table, column_description, 1)
+                    self.corptable = message_table
+
+                else:
+                    print("Message table missing")
+                    sys.exit(1)
+
+        elif self.db_type == "mysql":
+
+            self.data_engine = DataEngine(self.corpdb, self.mysql_config_file, self.encoding, self.use_unicode, self.db_type)
+            (self.dbConn, self.dbCursor, self.dictCursor) = self.data_engine.connect()
+
+            if not self.data_engine.tableExists(self.corptable):
+                print("Message table missing")
+                sys.exit(1)
+        
 
     ##PUBLIC METHODS#
     def checkIndices(self, table, primary=False, correlField=False):
@@ -472,12 +506,6 @@ class DLAWorker(object):
 
         return new_table
     
-    def csvToTable(self, csv_path, table_name, column_description, ignoreLines=1):
-        self.data_engine.dataEngine.csvToTable(csv_path, table_name, column_description, ignoreLines)
-
-    def tableToCSV(self, table_name, csv_file, quoting=csv.QUOTE_ALL):
-        self.data_engine.dataEngine.tableToCSV(table_name, csv_file, quoting)
-
     def makeBlackWhiteList(self, args_featlist, args_lextable, args_categories):
         """?????
  

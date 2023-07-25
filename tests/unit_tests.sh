@@ -29,6 +29,9 @@ while getopts "hd:t:c:f:l:-:" opt; do
     esac
 done
 
+#Create $OUTPUT folder
+mkdir -p $OUTPUT
+
 #Test message table cleaning.
 bash clean_messages.sh -d $DATABASE -t $TABLE -c $GROUP_FIELD --language_filter en
 

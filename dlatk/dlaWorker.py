@@ -80,7 +80,8 @@ class DLAWorker(object):
         if (".csv" in self.corptable) or (self.db_type == "sqlite"):
 
             self.db_type = "sqlite"
-            default_dir = path.join(path.expanduser('~'), "sqlite_data")
+
+            default_dir = path.join("/content", "sqlite_data") if path.exists("/content") else path.join(path.expanduser('~'), "sqlite_data")
             if not path.exists(default_dir):
                 makedirs(default_dir)
 

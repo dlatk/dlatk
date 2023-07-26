@@ -235,6 +235,8 @@ def main(fn_args = None):
                        help='Specify the batch size for generating the embeddings.')
     group.add_argument('--embedding_keep_msg', '--emb_keep_msg', action='store_true', dest='embkeepmsg', default=False,
                        help='store embeddings as message_level feature table instead.')
+    group.add_argument('--word_list',  type=str, metavar='FIELD(S)', dest='wordlist', nargs='+', default=[],
+                       help='Words to embed across groups.')
 
 
 
@@ -1094,7 +1096,7 @@ def main(fn_args = None):
 
     if args.embaddfeat:
         if not fe: fe = FE()
-        args.feattable = fe.addEmbTable(modelName = args.embmodel, tokenizerName=args.tokenizermodel, modelClass = args.embclass, batchSize=args.batchsize, aggregations=args.embaggs, layersToKeep=args.emblayers, noContext=args.embnocontext, layerAggregations = args.emblayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc, customTableName = args.embtablename, keepMsgFeats = args.embkeepmsg)
+        args.feattable = fe.addEmbTable(modelName = args.embmodel, tokenizerName=args.tokenizermodel, modelClass = args.embclass, batchSize=args.batchsize, aggregations=args.embaggs, layersToKeep=args.emblayers, noContext=args.embnocontext, layerAggregations = args.emblayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc, customTableName = args.embtablename, keepMsgFeats = args.embkeepmsg, wordList = args.wordlist)
     
     if args.addldafeattable:
         if not fe: fe = FE()

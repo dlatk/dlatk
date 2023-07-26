@@ -1188,7 +1188,7 @@ class FeatureExtractor(DLAWorker):
         return featureTableName
 
 
-    def addEmbTable(self, modelName, tokenizerName, modelClass=None, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], keepMsgFeats = False, customTableName = None, valueFunc = lambda d: d):
+    def addEmbTable(self, modelName, tokenizerName, modelClass=None, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], keepMsgFeats = False, customTableName = None, valueFunc = lambda d: d, wordList = []):
         '''
             Adds transformer embeddings
             ---------------------------
@@ -1302,7 +1302,15 @@ class FeatureExtractor(DLAWorker):
             batch_size=batchSize
             cuda = False
         dlac.warn("Done.")
+        layersToKeep = [9,10]
         layersToKeep = np.array(layersToKeep, dtype='int')
+
+        ### REMOVE SAL
+        DEBUG_SAL = False
+        tokenizedWordList = {}
+        if wordList:
+            tokenizedWordList = {w: [t for t in tokenizer.tokenize(w)] for w in wordList}
+        if DEBUG_SAL: print("tokenizedWordList", tokenizedWordList)
 
         #TODO: Change the model name later
         #Need to test noc
@@ -1318,7 +1326,8 @@ class FeatureExtractor(DLAWorker):
         if keepMsgFeats:
             embTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', None, valueFunc, correlField='message_id')
         else:
-            embTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', None, valueFunc)
+            m = max([len(w) for w in wordList]) + 12
+            embTableName = self.createFeatureTable(modelNameShort, "VARCHAR({m})".format(m=m), 'DOUBLE', None, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
         usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
@@ -1346,7 +1355,9 @@ class FeatureExtractor(DLAWorker):
             message_id_seq = [] 
             #stores the sequence of message_id corresponding to the message embeddings for applying aggregation later 
             #along with the sentence 1 and sentence 2 lengths
+            allSentToks = []
             for messageRow in messageRows:
+                if DEBUG_SAL: print("messageRow", messageRow)### REMOVE SAL
                 message_id = messageRow[0]
                 try:
                     messageSents = loads(messageRow[1])
@@ -1368,10 +1379,12 @@ class FeatureExtractor(DLAWorker):
                             subMessages.extend([[word] for word in tokenizer.tokenize(s)])
                     else: #keep context; one submessage; subMessages: [[Msg1, Msg2...]]
                         subMessages=[messageSents]
-
+                    messageSentToks = []
                     for sents in subMessages: #only matters for noContext)
                         #TODO: preprocess to remove newlines
                         sentsTok = [tokenizer.tokenize(s) for s in sents]
+                        messageSentToks.append(sentsTok)
+
                         #print(sentsTok)#debug
                         #check for overlength:
                         i = 0
@@ -1399,6 +1412,7 @@ class FeatureExtractor(DLAWorker):
                             segIds = encoded['token_type_ids'] if 'token_type_ids' in encoded else None
 
                             input_ids.append(torch.tensor(indexedToks, dtype=torch.long))
+                            if DEBUG_SAL: print("\t", "input_ids", [len(iiii) for iiii in input_ids], input_ids) ### REMOVE SAL
                             if 'token_type_ids' in encoded:
                                 token_type_ids.append(torch.tensor(segIds, dtype=torch.long))
                             attention_mask.append(torch.tensor([1]*len(indexedToks), dtype=torch.long))
@@ -1408,24 +1422,32 @@ class FeatureExtractor(DLAWorker):
                                 message_id_seq.append([message_id, len(thisPair[0]), len(thisPair[1])]) 
                             else:
                                 message_id_seq.append([message_id, len(thisPair[0]), 0]) 
-                
+                    
+                    allSentToks.append(messageSentToks[0])
                 if msgs % int(dlac.PROGRESS_AFTER_ROWS/5) == 0: #progress update
                     dlac.warn("Messages Read: %.2f k" % (msgs/1000.0))
                 mids.add(message_id)
                 midList.append(message_id)
-            
+
             #Number of Batches
             num_batches = int(np.ceil(len(input_ids)/batch_size))
             encSelectLayers = []
             #print ('len(input_ids): ',len(input_ids))
             #print ('Num Batches:', num_batches)
             #TODO: Check if len(messageSents) = 0, skip this and print warning
+            if DEBUG_SAL: 
+                print("num_batchesnum_batches", num_batches)### REMOVE SAL
+                print("layersToKeeplayersToKeep", layersToKeep)### REMOVE SAL
             for i in range(num_batches):
                 #Padding for batch input
                 input_ids_padded = pad_sequence(input_ids[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=pad_token_id)
                 if len(token_type_ids)>0:
                     token_type_ids_padded = pad_sequence(token_type_ids[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=0)
                 attention_mask_padded = pad_sequence(attention_mask[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=0)
+
+                if DEBUG_SAL: 
+                    print("\t", "input_ids_padded", input_ids_padded.shape, input_ids_padded)### REMOVE SAL
+                    print("\t", "attention_mask_padded", attention_mask_padded.shape, attention_mask_padded)### REMOVE SAL
 
                 if cuda:
                     input_ids_padded = input_ids_padded.to('cuda') 
@@ -1455,6 +1477,7 @@ class FeatureExtractor(DLAWorker):
                     if len(token_type_ids)>0: del token_type_ids_padded
                     
                 encSelectLayers.append(np.transpose(np.array(encSelectLayers_temp),(1,2,3,0)))
+                if DEBUG_SAL: print("encSelectLayers", [iii.shape for iii in encSelectLayers])### REMOVE SAL
 
             i = 0
             j = 0
@@ -1501,63 +1524,97 @@ class FeatureExtractor(DLAWorker):
                     i+=1
                     j+=1
                     msg_rep.append([msg_rep_temp])
+            if DEBUG_SAL: 
+                print("msg_rep", len(msg_rep), len(msg_rep[0]))### REMOVE SAL
+                try:
+                    print("msg_rep", len(msg_rep[0][0]), len(msg_rep[0][1]), msg_rep[0][1].__class__)### REMOVE SAL
+                    print("msg_rep", msg_rep[0][0][1].shape, msg_rep[0][0][1].__class__)### REMOVE SAL
+                except:
+                    pass
+                print("\t", "sentsTok", [len(sss) for sss in sentsTok], sentsTok) ### REMOVE SAL
+                print("\t", "allSentToks", allSentToks)
+
+            def subfinder(mylist, pattern):
+                matches = []
+                for i in range(len(mylist)):
+                    if mylist[i] == pattern[0] and mylist[i:i+len(pattern)] == pattern:
+                        r = [ii+1 for ii in range(i, i+len(pattern))]
+                        matches.append(r)
+                return matches
 
             #Layer aggregation followed by word aggregation
-            user_rep = [] #(num msgs, hidden_dim, lagg)
-            for i in range(len(msg_rep)):#Iterating through messages
-                sent_rep = []
-                for j in range(len(msg_rep[i])): #Iterate through the submessages to apply layer aggregation. 
-                    sub_msg = msg_rep[i][j]
-                    sub_msg_lagg = []
-                    for lagg in layerAggregations:
-                        if lagg == 'concatenate':
-                            sub_msg_lagg.append(sub_msg) #(seq len, hidden dim, num layers)
-                        else:
-                            sub_msg_lagg.append(eval("np."+lagg+"(sub_msg, axis=-1)").reshape(sub_msg.shape[0], sub_msg.shape[1], 1) )#(seq len, hidden dim, 1)
-                        #Shape: (seq len, hidden dim, (num_layers*(concatenate==True)+(sum(other layer aggregations))))
-                        #Example: lagg = [mean, min, concatenate], layers = [8,9]; Shape: (seq len, hidden dim, 2 + 1 + 1)
-                        sub_msg_lagg_ = np.concatenate(sub_msg_lagg, axis=-1) 
-                    #Getting the mean of all tokens representation
-                    #TODO: add word agg list and do eval
-                    sub_msg_lagg_wagg = np.mean(sub_msg_lagg_, axis=0) #Shape: (hidden dim, lagg)
-                    #ReShaping: (1, hidden dim, lagg)
-                    sub_msg_lagg_wagg = sub_msg_lagg_wagg.reshape(1, sub_msg_lagg_wagg.shape[0], sub_msg_lagg_wagg.shape[1]) 
-                    #Sentence representations
-                    sent_rep.append(sub_msg_lagg_wagg)
-                #Accumulate all the sentence representation of a user
-                user_rep.append(np.mean(np.concatenate(sent_rep, axis=0), axis=0)) 
+            for w, token_list in tokenizedWordList.items():
+                if DEBUG_SAL: print("WWWORD", w, token_list)### REMOVE SAL
+                user_rep = [] #(num msgs, hidden_dim, lagg)
+                for i in range(len(msg_rep)):#Iterating through messages
+                    if DEBUG_SAL: print("\ti", i)
+                    sent_rep = []
+                    for j in range(len(msg_rep[i])): #Iterate through the submessages to apply layer aggregation. 
+                        
+                        word_indices = subfinder(allSentToks[i][j], token_list)
+                        if DEBUG_SAL: print("\tj", j, word_indices) ### REMOVE SAL
+                        if word_indices == []:
+                            if DEBUG_SAL: print("\tNOT FOUND") ### REMOVE SAL
+                            continue
+                        sub_msg = msg_rep[i][j]
+                        sub_msg_lagg = []
+                        for lagg in layerAggregations:
+                            if lagg == 'concatenate':
+                                sub_msg_lagg.append(sub_msg) #(seq len, hidden dim, num layers)
+                            else:
+                                sub_msg_lagg.append(eval("np."+lagg+"(sub_msg, axis=-1)").reshape(sub_msg.shape[0], sub_msg.shape[1], 1) )#(seq len, hidden dim, 1)
+                            #Shape: (seq len, hidden dim, (num_layers*(concatenate==True)+(sum(other layer aggregations))))
+                            #Example: lagg = [mean, min, concatenate], layers = [8,9]; Shape: (seq len, hidden dim, 2 + 1 + 1)
+                            if DEBUG_SAL: print("sub_msg_lagg_", np.concatenate(sub_msg_lagg, axis=-1).shape) ### REMOVE SAL
+                            if len(word_indices) > 1:
+                                sub_msg_lagg_ = np.mean([np.concatenate(sub_msg_lagg, axis=-1)[wl, :, :] for wl in word_indices], axis=0)
+                            else:
+                                sub_msg_lagg_ = np.concatenate(sub_msg_lagg, axis=-1)[word_indices[0], :, :]
+                            if DEBUG_SAL: print("sub_msg_lagg_", sub_msg_lagg_.shape) ### REMOVE SAL
 
-            user_rep = np.array(user_rep)
-            if user_rep.shape[0] == 0:
-                continue
-            #Flatten the features [layer aggregations] to a single dimension.
-            user_rep = user_rep.reshape(user_rep.shape[0], -1)
-            if len(user_rep)>0:
-                embFeats = dict()
+                        #Getting the mean of all tokens representation
+                        #TODO: add word agg list and do eval
+                        sub_msg_lagg_wagg = np.mean(sub_msg_lagg_, axis=0) #Shape: (hidden dim, lagg)
+                        if DEBUG_SAL: print("sub_msg_lagg_wagg", sub_msg_lagg_wagg.shape) ### REMOVE SAL
+                        #ReShaping: (1, hidden dim, lagg)
+                        sub_msg_lagg_wagg = sub_msg_lagg_wagg.reshape(1, sub_msg_lagg_wagg.shape[0], sub_msg_lagg_wagg.shape[1]) 
+                        #Sentence representations
+                        sent_rep.append(sub_msg_lagg_wagg)
+                    if sent_rep:
+                        #Accumulate all the sentence representation of a user
+                        user_rep.append(np.mean(np.concatenate(sent_rep, axis=0), axis=0)) 
 
-                if keepMsgFeats: #just store message embeddings
-                    embRows = []
-                    for mid, msg in zip(midList, user_rep):
-                        embRows.extend([(str(mid), str(k), v, valueFunc(v)) for (k, v) in enumerate(msg)])
-                    wsql = """INSERT INTO """+embTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
-                    mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, embRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                user_rep = np.array(user_rep)
+                if user_rep.shape[0] == 0:
+                    continue
+                #Flatten the features [layer aggregations] to a single dimension.
+                user_rep = user_rep.reshape(user_rep.shape[0], -1)
+                if len(user_rep)>0:
+                    embFeats = dict()
+
+                    if keepMsgFeats: #just store message embeddings
+                        embRows = []
+                        for mid, msg in zip(midList, user_rep):
+                            embRows.extend([(str(mid), str(k), v, valueFunc(v)) for (k, v) in enumerate(msg)])
+                        wsql = """INSERT INTO """+embTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
+                        mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, embRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                        
+                    else:#Applying message aggregations
+                        for ag in aggregations:
+                            thisAg = eval("np."+ag+"(user_rep, axis=0)")
+                            embFeats.update([(str(k)+ag[:2], v) for (k, v) in enumerate(thisAg)])
                     
-                else:#Applying message aggregations
-                    for ag in aggregations:
-                        thisAg = eval("np."+ag+"(user_rep, axis=0)")
-                        embFeats.update([(str(k)+ag[:2], v) for (k, v) in enumerate(thisAg)])
-                
-                        #wsql = """INSERT INTO """+embTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
-                        insert_idx_start = 0
-                        insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
-                        query = self.qb.create_insert_query(embTableName).set_values([("group_id",str(cf_id)),("feat",""),("value",""),("group_norm","")])
-                        embRows = [(k, float(v), valueFunc(float(v))) for k, v in embFeats.items()] #adds group_norm and applies freq filter
-                        while insert_idx_start < len(embRows):
-                            insert_rows = embRows[insert_idx_start:min(insert_idx_end, len(embRows))]
-                            query.execute_query(insert_rows)
-                            insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
-                            insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
-                        #self.data_engine.execute_write_many(wsql, embRows)
+                            #wsql = """INSERT INTO """+embTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                            insert_idx_start = 0
+                            insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
+                            query = self.qb.create_insert_query(embTableName).set_values([("group_id",str(cf_id)),("feat",""),("value",""),("group_norm","")])
+                            embRows = [(w+"__"+k, float(v), valueFunc(float(v))) for k, v in embFeats.items()] #adds group_norm and applies freq filter
+                            while insert_idx_start < len(embRows):
+                                insert_rows = embRows[insert_idx_start:min(insert_idx_end, len(embRows))]
+                                query.execute_query(insert_rows)
+                                insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
+                                insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
+                            #self.data_engine.execute_write_many(wsql, embRows)
             
         dlac.warn("Done Reading / Inserting.")
         dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")

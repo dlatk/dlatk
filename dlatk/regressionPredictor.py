@@ -20,7 +20,10 @@ import operator
 from pprint import pprint
 import numbers
 
-from collections.abc import Iterable
+try:
+    from collections import Iterable
+except ImportError:
+    from collections.abc import Iterable
 from collections import defaultdict
 
 #scikit-learn imports

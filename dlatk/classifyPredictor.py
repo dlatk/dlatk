@@ -17,7 +17,10 @@ import collections
 
 import pandas as pd
 
-from collections.abc import Iterable
+try:
+    from collections import Iterable
+except ImportError:
+    from collections.abc import Iterable
 from collections import defaultdict, Counter
 
 # scikit-learn imports

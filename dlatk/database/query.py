@@ -273,10 +273,15 @@ class InsertQuery(Query):
 	def __init__(self, table, data_engine):
 		super().__init__()
 		self.sql = None
+		self.selectQuery = None
 		self.values = None
 		self.group_by_fields = None
 		self.table = table
 		self.data_engine = data_engine
+
+	def values_from_select(self, selectQuery):
+		self.selectQuery = selectQuery
+		return self
 
 	def set_values(self, values):
 		"""
@@ -300,6 +305,10 @@ class InsertQuery(Query):
 		------------
 		str: a built INSERT query
 		"""
+		if self.selectQuery is not None:
+			insertQuery = "INSERT INTO {} {}".format(self.table, self.selectQuery.toString())
+			return insertQuery
+
 		if self.data_engine.db_type == "mysql":
 			fields = ""
 			vals = ""
@@ -331,7 +340,7 @@ class InsertQuery(Query):
 			insertQuery = """INSERT INTO """+ self.table +""" ("""+ fields +""") values ("""+ vals + """)"""
 			return insertQuery
 
-	def execute_query(self, insert_rows):
+	def execute_query(self, insert_rows=None):
 		"""
 		Executes INSERT query
 
@@ -341,8 +350,10 @@ class InsertQuery(Query):
 		"""
 		if self.sql == None:
 			self.sql = self.build_query()
-		self.data_engine.execute_write_many(self.sql, insert_rows)
-
+		if self.selectQuery is not None:
+			self.data_engine.execute(self.sql)
+		else:
+			self.data_engine.execute_write_many(self.sql, insert_rows)
 
 
 class DropQuery(Query):

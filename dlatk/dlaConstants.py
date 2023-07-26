@@ -40,7 +40,7 @@ MAX_TO_DISABLE_KEYS = 100000 #number of groups * n must be less than this to dis
 MAX_SQL_PRINT_CHARS = 256
 
 ##Corpus Settings:
-DEF_CORPDB = 'dla_tutorial'
+DEF_CORPDB = None
 DEF_CORPTABLE = 'msgs'
 DEF_CORREL_FIELD = 'user_id'
 DEF_MESSAGE_FIELD = 'message'

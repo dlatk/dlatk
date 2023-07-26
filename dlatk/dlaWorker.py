@@ -1,3 +1,4 @@
+from os import path, makedirs
 import sys
 import time
 import csv
@@ -79,9 +80,14 @@ class DLAWorker(object):
         if (".csv" in self.corptable) or (self.db_type == "sqlite"):
 
             self.db_type = "sqlite"
+            default_dir = path.join(path.expanduser('~'), "sqlite_data")
+            if not path.exists(default_dir):
+                makedirs(default_dir)
 
             if self.corpdb is None:
-                self.corpdb = self.corptable + ".db"
+                self.corpdb = path.join(default_dir, self.corptable)
+            else:
+                self.corpdb = self.corpdb if len(self.corpdb.split('/')) > 1 else path.join(default_dir, self.corpdb)
    
             self.data_engine = DataEngine(self.corpdb, self.mysql_config_file, self.encoding, self.use_unicode, self.db_type)
             (self.dbConn, self.dbCursor, self.dictCursor) = self.data_engine.connect()
@@ -89,9 +95,12 @@ class DLAWorker(object):
             if not self.data_engine.tableExists(self.corptable):
 
                 if ".csv" in self.corptable:
+
                     message_table = self.corptable.split('/')[-1].split('.')[0]
-                    column_description = "(message_id INT(10), user_id VARCHAR(10), date DATE, created_time DATETIME, message TEXT);"
-                    self.data_engine.dataEngine.csvToTable(self.corptable, message_table, column_description, 1)
+                    if not self.data_engine.tableExists(message_table):
+                        #FIXME - automatically infer this.
+                        column_description = "(message_id INT(10), user_id VARCHAR(10), date DATE, created_time DATETIME, message TEXT);"
+                        self.data_engine.dataEngine.csvToTable(self.corptable, message_table, column_description, 1)
                     self.corptable = message_table
 
                 else:
@@ -385,14 +394,11 @@ class DLAWorker(object):
             A list of tables names
         """
         if feat_table:
-            sql = """SHOW TABLES FROM %s LIKE 'feat$%%$%s$%s$%%' """ % (self.corpdb, self.corptable, self.correl_field)
-        else:
-            sql = """SHOW TABLES FROM %s where Tables_in_%s NOT LIKE 'feat%%' """ % (self.corpdb, self.corpdb)
-            if isinstance(like, str): sql += """ AND Tables_in_%s like '%s'""" % (self.corpdb, like)
+            like = "feat$%${}${}%".format(self.corptable, self.correl_field)
+            return self.data_engine.getTables(like, feat_table)
+            
+        return self.data_engine.getTables(like)
         
-        #FIXME
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
-
     def describeTable(self, table_name):
         """
  
@@ -406,9 +412,7 @@ class DLAWorker(object):
         Description of table (list of lists)
             
         """
-        sql = """DESCRIBE %s""" % (table_name)
-        #FIXME
-        return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+        return self.data_engine.describeTable(table_name)
 
     def viewTable(self, table_name):
         """
@@ -423,12 +427,7 @@ class DLAWorker(object):
         First 5 rows of table (list of lists)
             
         """
-        col_sql = """select column_name from information_schema.columns 
-            where table_schema = '%s' and table_name='%s'""" % (self.corpdb, table_name)
-        col_names = [col[0] for col in mm.executeGetList(self.corpdb, self.dbCursor, col_sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)]
-        sql = """SELECT * FROM %s LIMIT 10""" % (table_name)
-        #FIXME
-        return [col_names] + list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))
+        return self.data_engine.viewTable(table_name)
 
 
     def createRandomSample(self, percentage, random_seed = dlac.DEFAULT_RANDOM_SEED, where = ''):
@@ -451,7 +450,7 @@ class DLAWorker(object):
         
         fields = ["count(*)"]
         selectQuery = self.qb.create_select_query(self.corptable).set_fields(fields)
-        n_old_rows = selectQuery.execute_query()
+        n_old_rows = selectQuery.execute_query()[0][0]
         n_new_rows = round(percentage * n_old_rows)
 
         dropQuery = self.qb.create_drop_query(new_table)
@@ -461,12 +460,13 @@ class DLAWorker(object):
         createQuery.execute_query()
         
         self.data_engine.disable_table_keys(new_table)
-        
-        insert_sql = """INSERT INTO %s SELECT * FROM %s where RAND(%s) < %s""" % (new_table, self.corptable, random_seed, percentage*1.1)
-        if where: insert_sql += " AND %s" % (where)
-        insert_sql += " LIMIT %s" % (n_new_rows)
-        #FIXME
-        mm.execute(self.corpdb, self.dbCursor, insert_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+
+        where_condition = "WHERE {} < {}".format(self.data_engine.getRandomFunc(random_seed), percentage * 1.1)
+        if where: where_condition += " AND {}".format(where)
+        where_condition += " LIMIT {}".format(n_new_rows)
+        selectQuery = self.qb.create_select_query(self.corptable).set_fields(['*']).where(where_condition)
+        insertQuery = self.qb.create_insert_query(new_table).values_from_select(selectQuery)
+        insertQuery.execute_query()
         
         self.data_engine.enable_table_keys(new_table)
 
@@ -488,19 +488,18 @@ class DLAWorker(object):
         string
             new table name
         """
-        #drop_sql = """DROP TABLE IF EXISTS %s""" % (new_table)
-        #mm.execute(self.corpdb, self.dbCursor, drop_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode)
+
+        dropQuery = self.qb.create_drop_query(new_table)
+        dropQuery.execute_query()
 
         createQuery = self.qb.create_createTable_query(new_table).like(old_table)
         createQuery.execute_query()
         
         self.data_engine.disable_table_keys(new_table)
         
-        insertQuery = self.qb.create_insert_query(new_table) 
-        insert_sql = """INSERT INTO %s SELECT * FROM %s""" % (new_table, old_table)
-        if where: insert_sql += " WHERE %s" % (where)
-        #FIXME
-        mm.execute(self.corpdb, self.dbCursor, insert_sql, warnQuery=True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+        selectQuery = self.qb.create_select_query(old_table).set_fields(['*']).where(where) 
+        insertQuery = self.qb.create_insert_query(new_table).values_from_select(selectQuery)
+        insertQuery.execute_query()
         
         self.data_engine.enable_table_keys(new_table)
 

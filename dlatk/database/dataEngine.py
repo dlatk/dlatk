@@ -192,6 +192,70 @@ class DataEngine(object):
 		True or False
 		"""
 		return self.dataEngine.indexExists(table_name, column_name)
+	
+	def getTables(self, like, feat_table=False):
+		"""
+		Returns a list of available tables.
+ 
+		Parameters
+		----------
+		like: boolean
+		Filter tables with sql-style call.
+
+		feat_table: str, optional
+		Indicator for listing feature tables
+
+		Returns
+		-------
+		list
+		"""
+		return self.dataEngine.getTables(like, feat_table)
+
+	def describeTable(self, table_name):
+		"""
+ 		Describe the column names and column types of a table.
+
+		Parameters
+		----------
+		table_name: str
+		Name of table to describe
+
+		Returns
+		-------
+		list of lists 
+		"""
+		return self.dataEngine.describeTable(table_name)	
+
+	def getRandomFunc(self, random_seed):
+		"""
+		Gives the right "random" function based on data engine used.
+
+		Parameters
+		----------
+		random_seed: float
+		Seed value used to produce the random number
+
+		Returns
+		-------
+		str
+    
+		"""
+		return self.dataEngine.getRandomFunc(random_seed)
+
+	def viewTable(self, table_name):
+		"""
+		Returns the first 5 rows of table (to inspect).
+
+		Parameters
+		----------
+		table_name : :obj:`str`
+		Name of table to describe
+
+		Returns
+		-------
+		list of lists
+		"""
+		return self.dataEngine.viewTable(table_name)
 
 	def getTableColumnNameTypes(self, table_name):
 		"""
@@ -232,6 +296,47 @@ class MySqlDataEngine(DataEngine):
 		Database connection objects
 		"""
 		return self.dbConn, self.dbCursor, self.dictCursor
+
+	def getTables(self, like, feat_table):
+		"""
+		Returns a list of available tables.
+ 
+		Parameters
+		----------
+		like: boolean
+		Filter tables with sql-style call.
+
+		feat_table: str, optional
+		Indicator for listing feature tables
+
+		Returns
+		-------
+		list
+		"""
+		if feat_table:
+			sql = "SHOW TABLES FROM {} LIKE {}".format(self.corpdb, like)
+		else:
+			sql = "SHOW TABLES FROM {} where Tables_in_{} NOT LIKE 'feat%%' ".format(self.corpdb, self.corpdb)
+			if isinstance(like, str): sql += " AND Tables_in_{} like '{}'".format(self.corpdb, like)
+
+		return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+
+	def describeTable(self, table_name):
+		"""
+ 		Describe the column names and column types of a table.
+
+		Parameters
+		----------
+		table_name: str
+		Name of table to describe
+     
+		Returns
+		-------
+		list of lists 
+		"""
+
+		sql = "DESCRIBE %s""" % (table_name)
+		return mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
 	def execute_get_list(self, usql):
 		"""
@@ -393,6 +498,40 @@ class MySqlDataEngine(DataEngine):
 		"""
 		return mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, table_name, mysql_config_file=self.mysql_config_file)
 
+	def viewTable(self, table_name):
+		"""
+		Returns the first 5 rows of table (to inspect).
+
+		Parameters
+		----------
+		table_name : :obj:`str`
+		Name of table to describe
+
+		Returns
+		-------
+		list of lists
+		"""
+		col_sql = "SELECT column_name FROM information_schema.columns WHERE table_schema = '{}' and table_name='{}'".format(self.corpdb, table_name)
+		col_names = [col[0] for col in mm.executeGetList(self.corpdb, self.dbCursor, col_sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)]
+
+		sql = """SELECT * FROM %s LIMIT 10""" % (table_name)
+		return [col_names] + list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))
+
+	def getRandomFunc(self, random_seed):
+		"""
+		Gives the right "random" function based on data engine used.
+
+		Parameters
+		----------
+		random_seed: float
+		Seed value used to produce the random number
+
+		Returns
+		-------
+		str 
+		"""
+		return "RAND({})".format(random_seed)
+
 class SqliteDataEngine(DataEngine):
 	def __init__(self, corpdb):
 		super().__init__(corpdb)
@@ -405,6 +544,47 @@ class SqliteDataEngine(DataEngine):
 		Database connection objects
 		"""
 		return self.dbConn, self.dbCursor, None
+
+	def getTables(self, like, feat_table):
+		"""
+		Returns a list of available tables.
+ 
+		Parameters
+		----------
+		like: boolean
+		Filter tables with sql-style call.
+
+		feat_table: str, optional
+		Indicator for listing feature tables
+ 
+		Returns
+		-------
+		list
+		"""
+		if feat_table:
+			sql = "SELECT name FROM sqlite_schema WHERE (type='table') AND (name LIKE '{}')".format(like)
+		else:
+			sql = "SELECT name FROM sqlite_schema WHERE (type='table') AND (name NOT LIKE 'feat%%') "
+			if isinstance(like, str): sql += " AND (name LIKE '{}')".format(like)
+
+		return sm.executeGetList(self.corpdb, self.dbCursor, sql)
+
+	def describeTable(self, table_name):
+		"""
+ 		Describe the column names and column types of a table.
+
+		Parameters
+		----------
+		table_name: str
+		Name of table to describe
+ 
+		Returns
+		-------
+		list of lists 
+		"""
+
+		sql = "PRAGMA table_info(%s);""" % (table_name)
+		return mm.executeGetList(self.corpdb, self.dbCursor, sql)
 
 	def enable_table_keys(self, table):
 		"""
@@ -538,6 +718,42 @@ class SqliteDataEngine(DataEngine):
 		for row in data:
 			dictionary[row[1]] = row[2]
 		return dictionary	
+
+	def viewTable(self, table_name):
+		"""
+		Returns the first 5 rows of table (to inspect).
+
+		Parameters
+		----------
+		table_name : :obj:`str`
+		Name of table to describe
+
+		Returns
+		-------
+		list of lists
+		"""
+		col_sql = "PRAGMA table_info(%s);" % (table_name)
+		col_names = [col[1] for col in sm.executeGetList(self.corpdb, self.dbCursor, col_sql)]
+
+		sql = "SELECT * FROM %s LIMIT 10" % (table_name)
+		return [col_names] + list(sm.executeGetList(self.corpdb, self.dbCursor, sql))
+
+	def getRandomFunc(self, random_seed):
+		"""
+		Gives the right "random" function based on data engine used.
+
+		Parameters
+		----------
+		random_seed: float
+		Seed value used to produce the random number
+
+		Returns
+		-------
+		str
+
+		"""
+		#RANDOM() function in SQLiye doesn't consume a seed value.
+		return "RANDOM()"
 
 	def csvToTable(self, csv_file, table_name, column_description, ignoreLines=1):
 		"""

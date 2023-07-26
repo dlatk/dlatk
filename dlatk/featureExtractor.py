@@ -1326,7 +1326,10 @@ class FeatureExtractor(DLAWorker):
         if keepMsgFeats:
             embTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', None, valueFunc, correlField='message_id')
         else:
-            m = max([len(w) for w in wordList]) + 12
+            if wordList:
+                m = max([len(w) for w in wordList]) + 14
+            else:
+                m = 12
             embTableName = self.createFeatureTable(modelNameShort, "VARCHAR({m})".format(m=m), 'DOUBLE', None, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:

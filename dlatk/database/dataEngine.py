@@ -3,6 +3,7 @@ from ..sqlitemethods import sqliteMethods as sm
 from .. import dlaConstants as dlac
 import sys
 import csv
+import ast
 
 class DataEngine(object):
 	"""
@@ -754,8 +755,57 @@ class SqliteDataEngine(DataEngine):
 		"""
 		#RANDOM() function in SQLiye doesn't consume a seed value.
 		return "RANDOM()"
+	
+	def get_column_description(self, csv_file):
+		"""
+		Infers the column datatypes from a CSV and returns the SQL column description.
+		
+		Parameters
+		------------
+		csv_file: str
+		"""
+		sample_size = 100
+		max_length = 100
 
-	def csvToTable(self, csv_file, table_name, column_description, ignoreLines=1):
+		def _eval(x):
+			try:
+				return ast.literal_eval(x)
+			except:
+				return x
+			
+		f = open(csv_file, 'r')
+		header = next(csv.reader(f, delimiter=','))
+
+		num_columns = len(header)
+		column_description = []	
+		for cid in range(num_columns):
+
+			reader = csv.reader(f, delimiter=',')
+			length = 0
+			for index, row in enumerate(reader):
+
+				if index == sample_size:
+					break
+
+				column_value = _eval(row[cid])
+				if (not length) and (isinstance(column_value, int)):
+					column_type = "INT"
+				elif (not length) and (isinstance(column_value, float)):
+					column_type = "DOUBLE"
+				else:
+					length = max(len(column_value), length)
+					if length <= max_length:
+						column_type = "VARCHAR({})".format(length)
+					else:
+						column_type = "TEXT"
+						break
+
+			column_description.append("{} {}".format(header[cid], column_type))
+
+		column_description = '(' + ','.join(column_description) + ");"
+		return column_description
+
+	def csvToTable(self, csv_file, table_name):
 		"""
 		Loads a CSV file as a SQLite table to the database
 		
@@ -764,15 +814,9 @@ class SqliteDataEngine(DataEngine):
 		csv_file: str
 
 		table_name: str
-		
-		column_description: str
 		"""
-
-		if self.tableExists(table_name):
-			#FIXME - raise an exception instead
-			print("A table by that name already exists in the database")
-			sys.exit(1)
-
+		
+		column_description = self.get_column_description(csv_file)
 		createSQL = "CREATE TABLE {} {}".format(table_name, column_description)
 		self.execute(createSQL)
 
@@ -785,9 +829,7 @@ class SqliteDataEngine(DataEngine):
 
 		with open(csv_file, 'r') as f:
 			reader = csv.reader(f, delimiter=',')
-			if ignoreLines > 0:
-				for i in range(0, ignoreLines): 
-					next(reader)
+			header = next(reader)
 			data = list(reader)
 			chunk_data = chunks(data) 
 			num_columns = None

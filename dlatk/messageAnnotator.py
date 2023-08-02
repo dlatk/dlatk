@@ -337,7 +337,7 @@ class MessageAnnotator(DLAWorker):
             createQuery.execute_query()
             
             self.data_engine.standardizeTable(
-                new_table, 
+                table, 
                 collate=dlac.DEF_COLLATIONS[self.encoding.lower()], 
                 engine=dlac.DEF_MYSQL_ENGINE, 
                 charset=self.encoding, 

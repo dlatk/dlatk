@@ -86,27 +86,22 @@ class DLAWorker(object):
                 makedirs(default_dir)
 
             if self.corpdb is None:
-                self.corpdb = path.join(default_dir, self.corptable)
-            else:
-                self.corpdb = self.corpdb if len(self.corpdb.split('/')) > 1 else path.join(default_dir, self.corpdb)
-   
+                self.corpdb = self.corptable.split('/')[-1].split('.')[0]
+            self.corpdb = path.join(default_dir, self.corpdb)
+            
+            print("Connecting to SQLite database: ", self.corpdb)   
             self.data_engine = DataEngine(self.corpdb, self.mysql_config_file, self.encoding, self.use_unicode, self.db_type)
             (self.dbConn, self.dbCursor, self.dictCursor) = self.data_engine.connect()
 
-            if not self.data_engine.tableExists(self.corptable):
-
+            message_table = self.corptable.split('/')[-1].split('.')[0]
+            if not self.data_engine.tableExists(message_table):
                 if ".csv" in self.corptable:
-
-                    message_table = self.corptable.split('/')[-1].split('.')[0]
-                    if not self.data_engine.tableExists(message_table):
-                        #FIXME - automatically infer this.
-                        column_description = "(message_id INT(10), user_id VARCHAR(10), date DATE, created_time DATETIME, message TEXT);"
-                        self.data_engine.dataEngine.csvToTable(self.corptable, message_table, column_description, 1)
-                    self.corptable = message_table
-
+                    self.data_engine.dataEngine.csvToTable(self.corptable, message_table)
                 else:
                     print("Message table missing")
                     sys.exit(1)
+            
+            self.corptable = message_table
 
         elif self.db_type == "mysql":
 

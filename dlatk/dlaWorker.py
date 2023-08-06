@@ -14,14 +14,19 @@ from .mysqlmethods import mysqlMethods as mm
 class DLAWorker(object):
     """Generic class for functions working with features
 
-    Parameters
-    ----------
+    Key Parameters
+    --------------
     corpdb : str
         Corpus Database Name.
     corptable : str
-        Corpus Table.
+        Corpus Table (AKA message_table).
     correl_field : str
         Correlation Field (AKA Group Field): The field which features are aggregated over.
+
+    Advanced Parameters
+    -------------------
+    data_engine: object (updated outside constructor)
+        the engine for working with data. Currently supports: mysql, sqlite
     mysql_config_file : str
         path to MySQL config file, for example ~/.my.cnf
     message_field : str

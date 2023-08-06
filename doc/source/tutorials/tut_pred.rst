@@ -15,10 +15,10 @@ Next, we will try predicting age and gender with the above features. Since age i
 .. code-block:: bash
 
 	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
-	-f 'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16' 'feat$1gram$msgs_xxx$user_id$16to16' \ 
+	-f 'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra' 'feat$1gram$msgs_xxx$user_id' \ 
 	--outcome_table blog_outcomes  --group_freq_thresh 500 \ 
 	--outcomes age --output_name xxx_age_output  \ 
-	--combo_test_reg --model ridgecv --folds 10 
+	--nfold_test_regression --model ridgecv --folds 10 
 
 Brief descriptions of the flags:
 
@@ -113,10 +113,10 @@ Next, we will predict gender. Since this is a binary outcome we switch to classi
 .. code-block:: bash
 
 	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \ 
-	-f 'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$16to16' 'feat$1gram$msgs_xxx$user_id$16to16' \ 
+	-f 'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra' 'feat$1gram$msgs_xxx$user_id$16to16' \ 
 	--outcome_table blog_outcomes  --group_freq_thresh 500   \ 
 	--outcomes gender --output_name xxx_gender_output \ 
-	--combo_test_classifiers --model lr --folds 10  --prediction_csv
+	--nfold_test_classifiers --model lr --folds 10  --prediction_csv
 
 Brief descriptions of the flags:
 
@@ -231,7 +231,7 @@ which gives the output
 .. code-block:: mysql
 
 	+----------------------------------+--------+-------------------+-----------+--------------+
-	| group_id                         | feat   | group_norm        | age | gender |
+	| group_id                         | feat   | group_norm        | age       | gender   |
 	+----------------------------------+--------+-------------------+-----------+--------------+
 	| 33522bc535275457a87e20b3d0be71f2 | GENDER |  3.23204271891755 |        26 |            1 |
 	| 33522bc535275457a87e20b3d0be71f2 | AGE    |  26.8702764242703 |        26 |            1 |

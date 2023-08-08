@@ -89,7 +89,7 @@ class DLAWorker(object):
                 self.corpdb = self.corptable.split('/')[-1].split('.')[0]
             self.corpdb = path.join(default_dir, self.corpdb)
             
-            print("Connecting to SQLite database: ", self.corpdb)   
+            print("Connecting to SQLite database: {}.db".format(self.corpdb))
             self.data_engine = DataEngine(self.corpdb, self.mysql_config_file, self.encoding, self.use_unicode, self.db_type)
             (self.dbConn, self.dbCursor, self.dictCursor) = self.data_engine.connect()
 

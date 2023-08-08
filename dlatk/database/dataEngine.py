@@ -1,6 +1,8 @@
 from ..mysqlmethods import mysqlMethods as mm
 from ..sqlitemethods import sqliteMethods as sm
 from .. import dlaConstants as dlac
+from subprocess import check_output
+import random
 import sys
 import csv
 import ast
@@ -764,25 +766,34 @@ class SqliteDataEngine(DataEngine):
 		------------
 		csv_file: str
 		"""
-		sample_size = 100
-		max_length = 100
 
 		def _eval(x):
 			try:
 				return ast.literal_eval(x)
 			except:
 				return x
-			
-		f = open(csv_file, 'r')
-		header = next(csv.reader(f, delimiter=','))
 
+		#read a random sample of size 100 from the CSV.	
+		sample_size = 100
+		num_lines = int(check_output(["wc", "-l", csv_file]).split()[0])
+		row_idx = sorted(random.sample(range(1, num_lines), sample_size))
+		with open(csv_file, 'r') as f:
+			reader = csv.reader(f, delimiter=',')
+			header = next(reader)
+			sample = []
+			for idx in range(1, row_idx[-1]+1):
+				row = next(reader)
+				if idx in row_idx:
+					sample.append(row)
+
+		#infer the column types from the sample.
+		max_length = 100
 		num_columns = len(header)
 		column_description = []	
 		for cid in range(num_columns):
 
-			reader = csv.reader(f, delimiter=',')
 			length = 0
-			for index, row in enumerate(reader):
+			for index, row in enumerate(sample):
 
 				if index == sample_size:
 					break
@@ -802,7 +813,7 @@ class SqliteDataEngine(DataEngine):
 
 			column_description.append("{} {}".format(header[cid], column_type))
 
-		column_description = '(' + ','.join(column_description) + ");"
+		column_description = '(' + ', '.join(column_description) + ");"
 		return column_description
 
 	def csvToTable(self, csv_file, table_name):

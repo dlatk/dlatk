@@ -25,8 +25,9 @@ except ImportError:
 #nltk
 try:
     import nltk.data
+    from nltk.tokenize.punkt import PunktSentenceTokenizer, PunktLanguageVars
 except ImportError:
-    print("warning: unable to import nltk.tree or nltk.corpus or nltk.data")
+    print("warning: unable to import nltk.tree or nltk.corpus or nltk.data or nltk.tokenize.punkt")
 try:
     from .lib.TweetNLP import TweetNLP
 except ImportError:
@@ -347,7 +348,7 @@ class MessageTransformer(DLAWorker):
 
         return tableName
 
-    def addSentTokenizedMessages(self, sentPerRow = False, cleanMessages = None, newlinesToPeriods=True):
+    def addSentTokenizedMessages(self, sentPerRow = False, cleanMessages = None, newlinesToPeriods=True, splitOnCommas=True):
         """Creates a sentence tokenized version of message table
 
         Returns
@@ -359,7 +360,15 @@ class MessageTransformer(DLAWorker):
             tableName = "%s_sent" % (self.corptable)
         else:
             tableName = "%s_stoks" % (self.corptable)
+
         sentDetector = nltk.data.load('tokenizers/punkt/english.pickle')
+        if splitOnCommas: ##TODO: set to false by default and move parameter to dlatkinterface (only useful after whisper transcripts)
+            class CommaLangVars(PunktLanguageVars):
+                sent_end_chars = ('.', '?', '!', ',')
+                
+            sentDetector = PunktSentenceTokenizer(lang_vars = CommaLangVars())
+            
+
 
         #Create Table:
         if sentPerRow:

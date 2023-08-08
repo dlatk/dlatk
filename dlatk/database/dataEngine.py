@@ -782,7 +782,10 @@ class SqliteDataEngine(DataEngine):
 			header = next(reader)
 			sample = []
 			for idx in range(1, row_idx[-1]+1):
-				row = next(reader)
+				try:
+					row = next(reader)
+				except StopIteration:
+					break
 				if idx in row_idx:
 					sample.append(row)
 
@@ -794,10 +797,6 @@ class SqliteDataEngine(DataEngine):
 
 			length = 0
 			for index, row in enumerate(sample):
-
-				if index == sample_size:
-					break
-
 				column_value = _eval(row[cid])
 				if (not length) and (isinstance(column_value, int)):
 					column_type = "INT"

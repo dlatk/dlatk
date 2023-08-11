@@ -1302,7 +1302,6 @@ class FeatureExtractor(DLAWorker):
             batch_size=batchSize
             cuda = False
         dlac.warn("Done.")
-        layersToKeep = [9,10]
         layersToKeep = np.array(layersToKeep, dtype='int')
 
         ### REMOVE SAL

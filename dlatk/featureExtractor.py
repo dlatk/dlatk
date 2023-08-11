@@ -1345,6 +1345,7 @@ class FeatureExtractor(DLAWorker):
         for cfRow in cfRows:
             #user_id
             cf_id = cfRow[0]
+            if DEBUG_SAL: print(cf_id) ### REMOVE SAL
             mids = set() #currently seen message ids
             midList = [] #only for keepMsgFeats
 
@@ -1386,7 +1387,7 @@ class FeatureExtractor(DLAWorker):
                     for sents in subMessages: #only matters for noContext)
                         #TODO: preprocess to remove newlines
                         sentsTok = [tokenizer.tokenize(s) for s in sents]
-                        messageSentToks.append(sentsTok)
+                        
 
                         #print(sentsTok)#debug
                         #check for overlength:
@@ -1400,6 +1401,8 @@ class FeatureExtractor(DLAWorker):
                                 sentsTok = sentsTok[:i] + newSegs + sentsTok[i+1:]
                                 i+=(len(newSegs) - 1)#skip ahead new segments
                             i+=1
+
+                        messageSentToks.append(sentsTok)
 
                         for i in range(len(sentsTok)):
                             thisPair = sentsTok[i:i+2] #Give two sequences as input
@@ -1415,7 +1418,7 @@ class FeatureExtractor(DLAWorker):
                             segIds = encoded['token_type_ids'] if 'token_type_ids' in encoded else None
 
                             input_ids.append(torch.tensor(indexedToks, dtype=torch.long))
-                            if DEBUG_SAL: print("\t", "input_ids", [len(iiii) for iiii in input_ids], input_ids) ### REMOVE SAL
+                            #if DEBUG_SAL: print("\t", "input_ids", [len(iiii) for iiii in input_ids], input_ids) ### REMOVE SAL
                             if 'token_type_ids' in encoded:
                                 token_type_ids.append(torch.tensor(segIds, dtype=torch.long))
                             attention_mask.append(torch.tensor([1]*len(indexedToks), dtype=torch.long))
@@ -1541,7 +1544,7 @@ class FeatureExtractor(DLAWorker):
                 matches = []
                 for i in range(len(mylist)):
                     if mylist[i] == pattern[0] and mylist[i:i+len(pattern)] == pattern:
-                        r = [ii+1 for ii in range(i, i+len(pattern))]
+                        r = [ii for ii in range(i, i+len(pattern))]
                         matches.append(r)
                 return matches
 
@@ -1550,17 +1553,34 @@ class FeatureExtractor(DLAWorker):
                 if DEBUG_SAL: print("WWWORD", w, token_list)### REMOVE SAL
                 user_rep = [] #(num msgs, hidden_dim, lagg)
                 for i in range(len(msg_rep)):#Iterating through messages
-                    if DEBUG_SAL: print("\ti", i)
+                    if DEBUG_SAL: ### REMOVE SAL
+                        print("\ti", i)
                     sent_rep = []
                     for j in range(len(msg_rep[i])): #Iterate through the submessages to apply layer aggregation. 
+                        if DEBUG_SAL: 
+                            print("\tj", j) ### REMOVE SAL
+                        try:
+                            word_indices = subfinder(allSentToks[i][j], token_list)
+                        except:
+                            print("\tERROR", "len(allSentToks[i])", len(allSentToks[i]))
+                            print("\tERROR", "msg_rep[i]", len(msg_rep[i]))
+                            exit(1)
+                        if DEBUG_SAL: 
+                            print("\t\tword_indices", word_indices) ### REMOVE SAL
                         
-                        word_indices = subfinder(allSentToks[i][j], token_list)
-                        if DEBUG_SAL: print("\tj", j, word_indices) ### REMOVE SAL
-                        if word_indices == []:
-                            if DEBUG_SAL: print("\tNOT FOUND") ### REMOVE SAL
-                            continue
                         sub_msg = msg_rep[i][j]
                         sub_msg_lagg = []
+
+                        if word_indices == []:
+                            sub_msg_lagg.append(sub_msg) #(seq len, hidden dim, num layers)
+                            if DEBUG_SAL: 
+                                print("\tNOT FOUND") ### REMOVE SAL
+                                print("\t\tGO", "allSentToks[i][j]", allSentToks[i][j])
+                                print("\t\tlen(allSentToks[i][j])", len(allSentToks[i][j]))
+                                print("\t\tsub_msg_lagg_", np.concatenate(sub_msg_lagg, axis=-1).shape) ### REMOVE SAL
+                            
+                            continue
+                        
                         for lagg in layerAggregations:
                             if lagg == 'concatenate':
                                 sub_msg_lagg.append(sub_msg) #(seq len, hidden dim, num layers)
@@ -1568,12 +1588,18 @@ class FeatureExtractor(DLAWorker):
                                 sub_msg_lagg.append(eval("np."+lagg+"(sub_msg, axis=-1)").reshape(sub_msg.shape[0], sub_msg.shape[1], 1) )#(seq len, hidden dim, 1)
                             #Shape: (seq len, hidden dim, (num_layers*(concatenate==True)+(sum(other layer aggregations))))
                             #Example: lagg = [mean, min, concatenate], layers = [8,9]; Shape: (seq len, hidden dim, 2 + 1 + 1)
-                            if DEBUG_SAL: print("sub_msg_lagg_", np.concatenate(sub_msg_lagg, axis=-1).shape) ### REMOVE SAL
+                            if DEBUG_SAL: print("Asub_msg_lagg_", np.concatenate(sub_msg_lagg, axis=-1).shape) ### REMOVE SAL
                             if len(word_indices) > 1:
                                 sub_msg_lagg_ = np.mean([np.concatenate(sub_msg_lagg, axis=-1)[wl, :, :] for wl in word_indices], axis=0)
                             else:
-                                sub_msg_lagg_ = np.concatenate(sub_msg_lagg, axis=-1)[word_indices[0], :, :]
-                            if DEBUG_SAL: print("sub_msg_lagg_", sub_msg_lagg_.shape) ### REMOVE SAL
+                                try:
+                                    sub_msg_lagg_ = np.concatenate(sub_msg_lagg, axis=-1)[word_indices[0], :, :]
+                                except:
+                                    print("ERROR", "token_list", token_list)
+                                    print("ERROR", "word_indices[0]", word_indices[0])
+                                    print("ERROR", "allSentToks[i][j]", allSentToks[i][j])
+                                    exit(1)
+                            if DEBUG_SAL: print("Bsub_msg_lagg_", sub_msg_lagg_.shape) ### REMOVE SAL
 
                         #Getting the mean of all tokens representation
                         #TODO: add word agg list and do eval

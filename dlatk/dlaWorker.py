@@ -98,8 +98,7 @@ class DLAWorker(object):
                 if ".csv" in self.corptable:
                     self.data_engine.dataEngine.csvToTable(self.corptable, message_table)
                 else:
-                    print("Message table missing")
-                    sys.exit(1)
+                    dlac.warn("Message table missing")
             
             self.corptable = message_table
 

@@ -774,7 +774,7 @@ class SqliteDataEngine(DataEngine):
 				return x
 
 		#read a random sample of size 100 from the CSV.	
-		sample_size = 100
+		sample_size = 1000
 		num_lines = int(check_output(["wc", "-l", csv_file]).split()[0])
 		row_idx = sorted(random.sample(range(1, num_lines), sample_size))
 		with open(csv_file, 'r') as f:

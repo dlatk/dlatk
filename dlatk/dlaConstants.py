@@ -41,7 +41,7 @@ MAX_SQL_PRINT_CHARS = 256
 
 ##Corpus Settings:
 DEF_CORPDB = None
-DEF_CORPTABLE = 'msgs'
+DEF_CORPTABLE = None
 DEF_CORREL_FIELD = 'user_id'
 DEF_MESSAGE_FIELD = 'message'
 DEF_MESSAGEID_FIELD = 'message_id'

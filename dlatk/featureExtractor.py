@@ -1919,12 +1919,9 @@ class FeatureExtractor(DLAWorker):
         #1. word -> set(category) dict
         #2. Get length for varchar column
         feat_cat_weight = dict()
-        if self.db_type == "sqlite":
-            self.data_engine.execute("attach '%s.db' as lexiconDB"%(self.lexicondb))
-            sql = "SELECT * FROM lexiconDB.%s"%(lexiconTableName)
-        else:
-            sql = "SELECT * FROM %s.%s"%(self.lexicondb, lexiconTableName)
-        rows = self.data_engine.execute_get_list(sql)
+        lexiconTableName = self.load_lexicon(lexiconTableName)
+        selectQuery = self.lexqb.create_select_query(lexiconTableName).set_fields('*')
+        rows = selectQuery.execute_query()
         #rows = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         categories = set()
         lexiconHasWildCard = False

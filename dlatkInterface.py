@@ -60,7 +60,7 @@ def getInitVar(variable, parser, default, varList=False):
 def colabify():
 
     dlatk_path = dlatk.__path__[0]
-    subprocess.call(['bash', os.path.join(dlatk_path, 'tools', 'colabify.sh')])
+    subprocess.call(['bash', os.path.join(dlatk_path, 'tools', 'colabify.sh'), dlatk_path])
 
     return
 

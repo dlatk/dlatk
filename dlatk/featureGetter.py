@@ -852,20 +852,23 @@ class FeatureGetter(DLAWorker):
 
     def getTopMessages(self, lex_tbl, outputfile, lim_num, whitelist, group_freq_thresh=0):
         """"""
-        assert mm.tableExists(self.corpdb, self.dbCursor, self.featureTable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file), 'feature table does not exist (make sure to quote it)'
-        assert mm.tableExists(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file), 'message table does not exist (make sure to quote it)'
+        assert self.data_engine.tableExists(self.featureTable), "feature table does not exist (make sure to quote it)"
+        assert self.data_engine.tableExists(self.corptable), "message table does not exist (make sure to quote it)"
         # if lex_tbl:
         #     assert mm.tableExists(self.lexicondb, self.dbCursor, ".".join([self.lexicondb, lex_tbl]), charset=self.encoding, use_unicode=self.use_unicode), 'lex table does not exist (make sure to quote it)'
         
         if lex_tbl:
-            feat_sql = """SELECT DISTINCT category FROM {db}.{tbl}""".format(db=self.lexicondb, tbl=lex_tbl)
+            selectQuery = self.lexqb.create_select_query(lex_tbl).set_fields(["DISTINCT category"])
             if whitelist:
-                feat_sql += """ where category in ({whitelist})""".format(whitelist="'" + "', '".join(whitelist) + "'")
+                where_condition = "category in ({whitelist})".format(whitelist="'" + "', '".join(whitelist) + "'")
+                selectQuery = selectQuery.where(where_condition)
         else:
-            feat_sql = """SELECT DISTINCT feat FROM {db}.{tbl}""".format(db=self.corpdb, tbl=self.featureTable)
+            selectQuery = self.qb.create_select_query(self.featureTable).set_fields(["DISTINCT feat"])
             if whitelist:
-                feat_sql += """ where feat in ({whitelist})""".format(whitelist="'" + "', '".join(whitelist) + "'")
-        features = mm.executeGetList(self.corpdb, self.dbCursor, feat_sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                where_condition = "feat in ({whitelist})".format(whitelist="'" + "', '".join(whitelist) + "'")
+                selectQuery = selectQuery.where(where_condition)
+
+        features = selectQuery.execute_query()
         if group_freq_thresh > 0:
             msg_ids_gft = frozenset([k for k,v in self.getGroupWordCounts().items() if v >= group_freq_thresh])
 
@@ -882,19 +885,18 @@ class FeatureGetter(DLAWorker):
                 if i % 100 == 0: print("Writing %s features" % str(i))
                 feat = feat[0]
                 if lex_tbl:
-                    cat_sql = """SELECT term FROM {db}.{tbl} WHERE category = '{cat}' 
-                        ORDER BY weight DESC LIMIT 15""".format(db=self.lexicondb, tbl=lex_tbl, cat=feat)
-                    data =  mm.executeGetList(self.corpdb, self.dbCursor, cat_sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                    where_condition = "category = '{}'".format(feat)
+                    selectQuery = self.lexqb.create_select_query(lex_tbl).set_fields(["term"]).where(where_condition).order_by([("weight", "DESC")]).set_limit(15)
+                    data = selectQuery.execute_query()
                     words = ", ".join([str(row[0]) for row in data])
                     feat_to_search = feat
                 else:
                     words = None
                     feat_to_search = "'" + feat + "'"
 
-                gid_sql = """SELECT group_id FROM {db}.{tbl}
-                    WHERE feat = '{cat}' ORDER BY group_norm DESC""".format(db=self.corpdb, tbl=self.featureTable, cat=feat_to_search)
+                selectQuery = self.qb.create_select_query(self.featureTable).set_fields(["group_id"]).where("feat = '{}'".format(feat)).order_by([("group_norm", "DESC")])
 
-                msg_ids =  mm.executeGetList(self.corpdb, self.dbCursor, gid_sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                msg_ids = selectQuery.execute_query()
                 msg_ids = [msgs_id[0] for msgs_id in msg_ids]
                 if group_freq_thresh > 0:
                     msg_ids = [m for m in msg_ids if m in msg_ids_gft]
@@ -903,10 +905,9 @@ class FeatureGetter(DLAWorker):
                         continue
 
                 msg_ids = [str(msgs_id) for msgs_id in msg_ids][0:lim_num]
-                msg_sql = """SELECT message_id, message FROM {db}.{tbl} WHERE message_id in ('{msg_ids}')""" \
-                    .format(db=self.corpdb, tbl=self.corptable, msg_ids="', '".join(msg_ids))
+                selectQuery = self.qb.create_select_query(self.corptable).set_fields(["message_id", "message"]).where("message_id in ('{}')".format("', '".join(msg_ids)))
 
-                msgs =  mm.executeGetList(self.corpdb, self.dbCursor, msg_sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                msgs = selectQuery.execute_query()
                 for msg in msgs:
                     tup = [msg[0], msg[1], feat]
                     if words: tup.append(words)

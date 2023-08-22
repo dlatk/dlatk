@@ -57,7 +57,7 @@ class DLAWorker(object):
         self.use_unicode = use_unicode
         self.mysql_config_file = mysql_config_file
 
-        self.prepareDatabase()
+        self.prepare_corpdb()
 
         self.correl_field = correl_field
         self.message_field = message_field
@@ -66,6 +66,8 @@ class DLAWorker(object):
         self.qb = QueryBuilder(self.data_engine)
 
         self.lexicondb = lexicondb
+        self.prepare_lexicondb()
+
         if wordTable:
             self.wordTable = wordTable
         else:
@@ -75,7 +77,7 @@ class DLAWorker(object):
             self.wordTable = wordTable
         self.messageIdUniqueChecked = False
     
-    def prepareDatabase(self):
+    def prepare_corpdb(self):
     
         if (".csv" in self.corptable) or (self.db_type == "sqlite"):
 
@@ -110,8 +112,34 @@ class DLAWorker(object):
             if not self.data_engine.tableExists(self.corptable):
                 print("Message table missing")
                 sys.exit(1)
-        
 
+    def prepare_lexicondb(self):
+
+        if self.db_type == "sqlite":
+            default_dir = path.join("/content", "sqlite_data") if path.exists("/content") else path.join(path.expanduser('~'), "sqlite_data")
+            self.lexicondb - path.join(default_dir, self.lexicondb)
+
+        print("Connecting to lexicon database: {}".format(self.lexicondb))
+        self.lex_engine = DataEngine(self.lexicondb, self.mysql_config_file, self.encoding, self.use_unicode, self.db_type)
+        (self.lexdbConn, self.lexdbCursor, self.lexDictCursor) = self.lex_engine.connect()
+        self.lexqb = QueryBuilder(self.lex_engine)
+
+    def load_lexicon(self, table_name):
+
+        if (".csv" in table_name) or (self.db_type == "sqlite"):
+
+            lex_table = table_namesplit('/')[-1].split('.')[0]
+            if not self.lex_engine.tableExists(lex_table):
+                if ".csv" in table_name:
+                    self.lex_engine.dataEngine.csvToTable(table_name, lex_table)
+                else:
+                    dlac.warn("Lexicon table missing")
+        
+        elif self.db_type == "mysql":
+            lex_table = table_name
+
+        return lex_table
+ 
     ##PUBLIC METHODS#
     def checkIndices(self, table, primary=False, correlField=False):
         hasPrimary, hasCorrelIndex = True, True
@@ -523,8 +551,6 @@ class DLAWorker(object):
         else:
             print("making black or white list: [%s] [%s] [%s]" %([feat if isinstance(feat, str) else feat for feat in args_featlist], args_lextable, args_categories))
         if args_lextable:
-            engine = DataEngine(self.lexicondb, self.mysql_config_file, self.encoding, self.use_unicode, self.self.db_type)
-            (conn, cur, dcur) = engine.connect()
             
             fields = ["term"]
             if (len(args_categories) > 0) and args_categories[0] != '*':
@@ -532,7 +558,7 @@ class DLAWorker(object):
             else:
                 where_condition = ''
             
-            selectQuery = QueryBuilder(engine).create_select_query(args_lextable).where(where_condition).set_fields(fields)
+            selectQuery = self.lexqb.create_select_query(args_lextable).where(where_condition).set_fields(fields)
             rows = selectQuery.execute_query()
 
             for row in rows:

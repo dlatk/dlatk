@@ -15,5 +15,4 @@ tar -xf mallet.tar.gz -C /opt/mallet --strip-components=1
 rm mallet.tar.gz
 
 # Install Python dependencies
-pip install -r /content/dlatk/install/requirements.txt
 pip install rpy2==3.5.1

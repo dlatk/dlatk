@@ -148,7 +148,7 @@ CLASSIFIERS = [
 ]
 VERSION = '1.2.6'
 PACKAGE_DATA = {
-  'dlatk': ['data/*.sql', 'tools/colabify.sh'],
+  'dlatk': ['data/*.sql', 'data/*.db', 'tools/colabify.sh'],
   'dlatk.lib': ['meloche_bd.ttf', 'oval_big_mask.png', 'oval_mask.png'],
 }
 INCLUDE_PACKAGE_DATA = True
@@ -173,7 +173,6 @@ if os.getenv("COLAB_RELEASE_TAG") is None:
     INSTALL_REQUIRES.append([
       'mysqlclient<=2.1.1', 
       'SQLAlchemy>=0.9.9,<=1.4.39'])
-    raise FileNotFoundError
 
   except FileNotFoundError as e:
     prompt = """

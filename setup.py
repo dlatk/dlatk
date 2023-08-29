@@ -156,17 +156,33 @@ SETUP_REQUIRES = [
   'numpy',
 ]
 INSTALL_REQUIRES = [
-  'mysqlclient<=2.1.1', 
   'nltk>=3.1,<=3.7', 
   'numpy<=1.23.1', 
-  'pandas>=0.17.1,<=1.4.3', 
+  'pandas>=0.17.1,<=1.5.3', 
   'patsy>=0.2.1,<=0.5.2', 
   'python-dateutil>=2.5.0,<=2.8.2', 
   'scikit-learn<=1.1.1', 
   'scipy>=0.13.3,<=1.8.1', 
-  'SQLAlchemy>=0.9.9,<=1.4.39', 
   'statsmodels>=0.5.0,<=0.13.2'
 ]
+
+if os.getenv("COLAB_RELEASE_TAG") is None:
+
+  try:
+    subprocess.check_output(["mysql", "--version"])
+    INSTALL_REQUIRES.append([
+      'mysqlclient<=2.1.1', 
+      'SQLAlchemy>=0.9.9,<=1.4.39'])
+    raise FileNotFoundError
+
+  except FileNotFoundError as e:
+    prompt = """
+MySQL is not installed. Skipping relevant dependencies.
+It is recommended that you first install MySQL 5.7 or MariaDB before installing them. 
+After you install MySQL or MariaDB, you can run ‘sudo pip install mysqlclient sqlalchemy’ to get them to use DLATK with MySQL.
+"""
+    print(prompt)
+
 EXTRAS_REQUIRE = {
   'dlatk-pymallet': ['dlatk-pymallet==1.0.0'],
   'gensim': ['gensim==3.8.3'],

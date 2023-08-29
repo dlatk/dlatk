@@ -858,7 +858,8 @@ class FeatureGetter(DLAWorker):
         #     assert mm.tableExists(self.lexicondb, self.dbCursor, ".".join([self.lexicondb, lex_tbl]), charset=self.encoding, use_unicode=self.use_unicode), 'lex table does not exist (make sure to quote it)'
         
         if lex_tbl:
-            selectQuery = self.lexqb.create_select_query(lex_tbl).set_fields(["DISTINCT category"])
+            if self.lexicon is None: self.load_lexicon(lex_tbl)
+            selectQuery = self.lexicon.qb.create_select_query(lex_tbl).set_fields(["DISTINCT category"])
             if whitelist:
                 where_condition = "category in ({whitelist})".format(whitelist="'" + "', '".join(whitelist) + "'")
                 selectQuery = selectQuery.where(where_condition)
@@ -885,8 +886,9 @@ class FeatureGetter(DLAWorker):
                 if i % 100 == 0: print("Writing %s features" % str(i))
                 feat = feat[0]
                 if lex_tbl:
+                    if self.lexicon is None: self.load_lexicon(lex_tbl)
                     where_condition = "category = '{}'".format(feat)
-                    selectQuery = self.lexqb.create_select_query(lex_tbl).set_fields(["term"]).where(where_condition).order_by([("weight", "DESC")]).set_limit(15)
+                    selectQuery = self.lexicon.qb.create_select_query(lex_tbl).set_fields(["term"]).where(where_condition).order_by([("weight", "DESC")]).set_limit(15)
                     data = selectQuery.execute_query()
                     words = ", ".join([str(row[0]) for row in data])
                     feat_to_search = feat

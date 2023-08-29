@@ -1730,7 +1730,15 @@ class FeatureExtractor(DLAWorker):
             
         #create sql
         dropTable = self.qb.create_drop_query(tableName)
-        createTable = self.qb.create_createTable_query(tableName).add_columns([Column("id","BIGINT(16)", unsigned=True, primary_key=True, nullable=False, auto_increment=True),Column("group_id", correl_fieldType), Column("feat", featureTypeAndEncoding), Column("value", valueType), Column("group_norm", "DOUBLE")]).add_mul_keys([("correl_field", "group_id"), ("feature", "feat")]).set_character_set(self.encoding).set_collation(dlac.DEF_COLLATIONS[self.encoding.lower()]).set_engine(dlac.DEF_MYSQL_ENGINE)
+        createTable = self.qb.create_createTable_query(tableName)
+        createTable = createTable.add_columns([
+            Column("id","BIGINT(16)", unsigned=True, primary_key=True, nullable=False, auto_increment=True),
+            Column("group_id", correl_fieldType), 
+            Column("feat", featureTypeAndEncoding), 
+            Column("value", valueType), 
+            Column("group_norm", "DOUBLE")])
+        createTable = createTable.add_mul_keys({"correl_field": "group_id", "feature": "feat"})
+        createTable = createTable.set_character_set(self.encoding).set_collation(dlac.DEF_COLLATIONS[self.encoding.lower()]).set_engine(dlac.DEF_MYSQL_ENGINE)
 
         #run sql
         dropTable.execute_query()
@@ -1920,7 +1928,7 @@ class FeatureExtractor(DLAWorker):
         #2. Get length for varchar column
         feat_cat_weight = dict()
         lexiconTableName = self.load_lexicon(lexiconTableName)
-        selectQuery = self.lexqb.create_select_query(lexiconTableName).set_fields('*')
+        selectQuery = self.lexicon.qb.create_select_query(lexiconTableName).set_fields('*')
         rows = selectQuery.execute_query()
         #rows = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         categories = set()

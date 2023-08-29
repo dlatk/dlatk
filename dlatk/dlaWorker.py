@@ -9,6 +9,7 @@ except:
 
 from .database.dataEngine import DataEngine
 from .database.query import QueryBuilder
+from .lexicainterface.lexInterface import WeightedLexicon, loadWeightedLexiconFromSparse
 
 from . import dlaConstants as dlac
 from .mysqlmethods import mysqlMethods as mm 
@@ -66,7 +67,7 @@ class DLAWorker(object):
         self.qb = QueryBuilder(self.data_engine)
 
         self.lexicondb = lexicondb
-        self.prepare_lexicondb()
+        self.lexicon = None
 
         if wordTable:
             self.wordTable = wordTable
@@ -113,30 +114,50 @@ class DLAWorker(object):
                 print("Message table missing")
                 sys.exit(1)
 
-    def prepare_lexicondb(self):
+    def load_lexicon(self, table_name, db_name=dlac.DEF_LEXICON_DB):
 
-        if self.db_type == "sqlite":
+        idx_to_db_type = ["sqlite", "mysql"]
+        db_type_to_idx = {db_type: index for index, db_type in enumerate(idx_to_db_type)}
+        db_type = self.db_type
+        db_idx = db_type_to_idx[db_type]
+
+        if db_type == "sqlite":
             default_dir = path.join("/content", "sqlite_data") if path.exists("/content") else path.join(path.expanduser('~'), "sqlite_data")
-            self.lexicondb - path.join(default_dir, self.lexicondb)
+            self.lexicondb = path.join(default_dir, db_name)
+        if db_type == "mysql":
+            self.lexicondb = db_name
 
-        print("Connecting to lexicon database: {}".format(self.lexicondb))
-        self.lex_engine = DataEngine(self.lexicondb, self.mysql_config_file, self.encoding, self.use_unicode, self.db_type)
-        (self.lexdbConn, self.lexdbCursor, self.lexDictCursor) = self.lex_engine.connect()
-        self.lexqb = QueryBuilder(self.lex_engine)
+        self.lexicon = WeightedLexicon(
+            lexicon_db=self.lexicondb,
+            mysql_config_file=self.mysql_config_file,
+            lex_db_type=self.db_type,
+            encoding=self.encoding,
+            use_unicode=self.use_unicode)
 
-    def load_lexicon(self, table_name):
+        lex_table = table_name.split('/')[-1].split('.')[0]
+        if not self.lexicon.engine.tableExists(lex_table):
 
-        if (".csv" in table_name) or (self.db_type == "sqlite"):
+            if ".csv" in table_name:
+                self.lexicon.setWeightedLexicon(loadWeightedLexiconFromSparse(table_name))
+                self.lexicon.createLexiconTable(lex_table)
 
-            lex_table = table_namesplit('/')[-1].split('.')[0]
-            if not self.lex_engine.tableExists(lex_table):
-                if ".csv" in table_name:
-                    self.lex_engine.dataEngine.csvToTable(table_name, lex_table)
-                else:
-                    dlac.warn("Lexicon table missing")
-        
-        elif self.db_type == "mysql":
-            lex_table = table_name
+            else:
+                #rotate connection if lexicon not in current db type
+                db_idx = (db_idx + 1) % len(idx_to_db_type)
+                db_type = idx_to_db_type[db_idx]
+
+                if db_type == "sqlite":
+                    default_dir = path.join("/content", "sqlite_data") if path.exists("/content") else path.join(path.expanduser('~'), "sqlite_data")
+                    self.lexicondb = path.join(default_dir, db_name)
+                if db_type == "mysql":
+                    self.lexicondb = db_name
+
+                self.lexicon = WeightedLexicon(
+                    lexicon_db=self.lexicondb,
+                    mysql_config_file=self.mysql_config_file, 
+                    lex_db_type=db_type, 
+                    encoding=self.encoding, 
+                    use_unicode=self.use_unicode)
 
         return lex_table
  
@@ -557,8 +578,9 @@ class DLAWorker(object):
                 where_condition = "category in (%s)" % (args_lextable, ','.join(['\''+str(x)+'\'' for x in args_categories]))
             else:
                 where_condition = ''
-            
-            selectQuery = self.lexqb.create_select_query(args_lextable).where(where_condition).set_fields(fields)
+           
+            if self.lexicon is None: self.load_lexicon(args_lextable) 
+            selectQuery = self.lexicon.qb.create_select_query(args_lextable).where(where_condition).set_fields(fields)
             rows = selectQuery.execute_query()
 
             for row in rows:

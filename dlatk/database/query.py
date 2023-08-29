@@ -502,7 +502,7 @@ class CreateTableQuery(Query):
 		success = self.data_engine.execute(self.sql)
 		if success==True and self.data_engine.db_type == "sqlite":
 			if self.mul_keys:
-				for key in self.mul_keys:
+				for key in self.mul_keys.items():
 					print("""\n\nCreating index {0} on table:{1}, column:{2} \n\n""".format(key[0], self.table, key[1]))
 					createIndex = """CREATE INDEX %s ON %s (%s)""" % (key[0]+self.table[4:], self.table, key[1])
 					if "meta" not in self.table:
@@ -535,7 +535,7 @@ class CreateTableQuery(Query):
 				createTable += ""","""
 				
 			if self.mul_keys!=None and len(self.mul_keys)>0:
-				for key in self.mul_keys:
+				for key in self.mul_keys.items():
 					createTable += """ KEY `%s` (`%s`),""" % (key[0], key[1])
 	
 			createTable = createTable[0:-1]

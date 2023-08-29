@@ -1607,7 +1607,8 @@ class OutcomeAnalyzer(OutcomeGetter):
             a label map based on a lexicon. labelmap is {feat:concatenated_categories}
 
         """
-        selectQuery = self.lexqb.create_select_query(lexicon_table).set_fields(['*'])
+        if self.lexicon is None: self.load_lexicon(lexicon_table)
+        selectQuery = self.lexicon.qb.create_select_query(lexicon_table).set_fields(['*'])
         rows = selectQuery.execute()
 
         feat_to_label = {}
@@ -1645,7 +1646,8 @@ class OutcomeAnalyzer(OutcomeGetter):
         elif not labelmap_table:
             raise Exception("must specify labelmap_table or lda_id")
 
-        selectQuery = self.lexqb.create_select_query(labelmap_table).set_fields(['*'])
+        if self.lexicon is None: self.load_lexicon(labelmap_table)
+        selectQuery = self.lexicon.qb.create_select_query(labelmap_table).set_fields(['*'])
         rows = selectQuery.execute()
 
         feat_to_label = {}
@@ -1930,7 +1932,8 @@ class OutcomeAnalyzer(OutcomeGetter):
             dlac.warn("No topic lexicon selected, please specify it with --topic_lexicon TOP_LEX")
             exit(2)
  
-        selectQuery = self.lexqb.create_select_query(topicLex).set_fields(["term", "category", "weight"])
+        if self.lexicon is None: self.load_lexicon(topicLex)
+        selectQuery = self.lexicon.qb.create_select_query(topicLex).set_fields(["term", "category", "weight"])
         catList = selectQuery.execute_query()
         topicWords = dict()
         for (term, cat, w) in catList:

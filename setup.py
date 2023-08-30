@@ -159,11 +159,11 @@ INSTALL_REQUIRES = [
   'nltk>=3.1,<=3.7', 
   'numpy<=1.23.1', 
   'pandas>=0.17.1,<=1.5.3', 
-  'patsy>=0.2.1,<=0.5.2', 
+  'patsy>=0.2.1,<=0.5.3', 
   'python-dateutil>=2.5.0,<=2.8.2', 
-  'scikit-learn<=1.1.1', 
+  'scikit-learn<=1.1.3', 
   'scipy>=0.13.3,<=1.8.1', 
-  'statsmodels>=0.5.0,<=0.13.2'
+  'statsmodels>=0.5.0,<=0.14.0'
 ]
 
 if os.getenv("COLAB_RELEASE_TAG") is None:
@@ -172,7 +172,7 @@ if os.getenv("COLAB_RELEASE_TAG") is None:
     subprocess.check_output(["mysql", "--version"])
     INSTALL_REQUIRES.append([
       'mysqlclient<=2.1.1', 
-      'SQLAlchemy>=0.9.9,<=1.4.39'])
+      'SQLAlchemy>=0.9.9,<=2.0.20'])
 
   except FileNotFoundError as e:
     prompt = """
@@ -188,11 +188,11 @@ EXTRAS_REQUIRE = {
   'image': ['image<=1.5.33'],
   'jsonrpclib-pelix': ['jsonrpclib-pelix>=0.2.8'],
   'langid': ['langid>=1.1.4,<=1.1.6'],
-  'matplotlib': ['matplotlib>=1.3.1,<=3.5.2'],
+  'matplotlib': ['matplotlib>=1.3.1,<=3.7.1'],
   'rpy2': ['rpy2<=3.5.2'],
   'simplejson': ['simplejson>=3.3.1'],
   'textstat': ['textstat>=0.6.1'],
-  'wordcloud':  ['wordcloud>=1.1.3,<=1.8.2.2']
+  'wordcloud':  ['wordcloud>=1.1.3,<=1.9.2']
 }
 
 SCRIPTS = ['dlatkInterface.py']

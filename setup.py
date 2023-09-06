@@ -162,7 +162,7 @@ INSTALL_REQUIRES = [
   'patsy>=0.2.1,<=0.5.3', 
   'python-dateutil>=2.5.0,<=2.8.2', 
   'scikit-learn<=1.1.3', 
-  'scipy>=0.13.3,<=1.8.1', 
+  'scipy>=0.13.3,<=1.10.0',
   'statsmodels>=0.5.0,<=0.14.0'
 ]
 

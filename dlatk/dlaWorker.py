@@ -114,12 +114,13 @@ class DLAWorker(object):
                 print("Message table missing")
                 sys.exit(1)
 
-    def load_lexicon(self, table_name, db_name=dlac.DEF_LEXICON_DB):
+    def load_lexicon(self, table_name):
 
         idx_to_db_type = ["sqlite", "mysql"]
         db_type_to_idx = {db_type: index for index, db_type in enumerate(idx_to_db_type)}
         db_type = self.db_type
         db_idx = db_type_to_idx[db_type]
+        db_name = self.lexicondb
 
         if db_type == "sqlite":
             default_dir = path.join("/content", "sqlite_data") if path.exists("/content") else path.join(path.expanduser('~'), "sqlite_data")

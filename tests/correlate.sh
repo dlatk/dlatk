@@ -1,9 +1,10 @@
 #!/usr/bin/bash 
 
-while getopts "hd:t:c:f:-:" opt; do
+while getopts "he:d:t:c:f:-:" opt; do
     case $opt in
 	h) echo "Usage - bash correlate.sh -d <DB> -t <TABLE> -c <GROUP_FIELD> -f '<FEAT_TABLE>' --group_freq_thresh <GFT> --outcome_table <OUTCOME_TABLE> --outcomes <OUTCOMES> --controls '<CONTROLS>' --categories_to_binary '<VARIABLES>' --output_name <OUTPUT>" >&2
 	   exit 2 ;;
+        e) ENGINE=$OPTARG ;;
         d) DATABASE=$OPTARG ;;
 	t) TABLE=$OPTARG ;;
 	c) GROUP_FIELD=$OPTARG ;;
@@ -31,7 +32,7 @@ done
 
 if [[ -v CTB ]];
 then
-python ../dlatkInterface.py -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --correlate --tagcloud --make_wordclouds --rmatrix --csv --sort --feat_table $FEAT_TABLE --outcome_table $OT --outcomes $OC --controls $CTRLS --categories_to_binary $CTB --output_name $OUTPUT
+python ../dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --correlate --tagcloud --make_wordclouds --rmatrix --csv --sort --feat_table $FEAT_TABLE --outcome_table $OT --outcomes $OC --controls $CTRLS --categories_to_binary $CTB --output_name $OUTPUT
 else
-python ../dlatkInterface.py -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --correlate --tagcloud --make_wordclouds --rmatrix --csv --sort --feat_table $FEAT_TABLE --outcome_table $OT --outcomes $OC --controls $CTRLS --output_name $OUTPUT
+python ../dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --correlate --tagcloud --make_wordclouds --rmatrix --csv --sort --feat_table $FEAT_TABLE --outcome_table $OT --outcomes $OC --controls $CTRLS --output_name $OUTPUT
 fi

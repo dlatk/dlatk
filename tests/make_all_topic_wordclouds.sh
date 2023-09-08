@@ -1,9 +1,10 @@
 #!/usr/bin/bash 
 
-while getopts "h-:" opt; do
+while getopts "he:-:" opt; do
     case $opt in
 	h) echo "Usage - bash make_all_topic_wordclouds.sh --topic_lexicon <TOPIC_LEX> --group_freq_thresh <GFT> --output <OUTPUT>" >&2
 	   exit 2 ;;
+        e) ENGINE=$OPTARG ;;
 	-)
             case $OPTARG in
                 group_freq_thresh) GFT="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 )) ;;
@@ -21,4 +22,4 @@ while getopts "h-:" opt; do
     esac
 done
 
-python ../dlatkInterface.py --topic_lexicon $TOPIC_LEX --group_freq_thresh $GFT --make_all_topic_wordclouds --tagcloud_colorscheme blue --output $OUTPUT
+python ../dlatkInterface.py -e $ENGINE --topic_lexicon $TOPIC_LEX --group_freq_thresh $GFT --make_all_topic_wordclouds --tagcloud_colorscheme blue --output $OUTPUT

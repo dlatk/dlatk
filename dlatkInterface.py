@@ -2181,6 +2181,22 @@ def main(fn_args = None):
         if (args.model and args.model != dlac.DEF_MODEL): init_file.write("model = " + str(args.model)+"\n")
 
         init_file.close()
+    
+    warning = """--
+Variables:
+
+Database - {}
+Corpus - {}
+Group ID - {}""".format(args.corpdb, args.corptable, args.correl_field)
+    dlac.warn(warning) 
+    if args.feattable:
+        dlac.warn("Feature table(s) - {}".format(args.feattable))
+    if args.outcometable:
+        dlac.warn("Outcome table - {}".format(args.outcometable))
+    if args.outcomefields:
+        dlac.warn("Outcome(s) - {}".format(' '.join(args.outcomefields)))
+    if args.outcomecontrols:
+        dlac.warn("Control(s) - {}".format(' '.join([args.outcomecontrols[index] for index in range(min(3, len(args.outcomecontrols)))])))
 
     dlac.warn("--\nInterface Runtime: %.2f seconds"% float(time.time() - start_time))
     dlac.warn("DLATK exits with success! A good day indeed  ¯\_(ツ)_/¯.")

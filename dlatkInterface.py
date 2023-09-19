@@ -1817,7 +1817,7 @@ def main(fn_args = None):
         elif args.featureselection:
             RegressionPredictor.featureSelectionString = dlac.DEF_RP_FEATURE_SELECTION_MAPPING[args.featureselection]
         if args.turn_off_backoff_model:
-            ClassifyPredictor.backOffModel = args.model
+            RegressionPredictor.backOffModel = args.model
         rp = RegressionPredictor(og, fgs, args.model, args.outlier_to_mean, n_components = args.n_components)
 
     if args.testcombregression:

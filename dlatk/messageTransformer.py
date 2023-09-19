@@ -413,14 +413,17 @@ class MessageTransformer(DLAWorker):
                 # parses = map(lambda m: json.dumps(sentDetector.tokenize(tc.removeNonAscii(tc.treatNewlines(m.strip())))), messages)
                 parses = []
                 for m in messages:
-                    parse = m.strip()
-                    if cleanMessages:
-                        parse = tc.sentenceNormalization(parse, normalizeDict, self.use_unicode)
-                    parse = tc.removeNonUTF8(tc.treatNewlines(parse))
-                    if newlinesToPeriods:
-                        parse = parse.replace('<NEWLINE>', '.')
-                    parse = sentDetector.tokenize((parse))
-                    parses.append(json.dumps(parse))
+                    if m:
+                        parse = m.strip()
+                        if cleanMessages:
+                            parse = tc.sentenceNormalization(parse, normalizeDict, self.use_unicode)
+                        parse = tc.removeNonUTF8(tc.treatNewlines(parse))
+                        if newlinesToPeriods:
+                            parse = parse.replace('<NEWLINE>', '.')
+                        parse = sentDetector.tokenize((parse))
+                        parses.append(json.dumps(parse))
+                    else:
+                        parses.append(json.dumps(''))
                 # if self.use_unicode:
                 #     if cleanMessages:
                 #         parses = [json.dumps(sentDetector.tokenize((tc.sentenceNormalization(m.strip(), normalizeDict, self.use_unicode)))) for m in messages]

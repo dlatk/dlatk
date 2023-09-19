@@ -281,7 +281,7 @@ class ClassifyPredictor:
             #{'C':[1, 10, 0.1, 0.01, 0.05, 0.005], 'penalty':['l1'], 'dual':[False]} #swl/perma message-level
             ],
         'lr': [
-            {'C':[0.1], 'penalty':['l2'], 'dual':[False], 'random_state': [42]},#DEFAULT
+            {'C':[0.01], 'penalty':['l2'], 'dual':[False], 'random_state': [42]},#DEFAULT
             #{'C':[0.01, 0.1, 1, 10], 'penalty':['l2'], 'dual':[False]}, 
             #{'C':[0.01, 0.1, 0.001, 1], 'penalty':['l2'], 'dual':[False]}, 
             #{'C':[0.00001], 'penalty':['l2']} # UnivVsMultiv choice Maarten
@@ -386,7 +386,7 @@ class ClassifyPredictor:
     cvFolds = 3
     chunkPredictions = False  # whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 30000
-    backOffPerc = .05 #when the num_featrue / training_insts is less than this backoff to backoffmodel
+    backOffPerc = .01 #when the num_featrue / training_insts is less than this backoff to backoffmodel
     backOffModel = 'lrnone' #'lr'
 
     # feature selection:

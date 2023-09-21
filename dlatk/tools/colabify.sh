@@ -13,3 +13,5 @@ wget -q -O mallet.tar.gz http://mallet.cs.umass.edu/dist/mallet-2.0.8.tar.gz
 mkdir -p /opt/mallet
 tar -xf mallet.tar.gz -C /opt/mallet --strip-components=1
 rm mallet.tar.gz
+
+python -c "from dlatk.tools.colab_methods import resize_colab_output; resize_colab_output();"

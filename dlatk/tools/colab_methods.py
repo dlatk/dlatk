@@ -3,6 +3,7 @@ from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 from oauth2client.client import GoogleCredentials
 from google.colab import auth, drive, files
+from IPython import display, get_ipython
 from IPython.display import Javascript
 
 def upload_dataset():

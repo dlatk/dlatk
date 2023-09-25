@@ -52,7 +52,7 @@ def get_file_from_drive(filename=None):
   #3. Download the dataset from Google Drive to Colab
   downloaded = drive.CreateFile({"id": fileid})
   downloaded.GetContentFile(filename)
-  print("File %s copied successfully from Google Drive." % (file["title"]))
+  print("File %s copied successfully from Google Drive." % (filename))
 
 def resize_colab_output():
 

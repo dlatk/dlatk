@@ -66,7 +66,11 @@ from sklearn.base import ClassifierMixin
 from scipy.stats import zscore, t, wilcoxon
 
 from scipy.stats.stats import pearsonr, spearmanr
-from scipy.sparse import csr_matrix, hstack, spmatrix
+from scipy.sparse import hstack
+try:
+    from scipy.sparse import csr_array, sparray
+except ImportError as e:
+    from scipy.sparse import csr_matrix as csr_array, spmatrix as sparray
 import numpy as np
 from numpy import sqrt, array, std, mean, int64, ceil
 
@@ -118,7 +122,7 @@ def alignDictsAsXy(X, y, sparse=False, returnKeyList=False, keys=None):
                     col.append(c)
                     data.append(value)
 
-        sparseX = csr_matrix((data, (row, col)), shape=(len(keys), len(X)))
+        sparseX = csr_array((data, (row, col)), shape=(len(keys), len(X)))
         if returnKeyList:
             return (sparseX, array(listy).astype(int64), keys)
         else:
@@ -1438,7 +1442,7 @@ class ClassifyPredictor:
                 df = df.reindex(thisTestGroupsOrder)
                 print("  (feature group: %d)" % (i))
 
-                multiXtest.append(csr_matrix(df.values))
+                multiXtest.append(csr_array(df.values))
 
                 # print "Maarten", csr_matrix(df.values).shape, csr_matrix(df.values).todense()
 
@@ -2012,7 +2016,7 @@ class ClassifyPredictor:
         """does the actual classification training, first feature selection: can be used by both train and test"""
 
         sparse = True
-        if not isinstance(X, csr_matrix):
+        if not isinstance(X, csr_array):
             X = np.array(X)
             sparse = False
 
@@ -2148,7 +2152,7 @@ class ClassifyPredictor:
         while i < len(multiX):  # changed to while loop by Youngseo
             X = multiX[i]
 
-            if not sparse and isinstance(X, csr_matrix):  # edited by Youngseo
+            if not sparse and isinstance(X, csr_array):  # edited by Youngseo
                 X = X.todense()
 
             # Standardization:
@@ -2657,7 +2661,7 @@ class ClassifyPredictor:
 
             # setup X and transformers:
             X = multiX[i]
-            if not sparse and isinstance(X, csr_matrix):  # edited by Youngseo
+            if not sparse and isinstance(X, csr_array):  # edited by Youngseo
                 X = X.todense()
 
             (scaler, fSelector) = (None, None)
@@ -3149,7 +3153,7 @@ class ClassifyPredictor:
 
 def chunks(X, y, size):
     """ Yield successive n-sized chunks from X and Y."""
-    if not isinstance(X, csr_matrix):
+    if not isinstance(X, csr_array):
         assert len(X) == len(y), "chunks: size of X and y don't match"
     size = max(len(y), size)
 
@@ -3229,13 +3233,13 @@ def getGroupsFromGroupNormValues(gnvs):
 
 
 def matrixAppendHoriz(A, B):
-    if isinstance(A, spmatrix) and isinstance(B, spmatrix):
+    if isinstance(A, sparray) and isinstance(B, sparray):
         return hstack([A, B])
     elif isinstance(A, np.ndarray) and isinstance(B, np.ndarray):
         return np.append(A, B, 1)
-    elif isinstance(A, spmatrix) and isinstance(B, np.ndarray):
+    elif isinstance(A, sparray) and isinstance(B, np.ndarray):
         return np.append(A.todense(), B, 1)
-    elif isinstance(A, np.ndarray) and isinstance(B, npspmatrix):
+    elif isinstance(A, np.ndarray) and isinstance(B, sparray):
         return np.append(A, B.todense(), 1)
     else:
         raise ValueError(

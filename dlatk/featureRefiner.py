@@ -14,7 +14,10 @@ import numbers
 from operator import mul
 from functools import reduce
 from sklearn.preprocessing import StandardScaler
-from scipy.sparse import csr_matrix
+try:
+    from scipy.sparse import csr_array
+except ImportError as e:
+    from scipy.sparse import csr_matrix as csr_array
 from scipy.interpolate import interp1d
 
 #local / nlp
@@ -396,7 +399,7 @@ class FeatureRefiner(FeatureGetter):
                     col.append(featIndex)
                     data.append(value)
         assert all([isinstance(x,numbers.Number) for x in data]), "Data is corrupt, there are non float elements in the group norms (some might be NULL?)"
-        X = csr_matrix((data,(row,col)), shape = (len(groups), len(featureNames)), dtype=np.float)
+        X = csr_array((data,(row,col)), shape = (len(groups), len(featureNames)), dtype=np.float)
         if use_mean: 
             X = X.todense()
         dlac.warn("\n X.shape: %s]" % str(X.shape))

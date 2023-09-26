@@ -52,7 +52,10 @@ from .occurrenceSelection import OccurrenceThreshold
 from scipy.stats import zscore, ttest_rel, ttest_1samp
 from scipy.stats.stats import pearsonr, spearmanr
 from scipy.stats import t
-from scipy.sparse import csr_matrix
+try:
+    from scipy.sparse import csr_array
+except ImportError as e:
+    from scipy.sparse import csr_matrix as csr_array
 import numpy as np
 from numpy import sqrt, array, std, mean, ceil, absolute, append, log, log2
 from numpy.linalg.linalg import LinAlgError
@@ -100,7 +103,7 @@ def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
                     data.append(value)
 
         assert all([isinstance(x,numbers.Number) for x in data]), "Data is corrupt, there are non float elements in the group norms (some might be NULL?)"
-        sparseX = csr_matrix((data,(row,col)), shape = (len(keys), len(X)), dtype=np.float)
+        sparseX = csr_array((data,(row,col)), shape = (len(keys), len(X)), dtype=np.float)
         if returnKeyList:
             return (sparseX, array(listy), keys)
         else:
@@ -155,7 +158,7 @@ def alignDictsAsXyz(X, y, z, sparse = False, returnKeyList = False, keys = None)
                     data.append(value)
 
         assert all([isinstance(x,numbers.Number) for x in data]), "Data is corrupt, there are non float elements in the group norms (some might be NULL?)"
-        sparseX = csr_matrix((data,(row,col)), shape = (len(keys), len(X)), dtype=np.float)
+        sparseX = csr_array((data,(row,col)), shape = (len(keys), len(X)), dtype=np.float)
         if returnKeyList:
             return (sparseX, array(listy), array(listz), keys)
         else:
@@ -1626,7 +1629,7 @@ class RegressionPredictor:
                 df = df.reindex(thisTestGroupsOrder)
                 print("  (feature group: %d)" % (i))
 
-                multiXtest.append(csr_matrix(df.values))
+                multiXtest.append(csr_array(df.values))
                 # print "Maarten", csr_matrix(df.values).shape, csr_matrix(df.values).todense()
 
             #############
@@ -1989,7 +1992,7 @@ class RegressionPredictor:
         """does the actual regression training, first feature selection: can be used by both train and test"""
 
         sparse = True
-        if not isinstance(X, csr_matrix):
+        if not isinstance(X, csr_array):
             X = np.array(X)
             sparse = False
         scaler = None
@@ -2166,7 +2169,7 @@ class RegressionPredictor:
         for i in range(len(multiX)):
             X = multiX[i]
             #this logic seemed off so commiting out beuase causing issues (HAS 6/3/2020)
-            if not sparse and not factorAdaptation and isinstance(X, csr_matrix):
+            if not sparse and not factorAdaptation and isinstance(X, csr_array):
                 X = X.todense()
             print(" X[%d]: (N, features): %s" % (i, str(X.shape)))
 
@@ -3188,7 +3191,7 @@ class SpamsGroupLasso(LinearRegression, RegressorMixin):
 
 def chunks(X, y, size):
     """ Yield successive n-sized chunks from X and Y."""
-    if not isinstance(X, csr_matrix):
+    if not isinstance(X, csr_array):
         assert len(X) == len(y), "chunks: size of X and y don't match"
     size = max(len(y), size)
     

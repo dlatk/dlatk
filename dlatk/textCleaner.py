@@ -37,7 +37,7 @@ newlines = re.compile(r'\s*\n\s*')
 
 def shrinkSpace(s):
     """turns multipel spaces into 1"""
-    s = multSpace.sub(' ',s)
+    s = multSpace.sub(' ',str(s))
     s = multDots.sub('....',s)
     s = endSpace.sub('',s)
     s = startSpace.sub('',s)
@@ -47,7 +47,7 @@ def shrinkSpace(s):
 newlines = re.compile(r'\s*\n\s*')
 
 def treatNewlines(s):
-    s = newlines.sub(' <NEWLINE> ',s)
+    s = newlines.sub(' <NEWLINE> ',str(s))
     return s
 
 ### method specific helper methods

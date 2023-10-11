@@ -3,10 +3,10 @@
 # This script is executed when dlatkInterface.py is called with --colabify flag.
 
 DLATK_PATH=$1 #Path to DLATK passed from dlatkInterface.py
-SQLITE_FOLDER=/content/sqlite_data
 
-mkdir -p ${SQLITE_FOLDER}
-cp ${DLATK_PATH}/data/dlatk_lexica.db ${SQLITE_FOLDER}/dlatk_lexica.db
+mkdir -p /content/sqlite_data
+cp ${DLATK_PATH}/data/dlatk_lexica.db /content/sqlite_data/dlatk_lexica.db
+cp ${DLATK_PATH}/data/msgs100.csv /content/msgs100.csv
 
 # Install mallet 2.0.8
 wget -q -O mallet.tar.gz http://mallet.cs.umass.edu/dist/mallet-2.0.8.tar.gz

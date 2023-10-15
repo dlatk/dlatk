@@ -44,7 +44,7 @@ try:
     from simplejson import loads
     import jsonrpclib
 except ImportError:
-    print("Warning: unable to import jsonrpclib or simplejson")
+    #print("Warning: unable to import jsonrpclib or simplejson")
     pass
 try:
     from textstat.textstat import textstat

@@ -74,7 +74,7 @@ def main(fn_args = None):
     :param fn_args: string - ex "-d testing -t msgs -c user_id --add_ngrams -n 1 "
     """
     strTime = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-    dlac.warn("\n\n-----\nDLATK Interface Initiated: %s\n-----" % strTime)
+    dlac.warn("\n-----\nDLATK Interface Initiated: %s\n-----" % strTime)
     start_time = time.time()
 
 
@@ -962,7 +962,7 @@ def main(fn_args = None):
     if args.listfeattables or args.showtables:
         feat_table = True if args.listfeattables else False
         tables = dlaw.getTables(like=args.showtables, feat_table=feat_table)
-        print('Found %s available tables' % (len(tables)))
+        print('\nFound %s available tables\n----' % (len(tables)))
         for table in tables: print(str(table[0]))
 
     def printTableDesc(description):
@@ -979,7 +979,7 @@ def main(fn_args = None):
 
     if args.describetables:
         if args.corptable:
-            printTableDesc(dlaw.describeTable(table_name=args.corptable))
+            printTableDesc(dlaw.describeTable(table_name=dlaw.corptable))
         if isinstance(args.feattable, str):
             printTableDesc(dlaw.describeTable(table_name=args.feattable))
         elif isinstance(args.feattable, list):
@@ -993,7 +993,7 @@ def main(fn_args = None):
 
     if args.viewtables:
         if args.corptable:
-            printTableData(dlaw.viewTable(table_name=args.corptable))
+            printTableData(dlaw.viewTable(table_name=dlaw.corptable))
         if isinstance(args.feattable, str):
             printTableData(dlaw.viewTable(table_name=args.feattable))
         elif isinstance(args.feattable, list):
@@ -2182,8 +2182,8 @@ def main(fn_args = None):
 
         init_file.close()
     
-    warning = """--
-Variables:
+    warning = """----
+Settings:
 
 Database - {}
 Corpus - {}
@@ -2198,7 +2198,7 @@ Group ID - {}""".format(args.corpdb, args.corptable, args.correl_field)
     if args.outcomecontrols:
         dlac.warn("Control(s) - {}".format(' '.join([args.outcomecontrols[index] for index in range(min(3, len(args.outcomecontrols)))])))
 
-    dlac.warn("--\nInterface Runtime: %.2f seconds"% float(time.time() - start_time))
+    dlac.warn("----\nInterface Runtime: %.2f seconds"% float(time.time() - start_time))
     dlac.warn("DLATK exits with success! A good day indeed  ¯\_(ツ)_/¯.")
 
 if __name__ == "__main__":

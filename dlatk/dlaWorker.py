@@ -99,7 +99,7 @@ class DLAWorker(object):
             message_table = self.corptable.split('/')[-1].split('.')[0]
             if not self.data_engine.tableExists(message_table):
                 if ".csv" in self.corptable:
-                    self.data_engine.dataEngine.csvToTable(self.corptable, message_table)
+                    self.data_engine.csvToTable(self.corptable, message_table)
                 else:
                     dlac.warn("Message table missing")
             
@@ -457,6 +457,7 @@ class DLAWorker(object):
         Description of table (list of lists)
             
         """
+        dlac.warn("\nPrinting: {}\n----\n".format(table_name))
         return self.data_engine.describeTable(table_name)
 
     def viewTable(self, table_name):
@@ -472,6 +473,7 @@ class DLAWorker(object):
         First 5 rows of table (list of lists)
             
         """
+        dlac.warn("\nPrinting: {}\n----\n".format(table_name))
         return self.data_engine.viewTable(table_name)
 
 

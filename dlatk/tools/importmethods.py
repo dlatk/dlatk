@@ -13,6 +13,8 @@ from pathlib import Path
 sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/dlatk/tools",""))
 from dlatk.mysqlmethods import mysqlMethods as mm
 from dlatk.sqlitemethods import sqliteMethods as sm
+from dlatk.database.dataEngine import DataEngine
+from dlatk import dlaConstants as dlac
 
 from warnings import filterwarnings
 filterwarnings('ignore', category = Warning)
@@ -48,19 +50,16 @@ def appendCSVtoMySQL(csvFile, database, table, ignoreLines=0, dbCursor=None):
     dbCursor.execute(enableSQL)
     return
 
-def csvToMySQL(csvFile, database, table, columnDescription, ignoreLines=0):
-    dbConn, dbCursor, dictCursor = mm.dbConnect(database)
+def csvToMySQL(csvFile, database, table,  mysql_config_file=dlac.MYSQL_CONFIG_FILE, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH):
 
-    dbCursor.execute("""SHOW TABLES LIKE '{table}'""".format(table=table))
-    tables = [item[0] for item in dbCursor.fetchall()]
-    if tables:
-        print("A table by that name already exists in the database. Please use appendCSVtoMySQL or choose a new name.")
-        sys.exit(1)
+    data_engine = DataEngine(database, mysql_config_file, encoding, use_unicode, "mysql")
+    (dbConn, dbCursor, dictCursor) = data_engine.connect()
 
-    createSQL = """CREATE TABLE {table} {colDesc} CHARACTER SET utf8mb4""".format(table=table, colDesc=columnDescription)
-    print(createSQL)
-    dbCursor.execute(createSQL)
-    appendCSVtoMySQL(csvFile, database, table, ignoreLines, dbCursor)
+    if not data_engine.tableExists(table):
+        data_engine.dataEngine.csvToTable(csvFile, table)
+    else:
+        dlac.warn("Table alreadye exists")
+
     return
 
 def mySQLToCSV(database, table, csvFile, csvQuoting=csv.QUOTE_ALL):
@@ -190,12 +189,8 @@ def main():
             print("Your CSV file does not exist.")
             sys.exit(1)
         if args.csv_to_mysql:
-            if not args.column_description:
-                print("You must specify a column description --column_description")
-                sys.exit(1)
-
             print("Importing {csv} to {db}.{table}".format(db=args.db, table=args.table, csv=args.csv_file))
-            csvToMySQL(args.csv_file, args.db, args.table, args.column_description, ignoreLines=args.ignore_lines)
+            csvToMySQL(args.csv_file, args.db, args.table)
         elif args.csv_to_sqlite:
             if not args.column_description:
                 print("You must specify a column description --column_description")

@@ -274,6 +274,101 @@ class DataEngine(object):
 		"""
 		return self.dataEngine.getTableColumnNameTypes(table_name)
 
+	def get_column_description(self, csv_file):
+		"""
+		Infers the column datatypes from a CSV and returns the SQL column description.
+		
+		Parameters
+		------------
+		csv_file: str
+		"""
+
+		def _eval(x):
+			try:
+				return ast.literal_eval(x)
+			except:
+				return x
+
+		#read a random sample of size 100 from the CSV.	
+		sample_size = 1000
+		num_lines = int(check_output(["wc", "-l", csv_file]).split()[0])
+		row_idx = sorted(random.sample(range(1, num_lines), sample_size))
+		with open(csv_file, 'r') as f:
+			reader = csv.reader(f, delimiter=',')
+			header = next(reader)
+			sample = []
+			for idx in range(1, row_idx[-1]+1):
+				try:
+					row = next(reader)
+				except StopIteration:
+					break
+				if idx in row_idx:
+					sample.append(row)
+
+		#infer the column types from the sample.
+		max_vc_length = 100
+		num_columns = len(header)
+		column_description = []	
+		for cid in range(num_columns):
+
+			length, is_str = 0, False
+			for index, row in enumerate(sample):
+				column_value = _eval(row[cid])
+				if (not is_str) and (isinstance(column_value, int)):
+					column_type = "INT"
+				elif (not is_str) and (isinstance(column_value, float)):
+					column_type = "DOUBLE"
+				else:
+					is_str = True
+					column_value = str(column_value)
+					length = max(len(column_value), length)
+					if length <= max_vc_length:
+						column_type = "VARCHAR({})".format(length)
+					else:
+						column_type = "LONGTEXT"
+						break
+
+			column_description.append("{} {}".format(header[cid], column_type))
+
+		column_description = '(' + ', '.join(column_description) + ");"
+		return column_description
+
+	def csvToTable(self, csv_file, table_name):
+		"""
+		Loads a CSV file as a SQLite table to the database
+		
+		Parameters
+		------------
+		csv_file: str
+
+		table_name: str
+		"""
+
+		column_description = self.get_column_description(csv_file)
+		createSQL = "CREATE TABLE {} {}".format(table_name, column_description)
+		self.execute(createSQL)
+
+		print("Importing data, reading {} file".format(csv_file))
+
+		def chunks(data, rows=10000):
+			"Divides the data into 10000 rows each"
+			for i in range(0, len(data), rows):
+				yield data[i:i+rows]
+
+		with open(csv_file, 'r') as f:
+			reader = csv.reader(f, delimiter=',')
+			header = next(reader)
+			data = list(reader)
+			chunk_data = chunks(data) 
+			num_columns = None
+			for chunk in chunk_data:
+				if not num_columns:
+					num_columns = len(chunk[0])
+					placeholder = "%s" if self.db_type == "mysql" else "?"
+					values_str = "(" + ",".join([placeholder] * num_columns) + ")"
+				insertQuery = "INSERT INTO {} VALUES {}".format(table_name, values_str)
+				self.execute_write_many(insertQuery, chunk)
+
 class MySqlDataEngine(DataEngine):
 	"""
 	Class for interacting with the MYSQL database engine.
@@ -317,7 +412,7 @@ class MySqlDataEngine(DataEngine):
 		list
 		"""
 		if feat_table:
-			sql = "SHOW TABLES FROM {} LIKE {}".format(self.corpdb, like)
+			sql = "SHOW TABLES FROM {} LIKE '{}'".format(self.corpdb, like)
 		else:
 			sql = "SHOW TABLES FROM {} where Tables_in_{} NOT LIKE 'feat%%' ".format(self.corpdb, self.corpdb)
 			if isinstance(like, str): sql += " AND Tables_in_{} like '{}'".format(self.corpdb, like)
@@ -757,98 +852,6 @@ class SqliteDataEngine(DataEngine):
 		"""
 		#RANDOM() function in SQLiye doesn't consume a seed value.
 		return "RANDOM()"
-	
-	def get_column_description(self, csv_file):
-		"""
-		Infers the column datatypes from a CSV and returns the SQL column description.
-		
-		Parameters
-		------------
-		csv_file: str
-		"""
-
-		def _eval(x):
-			try:
-				return ast.literal_eval(x)
-			except:
-				return x
-
-		#read a random sample of size 100 from the CSV.	
-		sample_size = 1000
-		num_lines = int(check_output(["wc", "-l", csv_file]).split()[0])
-		row_idx = sorted(random.sample(range(1, num_lines), sample_size))
-		with open(csv_file, 'r') as f:
-			reader = csv.reader(f, delimiter=',')
-			header = next(reader)
-			sample = []
-			for idx in range(1, row_idx[-1]+1):
-				try:
-					row = next(reader)
-				except StopIteration:
-					break
-				if idx in row_idx:
-					sample.append(row)
-
-		#infer the column types from the sample.
-		max_length = 100
-		num_columns = len(header)
-		column_description = []	
-		for cid in range(num_columns):
-
-			length = 0
-			for index, row in enumerate(sample):
-				column_value = _eval(row[cid])
-				if (not length) and (isinstance(column_value, int)):
-					column_type = "INT"
-				elif (not length) and (isinstance(column_value, float)):
-					column_type = "DOUBLE"
-				else:
-					length = max(len(column_value), length)
-					if length <= max_length:
-						column_type = "VARCHAR({})".format(length)
-					else:
-						column_type = "TEXT"
-						break
-
-			column_description.append("{} {}".format(header[cid], column_type))
-
-		column_description = '(' + ', '.join(column_description) + ");"
-		return column_description
-
-	def csvToTable(self, csv_file, table_name):
-		"""
-		Loads a CSV file as a SQLite table to the database
-		
-		Parameters
-		------------
-		csv_file: str
-
-		table_name: str
-		"""
-		
-		column_description = self.get_column_description(csv_file)
-		createSQL = "CREATE TABLE {} {}".format(table_name, column_description)
-		self.execute(createSQL)
-
-		print("Importing data, reading {} file".format(csv_file))
-
-		def chunks(data, rows=10000):
-			"Divides the data into 10000 rows each"
-			for i in range(0, len(data), rows):
-				yield data[i:i+rows]
-
-		with open(csv_file, 'r') as f:
-			reader = csv.reader(f, delimiter=',')
-			header = next(reader)
-			data = list(reader)
-			chunk_data = chunks(data) 
-			num_columns = None
-			for chunk in chunk_data:
-				if not num_columns:
-					num_columns = len(chunk[0])
-					values_str = "(" + ",".join(["?"] * num_columns) + ")"
-				insertQuery = "INSERT INTO {} VALUES {}".format(table_name, values_str)
-				self.execute_write_many(insertQuery, chunk)
 
 	def tableToCSV(self, table_name, csv_file, quoting=csv.QUOTE_ALL):
 		"""

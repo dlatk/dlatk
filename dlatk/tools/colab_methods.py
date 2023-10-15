@@ -1,4 +1,10 @@
+import glob
 import os
+import re
+
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 from oauth2client.client import GoogleCredentials
@@ -44,3 +50,28 @@ def shorten_colab_output():
         display(Javascript('''google.colab.output.setIframeHeight(0, true, {maxHeight: 250})'''))
 
     get_ipython().events.register("pre_run_cell", resize_output)
+
+def print_wordclouds(wordcloud_folder, num_plots=4):
+
+    images = glob.glob(os.path.join(wordcloud_folder, "*.png"))
+    pos_images, neg_images = [image for image in images if "pos" in image], [image for image in images if "neg" in image]
+
+    num_plots = min(num_plots, len(pos_images), len(neg_images))
+
+    def get_coeff(x):
+        return float(re.findall("\d+\.\d+", x.split('/')[-1])[0])
+
+    top = [
+        sorted(pos_images, key=lambda x: get_coeff(x))[::-1][:num_plots],
+        sorted(neg_images, key=lambda x: get_coeff(x))[::-1][:num_plots]]
+
+    fig, axes = plt.subplots(2, num_plots, figsize=(15, 5))
+    axes = axes.reshape(2, -1)
+    for direction, images in enumerate(top):
+      for index, image in enumerate(images):
+
+        axes[direction, index].set_axis_off()
+        axes[direction, index].set_title(image.split('/')[-1])
+        axes[direction, index].imshow(mpimg.imread(image))
+
+    return

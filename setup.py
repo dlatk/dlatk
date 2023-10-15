@@ -148,7 +148,7 @@ CLASSIFIERS = [
 ]
 VERSION = '1.2.6'
 PACKAGE_DATA = {
-  'dlatk': ['data/*.sql', 'data/*.db'],
+  'dlatk': ['data/*.sql', 'data/*.db', "data/*.csv", "tools/colabify.sh"],
   'dlatk.lib': ['meloche_bd.ttf', 'oval_big_mask.png', 'oval_mask.png'],
 }
 INCLUDE_PACKAGE_DATA = True
@@ -168,7 +168,6 @@ INSTALL_REQUIRES = [
 
 if os.getenv("COLAB_RELEASE_TAG") is None:
 
-  PACKAGE_DATA["dlatk"] += ["data/*.csv", "tools/colabify.sh"]
   try:
     subprocess.check_output(["mysql", "--version"])
     INSTALL_REQUIRES.append([

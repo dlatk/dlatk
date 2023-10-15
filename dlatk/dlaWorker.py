@@ -131,7 +131,7 @@ class DLAWorker(object):
         self.lexicon = WeightedLexicon(
             lexicon_db=self.lexicondb,
             mysql_config_file=self.mysql_config_file,
-            lex_db_type=self.db_type,
+            lex_db_type=db_type,
             encoding=self.encoding,
             use_unicode=self.use_unicode)
 

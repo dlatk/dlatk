@@ -112,6 +112,7 @@ class OutcomeGetter(DLAWorker):
     def __init__(self, db_type=dlac.DB_TYPE, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_config_file=dlac.MYSQL_CONFIG_FILE, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb = dlac.DEF_LEXICON_DB, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls = dlac.DEF_OUTCOME_CONTROLS, outcome_interaction = dlac.DEF_OUTCOME_CONTROLS, outcome_categories = [], multiclass_outcome = [], group_freq_thresh = None, low_variance_thresh = dlac.DEF_LOW_VARIANCE_THRESHOLD, featureMappingTable='', featureMappingLex='', wordTable = None, fold_column = None):
         super(OutcomeGetter, self).__init__(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable = wordTable)
         self.outcome_table = outcome_table
+        self.get_outcome_table()
 
         if isinstance(outcome_value_fields, str):
             outcome_value_fields = [outcome_value_fields]
@@ -146,6 +147,18 @@ class OutcomeGetter(DLAWorker):
         self.one_group_set_for_all_outcomes = False # whether to use groups in common for all outcomes
         self.fold_column = fold_column
         self.low_variance_thresh = low_variance_thresh
+
+    def get_outcome_table(self):
+
+        outcome_table = self.outcome_table.split('/')[-1].split('.')[0]
+        if not self.data_engine.tableExists(outcome_table):
+            if (".csv" in self.outcome_table) and (self.db_type == "sqlite"):
+                self.data_engine.csvToTable(self.outcome_table, outcome_table)
+            else:
+                dlac.warn("Outcome table missing")
+                sys.exit(1)
+            
+        self.outcome_table = outcome_table
 
     def hasOutcomes(self):
         if len(self.outcome_value_fields) > 0:

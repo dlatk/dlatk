@@ -1231,7 +1231,7 @@ class FeatureExtractor(DLAWorker):
             messages = list(map(lambda x: x[1], messageRows))
             parses = []
             for m_id, message in messageRows:
-                parses.append([m_id, json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(message.strip()))))])
+                if message is not None: parses.append([m_id, json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(message.strip()))))])
             return parses
 
         dlac.warn("WARNING: new version of BERT and transformer models starts at layer 1 rather than layer 0. Layer 0 is now the input embedding. For example, if you were using layer 10 for the second to last layer of bert-base that is now considered layer 11.")

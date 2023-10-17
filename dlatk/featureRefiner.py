@@ -1260,3 +1260,54 @@ class FeatureRefiner(FeatureGetter):
         print("Updating ufeat data with pocc values...")
         mif.mysql_update(db_eng, ufeat_multigram_table, pocc_dict_iter, log_every=10000)
         return ufeat_multigram_table
+
+
+    def createArchetypeFeats(self, archetypeFeats, featNormTable=False)
+        """Creates a feature table given a 1gram feature table name, a lexicon table / database name
+
+        Parameters
+        ----------
+        archetype_feats: str
+            Name of base lexicon table
+
+        Returns
+        -------
+        tableName : str
+            Name of created feature table: feat%archetype_lexTable%corptable$correl_field
+
+        """
+        PR = pprint #debug
+        
+        #Step 1: get the archetype vectors
+        
+        #step 2: iterate over the feature table scores
+        #    step 3: call archetype.static_analyze on batches
+        
+        #step 4: write the new feature table
+        
+        #uses pmi to remove uncommon collocations:
+        archGetter = FeatureGetter(self.dbengine, self.corpdb, self.corptable, self.correl_field, self.mysqlconfigfile, self.message_field, self.messageid_field, self.encoding, self.useunicode, self.lexicondb, archeTypefeats, self.featnames, wordTable = self.wordTable)
+        
+        featureTable = self.featureTable
+        dlac.warn(featureTable)
+        wordGetter = self.getWordGetter()
+        tokenizer = Tokenizer(use_unicode=self.use_unicode)
+
+        jointFreqs = self.getSumValuesByFeat()
+        wordFreqs = dict(wordGetter.getSumValuesByFeat())
+        allFreqs = wordGetter.getSumValue()
+
+        keepers = set()
+        for (colloc, freq) in jointFreqs:
+            # words = tokenizer.tokenize(colloc)
+            # If words got truncated in the creation of 1grams, we need to account for that
+            words = [word[:dlac.VARCHAR_WORD_LENGTH] for word in tokenizer.tokenize(colloc)]
+            if (len(words) > 1):
+                indFreqs = [wordFreqs[w] for w in words if w in wordFreqs]
+                pmi = FeatureRefiner.pmi(freq, indFreqs, allFreqs, words = words)
+                # print "%s: %.4f" % (colloc, pmi)#debug
+                if pmi > (len(words)-1)*threshold: 
+                    keepers.add(colloc)
+            else:
+                keepers.add(colloc)
+        return self.createNewTableWithGivenFeats(keepers, "pmi%s"%str(threshold).replace('.', '_'), featNormTable)

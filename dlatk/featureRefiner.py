@@ -1286,8 +1286,9 @@ class FeatureRefiner(FeatureGetter):
         #from archetypes import ArchetypeCollection, ArchetypeQuantifier 
         #main similarity metric: ArchetypeQuantifier.static_analyzer
         #TODO: update to note require reading column names from table
+        
         archCol = archetypeFeats.split('$')[-1]
-        archCorpus = archetypeFeats.split('$')[2]
+        [_, archFeatName, archCorpus,archCategory] = archetypeFeats.split('$')
         #archGetter = FeatureGetter(self.db_type, self.corpdb, archCorpus, archCol, self.mysql_config_file, self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb, archetypeFeats, wordTable = self.wordTable)
         archGetter = FeatureGetter(self.db_type, self.corpdb, archCorpus, archCol, self.mysql_config_file, self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb, archetypeFeats, wordTable = self.wordTable)
         
@@ -1320,7 +1321,7 @@ class FeatureRefiner(FeatureGetter):
         X = csr_matrix((data,(row,col)), shape = (len(groups), len(featureNames)), dtype=np.float)
         if meanCenter:
             X = X.todense()
-            X = X - X.mean()
+            X = X - X.mean(axis=0)
         dlac.warn("Groups, features to compare with: %s" % str(X.shape))
 
         #STEP 3 Iterate over archs to calculate similarity
@@ -1335,14 +1336,14 @@ class FeatureRefiner(FeatureGetter):
         
         ##STEP 4: write the new feature table
         nameLength = max([len(k) for k in sims.keys()])
-        featTypeName = "arche_"+'_'.join(sims.keys())[:8]
+        featTypeName = "arc_"+archFeatName[:6]+'_'+archCategory[:7]
         tableName = self.createFeatureTable(featTypeName, "VARCHAR(%d)"%nameLength, 'DOUBLE')
         #INSERT:
         #TODO: make this a function!
         for archName, sscores in sims.items():
             wsql = """INSERT INTO """+tableName+""" (group_id, feat, value, group_norm) values ('%s', %s, %s, %s)"""
             rows = [(groups[i], archName, int(np.round(sscores[i])), sscores[i]) for i in range(len(sscores))]
-            pprint(rows[:10])
+            pprint([rows[i] for i in np.random.choice(range(len(rows)), 10, False).tolist()])
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, mysql_config_file=self.mysql_config_file)
         dlac.warn("Done Inserting; new table: %s" % tableName)
 

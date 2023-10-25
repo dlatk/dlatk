@@ -15,6 +15,7 @@ import numbers
 from operator import mul
 from functools import reduce
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics.pairwise import cosine_similarity
 from scipy.sparse import csr_matrix
 from scipy.interpolate import interp1d
 
@@ -1266,8 +1267,10 @@ class FeatureRefiner(FeatureGetter):
         return ufeat_multigram_table
 
 
-    def createArchetypeFeats(self, archetypeFeats, meanCenter=True, featNormTable=False, \
-                             metric = lambda v, X: np.dot(X, v)/(norm(X, axis=1)*norm(v))):
+    def createArchetypeFeats(self, archetypeFeats, meanCenter=True, standardize=False, featNormTable=False, \
+                             metric = lambda v, X: cosine_similarity(v[None,:], X)):
+                             #v.dot(X.T) / (norm(X.T,axis=0)*norm(v))): 
+                             #np.dot(X, v)/(norm(X, axis=1)*norm(v))):
         """Creates a feature table given a 1gram feature table name, a lexicon table / database name
 
         Parameters
@@ -1299,39 +1302,34 @@ class FeatureRefiner(FeatureGetter):
         ##STEP 1: get the archetype vectors (group_id is category)
         print(archGetter.featureTable)
         (archGNs, archFeatureNames) = archGetter.getGroupNormsWithZeros()
-        archFeatureName = list(archFeatureNames)
+        archFeatureNames = list(archFeatureNames)
         dlac.warn("\narchetypes: %s; number of features: %d" % (str(archGNs.keys()), len(archFeatureNames)))
     
         ##STEP 2: Get document features
-        (groupNorms, featureNames) = self.getGroupNormsSparseFeatsFirst()
-        gnList = [groupNorms[feat] for feat in archFeatureNames] #list of dictionaries of group_id => group_norm
-        groups = list(set([gid for l in gnList for gid in l]))
-        groupToIndex = dict([(groups[i], i) for i in range(len(groups))])
-        row = []
-        col = []
-        data = []
-        # columns: features.
-        for featIndex in range(len(gnList)):
-            colData = gnList[featIndex]
-            for groupid, value in colData.items():
-                    row.append(groupToIndex[groupid])
-                    col.append(featIndex)
-                    data.append(value)
-        assert all([isinstance(x,numbers.Number) for x in data]), "Data is corrupt, there are non float elements in the group norms (some might be NULL?)"
-        X = csr_matrix((data,(row,col)), shape = (len(groups), len(featureNames)), dtype=np.float)
+        #(groupNorms, featureNames) = self.getGroupNormsSparseFeatsFirst()
+        (gns, featureNames) = self.getGroupNormsWithZeros()
+        groups = list(gns.keys())
+        X = np.array([[gns[gid][feat] for feat in archFeatureNames] for gid in gns.keys()])
+        #assert all([isinstance(X,numbers.Number) for x in X]), "Data is corrupt, there are non float elements in the group norms (some might be NULL?)"
+        Xmean = X.mean(axis=0)
         if meanCenter:
-            X = X.todense()
-            X = X - X.mean(axis=0)
-        dlac.warn("Groups, features to compare with: %s" % str(X.shape))
+            X = X - Xmean
+        if standardize:
+            X = X/X.std(axis=0,keepdims=True)
+        dlac.warn("Data being compared to archetypes (groups, feats): %s" % str(X.shape))
 
         #STEP 3 Iterate over archs to calculate similarity
         sims = {} #holds the architype similarities
         for archName, archGNs in archGNs.items():
-            print("calculating for", archName)
+            dlac.warn("calculating for: "+archName)
             archVector = np.array([archGNs[feat] for feat in archFeatureNames])
+            print(archVector.mean())
             if meanCenter:
-                archVector = archVector - archVector.mean()
-            sims[archName] = metric(archVector, X).flatten().tolist()[0]
+                #archVector = archVector - archVector.mean()
+                archVector = archVector - Xmean
+            if standardize:
+                archVector = archVector / archVector.std()
+            sims[archName] = metric(archVector, X).flatten().tolist()#[0]
         dlac.warn({k: len(v) for k, v in sims.items()})
         
         ##STEP 4: write the new feature table
@@ -1343,7 +1341,7 @@ class FeatureRefiner(FeatureGetter):
         for archName, sscores in sims.items():
             wsql = """INSERT INTO """+tableName+""" (group_id, feat, value, group_norm) values ('%s', %s, %s, %s)"""
             rows = [(groups[i], archName, int(np.round(sscores[i])), sscores[i]) for i in range(len(sscores))]
-            pprint([rows[i] for i in np.random.choice(range(len(rows)), 10, False).tolist()])
+            #pprint([rows[i] for i in np.random.choice(range(len(rows)), 10, False).tolist()])
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, mysql_config_file=self.mysql_config_file)
         dlac.warn("Done Inserting; new table: %s" % tableName)
 

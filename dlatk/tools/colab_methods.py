@@ -4,6 +4,7 @@ import re
 
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+from matplotlib.axes import Axes
 
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
@@ -51,27 +52,25 @@ def shorten_colab_output():
 
     get_ipython().events.register("pre_run_cell", resize_output)
 
-def print_wordclouds(wordcloud_folder, num_plots=4):
+def print_wordclouds(wordcloud_folder):
 
     images = glob.glob(os.path.join(wordcloud_folder, "*.png"))
-    pos_images, neg_images = [image for image in images if "pos" in image], [image for image in images if "neg" in image]
+    if len(images) == 0:
+      print("None of the features were significant, hence wordclouds not produced.")
+      return
+    
+    outcomes = set([re.split(r'_pos|_neg', image.split('/')[-1])[0] for image in images])
+    outcome_image_map = {outcome: [image for image in images if (outcome + '_') in image.split('/')[-1]] for outcome in outcomes}
 
-    num_plots = min(num_plots, len(pos_images), len(neg_images))
+    for outcome in outcomes:
 
-    def get_coeff(x):
-        return float(re.findall("\d+\.\d+", x.split('/')[-1])[0])
+      outcome_images = outcome_image_map[outcome]
+      fig, axes = plt.subplots(1, len(outcome_images), figsize=(5 * len(outcome_images), 5)) 
+      axes = [axes] if isinstance(axes, Axes) else axes
 
-    top = [
-        sorted(pos_images, key=lambda x: get_coeff(x))[::-1][:num_plots],
-        sorted(neg_images, key=lambda x: get_coeff(x))[::-1][:num_plots]]
-
-    fig, axes = plt.subplots(2, num_plots, figsize=(15, 5))
-    axes = axes.reshape(2, -1)
-    for direction, images in enumerate(top):
-      for index, image in enumerate(images):
-
-        axes[direction, index].set_axis_off()
-        axes[direction, index].set_title(image.split('/')[-1])
-        axes[direction, index].imshow(mpimg.imread(image))
+      for i, image in enumerate(outcome_images):
+        axes[i].set_axis_off()
+        axes[i].set_title(image.split('/')[-1])
+        axes[i].imshow(mpimg.imread(image))
 
     return

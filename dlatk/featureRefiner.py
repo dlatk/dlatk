@@ -1300,7 +1300,6 @@ class FeatureRefiner(FeatureGetter):
         # probably not needed: wordGetter = self.getWordGetter()
 
         ##STEP 1: get the archetype vectors (group_id is category)
-        print(archGetter.featureTable)
         (archGNs, archFeatureNames) = archGetter.getGroupNormsWithZeros()
         archFeatureNames = list(archFeatureNames)
         dlac.warn("\narchetypes: %s; number of features: %d" % (str(archGNs.keys()), len(archFeatureNames)))
@@ -1323,7 +1322,6 @@ class FeatureRefiner(FeatureGetter):
         for archName, archGNs in archGNs.items():
             dlac.warn("calculating for: "+archName)
             archVector = np.array([archGNs[feat] for feat in archFeatureNames])
-            print(archVector.mean())
             if meanCenter:
                 #archVector = archVector - archVector.mean()
                 archVector = archVector - Xmean

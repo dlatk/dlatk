@@ -1332,13 +1332,13 @@ class FeatureRefiner(FeatureGetter):
         
         ##STEP 4: write the new feature table
         nameLength = max([len(k) for k in sims.keys()])
-        featTypeName = "arc_"+archFeatName[:6]+'_'+archCategory[:7]
+        featTypeName = "arc_"+archFeatName[:5]+'_'+archCategory[:4]
         tableName = self.createFeatureTable(featTypeName, "VARCHAR(%d)"%nameLength, 'DOUBLE')
         #INSERT:
         #TODO: make this a function!
         for archName, sscores in sims.items():
-            wsql = """INSERT INTO """+tableName+""" (group_id, feat, value, group_norm) values ('%s', %s, %s, %s)"""
-            rows = [(groups[i], archName, int(np.round(sscores[i])), sscores[i]) for i in range(len(sscores))]
+            wsql = """INSERT INTO """+tableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
+            rows = [(str(groups[i]), archName, int(np.round(sscores[i])), sscores[i]) for i in range(len(sscores))]
             #pprint([rows[i] for i in np.random.choice(range(len(rows)), 10, False).tolist()])
             mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, mysql_config_file=self.mysql_config_file)
         dlac.warn("Done Inserting; new table: %s" % tableName)

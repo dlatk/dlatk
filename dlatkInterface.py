@@ -1613,7 +1613,7 @@ def main(fn_args = None):
                                            outputname = args.outputname if args.outputname
                                            else args.outputdir + '/rMatrix.' + fg.featureTable + '.' + og.outcome_table  + '.' + '_'.join(og.outcome_value_fields),
                                            useXFeats = args.usexfeats, useXControls = args.usexcontrols)
-
+    """
     if args.correlate:
         pprint(args)
         for outcomeField, featRs in correls.items():
@@ -1624,7 +1624,7 @@ def main(fn_args = None):
             #pprint(featRs)#debug
             pprint(sorted(list(featRs.items()), key= lambda f: f[1][0] if not isnan(f[1][0]) else 0),depth=3, compact=True)
             print("\n%d features significant at p < %s" % (cnt, args.maxP))
-
+    """
     if args.rmatrix and not args.cca:
         if args.outputname:
             outputFile = args.outputname

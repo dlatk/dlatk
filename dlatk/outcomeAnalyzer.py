@@ -2573,7 +2573,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             ffreq = 0
             for key2 in keys2:
                 (r, p, n, ci, f) = correlMatrix[key1].get(key2, [0, 1, 0, (0,0), ffreq])[:OutcomeAnalyzer.correls_length]
-                print(r, p, n, ci, f)
+                #print(r, p, n, ci, f)
                 if not f: f = 0
                 if f: ffreq = f
 

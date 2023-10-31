@@ -156,7 +156,6 @@ class OutcomeGetter(DLAWorker):
                 self.data_engine.csvToTable(self.outcome_table, outcome_table)
             else:
                 dlac.warn("Outcome table missing")
-                sys.exit(1)
             
         self.outcome_table = outcome_table
 
@@ -187,15 +186,14 @@ class OutcomeGetter(DLAWorker):
         return feat_to_label
 
     def createOutcomeTable(self, tablename, dataframe, ifExists='fail'):
-        #print("DEBUG", self.corpdb, self.mysql_config_file)#DEBUG
-        eng = get_db_engine(self.corpdb, mysql_config_file=self.mysql_config_file)
+
         dtype ={}
         if isinstance(dataframe.index[0], str):
             import sqlalchemy
             dataframe.index = dataframe.index.astype(str)
             dtype = {self.correl_field : sqlalchemy.types.VARCHAR(max([len(i) for i in dataframe.index]))}
             dataframe.index.name = self.correl_field
-        dataframe.to_sql(tablename, eng, index_label = self.correl_field, if_exists = ifExists, chunksize=dlac.MYSQL_BATCH_INSERT_SIZE, dtype = dtype)
+        dataframe.to_sql(tablename, self.dbConn, index_label = self.correl_field, if_exists = ifExists, chunksize=dlac.MYSQL_BATCH_INSERT_SIZE, dtype = dtype)
         print("New table created: %s" % tablename)
 
     def getDistinctOutcomeValues(self, outcome = None, includeNull = True, where = ''):

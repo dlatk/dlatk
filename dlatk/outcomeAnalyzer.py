@@ -2396,7 +2396,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         if paramString: print(paramString + "\n \n", file=outputFilePtr)
 
         outputFormat = outputFormat.lower()
-        dlac.warn('=====================%d===================='%(len(correlMatrix),))
+        #dlac.warn('=====================%d===================='%(len(correlMatrix),))
         if outputFormat == 'pickle':
             import pickle as pickle
             pickle.dump(correlMatrix, open(outputFile, "wb" ))

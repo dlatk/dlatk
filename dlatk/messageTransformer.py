@@ -348,7 +348,7 @@ class MessageTransformer(DLAWorker):
 
         return tableName
 
-    def addSentTokenizedMessages(self, sentPerRow = False, cleanMessages = None, newlinesToPeriods=True, splitOnCommas=True):
+    def addSentTokenizedMessages(self, sentPerRow = False, cleanMessages = None, newlinesToPeriods=True, splitOnCommas=False):
         """Creates a sentence tokenized version of message table
 
         Returns

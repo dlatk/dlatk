@@ -1290,10 +1290,8 @@ class FeatureRefiner(FeatureGetter):
         #main similarity metric: ArchetypeQuantifier.static_analyzer
         #TODO: update to note require reading column names from table
         
-        archCol = archetypeFeats.split('$')[-1]
-        [_, archFeatName, archCorpus,archCategory] = archetypeFeats.split('$')[:4]
-        #archGetter = FeatureGetter(self.db_type, self.corpdb, archCorpus, archCol, self.mysql_config_file, self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb, archetypeFeats, wordTable = self.wordTable)
-        archGetter = FeatureGetter(self.db_type, self.corpdb, archCorpus, archCol, self.mysql_config_file, self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb, archetypeFeats, wordTable = self.wordTable)
+        [_, archFeatName, archCorpus, archCategory] = archetypeFeats.split('$')[:4]
+        archGetter = FeatureGetter(self.db_type, self.corpdb, archCorpus, archCategory, self.mysql_config_file, self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb, archetypeFeats, wordTable = self.wordTable)
         
         featureTable = self.featureTable
         dlac.warn("adding archetype " + archetypeFeats + " features for " + featureTable)

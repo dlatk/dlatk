@@ -1291,7 +1291,7 @@ class FeatureRefiner(FeatureGetter):
         #TODO: update to note require reading column names from table
         
         archCol = archetypeFeats.split('$')[-1]
-        [_, archFeatName, archCorpus,archCategory] = archetypeFeats.split('$')
+        [_, archFeatName, archCorpus,archCategory] = archetypeFeats.split('$')[:4]
         #archGetter = FeatureGetter(self.db_type, self.corpdb, archCorpus, archCol, self.mysql_config_file, self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb, archetypeFeats, wordTable = self.wordTable)
         archGetter = FeatureGetter(self.db_type, self.corpdb, archCorpus, archCol, self.mysql_config_file, self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb, archetypeFeats, wordTable = self.wordTable)
         

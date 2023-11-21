@@ -262,4 +262,4 @@ if __name__ == '__main__':
         print("======================================================================")
         print(s)
         tokenized = tok.tokenize(s)
-        print("\n".join(tokenized).encode('utf8', 'ignore') if tok.use_unicode else "\n".join(tokenized))
+        print(tokenized)

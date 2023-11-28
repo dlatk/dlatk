@@ -263,6 +263,9 @@ class RegressionPredictor:
         'ridge10m': [
             {'alpha': [10000000]}, 
         ],
+        'ridge100m': [
+            {'alpha': [100000000]}, 
+        ],
         'ridge100': [{'alpha': [100]}],
         'ridge10': [{'alpha': [10]}],
         'ridge1': [{'alpha': [1]}],
@@ -380,19 +383,14 @@ class RegressionPredictor:
         'lassolars' : 'LassoLars',
         'lassolarscv' : 'LassoLarsCV',
         'lars' : 'Lars',
-        'ridge' : 'Ridge',
-        'ridge.01' : 'Ridge',
-        'ridge.001' : 'Ridge',
-        'ridge250' : 'Ridge',
-        'ridge10000' : 'Ridge',
-        'ridge100000' : 'Ridge',
-        'ridge100k' : 'Ridge',
-        'ridge1000' : 'Ridge',
-        'ridge100' : 'Ridge',
+        'ridge' : 'Ridge', 'ridge.01' : 'Ridge', 'ridge.001' : 'Ridge',
+        'ridge250' : 'Ridge', 'ridge10000' : 'Ridge', 'ridge100000' : 'Ridge',
+        'ridge100k' : 'Ridge', 'ridge1000' : 'Ridge', 'ridge100' : 'Ridge',
         'ridge10' : 'Ridge',
         'ridge1' : 'Ridge',
         'ridge1m' : 'Ridge',
         'ridge10m' : 'Ridge',
+        'ridge100m' : 'Ridge',
         'ridgecv' : 'RidgeCV',
         'ridgefirstpasscv' : 'RidgeCV',
         'ridgehighcv' : 'RidgeCV',
@@ -446,7 +444,7 @@ class RegressionPredictor:
     cvFolds = 3
     chunkPredictions = False #whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 60000
-    backOffPerc = .01 #when the num_featrue / training_insts is less than this backoff to backoffmodel
+    backOffPerc = .005 #when the num_featrue / training_insts is less than this backoff to backoffmodel
     #backOffModel = 'ridge10'
     backOffModel = 'linear'
 

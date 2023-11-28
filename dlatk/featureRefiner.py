@@ -8,12 +8,14 @@ import datetime
 
 #math / stats:
 from numpy import sqrt, array, std, mean, log2, log
+from numpy.linalg import norm
 import numpy as np
 import math
 import numbers
 from operator import mul
 from functools import reduce
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics.pairwise import cosine_similarity
 from scipy.sparse import csr_matrix
 from scipy.interpolate import interp1d
 
@@ -28,6 +30,9 @@ from .mysqlmethods import mysql_iter_funcs as mif
 from .database.query import QueryBuilder
 from .database.query import Column
 from .database.dataEngine import DataEngine
+
+from .regressionPredictor import alignDictsAsXy
+
 
 class FeatureRefiner(FeatureGetter):
     """Deals with the refinement of feature information already in a table (outputs to new table)
@@ -1260,3 +1265,81 @@ class FeatureRefiner(FeatureGetter):
         print("Updating ufeat data with pocc values...")
         mif.mysql_update(db_eng, ufeat_multigram_table, pocc_dict_iter, log_every=10000)
         return ufeat_multigram_table
+
+
+    def createArchetypeFeats(self, archetypeFeats, meanCenter=True, standardize=False, featNormTable=False, \
+                             metric = lambda v, X: cosine_similarity(v[None,:], X)):
+                             #v.dot(X.T) / (norm(X.T,axis=0)*norm(v))): 
+                             #np.dot(X, v)/(norm(X, axis=1)*norm(v))):
+        """Creates a feature table given a 1gram feature table name, a lexicon table / database name
+
+        Parameters
+        ----------
+        archetype_feats: str
+            Name of base lexicon table
+
+        Returns
+        -------
+        tableName : str
+            Name of created feature table: feat%archetype_lexTable%corptable$archetype_names
+
+        """
+
+        #prepare:
+        #from archetypes import ArchetypeCollection, ArchetypeQuantifier 
+        #main similarity metric: ArchetypeQuantifier.static_analyzer
+        #TODO: update to note require reading column names from table
+        
+        [_, archFeatName, archCorpus, archCategory] = archetypeFeats.split('$')[:4]
+        archGetter = FeatureGetter(self.db_type, self.corpdb, archCorpus, archCategory, self.mysql_config_file, self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb, archetypeFeats, wordTable = self.wordTable)
+        
+        featureTable = self.featureTable
+        dlac.warn("adding archetype " + archetypeFeats + " features for " + featureTable)
+        # probably not needed: wordGetter = self.getWordGetter()
+
+        ##STEP 1: get the archetype vectors (group_id is category)
+        (archGNs, archFeatureNames) = archGetter.getGroupNormsWithZeros()
+        archFeatureNames = list(archFeatureNames)
+        dlac.warn("\narchetypes: %s; number of features: %d" % (str(archGNs.keys()), len(archFeatureNames)))
+    
+        ##STEP 2: Get document features
+        #(groupNorms, featureNames) = self.getGroupNormsSparseFeatsFirst()
+        (gns, featureNames) = self.getGroupNormsWithZeros()
+        groups = list(gns.keys())
+        X = np.array([[gns[gid][feat] for feat in archFeatureNames] for gid in gns.keys()])
+        #assert all([isinstance(X,numbers.Number) for x in X]), "Data is corrupt, there are non float elements in the group norms (some might be NULL?)"
+        Xmean = X.mean(axis=0)
+        if meanCenter:
+            X = X - Xmean
+        if standardize:
+            X = X/X.std(axis=0,keepdims=True)
+        dlac.warn("Data being compared to archetypes (groups, feats): %s" % str(X.shape))
+
+        #STEP 3 Iterate over archs to calculate similarity
+        sims = {} #holds the architype similarities
+        for archName, archGNs in archGNs.items():
+            dlac.warn("calculating for: "+archName)
+            archVector = np.array([archGNs[feat] for feat in archFeatureNames])
+            if meanCenter:
+                #archVector = archVector - archVector.mean()
+                archVector = archVector - Xmean
+            if standardize:
+                archVector = archVector / archVector.std()
+            sims[archName] = metric(archVector, X).flatten().tolist()#[0]
+        dlac.warn({k: len(v) for k, v in sims.items()})
+        
+        ##STEP 4: write the new feature table
+        nameLength = max([len(k) for k in sims.keys()])
+        featTypeName = "arc_"+archFeatName[:5]+'_'+archCategory[:4]
+        tableName = self.createFeatureTable(featTypeName, "VARCHAR(%d)"%nameLength, 'DOUBLE')
+        #INSERT:
+        #TODO: make this a function!
+        for archName, sscores in sims.items():
+            wsql = """INSERT INTO """+tableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
+            rows = [(str(groups[i]), archName, int(np.round(sscores[i])), sscores[i]) for i in range(len(sscores))]
+            #pprint([rows[i] for i in np.random.choice(range(len(rows)), 10, False).tolist()])
+            mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, mysql_config_file=self.mysql_config_file)
+        dlac.warn("Done Inserting; new table: %s" % tableName)
+
+        return tableName
+

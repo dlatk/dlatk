@@ -20,7 +20,7 @@ try:
     from gensim.models.wrappers import LdaMallet
 except:
     LdaMallet = object
-    dlac.warn("Warning: TopicExtractor: Cannot import gensim (cannot run LDA)")
+    dlac.warn("Warning: TopicExtractor: Cannot import gensim")
     pass
 
 from numpy import log2, isnan

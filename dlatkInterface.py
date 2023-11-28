@@ -570,6 +570,10 @@ def main(fn_args = None):
                        help='Creates a feature table grouped by a given outcome (requires outcome field, can use controls)')
     group.add_argument('--aggregate_feats_by_new_group', action='store_true', dest='aggregategroup', default=False,
                        help='Aggregate feature table by group field (i.e. message_id features by user_ids). Specify new group with --group_by field; old group is whatever was used for the feature table.')
+
+    group.add_argument('--feat_archetype_similarity', '--archtype_similarity', type=str, dest='archetypesimilarity', \
+                       default=None, help='Creates a feature table of archetype similarities (provide archetype feature table)')
+    
     group.add_argument('--interpolate_aggregated_feats', '--interpolate_feats', type=float, dest='interpolategroup', default=None,
                        help='Aggregates features from a lower level to new group by field, interpolating across specified amount of days.')
 
@@ -1347,6 +1351,11 @@ def main(fn_args = None):
         # args.feattable = fr.createCollocRefinedFeatTable(featNormTable=False) #faster ## FEAT NORM TABLE LUKASZ LUKE
         args.feattable = fr.createCollocRefinedFeatTable(args.pmi)
 
+    if args.archetypesimilarity:
+        if not fr: fr=FR()
+        args.feattable = fr.createArchetypeFeats(args.archetypesimilarity)
+
+        
     if args.maketopiclabelmap:
         if not fr: fr=FR()
         args.featlabelmaplex = fr.makeTopicLabelMap(args.topiclexicon, args.numtopicwords, args.weightedlexicon)

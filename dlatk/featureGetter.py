@@ -286,7 +286,7 @@ class FeatureGetter(DLAWorker):
         """returns a dict of (group_id => feature => group_norm)"""
         #This functino gets killed on large feature sets
         gnlist = []
-        if groups: 
+        if groups:
             gCond = " group_id in ('%s')" % "','".join(str(g) for g in groups)
             if where: gnlist = self.getGroupNorms(where+" AND "+gCond)
             else: gnlist = self.getGroupNorms(gCond)

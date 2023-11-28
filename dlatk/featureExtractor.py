@@ -2877,7 +2877,7 @@ class FeatureExtractor(DLAWorker):
             mm.enableTableKeys(self.corpdb, self.dbCursor, posTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
         dlac.warn("Done\n")
         return featureTableName;
-
+    
 
     @staticmethod
     def parseCoreNLPForPOSTags(parseInfo):

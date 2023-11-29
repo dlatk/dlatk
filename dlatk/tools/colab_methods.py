@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from matplotlib.axes import Axes
 
+import urllib.error
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 from oauth2client.client import GoogleCredentials
@@ -14,7 +15,7 @@ from IPython.core.display import display
 from IPython import get_ipython
 from IPython.display import Javascript
 
-def upload_dataset(filename=None):
+def upload_dataset(filename=None, foldername=None):
 
   #Authenticate to Google Drive
   auth.authenticate_user()
@@ -35,12 +36,42 @@ def upload_dataset(filename=None):
     print("File %s uploaded successfully." % (file["title"]))
 
   else:
-    #Auto-iterate through all files in the root folder and get the fileid
-    file_list = drive.ListFile({'q': "(title contains '{}') and ('root' in parents) and (trashed=false)".format(filename.split('.')[0])}).GetList()
-    fileid = [file["id"] for file in file_list if ".csv" in file["title"]][0]
 
-    #Download the dataset from Google Drive to Colab
-    downloaded = drive.CreateFile({"id": fileid})
+    def search(name, parent='root'):
+
+      query = "'{}' in parents and trashed=false".format(parent)
+      try:
+        found = drive.ListFile({'q': query}).GetList()
+      except urllib.error.HttpError as e:
+        return None
+
+      for file_obj in found:
+        if file_obj['mimeType'] == 'application/vnd.google-apps.folder':
+          if file_obj["title"] == name:
+            return file_obj
+          else: search(name, file_obj['id'])
+
+    # Recursively find the folder
+    if foldername is not None:
+      folder = search(foldername)
+      if folder is None:
+        print("Folder not found")
+        return
+
+      folder_id = folder["id"]
+
+    else:
+      folder_id = "root"
+
+    # Auto-iterate through all files in the folder and get the fileid
+    file_list = drive.ListFile({'q': "(title contains '{}') and ('{}' in parents) and (trashed=false)".format(filename, folder_id)}).GetList()
+    if not file_list:
+      print("File not found")
+      return
+
+    # Finally download the file if found
+    file_id = [file["id"] for file in file_list if ".csv" in file["title"]][0]
+    downloaded = drive.CreateFile({"id": file_id})
     downloaded.GetContentFile(filename)
     print("File %s copied successfully from Google Drive." % (filename))
 
@@ -65,7 +96,7 @@ def print_wordclouds(wordcloud_folder):
     for outcome in outcomes:
 
       outcome_images = outcome_image_map[outcome]
-      fig, axes = plt.subplots(1, len(outcome_images), figsize=(5 * len(outcome_images), 5)) 
+      fig, axes = plt.subplots(1, len(outcome_images), figsize=(3.5 * len(outcome_images), 3)) 
       axes = [axes] if isinstance(axes, Axes) else axes
 
       for i, image in enumerate(outcome_images):

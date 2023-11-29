@@ -1802,6 +1802,38 @@ def main(fn_args = None):
         if args.mediationcsv or args.csv: mg.print_csv(args.outputname)
 
     ##Prediction methods:
+
+    def printMessagesAndPredictions(dlaw, outcome_table, prediction_table, outcome_fields, num_groups=2, num_messages=3):
+
+        # get unique groups
+        fields = ["DISTINCT {}".format(dlaw.correl_field)]
+        selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields(fields).set_limit(num_groups)
+        groups = [row[0] for row in selectQuery.execute_query()]
+
+        # get messages, outcomes, and predictions for the groups
+        for outcome_field in outcome_fields:
+
+            dlac.warn("\nPrediction for {}\n-------\n".format(outcome_field))
+            for group in groups:
+
+                dlac.warn("Group ID: {}\n".format(group))
+                selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields(["COUNT(*)"]).where("{} = {}".format(dlaw.correl_field, group))
+                num_messages = min(selectQuery.execute_query()[0][0], num_messages)
+
+                selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields([dlaw.message_field]).where("{} = {}".format(dlaw.correl_field, group)).set_limit(num_messages)
+                messages = [row[0] for row in selectQuery.execute_query()]
+                dlac.warn("\nTop {} messages for the group:".format(num_messages))
+                dlac.warn(messages) 
+                dlac.warn('\n')
+
+                selectQuery = dlaw.qb.create_select_query(outcome_table).set_fields([outcome_field]).where("{} = {}".format(dlaw.correl_field, group))
+                outcome = selectQuery.execute_query()[0]
+             
+                selectQuery = dlaw.qb.create_select_query(prediction_table).set_fields([outcome_field]).where("{} = {}".format(dlaw.correl_field, group))
+                prediction = selectQuery.execute_query()[0]
+                
+                dlac.warn("Ground-truth, Prediction: {}, {}\n-------\n".format(outcome, prediction))
+
     rp = None #regression predictor
     crp = None #combined regression predictor
     fgs = None #feature getters
@@ -2078,6 +2110,14 @@ def main(fn_args = None):
     if args.savemodels and dr:
         dr.save(args.picklefile)
 
+    if args.predictRtoOutcomeTable or args.predictCtoOutcomeTable:
+        if not dlaw: dlaw = DLAW()
+        if args.predictRtoOutcomeTable:
+            prediction_table = "p_{}${}".format(rp.modelName[:4], args.predictRtoOutcomeTable)
+        else:
+            prediction_table = "p_{}${}".format(cp.modelName[:4], args.predictCtoOutcomeTable)
+        printMessagesAndPredictions(dlaw, args.outcometable, prediction_table, args.outcomefields)
+
     ##Plot Actions:
     if args.makealltopicwordclouds:
         outputFile = makeOutputFilename(args, None, None, suffix="_alltopics/")
@@ -2182,12 +2222,13 @@ def main(fn_args = None):
 
         init_file.close()
     
-    warning = """----
+    warning = '''-------
+
 Settings:
 
 Database - {}
 Corpus - {}
-Group ID - {}""".format(args.corpdb, args.corptable, args.correl_field)
+Group ID - {}'''.format(args.corpdb, args.corptable, args.correl_field)
     dlac.warn(warning) 
     if args.feattable:
         dlac.warn("Feature table(s) - {}".format(args.feattable))
@@ -2198,7 +2239,7 @@ Group ID - {}""".format(args.corpdb, args.corptable, args.correl_field)
     if args.outcomecontrols:
         dlac.warn("Control(s) - {}".format(' '.join([args.outcomecontrols[index] for index in range(min(3, len(args.outcomecontrols)))])))
 
-    dlac.warn("----\nInterface Runtime: %.2f seconds"% float(time.time() - start_time))
+    dlac.warn("-------\nInterface Runtime: %.2f seconds"% float(time.time() - start_time))
     dlac.warn("DLATK exits with success! A good day indeed  ¯\_(ツ)_/¯.")
 
 if __name__ == "__main__":

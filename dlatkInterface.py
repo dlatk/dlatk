@@ -1588,7 +1588,10 @@ def main(fn_args = None):
             if args.outputname:
                 outputFile = args.outputname
             else:
-                outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
+                features = fg.featureTable.split('$')[1]
+                msgs = args.corptable.split('/')[-1].split('.')[0]
+                outputFile = "{}/rMatrix.{}.{}.{}".format(args.outputdir, msgs, features, '_'.join(oa.outcome_value_fields))
+
                 if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
                 if args.spearman: outputFile += '.spearman'
             oa.correlMatrix(featComp, outputFile+".feat", outputFormat='html', sort=args.sort, paramString=paramString.replace("\n","<br>"), nValue=args.nvalue, cInt=args.confint, freq=args.freq)
@@ -1630,7 +1633,10 @@ def main(fn_args = None):
         if args.outputname:
             outputFile = args.outputname
         else:
-            outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
+            features = fg.featureTable.split('$')[1]
+            msgs = args.corptable.split('/')[-1].split('.')[0]
+            outputFile = "{}/rMatrix.{}.{}.{}".format(args.outputdir, msgs, features, '_'.join(oa.outcome_value_fields))
+
             if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
             if args.spearman: outputFile += '.spearman'
         metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
@@ -1640,7 +1646,10 @@ def main(fn_args = None):
         if args.outputname:
             outputFile = args.outputname
         else:
-            outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
+            features = fg.featureTable.split('$')[1]
+            msgs = args.corptable.split('/')[-1].split('.')[0]
+            outputFile = "{}/rMatrix.{}.{}.{}".format(args.outputdir, msgs, features, '_'.join(oa.outcome_value_fields))
+
             if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
             if args.spearman: outputFile += '.spearman'
         metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)

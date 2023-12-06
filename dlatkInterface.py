@@ -282,6 +282,7 @@ def main(fn_args = None):
                        help='Limit outputs to the given set of features.')
     group.add_argument("--group_freq_thresh", type=int, metavar='N', dest="groupfreqthresh", default=getInitVar('groupfreqthresh', conf_parser, None),
                        help="minimum WORD frequency per correl_field to include correl_field in results")
+    group.add_argument('--output_dir', type=str, dest='outputdir', default=dlac.DEF_OUTPUT_DIR, help='folder to store the outputs, use either this or --output_name')
     group.add_argument('--output_name', '--output', '--output_file', type=str, dest='outputname', default=getInitVar('outputname', conf_parser, ''),
                        help='overrides the default filename for output')
     group.add_argument('--max_wordcloud_words', '--max_tagcloud_words', type=int, metavar='N', dest='maxtcwords', default=dlac.DEF_MAX_TC_WORDS,

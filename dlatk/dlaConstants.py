@@ -79,6 +79,7 @@ DEF_MAX_TOP_TC_WORDS = 15
 DEF_TC_FILTER = True
 DEF_WEIGHTS = ''
 DEF_LOW_VARIANCE_THRESHOLD = 0.0
+DEF_OUTPUT_DIR = '.'
 
 
 ##TODO: move elsewhere; quick hack for last minute EMNLP2020

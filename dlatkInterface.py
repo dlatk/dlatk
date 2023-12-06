@@ -1415,7 +1415,6 @@ def main(fn_args = None):
         if fg:
             filePieces.append(fg.featureTable)
         if og:
-            filePieces.append(og.outcome_table)
             if og.outcome_value_fields and len(og.outcome_value_fields) <= 10:
                 filePieces.append('_'.join(og.outcome_value_fields))
         if og.outcome_controls: filePieces.append('_'.join(og.outcome_controls))
@@ -1588,12 +1587,8 @@ def main(fn_args = None):
             if args.outputname:
                 outputFile = args.outputname
             else:
-                features = fg.featureTable.split('$')[1]
-                msgs = args.corptable.split('/')[-1].split('.')[0]
-                outputFile = "{}/rMatrix.{}.{}.{}".format(args.outputdir, msgs, features, '_'.join(oa.outcome_value_fields))
+                outputFile = os.path.join(args.outputdir, makeOutputFilename(args, fg, oa, suffix="rMatrix"))
 
-                if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
-                if args.spearman: outputFile += '.spearman'
             oa.correlMatrix(featComp, outputFile+".feat", outputFormat='html', sort=args.sort, paramString=paramString.replace("\n","<br>"), nValue=args.nvalue, cInt=args.confint, freq=args.freq)
             oa.correlMatrix(outcomeComp, outputFile+".outcome", outputFormat='html', sort=args.sort, paramString=paramString.replace("\n","<br>"), nValue=args.nvalue, cInt=args.confint, freq=args.freq)
             if args.csv:
@@ -1612,10 +1607,11 @@ def main(fn_args = None):
         cca = CCA(fg, og)
         if args.loadmodels:
             cca.loadModel(args.picklefile)
+        features = fg.featureTable.split('$')[1]
+        msgs = args.corptable.split('/')[-1].split('.')[0]
         components = cca.predictCompsToSQL(tablename=args.newSQLtable,
                                            csv = args.csv,
-                                           outputname = args.outputname if args.outputname
-                                           else args.outputdir + '/rMatrix.' + fg.featureTable + '.' + og.outcome_table  + '.' + '_'.join(og.outcome_value_fields),
+                                           outputname = args.outputname if args.outputname else os.path.join(args.outputdir, makeOutputFilename(args, fg, oa, suffix="rMatrix")),
                                            useXFeats = args.usexfeats, useXControls = args.usexcontrols)
     """
     if args.correlate:
@@ -1633,12 +1629,8 @@ def main(fn_args = None):
         if args.outputname:
             outputFile = args.outputname
         else:
-            features = fg.featureTable.split('$')[1]
-            msgs = args.corptable.split('/')[-1].split('.')[0]
-            outputFile = "{}/rMatrix.{}.{}.{}".format(args.outputdir, msgs, features, '_'.join(oa.outcome_value_fields))
+            outputFile = os.path.join(args.outputdir, makeOutputFilename(args, fg, oa, suffix="rMatrix"))
 
-            if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
-            if args.spearman: outputFile += '.spearman'
         metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
         oa.correlMatrix(correls, outputFile, outputFormat='html', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq, metric=metric)
 
@@ -1646,12 +1638,8 @@ def main(fn_args = None):
         if args.outputname:
             outputFile = args.outputname
         else:
-            features = fg.featureTable.split('$')[1]
-            msgs = args.corptable.split('/')[-1].split('.')[0]
-            outputFile = "{}/rMatrix.{}.{}.{}".format(args.outputdir, msgs, features, '_'.join(oa.outcome_value_fields))
+            outputFile = os.path.join(args.outputdir, makeOutputFilename(args, fg, oa, suffix="rMatrix"))
 
-            if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
-            if args.spearman: outputFile += '.spearman'
         metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
         oa.correlMatrix(correls, outputFile, outputFormat='csv', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq, metric=metric)
 

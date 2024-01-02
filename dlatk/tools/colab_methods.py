@@ -13,7 +13,7 @@ from oauth2client.client import GoogleCredentials
 from google.colab import auth, drive, files
 from IPython.core.display import display
 from IPython import get_ipython
-from IPython.display import Javascript
+from IPython.display import Javascript, HTML
 
 def upload_dataset(filename=None, foldername=None):
 
@@ -82,6 +82,13 @@ def shorten_colab_output():
         display(Javascript('''google.colab.output.setIframeHeight(0, true, {maxHeight: 250})'''))
 
     get_ipython().events.register("pre_run_cell", resize_output)
+
+def change_bg_color(r, g, b):
+
+  def change_color():
+    display(HTML('''<style> body {background-color: rgb(%d, %d, %d);}</style>''' % (r, g, b)))
+
+  get_ipython().events.register("pre_run_cell", change_color)
 
 def print_wordclouds(wordcloud_folder):
 

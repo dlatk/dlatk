@@ -289,21 +289,19 @@ class DataEngine(object):
 			except:
 				return x
 
-		#read a random sample of size 100 from the CSV.	
+		#read a random sample of size 1000 from the CSV.
 		sample_size = 1000
-		num_lines = int(check_output(["wc", "-l", csv_file]).split()[0])
-		row_idx = sorted(random.sample(range(1, num_lines), min(num_lines-1, sample_size)))
 		with open(csv_file, 'r') as f:
 			reader = csv.reader(f, delimiter=',')
 			header = next(reader)
+
 			sample = []
-			for idx in range(1, row_idx[-1]+1):
+			for idx in range(sample_size):
 				try:
 					row = next(reader)
+					sample.append(row)
 				except StopIteration:
 					break
-				if idx in row_idx:
-					sample.append(row)
 
 		#infer the column types from the sample.
 		max_vc_length = 100

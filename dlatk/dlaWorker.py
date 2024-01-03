@@ -9,7 +9,7 @@ except:
 
 from .database.dataEngine import DataEngine
 from .database.query import QueryBuilder
-from .lexicainterface.lexInterface import WeightedLexicon, loadWeightedLexiconFromSparse
+from .lexicainterface.lexInterface import WeightedLexicon, loadWeightedLexiconFromSparse, loadWeightedLexiconFromTopicCSV
 
 from . import dlaConstants as dlac
 from .mysqlmethods import mysqlMethods as mm 
@@ -79,7 +79,7 @@ class DLAWorker(object):
         self.messageIdUniqueChecked = False
     
     def prepare_corpdb(self):
-    
+
         if (".csv" in self.corptable) or (self.db_type == "sqlite"):
 
             self.db_type = "sqlite"
@@ -114,7 +114,11 @@ class DLAWorker(object):
                 print("Message table missing")
                 sys.exit(1)
 
-    def load_lexicon(self, table_name):
+    def load_lexicon(self, lexicon, lexicon_type="sparse", table_name=None):
+
+        lex_to_func = {
+            "sparse": loadWeightedLexiconFromSparse,
+            "topicCSV": loadWeightedLexiconFromTopicCSV}
 
         idx_to_db_type = ["sqlite", "mysql"]
         db_type_to_idx = {db_type: index for index, db_type in enumerate(idx_to_db_type)}
@@ -135,11 +139,11 @@ class DLAWorker(object):
             encoding=self.encoding,
             use_unicode=self.use_unicode)
 
-        lex_table = table_name.split('/')[-1].split('.')[0]
+        lex_table = lexicon.split('/')[-1].split('.')[0] if table_name is None else table_name
         if not self.lexicon.engine.tableExists(lex_table):
 
-            if ".csv" in table_name:
-                self.lexicon.setWeightedLexicon(loadWeightedLexiconFromSparse(table_name))
+            if ".csv" in lexicon:
+                self.lexicon.setWeightedLexicon(lex_to_func[lexicon_type](lexicon))
                 self.lexicon.createLexiconTable(lex_table)
 
             else:
@@ -197,10 +201,10 @@ class DLAWorker(object):
             ?????
         """
         if not messageTable: messageTable = self.corptable
-        msql = """SELECT %s, %s FROM %s"""% (self.messageid_field, self.message_field, messageTable)
-        if where: msql += " WHERE " + where
+        selectQuery = self.qb.create_select_query(messageTable).set_fields([self.messageid_field, self.message_field])
+        if where: selectQuery = selectQuery.where(where)
         
-        return mm.executeGetSSCursor(self.corpdb, msql, charset=self.encoding, mysql_config_file=self.mysql_config_file)
+        return selectQuery.execute_query()
 
     def getMessagesForCorrelField(self, cf_id, messageTable = None, warnMsg = True):
         """?????

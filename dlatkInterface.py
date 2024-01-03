@@ -1265,21 +1265,19 @@ def main(fn_args = None):
     #LDA
     if args.estimate_lda_topics:
         if not args.no_lda_lexicon:
-            lex_interface = LexInterfaceParser(mysql_config_file=args.mysqlconfigfile)
+            
+            if not dlaw: dlaw = DLAW()
 
             topic_file = os.path.join(args.save_lda_files, 'lda.topicGivenWord.csv')
             create_name = '{}_cp'.format(args.lda_lexicon_name)
-
             print('Adding topic lexicon: {}'.format(create_name))
-            lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name, '--lexicondb', args.lexicondb])
-            lex_interface.processArgs(lex_interface_args)
+            dlaw.load_lexicon(topic_file, "topicCSV", create_name)
 
             topic_file = os.path.join(args.save_lda_files, 'lda.freq.threshed50.loglik.csv')
             create_name = '{}_freq_t50ll'.format(args.lda_lexicon_name)
-
             print('Adding topic lexicon: {}'.format(create_name))
-            lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name, '--lexicondb', args.lexicondb])
-            lex_interface.processArgs(lex_interface_args)
+            dlaw.load_lexicon(topic_file, "topicCSV", create_name)
+
         print('LDA topics estimated. Files saved in {}.'.format(args.save_lda_files))
 
     if args.addtopiclexfromtopicfile:
@@ -1801,7 +1799,7 @@ def main(fn_args = None):
 
     ##Prediction methods:
 
-    def printMessagesAndPredictions(dlaw, outcome_table, prediction_table, outcome_fields, num_groups=2, num_messages=3):
+    def printMessagesAndPredictions(dlaw, prediction_table, outcome_table=None, outcome=None, num_groups=2, num_messages=3):
 
         # get unique groups
         fields = ["DISTINCT {}".format(dlaw.correl_field)]
@@ -1809,28 +1807,30 @@ def main(fn_args = None):
         groups = [row[0] for row in selectQuery.execute_query()]
 
         # get messages, outcomes, and predictions for the groups
-        for outcome_field in outcome_fields:
+        dlac.warn("\nExample predictions\n-------")
+        for group in groups:
 
-            dlac.warn("\nPrediction for {}\n-------\n".format(outcome_field))
-            for group in groups:
+            dlac.warn("Group ID: {}".format(group))
+            selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields(["COUNT(*)"]).where("{} = {}".format(dlaw.correl_field, group))
+            num_messages = min(selectQuery.execute_query()[0][0], num_messages)
 
-                dlac.warn("Group ID: {}\n".format(group))
-                selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields(["COUNT(*)"]).where("{} = {}".format(dlaw.correl_field, group))
-                num_messages = min(selectQuery.execute_query()[0][0], num_messages)
+            # print messages for the group
+            selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields([dlaw.message_field]).where("{} = {}".format(dlaw.correl_field, group)).set_limit(num_messages)
+            messages = [row[0] for row in selectQuery.execute_query()]
+            dlac.warn("\nTop {} messages for the group:\n-------".format(num_messages))
+            dlac.warn(messages)
+            dlac.warn('\n')
 
-                selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields([dlaw.message_field]).where("{} = {}".format(dlaw.correl_field, group)).set_limit(num_messages)
-                messages = [row[0] for row in selectQuery.execute_query()]
-                dlac.warn("\nTop {} messages for the group:".format(num_messages))
-                dlac.warn(messages) 
-                dlac.warn('\n')
+            selectQuery = dlaw.qb.create_select_query(prediction_table).set_fields(['*']).where("{} = {}".format(dlaw.correl_field, group))
+            prediction = selectQuery.execute_query()[0][1]
 
-                selectQuery = dlaw.qb.create_select_query(outcome_table).set_fields([outcome_field]).where("{} = {}".format(dlaw.correl_field, group))
-                outcome = selectQuery.execute_query()[0]
-             
-                selectQuery = dlaw.qb.create_select_query(prediction_table).set_fields([outcome_field]).where("{} = {}".format(dlaw.correl_field, group))
-                prediction = selectQuery.execute_query()[0]
-                
-                dlac.warn("Ground-truth, Prediction: {}, {}\n-------\n".format(outcome, prediction))
+            if outcome:
+                selectQuery = dlaw.qb.create_select_query(outcome_table).set_fields(outcome).where("{} = {}".format(dlaw.correl_field, group))
+                outcome_value = selectQuery.execute_query()[0]
+                dlac.warn("Ground-truth, Prediction: {}, {}\n-------\n".format(outcome_value, prediction))
+
+            else:
+                dlac.warn("Prediction: {}\n-------\n".format(prediction))
 
     rp = None #regression predictor
     crp = None #combined regression predictor
@@ -2110,18 +2110,18 @@ def main(fn_args = None):
 
     if args.predictRtoOutcomeTable or args.predictCtoOutcomeTable:
         if not dlaw: dlaw = DLAW()
-        if args.predictRtoOutcomeTable:
-            prediction_table = "p_{}${}".format(rp.modelName[:4], args.predictRtoOutcomeTable)
-        else:
-            prediction_table = "p_{}${}".format(cp.modelName[:4], args.predictCtoOutcomeTable)
-        printMessagesAndPredictions(dlaw, args.outcometable, prediction_table, args.outcomefields)
+        prediction_table = "p_{}${}".format(rp.modelName[:4], args.predictRtoOutcomeTable if args.predictRtoOutcomeTable else args.predictCtoOutcomeTable)
+        printMessagesAndPredictions(dlaw, prediction_table, args.outcometable, args.outcomefields)
 
     ##Plot Actions:
     if args.makealltopicwordclouds:
         outputFile = makeOutputFilename(args, None, None, suffix="_alltopics/")
         if args.tagcloudcolorscheme == 'multi':#make sure not to use multi
             args.tagcloudcolorscheme = 'blue'
-        wordcloud.makeLexiconTopicWordclouds(lexdb=args.lexicondb, lextable=args.topiclexicon, output=outputFile, color=args.tagcloudcolorscheme, max_words=args.numtopicwords, cleanCloud=args.cleancloud,mysql_config_file=args.mysqlconfigfile)
+        #wordcloud.makeLexiconTopicWordclouds(lexdb=args.lexicondb, lextable=args.topiclexicon, output=outputFile, color=args.tagcloudcolorscheme, max_words=args.numtopicwords, cleanCloud=args.cleancloud,mysql_config_file=args.mysqlconfigfile)
+        if not dlaw: dlaw = DLAW()
+        lextable = dlaw.load_lexicon(args.topiclexicon)
+        wordcloud.makeLexiconTopicWordclouds(dlaw, lextable=lextable, output=outputFile, color=args.tagcloudcolorscheme, max_words=args.numtopicwords, cleanCloud=args.cleancloud)
     if args.barplot:
         outputFile = makeOutputFilename(args, fg, oa, "barplot")
         oa.barPlot(correls, outputFile)

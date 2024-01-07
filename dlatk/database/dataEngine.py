@@ -348,18 +348,21 @@ class DataEngine(object):
 
 		print("Importing data, reading {} file".format(csv_file))
 
-		def chunks(data, rows=10000):
+		def chunks(reader, rows=10000):
 			"Divides the data into 10000 rows each"
-			for i in range(0, len(data), rows):
-				yield data[i:i+rows]
+			chunk = []
+			try:
+				for i in range(rows):
+					chunk.append(next(reader))
+			except StopIteration as e:
+				pass
+			yield chunk
 
 		with open(csv_file, 'r') as f:
 			reader = csv.reader(f, delimiter=',')
 			header = next(reader)
-			data = list(reader)
-			chunk_data = chunks(data) 
 			num_columns = None
-			for chunk in chunk_data:
+			for chunk in chunks(reader):
 				if not num_columns:
 					num_columns = len(chunk[0])
 					placeholder = "%s" if self.db_type == "mysql" else "?"

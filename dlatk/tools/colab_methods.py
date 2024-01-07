@@ -7,8 +7,8 @@ import matplotlib.image as mpimg
 from matplotlib.axes import Axes
 
 import urllib.error
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
+from pydrive2.auth import GoogleAuth
+from pydrive2.drive import GoogleDrive
 from oauth2client.client import GoogleCredentials
 from google.colab import auth, drive, files
 from IPython.core.display import display
@@ -75,11 +75,11 @@ def upload_dataset(filename=None, foldername=None):
     downloaded.GetContentFile(filename)
     print("File %s copied successfully from Google Drive." % (filename))
 
-def shorten_colab_output():
+def shorten_colab_output(pixels):
 
     #https://github.com/googlecolab/colabtools/issues/541
     def resize_output():
-        display(Javascript('''google.colab.output.setIframeHeight(0, true, {maxHeight: 250})'''))
+        display(Javascript('''google.colab.output.setIframeHeight(0, true, {maxHeight: %d})''' % pixels))
 
     get_ipython().events.register("pre_run_cell", resize_output)
 
@@ -89,6 +89,10 @@ def change_bg_color(r, g, b):
     display(HTML('''<style> body {background-color: rgb(%d, %d, %d);}</style>''' % (r, g, b)))
 
   get_ipython().events.register("pre_run_cell", change_color)
+
+def colab_shorten_and_bg(pixels=250, r=255, g=250, b=232):
+    shorten_colab_output(pixels)
+    change_bg_color(r, g, b)
 
 def print_wordclouds(wordcloud_folder):
 

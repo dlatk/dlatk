@@ -163,7 +163,7 @@ INSTALL_REQUIRES = [
   'python-dateutil>=2.5.0,<=2.8.2', 
   'scikit-learn<=1.1.3', 
   'scipy>=0.13.3,<=1.11.2',
-  'statsmodels>=0.5.0,<=0.14.0'
+  'statsmodels>=0.5.0,<=0.14.1'
 ]
 
 if os.getenv("COLAB_RELEASE_TAG") is None:

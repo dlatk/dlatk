@@ -175,7 +175,10 @@ def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True, classes=None
         roc_auc = dict()
         #print("Muti-AUCs:")
         for i in range(n_classes):
-            fpr[i], tpr[i], _ = roc_curve(ytrue[:, i], ypredProbs[:, i])
+            try:
+                fpr[i], tpr[i], _ = roc_curve(ytrue[:, i], ypredProbs[:, i])
+            except:
+                import pdb; pdb.set_trace();
             roc_auc[i] = auc(fpr[i], tpr[i])
             #print("  ", i, ": %.4f" % roc_auc[i]) 
 
@@ -289,7 +292,7 @@ class ClassifyPredictor:
             #{'C':[1, 10, 0.1, 0.01, 0.05, 0.005], 'penalty':['l1'], 'dual':[False]} #swl/perma message-level
             ],
         'lr': [
-            {'C':[0.1], 'penalty':['l2'], 'dual':[False], 'random_state': [42]},#DEFAULT
+            {'C':[0.01], 'penalty':['l2'], 'dual':[False], 'random_state': [42]},#DEFAULT
             #{'C':[0.01, 0.1, 1, 10], 'penalty':['l2'], 'dual':[False]}, 
             #{'C':[0.01, 0.1, 0.001, 1], 'penalty':['l2'], 'dual':[False]}, 
             #{'C':[0.00001], 'penalty':['l2']} # UnivVsMultiv choice Maarten
@@ -312,8 +315,8 @@ class ClassifyPredictor:
 
         'etc': [ 
             #{'n_jobs': [10], 'n_estimators': [250], 'criterion':['gini']}, 
-            #{'n_jobs': [10], 'n_estimators': [1000], 'criterion':['gini']},  #DEFAULT
-            {'n_jobs': [10], 'n_estimators': [250], 'max_features':['log2'],'criterion':['gini']}, 
+            {'n_jobs': [10], 'n_estimators': [1000], 'criterion':['gini']},  #DEFAULT
+            #{'n_jobs': [10], 'n_estimators': [250], 'max_features':['log2'],'criterion':['gini']}, 
             #{'n_jobs': [12], 'n_estimators': [50], 'max_features': ["sqrt", "log2", None], 'criterion':['gini', 'entropy'], 'min_samples_split': [2]},
            # {'n_jobs': [12], 'n_estimators': [1000], 'max_features': ["sqrt"], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced_subsample']},#BEST
             #{'n_jobs': [12], 'n_estimators': [1000], 'max_features': [None], 'criterion':['gini'], 'min_samples_split': [2], 'class_weight': ['balanced_subsample']},
@@ -394,7 +397,7 @@ class ClassifyPredictor:
     cvFolds = 3
     chunkPredictions = False  # whether or not to predict in chunks (good for keeping track when there are a lot of predictions to do)
     maxPredictAtTime = 30000
-    backOffPerc = .05 #when the num_featrue / training_insts is less than this backoff to backoffmodel
+    backOffPerc = .01 #when the num_featrue / training_insts is less than this backoff to backoffmodel
     backOffModel = 'lrnone' #'lr'
 
     # feature selection:
@@ -1107,22 +1110,26 @@ class ClassifyPredictor:
                             if withLanguage and savedControlYpp is not None:
                                 print("\n    calculating p-values versus controls...")
                                 #add lang only auc-p to top result
+                                langOnlyScores = scores[outcomeName][()][1]
                                 try:
-                                    langOnlyScores = scores[outcomeName][()][1]
                                     cntrlYtrue, YPredProbs, YCntrlProbs = alignDictsAsy(outcomes, langOnlyScores['predictionProbs'], savedControlPProbs)
-                                    langOnlyScores['auc_p_v_cntrls'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)
+                                    #langOnlyScores['auc_p_v_cntrls'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)
+                                    langOnlyScores['auc_p_v_cntrls'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs), np.array(YCntrlProbs), cntrlYtrue, multiclass, classes)
                                 except KeyError:
                                     print("unable to find saved lang only probabilities")
+                                    #pprint(langOnlyScores)
                                 #straight up auc, p value:
                                 cntrlYtrue, YPredProbs, YCntrlProbs = alignDictsAsy(outcomes, predictionProbs, savedControlPProbs)
-                                reportStats['auc_p_v_cntrls'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)
+                                #reportStats['auc_p_v_cntrls'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)
+                                reportStats['auc_p_v_cntrls'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs), np.array(YCntrlProbs), cntrlYtrue, multiclass, classes)
                                 #ensemble auc: 
                                 newProbsDict = ensembleNFoldAUCWeight(outcomes, [predictionProbs, savedControlPProbs], groupFolds)
                                 ensYtrue, ensYPredProbs, ensYCntrlProbs = alignDictsAsy(outcomes, newProbsDict, savedControlPProbs)
                                 #reportStats['auc_cntl_comb2'] = pos_neg_auc(ensYtrue, np.array(ensYPredProbs)[:,-1])
                                 reportStats['auc_cntl_comb2'] = computeAUC(ensYtrue, np.array(ensYPredProbs), multiclass,  classes = classes)
                                 #reportStats['auc_cntl_comb2_t'], reportStats['auc_cntl_comb2_p'] = paired_t_1tail_on_errors(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue)
-                                reportStats['auc_cntl_comb2_p'] = paired_bootstrap_1tail_on_aucs(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue, multiclass, classes)
+                                #reportStats['auc_cntl_comb2_p'] = paired_bootstrap_1tail_on_aucs(np.array(ensYPredProbs)[:,-1], np.array(ensYCntrlProbs)[:,-1], ensYtrue, multiclass, classes)
+                                reportStats['auc_cntl_comb2_p'] = paired_bootstrap_1tail_on_aucs(np.array(ensYPredProbs), np.array(ensYCntrlProbs), ensYtrue, multiclass, classes)
                                 ## TODO: finish this and add flag: --ensemble_controls
                                 # predictions = #todo:dictionary
                                 # predictionProbs = newProbsDict
@@ -3403,8 +3410,10 @@ def paired_bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, 
         this_ytrue = ytrue[ids]
         this_newprobs = newprobs[ids]
         this_oldprobs = oldprobs[ids]
-        this_newauc = computeAUC(this_ytrue, this_newprobs.reshape([n,1]), multiclass,  classes = classes)
-        this_oldauc = computeAUC(this_ytrue, this_oldprobs.reshape([n,1]), multiclass,  classes = classes)
+        # this_newauc = computeAUC(this_ytrue, this_newprobs.reshape([n,1]), multiclass,  classes = classes)
+        # this_oldauc = computeAUC(this_ytrue, this_oldprobs.reshape([n,1]), multiclass,  classes = classes)
+        this_newauc = computeAUC(this_ytrue, this_newprobs, multiclass,  classes = classes)
+        this_oldauc = computeAUC(this_ytrue, this_oldprobs, multiclass,  classes = classes)
         if this_newauc < this_oldauc:
             criteria_met += 1
     return criteria_met / float(iters)

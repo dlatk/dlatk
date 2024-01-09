@@ -26,8 +26,9 @@ except ImportError:
 #nltk
 try:
     import nltk.data
+    from nltk.tokenize.punkt import PunktSentenceTokenizer, PunktLanguageVars
 except ImportError:
-    print("warning: unable to import nltk.tree or nltk.corpus or nltk.data")
+    print("warning: unable to import nltk.tree or nltk.corpus or nltk.data or nltk.tokenize.punkt")
 try:
     from .lib.TweetNLP import TweetNLP
 except ImportError:
@@ -354,7 +355,7 @@ class MessageTransformer(DLAWorker):
 
         return tableName
 
-    def addSentTokenizedMessages(self, sentPerRow = False, cleanMessages = None, newlinesToPeriods=True):
+    def addSentTokenizedMessages(self, sentPerRow = False, cleanMessages = None, newlinesToPeriods=True, splitOnCommas=False):
         """Creates a sentence tokenized version of message table
 
         Returns
@@ -366,7 +367,15 @@ class MessageTransformer(DLAWorker):
             tableName = "%s_sent" % (self.corptable)
         else:
             tableName = "%s_stoks" % (self.corptable)
+
         sentDetector = nltk.data.load('tokenizers/punkt/english.pickle')
+        if splitOnCommas: ##TODO: set to false by default and move parameter to dlatkinterface (only useful after whisper transcripts)
+            class CommaLangVars(PunktLanguageVars):
+                sent_end_chars = ('.', '?', '!', ',')
+                
+            sentDetector = PunktSentenceTokenizer(lang_vars = CommaLangVars())
+            
+
 
         #Create Table:
         if sentPerRow:
@@ -411,14 +420,17 @@ class MessageTransformer(DLAWorker):
                 # parses = map(lambda m: json.dumps(sentDetector.tokenize(tc.removeNonAscii(tc.treatNewlines(m.strip())))), messages)
                 parses = []
                 for m in messages:
-                    parse = m.strip()
-                    if cleanMessages:
-                        parse = tc.sentenceNormalization(parse, normalizeDict, self.use_unicode)
-                    parse = tc.removeNonUTF8(tc.treatNewlines(parse))
-                    if newlinesToPeriods:
-                        parse = parse.replace('<NEWLINE>', '.')
-                    parse = sentDetector.tokenize((parse))
-                    parses.append(json.dumps(parse))
+                    if m:
+                        parse = m.strip()
+                        if cleanMessages:
+                            parse = tc.sentenceNormalization(parse, normalizeDict, self.use_unicode)
+                        parse = tc.removeNonUTF8(tc.treatNewlines(parse))
+                        if newlinesToPeriods:
+                            parse = parse.replace('<NEWLINE>', '.')
+                        parse = sentDetector.tokenize((parse))
+                        parses.append(json.dumps(parse))
+                    else:
+                        parses.append(json.dumps(''))
                 # if self.use_unicode:
                 #     if cleanMessages:
                 #         parses = [json.dumps(sentDetector.tokenize((tc.sentenceNormalization(m.strip(), normalizeDict, self.use_unicode)))) for m in messages]

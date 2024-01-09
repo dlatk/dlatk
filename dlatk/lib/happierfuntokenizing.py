@@ -120,7 +120,7 @@ regex_strings = (
     r"""(?:\/\w+\?(?:\;?\w+\=\w+)+)"""
     ,
     # HTML tags:
-    r"""(?:<[^>]+\w=[^>]+>|<[^>]+\s\/>|<[^>\s]+>?|<?[^<\s]+>)"""
+    r"""(?:<[^>]+=[^>]+>|<[^>]+\s\/>|<[^>\s]+>?|<?[^<\s]+>)"""
     #r"""(?:<[^>]+\w+[^>]+>|<[^>\s]+>?|<?[^<\s]+>)"""
     ,
     # Twitter username:
@@ -128,6 +128,9 @@ regex_strings = (
     ,
     # Twitter hashtags:
     r"""(?:\#+[\w_]+[\w\'_\-]*[\w_]+)"""
+    ,
+    # NER tags:
+    r"""(?:\[[^\]]\w+\:?\w+[^\]]\])"""
     ,
     # Remaining word types:
     r"""
@@ -252,7 +255,7 @@ if __name__ == '__main__':
         "It's perhaps noteworthy that phone numbers like +1 (800) 123-4567, (800) 123-4567, and 123-4567 are treated as words despite their whitespace.",
         'Something </sarcasm> about <fails to break this up> <3 </3 <\\3 mañana vergüenza güenza création tonterías tonteréas <em class="grumpy">pain</em> <meta name="viewport" content="width=device-width"> <br />',
         "This is more like a Facebook message with a url: http://www.youtube.com/watch?v=dQw4w9WgXcQ, youtube.com google.com https://google.com/ ",
-        "HTML entities &amp; other Web oddities can be an &aacute;cute <em class='grumpy'>pain</em> >:(",
+        "HTML entities &amp; other Web oddities can be an &aacute;cute <em class='grumpy'>pain</em> >:( especially with they come from [NER:PERSON]!",
         )
 
     if len(sys.argv) > 1 and (sys.argv[1]):
@@ -262,4 +265,4 @@ if __name__ == '__main__':
         print("======================================================================")
         print(s)
         tokenized = tok.tokenize(s)
-        print("\n".join(tokenized).encode('utf8', 'ignore') if tok.use_unicode else "\n".join(tokenized))
+        print(tokenized)

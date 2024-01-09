@@ -34,7 +34,7 @@ It is recommended that you see the [full installation instructions](http://dlatk
 ### STEP 1:  Make sure you have python3-mysqldb (if using mysql):
 ```sh
 sudo apt-get install python3-mysqldb
-sudo apt install libmysqlclient-dev
+sudo apt install libmysqlclient-dev  #OR for MariaDB: sudo apt-get install libmariadbclient-dev
 pip3 install mysqlclient
 ```
 

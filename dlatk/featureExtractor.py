@@ -1203,6 +1203,23 @@ class FeatureExtractor(DLAWorker):
                 customTableName (str): custom feature table name (if None, then it will be generated automatically)
                 batchSize (int): batch size for GPU processing
         '''
+        
+        def parse_layers(layers, num_hidden_layers):
+            """
+                Checks the validity of the input layer number
+                Turns negative layer idx into equivalent positive and sorts layer numbers in ascending order
+            """
+            for lyr in layers:
+                if (lyr > num_hidden_layers):
+                    print ("You have supplied a layer number %s greater than the total number of layers (%s) in the model. Retry with valid layer number(s)."%(lyr, num_hidden_layers))
+                    sys.exit()
+
+            layers = [(lyr%num_hidden_layers)+1 if lyr<0 else lyr for lyr in layers]
+            #removing duplicate layer inputs
+            layers = sorted(list(set(layers)))
+
+            return layers
+        
         def addSentTokenized(messageRows):
 
             try:
@@ -1214,7 +1231,7 @@ class FeatureExtractor(DLAWorker):
             messages = list(map(lambda x: x[1], messageRows))
             parses = []
             for m_id, message in messageRows:
-                parses.append([m_id, json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(message.strip()))))])
+                if message is not None: parses.append([m_id, json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(message.strip()))))])
             return parses
 
         dlac.warn("WARNING: new version of BERT and transformer models starts at layer 1 rather than layer 0. Layer 0 is now the input embedding. For example, if you were using layer 10 for the second to last layer of bert-base that is now considered layer 11.")
@@ -1225,8 +1242,6 @@ class FeatureExtractor(DLAWorker):
         sentTok_onthefly = False if self.data_engine.tableExists(self.corptable+'_stoks') else True
         sentTable = self.corptable if sentTok_onthefly else self.corptable+'_stoks'
         if sentTok_onthefly: dlac.warn("WARNING: run --add_sent_tokenized on the message table to avoid tokenizing it every time you generate embeddings")
-        
-
         
         #if len(layerAggregations) > 1:
         #    dlac.warn("AddBert: !!Does not currently support more than one layer aggregation; only using first aggregation!!")
@@ -1302,6 +1317,7 @@ class FeatureExtractor(DLAWorker):
             batch_size=batchSize
             cuda = False
         dlac.warn("Done.")
+        layersToKeep = parse_layers(layersToKeep, model.config.num_hidden_layers)
         layersToKeep = np.array(layersToKeep, dtype='int')
 
         #TODO: Change the model name later
@@ -2866,7 +2882,7 @@ class FeatureExtractor(DLAWorker):
             mm.enableTableKeys(self.corpdb, self.dbCursor, posTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
         dlac.warn("Done\n")
         return featureTableName;
-
+    
 
     @staticmethod
     def parseCoreNLPForPOSTags(parseInfo):

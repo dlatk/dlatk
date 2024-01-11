@@ -293,6 +293,7 @@ class MessageAnnotator(DLAWorker):
         new_table = self.corptable + "_%s"
 
         columnNames = mm.getTableColumnNames(self.corpdb, self.corptable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+        assert len(columnNames) > 0, "no columns in message table, check database name"
         messageIndex = [i for i, col in enumerate(columnNames) if col.lower() == dlac.DEF_MESSAGE_FIELD.lower()][0]
         #messageIDindex = [i for i, col in enumerate(columnNames) if col.lower() == dlac.DEF_MESSAGEID_FIELD.lower()][0]
 

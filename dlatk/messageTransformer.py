@@ -14,6 +14,7 @@ from io import StringIO
 from .dlaWorker import DLAWorker
 from . import dlaConstants as dlac
 from . import textCleaner as tc
+from .database.query import Column
 from .mysqlmethods import mysqlMethods as mm
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 try:
@@ -50,37 +51,46 @@ class MessageTransformer(DLAWorker):
     groupsAtTime = 100
 
     def _createTable(self, tableName, modify='', modify_id=''):
-        drop = """DROP TABLE IF EXISTS %s""" % (tableName)
-        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
 
-        sql = """CREATE TABLE %s like %s""" % (tableName, self.corptable)
-        mm.execute(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+        dropQuery = self.qb.create_drop_query(tableName)
+        dropQuery.execute_query()
 
-        if modify:
-            alter = """ALTER TABLE %s MODIFY %s %s""" % (tableName, self.message_field, modify)
-            mm.execute(self.corpdb, self.dbCursor, alter, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+        columns = self.data_engine.getTableColumnNameTypes(self.corptable)
+        if modify: columns[self.message_field] = modify
+        if modify_id: columns[self.messageid_field] = modify_id
+        columns = [Column(cname, ctype) for cname, ctype in columns.items()]
 
-        if modify_id:#modify message id field:
-            alter = """ALTER TABLE %s MODIFY %s %s""" % (tableName, self.messageid_field, modify_id)
-            mm.execute(self.corpdb, self.dbCursor, alter, charset=self.encoding, use_unicode=self.use_unicode)
+        createQuery = self.qb.create_createTable_query(tableName).add_columns(columns).add_mul_keys({self.messageid_field: self.messageid_field})
+        createQuery = createQuery.set_character_set(self.encoding).set_collation(dlac.DEF_COLLATIONS[self.encoding.lower()])
+        createQuery = createQuery.set_engine(dlac.DEF_MYSQL_ENGINE)
+        createQuery.execute_query()
 
-        mm.standardizeTable(self.corpdb, self.dbCursor, tableName, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
-        mm.disableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+        self.data_engine.standardizeTable(
+            tableName, 
+            collate=dlac.DEF_COLLATIONS[self.encoding.lower()], 
+            engine=dlac.DEF_MYSQL_ENGINE, 
+            charset=self.encoding, 
+            use_unicode=self.use_unicode)
 
-        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file).keys())
+        self.data_engine.disable_table_keys(tableName)
+
+        columnNames = list(self.data_engine.getTableColumnNameTypes(self.corptable))
         messageIndex = columnNames.index(self.message_field)
         messageIdIndex = columnNames.index(self.messageid_field)
         return columnNames, messageIndex, messageIdIndex
 
     def _findAllGroups(self):
-        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
-        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)]
+
+        selectQuery = self.qb.create_select_query(self.corptable).set_fields([self.correl_field]).group_by([self.correl_field])
+        cfRows = [r[0] for r in selectQuery.execute_query()]
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
         return cfRows
 
     def _getMsgsForGroups(self, groups, columnNames, messageIndex):
-        sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
-        rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))#, False)
+
+        where_condition = "%s IN ('%s')" % (self.correl_field, "','".join(str(g) for g in groups))
+        selectQuery = self.qb.create_select_query(self.corptable).where(where_condition).set_fields(columnNames)
+        rows = selectQuery.execute_query()
         return rows
 
     def _writeMsgsForGroups(self, rows, parses, messageIndex, tableName, columnNames):
@@ -88,15 +98,14 @@ class MessageTransformer(DLAWorker):
         insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
 
         #add msgs into new tables
-        sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
-                """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
         for i in range(len(rows)):
             rows[i] = list(rows[i])
             rows[i][messageIndex] = str(parses[i])
 
         while insert_idx_start < len(rows):
             dataToWrite = rows[insert_idx_start:min(insert_idx_end, len(rows))]
-            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, dataToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+            insertQuery = self.qb.create_insert_query(tableName).set_values([(name, '') for name in columnNames])
+            insertQuery.execute_query(dataToWrite)
             insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
             insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
 
@@ -150,11 +159,10 @@ class MessageTransformer(DLAWorker):
 
         """
         message_ids = [str(msg_id) for msg_id in ldas.keys()]
-        sql = """SELECT %s from %s where %s IN ('%s')""" % (
-            ','.join(columnNames), self.corptable, self.messageid_field,
-            "','".join(message_ids))
 
-        rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))
+        where_condition = "%s IN ('%s')" % (self.messageid_field, "','".join(message_ids))
+        selectQuery = self.qb.create_select_query(self.corptable).where(where_condition).set_fields(columnNames)
+        rows = selectQuery.execute_query()
 
         #generate row data:
         newRows = []
@@ -165,9 +173,8 @@ class MessageTransformer(DLAWorker):
                 newRows.append(newRow)
                 
         #insert
-        sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
-            """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-        mm.executeWriteMany(self.corpdb, self.dbCursor, sql, newRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+        insertQuery = self.qb.create_insert_query(tableName).set_values([(name, '') for name in columnNames])
+        insertQuery.execute_query(newRows)
 
 
     def addLDAMessages(self, ldaStatesFile, ldaStatesName=None):
@@ -221,7 +228,7 @@ class MessageTransformer(DLAWorker):
         self.insertLDARows(ldas, tableName, columnNames, messageIndex, messageIdIndex)
 
         #re-enable keys:
-        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+        self.data_engine.enable_table_keys(tableName)
 
         return tableName
 
@@ -385,13 +392,13 @@ class MessageTransformer(DLAWorker):
             normalizeDict = {}
             
             # Han, Bo  and  Cook, Paul  and  Baldwin, Timothy, 2012
-            sql = """select word, norm from %s.%s""" % (dlac.DEF_LEXICON_DB, "han_bo_emnlp_dict")
-            normalizeDict.update(dict(list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))))
+            selectQuery = self.lexicon.qb.create_select_query("han_bo_emnlp_dict").set_fields(["word", "norm"])
+            normalizeDict.update(dict(list(selectQuery.execute_query())))
             
             # Fei Liu, Fuliang Weng, Bingqing Wang, Yang Liu, 2011 
             # Fei Liu, Fuliang Weng, Xiao Jiang, 2012
-            sql = """select word, norm from %s.%s""" % (dlac.DEF_LEXICON_DB, "liu_weng_test_set_3802")
-            normalizeDict.update(dict(list(mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))))
+            selectQuery = self.lexicon.qb.create_select_query("liu_weng_test_set_3802").set_fields(["word", "norm"])
+            normalizeDict.update(dict(list(selectQuery.execute_query())))
         
 
         #find all groups
@@ -436,8 +443,7 @@ class MessageTransformer(DLAWorker):
                 #     #parses = [json.dumps(sentDetector.tokenize(tc.removeNonAscii(tc.treatNewlines(m.strip())))) for m in messages]
 
                 #add msgs into new tables
-                sql = """INSERT INTO """+tableName+""" ("""+', '.join(columnNames)+\
-                        """) VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
+                insertQuery = self.qb.create_insert_query(tableName).set_values([(name, '') for name in columnNames])
                 for i in range(len(rows)):
                     rows[i] = list(rows[i])
                     if sentPerRow:
@@ -463,7 +469,7 @@ class MessageTransformer(DLAWorker):
                 while insert_idx_start < len(sentRows):
                     dataToWrite = sentRows[insert_idx_start:min(insert_idx_end, len(sentRows))]
                     #dlac.warn("Inserting rows %d to %d... " % (insert_idx_start, insert_idx_end))
-                    mm.executeWriteMany(self.corpdb, self.dbCursor, sql, dataToWrite, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                    insertQuery.execute_query(dataToWrite)
                     insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
                     insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
                 
@@ -474,7 +480,7 @@ class MessageTransformer(DLAWorker):
                 dlac.warn("   Warning: No messages for:" + str(groups))
 
         #re-enable keys:
-        mm.enableTableKeys(self.corpdb, self.dbCursor, tableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+        self.data_engine.enable_table_keys(tableName)
 
         return tableName
 

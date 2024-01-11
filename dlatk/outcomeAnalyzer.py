@@ -1607,9 +1607,9 @@ class OutcomeAnalyzer(OutcomeGetter):
             a label map based on a lexicon. labelmap is {feat:concatenated_categories}
 
         """
-        (conn, cur, curD) = mm.dbConnect(self.lexicondb, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
-        sql = 'SELECT * FROM %s'%(lexicon_table)
-        rows = mm.executeGetList(self.lexicondb, cur, sql, True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file) #returns list of [id, feat, cat, ...] entries
+        if self.lexicon is None: self.load_lexicon(lexicon_table)
+        selectQuery = self.lexicon.qb.create_select_query(lexicon_table).set_fields(['*'])
+        rows = selectQuery.execute()
 
         feat_to_label = {}
         for row in rows:
@@ -1646,9 +1646,9 @@ class OutcomeAnalyzer(OutcomeGetter):
         elif not labelmap_table:
             raise Exception("must specify labelmap_table or lda_id")
 
-        (conn, cur, curD) = mm.dbConnect(self.lexicondb, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
-        sql = 'SELECT * FROM %s'%(labelmap_table)
-        rows = mm.executeGetList(self.lexicondb, cur, sql, True, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file) #returns list of [feat, label, ...] entries
+        if self.lexicon is None: self.load_lexicon(labelmap_table)
+        selectQuery = self.lexicon.qb.create_select_query(labelmap_table).set_fields(['*'])
+        rows = selectQuery.execute()
 
         feat_to_label = {}
         for row in rows:
@@ -1931,8 +1931,10 @@ class OutcomeAnalyzer(OutcomeGetter):
         if not topicLex:
             dlac.warn("No topic lexicon selected, please specify it with --topic_lexicon TOP_LEX")
             exit(2)
-        sql = "SELECT term, category, weight FROM %s.%s"%(self.lexicondb, topicLex)
-        catList = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+ 
+        if self.lexicon is None: self.load_lexicon(topicLex)
+        selectQuery = self.lexicon.qb.create_select_query(topicLex).set_fields(["term", "category", "weight"])
+        catList = selectQuery.execute_query()
         topicWords = dict()
         for (term, cat, w) in catList:
             stripped_cat = cat.strip() #thank you Daniel, love Johannes

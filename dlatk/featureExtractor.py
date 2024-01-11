@@ -44,7 +44,7 @@ try:
     from simplejson import loads
     import jsonrpclib
 except ImportError:
-    print("Warning: unable to import jsonrpclib or simplejson")
+    #print("Warning: unable to import jsonrpclib or simplejson")
     pass
 try:
     from textstat.textstat import textstat
@@ -1746,7 +1746,15 @@ class FeatureExtractor(DLAWorker):
             
         #create sql
         dropTable = self.qb.create_drop_query(tableName)
-        createTable = self.qb.create_createTable_query(tableName).add_columns([Column("id","BIGINT(16)", unsigned=True, primary_key=True, nullable=False, auto_increment=True),Column("group_id", correl_fieldType), Column("feat", featureTypeAndEncoding), Column("value", valueType), Column("group_norm", "DOUBLE")]).add_mul_keys([("correl_field", "group_id"), ("feature", "feat")]).set_character_set(self.encoding).set_collation(dlac.DEF_COLLATIONS[self.encoding.lower()]).set_engine(dlac.DEF_MYSQL_ENGINE)
+        createTable = self.qb.create_createTable_query(tableName)
+        createTable = createTable.add_columns([
+            Column("id","BIGINT(16)", unsigned=True, primary_key=True, nullable=False, auto_increment=True),
+            Column("group_id", correl_fieldType), 
+            Column("feat", featureTypeAndEncoding), 
+            Column("value", valueType), 
+            Column("group_norm", "DOUBLE")])
+        createTable = createTable.add_mul_keys({"correl_field": "group_id", "feature": "feat"})
+        createTable = createTable.set_character_set(self.encoding).set_collation(dlac.DEF_COLLATIONS[self.encoding.lower()]).set_engine(dlac.DEF_MYSQL_ENGINE)
 
         #run sql
         dropTable.execute_query()
@@ -1935,12 +1943,9 @@ class FeatureExtractor(DLAWorker):
         #1. word -> set(category) dict
         #2. Get length for varchar column
         feat_cat_weight = dict()
-        if self.db_type == "sqlite":
-            self.data_engine.execute("attach '%s.db' as lexiconDB"%(self.lexicondb))
-            sql = "SELECT * FROM lexiconDB.%s"%(lexiconTableName)
-        else:
-            sql = "SELECT * FROM %s.%s"%(self.lexicondb, lexiconTableName)
-        rows = self.data_engine.execute_get_list(sql)
+        lexiconTableName = self.load_lexicon(lexiconTableName)
+        selectQuery = self.lexicon.qb.create_select_query(lexiconTableName).set_fields('*')
+        rows = selectQuery.execute_query()
         #rows = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
         categories = set()
         lexiconHasWildCard = False

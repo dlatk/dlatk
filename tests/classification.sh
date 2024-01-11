@@ -1,9 +1,10 @@
 #!/usr/bin/bash 
 
-while getopts "hd:t:c:f:-:" opt; do
+while getopts "he:d:t:c:f:-:" opt; do
     case $opt in
 	h) echo "Usage - bash classification.sh -d <DB> -t <TABLE> -c <GROUP_FIELD> -f <FEAT_TABLE> --group_freq_thresh <GFT> --outcome_table <OUTCOME_TABLE> --outcomes <OUTCOME> --feature_selection <FS_ALGORITHM> --output_name <OUTPUT>" >&2
 	   exit 2 ;;
+        e) ENGINE=$OPTARG ;;
         d) DATABASE=$OPTARG ;;
 	t) TABLE=$OPTARG ;;
 	c) GROUP_FIELD=$OPTARG ;;
@@ -31,8 +32,8 @@ done
 if [[ -v FS ]];
 then
     echo "Classification with feature selection - " $FS
-    dlatkInterface.py -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --feat_table $FEAT_TABLE --outcome_table $OT --outcomes $OC --nfold_test_classifiers --categories_to_binary $OC --feature_selection $FS --model lr --folds 10 --csv --output_name $OUTPUT
+    python ../dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --feat_table $FEAT_TABLE --outcome_table $OT --outcomes $OC --nfold_test_classifiers --categories_to_binary $OC --feature_selection $FS --model lr --folds 10 --csv --output_name $OUTPUT
 else
     echo "Classification without feature selection..."
-    dlatkInterface.py -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --feat_table $FEAT_TABLE --outcome_table $OT --outcomes $OC --nfold_test_classifiers --categories_to_binary $OC --model lr --folds 10 --csv --output_name $OUTPUT
+    python ../dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --feat_table $FEAT_TABLE --outcome_table $OT --outcomes $OC --nfold_test_classifiers --categories_to_binary $OC --model lr --folds 10 --csv --output_name $OUTPUT
 fi

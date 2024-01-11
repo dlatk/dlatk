@@ -1,9 +1,10 @@
 #!/usr/bin/bash 
 
-while getopts "hd:t:c:-:" opt; do
+while getopts "he:d:t:c:-:" opt; do
     case $opt in
-	h) echo "Usage - bash clean_messages.sh -d <DB> -t <TABLE> -c <GROUP_FIELD> --language_filter <LANGUAGE>" >&2
+	h) echo "Usage - bash clean_messages.sh -e <ENGINE> -d <DB> -t <TABLE> -c <GROUP_FIELD> --language_filter <LANGUAGE>" >&2
 	   exit 2 ;;
+        e) ENGINE=$OPTARG ;;
         d) DATABASE=$OPTARG ;;
 	t) TABLE=$OPTARG ;;
 	c) GROUP_FIELD=$OPTARG ;;
@@ -22,5 +23,11 @@ while getopts "hd:t:c:-:" opt; do
     esac
 done
 
-dlatkInterface.py -d $DATABASE -t $TABLE -c $GROUP_FIELD --language_filter $LF --clean_messages
-dlatkInterface.py -d $DATABASE -t ${TABLE}_$LF -c $GROUP_FIELD --deduplicate --clean_messages
+echo "TESTING --language_filter AND --clean_messages..."
+python ../dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --language_filter $LF --clean_messages
+
+echo "TESTING --deduplicate..."
+python ../dlatkInterface.py -e $ENGINE -d $DATABASE -t ${TABLE} -c $GROUP_FIELD --deduplicate
+
+echo "TESTING --spam_filter..."
+python ../dlatkInterface.py -e $ENGINE -d $DATABASE -t ${TABLE} -c $GROUP_FIELD --spam_filter

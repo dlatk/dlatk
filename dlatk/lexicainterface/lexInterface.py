@@ -27,7 +27,9 @@ except ImportError:
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/dlatk/lexicainterface",""))
 import dlatk.dlaConstants as dlac
-from dlatk.mysqlmethods.mysqlMethods import abstractDBConnect, dbConnect
+#from dlatk.mysqlmethods.mysqlMethods import abstractDBConnect, dbConnect
+from dlatk.database.dataEngine import DataEngine
+from dlatk.database.query import QueryBuilder, Column
 
 ##CONSTANTS (STATIC VARIABLES)##
 PERMA_CODES = {'P+': 'positive emotion',
@@ -385,11 +387,25 @@ class Lexicon(object):
     dbCursor = None
     currentLexicon = None
 
-    def __init__(self, lex = None, mysql_config_file=dlac.MYSQL_CONFIG_FILE, lexicon_db=dlac.DEF_LEXICON_DB):
-        (self.dbConn, self.dbCursor, self.dictCursor) = dbConnect(db=lexicon_db, mysql_config_file=mysql_config_file)
+    def __init__(
+        self,
+        lex = None,
+        mysql_config_file=dlac.MYSQL_CONFIG_FILE,
+        lexicon_db=dlac.DEF_LEXICON_DB,
+        lex_db_type=dlac.DB_TYPE,
+        encoding=dlac.DEF_ENCODING,
+        use_unicode=dlac.DEF_UNICODE_SWITCH):
+
+        self.lex_db_type = lex_db_type
         self.lexicon_db = lexicon_db
         self.currentLexicon = lex
         self.mysql_config_file = mysql_config_file
+        self.encoding = encoding
+        self.use_unicode = use_unicode
+
+        self.engine = DataEngine(self.lexicon_db, self.mysql_config_file, self.encoding, self.use_unicode, self.lex_db_type)
+        (self.dbConn, self.dbCursor, self.dictCursor) = self.engine.connect()
+        self.qb = QueryBuilder(self.engine)
 
     def __str__(self):
         return str(self.currentLexicon)
@@ -402,18 +418,20 @@ class Lexicon(object):
         """Creates a lexicon table from the instances lexicon variable"""
         
         #first create the table:
-        enumCats = "'"+"', '".join([k.upper().replace("'", "\\'") for k in list(self.currentLexicon.keys())])+"'"   
-        drop = """DROP TABLE IF EXISTS """+tablename
-        sql = """CREATE TABLE IF NOT EXISTS %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                 term VARCHAR(128), category ENUM(%s), INDEX(term), INDEX(category)) CHARACTER SET %s COLLATE %s ENGINE=%s""" % (tablename, enumCats, dlac.DEF_ENCODING, dlac.DEF_COLLATIONS[dlac.DEF_ENCODING.lower()], dlac.DEF_MYSQL_ENGINE)
-        print("Running: ", drop)
-        print("and:     ", sql)
-        try:
-            self.dbCursor.execute(drop)
-            self.dbCursor.execute(sql)
-        except MySQLdb.Error as e:
-            dlac.warn("MYSQL ERROR in createLexiconTable" + str(e))
-            sys.exit(1)
+        dropQuery = self.qb.create_drop_query(tablename)
+        dropQuery.execute_query()
+
+        cat_max_length = max([len(category) for category in self.currentLexicon])
+        term_max_length = max([len(term) for key, value in self.currentLexicon.items() for term in value])
+        columns = [
+            Column("id", "INT"),
+            Column("term", "VARCHAR({})".format(term_max_length)),
+            Column("category", "VARCHAR({})".format(cat_max_length))]
+        keys = {"term": "term", "category": "category"}
+        createQuery = self.qb.create_createTable_query(tablename).add_columns(columns).add_mul_keys(keys)
+        createQuery = createQuery.set_character_set(self.encoding).set_collation(dlac.DEF_COLLATIONS[self.encoding.lower()])
+        createQuery = createQuery.set_engine(dlac.DEF_MYSQL_ENGINE)
+        createQuery.execute_query()
 
         #next insert rows:
         self.insertLexiconRows(tablename)
@@ -422,17 +440,12 @@ class Lexicon(object):
         """Adds rows, taken from the lexicon variable to mysql"""
         if not lex: lex = self.currentLexicon
         #SETUP QUERY:
-        sqlQuery = """INSERT INTO """+tablename+""" (term, category) values (%s, %s)"""
-        values = []
-        for cat, terms in lex.items():
-            values.extend([[term, cat.upper()] for term in terms])
         
-        try:
-            self.dbCursor.executemany(sqlQuery, values)
-        except MySQLdb.Error as e:
-            dlac.warn("MYSQL ERROR in insertLexiconRows:" + str(e) + sqlQuery);
-            sys.exit(1)
-
+        insertQuery = self.qb.create_insert_query(tablename).set_values([(name, '') for name in ["id", "term", "category"]])
+        values = []
+        for index, (cat, terms) in enumerate(lex.items()):
+            values.extend([[index, term, cat.upper()] for term in terms])
+        insertQuery.execute_query(values)
             
     def setLexicon(self, lexicon):
         self.currentLexicon = lexicon
@@ -928,9 +941,19 @@ class Lexicon(object):
    
 
 class WeightedLexicon(Lexicon):
+
     """WeightedLexicons have an additional dictionary with weights for each term in the regular lexicon"""
-    def __init__(self, weightedLexicon=None, lex=None, lexicon_db=dlac.DEF_LEXICON_DB, mysql_config_file=dlac.MYSQL_CONFIG_FILE):
-        super(WeightedLexicon, self).__init__(lex, mysql_config_file = mysql_config_file, lexicon_db = lexicon_db)
+    def __init__(
+        self,
+        weightedLexicon=None,
+        lex=None,
+        lexicon_db=dlac.DEF_LEXICON_DB,
+        mysql_config_file=dlac.MYSQL_CONFIG_FILE,
+        lex_db_type=dlac.DB_TYPE,
+        encoding=dlac.DEF_ENCODING,
+        use_unicode=dlac.DEF_UNICODE_SWITCH):
+
+        super(WeightedLexicon, self).__init__(lex, mysql_config_file = mysql_config_file, lexicon_db = lexicon_db, lex_db_type=lex_db_type, encoding=encoding, use_unicode=use_unicode)
         self.weightedLexicon = weightedLexicon
         self.mysql_config_file = mysql_config_file
      
@@ -953,6 +976,8 @@ class WeightedLexicon(Lexicon):
         else:
             raise Exception("Lexicon table [%s] has no columns"%tablename)
             
+    def setWeightedLexicon(self, lexicon):
+        self.weightedLexicon = lexicon
         
     def isSelfLexiconWeighted(self):
         if self.weightedLexicon and isinstance(self.weightedLexicon, dict):
@@ -1009,17 +1034,21 @@ class WeightedLexicon(Lexicon):
         """Creates a lexicon table from the instance's lexicon variable"""
         
         #first create the table:
-        enumCats = "'"+"', '".join([k.upper().replace("'", "\\'") for k in list(self.weightedLexicon.keys())])+"'"   
-        drop = """DROP TABLE IF EXISTS """+tablename
-        sql = """CREATE TABLE IF NOT EXISTS %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, term VARCHAR(140), category ENUM(%s), weight DOUBLE, INDEX(term), INDEX(category)) CHARACTER SET %s COLLATE %s ENGINE=%s""" % (tablename, enumCats, dlac.DEF_ENCODING, dlac.DEF_COLLATIONS[dlac.DEF_ENCODING.lower()], dlac.DEF_MYSQL_ENGINE)
-        print("Running: ", drop)
-        print("and:     ", sql)
-        try:
-            self.dbCursor.execute(drop)
-            self.dbCursor.execute(sql)
-        except MySQLdb.Error as e:
-            dlac.warn("MYSQL ERROR2" + str(e))
-            sys.exit(1)
+        dropQuery = self.qb.create_drop_query(tablename)
+        dropQuery.execute_query()
+ 
+        cat_max_length = max([len(category) for category in self.weightedLexicon])
+        term_max_length = max([len(term) for key, value in self.weightedLexicon.items() for term in value])
+        columns = [
+            Column("id", "INT"),
+            Column("term", "VARCHAR({})".format(term_max_length)),
+            Column("category", "VARCHAR({})".format(cat_max_length)),
+            Column("weight", "DOUBLE")]
+        keys = {"term": "term", "category": "category"}
+        createQuery = self.qb.create_createTable_query(tablename).add_columns(columns).add_mul_keys(keys)
+        createQuery = createQuery.set_character_set(self.encoding).set_collation(dlac.DEF_COLLATIONS[self.encoding.lower()])
+        createQuery = createQuery.set_engine(dlac.DEF_MYSQL_ENGINE)
+        createQuery.execute_query()
 
         #next insert rows:
         self.insertWeightedLexiconRows(tablename)
@@ -1059,30 +1088,30 @@ class WeightedLexicon(Lexicon):
     def insertWeightedLexiconRows(self, tablename, lex = None):
         """Adds rows, taken from the lexicon variable to mysql"""
         if not lex: lex = self.weightedLexicon
-        sqlQuery = """INSERT INTO """+tablename+""" (term, category, weight) values (%s, %s, %s)"""
-        values = []
+
+        insertQuery = self.qb.create_insert_query(tablename).set_values([(name, '') for name in ["id", "term", "category", "weight"]])
+
+        values, index = [], 0
         for cat in lex:
             for term in lex[cat]:
                 # print 'cat: %s term: %s' % (cat, term)
                 if self.weightedLexicon[cat][term] != 0:
-                    values.extend([[term, cat.upper(), self.weightedLexicon[cat][term]]])
+                    values.extend([[index, term, cat, self.weightedLexicon[cat][term]]])
+                    index += 1
         try:
             nbInserted = 0
             length = len(values)
             chunks = zip(*[iter(values)]*100)
-            pprint.pprint(chunks)
             for v in chunks:
-                nbInserted += self.dbCursor.executemany(sqlQuery, v)    
+                insertQuery.execute_query(v)
+                nbInserted += len(v)
             remainingValues = values[nbInserted:]
             if remainingValues:
-                nbInserted += self.dbCursor.executemany(sqlQuery, remainingValues)
-            print("Inserted %d terms into the lexicon" % nbInserted)
-            if nbInserted != length:
-                print("Warning the number of rows inserted doesn't match the total number of rows")
-                
+                insertQuery.execute_query(remainingValues)
+            print("Inserted %d terms into the lexicon" % length)
 
         except MySQLdb.Error as e:
-            dlac.warn("MYSQL ERROR:" + str(e) + sqlQuery);
+            dlac.warn("MYSQL ERROR:" + str(e) + insertQuery.toString());
             sys.exit(1)
 
     def mapToSuperLexicon(self, superLexiconMapping):

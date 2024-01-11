@@ -15,7 +15,10 @@ from numpy import sqrt, log2, array, mean, std, isnan, fabs, round
 from numpy.random import permutation
 import numpy as np
 from scipy.stats import zscore, norm, t
-from scipy.sparse import csr_matrix
+try:
+    from scipy.sparse import csr_array
+except ImportError as e:
+    from scipy.sparse import csr_matrix as csr_array
 from sklearn.metrics import roc_auc_score
 from sklearn.linear_model import LogisticRegression
 import statsmodels.stats.multitest as mt
@@ -40,8 +43,8 @@ MAX_TO_DISABLE_KEYS = 100000 #number of groups * n must be less than this to dis
 MAX_SQL_PRINT_CHARS = 256
 
 ##Corpus Settings:
-DEF_CORPDB = 'dla_tutorial'
-DEF_CORPTABLE = 'msgs'
+DEF_CORPDB = None
+DEF_CORPTABLE = None
 DEF_CORREL_FIELD = 'user_id'
 DEF_MESSAGE_FIELD = 'message'
 DEF_MESSAGEID_FIELD = 'message_id'
@@ -76,6 +79,7 @@ DEF_MAX_TOP_TC_WORDS = 15
 DEF_TC_FILTER = True
 DEF_WEIGHTS = ''
 DEF_LOW_VARIANCE_THRESHOLD = 0.0
+DEF_OUTPUT_DIR = '.'
 
 
 ##TODO: move elsewhere; quick hack for last minute EMNLP2020
@@ -331,7 +335,7 @@ def alignDictsAsX(X, sparse=False, returnKeyList=False):
                     row.append(keyToIndex[keyid])
                     col.append(c)
                     data.append(value)
-        sparseX = csr_matrix((data, (row, col)))
+        sparseX = csr_array((data, (row, col)))
         if returnKeyList:
             return (sparseX, keys)
         else:

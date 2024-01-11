@@ -20,7 +20,7 @@ try:
     from gensim.models.wrappers import LdaMallet
 except:
     LdaMallet = object
-    dlac.warn("Warning: TopicExtractor: Cannot import gensim")
+    dlac.warn("TopicExtractor: gensim Mallet wrapper unavailable, using Mallet directly.")
     pass
 
 from numpy import log2, isnan
@@ -29,7 +29,7 @@ try:
     from pymallet import defaults
     from pymallet.lda import estimate_topics
 except:
-    dlac.warn("Warning: TopicExtractor: Cannot import pymallet (cannot run LDA)")
+    #dlac.warn("Warning: TopicExtractor: Cannot import pymallet (cannot run LDA)")
     pass
 
 from json import loads

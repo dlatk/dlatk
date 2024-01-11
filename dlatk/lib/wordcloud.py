@@ -87,7 +87,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
     width=None, height=None, rgb=False, title=None,
     fontFamily="Helvetica-Narrow", keepPdfs=False, fontStyle=None,
     font_path="",
-    min_font_size=40, max_font_size=250, max_words=500,
+    min_font_size=4, max_font_size=250, max_words=500,
     big_mask=False,
     background_color="#FFFFFF",
     wordcloud_algorithm='ibm'):
@@ -933,17 +933,18 @@ def getFeatWithLimit(schema, table, group = '', amount = 50, orderBy = 'group_no
     return mm.executeGetList(schema, dbCursor, query)
 
 # wordcloud print methods
-def makeLexiconTopicWordclouds(lexdb, lextable, output, color, max_words=15, cleanCloud=False, censor_dict=dlac.DEF_CENSOR_DICT,mysql_config_file = None):
+def makeLexiconTopicWordclouds(dlaw, lextable, output, color, max_words=15, cleanCloud=False, censor_dict=dlac.DEF_CENSOR_DICT):
+
     if not os.path.exists(output):
         os.makedirs(output)
-    (dbConn, dbCursor, dictCursor) = mm.dbConnect(lexdb, mysql_config_file=mysql_config_file)
-    query = """SELECT distinct(category) FROM %s.%s""" % (lexdb, lextable)
-    categories = map(lambda x: x[0], mm.executeGetList(lexdb, dbCursor, query))
 
+    selectQuery = dlaw.lexicon.qb.create_select_query(lextable).set_fields(['distinct(category)'])
+    categories = map(lambda x: x[0], selectQuery.execute_query())
 
     for category in categories:
-        query = """SELECT term, weight FROM %s.%s WHERE category = \'%s\' ORDER BY weight desc LIMIT %d""" % (lexdb, lextable, category, max_words)
-        result = mm.executeGetList(lexdb, dbCursor, query)
+    
+        selectQuery = dlaw.lexicon.qb.create_select_query(lextable).set_fields(["term", "weight"]).where("category='{}'".format(category)).order_by([("weight", "desc")]).set_limit(max_words)
+        result = selectQuery.execute_query()
         (word_list, freq_list) = zip(*result)
 
         ranked_freq_list = normalizeFreqList(freq_list, word_count = max_words)

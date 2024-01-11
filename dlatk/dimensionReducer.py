@@ -60,7 +60,10 @@ from sklearn.cluster import SpectralClustering
 
 from scipy.stats import zscore
 from scipy.stats.stats import pearsonr, spearmanr
-from scipy.sparse import csr_matrix
+try:
+    from scipy.sparse import csr_array
+except ImportError as e:
+    from scipy.sparse import csr_matrix as csr_array
 import numpy as np
 from numpy import sqrt, outer
 from numpy.linalg import norm
@@ -91,7 +94,7 @@ def alignDictsAsXy(X, y, sparse=False, returnKeyList=False):
                     row.append(keyToIndex[keyid])
                     col.append(c)
                     data.append(value)
-        sparseX = csr_matrix((data, (row, col)))
+        sparseX = csr_array((data, (row, col)))
         if returnKeyList:
             return (sparseX, listy, keys)
         else:
@@ -286,7 +289,7 @@ class DimensionReducer:
         """does the actual regression training, can be used by both train and test"""
 
         sparse = True
-        if not isinstance(X, csr_matrix):
+        if not isinstance(X, csr_array):
             X = np.array(X)
             sparse = False
 
@@ -494,7 +497,7 @@ class DimensionReducer:
             )
 
         for outcomeName, outcomeX in transformedX.items():
-            if not isinstance(outcomeX, csr_matrix):
+            if not isinstance(outcomeX, csr_array):
                 dictX = dict()
                 (n, m) = outcomeX.shape
                 for j in range(m):
@@ -636,7 +639,7 @@ class DimensionReducer:
 
 def chunks(X, y, size):
     """ Yield successive n-sized chunks from l."""
-    if not isinstance(X, csr_matrix):
+    if not isinstance(X, csr_array):
         assert len(X) == len(y), "chunks: size of X and y don't match"
     size = max(len(y), size)
 

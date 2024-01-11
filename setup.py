@@ -148,7 +148,7 @@ CLASSIFIERS = [
 ]
 VERSION = '1.2.6'
 PACKAGE_DATA = {
-  'dlatk': ['data/*.sql', 'tools/colabify.sh'],
+  'dlatk': ['data/*.sql', 'data/*.db', "data/*.csv", "tools/colabify.sh"],
   'dlatk.lib': ['meloche_bd.ttf', 'oval_big_mask.png', 'oval_mask.png'],
 }
 INCLUDE_PACKAGE_DATA = True
@@ -156,28 +156,43 @@ SETUP_REQUIRES = [
   'numpy',
 ]
 INSTALL_REQUIRES = [
-  'mysqlclient<=2.1.1', 
-  'nltk>=3.1,<=3.7', 
-  'numpy<=1.23.1', 
-  'pandas>=0.17.1,<=1.4.3', 
-  'patsy>=0.2.1,<=0.5.2', 
+  'nltk>=3.1,<=3.8.1', 
+  'numpy<=1.23.5', 
+  'pandas>=0.17.1,<=1.5.3', 
+  'patsy>=0.2.1,<=0.5.4', 
   'python-dateutil>=2.5.0,<=2.8.2', 
-  'scikit-learn<=1.1.1', 
-  'scipy>=0.13.3,<=1.8.1', 
-  'SQLAlchemy>=0.9.9,<=1.4.39', 
-  'statsmodels>=0.5.0,<=0.13.2'
+  'scikit-learn<=1.1.3', 
+  'scipy>=0.13.3,<=1.11.2',
+  'statsmodels>=0.5.0,<=0.14.1'
 ]
+
+if os.getenv("COLAB_RELEASE_TAG") is None:
+
+  try:
+    subprocess.check_output(["mysql", "--version"])
+    INSTALL_REQUIRES.append([
+      'mysqlclient<=2.1.1', 
+      'SQLAlchemy>=0.9.9,<=2.0.20'])
+
+  except FileNotFoundError as e:
+    prompt = """
+MySQL is not installed. Skipping relevant dependencies.
+It is recommended that you first install MySQL 5.7 or MariaDB before installing them. 
+After you install MySQL or MariaDB, you can run ‘sudo pip install mysqlclient sqlalchemy’ to get them to use DLATK with MySQL.
+"""
+    print(prompt)
+
 EXTRAS_REQUIRE = {
   'dlatk-pymallet': ['dlatk-pymallet==1.0.0'],
   'gensim': ['gensim==3.8.3'],
   'image': ['image<=1.5.33'],
   'jsonrpclib-pelix': ['jsonrpclib-pelix>=0.2.8'],
   'langid': ['langid>=1.1.4,<=1.1.6'],
-  'matplotlib': ['matplotlib>=1.3.1,<=3.5.2'],
+  'matplotlib': ['matplotlib>=1.3.1,<=3.7.1'],
   'rpy2': ['rpy2<=3.5.2'],
   'simplejson': ['simplejson>=3.3.1'],
   'textstat': ['textstat>=0.6.1'],
-  'wordcloud':  ['wordcloud>=1.1.3,<=1.8.2.2']
+  'wordcloud':  ['wordcloud>=1.1.3,<=1.9.2']
 }
 
 SCRIPTS = ['dlatkInterface.py']

@@ -112,6 +112,7 @@ class OutcomeGetter(DLAWorker):
     def __init__(self, db_type=dlac.DB_TYPE, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_config_file=dlac.MYSQL_CONFIG_FILE, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb = dlac.DEF_LEXICON_DB, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls = dlac.DEF_OUTCOME_CONTROLS, outcome_interaction = dlac.DEF_OUTCOME_CONTROLS, outcome_categories = [], multiclass_outcome = [], group_freq_thresh = None, low_variance_thresh = dlac.DEF_LOW_VARIANCE_THRESHOLD, featureMappingTable='', featureMappingLex='', wordTable = None, fold_column = None):
         super(OutcomeGetter, self).__init__(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable = wordTable)
         self.outcome_table = outcome_table
+        self.get_outcome_table()
 
         if isinstance(outcome_value_fields, str):
             outcome_value_fields = [outcome_value_fields]
@@ -147,6 +148,17 @@ class OutcomeGetter(DLAWorker):
         self.fold_column = fold_column
         self.low_variance_thresh = low_variance_thresh
 
+    def get_outcome_table(self):
+
+        outcome_table = self.outcome_table.split('/')[-1].split('.')[0]
+        if not self.data_engine.tableExists(outcome_table):
+            if (".csv" in self.outcome_table) and (self.db_type == "sqlite"):
+                self.data_engine.csvToTable(self.outcome_table, outcome_table)
+            else:
+                dlac.warn("Outcome table missing")
+            
+        self.outcome_table = outcome_table
+
     def hasOutcomes(self):
         if len(self.outcome_value_fields) > 0:
             return True
@@ -174,15 +186,15 @@ class OutcomeGetter(DLAWorker):
         return feat_to_label
 
     def createOutcomeTable(self, tablename, dataframe, ifExists='fail'):
-        #print("DEBUG", self.corpdb, self.mysql_config_file)#DEBUG
-        eng = get_db_engine(self.corpdb, mysql_config_file=self.mysql_config_file)
+
         dtype ={}
         if isinstance(dataframe.index[0], str):
             import sqlalchemy
             dataframe.index = dataframe.index.astype(str)
             dtype = {self.correl_field : sqlalchemy.types.VARCHAR(max([len(i) for i in dataframe.index]))}
             dataframe.index.name = self.correl_field
-        dataframe.to_sql(tablename, eng, index_label = self.correl_field, if_exists = ifExists, chunksize=dlac.MYSQL_BATCH_INSERT_SIZE, dtype = dtype)
+        con = get_db_engine(self.corpdb, mysql_config_file=self.mysql_config_file) if self.db_type == "mysql" else self.dbConn
+        dataframe.to_sql(tablename, con, index_label = self.correl_field, if_exists = ifExists, chunksize=dlac.MYSQL_BATCH_INSERT_SIZE, dtype = dtype)
         print("New table created: %s" % tablename)
 
     def getDistinctOutcomeValues(self, outcome = None, includeNull = True, where = ''):
@@ -364,7 +376,7 @@ enabled, so the total word count for your groups might be off
                         if not all(isinstance(lbl, (int, str)) for lbl in outcomes[cat].values()):
                             dlac.warn("Arguments of --categories_to_binary must contain string or integer values")
                             sys.exit(1)
-                        cat_labels = set([str(lbl) for lbl in outcomes[cat].values()])
+                        cat_labels = sorted(set([str(lbl) for lbl in outcomes[cat].values()]))
                         if len(cat_labels) == 2: cat_labels.pop()
                         for lbl in cat_labels:
                             cat_label_str = "__".join([cat, lbl]).replace(" ", "_").lower()
@@ -383,7 +395,6 @@ enabled, so the total word count for your groups might be off
                     else:
                         self.outcome_interaction.remove(cat)
                         self.outcome_interaction += cat_label_list
-            
             # create multiclass (integer) representation of outcome
             if self.multiclass_outcome:
                 cat_labels_dict = dict() # store the final mapping in self.multiclass_outcome

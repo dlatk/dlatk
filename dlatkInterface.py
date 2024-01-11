@@ -74,7 +74,7 @@ def main(fn_args = None):
     :param fn_args: string - ex "-d testing -t msgs -c user_id --add_ngrams -n 1 "
     """
     strTime = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-    dlac.warn("\n\n-----\nDLATK Interface Initiated: %s\n-----" % strTime)
+    dlac.warn("\n-----\nDLATK Interface Initiated: %s\n-----" % strTime)
     start_time = time.time()
 
 
@@ -282,6 +282,7 @@ def main(fn_args = None):
                        help='Limit outputs to the given set of features.')
     group.add_argument("--group_freq_thresh", type=int, metavar='N', dest="groupfreqthresh", default=getInitVar('groupfreqthresh', conf_parser, None),
                        help="minimum WORD frequency per correl_field to include correl_field in results")
+    group.add_argument('--output_dir', type=str, dest='outputdir', default=dlac.DEF_OUTPUT_DIR, help='folder to store the outputs, use either this or --output_name')
     group.add_argument('--output_name', '--output', '--output_file', type=str, dest='outputname', default=getInitVar('outputname', conf_parser, ''),
                        help='overrides the default filename for output')
     group.add_argument('--max_wordcloud_words', '--max_tagcloud_words', type=int, metavar='N', dest='maxtcwords', default=dlac.DEF_MAX_TC_WORDS,
@@ -966,7 +967,7 @@ def main(fn_args = None):
     if args.listfeattables or args.showtables:
         feat_table = True if args.listfeattables else False
         tables = dlaw.getTables(like=args.showtables, feat_table=feat_table)
-        print('Found %s available tables' % (len(tables)))
+        print('\nFound %s available tables\n----' % (len(tables)))
         for table in tables: print(str(table[0]))
 
     def printTableDesc(description):
@@ -983,7 +984,7 @@ def main(fn_args = None):
 
     if args.describetables:
         if args.corptable:
-            printTableDesc(dlaw.describeTable(table_name=args.corptable))
+            printTableDesc(dlaw.describeTable(table_name=dlaw.corptable))
         if isinstance(args.feattable, str):
             printTableDesc(dlaw.describeTable(table_name=args.feattable))
         elif isinstance(args.feattable, list):
@@ -997,7 +998,7 @@ def main(fn_args = None):
 
     if args.viewtables:
         if args.corptable:
-            printTableData(dlaw.viewTable(table_name=args.corptable))
+            printTableData(dlaw.viewTable(table_name=dlaw.corptable))
         if isinstance(args.feattable, str):
             printTableData(dlaw.viewTable(table_name=args.feattable))
         elif isinstance(args.feattable, list):
@@ -1021,8 +1022,7 @@ def main(fn_args = None):
             print("Error: Need two arguments for --create_copied_table")
             sys.exit(1)
         new_table = dlaw.createCopiedTable(args.createcopiedtable[0], args.createcopiedtable[1], where=args.groupswhere)
-
-
+    
     #Feature Extraction:
     if args.addngrams:
         if not fe: fe = FE()
@@ -1269,21 +1269,19 @@ def main(fn_args = None):
     #LDA
     if args.estimate_lda_topics:
         if not args.no_lda_lexicon:
-            lex_interface = LexInterfaceParser(mysql_config_file=args.mysqlconfigfile)
+            
+            if not dlaw: dlaw = DLAW()
 
             topic_file = os.path.join(args.save_lda_files, 'lda.topicGivenWord.csv')
             create_name = '{}_cp'.format(args.lda_lexicon_name)
-
             print('Adding topic lexicon: {}'.format(create_name))
-            lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name, '--lexicondb', args.lexicondb])
-            lex_interface.processArgs(lex_interface_args)
+            dlaw.load_lexicon(topic_file, "topicCSV", create_name)
 
             topic_file = os.path.join(args.save_lda_files, 'lda.freq.threshed50.loglik.csv')
             create_name = '{}_freq_t50ll'.format(args.lda_lexicon_name)
-
             print('Adding topic lexicon: {}'.format(create_name))
-            lex_interface_args = lex_interface.parse_args(['--topic_csv', '--topicfile', topic_file, '-c', create_name, '--lexicondb', args.lexicondb])
-            lex_interface.processArgs(lex_interface_args)
+            dlaw.load_lexicon(topic_file, "topicCSV", create_name)
+
         print('LDA topics estimated. Files saved in {}.'.format(args.save_lda_files))
 
     if args.addtopiclexfromtopicfile:
@@ -1424,7 +1422,6 @@ def main(fn_args = None):
         if fg:
             filePieces.append(fg.featureTable)
         if og:
-            filePieces.append(og.outcome_table)
             if og.outcome_value_fields and len(og.outcome_value_fields) <= 10:
                 filePieces.append('_'.join(og.outcome_value_fields))
         if og.outcome_controls: filePieces.append('_'.join(og.outcome_controls))
@@ -1597,9 +1594,8 @@ def main(fn_args = None):
             if args.outputname:
                 outputFile = args.outputname
             else:
-                outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
-                if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
-                if args.spearman: outputFile += '.spearman'
+                outputFile = os.path.join(args.outputdir, makeOutputFilename(args, fg, oa, suffix="rMatrix"))
+
             oa.correlMatrix(featComp, outputFile+".feat", outputFormat='html', sort=args.sort, paramString=paramString.replace("\n","<br>"), nValue=args.nvalue, cInt=args.confint, freq=args.freq)
             oa.correlMatrix(outcomeComp, outputFile+".outcome", outputFormat='html', sort=args.sort, paramString=paramString.replace("\n","<br>"), nValue=args.nvalue, cInt=args.confint, freq=args.freq)
             if args.csv:
@@ -1618,12 +1614,13 @@ def main(fn_args = None):
         cca = CCA(fg, og)
         if args.loadmodels:
             cca.loadModel(args.picklefile)
+        features = fg.featureTable.split('$')[1]
+        msgs = args.corptable.split('/')[-1].split('.')[0]
         components = cca.predictCompsToSQL(tablename=args.newSQLtable,
                                            csv = args.csv,
-                                           outputname = args.outputname if args.outputname
-                                           else args.outputdir + '/rMatrix.' + fg.featureTable + '.' + og.outcome_table  + '.' + '_'.join(og.outcome_value_fields),
+                                           outputname = args.outputname if args.outputname else os.path.join(args.outputdir, makeOutputFilename(args, fg, oa, suffix="rMatrix")),
                                            useXFeats = args.usexfeats, useXControls = args.usexcontrols)
-
+    """
     if args.correlate:
         pprint(args)
         for outcomeField, featRs in correls.items():
@@ -1634,14 +1631,13 @@ def main(fn_args = None):
             #pprint(featRs)#debug
             pprint(sorted(list(featRs.items()), key= lambda f: f[1][0] if not isnan(f[1][0]) else 0),depth=3, compact=True)
             print("\n%d features significant at p < %s" % (cnt, args.maxP))
-
+    """
     if args.rmatrix and not args.cca:
         if args.outputname:
             outputFile = args.outputname
         else:
-            outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
-            if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
-            if args.spearman: outputFile += '.spearman'
+            outputFile = os.path.join(args.outputdir, makeOutputFilename(args, fg, oa, suffix="rMatrix"))
+
         metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
         if args.auc: metric = 'AUC'
         oa.correlMatrix(correls, outputFile, outputFormat='html', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq, metric=metric)
@@ -1650,9 +1646,8 @@ def main(fn_args = None):
         if args.outputname:
             outputFile = args.outputname
         else:
-            outputFile = args.outputdir + '/rMatrix.' + fg.featureTable + '.' + oa.outcome_table  + '.' + '_'.join(oa.outcome_value_fields)
-            if oa.outcome_controls: outputFile += '.'+ '_'.join(oa.outcome_controls)
-            if args.spearman: outputFile += '.spearman'
+            outputFile = os.path.join(args.outputdir, makeOutputFilename(args, fg, oa, suffix="rMatrix"))
+
         metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
         if args.auc: metric = 'AUC'
         oa.correlMatrix(correls, outputFile, outputFormat='csv', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq, metric=metric)
@@ -1814,6 +1809,40 @@ def main(fn_args = None):
         if args.mediationcsv or args.csv: mg.print_csv(args.outputname)
 
     ##Prediction methods:
+
+    def printMessagesAndPredictions(dlaw, prediction_table, outcome_table=None, outcome=None, num_groups=2, num_messages=3):
+
+        # get unique groups
+        fields = ["DISTINCT {}".format(dlaw.correl_field)]
+        selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields(fields).set_limit(num_groups)
+        groups = [row[0] for row in selectQuery.execute_query()]
+
+        # get messages, outcomes, and predictions for the groups
+        dlac.warn("\nExample predictions\n-------")
+        for group in groups:
+
+            dlac.warn("Group ID: {}".format(group))
+            selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields(["COUNT(*)"]).where("{} = {}".format(dlaw.correl_field, group))
+            num_messages = min(selectQuery.execute_query()[0][0], num_messages)
+
+            # print messages for the group
+            selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields([dlaw.message_field]).where("{} = {}".format(dlaw.correl_field, group)).set_limit(num_messages)
+            messages = [row[0] for row in selectQuery.execute_query()]
+            dlac.warn("\nTop {} messages for the group:\n-------".format(num_messages))
+            dlac.warn(messages)
+            dlac.warn('\n')
+
+            selectQuery = dlaw.qb.create_select_query(prediction_table).set_fields(['*']).where("{} = {}".format(dlaw.correl_field, group))
+            prediction = selectQuery.execute_query()[0][1]
+
+            if outcome:
+                selectQuery = dlaw.qb.create_select_query(outcome_table).set_fields(outcome).where("{} = {}".format(dlaw.correl_field, group))
+                outcome_value = selectQuery.execute_query()[0]
+                dlac.warn("Ground-truth, Prediction: {}, {}\n-------\n".format(outcome_value, prediction))
+
+            else:
+                dlac.warn("Prediction: {}\n-------\n".format(prediction))
+
     rp = None #regression predictor
     crp = None #combined regression predictor
     fgs = None #feature getters
@@ -2090,12 +2119,20 @@ def main(fn_args = None):
     if args.savemodels and dr:
         dr.save(args.picklefile)
 
+    if args.predictRtoOutcomeTable or args.predictCtoOutcomeTable:
+        if not dlaw: dlaw = DLAW()
+        prediction_table = "p_{}${}".format(rp.modelName[:4], args.predictRtoOutcomeTable if args.predictRtoOutcomeTable else args.predictCtoOutcomeTable)
+        printMessagesAndPredictions(dlaw, prediction_table, args.outcometable, args.outcomefields)
+
     ##Plot Actions:
     if args.makealltopicwordclouds:
         outputFile = makeOutputFilename(args, None, None, suffix="_alltopics/")
         if args.tagcloudcolorscheme == 'multi':#make sure not to use multi
             args.tagcloudcolorscheme = 'blue'
-        wordcloud.makeLexiconTopicWordclouds(lexdb=args.lexicondb, lextable=args.topiclexicon, output=outputFile, color=args.tagcloudcolorscheme, max_words=args.numtopicwords, cleanCloud=args.cleancloud,mysql_config_file=args.mysqlconfigfile)
+        #wordcloud.makeLexiconTopicWordclouds(lexdb=args.lexicondb, lextable=args.topiclexicon, output=outputFile, color=args.tagcloudcolorscheme, max_words=args.numtopicwords, cleanCloud=args.cleancloud,mysql_config_file=args.mysqlconfigfile)
+        if not dlaw: dlaw = DLAW()
+        lextable = dlaw.load_lexicon(args.topiclexicon)
+        wordcloud.makeLexiconTopicWordclouds(dlaw, lextable=lextable, output=outputFile, color=args.tagcloudcolorscheme, max_words=args.numtopicwords, cleanCloud=args.cleancloud)
     if args.barplot:
         outputFile = makeOutputFilename(args, fg, oa, "barplot")
         oa.barPlot(correls, outputFile)
@@ -2193,8 +2230,25 @@ def main(fn_args = None):
         if (args.model and args.model != dlac.DEF_MODEL): init_file.write("model = " + str(args.model)+"\n")
 
         init_file.close()
+    
+    warning = '''-------
 
-    dlac.warn("--\nInterface Runtime: %.2f seconds"% float(time.time() - start_time))
+Settings:
+
+Database - {}
+Corpus - {}
+Group ID - {}'''.format(args.corpdb, args.corptable, args.correl_field)
+    dlac.warn(warning) 
+    if args.feattable:
+        dlac.warn("Feature table(s) - {}".format(args.feattable))
+    if args.outcometable:
+        dlac.warn("Outcome table - {}".format(args.outcometable))
+    if args.outcomefields:
+        dlac.warn("Outcome(s) - {}".format(' '.join(args.outcomefields)))
+    if args.outcomecontrols:
+        dlac.warn("Control(s) - {}".format(' '.join([args.outcomecontrols[index] for index in range(min(3, len(args.outcomecontrols)))])))
+
+    dlac.warn("-------\nInterface Runtime: %.2f seconds"% float(time.time() - start_time))
     dlac.warn("DLATK exits with success! A good day indeed  ¯\_(ツ)_/¯.")
 
 if __name__ == "__main__":

@@ -83,6 +83,8 @@ class QueryBuilder():
 		"""
 		return CreateTableQuery(table, self.data_engine)
 
+	def create_createColumn_query(self, table, column):
+		return CreateColumnQuery(table, column, self.data_engine)
 
 class SelectQuery(Query):
 	"""
@@ -271,10 +273,15 @@ class InsertQuery(Query):
 	def __init__(self, table, data_engine):
 		super().__init__()
 		self.sql = None
+		self.selectQuery = None
 		self.values = None
 		self.group_by_fields = None
 		self.table = table
 		self.data_engine = data_engine
+
+	def values_from_select(self, selectQuery):
+		self.selectQuery = selectQuery
+		return self
 
 	def set_values(self, values):
 		"""
@@ -298,6 +305,10 @@ class InsertQuery(Query):
 		------------
 		str: a built INSERT query
 		"""
+		if self.selectQuery is not None:
+			insertQuery = "INSERT INTO {} {}".format(self.table, self.selectQuery.toString())
+			return insertQuery
+
 		if self.data_engine.db_type == "mysql":
 			fields = ""
 			vals = ""
@@ -329,7 +340,7 @@ class InsertQuery(Query):
 			insertQuery = """INSERT INTO """+ self.table +""" ("""+ fields +""") values ("""+ vals + """)"""
 			return insertQuery
 
-	def execute_query(self, insert_rows):
+	def execute_query(self, insert_rows=None):
 		"""
 		Executes INSERT query
 
@@ -339,8 +350,10 @@ class InsertQuery(Query):
 		"""
 		if self.sql == None:
 			self.sql = self.build_query()
-		self.data_engine.execute_write_many(self.sql, insert_rows)
-
+		if self.selectQuery is not None:
+			self.data_engine.execute(self.sql)
+		else:
+			self.data_engine.execute_write_many(self.sql, insert_rows)
 
 
 class DropQuery(Query):
@@ -489,7 +502,7 @@ class CreateTableQuery(Query):
 		success = self.data_engine.execute(self.sql)
 		if success==True and self.data_engine.db_type == "sqlite":
 			if self.mul_keys:
-				for key in self.mul_keys:
+				for key in self.mul_keys.items():
 					print("""\n\nCreating index {0} on table:{1}, column:{2} \n\n""".format(key[0], self.table, key[1]))
 					createIndex = """CREATE INDEX %s ON %s (%s)""" % (key[0]+self.table[4:], self.table, key[1])
 					if "meta" not in self.table:
@@ -522,7 +535,7 @@ class CreateTableQuery(Query):
 				createTable += ""","""
 				
 			if self.mul_keys!=None and len(self.mul_keys)>0:
-				for key in self.mul_keys:
+				for key in self.mul_keys.items():
 					createTable += """ KEY `%s` (`%s`),""" % (key[0], key[1])
 	
 			createTable = createTable[0:-1]
@@ -654,3 +667,29 @@ class Column():
 		bool: True if column is unsigned
 		"""
 		return self.unsigned
+
+class CreateColumnQuery(Query):
+
+	def __init__(self, table, column, data_engine):
+		super().__init__()
+
+		self.data_engine = data_engine
+		self.table = table
+		self.column = column
+	
+	def build_query(self):
+
+		sql = "ALTER TABLE {} ADD COLUMN {}".format(self.table, self.column.get_name())
+		sql += " {}".format(self.column.get_datatype())
+		if self.column.is_unsigned():
+			sql += " UNSIGNED"
+		if not self.column.is_nullable():
+			sql += " NOT NULL"
+		
+		#FIXME - remove this print
+		print(sql)
+		return sql
+
+	def execute_query(self):
+		self.sql = self.build_query()
+		self.data_engine.execute(self.sql)

@@ -15,8 +15,11 @@ import numbers
 from operator import mul
 from functools import reduce
 from sklearn.preprocessing import StandardScaler
+try:
+    from scipy.sparse import csr_array
+except ImportError as e:
+    from scipy.sparse import csr_matrix as csr_array
 from sklearn.metrics.pairwise import cosine_similarity
-from scipy.sparse import csr_matrix
 from scipy.interpolate import interp1d
 
 #local / nlp
@@ -401,7 +404,7 @@ class FeatureRefiner(FeatureGetter):
                     col.append(featIndex)
                     data.append(value)
         assert all([isinstance(x,numbers.Number) for x in data]), "Data is corrupt, there are non float elements in the group norms (some might be NULL?)"
-        X = csr_matrix((data,(row,col)), shape = (len(groups), len(featureNames)), dtype=np.float)
+        X = csr_array((data,(row,col)), shape = (len(groups), len(featureNames)), dtype=np.float)
         if use_mean: 
             X = X.todense()
         dlac.warn("\n X.shape: %s]" % str(X.shape))
@@ -846,7 +849,15 @@ class FeatureRefiner(FeatureGetter):
 
         #sql = """CREATE TABLE %s (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, group_id %s, feat %s, value %s, group_norm DOUBLE, KEY `correl_field` (`group_id`), KEY `feature` (`feat`)) CHARACTER SET %s COLLATE %s ENGINE=%s""" %(tableName, correl_fieldType, featureType, valueType, self.encoding, dlac.DEF_COLLATIONS[self.encoding.lower()], dlac.DEF_MYSQL_ENGINE)
 
-        createTable = self.qb.create_createTable_query(tableName).add_columns([Column("id", "INT", unsigned=True, primary_key=True, nullable=False, auto_increment=True), Column("group_id", correl_fieldType), Column("feat", featureType), Column("value", valueType), Column("group_norm", "DOUBLE")]).add_mul_keys([("correl_field", "group_id"), ("feature", "feat")]).set_character_set(self.encoding).set_collation(dlac.DEF_COLLATIONS[self.encoding.lower()]).set_engine(dlac.DEF_MYSQL_ENGINE)
+        createTable = self.qb.create_createTable_query(tableName)
+        createTable = createTable.add_columns([
+            Column("id", "INT", unsigned=True, primary_key=True, nullable=False, auto_increment=True), 
+            Column("group_id", correl_fieldType), 
+            Column("feat", featureType), 
+            Column("value", valueType), 
+            Column("group_norm", "DOUBLE")])
+        createTable = createTable.add_mul_keys({"correl_field": "group_id", "feature": "feat"})
+        createTable = createTable.set_character_set(self.encoding).set_collation(dlac.DEF_COLLATIONS[self.encoding.lower()]).set_engine(dlac.DEF_MYSQL_ENGINE)
 
         #run sql
         dropTable.execute_query()

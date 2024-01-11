@@ -4,10 +4,10 @@ import html
 from pprint import pprint
 
 #infrastructure
+from .database.query import Column
 from .dlaWorker import DLAWorker
 from . import textCleaner as tc
 from . import dlaConstants as dlac
-from .mysqlmethods import mysqlMethods as mm
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 
 try:
@@ -37,14 +37,23 @@ class MessageAnnotator(DLAWorker):
         tokenizer = Tokenizer(use_unicode=self.use_unicode)
 
         new_table = self.corptable + "_dedup"
-        drop = """DROP TABLE IF EXISTS %s""" % (new_table)
-        create = """CREATE TABLE %s like %s""" % (new_table, self.corptable)
-        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
-        mm.execute(self.corpdb, self.dbCursor, create, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
-        mm.standardizeTable(self.corpdb, self.dbCursor, new_table, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+
+        # Drop if the table exists, create a new table, and standardize it.
+        dropQuery = self.qb.create_drop_query(new_table)
+        dropQuery.execute_query()
+
+        createQuery = self.qb.create_createTable_query(new_table).like(self.corptable)
+        createQuery.execute_query()
+
+        self.data_engine.standardizeTable(
+            new_table, 
+            collate=dlac.DEF_COLLATIONS[self.encoding.lower()], 
+            engine=dlac.DEF_MYSQL_ENGINE, 
+            charset=self.encoding, 
+            use_unicode=self.use_unicode)
 
         #Find column names:
-        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file).keys())
+        columnNames = list(self.data_engine.getTableColumnNameTypes(self.corptable))
         messageIndex = columnNames.index(self.message_field)
         try:
             retweetedStatusIdx = columnNames.index("retweeted_status_text")
@@ -53,8 +62,8 @@ class MessageAnnotator(DLAWorker):
             pass
 
         #find all groups that are not already inserted
-        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
-        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)]
+        selectQuery = self.qb.create_select_query(self.corptable).set_fields([self.correl_field]).group_by([self.correl_field])
+        cfRows = [r[0] for r in selectQuery.execute_query()]
         dlac.warn("deduplicating messages for %d '%s's"%(len(cfRows), self.correl_field))
 
         # if message level analysis
@@ -68,9 +77,10 @@ class MessageAnnotator(DLAWorker):
         counter = 1
         for groups in dlac.chunks(cfRows, groupsAtTime):
 
-            # get msgs for groups:
-            sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
-            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))
+            # get msgs for groups: 
+            where_condition = "%s IN ('%s')" % (self.correl_field, "','".join(str(g) for g in groups))
+            selectQuery = self.qb.create_select_query(self.corptable).where(where_condition).set_fields(columnNames)
+            rows = selectQuery.execute_query()
             rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
 
             bf = []
@@ -107,8 +117,8 @@ class MessageAnnotator(DLAWorker):
                 except:
                     continue
             if len(rows_to_write) >= dlac.MYSQL_BATCH_INSERT_SIZE:
-                sql = """INSERT INTO """+new_table+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-                mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                insertQuery = self.qb.create_insert_query(new_table).set_values([(name, '') for name in columnNames])
+                insertQuery.execute_query(rows_to_write)
                 rows_to_write = []
 
             if (counter % 500 == 0):
@@ -116,22 +126,31 @@ class MessageAnnotator(DLAWorker):
             counter += 1
 
         if rows_to_write:
-            sql = """INSERT INTO """+new_table+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+            insertQuery = self.qb.create_insert_query(new_table).set_values([(name, '') for name in columnNames])
+            insertQuery.execute_query(rows_to_write)
 
     def addAnonymizedTable(self):
         """
         
         """
         new_table = self.corptable + "_an"
-        drop = """DROP TABLE IF EXISTS %s""" % (new_table)
-        create = """CREATE TABLE %s like %s""" % (new_table, self.corptable)
-        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
-        mm.execute(self.corpdb, self.dbCursor, create, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
-        mm.standardizeTable(self.corpdb, self.dbCursor, new_table, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+         
+        # Drop if the table exists, create a new table, and standardize it.
+        dropQuery = self.qb.create_drop_query(new_table)
+        dropQuery.execute_query()
+
+        createQuery = self.qb.create_createTable_query(new_table).like(self.corptable)
+        createQuery.execute_query()
+
+        self.data_engine.standardizeTable(
+            new_table, 
+            collate=dlac.DEF_COLLATIONS[self.encoding.lower()], 
+            engine=dlac.DEF_MYSQL_ENGINE, 
+            charset=self.encoding, 
+            use_unicode=self.use_unicode)
 
         #Find column names:
-        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file).keys())
+        columnNames = list(self.data_engine.getTableColumnNameTypes(self.corptable))
         messageIndex = columnNames.index(self.message_field)
         try:
             retweetedStatusIdx = columnNames.index("retweeted_status_text")
@@ -140,8 +159,8 @@ class MessageAnnotator(DLAWorker):
             pass
 
         #find all groups that are not already inserted
-        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
-        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)]
+        selectQuery = self.qb.create_select_query(self.corptable).set_fields([self.correl_field]).group_by([self.correl_field])
+        cfRows = [r[0] for r in selectQuery.execute_query()]
         dlac.warn("anonymizing messages for %d '%s's"%(len(cfRows), self.correl_field))
 
         groupsAtTime = 1
@@ -150,8 +169,9 @@ class MessageAnnotator(DLAWorker):
         for groups in dlac.chunks(cfRows, groupsAtTime):
 
             # get msgs for groups:
-            sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
-            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))
+            where_condition = "%s IN ('%s')" % (self.correl_field, "','".join(str(g) for g in groups))
+            selectQuery = self.qb.create_select_query(self.corptable).where(where_condition).set_fields(columnNames)
+            rows = selectQuery.execute_query()
             rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
 
             for row in rows:
@@ -165,8 +185,8 @@ class MessageAnnotator(DLAWorker):
                 except:
                     continue
             if len(rows_to_write) >= dlac.MYSQL_BATCH_INSERT_SIZE:
-                sql = """INSERT INTO """+new_table+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-                mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                insertQuery = self.qb.create_insert_query(new_table).set_values([(name, '') for name in columnNames])
+                insertQuery.execute_query(rows_to_write)
                 rows_to_write = []
 
             if (counter % 500 == 0):
@@ -174,9 +194,8 @@ class MessageAnnotator(DLAWorker):
             counter += 1
 
         if rows_to_write:
-            sql = """INSERT INTO """+new_table+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
-
+            insertQuery = self.qb.create_insert_query(new_table).set_values([(name, '') for name in columnNames])
+            insertQuery.execute_query(rows_to_write)
 
     def addSpamFilterTable(self, threshold=dlac.DEF_SPAM_FILTER):
         """
@@ -192,22 +211,32 @@ class MessageAnnotator(DLAWorker):
         spam_words = ['share', 'win', 'check', 'enter', 'products', 'awesome', 'prize', 'sweeps', 'bonus', 'gift']
 
         new_table = self.corptable + "_nospam"
-        drop = """DROP TABLE IF EXISTS %s""" % (new_table)
-        create = """CREATE TABLE %s like %s""" % (new_table, self.corptable)
-        add_colum = """ALTER TABLE %s ADD COLUMN is_spam INT(2) NULL""" % (new_table)
-        mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
-        mm.execute(self.corpdb, self.dbCursor, create, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
-        mm.execute(self.corpdb, self.dbCursor, add_colum, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
-        mm.standardizeTable(self.corpdb, self.dbCursor, new_table, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+
+        # Drop if the table exists, create a new table, add spam identifier column, and standardize it.
+        dropQuery = self.qb.create_drop_query(new_table)
+        dropQuery.execute_query()
+
+        createQuery = self.qb.create_createTable_query(new_table).like(self.corptable)
+        createQuery.execute_query()
+        
+        column = Column("is_spam", "INT(2)")
+        self.qb.create_createColumn_query(new_table, column).execute_query()
+
+        self.data_engine.standardizeTable(
+            new_table, 
+            collate=dlac.DEF_COLLATIONS[self.encoding.lower()], 
+            engine=dlac.DEF_MYSQL_ENGINE, 
+            charset=self.encoding, 
+            use_unicode=self.use_unicode)
 
         #Find column names:
-        columnNames = list(mm.getTableColumnNameTypes(self.corpdb, self.dbCursor, self.corptable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file).keys())
+        columnNames = list(self.data_engine.getTableColumnNameTypes(self.corptable))
         insertColumnNames = columnNames + ['is_spam']
         messageIndex = columnNames.index(self.message_field)
 
         #find all groups that are not already inserted
-        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
-        cfRows = [r[0] for r in mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)]
+        selectQuery = self.qb.create_select_query(self.corptable).set_fields([self.correl_field]).group_by([self.correl_field])
+        cfRows = [r[0] for r in selectQuery.execute_query()]
         dlac.warn("Removing spam messages for %d '%s's"%(len(cfRows), self.correl_field))
 
         # if message level analysis
@@ -223,8 +252,9 @@ class MessageAnnotator(DLAWorker):
         for groups in dlac.chunks(cfRows, groupsAtTime):
 
             # get msgs for groups:
-            sql = """SELECT %s from %s where %s IN ('%s')""" % (','.join(columnNames), self.corptable, self.correl_field, "','".join(str(g) for g in groups))
-            rows = list(mm.executeGetList(self.corpdb, self.dbCursor, sql, warnQuery=False, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))
+            where_condition = "%s IN ('%s')" % (self.correl_field, "','".join(str(g) for g in groups))
+            selectQuery = self.qb.create_select_query(self.corptable).where(where_condition).set_fields(columnNames)
+            rows = selectQuery.execute_query()
             rows = [row for row in rows if row[messageIndex] and not row[messageIndex].isspace()]
 
             total_messages = float(len(rows))
@@ -247,8 +277,8 @@ class MessageAnnotator(DLAWorker):
                 users_removed += 1
 
             if len(rows_to_write) >= dlac.MYSQL_BATCH_INSERT_SIZE:
-                sql = """INSERT INTO """+new_table+""" ("""+', '.join(insertColumnNames)+""") VALUES ("""  +", ".join(['%s']*len(insertColumnNames)) + """)"""
-                mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                insertQuery = self.qb.create_insert_query(new_table).set_values([(name, '') for name in insertColumnNames])
+                insertQuery.execute_query(rows_to_write)
                 rows_to_write = []
 
             if (counter % 500 == 0):
@@ -256,20 +286,20 @@ class MessageAnnotator(DLAWorker):
             counter += 1
 
         if rows_to_write:
-            sql = """INSERT INTO """+new_table+""" ("""+', '.join(insertColumnNames)+""") VALUES ("""  +", ".join(['%s']*len(insertColumnNames)) + """)"""
-            mm.executeWriteMany(self.corpdb, self.dbCursor, sql, rows_to_write, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+            insertQuery = self.qb.create_insert_query(new_table).set_values([(name, '') for name in insertColumnNames])
+            insertQuery.execute_query(rows_to_write)
         print('%d users removed!' % (users_removed))
 
     # TODO: add nicer implementation
     def yieldMessages(self, messageTable, totalcount):
         if totalcount > 10*dlac.MAX_SQL_SELECT:
             for i in range(0,totalcount, dlac.MAX_SQL_SELECT):
-                sql = "SELECT * FROM %s limit %d, %d" % (messageTable, i, dlac.MAX_SQL_SELECT)
-                for m in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file):
+                selectQuery = self.qb.create_select_query(messageTable).set_fields('*').set_limit("{}, {}".format(i, dlac.MAX_SQL_SELECT))
+                for m in selectQuery.execute_query():
                     yield [i for i in m]
         else:
-            sql = "SELECT * FROM %s" % messageTable
-            for m in mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file):
+            selectQuery = self.qb.create_select_query(messageTable).set_fields('*')
+            for m in selectQuery.execute_query():
                 yield m
 
     def addLanguageFilterTable(self, langs, cleanMessages, lowercase, lightEnglishFilter=False):
@@ -292,7 +322,7 @@ class MessageAnnotator(DLAWorker):
 
         new_table = self.corptable + "_%s"
 
-        columnNames = mm.getTableColumnNames(self.corpdb, self.corptable, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+        columnNames = list(self.data_engine.getTableColumnNameTypes(self.corptable))
         assert len(columnNames) > 0, "no columns in message table, check database name"
         messageIndex = [i for i, col in enumerate(columnNames) if col.lower() == dlac.DEF_MESSAGE_FIELD.lower()][0]
         #messageIDindex = [i for i, col in enumerate(columnNames) if col.lower() == dlac.DEF_MESSAGEID_FIELD.lower()][0]
@@ -300,19 +330,27 @@ class MessageAnnotator(DLAWorker):
         # CREATE NEW TABLES IF NEEDED
         messageTables = {l: new_table % l for l in langs}
         for l, table in messageTables.items():
-            drop = """DROP TABLE IF EXISTS %s""" % (table)
-            create = """CREATE TABLE %s like %s""" % (table, self.corptable)
-            mm.execute(self.corpdb, self.dbCursor, drop, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
-            mm.execute(self.corpdb, self.dbCursor, create, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
-            mm.standardizeTable(self.corpdb, self.dbCursor, table, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+
+            dropQuery = self.qb.create_drop_query(table)
+            dropQuery.execute_query()
+
+            createQuery = self.qb.create_createTable_query(table).like(self.corptable)
+            createQuery.execute_query()
+            
+            self.data_engine.standardizeTable(
+                table, 
+                collate=dlac.DEF_COLLATIONS[self.encoding.lower()], 
+                engine=dlac.DEF_MYSQL_ENGINE, 
+                charset=self.encoding, 
+                use_unicode=self.use_unicode)
 
         #ITERATE THROUGH EACH MESSAGE WRITING THOSE THAT ARE ENGLISH
         messageDataToAdd = {l: list() for l in langs}
         messageDataCounts = {l: 0 for l in langs}
         totalMessages = 0
         totalMessagesKept = 0
-        sql = """SELECT COUNT(*) FROM %s""" % self.corptable
-        totalMessagesInTable = mm.executeGetList(self.corpdb, self.dbCursor, sql, mysql_config_file=self.mysql_config_file)[0][0]
+        selectQuery = self.qb.create_select_query(self.corptable).set_fields(["COUNT(*)"])
+        totalMessagesInTable = selectQuery.execute_query()[0][0]
 
         print("Reading %s messages" % ",".join([str(totalMessagesInTable)[::-1][i:i+3] for i in range(0,len(str(totalMessagesInTable)),3)])[::-1])
         memory_limit = dlac.MYSQL_BATCH_INSERT_SIZE if dlac.MYSQL_BATCH_INSERT_SIZE < totalMessagesInTable else totalMessagesInTable/20
@@ -366,8 +404,8 @@ class MessageAnnotator(DLAWorker):
             if totalMessagesKept % memory_limit == 0:
                 #write messages every so often to clear memory
                 for l, messageData in messageDataToAdd.items():
-                    sql = """INSERT INTO """+messageTables[l]+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-                    mm.executeWriteMany(self.corpdb, self.dbCursor, sql, messageData, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                    insertQuery = self.qb.create_insert_query(messageTables[l]).set_values([(name, '') for name in columnNames])
+                    insertQuery.execute_query(messageData)
                     messageDataToAdd[l] = list()
 
                 for l, nb in [(x[0], len(x[1])) for x in iter(messageDataToAdd.items())]:
@@ -379,8 +417,8 @@ class MessageAnnotator(DLAWorker):
         if messageDataToAdd:
             print("Adding final rows")
             for l, messageData in messageDataToAdd.items():
-                sql = """INSERT INTO """+messageTables[l]+""" ("""+', '.join(columnNames)+""") VALUES ("""  +", ".join(['%s']*len(columnNames)) + """)"""
-                mm.executeWriteMany(self.corpdb, self.dbCursor, sql, messageData, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                insertQuery = self.qb.create_insert_query(messageTables[l]).set_values([(name, '') for name in columnNames])
+                insertQuery.execute_query(messageData)
 
         print("Kept %d out of %d messages" % (totalMessagesKept, totalMessages))
         pprint({messageTables[l]: v for l, v in messageDataCounts.items()})

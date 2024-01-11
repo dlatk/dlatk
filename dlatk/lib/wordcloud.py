@@ -87,7 +87,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
     width=None, height=None, rgb=False, title=None,
     fontFamily="Helvetica-Narrow", keepPdfs=False, fontStyle=None,
     font_path="",
-    min_font_size=40, max_font_size=250, max_words=500,
+    min_font_size=4, max_font_size=250, max_words=500,
     big_mask=False,
     background_color="#FFFFFF",
     wordcloud_algorithm='ibm'):

@@ -329,7 +329,7 @@ class DataEngine(object):
 			column_description.append("{} {}".format(header[cid], column_type))
 
 		column_description = '(' + ', '.join(column_description) + ");"
-		return column_description
+		return column_description, num_columns
 
 	def csvToTable(self, csv_file, table_name):
 		"""
@@ -342,33 +342,32 @@ class DataEngine(object):
 		table_name: str
 		"""
 
-		column_description = self.get_column_description(csv_file)
+		column_description, num_columns = self.get_column_description(csv_file)
 		createSQL = "CREATE TABLE {} {}".format(table_name, column_description)
 		self.execute(createSQL)
 
 		print("Importing data, reading {} file".format(csv_file))
 
-		def chunks(reader, rows=10000):
-			"Divides the data into 10000 rows each"
-			chunk = []
-			try:
-				for i in range(rows):
-					chunk.append(next(reader))
-			except StopIteration as e:
-				pass
-			yield chunk
+		placeholder = "%s" if self.db_type == "mysql" else "?"
+		values_str = "(" + ",".join([placeholder] * num_columns) + ")"
+		insertQuery = "INSERT INTO {} VALUES {}".format(table_name, values_str)
 
 		with open(csv_file, 'r') as f:
 			reader = csv.reader(f, delimiter=',')
 			header = next(reader)
-			num_columns = None
-			for chunk in chunks(reader):
-				if not num_columns:
-					num_columns = len(chunk[0])
-					placeholder = "%s" if self.db_type == "mysql" else "?"
-					values_str = "(" + ",".join([placeholder] * num_columns) + ")"
-				insertQuery = "INSERT INTO {} VALUES {}".format(table_name, values_str)
-				self.execute_write_many(insertQuery, chunk)
+
+			chunk = []
+			for index, row in enumerate(reader):
+
+				if (index % 10000 == 0 and index > 0):
+					print("Reading {} rows into the table...".format(len(chunk)))
+					self.execute_write_many(insertQuery, chunk)
+					chunk = []
+
+				chunk.append(row)
+
+			print("Reading remaining {} rows into the table...".format(len(chunk)))
+			self.execute_write_many(insertQuery, chunk)
 
 class MySqlDataEngine(DataEngine):
 	"""

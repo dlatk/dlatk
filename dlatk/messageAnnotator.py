@@ -291,14 +291,14 @@ class MessageAnnotator(DLAWorker):
         print('%d users removed!' % (users_removed))
 
     # TODO: add nicer implementation
-    def yieldMessages(self, messageTable, totalcount):
+    def yieldMessages(self, messageTable, totalcount, columnNames='*'):
         if totalcount > 10*dlac.MAX_SQL_SELECT:
             for i in range(0,totalcount, dlac.MAX_SQL_SELECT):
-                selectQuery = self.qb.create_select_query(messageTable).set_fields('*').set_limit("{}, {}".format(i, dlac.MAX_SQL_SELECT))
+                selectQuery = self.qb.create_select_query(messageTable).set_fields(columnNames).set_limit("{}, {}".format(i, dlac.MAX_SQL_SELECT))
                 for m in selectQuery.execute_query():
                     yield [i for i in m]
         else:
-            selectQuery = self.qb.create_select_query(messageTable).set_fields('*')
+            selectQuery = self.qb.create_select_query(messageTable).set_fields(columnNames)
             for m in selectQuery.execute_query():
                 yield m
 
@@ -323,9 +323,11 @@ class MessageAnnotator(DLAWorker):
         new_table = self.corptable + "_%s"
 
         columnNames = list(self.data_engine.getTableColumnNameTypes(self.corptable))
+        #print("column names", columnNames) #DEBUG
         assert len(columnNames) > 0, "no columns in message table, check database name"
         messageIndex = [i for i, col in enumerate(columnNames) if col.lower() == dlac.DEF_MESSAGE_FIELD.lower()][0]
         #messageIDindex = [i for i, col in enumerate(columnNames) if col.lower() == dlac.DEF_MESSAGEID_FIELD.lower()][0]
+        #print("messageIndex", messageIndex) #DEBUG
 
         # CREATE NEW TABLES IF NEEDED
         messageTables = {l: new_table % l for l in langs}
@@ -355,11 +357,11 @@ class MessageAnnotator(DLAWorker):
         print("Reading %s messages" % ",".join([str(totalMessagesInTable)[::-1][i:i+3] for i in range(0,len(str(totalMessagesInTable)),3)])[::-1])
         memory_limit = dlac.MYSQL_BATCH_INSERT_SIZE if dlac.MYSQL_BATCH_INSERT_SIZE < totalMessagesInTable else totalMessagesInTable/20
 
-        for messageRow in self.yieldMessages(self.corptable, totalMessagesInTable):
+        for messageRow in self.yieldMessages(self.corptable, totalMessagesInTable, columnNames):
             messageRow = list(messageRow)
             totalMessages+=1
             message = messageRow[messageIndex]
-
+            #print("message", message, messageIndex) #DEBUG
             try:
                 message = tc.removeNonAscii(message)
                 message = html.unescape(message)
@@ -377,7 +379,6 @@ class MessageAnnotator(DLAWorker):
             except Exception as e:
                 print(e)
                 print([message])
-
 
             lang, conf = None, None
             try:
@@ -413,6 +414,7 @@ class MessageAnnotator(DLAWorker):
 
                 print("  %6d rows written (%6.3f %% done)" % (totalMessagesKept,
                                                               100*float(totalMessages)/totalMessagesInTable))
+
 
         if messageDataToAdd:
             print("Adding final rows")

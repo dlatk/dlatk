@@ -376,7 +376,7 @@ enabled, so the total word count for your groups might be off
                         if not all(isinstance(lbl, (int, str)) for lbl in outcomes[cat].values()):
                             dlac.warn("Arguments of --categories_to_binary must contain string or integer values")
                             sys.exit(1)
-                        cat_labels = list(set([str(lbl) for lbl in outcomes[cat].values()]))
+                        cat_labels = sorted(set([str(lbl) for lbl in outcomes[cat].values()]))
                         if len(cat_labels) == 2: cat_labels.pop()
                         for lbl in cat_labels:
                             cat_label_str = "__".join([cat, lbl]).replace(" ", "_").lower()

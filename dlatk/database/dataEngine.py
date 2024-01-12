@@ -309,9 +309,11 @@ class DataEngine(object):
 		column_description = []	
 		for cid in range(num_columns):
 
-			length, is_str = 0, False
+			length, is_str, column_type = 0, False, "TEXT"
 			for index, row in enumerate(sample):
+
 				column_value = _eval(row[cid])
+				if column_value == '': continue #column type isn't infered until you see the first non-null value
 				if (not is_str) and (isinstance(column_value, int)):
 					column_type = "INT"
 				elif (not is_str) and (isinstance(column_value, float)):
@@ -326,9 +328,8 @@ class DataEngine(object):
 						column_type = "LONGTEXT"
 						break
 
-			column_description.append("{} {}".format(header[cid], column_type))
+			column_description.append((header[cid], column_type))
 
-		column_description = '(' + ', '.join(column_description) + ");"
 		return column_description, num_columns
 
 	def csvToTable(self, csv_file, table_name):
@@ -343,7 +344,9 @@ class DataEngine(object):
 		"""
 
 		column_description, num_columns = self.get_column_description(csv_file)
-		createSQL = "CREATE TABLE {} {}".format(table_name, column_description)
+
+		createSQL = '(' + ', '.join(["{} {}".format(cname, ctype) for cname, ctype in column_description]) + ");"
+		createSQL = "CREATE TABLE {} {}".format(table_name, createSQL)
 		self.execute(createSQL)
 
 		print("Importing data, reading {} file".format(csv_file))
@@ -352,6 +355,7 @@ class DataEngine(object):
 		values_str = "(" + ",".join([placeholder] * num_columns) + ")"
 		insertQuery = "INSERT INTO {} VALUES {}".format(table_name, values_str)
 
+		type_map = {"INT": int, "DOUBLE": float}
 		with open(csv_file, 'r') as f:
 			reader = csv.reader(f, delimiter=',')
 			header = next(reader)
@@ -364,7 +368,14 @@ class DataEngine(object):
 					self.execute_write_many(insertQuery, chunk)
 					chunk = []
 
-				chunk.append(row)
+				#enforcing strict column type
+				cleaned_row = []
+				for cindex, cvalue in enumerate(row):
+					try:
+						cleaned_row.append(type_map.get(column_description[cindex][1], str)(cvalue))
+					except ValueError as e:
+						cleaned_row.append(None)
+				chunk.append(cleaned_row)
 
 			print("Reading remaining {} rows into the table...".format(len(chunk)))
 			self.execute_write_many(insertQuery, chunk)

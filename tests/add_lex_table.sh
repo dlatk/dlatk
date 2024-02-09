@@ -24,4 +24,4 @@ while getopts "he:d:t:c:l:-:" opt; do
     esac
 done
 
-python ../dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --add_lex_table -l $LEX_TABLE --weighted_lexicon 
+dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --add_lex_table -l $LEX_TABLE --weighted_lexicon 

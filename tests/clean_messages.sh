@@ -24,10 +24,10 @@ while getopts "he:d:t:c:-:" opt; do
 done
 
 echo "TESTING --language_filter AND --clean_messages..."
-python ../dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --language_filter $LF --clean_messages
+dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --language_filter $LF --clean_messages
 
 echo "TESTING --deduplicate..."
-python ../dlatkInterface.py -e $ENGINE -d $DATABASE -t ${TABLE} -c $GROUP_FIELD --deduplicate
+dlatkInterface.py -e $ENGINE -d $DATABASE -t ${TABLE} -c $GROUP_FIELD --deduplicate
 
 echo "TESTING --spam_filter..."
-python ../dlatkInterface.py -e $ENGINE -d $DATABASE -t ${TABLE} -c $GROUP_FIELD --spam_filter
+dlatkInterface.py -e $ENGINE -d $DATABASE -t ${TABLE} -c $GROUP_FIELD --spam_filter

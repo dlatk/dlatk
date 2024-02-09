@@ -22,4 +22,4 @@ while getopts "he:-:" opt; do
     esac
 done
 
-python ../dlatkInterface.py -e $ENGINE --topic_lexicon $TOPIC_LEX --group_freq_thresh $GFT --make_all_topic_wordclouds --tagcloud_colorscheme blue --output $OUTPUT
+dlatkInterface.py -e $ENGINE --topic_lexicon $TOPIC_LEX --group_freq_thresh $GFT --make_all_topic_wordclouds --tagcloud_colorscheme blue --output $OUTPUT

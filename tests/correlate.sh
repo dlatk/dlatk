@@ -32,7 +32,7 @@ done
 
 if [[ -v CTB ]];
 then
-python ../dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --correlate --tagcloud --make_wordclouds --rmatrix --csv --sort --feat_table $FEAT_TABLE --outcome_table $OT --outcomes $OC --controls $CTRLS --categories_to_binary $CTB --output_name $OUTPUT
+dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --correlate --tagcloud --make_wordclouds --rmatrix --csv --sort --feat_table $FEAT_TABLE --outcome_table $OT --outcomes $OC --controls $CTRLS --categories_to_binary $CTB --output_name $OUTPUT
 else
-python ../dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --correlate --tagcloud --make_wordclouds --rmatrix --csv --sort --feat_table $FEAT_TABLE --outcome_table $OT --outcomes $OC --controls $CTRLS --output_name $OUTPUT
+dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --correlate --tagcloud --make_wordclouds --rmatrix --csv --sort --feat_table $FEAT_TABLE --outcome_table $OT --outcomes $OC --controls $CTRLS --output_name $OUTPUT
 fi

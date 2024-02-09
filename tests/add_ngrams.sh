@@ -27,4 +27,4 @@ while getopts "he:d:t:c:-:" opt; do
     esac
 done
 
-python ../dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --add_ngrams -n 1 2 3 --group_freq_thresh $GFT --combine_feat_tables 1to3gram --feat_occ_filter --set_p_occ $OCC --feat_colloc_filter --set_pmi_threshold $PMI
+dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --add_ngrams -n 1 2 3 --group_freq_thresh $GFT --combine_feat_tables 1to3gram --feat_occ_filter --set_p_occ $OCC --feat_colloc_filter --set_pmi_threshold $PMI

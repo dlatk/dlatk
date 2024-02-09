@@ -32,8 +32,8 @@ done
 if [[ -v FS ]];
 then
     echo "Regression with feature selection - ", $FS
-    python ../dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --feat_table $FEAT_TABLE --outcome_table $OT --outcomes $OC --nfold_test_regression --feature_selection $FS --model ridgecv --folds 10 --csv --output_name $OUTPUT
+    dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --feat_table $FEAT_TABLE --outcome_table $OT --outcomes $OC --nfold_test_regression --feature_selection $FS --model ridgecv --folds 10 --csv --output_name $OUTPUT
 else
     echo "Regression without feature selection..."
-    python ../dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --feat_table $FEAT_TABLE --outcome_table $OT --outcomes $OC --nfold_test_regression --model ridgecv --folds 10 --csv --output_name $OUTPUT
+    dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --feat_table $FEAT_TABLE --outcome_table $OT --outcomes $OC --nfold_test_regression --model ridgecv --folds 10 --csv --output_name $OUTPUT
 fi

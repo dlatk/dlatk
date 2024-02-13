@@ -794,7 +794,7 @@ class RegressionPredictor:
                           weightedEvalOutcome = None, residualizedControls = False, groupsWhere = '',\
                           weightedSample = '', adaptationFactorsName=[], featureSelectionParameters=None,\
                           numOfFactors = [] , factorSelectionType='rfe' , pairedFactors=False, outputName='',\
-                          report=True, integrationMethod=''):
+                          report=True, integrationMethod='', stratifyFolds = False):
         """Tests regressors, by cross-validating over folds with different combinations of controls"""
         
         ###################################
@@ -812,7 +812,8 @@ class RegressionPredictor:
             random.seed(self.randomState)
             groupList = sorted(list(groups), reverse=True)
             random.shuffle(groupList)
-            groupFolds =  [x for x in foldN(groupList, nFolds)]
+            #if stratifyFolds:
+            groupFolds =  [x for x in foldN(groupList, nFolds)]#TODO: STRATIFY_FOLDS
         print("[number of groups: %d (%d Folds)]" % (len(groups), nFolds))
         
 
@@ -3202,8 +3203,12 @@ def grouper(folds, iterable, padvalue=None):
     n = len(l) / folds
     return zip_longest(*[iter(iterable)]*n, fillvalue=padvalue)
 
-def foldN(l, folds):
+def foldN(l, folds, stratify_key_for_l = None):
     """ Yield successive n-sized chunks from l."""
+    if stratify_key_for_l:
+        #TODO: STRATIFY_FOLDS
+        #reorder l according to outcomes_for_l
+        pass
     n = len(l) // folds
     last = len(l) % folds
     for i in range(0, n*folds, n):

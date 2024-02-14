@@ -175,10 +175,7 @@ def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True, classes=None
         roc_auc = dict()
         #print("Muti-AUCs:")
         for i in range(n_classes):
-            try:
-                fpr[i], tpr[i], _ = roc_curve(ytrue[:, i], ypredProbs[:, i])
-            except:
-                import pdb; pdb.set_trace();
+            fpr[i], tpr[i], _ = roc_curve(ytrue[:, i], ypredProbs[:, i])
             roc_auc[i] = auc(fpr[i], tpr[i])
             #print("  ", i, ": %.4f" % roc_auc[i]) 
 

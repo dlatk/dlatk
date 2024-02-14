@@ -6,7 +6,6 @@ Interface Module to DLATK
 print("\n")#clear some lines to make command more obvious
 import os, getpass
 import sys
-import pdb
 import argparse
 import time
 import subprocess

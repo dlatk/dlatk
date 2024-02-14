@@ -1,10 +1,12 @@
 # Differential Language Analysis ToolKit
 
-DLATK is an end to end human text analysis package for Python 3. It is specifically *suited for social media, Psychology, and health research*, developed originally for projects out of the University of Pennsylvania, Stony Brook University, and Stanford University.  Currently, it has been used in over 75 peer-reviewed publicaitons (many from before there was an article to reference).
+DLATK is an end to end human text analysis package for Python 3. It is specifically *suited for social media, Psychology, and health research*, developed originally for projects out of the University of Pennsylvania, Stony Brook University, and Stanford University.  Currently, it has been used in over 100 peer-reviewed publicaitons (many from before there was an article to reference).
 
-DLATK can perform:
+Dlatk is designed to handle the multi-level nature of language (words belong to documents, written by people, within communities) that makes it particularly useful for psychological and social science. 
 
-- linguistic feature extraction (i.e. turning text into variables)
+Some examples of what DLATK can perform:
+
+- linguistic feature extraction (i.e. turning text into features or variables for analyses)
 - differential language analysis (i.e. finding the language that is most associated with psychological or health variables)
 - wordcloud visualization
 - statistical- and machine learning-based supervised prediction (regression and classification)
@@ -16,8 +18,7 @@ DLATK can perform:
 DLATK can integrate with
 - [pandas](http://pandas.pydata.org/) dataframe output
 
-Functions of DLATK use:
-
+DLATK use:
 - [HuggingFace](http://??.org/) for transformer language models
 - [Mallet](http://mallet.cs.umass.edu/) for creating LDA topics
 - [Stanford Parser](http://nlp.stanford.edu/software/lex-parser.shtml) for syntactic parsing
@@ -26,7 +27,7 @@ Functions of DLATK use:
 
 ## Installation
 
-DLATK is available via any of four popular installation platforms: conda, pip, github, or Docker:
+DLATK is available via any of four popular installation platforms: pip (recommended), conda, github, or Docker:
 
 #### New to installing Python packages?
 It is recommended that you see the [full installation instructions](http://dlatk.wwbp.org/install.html#dependencies).

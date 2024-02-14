@@ -356,7 +356,7 @@ class DataEngine(object):
 		insertQuery = "INSERT INTO {} VALUES {}".format(table_name, values_str)
 
 		type_map = {"INT": int, "DOUBLE": float}
-		with open(csv_file, 'r') as f:
+		with open(csv_file, 'r', errors="surrogateescape") as f:
 			reader = csv.reader(f, delimiter=',')
 			header = next(reader)
 
@@ -372,7 +372,8 @@ class DataEngine(object):
 				cleaned_row = []
 				for cindex, cvalue in enumerate(row):
 					try:
-						cleaned_row.append(type_map.get(column_description[cindex][1], str)(cvalue))
+						cvalue = type_map.get(column_description[cindex][1], str)(cvalue)
+						cleaned_row.append(cvalue)
 					except ValueError as e:
 						cleaned_row.append(None)
 				chunk.append(cleaned_row)

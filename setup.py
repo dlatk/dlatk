@@ -125,7 +125,7 @@ PACKAGES = ['dlatk',
   'dlatk.tools'
 ]
 LICENSE = 'GNU General Public License v3 (GPLv3)'
-AUTHOR = "H. Andrew Schwartz, Salvatore Giorgi, Maarten Sap, Patrick Crutchley, Lukasz Dziurzynski and Megha Agrawal"
+AUTHOR = "H. Andrew Schwartz, Salvatore Giorgi, Maarten Sap, Patrick Crutchley, Lukasz Dziurzynski, Megha Agrawal, and Shashanka Subrahmanya"
 EMAIL = "has@cs.stonybrook.edu, sgiorgi@sas.upenn.edu"
 MAINTAINER = "Salvatore Giorgi, H. Andrew Schwartz"
 MAINTAINER_EMAIL = "sgiorgi@sas.upenn.edu, has@cs.stonybrook.edu"
@@ -146,7 +146,7 @@ CLASSIFIERS = [
   'Programming Language :: Python :: 3.9',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '1.2.6'
+VERSION = '1.3.1'
 PACKAGE_DATA = {
   'dlatk': ['data/*.sql', 'data/*.db', "data/*.csv", "tools/colabify.sh"],
   'dlatk.lib': ['meloche_bd.ttf', 'oval_big_mask.png', 'oval_mask.png'],

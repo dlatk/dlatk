@@ -1828,9 +1828,10 @@ def main(fn_args = None):
             # print messages for the group
             selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields([dlaw.message_field]).where("{} = {}".format(dlaw.correl_field, group)).set_limit(num_messages)
             messages = [row[0] for row in selectQuery.execute_query()]
-            dlac.warn("\nTop {} messages for the group:\n-------".format(num_messages))
-            dlac.warn(messages)
-            dlac.warn('\n')
+            dlac.warn("Top {} messages for the group:".format(num_messages))
+            for message in messages:
+                dlac.warn(message)
+                dlac.warn('\n')
 
             selectQuery = dlaw.qb.create_select_query(prediction_table).set_fields(['*']).where("{} = {}".format(dlaw.correl_field, group))
             prediction = selectQuery.execute_query()[0][1]
@@ -1838,10 +1839,10 @@ def main(fn_args = None):
             if outcome:
                 selectQuery = dlaw.qb.create_select_query(outcome_table).set_fields(outcome).where("{} = {}".format(dlaw.correl_field, group))
                 outcome_value = selectQuery.execute_query()[0]
-                dlac.warn("Ground-truth, Prediction: {}, {}\n-------\n".format(outcome_value, prediction))
+                dlac.warn("Ground-truth, Prediction: {}, {}\n-------".format(outcome_value, prediction))
 
             else:
-                dlac.warn("Prediction: {}\n-------\n".format(prediction))
+                dlac.warn("Prediction: {}\n-------".format(prediction))
 
     rp = None #regression predictor
     crp = None #combined regression predictor
@@ -2232,7 +2233,6 @@ def main(fn_args = None):
         init_file.close()
     
     warning = '''-------
-
 Settings:
 
 Database - {}

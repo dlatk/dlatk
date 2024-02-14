@@ -1,6 +1,6 @@
 # Differential Language Analysis ToolKit
 
-DLATK is an end to end human text analysis package for Python 3. It is specifically *suited for social media, Psychology, and health research*, developed originally for projects out of the University of Pennsylvania and Stony Brook University.  Currently, it has been used in over 75 peer-reviewed publicaitons (many from before there was an article to reference).
+DLATK is an end to end human text analysis package for Python 3. It is specifically *suited for social media, Psychology, and health research*, developed originally for projects out of the University of Pennsylvania, Stony Brook University, and Stanford University.  Currently, it has been used in over 75 peer-reviewed publicaitons (many from before there was an article to reference).
 
 DLATK can perform:
 

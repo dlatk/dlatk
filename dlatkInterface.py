@@ -1620,7 +1620,7 @@ def main(fn_args = None):
                                            csv = args.csv,
                                            outputname = args.outputname if args.outputname else os.path.join(args.outputdir, makeOutputFilename(args, fg, oa, suffix="rMatrix")),
                                            useXFeats = args.usexfeats, useXControls = args.usexcontrols)
-    """
+    #"""
     if args.correlate:
         pprint(args)
         for outcomeField, featRs in correls.items():
@@ -1631,7 +1631,7 @@ def main(fn_args = None):
             #pprint(featRs)#debug
             pprint(sorted(list(featRs.items()), key= lambda f: f[1][0] if not isnan(f[1][0]) else 0),depth=3, compact=True)
             print("\n%d features significant at p < %s" % (cnt, args.maxP))
-    """
+    #"""
     if args.rmatrix and not args.cca:
         if args.outputname:
             outputFile = args.outputname

@@ -794,14 +794,14 @@ class RegressionPredictor:
                           weightedEvalOutcome = None, residualizedControls = False, groupsWhere = '',\
                           weightedSample = '', adaptationFactorsName=[], featureSelectionParameters=None,\
                           numOfFactors = [] , factorSelectionType='rfe' , pairedFactors=False, outputName='',\
-                          report=True, integrationMethod=''):
+                          report=True, integrationMethod='', stratifyFolds = False):
         """Tests regressors, by cross-validating over folds with different combinations of controls"""
         
         ###################################
         #1. setup groups for random folds
         if blacklist: print("USING BLACKLIST: %s" %str(blacklist))
         (groups, allOutcomes, allControls, foldLabels) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere, includeFoldLabels=True)
-        if foldLabels:
+        if foldLabels: #TODO: STRATIFY_FOLDS: update print statements; change to elif, else
             print("    ***explicit fold labels specified, not splitting again***")
             temp = {}
             # for k,v in sorted(foldLabels.iteritems()): temp.setdefault(v, []).append(k)
@@ -915,7 +915,12 @@ class RegressionPredictor:
                     for outcomeName, outcomes in sorted(allOutcomes.items()):
                         originalGroupNormsList = copy.copy(thisGroupNormsList)
                         thisOutcomeGroups = set(outcomes.keys()) & XGroups
-                        #### factors selection, using rfe or pca and from a pool of single factors or paired factors                    
+
+                        if stratifyFolds:
+                            #TODO: STRATIFY_FOLDS: copy logic of classify predictor; add stratify function
+                            pass
+                        
+                        #### factors selection, using rfe or pca and from a pool of single factors or paired factors                
                         if factorAdaptation or factorAddition:
                             groupsOrder = list(thisOutcomeGroups)
                             factorsList = self.selectAdaptationFactors(allFactors, groupsOrder, outcomes, nFactors = nFactors, factorSelectionType=factorSelectionType , pairedFactors=pairedFactors, sparse = sparse, outputName = outputName) 

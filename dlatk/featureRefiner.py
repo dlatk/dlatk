@@ -404,7 +404,7 @@ class FeatureRefiner(FeatureGetter):
                     col.append(featIndex)
                     data.append(value)
         assert all([isinstance(x,numbers.Number) for x in data]), "Data is corrupt, there are non float elements in the group norms (some might be NULL?)"
-        X = csr_array((data,(row,col)), shape = (len(groups), len(featureNames)), dtype=np.float)
+        X = csr_array((data,(row,col)), shape = (len(groups), len(featureNames)), dtype=np.float64)
         if use_mean: 
             X = X.todense()
         dlac.warn("\n X.shape: %s]" % str(X.shape))

@@ -110,7 +110,7 @@ def print_wordclouds(wordcloud_folder):
       fig, axes = plt.subplots(1, len(outcome_images), figsize=(3.5 * len(outcome_images), 3)) 
       axes = [axes] if isinstance(axes, Axes) else axes
 
-      outcome_images = outcome_images[::-1]
+      outcome_images = sorted(outcome_images)
       for i, image in enumerate(outcome_images):
         axes[i].set_axis_off()
         axes[i].set_title(image.split('/')[-1])

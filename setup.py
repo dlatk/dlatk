@@ -157,7 +157,7 @@ SETUP_REQUIRES = [
 ]
 INSTALL_REQUIRES = [
   'nltk>=3.1,<=3.8.1', 
-  'numpy<=1.23.5', 
+  'numpy<=1.25.2', 
   'pandas>=0.17.1,<=1.5.3', 
   'patsy>=0.2.1,<=0.5.6', 
   'python-dateutil>=2.5.0,<=2.8.2', 

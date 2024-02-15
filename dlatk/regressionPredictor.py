@@ -103,7 +103,7 @@ def alignDictsAsXy(X, y, sparse = False, returnKeyList = False, keys = None):
                     data.append(value)
 
         assert all([isinstance(x,numbers.Number) for x in data]), "Data is corrupt, there are non float elements in the group norms (some might be NULL?)"
-        sparseX = csr_array((data,(row,col)), shape = (len(keys), len(X)), dtype=np.float)
+        sparseX = csr_array((data,(row,col)), shape = (len(keys), len(X)), dtype=np.float64)
         if returnKeyList:
             return (sparseX, array(listy), keys)
         else:
@@ -158,7 +158,7 @@ def alignDictsAsXyz(X, y, z, sparse = False, returnKeyList = False, keys = None)
                     data.append(value)
 
         assert all([isinstance(x,numbers.Number) for x in data]), "Data is corrupt, there are non float elements in the group norms (some might be NULL?)"
-        sparseX = csr_array((data,(row,col)), shape = (len(keys), len(X)), dtype=np.float)
+        sparseX = csr_array((data,(row,col)), shape = (len(keys), len(X)), dtype=np.float64)
         if returnKeyList:
             return (sparseX, array(listy), array(listz), keys)
         else:

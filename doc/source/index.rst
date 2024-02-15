@@ -18,6 +18,7 @@ DLATK is an end to end human text analysis package, specifically suited for soci
 
 DLATK can utilize:
 
+- `HuggingFace <https://huggingface.co/>`_ for transformer language models
 - `Mallet <http://mallet.cs.umass.edu/>`_ for creating LDA topics
 - `Stanford Parser <http://nlp.stanford.edu/software/lex-parser.shtml>`_
 - `CMU's TweetNLP <http://www.cs.cmu.edu/~ark/TweetNLP/>`_ 

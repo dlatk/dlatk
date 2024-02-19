@@ -808,6 +808,15 @@ class RegressionPredictor:
             for k,v in sorted(foldLabels.items()): temp.setdefault(v, []).append(k)
             groupFolds = list(temp.values())
             nFolds = len(groupFolds)
+        elif stratifyFolds:
+            print(
+                "[number of groups: %d (%d Folds)] non-stratified / using same folds for all outcomes"
+                % (len(groups), nFolds)
+            )
+            random.seed(self.randomState)
+            groupList = list(groups)
+            random.shuffle(groupList)
+            groupFolds = foldN(groupList, nFolds)
         else:
             random.seed(self.randomState)
             groupList = sorted(list(groups), reverse=True)
@@ -918,8 +927,12 @@ class RegressionPredictor:
 
                         if stratifyFolds:
                             #TODO: STRATIFY_FOLDS: copy logic of classify predictor; add stratify function
-                            pass
-                        
+                            print(
+                            "Warning: Stratifying outcome classes across folds (thus, folds will differ across outcomes)."
+                        )
+                            groupFolds = stratifyGroups(
+                                thisOutcomeGroups, outcomes, nFolds, randomState=DEFAULT_RANDOM_SEED
+                            )
                         #### factors selection, using rfe or pca and from a pool of single factors or paired factors                
                         if factorAdaptation or factorAddition:
                             groupsOrder = list(thisOutcomeGroups)
@@ -3217,6 +3230,29 @@ def foldN(l, folds):
             break
         else: 
             yield l[i:i+n]
+
+def stratifyGroups(groups, outcomes, folds, randomState=DEFAULT_RANDOM_SEED):
+    """breaks groups up into folds such that each fold has at most 1 more of a class than other folds """
+    random.seed(randomState)
+    xGroups = sorted(list(set(groups) & set(outcomes.keys())))
+    # TODO: get rid of the following problem. DTypes should be fixed at the source. 
+    
+    # outcome_values = [float(val) if not isinstance(val, float) or not isinstance(val, int) else val for val in list(outcomes.values())]
+    
+    # outcome_groups = dict(zip(list(outcomes.keys()), outcome_values))
+    
+    outcome_groups = sorted(xGroups, key=lambda g: outcomes[g])
+        
+    groupsPerFold = {f: [] for f in range(folds)}
+    # countPerFold = {f: 0 for f in range(folds)}
+    for idx, grp in enumerate(outcome_groups):
+        groupsPerFold[idx%folds].append(grp)
+        
+    # make sure all outcomes aren't together in the groups:
+    for gs in list(groupsPerFold.values()):
+        random.shuffle(gs)
+
+    return list(groupsPerFold.values())
 
 def hasMultValuesPerItem(listOfD):
     """returns true if the dictionary has a list with more than one element"""

@@ -691,7 +691,7 @@ def main(fn_args = None):
     group.add_argument('--classification_to_lexicon', dest='classToLex', type=str, default=None,
                        help='Uses the classification coefficients to create a weighted lexicon.')
     group.add_argument('--stratify_folds', action='store_true', dest='stratifyfolds', default=False,
-                       help='stratify folds during combo_test_classifiers')
+                       help='stratify folds during combo_test_classifiers or combo_test_regression')
     group.add_argument('--train_c2r', action='store_true', dest='trainclasstoreg', default=False,
                        help='train a model that goes from classification to prediction')
     group.add_argument('--test_c2r', action='store_true', dest='testclasstoreg', default=False,

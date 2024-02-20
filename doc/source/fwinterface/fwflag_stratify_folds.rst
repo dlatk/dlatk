@@ -5,7 +5,7 @@
 Switch
 ======
 
----stratify_folds
+--stratify_folds
 
 
 Description

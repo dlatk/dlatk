@@ -32,6 +32,7 @@ Getting Started
    :maxdepth: 1
 
    install
+   Github Repo <https://github.com/dlatk/dlatk/>
    tutorials
    datasets
    dlatkinterface_ordered

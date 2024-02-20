@@ -5,7 +5,7 @@
 Switch
 ======
 
---stratify_folds
+---stratify_folds
 
 
 Description
@@ -21,7 +21,15 @@ None
 Details
 =======
 
-Can be used for both binary and continuous outcomes
+Can be used for both binary and continuous outcomes.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t` 
+* :doc:`fwflag_combo_test_regression` or :doc:`fwflag_combo_test_classifiers`
 
 Example Commands
 ================

@@ -1,11 +1,11 @@
 .. _fwflag_stratify_folds:
 ==========
-\\-\\-stratify_folds
+--stratify_folds
 ==========
 Switch
 ======
 
-\\-\\-stratify_folds
+--stratify_folds
 
 
 Description

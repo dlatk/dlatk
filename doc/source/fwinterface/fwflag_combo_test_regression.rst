@@ -29,6 +29,7 @@ If you included :doc:`fwflag_controls` in your command, multiple K-fold CV will 
 Note that all remarks about feature selection and model/parameter selection from :doc:`fwflag_train_regression` apply, so please read that section.
 
 Output
+------
 
 Per fold, the following line will be printed to the standard output (numbers are examples)
 
@@ -57,7 +58,8 @@ At the end of the folds, you'll get output that looks like this:
                    'r': 0.79109013487672142,
                    'r_folds': 0.7909194802451609,
                    'r_p': 0.0,
-                   'r_p_folds': 1.5067491373744111e:doc:`fwflag_188`,                    'rho': 0.77229872578756076,
+                   'r_p_folds': 1.5067491373744111,                    
+                   'rho': 0.77229872578756076,
                    'rho_p': 0.0,
                    'se_R2_folds': 0.0083296286255124322,
                    'se_mae_folds': 0.028974068999092516,

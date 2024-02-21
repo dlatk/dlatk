@@ -8,7 +8,7 @@ The following tutorials are roughly ordered from beginner to more advanced topic
 Getting started
 ---------------
 * :doc:`tutorials/tut_dla`
-* Getting started in Colab <https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing>
+* `Getting started in Colab <https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing>`_ 
 
 Text Cleaning and Transformations
 ---------------------------------

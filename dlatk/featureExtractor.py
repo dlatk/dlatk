@@ -2030,7 +2030,7 @@ class FeatureExtractor(DLAWorker):
             cat_to_function_summed_weight = dict()
             cat_to_function_summed_weight_gn = {}
             if isinstance(groupId, str):
-                sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id LIKE '%s'"%(wordTable, groupId)
+                sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id = '%s'"%(wordTable, groupId)
             else:
                 sql = "SELECT group_id, feat, value, group_norm FROM %s WHERE group_id = %d"%(wordTable, groupId)
 

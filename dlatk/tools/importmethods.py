@@ -9,6 +9,7 @@ except:
     pass
 import sqlite3
 from pathlib import Path
+import pandas as pd
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)).replace("/dlatk/tools",""))
 from dlatk.mysqlmethods import mysqlMethods as mm
@@ -141,6 +142,213 @@ def sqliteToCSV(database, table, csvFile, csvQuoting=csv.QUOTE_ALL):
 def jsonToMySQL(jsonFile, database, table, columnDescription):
     return
 
+def checkIfTableExists(table, dbCursor):
+    dbCursor.execute("""SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '{table}'""".format(table=table))
+    tables = [item[0] for item in dbCursor.fetchall()]
+    if tables:
+        print("A table called 'utterances' already exists in the database.")
+        sys.exit(1)
+    else:
+        return
+
+# methods for importing ConvoKit data
+# see documentation for format of ConvoKit data:
+# https://convokit.cornell.edu/documentation/data_format.html
+def doesTableExists(table, dbCursor):
+    dbCursor.execute("""SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '{table}'""".format(table=table))
+    tables = [item[0] for item in dbCursor.fetchall()]
+    if tables:
+        print("A table called '{table}' already exists in the database.".format(table=table))
+        return False
+    else:
+        return True
+
+def checkExactTypes(type):
+    typeStr = "VARCHAR(255)"
+    try:
+        if type == 'string':
+            typeStr = "VARCHAR(255)"
+        elif type == 'Int64':
+            typeStr = "INTEGER"
+        elif type == 'Float64':
+            typeStr = "FLOAT"
+    except:
+        pass
+    return typeStr
+
+def getColumnTypes(jsonFile, table, numColsToCheck = 5):
+    idCol = "id"
+    if table == "speakers":
+        idCol = "speaker"
+    elif table == "conversations":
+        idCol = "conversation_id"
+    elif table == "corpus":
+        idCol = "meta_data"
+    elif table == "index":
+        idCol = "index"
+    
+    columns, types = [], []
+    thisData = []
+
+    with open(jsonFile) as f:
+        data = json.load(f)
+        i = 0
+        for k, v in data.items():
+            flatData = {idCol: k}
+            for kk, vv in v.items():
+                if kk == "meta":
+                    metaData = v[kk]
+                    for kkk, vvv in metaData.items():
+                        if isinstance(vvv, list) or isinstance(vvv, dict):
+                            vvv = str(vvv)
+                        flatData[kkk] = vvv
+                else:
+                    if isinstance(vv, list) or isinstance(vv, dict):
+                        vv = str(vv)
+                    flatData[kk] = vv
+            thisData.append(flatData)
+            i += 1
+            if i == numColsToCheck:
+                break
+        df = pd.DataFrame(thisData).convert_dtypes()
+        for ii in zip(df.columns, df.dtypes):
+            columns.append(ii[0])
+            types.append(checkExactTypes(ii[1]))
+    return columns, types
+
+def getColumnTypesUtterances(jsonFile, numColsToCheck = 5):
+    columns, types = [], []
+    thisData = []
+    with open(jsonFile) as f:
+        for i, line in enumerate(f):
+            data = json.loads(line)
+            flatData = {}
+            for k,v in data.items():
+                if k == 'meta':
+                    metaData = data[k]
+                    for kk, vv in metaData.items():
+                        if isinstance(vv, list) or isinstance(vv, dict):
+                            vv = str(vv)
+                        flatData[kk] = vv
+                else:
+                    if isinstance(v, list) or isinstance(v, dict):
+                        v = str(v)
+                    flatData[k] = v
+            thisData.append(flatData)
+            if i == numColsToCheck:
+                break
+        
+        df = pd.DataFrame(thisData).convert_dtypes()
+        for ii in zip(df.columns, df.dtypes):
+            columns.append(ii[0])
+            types.append(checkExactTypes(ii[1]))
+        columns = [c if c != 'id' else 'message_id' for c in columns ]
+        columns = [c if c != 'text' else 'message' for c in columns ]
+    return columns, types
+
+def createColDescription(columns, types, tableType=""):
+    columnDescription = ""
+    for column, type in zip(columns, types):
+        if column == "id":
+            columnDescription += "{column} {type} PRIMARY KEY, ".format(column=column, type=type)
+        else:
+            columnDescription += "{column} {type}, ".format(column=column, type=type)
+    # if tableType == "utterances":
+    #     columnDescription += """PRIMARY KEY (id)"""
+    columnDescription = columnDescription[:-2]
+    columnDescription = columnDescription.replace("-", "_")
+    return columnDescription
+
+def flattenUtterancesJSON(jsonData):
+    dataToWrite = []
+    for k,v in jsonData.items():
+        if k == 'meta':
+            metaData = jsonData[k]
+            for kk, vv in metaData.items():
+                if isinstance(vv, list) or isinstance(vv, dict):
+                    vv = str(vv)
+                dataToWrite.append(vv)
+        else:
+            if isinstance(v, list) or isinstance(v, dict):
+                v = str(v)
+            dataToWrite.append(v)
+    return dataToWrite
+
+def flattenJSON(jsonData):
+    dataToWrite = []
+    for k,v in jsonData.items():
+        data = [k]
+        for kk, vv in v.items():
+            if kk == "meta":
+                metaData = v[kk]
+                for kkk, vvv in metaData.items():
+                    if isinstance(vvv, list) or isinstance(vvv, dict):
+                        vvv = str(vvv)
+                    data.append(vvv)
+            else:
+                if isinstance(vv, list) or isinstance(vv, dict):
+                    vv = str(vv)
+                data.append(vv)
+        dataToWrite.append(data)
+    return dataToWrite
+
+def importConvoKit(pathToCorpus):
+    if not pathToCorpus.endswith("/"):
+        pathToCorpus += "/"
+    databaseName = Path(pathToCorpus).stem
+    dbConn, dbCursor = sm.dbConnect(databaseName)
+
+    tables = ["utterances", "speakers", "conversations", ] # "corpus", "index"
+
+    for table in tables:
+        jsonFile = pathToCorpus + table + ".json"
+        if table == "utterances":
+            jsonFile += "l"
+        if os.path.isfile(jsonFile) and doesTableExists(table, dbCursor):
+            if table == "utterances":
+                columns, types = getColumnTypesUtterances(jsonFile)
+            else:
+                columns, types = getColumnTypes(jsonFile, table)
+            columnDescription = createColDescription(columns, types, table)
+            createSQL = """CREATE TABLE {table} ({colDesc});""".format(table=table, colDesc=columnDescription)
+            print(createSQL)
+            dbCursor.execute(createSQL)
+
+            print("""Importing data, reading {csvFile} file""".format(csvFile=jsonFile))
+            if table == "utterances":
+                dataToWrite = []
+                numColumns = None
+                with open(jsonFile) as f:
+                    for i, line in enumerate(f, 1):
+                        data = json.loads(line)
+                        data = flattenUtterancesJSON(data)
+                        if not numColumns:
+                            numColumns = len(data)
+                            values_str = "(" + ",".join(["?"]*numColumns) + ")"
+                        dataToWrite.append(data)
+                        if i % 10000 == 0:
+                            print("\tWrote {i} lines".format(i=i))
+                            dbCursor.executemany("""INSERT INTO {table} VALUES {values}""".format(table=table, values=values_str), dataToWrite)
+                            dbConn.commit()
+                            dataToWrite = []
+
+            else:
+                with open(jsonFile) as f:
+                    data = json.load(f)
+                data = flattenJSON(data)
+                chunkData = chunks(data)
+                numColumns = None
+                for chunk in chunkData:
+                    if not numColumns:
+                        numColumns = len(chunk[0])
+                        values_str = "(" + ",".join(["?"]*numColumns) + ")"
+                    dbCursor.executemany("""INSERT INTO {table} VALUES {values}""".format(table=table, values=values_str), chunk)
+                    dbConn.commit()
+        else:
+            print("The file {file} does not exist, skipping.".format(file=pathToCorpus + table + ".jsonl"))
+            pass
+    dbConn.close()
+    return 
 
 def main():
 
@@ -164,19 +372,22 @@ def main():
     parser.add_argument('--column_description', dest='column_description', default=DEFAULT_CSV_FILE, help='Description of MySQL table.')
     parser.add_argument('--ignore_lines', type=int, dest='ignore_lines', default=0, help='Number of lines to ignore when uploading CSV.')
 
+    parser.add_argument('--add_convokit', dest='convokit_data', default="", help='Path to ConvoKit formatted data.')
+    
+
     args = parser.parse_args()
 
     # check that flags are properly set
-    if not args.db:
+    if not args.db and not args.convokit_data:
         print("You must choose a database -d")
         sys.exit(1)
 
-    if not args.table:
+    if not args.table and not args.convokit_data:
         print("You must choose a table -t")
         sys.exit(1)
 
-    if not (args.csv_to_mysql or args.json_to_mysql or args.mysql_to_csv or args.append_csv_to_mysql or args.csv_to_sqlite):
-        print("You must choose some action: --csv_to_mysql, --append_csv_to_mysql, --json_to_mysql or --mysql_to_csv or --csv_to_sqlite")
+    if not (args.csv_to_mysql or args.json_to_mysql or args.mysql_to_csv or args.append_csv_to_mysql or args.csv_to_sqlite or args.convokit_data):
+        print("You must choose some action: --csv_to_mysql, --append_csv_to_mysql, --json_to_mysql or --mysql_to_csv or --csv_to_sqlite or --add_convokit")
         sys.exit() 
 
     ### perform actions
@@ -204,6 +415,8 @@ def main():
     elif args.json_to_mysql:
         print("--json_to_mysql is not implemented")
         jsonToMySQL(args.json_file, args.db, args.table, args.column_description)
+    elif args.convokit_data:
+        importConvoKit(args.convokit_data)
 
     # export actions
     elif args.mysql_to_csv:

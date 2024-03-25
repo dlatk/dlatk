@@ -41,15 +41,18 @@ def upload_dataset(filename=None, foldername=None):
 
       query = "'{}' in parents and trashed=false".format(parent)
       try:
+
         found = drive.ListFile({'q': query}).GetList()
+        folder = None
+        for file_obj in found:
+          if file_obj['mimeType'] == 'application/vnd.google-apps.folder':
+            folder = file_obj if file_obj["title"] == name else search(name, file_obj['id'])
+            if folder: return folder
+
+        return folder
+
       except urllib.error.HttpError as e:
         return None
-
-      for file_obj in found:
-        if file_obj['mimeType'] == 'application/vnd.google-apps.folder':
-          if file_obj["title"] == name:
-            return file_obj
-          else: search(name, file_obj['id'])
 
     # Recursively find the folder
     if foldername is not None:

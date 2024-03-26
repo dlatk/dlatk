@@ -25,15 +25,15 @@ You will then see the following printed to your terminal
 .. code-block:: bash
 
     CREATE TABLE utterances (message_id VARCHAR(255), conversation_id VARCHAR(255), message VARCHAR(255), speaker VARCHAR(255), movie_id VARCHAR(255), parsed VARCHAR(255), reply_to VARCHAR(255), timestamp VARCHAR(255), vectors VARCHAR(255));
-    Importing data, reading /Users/salvatoregiorgi/Downloads/movie-corpus/utterances.jsonl file
+    Importing data, reading /path/to/downloaded/data/movie-corpus/utterances.jsonl file
 	Wrote 10000 lines
 	Wrote 20000 lines
     ...
 	Wrote 300000 lines
     CREATE TABLE speakers (speaker VARCHAR(255), character_name VARCHAR(255), movie_idx VARCHAR(255), movie_name VARCHAR(255), gender VARCHAR(255), credit_pos VARCHAR(255), vectors VARCHAR(255));
-    Importing data, reading /Users/salvatoregiorgi/Downloads/movie-corpus/speakers.json file
+    Importing data, reading /path/to/downloaded/data/movie-corpus/speakers.json file
     CREATE TABLE conversations (conversation_id VARCHAR(255), movie_idx VARCHAR(255), movie_name VARCHAR(255), release_year VARCHAR(255), rating VARCHAR(255), votes VARCHAR(255), genre VARCHAR(255), vectors VARCHAR(255));
-    Importing data, reading /Users/salvatoregiorgi/Downloads/movie-corpus/conversations.json file
+    Importing data, reading /path/to/downloaded/data/movie-corpus/conversations.json file
 
 You can then view your data by using sqlite from the command line:
 
@@ -68,7 +68,7 @@ First, we extract unigrams at the speaker level:
     -----
     DLATK Interface Initiated: 2024-03-26 18:32:10
     -----
-    Connecting to SQLite database: /path/to/movie-corpus.db
+    Connecting to SQLite database: /path/to/db/movie-corpus.db
     query: PRAGMA table_info(utterances)
     SQL Query: DROP TABLE IF EXISTS feat$1gram$utterances$speaker
     SQL Query: CREATE TABLE feat$1gram$utterances$speaker ( id INTEGER PRIMARY KEY, group_id VARCHAR(255), feat VARCHAR(36), value INTEGER, group_norm DOUBLE)
@@ -92,7 +92,7 @@ First, we extract unigrams at the speaker level:
     -------
     Settings:
 
-    Database - /path/to/movie-corpus
+    Database - /path/to/db/movie-corpus
     Corpus - utterances
     Group ID - speaker
     Feature table(s) - feat$1gram$utterances$speaker
@@ -179,7 +179,7 @@ Here we will look at words which are used differentially across genders. Before 
     f
     m
 
-Now we can use DLATK to correlate unigram features with the binary gender outcome. We will perform DLA using a logistic regression and will visualize these correlations with a wordcloud. The :doc:`../fwinterface/fwflag_categorical` will convert the text string in the *gender* column to a one-hot encoding, where females are 1 and males are 0. Null entries are dropped
+Now we can use DLATK to correlate unigram features with the binary gender outcome. We will perform DLA using a logistic regression and will visualize these correlations with a wordcloud. The :doc:`../fwinterface/fwflag_categorical` will convert the text string in the *gender* column to a one-hot encoding, where females are 1 and males are 0. Null entries are dropped.
 
 
 .. code-block:: bash
@@ -200,7 +200,7 @@ Now we can use DLATK to correlate unigram features with the binary gender outcom
     Wordcloud created at: gender_wordclouds_tagcloud_wordclouds/gender__f_pos.B_0.164-0.507_wc.png
     Wordcloud created at: gender_wordclouds_tagcloud_wordclouds/gender__f_neg.B_0.167-0.470_wc.png
 
-The names of the files show use the full range of coefficient values, e.g. 0.164 to 0.507 for the words in the positive wordcloud. Wordclouds are shown below:
+From the above output we see that we are correlating 561 features across 1073 observations (speakers). The names of the files show use the full range of coefficient values, e.g. 0.164 to 0.507 for the words in the positive wordcloud. Wordclouds are shown below:
 
 .. |gender_ck_1pos| image:: ../../_static/gender_ck_1pos.png
 .. |gender_ck_1neg| image:: ../../_static/gender_ck_1neg.png

@@ -3,28 +3,14 @@
 DLATK with ConvoKit
 ===================
 
-In Differential Language Analysis (DLA) we correlate patterns in language with other characteristics such as gender, or voting results.  We may look at text broken down by user, county or individual message among other things.  You can see more about the conceptual aspect of DLA in this `Youtube Video <https://www.google.com/url?q=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DZdTeDED9h-w>`_ and in this journal paper, `Toward Personality Insights from Language Exploration in Social Media <http://wwbp.org/papers/sam2013-dla.pdf>`_.
-
-In this tutorial we will walk you through the process of running DLA using the dlatkInterface.py interface tool. Before running DLA here are some questions to ask yourself:
-
-* What text am I using?
-	* twitter, facebook, blogs
-* What relationships am I looking at?
-	* LIWC category prevalence VS voting habits
-	* Usage of the word “I” VS narcissism score on personality quiz
-	* What words correlate with extraversion score on a personality quiz
-* How will I group my data?
-	* by message, by user, by country, by hour
-
-Answers for this tutorial:
-
+In this tutorial we will import a ConvoKit data set, extract features, and run Differential Language Analysis (DLA).
 
 Step 1 - Import Data
 ====================
 
-Data must be formatted according to `ConvoKit standards<https://convokit.cornell.edu/documentation/data_format.html>`_. In particular, DLATK will import three tables: **utterances**, **speakers**, and **conversations**. The json files *corpus.json* and *index.json* are ignored.
+Data must be formatted according to `ConvoKit standards <https://convokit.cornell.edu/documentation/data_format.html>`_. In particular, DLATK will import three tables: **utterances**, **speakers**, and **conversations**. The json files *corpus.json* and *index.json* are ignored.
 
-ConvoKit comes packaged with `several data sets<https://convokit.cornell.edu/documentation/datasets.html>`_. We will use the `Cornell Movie–Dialogs Corpus<https://convokit.cornell.edu/documentation/movie.html>`_ for this tutorial, which you can download `here<https://zissou.infosci.cornell.edu/convokit/datasets/movie-corpus/>`_. To import the data you need to pass the path to the downloaded (and unzipped) corpus directory. 
+ConvoKit comes packaged with `several data sets <https://convokit.cornell.edu/documentation/datasets.html>`_. We will use the `Cornell Movie–Dialogs Corpus <https://convokit.cornell.edu/documentation/movie.html>`_ for this tutorial, which you can download `here <https://zissou.infosci.cornell.edu/convokit/datasets/movie-corpus/>`_. To import the data you need to pass the path to the downloaded (and unzipped) corpus directory. 
 
 .. code-block:: bash
 

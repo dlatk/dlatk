@@ -662,12 +662,11 @@ class FeatureExtractor(DLAWorker):
         featureTableName = self.createFeatureTable(featureTypeName, "VARCHAR(%d)"%varcharLength, 'INTEGER', tableName, valueFunc)
 
         #SELECT / LOOP ON CORREL FIELD FIRST:
-        usql = """SELECT %s FROM %s GROUP BY %s""" % (
-            self.correl_field, self.corptable, self.correl_field)
+        selectQuery = self.qb.create_select_query(self.corptable).set_fields([self.correl_field]).group_by([self.correl_field])
         msgs = 0 # keeps track of the number of messages read
-        cfRows = FeatureExtractor.noneToNull(mm.executeGetList(self.corpdb, self.dbCursor, usql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file))#SSCursor woudl be better, but it loses connection
+        cfRows = FeatureExtractor.noneToNull(selectQuery.execute_query())#SSCursor woudl be better, but it loses connection
         dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
-        if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS: mm.disableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#for faster, when enough space for repair by sorting
+        if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS: self.data_engine.disable_table_keys(featureTableName)#for faster, when enough space for repair by sorting
 
         for cfRow in cfRows:
             cf_id = cfRow[0]
@@ -702,20 +701,20 @@ class FeatureExtractor(DLAWorker):
             totalGrams = sum(freqs.values())
             #write n-grams to database (no need for "REPLACE" because we are creating the table)
             if totalGrams:
-                wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values ('"""+str(cf_id)+"""', %s, %s, %s)"""
+                query = self.qb.create_insert_query(featureTableName).set_values([("group_id",str(cf_id)),("feat",""),("value",""),("group_norm","")])
                 totalGrams = float(totalGrams) # to avoid casting each time below
                 if self.use_unicode:
                     rows = [(k, v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
                 else:
                     rows = [(k.encode('utf-8'), v, valueFunc((v / totalGrams))) for k, v in freqs.items() if v >= min_freq] #adds group_norm and applies freq filter
 
-                mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, rows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                query.execute_query(rows)
 
         dlac.warn("Done Reading / Inserting.")
 
         if len(cfRows) < dlac.MAX_TO_DISABLE_KEYS:
             dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
-            mm.enableTableKeys(self.corpdb, self.dbCursor, featureTableName, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)#rebuilds keys
+            self.data_engine.enable_table_keys(featureTableName)
         dlac.warn("Done\n")
         return featureTableName
 

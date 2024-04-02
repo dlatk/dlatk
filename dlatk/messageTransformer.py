@@ -445,7 +445,6 @@ class MessageTransformer(DLAWorker):
                 #add msgs into new tables
                 insertQuery = self.qb.create_insert_query(tableName).set_values([(name, '') for name in columnNames])
                 for i in range(len(rows)):
-                    rows[i] = list(rows[i])
                     if sentPerRow:
                         for j, parse in enumerate(ast.literal_eval(parses[i]), 1):
                             sentRows.append(list(rows[i]))

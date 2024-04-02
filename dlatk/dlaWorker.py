@@ -114,7 +114,11 @@ class DLAWorker(object):
                 print("Message table missing")
                 sys.exit(1)
 
-    def load_lexicon(self, lexicon, lexicon_type="sparse", table_name=None):
+    def load_lexicon(
+        self,
+        lexicon,
+        lexicon_type="sparse",
+        table_name=None):
 
         lex_to_func = {
             "sparse": loadWeightedLexiconFromSparse,
@@ -140,8 +144,13 @@ class DLAWorker(object):
             use_unicode=self.use_unicode)
 
         lex_table = lexicon.split('/')[-1].split('.')[0] if table_name is None else table_name
-        if not self.lexicon.engine.tableExists(lex_table):
 
+        if self.lexicon.engine.tableExists(lex_table):
+            if ".csv" in lexicon and lexicon_type == "topicCSV":
+                self.lexicon.setWeightedLexicon(lex_to_func[lexicon_type](lexicon))
+                self.lexicon.createLexiconTable(lex_table)
+
+        else:
             if ".csv" in lexicon:
                 self.lexicon.setWeightedLexicon(lex_to_func[lexicon_type](lexicon))
                 self.lexicon.createLexiconTable(lex_table)
@@ -582,7 +591,7 @@ class DLAWorker(object):
             
             fields = ["term"]
             if (len(args_categories) > 0) and args_categories[0] != '*':
-                where_condition = "category in (%s)" % (args_lextable, ','.join(['\''+str(x)+'\'' for x in args_categories]))
+                where_condition = "category in (%s)" % (','.join(['\''+str(x)+'\'' for x in args_categories]))
             else:
                 where_condition = ''
            

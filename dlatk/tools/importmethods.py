@@ -344,6 +344,20 @@ def importConvoKit(pathToCorpus):
                         values_str = "(" + ",".join(["?"]*numColumns) + ")"
                     dbCursor.executemany("""INSERT INTO {table} VALUES {values}""".format(table=table, values=values_str), chunk)
                     dbConn.commit()
+            indexSQL = []
+            if table == "utterances":
+                indexSQL = ["""CREATE UNIQUE INDEX ut_id_idx ON utterances (message_id);""",
+                            """CREATE INDEX ut_speaker_idx ON utterances (speaker);""",
+                            """CREATE INDEX ut_conversation_id_idx ON utterances (conversation_id);""",
+                            ]
+            elif table == "speakers":
+                indexSQL = ["""CREATE UNIQUE INDEX sp_speaker_idx ON speakers (speaker);"""]
+            elif table == "conversations":
+                indexSQL = ["""CREATE UNIQUE INDEX co_conversation_id_idx ON conversations (conversation_id);"""]
+            if indexSQL:
+                for isql in indexSQL:
+                    print(isql)
+                    dbCursor.execute(isql)
         else:
             print("The file {file} does not exist, skipping.".format(file=pathToCorpus + table + ".jsonl"))
             pass

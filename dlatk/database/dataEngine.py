@@ -311,7 +311,6 @@ class DataEngine(object):
 
             length, is_str, column_type = 0, False, "TEXT"
             for index, row in enumerate(sample):
-                print(row)
                 column_value = _eval(row[cid])
                 if column_value == '': continue #column type isn't infered until you see the first non-null value
                 if (not is_str) and (isinstance(column_value, int)):

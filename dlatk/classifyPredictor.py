@@ -185,9 +185,12 @@ def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True, classes=None
         this_auc = auc(fpr["micro"], tpr["micro"])
     else:
         try:
+            #pprint(ytrue)#DEBUG
+            #pprint(ypredProbs[:, -1])#DEBUG
             this_auc = roc_auc_score(ytrue, ypredProbs[:, -1])
+            #print(this_auc)#DBEUG
         except ValueError as e:
-            print("\nWARNING: Unable to comput a ROC_AUC: '", e, "'\n  Thus, using AUC = 0.0.\n")
+            print("\nWARNING: Unable to compute a ROC_AUC: '", e, "'\n  Thus, using AUC = 0.0.\n")
             this_auc = 0.0
     if negatives and this_auc < 0.5:
         this_auc = this_auc - 1
@@ -806,6 +809,7 @@ class ClassifyPredictor:
                 #    comboSizes = [0, 1, len(controlKeys)]
                 # else:
                 comboSizes = [0, len(controlKeys)]
+                savePredictions = True #always save so one can do an ensemble
         for r in comboSizes:
             for controlKeyCombo in combinations(controlKeys, r):
                 controls = dict()
@@ -1001,6 +1005,7 @@ class ClassifyPredictor:
                             auc = computeAUC(
                                 ytest, ypredProbs, multiclass, negatives=False, classes=classes
                             )
+                            
                             # classes = list(set(ytest))
                             # ytest_binary = label_binarize(ytest,classes=classes)
                             # ypred_binary = label_binarize(ypred,classes=classes)
@@ -1114,6 +1119,7 @@ class ClassifyPredictor:
                                     langOnlyScores['auc_p_v_cntrls'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs), np.array(YCntrlProbs), cntrlYtrue, multiclass, classes)
                                 except KeyError:
                                     print("unable to find saved lang only probabilities")
+                                    pprint(list(langOnlyScores.keys()))
                                     #pprint(langOnlyScores)
                                 #straight up auc, p value:
                                 cntrlYtrue, YPredProbs, YCntrlProbs = alignDictsAsy(outcomes, predictionProbs, savedControlPProbs)
@@ -3396,7 +3402,7 @@ def permutation_1tail_on_aucs(ytrue, ypredProbs, multiclass=False, classes=None,
 
     
 
-def paired_bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 8000):
+def paired_bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 4000):
     #computes p-value based on paired bootstrap 
     n = len(ytrue)
     ytrue = np.array(ytrue)

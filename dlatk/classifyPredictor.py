@@ -809,7 +809,7 @@ class ClassifyPredictor:
                 #    comboSizes = [0, 1, len(controlKeys)]
                 # else:
                 comboSizes = [0, len(controlKeys)]
-                savePredictions = True #always save so one can do an ensemble
+                #savePredictions = True #always save so one can do an ensemble
         for r in comboSizes:
             for controlKeyCombo in combinations(controlKeys, r):
                 controls = dict()
@@ -1118,9 +1118,8 @@ class ClassifyPredictor:
                                     #langOnlyScores['auc_p_v_cntrls'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)
                                     langOnlyScores['auc_p_v_cntrls'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs), np.array(YCntrlProbs), cntrlYtrue, multiclass, classes)
                                 except KeyError:
-                                    print("unable to find saved lang only probabilities")
-                                    pprint(list(langOnlyScores.keys()))
-                                    #pprint(langOnlyScores)
+                                    print("unable to find saved lang only probabilities so no p-value for lang-only v controls")
+                                    #pprint(list(langOnlyScores.keys()))
                                 #straight up auc, p value:
                                 cntrlYtrue, YPredProbs, YCntrlProbs = alignDictsAsy(outcomes, predictionProbs, savedControlPProbs)
                                 #reportStats['auc_p_v_cntrls'] = paired_bootstrap_1tail_on_aucs(np.array(YPredProbs)[:,-1], np.array(YCntrlProbs)[:,-1], cntrlYtrue, multiclass, classes)

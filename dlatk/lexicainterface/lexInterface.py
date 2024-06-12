@@ -154,7 +154,7 @@ def loadWeightedLexiconFromSparse(filename):
     """Loads the perma lexicon from a sparse formatting word[, word], category
     returns a dictionary of frozensets"""
     lexFile = open(filename)
-    comma = re.compile(r'\,\s*')
+    comma = re.compile(r'\,|\s')
     cats = [] 
     lexicon = {}
     for line in lexFile:

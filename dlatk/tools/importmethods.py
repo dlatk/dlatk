@@ -146,7 +146,7 @@ def checkIfTableExists(table, dbCursor):
     dbCursor.execute("""SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '{table}'""".format(table=table))
     tables = [item[0] for item in dbCursor.fetchall()]
     if tables:
-        print("A table called 'utterances' already exists in the database.")
+        print("A table called '{table}' already exists in the database.".format(table=table))
         sys.exit(1)
     else:
         return
@@ -331,6 +331,11 @@ def importConvoKit(pathToCorpus):
                             dbCursor.executemany("""INSERT INTO {table} VALUES {values}""".format(table=table, values=values_str), dataToWrite)
                             dbConn.commit()
                             dataToWrite = []
+                    if len(dataToWrite) > 0:
+                        print("\tWrote {i} lines".format(i=i))
+                        dbCursor.executemany("""INSERT INTO {table} VALUES {values}""".format(table=table, values=values_str), dataToWrite)
+                        dbConn.commit()
+                        dataToWrite = []
 
             else:
                 with open(jsonFile) as f:

@@ -1,7 +1,7 @@
 .. _tut_trns:
-=================================
-Transformers in DLATK
-=================================
+=============================================
+Transformers in DLATK (Huggingface Interface)
+=============================================
 
 Transformers form the building blocks of many modern NLP models including ChatGPT and BARD. Modern language models are multiple layers of these transformers stacked on top of each other, and trained on huge corpora of texts.
 These transformers-based language models produce numeric vectors representing words. The word vectors have found to be capturing strong semantic information and syntactic information. 

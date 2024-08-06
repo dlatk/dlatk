@@ -2394,7 +2394,27 @@ class RegressionPredictor:
                 sys.modules['FeatureWorker'] = DLAWorker
                 sys.modules['FeatureWorker.occurrenceSelection'] = occurrenceSelection
                 sys.modules['FeatureWorker.pca_mod'] = pca_mod
-            tmp_dict = pickle.load(f, encoding='latin1')
+            try: 
+                tmp_dict = pickle.load(f, encoding='latin1')
+            except ModuleNotFoundError:
+                print("\n***********\n!WARNING: Trying to use an older sklearn pickle with newer sklearn version. This will likely lead to downstream errors.\n***********\n")
+                #the following is chatGPTs solution to get linear_model.ridge to point to linear_model.Ridge
+                import sklearn.linear_model
+                # Custom Unpickler to handle the renaming
+                class CustomUnpickler(pickle.Unpickler):
+                    def find_class(self, module, name):
+                        if module.startswith('sklearn.linear_model'):
+                            # Capitalize the first letter of the class name if it is lowercase
+                            module = 'sklearn.linear_model'
+                            name = name.capitalize()
+                        elif module == 'sklearn.preprocessing.data':
+                            module = 'sklearn.preprocessing'
+                        print(module, name)
+                        return super().find_class(module, name)
+
+                tmp_dict = CustomUnpickler(f).load()
+                #tmp_dict = pickle.load(f)
+                
             f.close()          
         try:
             print("Outcomes in loaded model:", list(tmp_dict['regressionModels'].keys()))

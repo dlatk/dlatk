@@ -5,9 +5,9 @@ import argparse
 try:
     from MySQLdb import Warning
     from MySQLdb.cursors import SSCursor
+    import sqlite3
 except:
     pass
-import sqlite3
 from pathlib import Path
 import pandas as pd
 

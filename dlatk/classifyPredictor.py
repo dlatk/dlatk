@@ -3195,11 +3195,14 @@ def foldN(l, folds):
     return [f for f in xFoldN(l, folds)]
 
 
-def stratifyGroups(groups, outcomes, folds, randomState=DEFAULT_RANDOM_SEED):
+def stratifyGroups(groups, outcomes, folds, randSortGroupsFirst = True, randomState=DEFAULT_RANDOM_SEED):
     """breaks groups up into folds such that each fold has at most 1 more of a class than other folds """
     random.seed(randomState)
+    
     xGroups = sorted(list(set(groups) & set(outcomes.keys())))
-    outcomesByClass = {}
+    if randSortGroupsFirst:
+        random.shuffle(xGroups) #to make sure starting random (does this help. 
+    outcomesByClass = {} 
     for g in xGroups:
         try:
             outcomesByClass[outcomes[g]].append(g)

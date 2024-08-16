@@ -3251,7 +3251,7 @@ def foldN(l, folds):
         else: 
             yield l[i:i+n]
 
-def stratifyGroups(groups, outcomes, folds, randSortGroupsFirst = False, randomState=DEFAULT_RANDOM_SEED):
+def stratifyGroups(groups, outcomes, folds, randSortGroupsFirst = True, randomState=DEFAULT_RANDOM_SEED):
     """breaks groups up into folds such that each fold has at most 1 more of a class than other folds """
     random.seed(randomState)
     xGroups = sorted(list(set(groups) & set(outcomes.keys())))

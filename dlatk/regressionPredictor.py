@@ -3251,12 +3251,12 @@ def foldN(l, folds):
         else: 
             yield l[i:i+n]
 
-def stratifyGroups(groups, outcomes, folds, randSortGroupsFirst = True, randomState=DEFAULT_RANDOM_SEED):
+def stratifyGroups(groups, outcomes, folds, randSortGroupsFirst = False, randomState=DEFAULT_RANDOM_SEED):
     """breaks groups up into folds such that each fold has at most 1 more of a class than other folds """
     random.seed(randomState)
     xGroups = sorted(list(set(groups) & set(outcomes.keys())))
     if randSortGroupsFirst: #NOTE: this likely a good idea to always be true and remove sort above
-        random.shuffle(xGroups) #to make sure starting random (does this help. 
+        random.shuffle(xGroups) #to make sure starting random. 
 
     # TODO: get rid of the following problem. DTypes should be fixed at the source. 
     # outcome_values = [float(val) if not isinstance(val, float) or not isinstance(val, int) else val for val in list(outcomes.values())]

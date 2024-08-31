@@ -14,20 +14,6 @@ except ImportError:
     pass
 import pickle as pickle
 
-try:
-    from rpy2.robjects.packages import importr
-    import rpy2.robjects as ro
-    from rpy2.rinterface import RNULLType
-except ImportError:
-    try:
-        import readline
-        from rpy2.robjects.packages import importr
-        import rpy2.robjects as ro
-        from rpy2.rinterface import RNULLType
-    except ImportError:
-        pass
-    pass
-
 import pandas as pd
 
 try:
@@ -790,6 +776,20 @@ class CCA:
     """Handles CCA analyses of language and outcomes"""
 
     def __init__(self, fg, og, numComponents=15):
+        try:
+            from rpy2.robjects.packages import importr
+            import rpy2.robjects as ro
+            from rpy2.rinterface import RNULLType
+        except ImportError:
+            try:
+                import readline
+                from rpy2.robjects.packages import importr
+                import rpy2.robjects as ro
+                from rpy2.rinterface import RNULLType
+            except ImportError:
+                pass
+            pass
+
         try:
             import pandas.rpy.common as com
         except ImportError:

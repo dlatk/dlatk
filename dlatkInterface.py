@@ -157,8 +157,6 @@ def main(fn_args = None):
                         help='Table that holds a list of collocations to be used as features.')
     group.add_argument('--colloc_column', metavar='COLUMN', dest='colloc_column', default=dlac.DEF_COLUMN_COLLOC,
                         help='Column giving collocations to be used as features.')
-    group.add_argument('--create_collocation_scores', '--create_collocs', dest='createcollocscores', const=True, nargs='?', default=False,
-                        help='Create ufeat table and annotate with pocc and npmi.')
     group.add_argument('--feature_type_name', metavar='STRING', dest='feature_type_name',
                         help='Customize the name of output features.')
     group.add_argument('--gzip_csv', metavar='filename', dest='gzipcsv', default='',
@@ -560,6 +558,8 @@ def main(fn_args = None):
 
     group.add_argument('--feat_colloc_filter', action='store_true', dest='featcollocfilter',
                        help='removes featrues that do not pass as collocations. (uses feat_table).')
+        group.add_argument('--create_collocation_scores', '--create_collocs', dest='createcollocscores', const=True, nargs='?', default=False,
+                        help='Create a ufeat table (specified as arg) from feat table and annotate with pocc and npmi. This can be used with --use_colloc during ngrams extraction.')
     group.add_argument('--feat_correl_filter', action='store_true', dest='featcorrelfilter',
                        help='removes features that do not pass correlation sig tests with given outcomes (uses -f --outcome_table --outcomes).')
     group.add_argument('--make_topic_labelmap_lex', action='store_true', dest='maketopiclabelmap', default=False,

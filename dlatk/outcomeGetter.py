@@ -33,6 +33,9 @@ class OutcomeGetter(DLAWorker):
 
     outcome_interaction : list
         List of MySQL column names to be used as interactions 
+    
+    outcome_adaptation_factors : list
+        List of MySQL column names to be used as adaptation factors
 
     group_freq_thresh : str
         Minimum word threshold per group
@@ -109,7 +112,7 @@ class OutcomeGetter(DLAWorker):
         return cls(db_type=db_type, corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_config_file=mysql_config_file, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, outcome_categories=outcome_categories, multiclass_outcome=multiclass_outcome, group_freq_thresh=group_freq_thresh, low_variance_thresh=low_variance_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex, wordTable=wordTable)
     
 
-    def __init__(self, db_type=dlac.DB_TYPE, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_config_file=dlac.MYSQL_CONFIG_FILE, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb = dlac.DEF_LEXICON_DB, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls = dlac.DEF_OUTCOME_CONTROLS, outcome_interaction = dlac.DEF_OUTCOME_CONTROLS, outcome_categories = [], multiclass_outcome = [], group_freq_thresh = None, low_variance_thresh = dlac.DEF_LOW_VARIANCE_THRESHOLD, featureMappingTable='', featureMappingLex='', wordTable = None, fold_column = None):
+    def __init__(self, db_type=dlac.DB_TYPE, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_config_file=dlac.MYSQL_CONFIG_FILE, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb = dlac.DEF_LEXICON_DB, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls = dlac.DEF_OUTCOME_CONTROLS, outcome_interaction = dlac.DEF_OUTCOME_CONTROLS, outcome_adaptation_factors = [], outcome_categories = [], multiclass_outcome = [], group_freq_thresh = None, low_variance_thresh = dlac.DEF_LOW_VARIANCE_THRESHOLD, featureMappingTable='', featureMappingLex='', wordTable = None, fold_column = None):
         super(OutcomeGetter, self).__init__(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable = wordTable)
         self.outcome_table = outcome_table
         self.get_outcome_table()
@@ -136,6 +139,7 @@ class OutcomeGetter(DLAWorker):
         self.outcome_value_fields = outcome_value_fields
         self.outcome_controls = outcome_controls
         self.outcome_interaction = outcome_interaction
+        self.outcome_adaptation_factors = outcome_adaptation_factors or []
         self.outcome_categories = outcome_categories
         self.multiclass_outcome = multiclass_outcome
         #if not group_freq_thresh and group_freq_thresh != 0:
@@ -329,7 +333,7 @@ enabled, so the total word count for your groups might be off
 
         groups = set()
         outcomes = dict()
-        outcomeFieldList = set(self.outcome_value_fields).union(set(self.outcome_controls)).union(set(self.outcome_interaction))
+        outcomeFieldList = set(self.outcome_value_fields).union(set(self.outcome_controls)).union(set(self.outcome_interaction)).union(set(self.outcome_adaptation_factors))
         ocs = dict()
         controls = dict()
 
@@ -356,14 +360,13 @@ enabled, so the total word count for your groups might be off
                         to_remove.append(outcomeField)
                         continue
 
-
                 if outcomeField in self.outcome_value_fields:
                     groups.update(list(outcomes[outcomeField].keys()))
             for outcome in to_remove: 
                 outcomeFieldList.remove(outcome)
                 if outcome in self.outcome_value_fields: self.outcome_value_fields.remove(outcome)
                 elif outcome in self.outcome_controls: self.outcome_controls.remove(outcome)
-                elif outcome in self.outcome_interaction: self.outcome_interaction.remove(outcome)
+                elif outcome in self.outcome_adaptation_factors: self.outcome_adaptation_factors.remove(outcome)
             if len(self.outcome_value_fields) == 0: 
                 dlac.warn("No outcomes remaining after checking variances.")
                 sys.exit(1)
@@ -392,9 +395,12 @@ enabled, so the total word count for your groups might be off
                     elif cat in self.outcome_controls:
                         self.outcome_controls.remove(cat)
                         self.outcome_controls += cat_label_list
-                    else:
+                    elif cat in self.outcome_interaction:
                         self.outcome_interaction.remove(cat)
                         self.outcome_interaction += cat_label_list
+                    else:
+                        self.outcome_value_fields.remove(cat)
+                        self.outcome_value_fields += cat_label_list
             # create multiclass (integer) representation of outcome
             if self.multiclass_outcome:
                 cat_labels_dict = dict() # store the final mapping in self.multiclass_outcome
@@ -419,9 +425,12 @@ enabled, so the total word count for your groups might be off
                     elif moutcome in self.outcome_controls:
                         self.outcome_controls.remove(moutcome)
                         self.outcome_controls += cat_label_list
-                    else:
+                    elif moutcome in self.outcome_interaction:
                         self.outcome_interaction.remove(moutcome)
                         self.outcome_interaction += cat_label_list
+                    else:
+                        self.outcome_adaptation_factors.remove(moutcome)
+                        self.outcome_adaptation_factors += cat_label_list
                 self.multiclass_outcome = cat_labels_dict
 
             if self.group_freq_thresh:
@@ -440,7 +449,7 @@ enabled, so the total word count for your groups might be off
                         groups.update(list(newOutcomes.keys()))
 
             #set groups:
-            for k in self.outcome_controls + self.outcome_interaction:
+            for k in self.outcome_controls + self.outcome_interaction + self.outcome_adaptation_factors:
                 groups = groups & set(outcomes[k].keys()) #always intersect with controls
             if self.outcome_categories:
                 for cat in cat_label_list:
@@ -451,8 +460,10 @@ enabled, so the total word count for your groups might be off
                             self.outcome_value_fields.remove(cat)
                         elif cat in self.outcome_controls:
                             self.outcome_controls.remove(cat)
-                        else:
+                        elif cat in self.outcome_interaction:
                             self.outcome_interaction.remove(cat)
+                        else:
+                            self.outcome_adaptation_factors.remove(cat)
 
             if groupsWhere:
                 outcm = groupsWhere.split()[0].strip()
@@ -466,7 +477,7 @@ enabled, so the total word count for your groups might be off
             #split into outcomes and controls:
             ocs = dict()
             controls = dict()
-            for k in self.outcome_controls + self.outcome_interaction:
+            for k in self.outcome_controls + self.outcome_interaction + self.outcome_adaptation_factors:
                 outcomeDict = outcomes[k]
                 outcomeDict = dict([(g, v) for g, v in outcomeDict.items() if g in groups])
                 controls[k] = outcomeDict

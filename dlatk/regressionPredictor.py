@@ -276,6 +276,7 @@ class RegressionPredictor:
         'ridge100': [{'alpha': [100]}],
         'ridge10': [{'alpha': [10]}],
         'ridge1': [{'alpha': [1]}],
+        'ridgegs': {'alpha': [1000, 100, 10000, 10, 100000, 1, 1000000, 0.1]},
         'ridgecv': [
             #{'alphas': np.array([100000, 500000, 250000, 25000, 10000, 2500, 1000, 100, 10])}, 
             #{'alphas': np.array([100000, 500000, 250000, 25000, 10000])},
@@ -398,6 +399,7 @@ class RegressionPredictor:
         'ridge1m' : 'Ridge',
         'ridge10m' : 'Ridge',
         'ridge100m' : 'Ridge',
+        'ridgegs' : 'Ridge',
         'ridgecv' : 'RidgeCV',
         'ridgefirstpasscv' : 'RidgeCV',
         'ridgehighcv' : 'RidgeCV',

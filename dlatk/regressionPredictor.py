@@ -243,6 +243,9 @@ class RegressionPredictor:
         'ridge': [
             {'alpha': [1]}, 
         ],
+        'ridge.1': [
+            {'alpha': [.1]}, 
+        ],
         'ridge.01': [
             {'alpha': [.01]}, 
         ],
@@ -276,7 +279,7 @@ class RegressionPredictor:
         'ridge100': [{'alpha': [100]}],
         'ridge10': [{'alpha': [10]}],
         'ridge1': [{'alpha': [1]}],
-        'ridgegs': {'alpha': [1000, 100, 10000, 10, 100000, 1, 1000000, 0.1]},
+        'ridgegs': [{'alpha': [1000, 100, 10000, 10, 100000, 1, 1000000, 0.1, 10000000, 100000000, 1000000000]},],
         'ridgecv': [
             #{'alphas': np.array([100000, 500000, 250000, 25000, 10000, 2500, 1000, 100, 10])}, 
             #{'alphas': np.array([100000, 500000, 250000, 25000, 10000])},
@@ -391,7 +394,7 @@ class RegressionPredictor:
         'lassolars' : 'LassoLars',
         'lassolarscv' : 'LassoLarsCV',
         'lars' : 'Lars',
-        'ridge' : 'Ridge', 'ridge.01' : 'Ridge', 'ridge.001' : 'Ridge',
+        'ridge' : 'Ridge', 'ridge.1' : 'Ridge', 'ridge.01' : 'Ridge', 'ridge.001' : 'Ridge',
         'ridge250' : 'Ridge', 'ridge10000' : 'Ridge', 'ridge100000' : 'Ridge',
         'ridge100k' : 'Ridge', 'ridge1000' : 'Ridge', 'ridge100' : 'Ridge',
         'ridge10' : 'Ridge',
@@ -2262,11 +2265,11 @@ class RegressionPredictor:
         if hasMultValuesPerItem(self.cvParams[modelName]) and modelName[-2:] != 'cv':
             #grid search for classifier params:
             gs = GridSearchCV(eval(self.modelToClassName[modelName]+'()'), 
-                              self.cvParams[modelName], n_jobs = self.cvJobs)
+                              self.cvParams[modelName], n_jobs = self.cvJobs, scoring='r2')
             print("[COMBINED FEATS: Performing grid search for parameters over training]")
             #gs.fit(X, y, cv=ShuffleSplit(len(y), n_iterations=(self.cvFolds+1), test_size=1/float(self.cvFolds), random_state=0))
             gs.fit(X, y)
-
+            #print(gs.cv_results_)#DEBUG
             print("[COMBINED FEATS] best estimator: %s (score: %.4f)\n" % (gs.best_estimator_, gs.best_score_))
             return gs.best_estimator_,  multiScalers, multiFSelectors
         else:

@@ -353,12 +353,7 @@ enabled, so the total word count for your groups might be off
                             continue
                     except TypeError:
                         dlac.warn("WARNING: Could not determine variance of %s. Skipping variance check." % (outcomeField))
-                        outcomeVariance = 1
-                    if isclose(outcomeVariance, 0.0) or outcomeVariance < self.low_variance_thresh:
-                        del outcomes[outcomeField]
-                        dlac.warn("Removing %s from analysis: variance %s less than threshold %s. To keep use --keep_low_variance" % (outcomeField, outcomeVariance, self.low_variance_thresh))
-                        to_remove.append(outcomeField)
-                        continue
+                        outcomeVariance = 1.0
 
                 if outcomeField in self.outcome_value_fields:
                     groups.update(list(outcomes[outcomeField].keys()))

@@ -3255,29 +3255,41 @@ def foldN(l, folds):
         else: 
             yield l[i:i+n]
 
-def stratifyGroups(groups, outcomes, folds, randSortGroupsFirst = True, randomState=DEFAULT_RANDOM_SEED):
-    """breaks groups up into folds such that each fold has at most 1 more of a class than other folds """
+def stratifyGroups(groups, outcomes, folds, randSortGroupsFirst = True, randomState=DEFAULT_RANDOM_SEED, superGroups = None, superGroupAvg = lambda i: np.mean(i)):
+    """breaks groups up into folds such that each fold has at most 1 more of a class than other folds 
+    groups are the ids to be put into folds
+    outcomes are the outcomes to make sure are nearly uniform across folds
+    folds is the number of folds
+    randSortGroupsFirst makes sure the groups are randomly sorted before stratifying (in case they had an order already)
+    superGroups defines a higher order variable that groups belond such that a single super group; stratification is done by the average for the super group
+    superGroupAvg is the function to calculate the average (mean or median likely best)
+    """
+
+    #1. Check for super-groups, if so, change outcomes to their means by super group
+    #TODO
+    
+    #2. Sort by outcome 
     random.seed(randomState)
     xGroups = sorted(list(set(groups) & set(outcomes.keys())))
     if randSortGroupsFirst: #NOTE: this likely a good idea to always be true and remove sort above
         random.shuffle(xGroups) #to make sure starting random. 
-
-    # TODO: get rid of the following problem. DTypes should be fixed at the source. 
-    # outcome_values = [float(val) if not isinstance(val, float) or not isinstance(val, int) else val for val in list(outcomes.values())]
-    # outcome_groups = dict(zip(list(outcomes.keys()), outcome_values))
-    
     outcome_groups = sorted(xGroups, key=lambda g: outcomes[g])
         
+    #3. iterate to create groups per fold:
     groupsPerFold = {f: [] for f in range(folds)}
     # countPerFold = {f: 0 for f in range(folds)}
     for idx, grp in enumerate(outcome_groups):
         groupsPerFold[idx%folds].append(grp)
         
-    # make sure all outcomes aren't together in the groups:
+    #4.  make sure all outcomes aren't together in the groups:
     for gs in list(groupsPerFold.values()):
         random.shuffle(gs)
 
+    #5. If sorted by super-groups then project back to subordinate groups:
+    #TODO
+        
     return list(groupsPerFold.values())
+
 
 def hasMultValuesPerItem(listOfD):
     """returns true if the dictionary has a list with more than one element"""

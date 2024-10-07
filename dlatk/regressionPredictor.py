@@ -3266,14 +3266,13 @@ def stratifyGroups(groups, outcomes, folds, randSortGroupsFirst = True, randomSt
     """
 
     #1. Check for super-groups, if so, change outcomes to their means by super group
-    #TODO
     if superGroups:
         oldOutcomes = outcomes
         outcomes = dict()
         for sg, subs_set in sg.items():
             outcomes[sg] = superGroupAvg([outcomes[gid] for gid in subs_set])
         oldGroups = groups
-        newGroups = superGroups.keys()
+        groups = superGroups.keys()
         
     #2. Sort by outcome 
     random.seed(randomState)
@@ -3283,7 +3282,7 @@ def stratifyGroups(groups, outcomes, folds, randSortGroupsFirst = True, randomSt
     outcome_groups = sorted(xGroups, key=lambda g: outcomes[g])
         
     #3. iterate to create groups per fold:
-    ##TOPDO: update to round robin:
+    ##TODO: update to round robin:
     groupsPerFold = {f: [] for f in range(folds)}
     # countPerFold = {f: 0 for f in range(folds)}
     for idx, grp in enumerate(outcome_groups):

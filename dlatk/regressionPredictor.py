@@ -3261,13 +3261,20 @@ def stratifyGroups(groups, outcomes, folds, randSortGroupsFirst = True, randomSt
     outcomes are the outcomes to make sure are nearly uniform across folds
     folds is the number of folds
     randSortGroupsFirst makes sure the groups are randomly sorted before stratifying (in case they had an order already)
-    superGroups defines a higher order variable that groups belond such that a single super group; stratification is done by the average for the super group
+    superGroups is a dictionary with super-groups as keys and a set of lower-order groups as the value. Stratification is done by the average for the super group, keeping all members of a single super group within one fold. 
     superGroupAvg is the function to calculate the average (mean or median likely best)
     """
 
     #1. Check for super-groups, if so, change outcomes to their means by super group
     #TODO
-    
+    if superGroups:
+        oldOutcomes = outcomes
+        outcomes = dict()
+        for sg, subs_set in sg.items():
+            outcomes[sg] = superGroupAvg([outcomes[gid] for gid in subs_set])
+        oldGroups = groups
+        newGroups = superGroups.keys()
+        
     #2. Sort by outcome 
     random.seed(randomState)
     xGroups = sorted(list(set(groups) & set(outcomes.keys())))
@@ -3276,6 +3283,7 @@ def stratifyGroups(groups, outcomes, folds, randSortGroupsFirst = True, randomSt
     outcome_groups = sorted(xGroups, key=lambda g: outcomes[g])
         
     #3. iterate to create groups per fold:
+    ##TOPDO: update to round robin:
     groupsPerFold = {f: [] for f in range(folds)}
     # countPerFold = {f: 0 for f in range(folds)}
     for idx, grp in enumerate(outcome_groups):
@@ -3286,7 +3294,13 @@ def stratifyGroups(groups, outcomes, folds, randSortGroupsFirst = True, randomSt
         random.shuffle(gs)
 
     #5. If sorted by super-groups then project back to subordinate groups:
-    #TODO
+    if superGroups:
+        newGroupsPerFold = dict()
+        for f, sgs in groupsPerFold.items():
+            newGroupsPerFold[f] = []
+            for sg in sgs:#extend the list for all subordinates of the sgs in the fold:
+                newGroupsPerFold[f].extend(superGroups[sg])
+        groupsPerFold = newGroupsPerFold
         
     return list(groupsPerFold.values())
 

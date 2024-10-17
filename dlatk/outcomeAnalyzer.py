@@ -2250,7 +2250,7 @@ class OutcomeAnalyzer(OutcomeGetter):
     @staticmethod
     def duplicateFilter(rList, wordFreqs, maxToCheck = 100):
         """
-        Filters out duplicate words
+        Filters out ngrams that overlap with other ngrams with larger correlations
 
         Parameters
         ----------
@@ -2281,9 +2281,9 @@ class OutcomeAnalyzer(OutcomeGetter):
             keep = True
             for i in range(len(words)):
                 word = words[i]
-                if word in usedWords:
+                if word in usedWords: #if it has a word in common with a previously used words
                     ditch = True
-                    for otherWord in words[:i]+words[i+1:]:
+                    for otherWord in words[:i]+words[i+1:]: #keep the new phrase if it's other words are more specific (i.e. lower freq) than the usedWord
                         if (not otherWord in wordFreqs) or (not word in wordFreqs) or wordFreqs[otherWord] < wordFreqs[word]:
                             ditch = False
                             break

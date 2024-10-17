@@ -2494,7 +2494,7 @@ class RegressionPredictor:
     def printComboControlPredictionsToCSV(scores, outputstream, paramString = None, delimiter=','):
         """prints predictions with all combinations of controls to csv)"""
         predictionData = {}
-        data = defaultdict(list)
+        data = defaultdict(dict)
         columns = ["Id"]
         if paramString:
             print(paramString+"\n", file=outputstream)
@@ -2504,10 +2504,10 @@ class RegressionPredictor:
         if 'controls' in outcomeKeys:#print controls first
             outcomeKeys.remove('controls')
             for c, s in scores['controls'].items(): 
-                columns.append('control_'+str(c))
-                predictionData['control_'+str(c)] = s
+                control_col_name = 'control_' + str(c)
+                columns.append(control_col_name)
                 for k,v in s.items():
-                    data[k].append(v )               
+                    data[k][control_col_name] = v                
 
         for outcomeName in outcomeKeys:
             outcomeScores = scores[outcomeName]
@@ -2519,21 +2519,23 @@ class RegressionPredictor:
                     mc = "_".join(rk)
                     if(withLang):
                         mc += "_withLanguage"
-                    columns.append(outcomeName+'_'+mc)
-                    predictionData[str(i)+'_'+outcomeName+'_'+mc] = s['predictions']
+                    outcome_col_name = outcomeName + '_' + mc
+                    columns.append(outcome_col_name)
                     for k,v in s['predictions'].items():
-                        data[k].append(v)
+                        data[k][outcome_col_name] = v
                     if 'trues' in s:
-                        columns.append(outcomeName+'_trues')
-                        predictionData[str(i)+'_'+outcomeName+'_trues'] = s['predictions']
-                        for k,v in s['trues'].items():
-                            data[k].append(v)
+                        trues_col_name = outcomeName + '_trues'
+                        columns.append(trues_col_name)
+                        for k, v in s['trues'].items():
+                            data[k][trues_col_name] = v
         
         writer = csv.writer(outputstream)
         writer.writerow(columns)
-        for k,v in data.items():
-           v.insert(0,k)  
-           writer.writerow(v)
+        for k in sorted(data.keys()):
+            row = [k]
+            for col in columns[1:]:
+                row.append(data[k].get(col, ''))
+            writer.writerow(row)
         
     #################
     ## Deprecated:

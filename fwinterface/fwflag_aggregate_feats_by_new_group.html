@@ -1,0 +1,319 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>--aggregate_feats_by_new_group &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="../_static/style.css" type="text/css" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../papers.html">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">--aggregate_feats_by_new_group</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/fwinterface/fwflag_aggregate_feats_by_new_group.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="aggregate-feats-by-new-group">
+<span id="fwflag-aggregate-feats-by-new-group"></span><h1>--aggregate_feats_by_new_group<a class="headerlink" href="#aggregate-feats-by-new-group" title="Link to this heading"></a></h1>
+<section id="switch">
+<h2>Switch<a class="headerlink" href="#switch" title="Link to this heading"></a></h2>
+<p>--aggregate_feats_by_new_group</p>
+</section>
+<section id="description">
+<h2>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h2>
+<p>Aggregate feature table by group field (i.e. message_id features by user_ids).</p>
+</section>
+<section id="argument-and-default-value">
+<h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
+<p>Required Switches:</p>
+</section>
+<section id="details">
+<h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
+</section>
+<section id="other-switches">
+<h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>
+<p>Required Switches:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a>, <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a>, <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a>, <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a></p></li>
+</ul>
+<p>Optional Switches:</p>
+<ul class="simple">
+<li><p>None</p></li>
+</ul>
+</section>
+<section id="example-commands">
+<h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
+<p>Example use case: feature tables broken down by month being recombined.
+Feature tables in question:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="p">|</span><span class="w"> </span>feat<span class="nv">$1</span>to3gram<span class="nv">$msgsPA_2012$cntyYM$16</span>to16<span class="nv">$0</span>_01<span class="w">                   </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>feat<span class="nv">$1</span>to3gram<span class="nv">$msgsPA_2012_01$cnty$16</span>to16<span class="nv">$0</span>_01<span class="w">                  </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>feat<span class="nv">$1</span>to3gram<span class="nv">$msgsPA_2012_02$cnty$16</span>to16<span class="nv">$0</span>_01<span class="w">                  </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>feat<span class="nv">$1</span>to3gram<span class="nv">$msgsPA_2012_03$cnty$16</span>to16<span class="nv">$0</span>_01<span class="w">                  </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>feat<span class="nv">$1</span>to3gram<span class="nv">$msgsPA_2012_04$cnty$16</span>to16<span class="nv">$0</span>_01<span class="w">                  </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>feat<span class="nv">$1</span>to3gram<span class="nv">$msgsPA_2012_05$cnty$16</span>to16<span class="nv">$0</span>_01<span class="w">                  </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>feat<span class="nv">$1</span>to3gram<span class="nv">$msgsPA_2012_06$cnty$16</span>to16<span class="nv">$0</span>_01<span class="w">                  </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>feat<span class="nv">$1</span>to3gram<span class="nv">$msgsPA_2012_07$cnty$16</span>to16<span class="nv">$0</span>_01<span class="w">                  </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>feat<span class="nv">$1</span>to3gram<span class="nv">$msgsPA_2012_08$cnty$16</span>to16<span class="nv">$0</span>_01<span class="w">                  </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>feat<span class="nv">$1</span>to3gram<span class="nv">$msgsPA_2012_09$cnty$16</span>to16<span class="nv">$0</span>_01<span class="w">                  </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>feat<span class="nv">$1</span>to3gram<span class="nv">$msgsPA_2012_10$cnty$16</span>to16<span class="nv">$0</span>_01<span class="w">                  </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>feat<span class="nv">$1</span>to3gram<span class="nv">$msgsPA_2012_11$cnty$16</span>to16<span class="nv">$0</span>_01<span class="w">                  </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>feat<span class="nv">$1</span>to3gram<span class="nv">$msgsPA_2012_12$cnty$16</span>to16<span class="nv">$0</span>_01<span class="w">                  </span><span class="p">|</span>
+</pre></div>
+</div>
+<p>Note that feat$1to3gram$msgsPA_2012$cntyYM$16to16$0_01 has been created to hold the intermediate step.</p>
+<p>Original tables like feat$1to3gram$msgsPA_2012_12$cnty$16to16$0_01:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>+----------+--------------+-------+--------------------------+
+<span class="p">|</span><span class="w"> </span>group_id<span class="w"> </span><span class="p">|</span><span class="w"> </span>feat<span class="w">         </span><span class="p">|</span><span class="w"> </span>value<span class="w"> </span><span class="p">|</span><span class="w"> </span>group_norm<span class="w">               </span><span class="p">|</span>
++----------+--------------+-------+--------------------------+
+<span class="p">|</span><span class="w">    </span><span class="m">42101</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>soon<span class="w"> </span>as<span class="w">      </span><span class="p">|</span><span class="w">    </span><span class="m">73</span><span class="w"> </span><span class="p">|</span><span class="w">  </span><span class="m">0</span>.000037435667062561665<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">    </span><span class="m">42017</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>are<span class="w"> </span>now<span class="w">      </span><span class="p">|</span><span class="w">     </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w">  </span><span class="m">0</span>.000019275622120703946<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">    </span><span class="m">42077</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>i<span class="w"> </span>tell<span class="w"> </span>u<span class="w">     </span><span class="p">|</span><span class="w">     </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w">  </span><span class="m">0</span>.000036302911493501776<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">    </span><span class="m">42003</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>fuck<span class="w"> </span>out<span class="w"> </span>.<span class="w">   </span><span class="p">|</span><span class="w">     </span><span class="m">3</span><span class="w"> </span><span class="p">|</span><span class="w">  </span><span class="m">0</span>.000005261560964829973<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">    </span><span class="m">42025</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>the<span class="w"> </span>last<span class="w"> </span>day<span class="w"> </span><span class="p">|</span><span class="w">     </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w">   </span><span class="m">0</span>.00040225261464199515<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">    </span><span class="m">42101</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>it<span class="w"> </span>!<span class="w"> </span>we<span class="w">      </span><span class="p">|</span><span class="w">     </span><span class="m">2</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">0</span>.0000011117948649530572<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">    </span><span class="m">42017</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>is<span class="w"> </span>willing<span class="w">   </span><span class="p">|</span><span class="w">     </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w">  </span><span class="m">0</span>.000019275622120703946<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">    </span><span class="m">42049</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>kno<span class="w"> </span>wat<span class="w">      </span><span class="p">|</span><span class="w">     </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w">   </span><span class="m">0</span>.00003332777870354941<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">    </span><span class="m">42003</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>just<span class="w"> </span>barely<span class="w">  </span><span class="p">|</span><span class="w">     </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">0</span>.0000016047294586605644<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">    </span><span class="m">42101</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">2006</span><span class="w">         </span><span class="p">|</span><span class="w">    </span><span class="m">48</span><span class="w"> </span><span class="p">|</span><span class="w">   </span><span class="m">0</span>.00002283123484160593<span class="w"> </span><span class="p">|</span>
++----------+--------------+-------+--------------------------+
+</pre></div>
+</div>
+<p>Initial collapse mysql command, e.g. (note different group field, cntyYM instead of cnty):</p>
+<p>First collapsed table (feat$1to3gram$msgsPA_2012$cntyYM$16to16$0_01):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>+---------------+------------------+-------+--------------------------+
+<span class="p">|</span><span class="w"> </span>group_id<span class="w">      </span><span class="p">|</span><span class="w"> </span>feat<span class="w">             </span><span class="p">|</span><span class="w"> </span>value<span class="w"> </span><span class="p">|</span><span class="w"> </span>group_norm<span class="w">               </span><span class="p">|</span>
++---------------+------------------+-------+--------------------------+
+<span class="p">|</span><span class="w"> </span>42091_2012_11<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="c1">#theatreproblems |     1 |   0.00001484692817056151 |</span>
+<span class="p">|</span><span class="w"> </span>42101_2012_02<span class="w"> </span><span class="p">|</span><span class="w"> </span>inappropriate<span class="w">    </span><span class="p">|</span><span class="w">     </span><span class="m">7</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">0</span>.0000026320123388738445<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>42125_2012_03<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="k">for</span><span class="w"> </span>everything<span class="w">   </span><span class="p">|</span><span class="w">     </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w">  </span><span class="m">0</span>.000040645449741901396<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>42101_2012_05<span class="w"> </span><span class="p">|</span><span class="w"> </span>fun<span class="w"> </span>and<span class="w">          </span><span class="p">|</span><span class="w">    </span><span class="m">18</span><span class="w"> </span><span class="p">|</span><span class="w">  </span><span class="m">0</span>.000013396794444795903<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>42071_2012_02<span class="w"> </span><span class="p">|</span><span class="w"> </span>at<span class="w"> </span>my<span class="w"> </span>desk<span class="w">       </span><span class="p">|</span><span class="w">     </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w">  </span><span class="m">0</span>.000019890601690701143<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>42071_2012_11<span class="w"> </span><span class="p">|</span><span class="w"> </span>album<span class="w"> </span>will<span class="w">       </span><span class="p">|</span><span class="w">     </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w">  </span><span class="m">0</span>.000019987607683236393<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>42003_2012_06<span class="w"> </span><span class="p">|</span><span class="w"> </span>waste<span class="w"> </span>it<span class="w">         </span><span class="p">|</span><span class="w">     </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">0</span>.0000012686121256484195<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>42003_2012_08<span class="w"> </span><span class="p">|</span><span class="w"> </span>tweet<span class="w"> </span>goes<span class="w"> </span>out<span class="w">   </span><span class="p">|</span><span class="w">     </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w">  </span><span class="m">0</span>.000006096408605690388<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>42101_2012_04<span class="w"> </span><span class="p">|</span><span class="w"> </span>day<span class="w"> </span>:<span class="w">            </span><span class="p">|</span><span class="w">    </span><span class="m">29</span><span class="w"> </span><span class="p">|</span><span class="w">    </span><span class="m">0</span>.0000182426537148019<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>42101_2012_07<span class="w"> </span><span class="p">|</span><span class="w"> </span>girl<span class="w"> </span>you<span class="w"> </span>better<span class="w">  </span><span class="p">|</span><span class="w">     </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">0</span>.0000007502882982786135<span class="w"> </span><span class="p">|</span>
++---------------+------------------+-------+--------------------------+
+</pre></div>
+</div>
+<p>Create a new dummy &quot;message table&quot; containing mappings from new group_id to original group_id with mysql commands like:
+insert into cntyYM_to_cnty values('42007_2012_01','42007');</p>
+<p>Resulting table (cntyYM_to_cnty):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>+---------------+-------+
+<span class="p">|</span><span class="w"> </span>cntyYM<span class="w">        </span><span class="p">|</span><span class="w"> </span>cnty<span class="w">  </span><span class="p">|</span>
++---------------+-------+
+<span class="p">|</span><span class="w"> </span>42001_2012_01<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">42001</span><span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>42001_2012_02<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">42001</span><span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>42001_2012_03<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">42001</span><span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>42001_2012_04<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">42001</span><span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>42001_2012_05<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">42001</span><span class="w"> </span><span class="p">|</span>
++---------------+-------+
+</pre></div>
+</div>
+<p>Aggregation fwInterface command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>paHealth<span class="w"> </span>-t<span class="w"> </span>cntyYM_to_cnty<span class="w"> </span>-c<span class="w"> </span>cnty<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-f<span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgsPA_2012$cntyYM$16to16$0_01&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--aggregate_feats_by_new_group
+</pre></div>
+</div>
+<p>At its heart, this function runs two SQL commands:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>INSERT<span class="w"> </span>INTO<span class="w"> </span>feat<span class="nv">$agg_1to3gram$msgsPA_2012$cnty</span>
+<span class="w">  </span>SELECT<span class="w"> </span>m.cnty,<span class="w"> </span>f.feat,<span class="w"> </span>sum<span class="o">(</span>f.value<span class="o">)</span>,<span class="w"> </span><span class="m">0</span><span class="w"> </span>FROM<span class="w"> </span>feat<span class="nv">$1</span>to3gram<span class="nv">$msgsPA_2012$cntyYM$16</span>to16<span class="nv">$0</span>_01<span class="w"> </span>AS<span class="w"> </span>f,
+<span class="w">  </span>cntyYM_to_cnty<span class="w"> </span>AS<span class="w"> </span>m<span class="w"> </span>where<span class="w"> </span>m.cntyYM<span class="w"> </span><span class="o">=</span><span class="w"> </span>f.group_id<span class="w"> </span>GROUP<span class="w"> </span>BY<span class="w"> </span>m.cnty,<span class="w"> </span>f.feat
+UPDATE<span class="w"> </span>feat<span class="nv">$agg_1to3gram$msgsPA_2012$cnty</span><span class="w"> </span>a<span class="w"> </span>INNER<span class="w"> </span>JOIN
+<span class="w">  </span><span class="o">(</span>SELECT<span class="w"> </span>group_id,sum<span class="o">(</span>value<span class="o">)</span><span class="w"> </span>sum<span class="w"> </span>FROM<span class="w"> </span>feat<span class="nv">$agg_1to3gram$msgsPA_2012$cnty</span>
+<span class="w">  </span>GROUP<span class="w"> </span>BY<span class="w"> </span>group_id<span class="o">)</span><span class="w"> </span>b<span class="w"> </span>ON<span class="w"> </span>a.group_id<span class="o">=</span>b.group_id<span class="w"> </span>SET<span class="w"> </span>a.group_norm<span class="o">=</span>a.value/b.sum
+</pre></div>
+</div>
+<p>The output table name could probably be improved with better logic. After the fact, I changed it from feat$agg_1to3gram$msgsPA_2012$cnty to feat$1to3gram$msgsPA_2012$cnty$10to16$0_01.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

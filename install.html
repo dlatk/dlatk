@@ -1,0 +1,426 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="_static/style.css" type="text/css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorials" href="tutorials.html" />
+    <link rel="prev" title="Differential Language Analysis ToolKit" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="papers.html">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="papers.html#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="papers.html#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/install.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
+<p>DLATK is highly dependent on MySQL. If you do not have MySQL installed and running please skip <a class="reference internal" href="#recommended-install">Recommended Install</a> and follow the steps in the <a class="reference internal" href="#full-install">Full Install</a> section.</p>
+<p>Please see <a class="reference internal" href="install_faq.html"><span class="doc">Install FAQs</span></a> for common install issues.</p>
+<section id="recommended-install">
+<h2>Recommended Install<a class="headerlink" href="#recommended-install" title="Link to this heading"></a></h2>
+<p>The easiest way to install dlatk is through Docker (follow the <a class="reference internal" href="tutorials/tut_docker.html"><span class="doc">Installing DLATK with Docker</span></a> tutorial) or through pip (with sudo privileges):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>dlatk
+</pre></div>
+</div>
+<p>If you do not have sudo then you can use the --user flag</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>dlatk
+</pre></div>
+</div>
+<p>This will install all of the required Python dependencies listed below. See <a class="reference internal" href="#full-list-of-dependencies">Full List of Dependencies</a>.</p>
+<p><strong>Note</strong>: some features in DLATK require other non-Python packages (besides MySQL). The Docker installation will install everything whereas <cite>pip</cite> will not. Please see notes below on installing other dependencies.</p>
+</section>
+<section id="full-install">
+<h2>Full Install<a class="headerlink" href="#full-install" title="Link to this heading"></a></h2>
+<section id="setup">
+<h3>Setup<a class="headerlink" href="#setup" title="Link to this heading"></a></h3>
+<p>Before installing DLATK you need to install the necessary system requirements (MySQL being the most important). The next steps will walk you through how to do this on a machine running Ubuntu or OSX.</p>
+<section id="linux">
+<h4>Linux<a class="headerlink" href="#linux" title="Link to this heading"></a></h4>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This will install MySQL on your computer.</p>
+</div>
+<p>Install the required Ubuntu libraries. The requirements.sys can be found on the <a class="reference external" href="http://www.github.com/dlatk/dlatk">DLATK GitHub page</a>.   The <code class="docutils literal notranslate"><span class="pre">r-base</span></code> package might be difficult to install and can be removed from <code class="docutils literal notranslate"><span class="pre">requirements.sys</span></code> if needed though this will limit some minor functionality.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>wget<span class="w"> </span>https://github.com/dlatk/dlatk/blob/public/install/requirements.sys
+xargs<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>&lt;<span class="w"> </span>requirements.sys
+</pre></div>
+</div>
+<p>DLATK has been tested on Ubuntu 14.04.</p>
+</section>
+<section id="osx-with-brew">
+<h4>OSX (with brew)<a class="headerlink" href="#osx-with-brew" title="Link to this heading"></a></h4>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This will install MySQL on your computer.</p>
+</div>
+<p>Install dependencies with brew.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>install<span class="w"> </span>python<span class="w"> </span>mysql
+</pre></div>
+</div>
+<p>DLATK has been tested on OSX 10.11.</p>
+<p>With the system requirements out of the way you can now install the Python code via Pip, Anaconda or GitHub:</p>
+</section>
+<section id="install-pip">
+<h4>Install (pip)<a class="headerlink" href="#install-pip" title="Link to this heading"></a></h4>
+<p>Install the Python 3 version via pip:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>dlatk
+</pre></div>
+</div>
+<p>To install the Python 2.7 version use:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;dlatk &lt; 1.0&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="install-anaconda">
+<h4>Install (Anaconda)<a class="headerlink" href="#install-anaconda" title="Link to this heading"></a></h4>
+<p>Run the following in a Python 3.5 conda env:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>wwbp<span class="w"> </span>dlatk
+</pre></div>
+</div>
+</section>
+<section id="install-github">
+<h4>Install (GitHub)<a class="headerlink" href="#install-github" title="Link to this heading"></a></h4>
+<p>Run the following:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/dlatk/dlatk.git
+<span class="nb">cd</span><span class="w"> </span>dlatk
+python<span class="w"> </span>setup.py<span class="w"> </span>install
+</pre></div>
+</div>
+</section>
+</section>
+<section id="install-other-dependencies">
+<h3>Install Other Dependencies<a class="headerlink" href="#install-other-dependencies" title="Link to this heading"></a></h3>
+<section id="load-nltk-corpus">
+<h4>Load NLTK corpus<a class="headerlink" href="#load-nltk-corpus" title="Link to this heading"></a></h4>
+<p>Load NLTK data from the command line:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import nltk; nltk.download(&#39;wordnet&#39;)&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="install-stanford-parser">
+<h4>Install Stanford Parser<a class="headerlink" href="#install-stanford-parser" title="Link to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p>Download the zip file from <a class="reference external" href="http://nlp.stanford.edu/software/lex-parser.shtml">http://nlp.stanford.edu/software/lex-parser.shtml</a>.</p></li>
+<li><p>Extract into <code class="docutils literal notranslate"><span class="pre">../dlatk/Tools/StanfordParser/</span></code>.</p></li>
+<li><p>Move <code class="docutils literal notranslate"><span class="pre">../dlatk/Tools/StanfordParser/oneline.sh</span></code> into the folder you extracted: <code class="docutils literal notranslate"><span class="pre">../dlatk/Tools/StanfordParser/stanford-parser-full*/</span></code>.</p></li>
+</ol>
+</section>
+<section id="install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">
+<h4>Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)<a class="headerlink" href="#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3" title="Link to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p>Download the tgz file (for version 0.3) from <a class="reference external" href="http://www.cs.cmu.edu/~ark/TweetNLP/">http://www.cs.cmu.edu/~ark/TweetNLP/</a>.</p></li>
+<li><p>Extract this file into <code class="docutils literal notranslate"><span class="pre">../dlatk/Tools/TwitterTagger/</span></code>.</p></li>
+</ol>
+</section>
+<section id="python-modules-optional">
+<h4>Python Modules (optional)<a class="headerlink" href="#python-modules-optional" title="Link to this heading"></a></h4>
+<p>You can install the optional python dependencies with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>image<span class="w"> </span>jsonrpclib-pelix<span class="w"> </span>langid<span class="w"> </span>rpy2<span class="w"> </span>simplejson<span class="w"> </span>textstat<span class="w"> </span>wordcloud
+</pre></div>
+</div>
+<p>Standard DLATK functions can be run without these modules.</p>
+</section>
+<section id="install-the-ibm-wordcloud-jar-file-optional">
+<h4>Install the IBM Wordcloud jar file (optional)<a class="headerlink" href="#install-the-ibm-wordcloud-jar-file-optional" title="Link to this heading"></a></h4>
+<p>The IBM wordcloud module is our default. To install this you must sign up for a IBM DeveloperWorks account and download ibm-word-cloud.jar. Place this file into <code class="docutils literal notranslate"><span class="pre">../dlatk/lib/</span></code>.</p>
+<p>If you are unable to install this jar then you can use the python wordcloud module:</p>
+<ol class="arabic simple">
+<li><p>pip install wordcloud</p></li>
+<li><p>Change <code class="docutils literal notranslate"><span class="pre">wordcloud_algorithm='ibm'</span></code> in ../dlatk/lib/wordcloud.py to <code class="docutils literal notranslate"><span class="pre">wordcloud_algorithm='amueller'</span></code>.</p></li>
+</ol>
+<p><strong>Note</strong>: You must install either the IBM Wordcloud jar or the Python wordcloud module to print wordclouds.</p>
+</section>
+<section id="mallet-optional">
+<h4>Mallet (optional)<a class="headerlink" href="#mallet-optional" title="Link to this heading"></a></h4>
+<p><a class="reference external" href="http://mallet.cs.umass.edu/">Mallet</a> can be used with DLATK to create LDA topics (see the <a class="reference internal" href="tutorials/tut_lda.html"><span class="doc">DLATK LDA Interface</span></a> tutorial). Directions on downloading and installing can be found <a class="reference external" href="http://mallet.cs.umass.edu/download.php">here</a>.</p>
+</section>
+</section>
+</section>
+<section id="full-list-of-dependencies">
+<h2>Full List of Dependencies<a class="headerlink" href="#full-list-of-dependencies" title="Link to this heading"></a></h2>
+<section id="python">
+<h3>Python<a class="headerlink" href="#python" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="http://matplotlib.org/">matplotlib</a> (&gt;=1.3.1)</p></li>
+<li><p><a class="reference external" href="https://github.com/PyMySQL/mysqlclient-python">mysqlclient</a></p></li>
+<li><p><a class="reference external" href="http://www.nltk.org/">nltk</a> (&gt;=3.1)</p></li>
+<li><p><a class="reference external" href="http://www.numpy.org/">numpy</a></p></li>
+<li><p><a class="reference external" href="http://pandas.pydata.org/">pandas</a> (&gt;=0.17.1)</p></li>
+<li><p><a class="reference external" href="https://dateutil.readthedocs.io/">python-dateutil</a> (&gt;=2.5.0)</p></li>
+<li><p><a class="reference external" href="http://www.scikit-learn.org">scikit-learn</a> (&gt;=0.17.1)</p></li>
+<li><p><a class="reference external" href="https://www.scipy.org/">scipy</a></p></li>
+<li><p><a class="reference external" href="https://www.sqlalchemy.org/">SQLAlchemy</a> (&gt;=0.9.9)</p></li>
+<li><p><a class="reference external" href="http://statsmodels.sourceforge.net/">statsmodels</a> (&gt;=0.6.1)</p></li>
+</ul>
+</section>
+<section id="other">
+<h3>Other<a class="headerlink" href="#other" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="http://nlp.stanford.edu/software/lex-parser.shtml">Stanford Parser</a></p></li>
+<li><p><a class="reference external" href="http://www.cs.cmu.edu/~ark/TweetNLP/">Tweet NLP</a></p></li>
+</ul>
+</section>
+<section id="python-optional">
+<h3>Python (optional)<a class="headerlink" href="#python-optional" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>image</p></li>
+<li><p><a class="reference external" href="https://pypi.python.org/pypi/jsonrpclib-pelix/">jsonrpclib-pelix</a> (&gt;=0.2.8)</p></li>
+<li><p><a class="reference external" href="https://github.com/saffsd/langid.py">langid</a> (&gt;=1.1.4)</p></li>
+<li><p><a class="reference external" href="https://rpy2.readthedocs.io">rpy2</a> (2.6.0)</p></li>
+<li><p><a class="reference external" href="https://simplejson.readthedocs.io/en/latest/">simplejson</a> (&gt;=3.3.1)</p></li>
+<li><p><a class="reference external" href="https://pypi.python.org/pypi/textstat">textstat</a> (&gt;=0.6.1)</p></li>
+<li><p><a class="reference external" href="https://github.com/amueller/word_cloud">wordcloud</a> (&gt;=1.1.3)</p></li>
+</ul>
+</section>
+<section id="other-optional">
+<h3>Other (optional)<a class="headerlink" href="#other-optional" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>IBM Wordcloud (for wordcloud visualization)</p></li>
+<li><p><a class="reference external" href="http://mallet.cs.umass.edu/">Mallet</a> (for creating LDA topics)</p></li>
+</ul>
+</section>
+</section>
+<section id="python-version-support">
+<h2>Python version support<a class="headerlink" href="#python-version-support" title="Link to this heading"></a></h2>
+<p>DLATK is available for Python 2.7 and 3.5, with the 3.5 version being the official release. The 2.7 version is fully functional (as of v0.6.1) but will not be maintained and also does not contain some of the newer features available in v1.0.</p>
+<p>To install the Python 2.7 version run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;dlatk &lt; 1.0&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h2>
+<section id="command-line-interface">
+<h3>Command Line Interface<a class="headerlink" href="#command-line-interface" title="Link to this heading"></a></h3>
+<p>DLATK is run using dlatkInterface.py which is added to /usr/local/bin during the installation process.</p>
+</section>
+<section id="mysql-configuration">
+<h3>MySQL Configuration<a class="headerlink" href="#mysql-configuration" title="Link to this heading"></a></h3>
+<p>Any calls to dlatkInterface.py will open MySQL. We assume any table with text data has the following columns:</p>
+<ul class="simple">
+<li><p>message: text data</p></li>
+<li><p>message_id: unique numeric identifier for each message</p></li>
+</ul>
+<p>All lexicon tables are assumed to be in a database called dlatk_lexica (a sample database with this name is distributed with the release). To change this you must edit dlaConstants.py: <code class="docutils literal notranslate"><span class="pre">DEF_LEXICON_DB</span> <span class="pre">=</span> <span class="pre">'dlatk_lexica'</span></code></p>
+</section>
+<section id="sample-datasets">
+<h3>Sample Datasets<a class="headerlink" href="#sample-datasets" title="Link to this heading"></a></h3>
+<p>DLATK comes packaged with two sample databases: dla_tutorial and dlatk_lexica. See <a class="reference internal" href="datasets.html"><span class="doc">Packaged Datasets</span></a> for more information on the databases. To install them use the following:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mysql<span class="w"> </span>-u<span class="w"> </span>username<span class="w"> </span>-p<span class="w">  </span>&lt;<span class="w"> </span>/path/to/dlatk/data/dla_tutorial.sql
+mysql<span class="w"> </span>-u<span class="w"> </span>username<span class="w"> </span>-p<span class="w">  </span>&lt;<span class="w"> </span>/path/to/dlatk/data/dlatk_lexica.sql
+</pre></div>
+</div>
+<p>The path to DLATK can be found using the following:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import dlatk; print(dlatk.__file__)&quot;</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If the above databases already exist then the above commands will add tables to the them.</p>
+</div>
+</section>
+<section id="next-steps">
+<h3>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading"></a></h3>
+<p>Try the <a class="reference internal" href="tutorials/tut_dla.html"><span class="doc">Differential Language Analysis (DLA) Tutorial</span></a> once you have everything running.</p>
+</section>
+</section>
+<section id="install-issues">
+<h2>Install Issues<a class="headerlink" href="#install-issues" title="Link to this heading"></a></h2>
+<p>See <a class="reference internal" href="install_faq.html"><span class="doc">Install FAQs</span></a> for more info.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Differential Language Analysis ToolKit" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tutorials.html" class="btn btn-neutral float-right" title="Tutorials" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,430 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installing DLATK with Docker &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="../_static/style.css" type="text/css" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../papers.html">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installing DLATK with Docker</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/tut_docker.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installing-dlatk-with-docker">
+<span id="tut-docker"></span><h1>Installing DLATK with Docker<a class="headerlink" href="#installing-dlatk-with-docker" title="Link to this heading"></a></h1>
+<section id="run-from-docker-hub">
+<h2>Run from Docker Hub<a class="headerlink" href="#run-from-docker-hub" title="Link to this heading"></a></h2>
+<section id="step-1-install-docker">
+<h3>Step 1: Install Docker<a class="headerlink" href="#step-1-install-docker" title="Link to this heading"></a></h3>
+<p>Installing Docker is very easy. Visit the <a class="reference external" href="https://docs.docker.com/install/">official Docker installation page</a> page and follow the instructions tailored for your operating system.</p>
+<p>After you’ve installed Docker, open the terminal and type the following to verify the installation:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>docker<span class="w"> </span>info
+</pre></div>
+</div>
+<p>you should see something like</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>docker<span class="w"> </span>info
+Containers:<span class="w"> </span><span class="m">0</span>
+<span class="w"> </span>Running:<span class="w"> </span><span class="m">0</span>
+<span class="w"> </span>Paused:<span class="w"> </span><span class="m">0</span>
+<span class="w"> </span>Stopped:<span class="w"> </span><span class="m">0</span>
+Images:<span class="w"> </span><span class="m">0</span>
+...
+</pre></div>
+</div>
+</section>
+<section id="step-2-install-mysql">
+<h3>Step 2: Install MySQL<a class="headerlink" href="#step-2-install-mysql" title="Link to this heading"></a></h3>
+<p>You can pull the offical image of MySQL from <a class="reference external" href="https://hub.docker.com/_/mysql/">Docker Hub</a>. Starting a MySQL instance is simple:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>--name<span class="w"> </span>some-mysql<span class="w"> </span>--env<span class="w"> </span><span class="nv">MYSQL_ROOT_PASSWORD</span><span class="o">=</span>my-secret-pw<span class="w"> </span>--detach<span class="w"> </span>mysql:tag
+</pre></div>
+</div>
+<p>where <cite>some-mysql</cite> is the name you want to assign to your container, <cite>my-secret-pw</cite> is the password to be set for the MySQL root user and tag is the <cite>tag</cite> specifying the MySQL version you want. We've tested using MySQL v5.5:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>--name<span class="w"> </span>mysql_v5<span class="w">  </span>--env<span class="w"> </span><span class="nv">MYSQL_ROOT_PASSWORD</span><span class="o">=</span>my-secret-pw<span class="w"> </span>--detach<span class="w"> </span>mysql:5.5
+</pre></div>
+</div>
+<p>and we can confirm the installation with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>docker<span class="w"> </span>images
+REPOSITORY<span class="w">          </span>TAG<span class="w">                 </span>IMAGE<span class="w"> </span>ID<span class="w">            </span>CREATED<span class="w">             </span>SIZE
+mysql<span class="w">               </span><span class="m">5</span>.5<span class="w">                 </span>a8a59477268d<span class="w">        </span><span class="m">7</span><span class="w"> </span>weeks<span class="w"> </span>ago<span class="w">         </span>445MB
+
+&gt;<span class="w"> </span>docker<span class="w"> </span>ps
+CONTAINER<span class="w"> </span>ID<span class="w">        </span>IMAGE<span class="w">               </span>COMMAND<span class="w">                  </span>CREATED<span class="w">             </span>STATUS<span class="w">              </span>PORTS<span class="w">                    </span>NAMES
+552954e73844<span class="w">        </span>mysql<span class="w">               </span><span class="s2">&quot;docker-entrypoint...&quot;</span><span class="w">   </span><span class="m">5</span><span class="w"> </span>minutes<span class="w"> </span>ago<span class="w">       </span>Up<span class="w"> </span><span class="m">5</span><span class="w"> </span>minutes<span class="w">        </span><span class="m">0</span>.0.0.0:3306-&gt;3306/tcp<span class="w">   </span>mysql_v5
+</pre></div>
+</div>
+<p>Note that this is running on port <cite>3306</cite>. Here is the command broken down:</p>
+<ul class="simple">
+<li><p><strong>run</strong>: Run a command in a new container.</p></li>
+<li><p><strong>--name</strong>: Assign a name to the container. If you don’t specify this, Docker will generate a random name.</p></li>
+<li><p><strong>--env</strong>: Set environment variables</p></li>
+<li><p><strong>--detach</strong>: Run container in background and print container ID</p></li>
+<li><p><strong>mysql</strong>: The image name as stated on the Docker Hub page. This is the simplest image name. The standard is “username/image_name:tag”, for example “severalnines/mysql:5.6”. In this case, we specified “mysql”, which means it has no username (the image is built and maintained by Docker, therefore no username), the image name is “mysql” and the tag is latest (default). If the image does not exist, it will pull it first from Docker Hub into the host, and then run the container.</p></li>
+</ul>
+<p>You can see which IP the MySQL container is running on via:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>docker<span class="w"> </span>inspect<span class="w"> </span>mysql_v5<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>IPAddress
+<span class="w">    </span><span class="s2">&quot;SecondaryIPAddresses&quot;</span>:<span class="w"> </span>null,
+<span class="w">    </span><span class="s2">&quot;IPAddress&quot;</span>:<span class="w"> </span><span class="s2">&quot;172.17.0.2&quot;</span>,
+<span class="w">            </span><span class="s2">&quot;IPAddress&quot;</span>:<span class="w"> </span><span class="s2">&quot;172.17.0.2&quot;</span>,
+</pre></div>
+</div>
+<p>Both of these can be used to configure a graphical SQL client such as Heidi, MySQL Workbench or Sequel Pro.</p>
+<p>To open this MySQL instance we run, remembering that we set the root password to <cite>my-secret-pw</cite>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>mysql_v5<span class="w"> </span>bash
+
+root@d6ed6aa86c31:/#<span class="w"> </span>mysql<span class="w"> </span>-p
+Enter<span class="w"> </span>password:
+
+Welcome<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>MySQL<span class="w"> </span>monitor.<span class="w">  </span>Commands<span class="w"> </span>end<span class="w"> </span>with<span class="w"> </span><span class="p">;</span><span class="w"> </span>or<span class="w"> </span><span class="se">\g</span>.
+Your<span class="w"> </span>MySQL<span class="w"> </span>connection<span class="w"> </span>id<span class="w"> </span>is<span class="w"> </span><span class="m">13</span>
+Server<span class="w"> </span>version:<span class="w"> </span><span class="m">8</span>.0.11<span class="w"> </span>MySQL<span class="w"> </span>Community<span class="w"> </span>Server<span class="w"> </span>-<span class="w"> </span>GPL
+
+Copyright<span class="w"> </span><span class="o">(</span>c<span class="o">)</span><span class="w"> </span><span class="m">2000</span>,<span class="w"> </span><span class="m">2018</span>,<span class="w"> </span>Oracle<span class="w"> </span>and/or<span class="w"> </span>its<span class="w"> </span>affiliates.<span class="w"> </span>All<span class="w"> </span>rights<span class="w"> </span>reserved.
+
+Oracle<span class="w"> </span>is<span class="w"> </span>a<span class="w"> </span>registered<span class="w"> </span>trademark<span class="w"> </span>of<span class="w"> </span>Oracle<span class="w"> </span>Corporation<span class="w"> </span>and/or<span class="w"> </span>its
+affiliates.<span class="w"> </span>Other<span class="w"> </span>names<span class="w"> </span>may<span class="w"> </span>be<span class="w"> </span>trademarks<span class="w"> </span>of<span class="w"> </span>their<span class="w"> </span>respective
+owners.
+
+Type<span class="w"> </span><span class="s1">&#39;help;&#39;</span><span class="w"> </span>or<span class="w"> </span><span class="s1">&#39;\h&#39;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span>help.<span class="w"> </span>Type<span class="w"> </span><span class="s1">&#39;\c&#39;</span><span class="w"> </span>to<span class="w"> </span>clear<span class="w"> </span>the<span class="w"> </span>current<span class="w"> </span>input<span class="w"> </span>statement.
+
+mysql&gt;<span class="w"> </span>show<span class="w"> </span>databases<span class="p">;</span>
++--------------------+
+<span class="p">|</span><span class="w"> </span>Database<span class="w">           </span><span class="p">|</span>
++--------------------+
+<span class="p">|</span><span class="w"> </span>information_schema<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>mysql<span class="w">              </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>performance_schema<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>sys<span class="w">                </span><span class="p">|</span>
++--------------------+
+<span class="m">4</span><span class="w"> </span>rows<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="o">(</span><span class="m">0</span>.00<span class="w"> </span>sec<span class="o">)</span>
+
+mysql&gt;
+</pre></div>
+</div>
+</section>
+<section id="step-3-link-mysql-and-dlatk">
+<h3>Step 3: Link MySQL and DLATK<a class="headerlink" href="#step-3-link-mysql-and-dlatk" title="Link to this heading"></a></h3>
+<p>Here we run DLATK and link to MySQL. We pull DLATK from it's <a class="reference external" href="https://hub.docker.com/r/dlatk/dlatk/">official repo at DockerHub</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>--name<span class="w"> </span>dlatk_docker<span class="w"> </span>--link<span class="w"> </span>mysql_v5:mysql<span class="w"> </span>dlatk/dlatk<span class="w"> </span>bash
+</pre></div>
+</div>
+<p>which should give you a new prompt. Here we can open MySQL as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root@70032e45f971:/#<span class="w"> </span>mysql<span class="w"> </span>-p
+Enter<span class="w"> </span>password:
+Welcome<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>MariaDB<span class="w"> </span>monitor.<span class="w">  </span>Commands<span class="w"> </span>end<span class="w"> </span>with<span class="w"> </span><span class="p">;</span><span class="w"> </span>or<span class="w"> </span><span class="se">\g</span>.
+Your<span class="w"> </span>MySQL<span class="w"> </span>connection<span class="w"> </span>id<span class="w"> </span>is<span class="w"> </span><span class="m">1</span>
+Server<span class="w"> </span>version:<span class="w"> </span><span class="m">5</span>.5.60<span class="w"> </span>MySQL<span class="w"> </span>Community<span class="w"> </span>Server<span class="w"> </span><span class="o">(</span>GPL<span class="o">)</span>
+
+Copyright<span class="w"> </span><span class="o">(</span>c<span class="o">)</span><span class="w"> </span><span class="m">2000</span>,<span class="w"> </span><span class="m">2017</span>,<span class="w"> </span>Oracle,<span class="w"> </span>MariaDB<span class="w"> </span>Corporation<span class="w"> </span>Ab<span class="w"> </span>and<span class="w"> </span>others.
+
+Type<span class="w"> </span><span class="s1">&#39;help;&#39;</span><span class="w"> </span>or<span class="w"> </span><span class="s1">&#39;\h&#39;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span>help.<span class="w"> </span>Type<span class="w"> </span><span class="s1">&#39;\c&#39;</span><span class="w"> </span>to<span class="w"> </span>clear<span class="w"> </span>the<span class="w"> </span>current<span class="w"> </span>input<span class="w"> </span>statement.
+
+MySQL<span class="w"> </span><span class="o">[(</span>none<span class="o">)]</span>&gt;<span class="w"> </span>show<span class="w"> </span>databases<span class="p">;</span>
++--------------------+
+<span class="p">|</span><span class="w"> </span>Database<span class="w">           </span><span class="p">|</span>
++--------------------+
+<span class="p">|</span><span class="w"> </span>information_schema<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>mysql<span class="w">              </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>performance_schema<span class="w"> </span><span class="p">|</span>
++--------------------+
+<span class="m">3</span><span class="w"> </span>rows<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="o">(</span><span class="m">0</span>.00<span class="w"> </span>sec<span class="o">)</span>
+
+MySQL<span class="w"> </span><span class="o">[(</span>none<span class="o">)]</span>&gt;<span class="w"> </span><span class="nb">exit</span>
+Bye
+</pre></div>
+</div>
+<p>Next we will upload the sample data packaged with DLATK into MySQL, noting that we have access to the DLATK install path via <cite>$DLATK_DIR</cite>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root@70032e45f971:/#<span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="nv">$DLATK_DIR</span>
+/usr/local/lib/python3.6/site-packages/dlatk
+
+root@70032e45f971:/#<span class="w"> </span>mysql<span class="w"> </span>&lt;<span class="w"> </span><span class="nv">$DLATK_DIR</span>/data/dla_tutorial.sql
+root@70032e45f971:/#<span class="w"> </span>mysql<span class="w"> </span>&lt;<span class="w"> </span><span class="nv">$DLATK_DIR</span>/data/permaLexicon.sql
+root@70032e45f971:/#<span class="w"> </span>mysql
+Welcome<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>MariaDB<span class="w"> </span>monitor.<span class="w">  </span>Commands<span class="w"> </span>end<span class="w"> </span>with<span class="w"> </span><span class="p">;</span><span class="w"> </span>or<span class="w"> </span><span class="se">\g</span>.
+Your<span class="w"> </span>MySQL<span class="w"> </span>connection<span class="w"> </span>id<span class="w"> </span>is<span class="w"> </span><span class="m">4</span>
+Server<span class="w"> </span>version:<span class="w"> </span><span class="m">5</span>.5.60<span class="w"> </span>MySQL<span class="w"> </span>Community<span class="w"> </span>Server<span class="w"> </span><span class="o">(</span>GPL<span class="o">)</span>
+
+Copyright<span class="w"> </span><span class="o">(</span>c<span class="o">)</span><span class="w"> </span><span class="m">2000</span>,<span class="w"> </span><span class="m">2017</span>,<span class="w"> </span>Oracle,<span class="w"> </span>MariaDB<span class="w"> </span>Corporation<span class="w"> </span>Ab<span class="w"> </span>and<span class="w"> </span>others.
+
+Type<span class="w"> </span><span class="s1">&#39;help;&#39;</span><span class="w"> </span>or<span class="w"> </span><span class="s1">&#39;\h&#39;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span>help.<span class="w"> </span>Type<span class="w"> </span><span class="s1">&#39;\c&#39;</span><span class="w"> </span>to<span class="w"> </span>clear<span class="w"> </span>the<span class="w"> </span>current<span class="w"> </span>input<span class="w"> </span>statement.
+
+MySQL<span class="w"> </span><span class="o">[(</span>none<span class="o">)]</span>&gt;<span class="w"> </span>show<span class="w"> </span>databases<span class="p">;</span>
++--------------------+
+<span class="p">|</span><span class="w"> </span>Database<span class="w">           </span><span class="p">|</span>
++--------------------+
+<span class="p">|</span><span class="w"> </span>information_schema<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>dla_tutorial<span class="w">       </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>mysql<span class="w">              </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>performance_schema<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w"> </span>permaLexicon<span class="w">       </span><span class="p">|</span>
++--------------------+
+<span class="m">5</span><span class="w"> </span>rows<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="o">(</span><span class="m">0</span>.00<span class="w"> </span>sec<span class="o">)</span>
+</pre></div>
+</div>
+<p>Going back to the prompt we can run DLATK through the interface script <cite>dlatkInterface.py</cite>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root@70032e45f971:/#<span class="w"> </span>dlatkInterface.py<span class="w"> </span>-h
+</pre></div>
+</div>
+<p>Note that this also installs Mallet, Stanford Parser and Tweet NLP with Mallet added to your path:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root@0f8f18074713:/#<span class="w"> </span>mallet
+Unrecognized<span class="w"> </span>command:
+Mallet<span class="w"> </span><span class="m">2</span>.0<span class="w"> </span>commands:
+
+<span class="w">  </span>import-dir<span class="w">         </span>load<span class="w"> </span>the<span class="w"> </span>contents<span class="w"> </span>of<span class="w"> </span>a<span class="w"> </span>directory<span class="w"> </span>into<span class="w"> </span>mallet<span class="w"> </span>instances<span class="w"> </span><span class="o">(</span>one<span class="w"> </span>per<span class="w"> </span>file<span class="o">)</span>
+<span class="w">  </span>import-file<span class="w">        </span>load<span class="w"> </span>a<span class="w"> </span>single<span class="w"> </span>file<span class="w"> </span>into<span class="w"> </span>mallet<span class="w"> </span>instances<span class="w"> </span><span class="o">(</span>one<span class="w"> </span>per<span class="w"> </span>line<span class="o">)</span>
+<span class="w">  </span>import-svmlight<span class="w">    </span>load<span class="w"> </span>SVMLight<span class="w"> </span>format<span class="w"> </span>data<span class="w"> </span>files<span class="w"> </span>into<span class="w"> </span>Mallet<span class="w"> </span>instances
+<span class="w">  </span>info<span class="w">               </span>get<span class="w"> </span>information<span class="w"> </span>about<span class="w"> </span>Mallet<span class="w"> </span>instances
+<span class="w">  </span>train-classifier<span class="w">   </span>train<span class="w"> </span>a<span class="w"> </span>classifier<span class="w"> </span>from<span class="w"> </span>Mallet<span class="w"> </span>data<span class="w"> </span>files
+<span class="w">  </span>classify-dir<span class="w">       </span>classify<span class="w"> </span>data<span class="w"> </span>from<span class="w"> </span>a<span class="w"> </span>single<span class="w"> </span>file<span class="w"> </span>with<span class="w"> </span>a<span class="w"> </span>saved<span class="w"> </span>classifier
+<span class="w">  </span>classify-file<span class="w">      </span>classify<span class="w"> </span>the<span class="w"> </span>contents<span class="w"> </span>of<span class="w"> </span>a<span class="w"> </span>directory<span class="w"> </span>with<span class="w"> </span>a<span class="w"> </span>saved<span class="w"> </span>classifier
+<span class="w">  </span>classify-svmlight<span class="w">  </span>classify<span class="w"> </span>data<span class="w"> </span>from<span class="w"> </span>a<span class="w"> </span>single<span class="w"> </span>file<span class="w"> </span><span class="k">in</span><span class="w"> </span>SVMLight<span class="w"> </span>format
+<span class="w">  </span>train-topics<span class="w">       </span>train<span class="w"> </span>a<span class="w"> </span>topic<span class="w"> </span>model<span class="w"> </span>from<span class="w"> </span>Mallet<span class="w"> </span>data<span class="w"> </span>files
+<span class="w">  </span>infer-topics<span class="w">       </span>use<span class="w"> </span>a<span class="w"> </span>trained<span class="w"> </span>topic<span class="w"> </span>model<span class="w"> </span>to<span class="w"> </span>infer<span class="w"> </span>topics<span class="w"> </span><span class="k">for</span><span class="w"> </span>new<span class="w"> </span>documents
+<span class="w">  </span>evaluate-topics<span class="w">    </span>estimate<span class="w"> </span>the<span class="w"> </span>probability<span class="w"> </span>of<span class="w"> </span>new<span class="w"> </span>documents<span class="w"> </span>under<span class="w"> </span>a<span class="w"> </span>trained<span class="w"> </span>model
+<span class="w">  </span>prune<span class="w">              </span>remove<span class="w"> </span>features<span class="w"> </span>based<span class="w"> </span>on<span class="w"> </span>frequency<span class="w"> </span>or<span class="w"> </span>information<span class="w"> </span>gain
+<span class="w">  </span>split<span class="w">              </span>divide<span class="w"> </span>data<span class="w"> </span>into<span class="w"> </span>testing,<span class="w"> </span>training,<span class="w"> </span>and<span class="w"> </span>validation<span class="w"> </span>portions
+<span class="w">  </span>bulk-load<span class="w">          </span><span class="k">for</span><span class="w"> </span>big<span class="w"> </span>input<span class="w"> </span>files,<span class="w"> </span>efficiently<span class="w"> </span>prune<span class="w"> </span>vocabulary<span class="w"> </span>and<span class="w"> </span>import<span class="w"> </span>docs
+
+Include<span class="w"> </span>--help<span class="w"> </span>with<span class="w"> </span>any<span class="w"> </span>option<span class="w"> </span><span class="k">for</span><span class="w"> </span>more<span class="w"> </span>information
+</pre></div>
+</div>
+</section>
+</section>
+<section id="build-image-from-dockerfile">
+<h2>Build Image from DockerFile<a class="headerlink" href="#build-image-from-dockerfile" title="Link to this heading"></a></h2>
+<p>This is more advanced and probably not needed for most use cases. First we download the DockerFile from GitHub. If you have <cite>git</cite> installed you can run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/dlatk/dlatk-docker.git<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>dlatk-docker
+</pre></div>
+</div>
+<p>To build the image we run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>dlatk-docker<span class="w"> </span>.
+</pre></div>
+</div>
+<p>Here is the command broken down:</p>
+<ul class="simple">
+<li><p><strong>build</strong>: Build an image from a Dockerfile</p></li>
+<li><p><strong>-t</strong>: Alias for <cite>--tag</cite>. Name and optionally a tag in the 'name:tag' format. Since we are not specifying a tag we will pull the latest version.</p></li>
+</ul>
+<p>You will see the following output:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Sending<span class="w"> </span>build<span class="w"> </span>context<span class="w"> </span>to<span class="w"> </span>Docker<span class="w"> </span>daemon<span class="w">  </span><span class="m">84</span>.48kB
+Step<span class="w"> </span><span class="m">1</span>/15<span class="w"> </span>:<span class="w"> </span>FROM<span class="w"> </span>python:3.6-stretch
+stretch:<span class="w"> </span>Pulling<span class="w"> </span>from<span class="w"> </span>library/python
+cc1a78bfd46b:<span class="w"> </span>Downloading<span class="w"> </span><span class="o">[=============================================</span>&gt;<span class="w">     </span><span class="o">]</span><span class="w">  </span><span class="m">40</span>.86MB/45.32MB
+d2c05365ee2a:<span class="w"> </span>Download<span class="w"> </span><span class="nb">complete</span>
+231cb0e216d3:<span class="w"> </span>Download<span class="w"> </span><span class="nb">complete</span>
+3d2aa70286b8:<span class="w"> </span>Downloading<span class="w"> </span><span class="o">[===================================</span>&gt;<span class="w">               </span><span class="o">]</span><span class="w">  </span><span class="m">35</span>.08MB/50.06MB
+e80dfb6a4adf:<span class="w"> </span>Downloading<span class="w"> </span><span class="o">[=======</span>&gt;<span class="w">                                           </span><span class="o">]</span><span class="w">  </span><span class="m">31</span>.16MB/213.2MB
+....
+</pre></div>
+</div>
+<p>At the end you should see:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Removing<span class="w"> </span>intermediate<span class="w"> </span>container<span class="w"> </span>c4776548e966
+Successfully<span class="w"> </span>built<span class="w"> </span>dc2005cd24a6
+Successfully<span class="w"> </span>tagged<span class="w"> </span>dlatk-docker:latest
+</pre></div>
+</div>
+<p>and we can confirm the installation with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>docker<span class="w"> </span>images
+docker<span class="w"> </span>images
+REPOSITORY<span class="w">          </span>TAG<span class="w">                 </span>IMAGE<span class="w"> </span>ID<span class="w">            </span>CREATED<span class="w">              </span>SIZE
+dlatk-docker<span class="w">        </span>latest<span class="w">              </span>10eea3e0202a<span class="w">        </span>About<span class="w"> </span>a<span class="w"> </span>minute<span class="w"> </span>ago<span class="w">   </span><span class="m">2</span>.56GB
+python<span class="w">              </span><span class="m">3</span>.6-stretch<span class="w">         </span>d330010a503a<span class="w">        </span><span class="m">3</span><span class="w"> </span>days<span class="w"> </span>ago<span class="w">           </span>912MB
+</pre></div>
+</div>
+</section>
+<section id="acknowledgment">
+<h2>Acknowledgment<a class="headerlink" href="#acknowledgment" title="Link to this heading"></a></h2>
+<p>The DockerFile was originally written by <a class="reference external" href="https://github.com/mdbecker">Michael Becker</a> at Penn Medicine.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

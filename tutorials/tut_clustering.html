@@ -1,0 +1,372 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clustering and Super Topics &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="../_static/style.css" type="text/css" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../papers.html">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Clustering and Super Topics</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/tut_clustering.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="clustering-and-super-topics">
+<span id="tut-clustering"></span><h1>Clustering and Super Topics<a class="headerlink" href="#clustering-and-super-topics" title="Link to this heading"></a></h1>
+<section id="step-1-clustering">
+<h2>Step 1 - Clustering<a class="headerlink" href="#step-1-clustering" title="Link to this heading"></a></h2>
+<p>In this step we will</p>
+<ol class="arabic simple">
+<li><p>Cluster features based on their distribution over some corpus</p></li>
+<li><p>Output reduced feature space to a lexicon</p></li>
+</ol>
+<p>Note: This step refers to a general clustering method. While the following commands cluster a topic based feature table one can also cluster other features as well.</p>
+<p>Setup:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_d.html"><span class="doc">-d</span></a>: the database we are using</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_t.html"><span class="doc">-t</span></a>: the table inside the database where our text lives</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_c.html"><span class="doc">-g</span></a>: the table column we will be grouping the text by</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a>: Ignore groups which do not contain a certain number of words</p></li>
+</ul>
+<p>Clustering flags:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_fit_reducer.html"><span class="doc">--fit_reducer</span></a>: flag to initalize the clustering</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_reducer_to_lexicon.html"><span class="doc">--reducer_to_lexicon</span></a>: writes the clustered features to a lexicon format</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_n_components.html"><span class="doc">--n_components</span></a>: specify the number of clusters</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_model.html"><span class="doc">--model</span></a>: specify the clustering algorithm</p></li>
+</ul>
+<section id="step-1a-fit-reducer">
+<h3>Step 1a: Fit Reducer<a class="headerlink" href="#step-1a-fit-reducer" title="Link to this heading"></a></h3>
+<p>This flag initializes the clustering process. Using <a class="reference internal" href="../fwinterface/fwflag_model.html"><span class="doc">--model</span></a> one can specify the following clustering algorithms:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.NMF.html">nmf</a> - Non-Negative matrix factorization by Projected Gradient (NMF)</p></li>
+<li><p><a class="reference external" href="http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html">pca</a> - (Principal component analysis) Linear dimensionality reduction using Singular Value Decomposition of the data and keeping only the most significant singular vectors to project the data to a lower dimensional space.</p></li>
+<li><p><a class="reference external" href="http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.SparsePCA.html">sparsepca</a> - (Sparse Principal Components Analysis) Finds the set of sparse components that can optimally reconstruct the data. The amount of sparseness is controllable by the coefficient of the L1 penalty.</p></li>
+<li><p><a class="reference external" href="http://scikit-learn.org/stable/modules/generated/sklearn.lda.LDA.html">lda</a> - (Linear Discriminant Analysis) A classifier with a linear decision boundary, generated by fitting class conditional densities to the data and using Bayes’ rule.</p></li>
+<li><p><a class="reference external" href="http://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html">kmeans</a> - K-Means clustering</p></li>
+<li><p><a class="reference external" href="http://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html">dbscan</a> - (Density-Based Spatial Clustering of Applications with Noise) Finds core samples of high density and expands clusters from them. Good for data which contains clusters of similar density.</p></li>
+<li><p><a class="reference external" href="http://scikit-learn.org/stable/modules/generated/sklearn.cluster.SpectralClustering.html">spectral</a> - Apply clustering to a projection to the normalized laplacian. In practice Spectral Clustering is very useful when the structure of the individual clusters is highly non-convex or more generally when a measure of the center and spread of the cluster is not a suitable description of the complete cluster. For instance when clusters are nested circles on the 2D plan.</p></li>
+<li><p><a class="reference external" href="http://scikit-learn.org/stable/modules/generated/sklearn.mixture.GMM.html">gmm</a> - (Gaussian Mixture Model)</p></li>
+</ul>
+<p>We can also specify the number of components in the clustering with <a class="reference internal" href="../fwinterface/fwflag_n_components.html"><span class="doc">--n_components</span></a>.</p>
+<p><strong>Sample Command</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w"> </span>--fit_reducer<span class="w"> </span>--model<span class="w"> </span>nmf<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span>
+
+SQL<span class="w"> </span>QUERY:<span class="w"> </span><span class="k">select</span><span class="w"> </span>distinct<span class="w"> </span>feat<span class="w"> </span>from<span class="w"> </span>feat<span class="nv">$cat_met_a30_2000_cp_w$msgs$user_id$16</span>to16
+Adding<span class="w"> </span>zeros<span class="w"> </span>to<span class="w"> </span>group<span class="w"> </span>norms<span class="w"> </span><span class="o">(</span><span class="m">978</span><span class="w"> </span>groups<span class="w"> </span>*<span class="w"> </span><span class="m">48</span><span class="w"> </span>feats<span class="o">)</span>.
+<span class="o">[</span>Applying<span class="w"> </span>StandardScaler<span class="w"> </span>to<span class="w"> </span>X:<span class="w"> </span>StandardScaler<span class="o">(</span><span class="nv">copy</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">with_mean</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">with_std</span><span class="o">=</span>True<span class="o">)]</span>
+<span class="w"> </span><span class="o">(</span>N,<span class="w"> </span>features<span class="o">)</span>:<span class="w"> </span><span class="o">(</span><span class="m">978</span>,<span class="w"> </span><span class="m">48</span><span class="o">)</span>
+<span class="o">[</span>Doing<span class="w"> </span>clustering<span class="w"> </span>using<span class="w"> </span>:<span class="w"> </span>nmf<span class="o">]</span>
+model:<span class="w"> </span>NMF<span class="o">(</span><span class="nv">alpha</span><span class="o">=</span><span class="m">10</span>,<span class="w"> </span><span class="nv">beta</span><span class="o">=</span><span class="m">1</span>,<span class="w"> </span><span class="nv">eta</span><span class="o">=</span><span class="m">0</span>.1,<span class="w"> </span><span class="nv">init</span><span class="o">=</span><span class="s1">&#39;nndsvd&#39;</span>,<span class="w"> </span><span class="nv">l1_ratio</span><span class="o">=</span><span class="m">0</span>.95,<span class="w"> </span><span class="nv">max_iter</span><span class="o">=</span><span class="m">200</span>,
+<span class="w">  </span><span class="nv">n_components</span><span class="o">=</span><span class="m">30</span>,<span class="w"> </span><span class="nv">nls_max_iter</span><span class="o">=</span><span class="m">2000</span>,<span class="w"> </span><span class="nv">random_state</span><span class="o">=</span><span class="m">42</span>,<span class="w"> </span><span class="nv">shuffle</span><span class="o">=</span>False,
+<span class="w">  </span><span class="nv">solver</span><span class="o">=</span><span class="s1">&#39;cd&#39;</span>,<span class="w"> </span><span class="nv">sparseness</span><span class="o">=</span>None,<span class="w"> </span><span class="nv">tol</span><span class="o">=</span><span class="m">0</span>.0001,<span class="w"> </span><span class="nv">verbose</span><span class="o">=</span><span class="m">0</span><span class="o">)</span>
+--
+Interface<span class="w"> </span>Runtime:<span class="w"> </span><span class="m">1</span>.06<span class="w"> </span>seconds
+DLATK<span class="w"> </span>exits<span class="w"> </span>with<span class="w"> </span>success!<span class="w"> </span>A<span class="w"> </span>good<span class="w"> </span>day<span class="w"> </span>indeed<span class="w">  </span>¯<span class="se">\_</span><span class="o">(</span>ツ<span class="o">)</span>_/¯.
+</pre></div>
+</div>
+<p>This command will cluster the topics, using only users with 500 or more words, but note that while we ran clustering but haven't told DLATK what to do with those clusters.</p>
+</section>
+<section id="step-1b-reducer-to-lexicon">
+<h3>Step 1b: Reducer to lexicon<a class="headerlink" href="#step-1b-reducer-to-lexicon" title="Link to this heading"></a></h3>
+<p>This flag takes the output from <a class="reference internal" href="../fwinterface/fwflag_fit_reducer.html"><span class="doc">--fit_reducer</span></a> and saves the weights in a &quot;lexicon&quot;.</p>
+<p><strong>Sample Command</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w"> </span>--fit_reducer<span class="w"> </span>--model<span class="w"> </span>nmf<span class="w"> </span>--reducer_to_lexicon<span class="w"> </span>msgs_reduced10_nmf<span class="w"> </span>--n_components<span class="w"> </span><span class="m">10</span>
+</pre></div>
+</div>
+<p>This command will produce table <em>msgs_reduced10_nmf</em> in the database <em>dlatk_lexica</em>. Here the term column contains topic ids and the category column contains the reduced component number. Weights are entries in the <em>m x n</em> facorization matrix produced in the clustering method where <em>m</em> is the number of features in your feature table and <em>n</em> is the number of components specified by <a class="reference internal" href="../fwinterface/fwflag_n_components.html"><span class="doc">--n_components</span></a>.</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">dlatk_lexica</span><span class="p">.</span><span class="n">msgs_reduced10_nmf</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="o">+----+------+----------+----------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">term</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">category</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">weight</span><span class="w">         </span><span class="o">|</span>
+<span class="o">+----+------+----------+----------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">272</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT7</span><span class="w">   </span><span class="o">|</span><span class="w">  </span><span class="mf">8.73150685503</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">101</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT7</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="mf">0.141548621844</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">278</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT1</span><span class="w">   </span><span class="o">|</span><span class="w">  </span><span class="mf">3.56542413757</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">346</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT1</span><span class="w">   </span><span class="o">|</span><span class="w">  </span><span class="mf">0.28171112431</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">290</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT1</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="mf">0.731260898487</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">6</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">349</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT1</span><span class="w">   </span><span class="o">|</span><span class="w">  </span><span class="mf">7.81170807542</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">7</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">276</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT1</span><span class="w">   </span><span class="o">|</span><span class="w">  </span><span class="mf">6.14425018597</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">8</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">1781</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT1</span><span class="w">   </span><span class="o">|</span><span class="w">  </span><span class="mf">1.26721023671</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">9</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">107</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT1</span><span class="w">   </span><span class="o">|</span><span class="w">  </span><span class="mf">1.29672280401</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">344</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT8</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="mf">0.159080830815</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+------+----------+----------------+</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="step-2-super-topics">
+<h2>Step 2: Super Topics<a class="headerlink" href="#step-2-super-topics" title="Link to this heading"></a></h2>
+<p>This allows one to unroll the reduced lexicon table at the word level to create a new topic set. We refer to the reduced lexicon table produced in Step 1b using the <a class="reference internal" href="../fwinterface/fwflag_reduced_lexicon.html"><span class="doc">--reduced_lexicon</span></a> flag. We will use two additional flags:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_reduced_lexicon.html"><span class="doc">--reduced_lexicon</span></a></p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_super_topics.html"><span class="doc">--super_topics</span></a></p></li>
+</ul>
+<p>Note: For this step you need to first cluster a topic based feature table. Super topics do not make sense for other features such as 1to3grams.</p>
+<p><em>Sample Command</em></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w">  </span>--reduced_lexicon<span class="w"> </span>msgs_reduced10_nmf<span class="w"> </span>--super_topics<span class="w"> </span>msgs_10nmf_fbcp<span class="w"> </span>-l<span class="w"> </span>met_a30_2000_cp
+</pre></div>
+</div>
+<p>This produces the table <em>emp_50nmf_fbcp</em> in <em>dlatk_lexica</em>:</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">dlatk_lexica</span><span class="p">.</span><span class="n">msgs_10nmf_fbcp</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+<span class="o">+----+--------------+----------+------------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">term</span><span class="w">         </span><span class="o">|</span><span class="w"> </span><span class="n">category</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">weight</span><span class="w">                 </span><span class="o">|</span>
+<span class="o">+----+--------------+----------+------------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="w">           </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT7</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="mf">0.00006541063856000905</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">8d</span><span class="w">           </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT7</span><span class="w">   </span><span class="o">|</span><span class="w">     </span><span class="mf">0.8575587089762855</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">:</span><span class="n">d</span><span class="w">           </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT7</span><span class="w">   </span><span class="o">|</span><span class="w">     </span><span class="mf">1.7992666876157764</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">:</span><span class="n">p</span><span class="w">           </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT7</span><span class="w">   </span><span class="o">|</span><span class="w">   </span><span class="mf">0.020210781774380928</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">;</span><span class="n">d</span><span class="w">           </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT7</span><span class="w">   </span><span class="o">|</span><span class="w">     </span><span class="mf">1.5833280925503392</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">6</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">3</span><span class="w">           </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT7</span><span class="w">   </span><span class="o">|</span><span class="w">   </span><span class="mf">0.010472837603757787</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">7</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">&gt;:</span><span class="w">           </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT7</span><span class="w">   </span><span class="o">|</span><span class="w">  </span><span class="mf">0.0003415147203434118</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">8</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">&gt;:</span><span class="n">d</span><span class="w">          </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT7</span><span class="w">   </span><span class="o">|</span><span class="w">     </span><span class="mf">1.8820983398248488</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">9</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">accident</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT7</span><span class="w">   </span><span class="o">|</span><span class="w">  </span><span class="mf">0.0026496137794309827</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">accidentally</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT7</span><span class="w">   </span><span class="o">|</span><span class="w">   </span><span class="mf">0.009535178394562414</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+--------------+----------+------------------------+</span>
+</pre></div>
+</div>
+<section id="under-the-hood">
+<h3>Under the hood<a class="headerlink" href="#under-the-hood" title="Link to this heading"></a></h3>
+<p>Super topic creation runs the following MySQL command:</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="o">&lt;</span><span class="n">newtable</span><span class="o">&gt;</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">super</span><span class="p">.</span><span class="n">category</span><span class="p">,</span><span class="w"> </span><span class="n">orig</span><span class="p">.</span><span class="n">term</span><span class="p">,</span><span class="w"> </span><span class="nf">SUM</span><span class="p">(</span><span class="k">super</span><span class="p">.</span><span class="n">weight</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">orig</span><span class="p">.</span><span class="n">weight</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">weight</span>
+<span class="w">        </span><span class="k">FROM</span><span class="w"> </span><span class="o">&lt;</span><span class="n">supertopic</span><span class="o">&gt;</span><span class="w"> </span><span class="k">super</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;</span><span class="n">origtopic</span><span class="o">&gt;</span><span class="w"> </span><span class="n">orig</span>
+<span class="w">        </span><span class="k">WHERE</span><span class="w"> </span><span class="k">super</span><span class="p">.</span><span class="n">term</span><span class="o">=</span><span class="n">orig</span><span class="p">.</span><span class="n">category</span>
+<span class="w">        </span><span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="k">super</span><span class="p">.</span><span class="n">category</span><span class="p">,</span><span class="w"> </span><span class="n">orig</span><span class="p">.</span><span class="n">term</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Everything in a single command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w"> </span><span class="se">\</span>
+--fit_reducer<span class="w"> </span>--model<span class="w"> </span>nmf<span class="w"> </span>--reducer_to_lexicon<span class="w"> </span>msgs_reduced10_nmf<span class="w"> </span>--n_components<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="se">\</span>
+--super_topics<span class="w"> </span>msgs_10nmf_fbcp<span class="w"> </span>-l<span class="w"> </span>met_a30_2000_cp
+</pre></div>
+</div>
+</section>
+</section>
+<section id="step-3-using-your-super-topics">
+<h2>Step 3: Using your super topics<a class="headerlink" href="#step-3-using-your-super-topics" title="Link to this heading"></a></h2>
+<p>Now that we have the super topic table we can extract features over our corpus:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--add_lex_table<span class="w"> </span>-l<span class="w"> </span>msgs_10nmf_fbcp<span class="w"> </span>--weighted_lexicon
+</pre></div>
+</div>
+<p>This command produces the following feature table:</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">feat$cat_msgs_10nmf_fbcp_w$msgs$user_id$16to16</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+<span class="o">+----+----------+--------+-------+-------------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">              </span><span class="o">|</span>
+<span class="o">+----+----------+--------+-------+-------------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT9</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000000921854579604825</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT1</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">36</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mf">0.00467374305816601</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT8</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">12</span><span class="w"> </span><span class="o">|</span><span class="w">   </span><span class="mf">0.0000368626647544864</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT4</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">18</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mf">0.00112652429225695</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT0</span><span class="w"> </span><span class="o">|</span><span class="w">   </span><span class="mi">203</span><span class="w"> </span><span class="o">|</span><span class="w">      </span><span class="mf">0.0366415948096726</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">6</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT2</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">17</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mf">0.000283381640611496</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">7</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT7</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mi">8</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.00000232305243540397</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">8</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT6</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mi">7</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mf">0.000518033494791095</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">9</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT3</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">64</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mf">0.00532112905379904</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">RFEAT5</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">15</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mf">0.000161019216334877</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+----------+--------+-------+-------------------------+</span>
+</pre></div>
+</div>
+<p>We can also create a set of super topics whose weights are based off of the <em>freq_t50ll</em> table and use them for printing wordclouds:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># create log likihood version of super topics</span>
+<span class="c1"># creates msgs_10nmf_fbll in dlatk_lexica</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--reduced_lexicon<span class="w"> </span>msgs_reduced10_nmf<span class="w"> </span>--super_topics<span class="w"> </span>msgs_10nmf_fbll<span class="w"> </span>-l<span class="w"> </span>met_a30_2000_freq_t50ll
+
+<span class="c1"># print wordclouds using all of the above</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_msgs_10nmf_fbcp_w$msgs$user_id$16to16&#39;</span>
+--outcome_table<span class="w"> </span>blog_outcomes<span class="w">  </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span>--output_name<span class="w"> </span>supertopic_output<span class="w"> </span><span class="se">\</span>
+--topic_tagcloud<span class="w"> </span>--make_topic_wordcloud<span class="w"> </span>--topic_lexicon<span class="w"> </span>msgs_10nmf_fbll<span class="w"> </span><span class="se">\</span>
+--tagcloud_colorscheme<span class="w"> </span>bluered
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

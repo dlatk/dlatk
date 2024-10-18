@@ -1,0 +1,518 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Building A Pickle Model &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="../_static/style.css" type="text/css" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../papers.html">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Building A Pickle Model</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/tut_pickle_build.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="building-a-pickle-model">
+<span id="tut-pickle-build"></span><h1>Building A Pickle Model<a class="headerlink" href="#building-a-pickle-model" title="Link to this heading"></a></h1>
+<p>In this tutorial you will learn how to build a pickled regression model which can be used to predict values on a new data set. Specifically we will build an age language model.  It assumes you have completed the following tutorials:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="tut_dla.html"><span class="doc">Differential Language Analysis (DLA) Tutorial</span></a></p></li>
+<li><p><a class="reference internal" href="tut_feat_tables.html"><span class="doc">Understanding Feature Table Names</span></a></p></li>
+<li><p><a class="reference internal" href="tut_pred.html"><span class="doc">Intro Prediction / Classification / Predictive Lexica</span></a></p></li>
+</ul>
+<section id="commands">
+<h2>Commands<a class="headerlink" href="#commands" title="Link to this heading"></a></h2>
+<p>To create a pickle model we have two separate commands for both regression and classification tasks.</p>
+<p>Regression:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_combo_test_regression.html"><span class="doc">--nfold_test_regression</span></a></p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_train_regression.html"><span class="doc">--train_regression</span></a></p></li>
+</ul>
+<p>Classification</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_combo_test_classifiers.html"><span class="doc">--nfold_test_classifiers</span></a></p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_train_classifiers.html"><span class="doc">--train_classifiers</span></a></p></li>
+</ul>
+<p>You will also use the follow, which are the same for both regression and classification:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_save_model.html"><span class="doc">--save_model</span></a></p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_picklefile.html"><span class="doc">--picklefile</span></a></p></li>
+</ul>
+</section>
+<section id="training-a-model">
+<h2>Training A Model<a class="headerlink" href="#training-a-model" title="Link to this heading"></a></h2>
+<p>Finding the best model takes a few iterations as there are a few knobs to tune. We need to decide which feature set, model and feature selection pipeline to use. All of these choices depend on your level of analysis (document, user or community) as well. We will try a few options and use N-fold cross validation to determine the best model. N-fold cross validation is run with the following flags:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_combo_test_regression.html"><span class="doc">--nfold_test_regression</span></a></p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_folds.html"><span class="doc">--folds</span></a></p></li>
+</ul>
+<section id="first-pass">
+<h3>First Pass<a class="headerlink" href="#first-pass" title="Link to this heading"></a></h3>
+<p>As a first pass we will use 2000 LDA Facebook topics (available at wwbp.org) with the <em>ridgefirstpasscv</em> model. In <em>regressionPredictor.py</em> you can find the parameters for the <em>ridgefirstpasscv</em> model:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;ridgefirstpasscv&#39;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s1">&#39;alphas&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mf">.01</span><span class="p">,</span> <span class="mf">.0001</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">1000000</span><span class="p">])},</span>
+            <span class="p">],</span>
+</pre></div>
+</div>
+<p>This specifies a range of Ridge Regression penalization parameters <em>alpha</em> and uses the sci-kit learn RidgeCV class. Note that we start with 1, iterate through smaller values and end with larger values. You will notice this same style when looking at other models in <em>regressionPredictor.py</em>. When the RidgeCV class finds two penalities with the same results it will default to the first parameter. By setting the first parameter to 1 we ensure that we will not default to a boundary case.</p>
+<p>The full call to <em>dlatkInterface</em> is as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--combo_test_regression<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--model<span class="w"> </span>ridgefirstpasscv
+</pre></div>
+</div>
+<p>We run 10-fold cross validation, using the 2000 Facebook topics and consider only users with 500 or more words. The final output should look something like:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>TEST<span class="w"> </span>COMPLETE<span class="o">]</span>
+
+<span class="o">{</span><span class="s1">&#39;age&#39;</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;N&#39;</span>:<span class="w"> </span><span class="m">978</span>,
+<span class="w">  </span><span class="s1">&#39;R&#39;</span>:<span class="w"> </span>nan,
+<span class="w">  </span><span class="s1">&#39;R2&#39;</span>:<span class="w"> </span>-0.88992485335879401,
+<span class="w">  </span><span class="s1">&#39;R2_folds&#39;</span>:<span class="w"> </span>-0.96270830361273707,
+<span class="w">  </span><span class="s1">&#39;mae&#39;</span>:<span class="w"> </span><span class="m">8</span>.5336986508333688,
+<span class="w">  </span><span class="s1">&#39;mae_folds&#39;</span>:<span class="w"> </span><span class="m">8</span>.5281778935127832,
+<span class="w">  </span><span class="s1">&#39;mse&#39;</span>:<span class="w"> </span><span class="m">130</span>.66895432831001,
+<span class="w">  </span><span class="s1">&#39;mse_folds&#39;</span>:<span class="w"> </span><span class="m">130</span>.30072681531286,
+<span class="w">  </span><span class="s1">&#39;num_features&#39;</span>:<span class="w"> </span><span class="m">2000</span>,
+<span class="w">  </span><span class="s1">&#39;r&#39;</span>:<span class="w"> </span><span class="m">0</span>.40222682541212029,
+<span class="w">  </span><span class="s1">&#39;r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.40305582938481005,
+<span class="w">  </span><span class="s1">&#39;r_p&#39;</span>:<span class="w"> </span><span class="m">2</span>.4971926509824059e-39,
+<span class="w">  </span><span class="s1">&#39;r_p_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.0012968155250152563,
+<span class="w">  </span><span class="s1">&#39;rho&#39;</span>:<span class="w"> </span><span class="m">0</span>.45284615270670103,
+<span class="w">  </span><span class="s1">&#39;rho_p&#39;</span>:<span class="w"> </span><span class="m">1</span>.288374195668318e-50,
+<span class="w">  </span><span class="s1">&#39;se_R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.14099512415343221,
+<span class="w">  </span><span class="s1">&#39;se_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.16581363417963907,
+<span class="w">  </span><span class="s1">&#39;se_mse_folds&#39;</span>:<span class="w"> </span><span class="m">7</span>.7572038557968686,
+<span class="w">  </span><span class="s1">&#39;se_r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.026510802106572903,
+<span class="w">  </span><span class="s1">&#39;se_r_p_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.00086305723986972909,
+<span class="w">  </span><span class="s1">&#39;se_train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.20067386714575627,
+<span class="w">  </span><span class="s1">&#39;test_size&#39;</span>:<span class="w"> </span><span class="m">105</span>,
+<span class="w">  </span><span class="s1">&#39;train_mean_mae&#39;</span>:<span class="w"> </span><span class="m">8</span>.8679725446432318,
+<span class="w">  </span><span class="s1">&#39;train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">6</span>.4643151489350172,
+<span class="w">  </span><span class="s1">&#39;train_size&#39;</span>:<span class="w"> </span><span class="m">873</span>,
+<span class="w">  </span><span class="s1">&#39;{modelFS_desc}&#39;</span>:<span class="w"> </span><span class="s1">&#39;None&#39;</span>,
+<span class="w">  </span><span class="s1">&#39;{model_desc}&#39;</span>:<span class="w"> </span><span class="s1">&#39;RidgeCV(alphas=array([ 1.00000e+00,  &#39;</span>
+<span class="w">                  </span><span class="s1">&#39;1.00000e-02,  1.00000e-04,  &#39;</span>
+<span class="w">                  </span><span class="s1">&#39;1.00000e+02,     1.00000e+04,  &#39;</span>
+<span class="w">                  </span><span class="s1">&#39;1.00000e+06]),   cv=None, &#39;</span>
+<span class="w">                  </span><span class="s1">&#39;fit_intercept=True, gcv_mode=None, &#39;</span>
+<span class="w">                  </span><span class="s1">&#39;normalize=False,   scoring=None, &#39;</span>
+<span class="w">                  </span><span class="s1">&#39;store_cv_values=False)&#39;</span><span class="o">}}}}</span>
+--
+Interface<span class="w"> </span>Runtime:<span class="w"> </span><span class="m">98</span>.57<span class="w"> </span>seconds
+DLATK<span class="w"> </span>exits<span class="w"> </span>with<span class="w"> </span>success!<span class="w"> </span>A<span class="w"> </span>good<span class="w"> </span>day<span class="w"> </span>indeed<span class="w">  </span>¯<span class="se">\_</span><span class="o">(</span>ツ<span class="o">)</span>_/¯.
+</pre></div>
+</div>
+<p>Here we see a Pearson <em>r</em> = 0.402 but we also see <em>R</em> = nan so something is not right. Note that in the above output we have <a href="#id1"><span class="problematic" id="id2">*</span></a>N*=978 and <a href="#id3"><span class="problematic" id="id4">*</span></a>num_features*=2000. Since the number of features is twice the size of our observations one might consider using some feature selection. You can set the feature selection with either of the following flags:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_feature_selection.html"><span class="doc">--feature_selection</span></a></p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_feature_selection_string.html"><span class="doc">--feature_selection_string</span></a></p></li>
+</ul>
+<p>We will use our <em>magic_sauce</em> pipeline which uses a pipeline of univariate feature selection (with a family wise error rate of 60) and Randomized PCA:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Pipeline</span><span class="p">([(</span><span class="s2">&quot;1_mean_value_filter&quot;</span><span class="p">,</span> <span class="n">OccurrenceThreshold</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mf">100.0</span><span class="p">))),</span> <span class="p">(</span><span class="s2">&quot;2_univariate_select&quot;</span><span class="p">,</span> <span class="n">SelectFwe</span><span class="p">(</span><span class="n">f_regression</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">60.0</span><span class="p">)),</span> <span class="p">(</span><span class="s2">&quot;3_rpca&quot;</span><span class="p">,</span> <span class="n">RandomizedPCA</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="nb">max</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">featureGetters</span><span class="p">))),</span> <span class="nb">min</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">whiten</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">iterated_power</span><span class="o">=</span><span class="mi">3</span><span class="p">))])</span>
+</pre></div>
+</div>
+<p>We rerun the first command with the addition of the <a class="reference internal" href="../fwinterface/fwflag_feature_selection.html"><span class="doc">--feature_selection</span></a> flag:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--combo_test_regression<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--model<span class="w"> </span>ridgefirstpass<span class="w"> </span>--feature_selection<span class="w"> </span>magic_sauce
+</pre></div>
+</div>
+<p>which gives us the following output:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>TEST<span class="w"> </span>COMPLETE<span class="o">]</span>
+
+<span class="o">{</span><span class="s1">&#39;age&#39;</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;N&#39;</span>:<span class="w"> </span><span class="m">978</span>,
+<span class="w">  </span><span class="s1">&#39;R&#39;</span>:<span class="w"> </span><span class="m">0</span>.61078813837532941,
+<span class="w">  </span><span class="s1">&#39;R2&#39;</span>:<span class="w"> </span><span class="m">0</span>.37306214998000053,
+<span class="w">  </span><span class="s1">&#39;R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.36172845861240155,
+<span class="w">  </span><span class="s1">&#39;mae&#39;</span>:<span class="w"> </span><span class="m">4</span>.884718059241858,
+<span class="w">  </span><span class="s1">&#39;mae_folds&#39;</span>:<span class="w"> </span><span class="m">4</span>.882525635420599,
+<span class="w">  </span><span class="s1">&#39;mse&#39;</span>:<span class="w"> </span><span class="m">43</span>.346333662611386,
+<span class="w">  </span><span class="s1">&#39;mse_folds&#39;</span>:<span class="w"> </span><span class="m">43</span>.319316495428431,
+<span class="w">  </span><span class="s1">&#39;num_features&#39;</span>:<span class="w"> </span><span class="m">2000</span>,
+<span class="w">  </span><span class="s1">&#39;r&#39;</span>:<span class="w"> </span><span class="m">0</span>.6225268232718818,
+<span class="w">  </span><span class="s1">&#39;r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.62849684211444135,
+<span class="w">  </span><span class="s1">&#39;r_p&#39;</span>:<span class="w"> </span><span class="m">5</span>.0851259142747209e-106,
+<span class="w">  </span><span class="s1">&#39;r_p_folds&#39;</span>:<span class="w"> </span><span class="m">5</span>.3572426774038191e-10,
+<span class="w">  </span><span class="s1">&#39;rho&#39;</span>:<span class="w"> </span><span class="m">0</span>.66881845157843556,
+<span class="w">  </span><span class="s1">&#39;rho_p&#39;</span>:<span class="w"> </span><span class="m">8</span>.1125738610915348e-128,
+<span class="w">  </span><span class="s1">&#39;se_R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.019350854084730935,
+<span class="w">  </span><span class="s1">&#39;se_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.15951572834767661,
+<span class="w">  </span><span class="s1">&#39;se_mse_folds&#39;</span>:<span class="w"> </span><span class="m">2</span>.6529378160101356,
+<span class="w">  </span><span class="s1">&#39;se_r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.019365962321772998,
+<span class="w">  </span><span class="s1">&#39;se_r_p_folds&#39;</span>:<span class="w"> </span><span class="m">2</span>.8069174191858989e-10,
+<span class="w">  </span><span class="s1">&#39;se_train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.20067386714575627,
+<span class="w">  </span><span class="s1">&#39;test_size&#39;</span>:<span class="w"> </span><span class="m">105</span>,
+<span class="w">  </span><span class="s1">&#39;train_mean_mae&#39;</span>:<span class="w"> </span><span class="m">3</span>.3734409296293868,
+<span class="w">  </span><span class="s1">&#39;train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">6</span>.4643151489350172,
+<span class="w">  </span><span class="s1">&#39;train_size&#39;</span>:<span class="w"> </span><span class="m">873</span>,
+<span class="w">  </span><span class="s1">&#39;{modelFS_desc}&#39;</span>:<span class="w"> </span><span class="s2">&quot;Pipeline(steps=[(&#39;1_mean_value_filter&#39;, &quot;</span>
+<span class="w">                    </span><span class="s1">&#39;OccurrenceThreshold(threshold=2954)), &#39;</span>
+<span class="w">                    </span><span class="s2">&quot;(&#39;2_univariate_select&#39;, &quot;</span>
+<span class="w">                    </span><span class="s1">&#39;SelectFwe(alpha=60.0, &#39;</span>
+<span class="w">                    </span><span class="s1">&#39;score_func=&lt;function f_regression at &#39;</span>
+<span class="w">                    </span><span class="s2">&quot;0x7fd8667328c8&gt;)), (&#39;3_rpca&#39;, &quot;</span>
+<span class="w">                    </span><span class="s1">&#39;RandomizedPCA(copy=True, &#39;</span>
+<span class="w">                    </span><span class="s1">&#39;iterated_power=3, max_components=None,    &#39;</span>
+<span class="w">                    </span><span class="s1">&#39;n_components=793, random_state=42, &#39;</span>
+<span class="w">                    </span><span class="s1">&#39;whiten=False))])&#39;</span>,
+<span class="w">  </span><span class="s1">&#39;{model_desc}&#39;</span>:<span class="w"> </span><span class="s1">&#39;RidgeCV(alphas=array([ 1.00000e+00,  &#39;</span>
+<span class="w">                  </span><span class="s1">&#39;1.00000e-02,  1.00000e-04,  &#39;</span>
+<span class="w">                  </span><span class="s1">&#39;1.00000e+02,     1.00000e+04,  &#39;</span>
+<span class="w">                  </span><span class="s1">&#39;1.00000e+06]),   cv=None, &#39;</span>
+<span class="w">                  </span><span class="s1">&#39;fit_intercept=True, gcv_mode=None, &#39;</span>
+<span class="w">                  </span><span class="s1">&#39;normalize=False,   scoring=None, &#39;</span>
+<span class="w">                  </span><span class="s1">&#39;store_cv_values=False)&#39;</span><span class="o">}}}}</span>
+--
+Interface<span class="w"> </span>Runtime:<span class="w"> </span><span class="m">114</span>.71<span class="w"> </span>seconds
+DLATK<span class="w"> </span>exits<span class="w"> </span>with<span class="w"> </span>success!<span class="w"> </span>A<span class="w"> </span>good<span class="w"> </span>day<span class="w"> </span>indeed<span class="w">  </span>¯<span class="se">\_</span><span class="o">(</span>ツ<span class="o">)</span>_/¯.
+</pre></div>
+</div>
+<p>Now we see both <em>r</em> and <em>R</em> are roughly equal. This gives us a good baseline to iterate on.</p>
+</section>
+<section id="second-pass">
+<h3>Second Pass<a class="headerlink" href="#second-pass" title="Link to this heading"></a></h3>
+<p>Besides the final output of the various metrics you should also scroll up and see the output for each fold and look at the chosen <em>alpha</em> parameter:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Fold<span class="w"> </span><span class="m">7</span>
+<span class="w">   </span><span class="o">(</span>feature<span class="w"> </span>group:<span class="w"> </span><span class="m">0</span><span class="o">)</span>:<span class="w"> </span><span class="o">[</span>Initial<span class="w"> </span>size:<span class="w"> </span><span class="m">978</span><span class="o">]</span>
+<span class="o">[</span>Train<span class="w"> </span>size:<span class="w"> </span><span class="m">881</span><span class="w">    </span>Test<span class="w"> </span>size:<span class="w"> </span><span class="m">97</span><span class="o">]</span>
+<span class="o">[</span>Applying<span class="w"> </span>StandardScaler<span class="w"> </span>to<span class="w"> </span>X<span class="o">[</span><span class="m">0</span><span class="o">]</span>:<span class="w"> </span>StandardScaler<span class="o">(</span><span class="nv">copy</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">with_mean</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">with_std</span><span class="o">=</span>True<span class="o">)]</span>
+<span class="w"> </span>X<span class="o">[</span><span class="m">0</span><span class="o">]</span>:<span class="w"> </span><span class="o">(</span>N,<span class="w"> </span>features<span class="o">)</span>:<span class="w"> </span><span class="o">(</span><span class="m">881</span>,<span class="w"> </span><span class="m">2000</span><span class="o">)</span>
+<span class="o">[</span>Applying<span class="w"> </span>Feature<span class="w"> </span>Selection<span class="w"> </span>to<span class="w"> </span>X:<span class="w"> </span>Pipeline<span class="o">(</span><span class="nv">steps</span><span class="o">=[(</span><span class="s1">&#39;1_mean_value_filter&#39;</span>,<span class="w"> </span>OccurrenceThreshold<span class="o">(</span><span class="nv">threshold</span><span class="o">=</span><span class="m">2968</span><span class="o">))</span>,<span class="w"> </span><span class="o">(</span><span class="s1">&#39;2_univariate_select&#39;</span>,<span class="w"> </span>Selec
+tFwe<span class="o">(</span><span class="nv">alpha</span><span class="o">=</span><span class="m">60</span>.0,<span class="w"> </span><span class="nv">score_func</span><span class="o">=</span>&lt;<span class="k">function</span><span class="w"> </span>f_regression<span class="w"> </span>at<span class="w"> </span>0x7fd8667328c8&gt;<span class="o">))</span>,<span class="w"> </span><span class="o">(</span><span class="s1">&#39;3_rpca&#39;</span>,<span class="w"> </span>RandomizedPCA<span class="o">(</span><span class="nv">copy</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">iterated_power</span><span class="o">=</span><span class="m">3</span>,<span class="w"> </span><span class="nv">max_components</span>
+<span class="o">=</span>None,
+<span class="w">       </span><span class="nv">n_components</span><span class="o">=</span><span class="m">800</span>,<span class="w"> </span><span class="nv">random_state</span><span class="o">=</span><span class="m">42</span>,<span class="w"> </span><span class="nv">whiten</span><span class="o">=</span>False<span class="o">))])]</span>
+SET<span class="w"> </span>THRESHOLD<span class="w"> </span><span class="m">2968</span>
+<span class="w"> </span>after<span class="w"> </span>feature<span class="w"> </span>selection:<span class="w"> </span><span class="o">(</span>N,<span class="w"> </span>features<span class="o">)</span>:<span class="w"> </span><span class="o">(</span><span class="m">881</span>,<span class="w"> </span><span class="m">800</span><span class="o">)</span>
+<span class="o">[</span>Training<span class="w"> </span>regression<span class="w"> </span>model:<span class="w"> </span>ridgefirstpasscv<span class="o">]</span>
+model:<span class="w"> </span>RidgeCV<span class="o">(</span><span class="nv">alphas</span><span class="o">=</span>array<span class="o">([</span><span class="w">  </span><span class="m">1</span>.00000e+00,<span class="w">   </span><span class="m">1</span>.00000e-02,<span class="w">   </span><span class="m">1</span>.00000e-04,<span class="w">   </span><span class="m">1</span>.00000e+02,
+<span class="w">         </span><span class="m">1</span>.00000e+04,<span class="w">   </span><span class="m">1</span>.00000e+06<span class="o">])</span>,
+<span class="w">    </span><span class="nv">cv</span><span class="o">=</span>None,<span class="w"> </span><span class="nv">fit_intercept</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">gcv_mode</span><span class="o">=</span>None,<span class="w"> </span><span class="nv">normalize</span><span class="o">=</span>False,
+<span class="w">    </span><span class="nv">scoring</span><span class="o">=</span>None,<span class="w"> </span><span class="nv">store_cv_values</span><span class="o">=</span>False<span class="o">)</span>
+<span class="w">  </span>selected<span class="w"> </span>alpha:<span class="w"> </span><span class="m">10000</span>.000000
+</pre></div>
+</div>
+<p>For each fold the RidgeCV class chose <em>alpha</em> = 10000 so for our next pass we will choose the <em>ridgehighcv</em> model:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;ridgehighcv&#39;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s1">&#39;alphas&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">100000</span><span class="p">,</span> <span class="mi">1000000</span><span class="p">])},</span>
+<span class="p">],</span>
+</pre></div>
+</div>
+<p>The command then becomes</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--combo_test_regression<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--model<span class="w"> </span>ridgehighcv<span class="w"> </span>--feature_selection<span class="w"> </span>magic_sauce
+</pre></div>
+</div>
+<p>which gives the output:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">{</span><span class="s1">&#39;age&#39;</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;N&#39;</span>:<span class="w"> </span><span class="m">978</span>,
+<span class="w">      </span><span class="s1">&#39;R&#39;</span>:<span class="w"> </span><span class="m">0</span>.6279876727085858,
+<span class="w">      </span><span class="s1">&#39;R2&#39;</span>:<span class="w"> </span><span class="m">0</span>.39436851707394593,
+<span class="w">      </span><span class="s1">&#39;R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.37710881124945012,
+<span class="w">      </span><span class="s1">&#39;mae&#39;</span>:<span class="w"> </span><span class="m">4</span>.8017728082382849,
+<span class="w">      </span><span class="s1">&#39;mae_folds&#39;</span>:<span class="w"> </span><span class="m">4</span>.7992072704676758,
+<span class="w">      </span><span class="s1">&#39;mse&#39;</span>:<span class="w"> </span><span class="m">41</span>.873216515253354,
+<span class="w">      </span><span class="s1">&#39;mse_folds&#39;</span>:<span class="w"> </span><span class="m">41</span>.857939340623183,
+<span class="w">      </span><span class="s1">&#39;num_features&#39;</span>:<span class="w"> </span><span class="m">2000</span>,
+<span class="w">      </span><span class="s1">&#39;r&#39;</span>:<span class="w"> </span><span class="m">0</span>.63275749683012394,
+<span class="w">      </span><span class="s1">&#39;r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.63739741140546302,
+<span class="w">      </span><span class="s1">&#39;r_p&#39;</span>:<span class="w"> </span><span class="m">1</span>.614437770178403e-110,
+<span class="w">      </span><span class="s1">&#39;r_p_folds&#39;</span>:<span class="w"> </span><span class="m">5</span>.732582650282395e-10,
+<span class="w">      </span><span class="s1">&#39;rho&#39;</span>:<span class="w"> </span><span class="m">0</span>.68505102312465327,
+<span class="w">      </span><span class="s1">&#39;rho_p&#39;</span>:<span class="w"> </span><span class="m">1</span>.991911281360676e-136,
+<span class="w">      </span><span class="s1">&#39;se_R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.028505009510342232,
+<span class="w">      </span><span class="s1">&#39;se_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.156478519231599,
+<span class="w">      </span><span class="s1">&#39;se_mse_folds&#39;</span>:<span class="w"> </span><span class="m">2</span>.2790368274979054,
+<span class="w">      </span><span class="s1">&#39;se_r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.018905676945535039,
+<span class="w">      </span><span class="s1">&#39;se_r_p_folds&#39;</span>:<span class="w"> </span><span class="m">4</span>.232561097638729e-10,
+<span class="w">      </span><span class="s1">&#39;se_train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.20067386714575627,
+<span class="w">      </span><span class="s1">&#39;test_size&#39;</span>:<span class="w"> </span><span class="m">105</span>,
+<span class="w">      </span><span class="s1">&#39;train_mean_mae&#39;</span>:<span class="w"> </span><span class="m">4</span>.7403932140338458,
+<span class="w">      </span><span class="s1">&#39;train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">6</span>.4643151489350172,
+<span class="w">      </span><span class="s1">&#39;train_size&#39;</span>:<span class="w"> </span><span class="m">873</span>,
+<span class="w">      </span><span class="s1">&#39;{modelFS_desc}&#39;</span>:<span class="w"> </span><span class="s2">&quot;Pipeline(steps=[(&#39;1_mean_value_filter&#39;, &quot;</span>
+<span class="w">                        </span><span class="s1">&#39;OccurrenceThreshold(threshold=2954)), &#39;</span>
+<span class="w">                        </span><span class="s2">&quot;(&#39;2_univariate_select&#39;, &quot;</span>
+<span class="w">                        </span><span class="s1">&#39;SelectFwe(alpha=60.0, &#39;</span>
+<span class="w">                        </span><span class="s1">&#39;score_func=&lt;function f_regression at &#39;</span>
+<span class="w">                        </span><span class="s2">&quot;0x7f0f75de38c8&gt;)), (&#39;3_rpca&#39;, &quot;</span>
+<span class="w">                        </span><span class="s1">&#39;RandomizedPCA(copy=True, &#39;</span>
+<span class="w">                        </span><span class="s1">&#39;iterated_power=3, max_components=None,    &#39;</span>
+<span class="w">                        </span><span class="s1">&#39;n_components=793, random_state=42, &#39;</span>
+<span class="w">                        </span><span class="s1">&#39;whiten=False))])&#39;</span>,
+<span class="w">      </span><span class="s1">&#39;{model_desc}&#39;</span>:<span class="w"> </span><span class="s1">&#39;RidgeCV(alphas=array([   10,   100,    1,  &#39;</span>
+<span class="w">                      </span><span class="s1">&#39;1000,  10000, 100000, 1000000]),   cv=None, &#39;</span>
+<span class="w">                      </span><span class="s1">&#39;fit_intercept=True, gcv_mode=None, &#39;</span>
+<span class="w">                      </span><span class="s1">&#39;normalize=False,   scoring=None, &#39;</span>
+<span class="w">                      </span><span class="s1">&#39;store_cv_values=False)&#39;</span><span class="o">}}}}</span>
+</pre></div>
+</div>
+<p>This time <em>alpha</em> = 1000 is chosen for most of the folds and we see a jump in Pearson r. If we wanted to set this value for good we could switch the model to <em>ridge1000</em> but as we are going to try a few more iterations we will keep the <em>ridgehighcv</em> model.</p>
+<p>We see a slight bump in Pearson r and a slight decrease in MSE. It is unknown if these are statistically significant differences but we will proceed as if they are.</p>
+</section>
+<section id="third-pass">
+<h3>Third Pass<a class="headerlink" href="#third-pass" title="Link to this heading"></a></h3>
+<p>In this next pass we will add additional feature sets. The 2000 Facebook topics are the best place to start but additional information can be found in the 1to3gram tables. We will add both a relative frequecy table (16to16) and a boolean table (16to1). We will also make sure these tables have rare words removed so as to not use too many features and overfit the model. Details on how to create these tables can be found in <a class="reference internal" href="tut_adv_fe.html"><span class="doc">Advanced Feature Extraction</span></a>. Choosing the correct number and type of features is outside the scope of this tutorial.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgs$user_id$16to16$0_1&#39;</span><span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgs$user_id$16to1$0_1&#39;</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--combo_test_regression<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--model<span class="w"> </span>ridgehighcv<span class="w"> </span>--feature_selection<span class="w"> </span>magic_sauce
+</pre></div>
+</div>
+<p>Before looking at the output you should note the order of your feature tables. This order is <em>VERY</em> important when you go to build your final model, which is explained in the next section.</p>
+<p>The output should look like:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">{</span><span class="s1">&#39;age&#39;</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;N&#39;</span>:<span class="w"> </span><span class="m">978</span>,
+<span class="w">      </span><span class="s1">&#39;R&#39;</span>:<span class="w"> </span><span class="m">0</span>.65328970316714685,
+<span class="w">      </span><span class="s1">&#39;R2&#39;</span>:<span class="w"> </span><span class="m">0</span>.42678743626421878,
+<span class="w">      </span><span class="s1">&#39;R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.41097464037854003,
+<span class="w">      </span><span class="s1">&#39;mae&#39;</span>:<span class="w"> </span><span class="m">4</span>.7327336968238978,
+<span class="w">      </span><span class="s1">&#39;mae_folds&#39;</span>:<span class="w"> </span><span class="m">4</span>.7325620923091893,
+<span class="w">      </span><span class="s1">&#39;mse&#39;</span>:<span class="w"> </span><span class="m">39</span>.631780162099723,
+<span class="w">      </span><span class="s1">&#39;mse_folds&#39;</span>:<span class="w"> </span><span class="m">39</span>.631679282044317,
+<span class="w">      </span><span class="s1">&#39;num_features&#39;</span>:<span class="w"> </span><span class="m">18394</span>,
+<span class="w">      </span><span class="s1">&#39;r&#39;</span>:<span class="w"> </span><span class="m">0</span>.65400913034708874,
+<span class="w">      </span><span class="s1">&#39;r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.66135842980913795,
+<span class="w">      </span><span class="s1">&#39;r_p&#39;</span>:<span class="w"> </span><span class="m">1</span>.9997143428258404e-120,
+<span class="w">      </span><span class="s1">&#39;r_p_folds&#39;</span>:<span class="w"> </span><span class="m">1</span>.194981277707842e-11,
+<span class="w">      </span><span class="s1">&#39;rho&#39;</span>:<span class="w"> </span><span class="m">0</span>.69474789987194996,
+<span class="w">      </span><span class="s1">&#39;rho_p&#39;</span>:<span class="w"> </span><span class="m">7</span>.612360070325049e-142,
+<span class="w">      </span><span class="s1">&#39;se_R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.020842882578666778,
+<span class="w">      </span><span class="s1">&#39;se_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.11834531391511936,
+<span class="w">      </span><span class="s1">&#39;se_mse_folds&#39;</span>:<span class="w"> </span><span class="m">1</span>.9002353374669132,
+<span class="w">      </span><span class="s1">&#39;se_r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.014106368216269394,
+<span class="w">      </span><span class="s1">&#39;se_r_p_folds&#39;</span>:<span class="w"> </span><span class="m">9</span>.4034265034747871e-12,
+<span class="w">      </span><span class="s1">&#39;se_train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.20067386714575627,
+<span class="w">      </span><span class="s1">&#39;test_size&#39;</span>:<span class="w"> </span><span class="m">105</span>,
+<span class="w">      </span><span class="s1">&#39;train_mean_mae&#39;</span>:<span class="w"> </span><span class="m">4</span>.6141474094178232,
+<span class="w">      </span><span class="s1">&#39;train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">6</span>.4643151489350172,
+<span class="w">      </span><span class="s1">&#39;train_size&#39;</span>:<span class="w"> </span><span class="m">873</span>,
+<span class="w">      </span><span class="s1">&#39;{modelFS_desc}&#39;</span>:<span class="w"> </span><span class="s2">&quot;Pipeline(steps=[(&#39;1_mean_value_filter&#39;, &quot;</span>
+<span class="w">                        </span><span class="s1">&#39;OccurrenceThreshold(threshold=2954)), &#39;</span>
+<span class="w">                        </span><span class="s2">&quot;(&#39;2_univariate_select&#39;, &quot;</span>
+<span class="w">                        </span><span class="s1">&#39;SelectFwe(alpha=60.0, &#39;</span>
+<span class="w">                        </span><span class="s1">&#39;score_func=&lt;function f_regression at &#39;</span>
+<span class="w">                        </span><span class="s2">&quot;0x7fa9b599e8c8&gt;)), (&#39;3_rpca&#39;, &quot;</span>
+<span class="w">                        </span><span class="s1">&#39;RandomizedPCA(copy=True, &#39;</span>
+<span class="w">                        </span><span class="s1">&#39;iterated_power=3, max_components=None,    &#39;</span>
+<span class="w">                        </span><span class="s1">&#39;n_components=281, random_state=42, &#39;</span>
+<span class="w">                        </span><span class="s1">&#39;whiten=False))])&#39;</span>,
+<span class="w">      </span><span class="s1">&#39;{model_desc}&#39;</span>:<span class="w"> </span><span class="s1">&#39;RidgeCV(alphas=array([   10,   100,    1,  &#39;</span>
+<span class="w">                      </span><span class="s1">&#39;1000,  10000, 100000, 1000000]),   cv=None, &#39;</span>
+<span class="w">                      </span><span class="s1">&#39;fit_intercept=True, gcv_mode=None, &#39;</span>
+<span class="w">                      </span><span class="s1">&#39;normalize=False,   scoring=None, &#39;</span>
+<span class="w">                      </span><span class="s1">&#39;store_cv_values=False)&#39;</span><span class="o">}}}}</span>
+</pre></div>
+</div>
+<p>Again we see <em>r</em> and <em>R</em> fairly close to each other and also see a nice bump in performance over the topics alone model (r=0.63 to 0.65).</p>
+<p>We should go back and iterate on different feature selection pipelines, models (we have only tried Ridge regression but DLATK supports Lasso, Linear Regression, ElasticNet, Extra Trees, etc.) and model parameters but often you can get a &quot;good enough&quot; model without a full search over all models / parameters / features.</p>
+</section>
+</section>
+<section id="building-the-final-model">
+<h2>Building The Final Model<a class="headerlink" href="#building-the-final-model" title="Link to this heading"></a></h2>
+<p>Finally, we want to build a model over the entire data set and save the model so we can apply to other data sets where age might not be available. To do that we use the following flag to train the model:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_train_regression.html"><span class="doc">--train_regression</span></a></p></li>
+</ul>
+<p>and the following to save the model:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_save_model.html"><span class="doc">--save_model</span></a></p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_picklefile.html"><span class="doc">--picklefile</span></a></p></li>
+</ul>
+<p>Our final command looks like:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgs$user_id$16to16$0_1&#39;</span><span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgs$user_id$16to1$0_1&#39;</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--train_regression<span class="w"> </span>--model<span class="w"> </span>ridge1000<span class="w"> </span>--feature_selection<span class="w"> </span>magic_sauce<span class="w"> </span>--save_model<span class="w"> </span>--picklefile<span class="w"> </span>~/age.2000fbtopics.1to3grams.16to16.16to1.ridge1000.magic_sauce.gft500.pickle
+</pre></div>
+</div>
+<p>which gives the output:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>TRAINING<span class="w"> </span>COMPLETE<span class="o">]</span>
+
+<span class="o">[</span>Saving<span class="w"> </span>/home/user/age.2000fbtopics.1to3grams.16to16.16to1.ridge1000.magic_sauce.gft500.pickle<span class="o">]</span>
+--
+Interface<span class="w"> </span>Runtime:<span class="w"> </span><span class="m">41</span>.60<span class="w"> </span>seconds
+DLATK<span class="w"> </span>exits<span class="w"> </span>with<span class="w"> </span>success!<span class="w"> </span>A<span class="w"> </span>good<span class="w"> </span>day<span class="w"> </span>indeed<span class="w">  </span>¯<span class="se">\_</span><span class="o">(</span>ツ<span class="o">)</span>_/¯.
+</pre></div>
+</div>
+<p>Note the long file name. This tells us we built a model for age using 2000 Facebook topics, relative frequency (16to16) 1to3grams, boolean (16to1) 1to3grams using a Ridge regression (with penalization parameter = 1000), the &quot;magic sauce&quot; feature selection pipeline and that we limited the analysis to people with 500 or more words. This seems like a lot but you will most likely forget what went into your model and it's best to be explicit.</p>
+<p>Also it is <em>VERY</em> important to list the feature tables in the same exact order as you trained the model. When you go to apply the model to new data you will need to list the feature tables in the same exact order.</p>
+<p>To see how to apply your saved model to new data see the next tutorial: <a class="reference internal" href="tut_pickle_apply.html"><span class="doc">Applying A Pickle Model</span></a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

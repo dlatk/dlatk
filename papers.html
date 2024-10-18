@@ -1,0 +1,330 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Papers Utilizing DLATK &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="_static/style.css" type="text/css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="dlatkInterface Flags by type" href="dlatkinterface_ordered.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="install.html#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="install.html#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="install.html#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="install.html#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="install.html#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Papers Utilizing DLATK</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/papers.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="papers-utilizing-dlatk">
+<h1>Papers Utilizing DLATK<a class="headerlink" href="#papers-utilizing-dlatk" title="Link to this heading"></a></h1>
+<section id="dlatk-paper">
+<h2>DLATK Paper<a class="headerlink" href="#dlatk-paper" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Schwartz, H. A., Giorgi, S., Sap, M., Crutchley, P., Eichstaedt, J. &amp; Ungar, L. (2017). <em>DLATK: Differential Language Analysis ToolKit</em>. In Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing: System Demonstrations (pp. 55-60). <a class="reference external" href="https://wwbp.org/papers/DLATK_Differential_Language_Analysis_ToolKit.pdf">PDF</a></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>@InProceedings<span class="o">{</span>DLATKemnlp2017,
+<span class="w">  </span><span class="nv">author</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="s2">&quot;Schwartz, H. Andrew</span>
+<span class="s2">      and Giorgi, Salvatore</span>
+<span class="s2">      and Sap, Maarten</span>
+<span class="s2">      and Crutchley, Patrick</span>
+<span class="s2">      and Eichstaedt, Johannes</span>
+<span class="s2">      and Ungar, Lyle&quot;</span>,
+<span class="w">  </span><span class="nv">title</span><span class="w"> </span><span class="o">=</span><span class="w">   </span><span class="s2">&quot;DLATK: Differential Language Analysis ToolKit&quot;</span>,
+<span class="w">  </span><span class="nv">booktitle</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="s2">&quot;Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing: System Demonstrations&quot;</span>,
+<span class="w">  </span><span class="nv">year</span><span class="w"> </span><span class="o">=</span><span class="w">    </span><span class="s2">&quot;2017&quot;</span>,
+<span class="w">  </span><span class="nv">publisher</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="s2">&quot;Association for Computational Linguistics&quot;</span>,
+<span class="w">  </span><span class="nv">pages</span><span class="w"> </span><span class="o">=</span><span class="w">   </span><span class="s2">&quot;55--60&quot;</span>,
+<span class="w">  </span><span class="nv">location</span><span class="w"> </span><span class="o">=</span><span class="w">   </span><span class="s2">&quot;Copenhagen, Denmark&quot;</span>,
+<span class="w">  </span><span class="nv">url</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="s2">&quot;http://aclweb.org/anthology/D17-2010&quot;</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</section>
+<section id="peer-reviewed-publications">
+<h2>Peer Reviewed Publications<a class="headerlink" href="#peer-reviewed-publications" title="Link to this heading"></a></h2>
+<p>The following peer reviewed publications have used DLATK:</p>
+<section id="id1">
+<h3>2020<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Estimating geographic subjective well-being from Twitter: A comparison of dictionary and data-driven language methods</p></li>
+<li><p>Abebe, R., Giorgi, S., Tedijanto, A., Buffone, A. &amp; Schwartz, H.A. (2020). Quantifying Community Characteristics of Maternal Mortality Using Social Media. In The World Wide Web Conference</p></li>
+<li><p>Giorgi, S., Yaden, D. B., Eichstaedt, J. C., Ashford, R. D., Buffone, A. E., Schwartz, H. A., ... &amp; Curtis, B. (2020). Cultural Differences in Tweeting about Drinking Across the US. International Journal of Environmental Research and Public Health, 17(4), 1125.</p></li>
+<li><p>Stevens, R. C., Brawner, B. M., Kranzler, E., Giorgi, S., Lazarus, E., Abera, M., ... &amp; Ungar, L. (2020). Exploring Substance Use Tweets of Youth in the United States: Mixed Methods Study. JMIR Public Health and Surveillance, 6(1), e16191.</p></li>
+<li><p>Ashford, R. D., Giorgi, S., Mann, B., Pesce, C., Sherritt, L., Ungar, L., &amp; Curtis, B. (2020). Digital recovery networks: Characterizing user participation, engagement, and outcomes of a novel recovery social network smartphone application. Journal of Substance Abuse Treatment, 109, 50-55.</p></li>
+</ul>
+</section>
+<section id="id2">
+<h3>2019<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Guntuku, S. C., Schneider, R., Pelullo, A., Young, J., Wong, V., Ungar, L., ... &amp; Merchant, R. (2019). Studying expressions of loneliness in individuals using twitter: an observational study. BMJ Open, 9(11).</p></li>
+<li><p>Matero, M., Idnani, A., Son, Y., Giorgi, S., Vu, H., Zamani, M., Limbachiya, P., Guntuku, S. C., &amp; Schwartz, H. A. (2019, June). Suicide risk assessment with multi-level dual-context language and BERT. Paper presented at the Sixth Workshop on Computational Linguistics and Clinical Psychology, Minneapolis, Minnesota</p></li>
+<li><p>Pang, D., Eichstaedt, J. C., Buffone, A., Slaff, B., Ruch, W., &amp; Ungar, L. H. (2019). The language of character strengths: Predicting morally valued traits on social media. Journal of Personality. 2019;00:1-20. <a class="reference external" href="https://doi.org/10.1111/jopy.12491">https://doi.org/10.1111/jopy.12491</a></p></li>
+<li></li>
+</ul>
+</section>
+<section id="id3">
+<h3>2018<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Clifton, J.D., Baker, J.D., Park, C.L., Yaden, D.B., Clifton, A.B., Terni, P., Miller, J.L., Zeng, G., Giorgi, S., Schwartz, H.A. and Seligman, M.E. (2018). Primal World Beliefs. Psychological assessment</p></li>
+<li><p>Eichstaedt, J. C., Smith, R. J., Merchant, R. M., Ungar, L. H., Crutchley, P., Preo?iuc-Pietro, D., ... &amp; Schwartz, H. A. (2018). Facebook language predicts depression in medical records. Proceedings of the National Academy of Sciences, 115(44), 11203-11208</p></li>
+<li><p>Rouhizadeh, M., Jaidka, K., Smith, L., Schwartz, H. A., &amp; Buffone, A.. 2018. Identifying Locus of Control in Social Media Language. In Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing</p></li>
+<li><p>Giorgi, S., Preotiuc-Pietro, D., Buffone, A., Rieman, D.,Ungar, L. H., &amp; Schwartz, H. A. 2018. The Remarkable Benefit of User-Level Aggregation for Lexical-based Population-Level Predictions. In Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing</p></li>
+<li><p>Buechel, S., Buffone, A., Slaff, B., Ungar, L. and Sedoc, J. 2018. Modeling Empathy &amp; Distress in Reaction to News Stories. In Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing</p></li>
+<li><p>Eichstaedt, J. C., Schwartz, H. A., Giorgi, S., Kern, M. L., Park, G., Sap, M., Labarthe D.R., Larson, E. E., Seligman, M. E, P., &amp; Ungar, L. H. (2018, March 15). More Evidence that Twitter Language Predicts Heart Disease: A Response and Replication. PsyArXiv. <a class="reference external" href="https://doi.org/10.31234/osf.io/p75ku">https://doi.org/10.31234/osf.io/p75ku</a></p></li>
+<li><p>Jaidka, K., Chhaya, N. &amp; Ungar, L. (2018). Diachronic degradation of language models: Insights from social media. Proceedings of the 56th Conference of the Association of Computational Linguistics, ACL</p></li>
+<li><p>Mohammadzaman Zamani, Anneke Buffone, and H. Andrew Schwartz (2018). Predicting Human Trustfulness from Facebook Language. Proceedings of the Fifth Workshop on Computational Linguistics and Clinical Psychology: From Keyboard to Clinic, pages 174-181 New Orleans, Louisiana, June 5, 2018</p></li>
+<li><p>Kokil Jaidka, Anneke Buffone, Salvatore Giorgi, Johannes Eichstaedt, Masoud Rouhizadeh, and Lyle Ungar (2018). Modeling and Visualizing Locus of Control with Facebook Language. Proceedings of the International AAAI Conference on Web and Social Media</p></li>
+<li><p>Kokil Jaidka, Tanya Goyal, and Niyati Chhaya (2018). Predicting Email and Article Clickthroughs with Domain-adaptive Language Models. Proceedings of the 10th ACM conference on Web Science</p></li>
+<li><p>Kokil Jaidka, Sharath Chandra Guntuku, Anneke Buffone, H. Andrew Schwartz, and Lyle Ungar (2018). Facebook versus Twitter: Cross-Platform Differences in Self-Disclosure and Trait Prediction. Proceedings of the International AAAI Conference on Web and Social Media</p></li>
+<li><p>Kokil Jaidka, Saifuddin Ahmed, Marko Skoric &amp; Martin Hilbert (2018) Predicting elections from social media: a three-country, three-method comparative study, Asian Journal of Communication, DOI: 10.1080/01292986.2018.1453849</p></li>
+<li><p>Curtis B, Giorgi S, Buffone AEK, Ungar LH, Ashford RD, et al. (2018) Can Twitter be used to predict county excessive alcohol consumption rates?. PLOS ONE 13(4): e0194290. <a class="reference external" href="https://doi.org/10.1371/journal.pone.0194290">https://doi.org/10.1371/journal.pone.0194290</a></p></li>
+</ul>
+</section>
+<section id="id4">
+<h3>2017<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Yaden, D. B., Eichstaedt, J. C., Kern, M. L., Smith, L. K., Buffone, A., Stillwell, D. J., Kosinski, M., Ungar, L. H., Seligman, M. E. P., Schwartz, H. A. (2017). The Language of Religious Affiliation: Social, Emotional, and Cognitive Differences. Social Psychological and Personality Science. doi: <a class="reference external" href="https://doi.org/10.1177/1948550617711228">https://doi.org/10.1177/1948550617711228</a></p></li>
+<li><p>Guntuku, S., Ramsay, J. R., Merchant, R. M., &amp; Ungar, L. H. (2017). Language of ADHD in Adults on Social Media . Journal of Attention Disorders . doi:https://doi.org/10.1177/1087054717738083</p></li>
+<li><p>Schwartz, H. A., Rouhizadeh, M., Bishop, M., Tetlock, P., Mellers, B., &amp; Ungar, L. (2017). Assessing Objective Recommendation Quality through Political Forecasting. In Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing (pp. 2338-2347).</p></li>
+<li><p>Guntuku, S.C., Lin, W., Carpenter, J., Ng, W.K, Ungar, L. &amp; Preotiuc-Pietro D. <em>Studying Personality through the Content of Posted and Liked Images on Twitter</em>. Proceedings of the 9th International ACM Web Science Conference, Web Science. <a class="reference external" href="http://wwbp.org/papers/persimages17websci.pdf">PDF</a></p></li>
+<li><p>Preotiuc-Pietro D., Liu Y., Hopkins, D. &amp; Ungar, L. (2017). <em>Beyond Binary Labels: Political Ideology Prediction of Twitter Users</em>. Proceedings of the 55th Conference of the Association for Computational Linguistics, ACL. <a class="reference external" href="http://wwbp.org/papers/moderates17acl.pdf">PDF</a></p></li>
+<li><p>Almodaresi, F., Ungar, L., Kulkarni, V., Zakeri, M., Giorgi, S., and Schwartz, H.A., <em>On the Distribution of Lexical Features in Social Media</em>, ACL, 2017 <a class="reference external" href="https://wwbp.org/papers/Almodaresi-Schwartz_ACL-2017.pdf">PDF</a></p></li>
+<li><p>Son, Y., Buffone, A., Schwartz, H.A., and Ungar, L., <em>Recognizing Counterfactual Thinking in Social Media Texts</em>, ACL, 2017 <a class="reference external" href="https://wwbp.org/papers/Son-Ungar%20ACL-2017.pdf">PDF</a></p></li>
+<li><p>Rieman, D., Jaidka, K., Schwartz, H. A., &amp; Ungar, L. (2017). <em>Domain Adaptation from User-level Facebook Models to County-level Twitter Predictions</em>. In Proceedings of the Eighth International Joint Conference on Natural Language Processing (Volume 1: Long Papers) (Vol. 1, pp. 764-773)  <a class="reference external" href="http://www.aclweb.org/anthology/I17-1077">PDF</a></p></li>
+<li><p>Abdul-Mageed, M., Buffone, A., Peng, H., Giorgi, S., Eichstaedt, J., and Ungar, L., <em>Recognizing Pathogenic Empathy in Social Media</em>, ICWSM, 2017 <a class="reference external" href="https://wwbp.org/papers/pathogenic_empathy_facebook_2017.pdf">PDF</a></p></li>
+</ul>
+</section>
+<section id="id11">
+<h3>2016<a class="headerlink" href="#id11" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Rouhizadeh, M., Ungar, L., Buffone, A. &amp; Schwartz, H.A (2016). <em>Using Syntactic and Semantic Context to Explore Psychodemographic Differences in Self-reference</em>. Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing. <a class="reference external" href="http://wwbp.org/papers/mr-self-ref-emnlp-16.pdf">PDF</a></p></li>
+<li><p>Smith, L.K., Giorgi, S., Solanki, R., Eichstaedt, J.C., Schwartz, A.H., Abdul-Mageed, M., Buffone, A., &amp; Ungar, L.H., (2016). <em>Does 'well-being' translate on Twitter?</em>, Proceedings of the 2014 Conference on Empirical Methods in Natural Language Processing (EMNLP)  <a class="reference external" href="http://wwbp.org/papers/EMNLP_2016_Does_well_being_translate_on_Twitter.pdf">PDF</a></p></li>
+<li><p>Carpenter, J., Preotiuc-Pietro D., Flekova L., Giorgi S., Hagan C., Kern M., Buffone A., Ungar L., Seligman M. (2016). <em>Real Men don't say 'cute': Using Automatic Language Analysis to Isolate Inaccurate Aspects of Stereotypes</em>. Social Psychological and Personality Science.  <a class="reference external" href="http://wwbp.org/papers/social_psychological_and_personality_science_2016_carpenter_1948550616671998.pdf">PDF</a></p></li>
+<li><p>Carpenter J, Crutchley P, Zilca RD, Schwartz HA, Smith LK, Cobb AM, Parks AC. <em>Seeing the &quot;Big&quot; Picture: Big Data Methods for Exploring Relationships Between Usage, Language, and Outcome in Internet Intervention Data</em>. J Med Internet Res 2016;18(8):e241  <a class="reference external" href="http://wwbp.org/papers/JMIR_2016.pdf">PDF</a></p></li>
+<li><p>Preotiuc-Pietro D., Carpenter J., Giorgi S., Ungar L. (2016). <em>Studying the Dark Triad of Personality through Twitter Behavior</em>. Proceedings of the 25th ACM Conference on Information and Knowledge Management, CIKM <a class="reference external" href="http://wwbp.org/papers/darktriad16cikm.pdf">PDF</a></p></li>
+<li><p>Park, G., Yaden, D. B., Schwartz, H. A., Kern, M. L., Eichstaedt, J. C., Kosinski, M., ... &amp; Seligman, M. E. (2016). <em>Women are Warmer but No Less Assertive than Men: Gender and Language on Facebook</em>. PloS one, 11(5), e0155885.  <a class="reference external" href="http://wwbp.org/papers/facebook_gender_language.pdf">PDF</a></p></li>
+<li><p>Park, G., Schwartz, H.A., Sap, M., Kern, M.L., Weingarten, E., Eichstaedt, J.C., Berger, J., Stillwell, D.J., Kosinski, M., Ungar, L.H. &amp; Seligman, M.E. (2015). <em>Living in the Past, Present, and Future: Measuring Temporal Orientation with Language</em>. Journal of personality.  <a class="reference external" href="http://wwbp.org/papers/2016_predicting_wellbeing.pdf">PDF</a></p></li>
+<li><p>Schwartz, H.A., Sap, M., Kern, M.L., Eichstaedt, J.C., Kapelner, A., Agrawal, M., Blanco, E., Dziurzynski, L., Park, G., Stillwell, D. &amp; Kosinski, M. (2016). <em>Predicting individual well-being through the language of social media</em>. In Biocomputing 2016: Proceedings of the Pacific Symposium (pp. 516-527).  <a class="reference external" href="http://wwbp.org/papers/2016_predicting_wellbeing.pdf">PDF</a></p></li>
+<li><p>Preotiuc-Pietro, D., Schwartz, H.A., Park, G., Eichstaedt, J., Kern, M., Ungar, L., Shulman, E.P. (2016). <em>Modeling Valence and Arousal in Facebook Posts</em>. Proceedings of the Workshop on Computational Approaches to Subjectivity, Sentiment and Social Media Analysis (WASSA), NAACL.  <a class="reference external" href="http://wwbp.org/papers/va16wassa.pdf">PDF</a></p></li>
+</ul>
+</section>
+<section id="id21">
+<h3>2015<a class="headerlink" href="#id21" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Schwartz, H. A., Park, G., Sap, M., Weingarten, E., Eichstaedt, J., Kern, M., Stillwell, D., Kosinski, M., Berger, J., Seligman, M., &amp; Ungar, L. (2015). <em>Extracting Human Temporal Orientation from Facebook Language</em>. NAACL-2015: Conference of the North American Chapter of the Association for Computational Linguistics. <a class="reference external" href="http://www.seas.upenn.edu/~hansens/tempor-naacl15-cr.pdf">PDF</a></p></li>
+<li><p>Eichstaedt, J. C., Schwartz, H. A., Kern, M. L., Park, G., Labarthe, D. R., Merchant, R. M., Jha, S., Agrawal, M., Dziurzynski, L. A., Sap, M., Weeg, C., Larson, E. E., Ungar, L. H., &amp; Seligman, M. E. (2015). <em>Psychological Language on Twitter Predicts County-Level Heart Disease Mortality</em>. Psychological Science 26(2), 159-169.  <a class="reference external" href="http://wwbp.org/papers/PsychSci2015_HeartDisease.pdf">PDF</a></p></li>
+<li><p>Yaden, D. B., Eichstaedt, J. C., Schwartz, H. A., Kern, M. L., Le Nguyen, K. D., Wintering, N. A., Hood, R. W., Jr., &amp; Newberg, A. B. (2015, July 27). <em>The Language of Ineffability: Linguistic Analysis of Mystical Experiences</em>. Psychology of Religion and Spirituality. <a class="reference external" href="http://wwbp.org/papers/LanguageofIneffability9.8.15.pdf">PDF</a></p></li>
+<li><p>Preotiuc-Pietro, D., Sap, M., Schwartz, H. A., &amp; Ungar, L. H. (2015). <em>Mental Illness Detection at the World Well-Being Project for the CLPsych 2015 Shared Task</em>. In Proceedings of the Workshop on Computational Linguistics and Clinical Psychology: From Linguistic Signal to Clinical Reality, NAACL.  <a class="reference external" href="https://sites.sas.upenn.edu/danielpr/files/wwbpst2015clpsych_0.pdf">PDF</a></p></li>
+</ul>
+</section>
+<section id="id26">
+<h3>2014<a class="headerlink" href="#id26" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Park, G., Schwartz, H. A., Eichstaedt, J. C., Kern, M. L., Stillwell, D. J., Kosinski, M., Ungar, L. H., &amp; Seligman, M. E. (in press). <em>Automatic personality assessment through social media language</em>. Journal of Personality and Social Psychology, Nov 3 , 2014.  <a class="reference external" href="http://psycnet.apa.org/journals/psp/108/6/934.pdf">PDF</a></p></li>
+<li><p>Sap, M., Park, G., Eichstaedt, J. C., Kern, M. L., Stillwell, D. J., Kosinski, M., Ungar, L. H., &amp; Schwartz, H. A. (2014). <em>Developing Age and Gender Predictive Lexica over Social Media</em>. Proceedings of the 2014 Conference on Empirical Methods in Natural Language Processing (EMNLP), 1146–1151.  <a class="reference external" href="http://wwbp.org/papers/emnlp2014_developingLexica.pdf">PDF</a></p></li>
+<li><p>Schwartz, H. A., Eichstaedt, J., Kern, M. L., Park, G., Sap, M., Stillwell, D., Kosinski, M., &amp; Ungar, L. (2014). <em>Towards Assessing Changes in Degree of Depression through Facebook</em>. Workshop on Computational Linguistics and Clinical Psychology: From Linguistic Signal to Clinical Reality, Association for Computational Linguistics, 118-125.  <a class="reference external" href="http://acl2014.org/acl2014/W14-32/W14-32-2014.pdf#page=130">PDF</a></p></li>
+<li><p>Kern, M. L., Eichstaedt, J. C., Schwartz, H. A., Dziurzynski, L., Ungar, L. H., Stillwell, D. J., Kosinski, M., Ramones, S. M., &amp; Seligman, M. E. (2014). <em>The Online Social Self: An Open Vocabulary Approach to Personality</em>. Assessment, 21(2), 158-169.  <a class="reference external" href="http://wwbp.org/papers/assessment2013_openvocab.pdf">PDF</a></p></li>
+<li><p>Kern, M. L., Eichstaedt, J. C., Schwartz, H. A., Park, G., Ungar, L. H., Stillwell, D. J., Kosinski, M., Dziurzynski, L., &amp; Seligman, M. E. (2014). <em>From &quot;sooo excited!!!&quot; to &quot;so proud&quot;: Using language to study development</em>. Developmental Psychology, 50(1), 178-188.  <a class="reference external" href="http://wwbp.org/papers/devPsych2013_using.pdf">PDF</a></p></li>
+</ul>
+</section>
+<section id="id32">
+<h3>2013<a class="headerlink" href="#id32" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Schwartz, H. A., Eichstaedt, J. C., Kern, M. L., Dziurzynski, L., Ramones, S. M., Agrawal, M., Shah, A., Kosinski, M., Stillwell, D., Seligman, M. E., &amp; Ungar, L. H. (2013). <em>Personality, Gender, and Age in the Language of Social Media: The Open-Vocabulary Approach</em>. PLOS ONE, 8(9), e73791.  <a class="reference external" href="http://www.plosone.org/article/fetchObject.action?uri=info:doi/10.1371/journal.pone.0073791&amp;representation=PDF">PDF</a></p></li>
+<li><p>Schwartz, H. A., Eichstaedt, J. C., Kern, M. L., Dziurzynski, L., Lucas, R. E., Agrawal, M., Park, G. J., Lakshmikanth, S. K., Jha, S., Seligman, M. E. P., &amp; Ungar, L. H. (2013). <em>Characterizing Geographic Variation in Well-Being using Tweets</em>. Proceedings of the Seventh International AAAI Conference on Weblogs and Social Media (ICWSM), Boston, MA.  <a class="reference external" href="http://wwbp.org/papers/icwsm2013_cnty-wb.pdf">PDF</a></p></li>
+<li><p>Schwartz, H. A., Eichstaedt, J. C., Dziurzynski, L., Kern, M. L., Blanco, E., Ramones, S., Seligman, M. E. P., &amp; Ungar, L. H. (2013). <em>Choosing the Right Words: Characterizing and Reducing Error of the Word Count Approach</em>. Proceedings of SEM-2013: Second Joint Conference on Lexical and Computational Semantics, Atlanta, Georgia, USA. 296-305.  <a class="reference external" href="http://wwbp.org/papers/starsem2013-choosing.pdf">PDF</a></p></li>
+<li><p>Schwartz, H. A., Eichstaedt, J. C., Dziurzynski, L., Kern, M. L., Blanco, E., Kosinski, M., Stillwell, D., Seligman, M. E. P., &amp; Ungar, L. H. (2013). <em>Toward Personality Insights from Language Exploration in Social Media</em>. Proceedings of the AAAI Spring Symposium Series: Analyzing Microtext, Stanford, California, USA.  <a class="reference external" href="http://wwbp.org/papers/sam2013-dla.pdf">PDF</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="dlatkinterface_ordered.html" class="btn btn-neutral float-left" title="dlatkInterface Flags by type" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

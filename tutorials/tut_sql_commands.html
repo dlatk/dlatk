@@ -1,0 +1,382 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Using DLATK to view your SQL data &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="../_static/style.css" type="text/css" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../papers.html">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Using DLATK to view your SQL data</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/tut_sql_commands.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="using-dlatk-to-view-your-sql-data">
+<span id="tut-sql-commands"></span><h1>Using DLATK to view your SQL data<a class="headerlink" href="#using-dlatk-to-view-your-sql-data" title="Link to this heading"></a></h1>
+<p>Since DLATK relies so heavily in MySQL we have created a few commands to help keep track of high level data. As with most dlatkInterface calls you will need the standard flags:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_d.html"><span class="doc">-d</span></a>: the database we are using</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_t.html"><span class="doc">-t</span></a>: the table inside the database where our text lives (aka the message table)</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_c.html"><span class="doc">-g</span></a>: the table column we will be grouping the text by (aka group)</p></li>
+</ul>
+<section id="viewing-and-describing-tables">
+<h2>Viewing and Describing Tables<a class="headerlink" href="#viewing-and-describing-tables" title="Link to this heading"></a></h2>
+<section id="show-feature-tables">
+<h3>Show Feature Tables<a class="headerlink" href="#show-feature-tables" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_ls.html"><span class="doc">--show_feature_tables</span></a></p></li>
+</ul>
+<p>View all feature tables for a given message table and / or grouping</p>
+<p><strong>Example 1</strong>: See user level features for the message table <em>msgs</em>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--show_feature_tables
+
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>SHOW<span class="w"> </span>TABLES<span class="w"> </span>FROM<span class="w"> </span>dla_tutorial<span class="w"> </span>LIKE<span class="w"> </span><span class="s1">&#39;feat$%$msgs$user_id$%&#39;</span>
+Found<span class="w"> </span><span class="m">4</span><span class="w"> </span>available<span class="w"> </span>feature<span class="w"> </span>tables
+feat<span class="nv">$1</span>gram<span class="nv">$msgs$user_id$16</span>to1
+feat<span class="nv">$1</span>gram<span class="nv">$msgs$user_id$16</span>to16
+feat<span class="nv">$cat_met_a30_2000_cp_w$msgs$user_id$16</span>to16
+feat<span class="nv">$meta_1gram$msgs$user_id$16</span>to1
+</pre></div>
+</div>
+<p><strong>Example 2</strong>: See features extracted at any level for the message table <em>msgs</em>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;%&#39;</span><span class="w"> </span>--ls
+
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>SHOW<span class="w"> </span>TABLES<span class="w"> </span>FROM<span class="w"> </span>dla_tutorial<span class="w"> </span>LIKE<span class="w"> </span><span class="s1">&#39;feat$%$msgs$%$%&#39;</span>
+Found<span class="w"> </span><span class="m">6</span><span class="w"> </span>available<span class="w"> </span>feature<span class="w"> </span>tables
+feat<span class="nv">$1</span>gram<span class="nv">$msgs$message_id$16</span>to1
+feat<span class="nv">$1</span>gram<span class="nv">$msgs$user_id$16</span>to1
+feat<span class="nv">$1</span>gram<span class="nv">$msgs$user_id$16</span>to16
+feat<span class="nv">$cat_met_a30_2000_cp_w$msgs$user_id$16</span>to16
+feat<span class="nv">$meta_1gram$msgs$message_id$16</span>to1
+feat<span class="nv">$meta_1gram$msgs$user_id$16</span>to1
+</pre></div>
+</div>
+</section>
+<section id="show-tables">
+<h3>Show Tables<a class="headerlink" href="#show-tables" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_show_tables.html"><span class="doc">--show_tables</span></a></p></li>
+</ul>
+<p>Use this flag to view non-feature tables:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>--show_tables
+
+Found<span class="w"> </span><span class="m">5</span><span class="w"> </span>available<span class="w"> </span>tables
+blog_outcomes
+blog_outcomes_rand
+dummy_table
+msgs
+msgs_rand
+
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w">  </span>--show_tables<span class="w"> </span><span class="s1">&#39;blog%&#39;</span>
+
+Found<span class="w"> </span><span class="m">2</span><span class="w"> </span>available<span class="w"> </span>tables
+blog_outcomes
+blog_outcomes_rand
+</pre></div>
+</div>
+</section>
+<section id="describe-tables">
+<h3>Describe Tables<a class="headerlink" href="#describe-tables" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_desc_tables.html"><span class="doc">--describe_tables</span></a></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>--describe_tables
+...
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>DESCRIBE<span class="w"> </span>msgs
+<span class="w">                    </span>Field<span class="w">                     </span>Type<span class="w">      </span>Null<span class="w">       </span>Key<span class="w">   </span>Default<span class="w">          </span>Extra
+<span class="w">               </span>message_id<span class="w">                  </span>int<span class="o">(</span><span class="m">11</span><span class="o">)</span><span class="w">        </span>NO<span class="w">       </span>PRI<span class="w">           </span>auto_increment
+<span class="w">                  </span>user_id<span class="w">         </span>int<span class="o">(</span><span class="m">10</span><span class="o">)</span><span class="w"> </span>unsigned<span class="w">       </span>YES<span class="w">       </span>MUL
+<span class="w">                     </span>date<span class="w">              </span>varchar<span class="o">(</span><span class="m">64</span><span class="o">)</span><span class="w">       </span>YES
+<span class="w">             </span>created_time<span class="w">                 </span>datetime<span class="w">       </span>YES<span class="w">       </span>MUL
+<span class="w">                  </span>message<span class="w">                     </span>text<span class="w">       </span>YES
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>--describe_tables<span class="w"> </span>blog_outcomes
+...
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>DESCRIBE<span class="w"> </span>msgs
+<span class="w">                    </span>Field<span class="w">                     </span>Type<span class="w">      </span>Null<span class="w">       </span>Key<span class="w">   </span>Default<span class="w">          </span>Extra
+<span class="w">               </span>message_id<span class="w">                  </span>int<span class="o">(</span><span class="m">11</span><span class="o">)</span><span class="w">        </span>NO<span class="w">       </span>PRI<span class="w">           </span>auto_increment
+<span class="w">                  </span>user_id<span class="w">         </span>int<span class="o">(</span><span class="m">10</span><span class="o">)</span><span class="w"> </span>unsigned<span class="w">       </span>YES<span class="w">       </span>MUL
+<span class="w">                     </span>date<span class="w">              </span>varchar<span class="o">(</span><span class="m">64</span><span class="o">)</span><span class="w">       </span>YES
+<span class="w">             </span>created_time<span class="w">                 </span>datetime<span class="w">       </span>YES<span class="w">       </span>MUL
+<span class="w">                  </span>message<span class="w">                     </span>text<span class="w">       </span>YES
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>DESCRIBE<span class="w"> </span>blog_outcomes
+<span class="w">                    </span>Field<span class="w">                     </span>Type<span class="w">      </span>Null<span class="w">       </span>Key<span class="w">   </span>Default<span class="w">          </span>Extra
+<span class="w">                  </span>user_id<span class="w">                  </span>int<span class="o">(</span><span class="m">11</span><span class="o">)</span><span class="w">        </span>NO<span class="w">       </span>PRI
+<span class="w">                   </span>gender<span class="w">                   </span>int<span class="o">(</span><span class="m">2</span><span class="o">)</span><span class="w">       </span>YES
+<span class="w">                      </span>age<span class="w">          </span>int<span class="o">(</span><span class="m">3</span><span class="o">)</span><span class="w"> </span>unsigned<span class="w">       </span>YES
+<span class="w">                     </span>occu<span class="w">              </span>varchar<span class="o">(</span><span class="m">32</span><span class="o">)</span><span class="w">       </span>YES
+<span class="w">                     </span>sign<span class="w">              </span>varchar<span class="o">(</span><span class="m">16</span><span class="o">)</span><span class="w">       </span>YES
+<span class="w">                </span>is_indunk<span class="w">                   </span>int<span class="o">(</span><span class="m">1</span><span class="o">)</span><span class="w">       </span>YES
+<span class="w">               </span>is_student<span class="w">                   </span>int<span class="o">(</span><span class="m">1</span><span class="o">)</span><span class="w">       </span>YES
+<span class="w">             </span>is_education<span class="w">                   </span>int<span class="o">(</span><span class="m">1</span><span class="o">)</span><span class="w">       </span>YES
+<span class="w">            </span>is_technology<span class="w">                   </span>int<span class="o">(</span><span class="m">1</span><span class="o">)</span><span class="w">       </span>YES
+</pre></div>
+</div>
+</section>
+<section id="view-table-data">
+<h3>View Table Data<a class="headerlink" href="#view-table-data" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_view_tables.html"><span class="doc">--view_tables</span></a></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">   </span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>--view_tables
+<span class="w">   </span>...
+<span class="w">   </span>SQL<span class="w"> </span>QUERY:<span class="w"> </span><span class="k">select</span><span class="w"> </span>column_name<span class="w"> </span>from<span class="w"> </span>information_schema.columns
+<span class="w">       </span>where<span class="w"> </span><span class="nv">table_schema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;dla_tutorial&#39;</span><span class="w"> </span>and<span class="w"> </span><span class="nv">table_name</span><span class="o">=</span><span class="s1">&#39;msgs&#39;</span>
+<span class="w">   </span>SQL<span class="w"> </span>QUERY:<span class="w"> </span>SELECT<span class="w"> </span>*<span class="w"> </span>FROM<span class="w"> </span>msgs<span class="w"> </span>LIMIT<span class="w"> </span><span class="m">5</span>
+message_id<span class="w">        </span>user_id<span class="w">           </span>date<span class="w">   </span>created_time<span class="w">        </span>message
+<span class="w">         </span><span class="m">1</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">31</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-31<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>can<span class="w"> </span>you<span class="w"> </span>bel
+<span class="w">         </span><span class="m">2</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">25</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-25<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>miss<span class="w"> </span>su<span class="w">  </span>us
+<span class="w">         </span><span class="m">3</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">24</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-24<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>i<span class="err">&#39;</span>m<span class="w"> </span>lookin
+<span class="w">         </span><span class="m">4</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">24</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-24<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>what<span class="w"> </span>a<span class="w"> </span><span class="nb">time</span>
+<span class="w">         </span><span class="m">5</span><span class="w">        </span><span class="m">3991108</span><span class="w"> </span><span class="m">01</span>,August,2004<span class="w"> </span><span class="m">2004</span>-08-01<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>i<span class="w"> </span>cannot<span class="w"> </span>be
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">   </span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>--view_tables<span class="w"> </span>blog_outcomes
+<span class="w">   </span>...
+<span class="w">   </span>SQL<span class="w"> </span>QUERY:<span class="w"> </span><span class="k">select</span><span class="w"> </span>column_name<span class="w"> </span>from<span class="w"> </span>information_schema.columns
+<span class="w">       </span>where<span class="w"> </span><span class="nv">table_schema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;dla_tutorial&#39;</span><span class="w"> </span>and<span class="w"> </span><span class="nv">table_name</span><span class="o">=</span><span class="s1">&#39;msgs&#39;</span>
+<span class="w">   </span>SQL<span class="w"> </span>QUERY:<span class="w"> </span>SELECT<span class="w"> </span>*<span class="w"> </span>FROM<span class="w"> </span>msgs<span class="w"> </span>LIMIT<span class="w"> </span><span class="m">5</span>
+message_id<span class="w">        </span>user_id<span class="w">           </span>date<span class="w">   </span>created_time<span class="w">        </span>message
+<span class="w">         </span><span class="m">1</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">31</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-31<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>can<span class="w"> </span>you<span class="w"> </span>bel
+<span class="w">         </span><span class="m">2</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">25</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-25<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>miss<span class="w"> </span>su<span class="w">  </span>us
+<span class="w">         </span><span class="m">3</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">24</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-24<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>i<span class="s1">&#39;m lookin</span>
+<span class="s1">         4        3991108   24,July,2004 2004-07-24 00:    what a time</span>
+<span class="s1">         5        3991108 01,August,2004 2004-08-01 00:    i cannot be</span>
+
+<span class="s1">   SQL QUERY: select column_name from information_schema.columns</span>
+<span class="s1">               where table_schema = &#39;</span>dla_tutorial<span class="s1">&#39; and table_name=&#39;</span>blog_outcomes<span class="err">&#39;</span>
+<span class="w">   </span>SQL<span class="w"> </span>QUERY:<span class="w"> </span>SELECT<span class="w"> </span>*<span class="w"> </span>FROM<span class="w"> </span>blog_outcomes<span class="w"> </span>LIMIT<span class="w"> </span><span class="m">5</span>
+<span class="w">           </span>user_id<span class="w">         </span>gender<span class="w">     </span>gender_cat<span class="w">            </span>age<span class="w">           </span>occu<span class="w">           </span>sign<span class="w">      </span>is_indunk<span class="w">     </span>is_student<span class="w">   </span>is_education<span class="w">  </span>is_technology
+<span class="w">           </span><span class="m">3991108</span><span class="w">              </span><span class="m">1</span><span class="w">         </span>female<span class="w">             </span><span class="m">17</span><span class="w">         </span>indUnk<span class="w">            </span>Leo<span class="w">              </span><span class="m">1</span><span class="w">              </span><span class="m">0</span><span class="w">              </span><span class="m">0</span><span class="w">              </span><span class="m">0</span>
+<span class="w">           </span><span class="m">3417138</span><span class="w">              </span><span class="m">1</span><span class="w">         </span>female<span class="w">             </span><span class="m">25</span><span class="w"> </span>Communications<span class="w">         </span>Taurus<span class="w">              </span><span class="m">0</span><span class="w">              </span><span class="m">0</span><span class="w">              </span><span class="m">0</span><span class="w">              </span><span class="m">0</span>
+<span class="w">           </span><span class="m">3673414</span><span class="w">              </span><span class="m">0</span><span class="w">           </span>male<span class="w">             </span><span class="m">14</span><span class="w">        </span>Student<span class="w">        </span>Scorpio<span class="w">              </span><span class="m">0</span><span class="w">              </span><span class="m">1</span><span class="w">              </span><span class="m">0</span><span class="w">              </span><span class="m">0</span>
+<span class="w">           </span><span class="m">3361075</span><span class="w">              </span><span class="m">1</span><span class="w">         </span>female<span class="w">             </span><span class="m">16</span><span class="w">        </span>Student<span class="w">      </span>Capricorn<span class="w">              </span><span class="m">0</span><span class="w">              </span><span class="m">1</span><span class="w">              </span><span class="m">0</span><span class="w">              </span><span class="m">0</span>
+<span class="w">           </span><span class="m">4115327</span><span class="w">              </span><span class="m">1</span><span class="w">         </span>female<span class="w">             </span><span class="m">14</span><span class="w">         </span>indUnk<span class="w">          </span>Libra<span class="w">              </span><span class="m">1</span><span class="w">              </span><span class="m">0</span><span class="w">              </span><span class="m">0</span><span class="w">              </span><span class="m">0</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="creating-tables">
+<h2>Creating tables<a class="headerlink" href="#creating-tables" title="Link to this heading"></a></h2>
+<p>These commands allow you to create random samples of your data</p>
+<section id="random-sample">
+<h3>Random Sample<a class="headerlink" href="#random-sample" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_create_rand_sample.html"><span class="doc">--create_random_sample</span></a></p></li>
+</ul>
+<p>Creates a new table with a random subset of rows from the table specified by <a class="reference internal" href="../fwinterface/fwflag_t.html"><span class="doc">-t</span></a>.</p>
+<p><strong>Example 1</strong>: create the table <em>msgs_rand</em> that contains a random 10% of the rows in <em>msgs</em>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>--create_random_sample<span class="w"> </span>.10
+...
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>DROP<span class="w"> </span>TABLE<span class="w"> </span>IF<span class="w"> </span>EXISTS<span class="w"> </span>msgs_rand
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>CREATE<span class="w"> </span>TABLE<span class="w"> </span>msgs_rand<span class="w"> </span>LIKE<span class="w"> </span>msgs
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>ALTER<span class="w"> </span>TABLE<span class="w"> </span>msgs_rand<span class="w"> </span>DISABLE<span class="w"> </span>KEYS
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>INSERT<span class="w"> </span>INTO<span class="w"> </span>msgs_rand<span class="w"> </span>SELECT<span class="w"> </span>*<span class="w"> </span>FROM<span class="w"> </span>msgs<span class="w"> </span>where<span class="w"> </span>RAND<span class="o">(</span><span class="m">42</span><span class="o">)</span><span class="w"> </span>&lt;<span class="w"> </span><span class="m">0</span>.11000000000000001<span class="w"> </span>LIMIT<span class="w"> </span><span class="m">3167</span>
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>ALTER<span class="w"> </span>TABLE<span class="w"> </span>msgs_rand<span class="w"> </span>ENABLE<span class="w"> </span>KEYS
+</pre></div>
+</div>
+<p><strong>Example 2</strong>: create the table <em>blog_outcomes_rand</em> that contains a random 50% of the rows in <em>blog_outcomes</em> with the random seed 567:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>blog_outcomes<span class="w"> </span>--create_random_sample<span class="w"> </span>.50<span class="w"> </span><span class="m">567</span>
+...
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>DROP<span class="w"> </span>TABLE<span class="w"> </span>IF<span class="w"> </span>EXISTS<span class="w"> </span>msgs_rand
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>CREATE<span class="w"> </span>TABLE<span class="w"> </span>msgs_rand<span class="w"> </span>LIKE<span class="w"> </span>msgs
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>ALTER<span class="w"> </span>TABLE<span class="w"> </span>msgs_rand<span class="w"> </span>DISABLE<span class="w"> </span>KEYS
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>INSERT<span class="w"> </span>INTO<span class="w"> </span>msgs_rand<span class="w"> </span>SELECT<span class="w"> </span>*<span class="w"> </span>FROM<span class="w"> </span>msgs<span class="w"> </span>where<span class="w"> </span>RAND<span class="o">(</span><span class="m">567</span><span class="o">)</span><span class="w"> </span>&lt;<span class="w"> </span><span class="m">0</span>.55<span class="w"> </span>LIMIT<span class="w"> </span><span class="m">15837</span>
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>ALTER<span class="w"> </span>TABLE<span class="w"> </span>msgs_rand<span class="w"> </span>ENABLE<span class="w"> </span>KEYS
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,406 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Changelog &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="_static/style.css" type="text/css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="install.html#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="install.html#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="install.html#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="install.html#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="install.html#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="papers.html">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="papers.html#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="papers.html#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Changelog</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/changelog.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="changelog">
+<span id="id1"></span><h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading"></a></h1>
+<section id="id2">
+<h2>1.2.0 (2021-03-11)<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>New feature: Huggingface interface with --add_embedding (Bert, Roberta, XLNet, GPT2, etc.)</p></li>
+<li><p>New feature: pymallet interface for creating LDA topics</p></li>
+<li><p>New feature: optional sqlite backend</p></li>
+<li><p>New feature: MySQL configuration read from config files (~/.my.cnf) instead of command line</p></li>
+<li><p>Improving feature: dropped the 16to16 notation for default encoding (i.e., non-transformed) feature tables</p></li>
+<li><p>Improving feature: new notation for group flag (--group or -g), in addition to previous version (--correl_field or -c)</p></li>
+<li><p>Improving feature: default for running n-fold cross validation is to use all controls, use --all_control_combinations for all combinations</p></li>
+<li><p>Improving feature: additional classification metrics printed to terminal</p></li>
+<li><p>Improving feature: support for chinese segmentation in mallet</p></li>
+<li><p>Improving feature: normalize lexicon scores by words with category (rather than all words), --lexicon_weighting</p></li>
+<li><p>Improving feature: all external tools moved to ~/dlatk_tools</p></li>
+<li><p>Bug: fixed bugs in --regression_to_lex</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="id3">
+<h2>1.1.6 (2019-07-31)<a class="headerlink" href="#id3" title="Link to this heading"></a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>New feature: bert feature extraction v1 ready</p></li>
+<li><p>New feature: added --keep_low_variance_outcomes</p></li>
+<li><p>New feature: added --outliers_to_mean to classifyPredictor</p></li>
+<li><p>New feature: added --cohens_d flag</p></li>
+<li><p>New feature: added factor adaptation code</p></li>
+<li><p>New feature: added --multiclass flag</p></li>
+<li><p>New feature: added new flag --predict_probabilities_to_feats</p></li>
+<li><p>Improving feature: added effect size ranges to ngram wordcloud filenames</p></li>
+<li><p>Improving feature: new default is to <em>not</em> print duplicate topic wordclouds, use --keep_duplicates to turn this off</p></li>
+<li><p>Improving feature: beta classification auc ensembling</p></li>
+<li><p>Improving feature: add _intercept=1 to all groups in lex feature tables</p></li>
+<li><p>Improving feature: --classification_to_lexicon works with topic level features and multiple feature tables</p></li>
+<li><p>Improving feature: remove underscores when uploading multiword lexica, use --keep_underscores to turn off</p></li>
+<li><p>Improving feature: added mysql methods for checking indices</p></li>
+<li><p>Improving feature: docker documentation</p></li>
+<li><p>Improving feature: cleaned up regression predictor output</p></li>
+<li><p>Improving feature: using default random seed throughout classes</p></li>
+<li><p>Improving feature: fixed bug in interactions and language filtering</p></li>
+<li><p>Improving feature: added printing of true values to pred_csv</p></li>
+<li><p>Improving feature: teal colorscheme, aliases for 'tagcloud' and 'wordcloud'</p></li>
+<li><p>Improving feature: metric names in wordcloud output</p></li>
+<li><p>Bug: fixed n_iter shufflesplit outdated param</p></li>
+<li><p>Bug: fixed nan pvalue issue in control corrections</p></li>
+<li><p>Bug: fixed --log transform table naming convention</p></li>
+<li><p>Bug: fixed bug in dlatk/classifyPredictor.py, scaler fit_transform was called during _multiXpredict, changed to transform</p></li>
+<li><p>Bug: correct version of wordcloud python module is 1.1.3</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="id4">
+<h2>1.1.5 (2018-03-02)<a class="headerlink" href="#id4" title="Link to this heading"></a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>Improving feature: changes to LDA process: topicExtractor now accessible inside dlatkInterface</p></li>
+<li><p>Improving feature: --lex_interface: lexInterface flags accessible inside dlatkInterface</p></li>
+<li><p>Improving feature: changes default lexicon based feature table names</p></li>
+<li><p>Improving feature: --categorical flag removes one outcome for any column with only two values.</p></li>
+<li><p>Improving feature: mysqlMethods changed to mysqlmethods</p></li>
+<li><p>Improving feature: default lexicon MySQL database now called &quot;dlatk_lexica&quot; (old database called &quot;permaLexicon&quot;)</p></li>
+<li><p>Bug fix: updated ridgehighcv to fix integer bug in sklearn</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="id5">
+<h2>1.1.4 (2018-01-11)<a class="headerlink" href="#id5" title="Link to this heading"></a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>Bug fix: added __init__.py file to Tools directory to fix pip install</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="id6">
+<h2>1.1.3 (2018-01-09)<a class="headerlink" href="#id6" title="Link to this heading"></a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>Improving feature: created the alias --show_feat_tables for --ls</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="id7">
+<h2>1.1.2 (2018-01-09)<a class="headerlink" href="#id7" title="Link to this heading"></a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>New Feature: added --show_tables</p></li>
+<li><p>New Feature: added --describe_tables</p></li>
+<li><p>New Feature: added --create_random_sample</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="id8">
+<h2>1.1.1 (2017-11-30)<a class="headerlink" href="#id8" title="Link to this heading"></a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>New Feature: added --categories_to_binary</p></li>
+<li><p>New Feature: added --create_collocation_scores</p></li>
+<li><p>New Feature: added --weighted_sample for running weight regression</p></li>
+<li><p>New Feature: added --reduced_lexicon flag for creating super topics</p></li>
+<li><p>New Feature: added --extension</p></li>
+<li><p>Improving feature: allow LDA messages to have non-numeric message id</p></li>
+<li><p>Improving feature: removed extra '.' from tagcloud filenames</p></li>
+<li><p>Improving feature: moved location of Stanford Segmenter to dlaConstants</p></li>
+<li><p>Bug fix: in --predict_regression_to_outcome_table and --predict_regression_to_feats</p></li>
+<li><p>Bug fix: in setup.py for adding Tools directory</p></li>
+<li><p>Bug fix: fixed bug in super topics (added auto increment id)</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="id9">
+<h2>1.1.0 (2017-06-29)<a class="headerlink" href="#id9" title="Link to this heading"></a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>New feature: added --n_components / --num_factors flag to --fit_reducer</p></li>
+<li><p>New feature: --clean_cloud flag working for n_gram correlation, all clouds, and topic clouds</p></li>
+<li><p>New feature: added p correction to correlate --auc</p></li>
+<li><p>New feature: messageAnnotator and messageTransformer classes added</p></li>
+<li><p>New feature: clustering.py changed to dimensionReducer.py</p></li>
+<li><p>New feature: FeatureWorker changed to DLAWorker</p></li>
+<li><p>New feature: --clean_messages flag for anonymizing message tables</p></li>
+<li><p>Improving feature: residualized control model in --combo_test_regression</p></li>
+<li><p>Improving feature: changed f1 to macro f1 instead of pos-class f1</p></li>
+<li><p>Bug fix: in --predict_regression_to_outcome_table</p></li>
+<li><p>Bug fix: in --regression_to_lexicon</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="id10">
+<h2>1.0.1 (2016-11-21)<a class="headerlink" href="#id10" title="Link to this heading"></a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>New feature: --deduplicate flag added to remove duplicate tweets within user</p></li>
+<li><p>New feature: --spam_filter added</p></li>
+<li><p>New feature: --cleanmessages added to --deduplicate and --spam_filter</p></li>
+<li><p>New feature: --fold_column added to classifyPredictor and regressionPredictor</p></li>
+<li><p>Bug fix: --print_csv</p></li>
+<li><p>Bug fix: csv from binary to text mode lexInterface</p></li>
+<li><p>Bug fix: add_postimexdiff, nlp server</p></li>
+<li><p>Improving feature: error messages when incorrectly specifying --p_correction</p></li>
+<li><p>Improving feature: changed _tok message tables to always be stored as longtext</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="id11">
+<h2>1.0.0 (2016-10-21)<a class="headerlink" href="#id11" title="Link to this heading"></a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>New feature: python 3.5 version, changed from FeatureWorker to dlatk</p></li>
+<li><p>New feature: --densify_table</p></li>
+<li><p>New feature: --language_filter and --clean_messages</p></li>
+<li><p>New feature: --make_all_topic_wordclouds</p></li>
+<li><p>New feature: --no_lower flag added for --add_char_ngrams</p></li>
+<li><p>New feature: confidence intervals added to --correlate, --rmatrix and --csv</p></li>
+<li><p>New feature: --add_message_id flag replaces LexicaInterface/addMessageID.py</p></li>
+<li><p>New feature: --ls</p></li>
+<li><p>New feature: stratified classification</p></li>
+<li><p>New feature: --where</p></li>
+<li><p>New feature: --stratify_folds added to --combo_test_classifiers</p></li>
+<li><p>Bug fix: using multiple feature tables with --to_file</p></li>
+<li><p>Improving feature: batch insert in tfidf</p></li>
+<li><p>Improving feature: make_wordclouds/make_topic_wordcloud error catch</p></li>
+<li><p>Improving feature: removed lda.py</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="id12">
+<h2>0.6.1 (2016-07-05)<a class="headerlink" href="#id12" title="Link to this heading"></a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>New feature: install notes for OSX</p></li>
+<li><p>Bug fix: using multiple feature tables with --to_file</p></li>
+<li><p>Improving feature: Default MySQL host changed from 'localhost' to 127.0.0.1</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="id13">
+<h2>0.6.0 (2016-06-15)<a class="headerlink" href="#id13" title="Link to this heading"></a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>Bug fix: in makeBlackWhiteList</p></li>
+<li><p>Bug fix: in fiftyChecks, added random seed</p></li>
+<li><p>Bug fix: for using old pickle files</p></li>
+<li><p>Improving feature: added unicode try/except in wordcloud module and print csv</p></li>
+<li><p>Improving feature: removed hardcoded utf8 and hardcoded table charset</p></li>
+<li><p>New feature: --feat_selection_string</p></li>
+<li><p>New feature: --add_corp_lex_table</p></li>
+<li><p>New feature: new models added to regressionPredictor (ridgefirstpasscv, ridgehighcv, ridgelowcv)</p></li>
+<li><p>New feature: --add_char_ngrams</p></li>
+<li><p>New feature: --no_outcomes and --no_controls</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="id14">
+<h2>0.5.0 (2016-04-01)<a class="headerlink" href="#id14" title="Link to this heading"></a></h2>
+</section>
+<section id="id15">
+<h2>0.4.0 (2015-08-17)<a class="headerlink" href="#id15" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

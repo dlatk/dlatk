@@ -1,0 +1,422 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intro Prediction / Classification / Predictive Lexica &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="../_static/style.css" type="text/css" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../papers.html">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Intro Prediction / Classification / Predictive Lexica</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/tut_pred.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="intro-prediction-classification-predictive-lexica">
+<span id="tut-pred"></span><h1>Intro Prediction / Classification / Predictive Lexica<a class="headerlink" href="#intro-prediction-classification-predictive-lexica" title="Link to this heading"></a></h1>
+<p>This is a continuation of the <a class="reference internal" href="tut_dla.html"><span class="doc">Differential Language Analysis (DLA) Tutorial</span></a> tutorial.</p>
+<section id="step-3-prediction-classification-and-predictive-lexica">
+<h2>STEP 3 - Prediction, Classification and Predictive Lexica<a class="headerlink" href="#step-3-prediction-classification-and-predictive-lexica" title="Link to this heading"></a></h2>
+<section id="prediction">
+<h3>Prediction<a class="headerlink" href="#prediction" title="Link to this heading"></a></h3>
+<p>Next, we will try predicting age and gender with the above features. Since age is a continuous variable and gender binary we will use two different methods. We begin with predicting age. Here is the basic command for prediction:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span><span class="se">\</span>
+-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra&#39;</span><span class="w"> </span><span class="s1">&#39;feat$1gram$msgs_xxx$user_id&#39;</span><span class="w"> </span><span class="se">\</span>
+--outcome_table<span class="w"> </span>blog_outcomes<span class="w">  </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span><span class="se">\</span>
+--outcomes<span class="w"> </span>age<span class="w"> </span>--output_name<span class="w"> </span>xxx_age_output<span class="w">  </span><span class="se">\</span>
+--nfold_test_regression<span class="w"> </span>--model<span class="w"> </span>ridgecv<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span>
+</pre></div>
+</div>
+<p>Brief descriptions of the flags:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_combo_test_regression.html"><span class="doc">--nfold_test_regression</span></a>: Does K folds of splitting the data into test and training set, trains a model on training set and predicts it on the test set. K-fold cross validation</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_model.html"><span class="doc">--model</span></a>: Model to use when predicting. For example: ridge regression, lasso regression, logistic regression</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_folds.html"><span class="doc">--folds</span></a>: number of chunks to split the data into</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_prediction_csv.html"><span class="doc">--prediction_csv</span></a>: print prediction results to a csv (optional)</p></li>
+</ul>
+<p>The above command will randomly split the data set into K chunks (or folds) where K is specified by --folds (default value is 5). For each chunk, a model is trained on the remaining K-1 chunks and tested on this chunk. Note that we are now using two feature tables (1grams and Facebook topics), as opposed to Step 2 above.</p>
+<p>After each fold you will see the following output:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>model:<span class="w"> </span>RidgeCV<span class="o">(</span><span class="nv">alphas</span><span class="o">=</span>array<span class="o">([</span><span class="w">   </span><span class="m">1000</span>,<span class="w">   </span><span class="m">10000</span>,<span class="w">  </span><span class="m">100000</span>,<span class="w"> </span><span class="m">1000000</span><span class="o">])</span>,<span class="w"> </span><span class="nv">cv</span><span class="o">=</span>None,
+<span class="w">  </span><span class="nv">fit_intercept</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">gcv_mode</span><span class="o">=</span>None,<span class="w"> </span><span class="nv">normalize</span><span class="o">=</span>False,<span class="w"> </span><span class="nv">scoring</span><span class="o">=</span>None,
+<span class="w">  </span><span class="nv">store_cv_values</span><span class="o">=</span>False<span class="o">)</span>
+selected<span class="w"> </span>alpha:<span class="w"> </span><span class="m">1000</span>.000000
+predict:<span class="w"> </span>applying<span class="w"> </span>standard<span class="w"> </span>scaler<span class="w"> </span>to<span class="w"> </span>X<span class="o">[</span><span class="m">0</span><span class="o">]</span>:<span class="w"> </span>StandardScaler<span class="o">(</span><span class="nv">copy</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">with_mean</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">with_std</span><span class="o">=</span>True<span class="o">)</span>
+predict:<span class="w"> </span>applying<span class="w"> </span>standard<span class="w"> </span>scaler<span class="w"> </span>to<span class="w"> </span>X<span class="o">[</span><span class="m">1</span><span class="o">]</span>:<span class="w"> </span>StandardScaler<span class="o">(</span><span class="nv">copy</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">with_mean</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">with_std</span><span class="o">=</span>True<span class="o">)</span>
+predict:<span class="w"> </span>combined<span class="w"> </span>X<span class="w"> </span>shape:<span class="w"> </span><span class="o">(</span><span class="m">50</span>,<span class="w"> </span><span class="m">67593</span><span class="o">)</span>
+predict:<span class="w"> </span>regression<span class="w"> </span>intercept:<span class="w"> </span><span class="m">25</span>.602222
+*FOLD<span class="w"> </span>R^2:<span class="w"> </span><span class="m">0</span>.4065<span class="w"> </span><span class="o">(</span>MSE:<span class="w"> </span><span class="m">41</span>.8599<span class="p">;</span><span class="w"> </span>MAE:<span class="w"> </span><span class="m">4</span>.7181<span class="p">;</span><span class="w"> </span>mean<span class="w"> </span>train<span class="w"> </span>mae:<span class="w"> </span><span class="m">6</span>.7604<span class="o">)</span>
+</pre></div>
+</div>
+<p>Note that we are training a separate model for each fold and could have different alpha's for each model.</p>
+<p>and then at the end of the K folds you will see:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>*Overall<span class="w"> </span>R^2:<span class="w">          </span><span class="m">0</span>.3010
+*Overall<span class="w"> </span>FOLDS<span class="w"> </span>R^2:<span class="w">    </span><span class="m">0</span>.3136<span class="w"> </span><span class="o">(</span>+-<span class="w"> </span><span class="m">0</span>.0224<span class="o">)</span>
+*R<span class="w"> </span><span class="o">(</span>sqrt<span class="w"> </span>R^2<span class="o">)</span>:<span class="w">         </span><span class="m">0</span>.5487
+*Pearson<span class="w"> </span>r:<span class="w">            </span><span class="m">0</span>.6496<span class="w"> </span><span class="o">(</span><span class="nv">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span>.00000<span class="o">)</span>
+*Folds<span class="w"> </span>Pearson<span class="w"> </span>r:<span class="w">      </span><span class="m">0</span>.6814<span class="w"> </span><span class="o">(</span><span class="nv">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span>.00001<span class="o">)</span>
+*Spearman<span class="w"> </span>rho:<span class="w">         </span><span class="m">0</span>.7277<span class="w"> </span><span class="o">(</span><span class="nv">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span>.00000<span class="o">)</span>
+*Mean<span class="w"> </span>Squared<span class="w"> </span>Error:<span class="w">   </span><span class="m">77</span>.7278
+*Mean<span class="w"> </span>Absolute<span class="w"> </span>Error:<span class="w">  </span><span class="m">5</span>.5103
+*Train_Mean<span class="w"> </span>MAE:<span class="w">       </span><span class="m">2</span>.6129
+</pre></div>
+</div>
+<p>which is the average score over all folds.</p>
+<p>Finally, once each outcome is finished, you will see the following output (only if --prediction_csv is NOT used):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">{</span><span class="s1">&#39;age&#39;</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;N&#39;</span>:<span class="w"> </span><span class="m">499</span>,
+<span class="w">                </span><span class="s1">&#39;R&#39;</span>:<span class="w"> </span><span class="m">0</span>.54865313166717689,
+<span class="w">                </span><span class="s1">&#39;R2&#39;</span>:<span class="w"> </span><span class="m">0</span>.3010202588882005,
+<span class="w">                </span><span class="s1">&#39;R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.3136392251334551,
+<span class="w">                </span><span class="s1">&#39;mae&#39;</span>:<span class="w"> </span><span class="m">5</span>.5102667175760027,
+<span class="w">                </span><span class="s1">&#39;mae_folds&#39;</span>:<span class="w"> </span><span class="m">5</span>.4962114905936383,
+<span class="w">                </span><span class="s1">&#39;mse&#39;</span>:<span class="w"> </span><span class="m">77</span>.727807054395043,
+<span class="w">                </span><span class="s1">&#39;mse_folds&#39;</span>:<span class="w"> </span><span class="m">76</span>.30786952879339,
+<span class="w">                </span><span class="s1">&#39;num_features&#39;</span>:<span class="w"> </span><span class="m">67558</span>,
+<span class="w">                </span><span class="s1">&#39;r&#39;</span>:<span class="w"> </span><span class="m">0</span>.64961384918228648,
+<span class="w">                </span><span class="s1">&#39;r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.68141019974698003,
+<span class="w">                </span><span class="s1">&#39;r_p&#39;</span>:<span class="w"> </span><span class="m">3</span>.7941701177133611e-61,
+<span class="w">                </span><span class="s1">&#39;r_p_folds&#39;</span>:<span class="w"> </span><span class="m">1</span>.4329061542488414e-05,
+<span class="w">                </span><span class="s1">&#39;rho&#39;</span>:<span class="w"> </span><span class="m">0</span>.72770801319050482,
+<span class="w">                </span><span class="s1">&#39;rho_p&#39;</span>:<span class="w"> </span><span class="m">2</span>.034045921063826e-83,
+<span class="w">                </span><span class="s1">&#39;se_R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.022425595182743487,
+<span class="w">                </span><span class="s1">&#39;se_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.31528063131662087,
+<span class="w">                </span><span class="s1">&#39;se_mse_folds&#39;</span>:<span class="w"> </span><span class="m">13</span>.616220914873225,
+<span class="w">                </span><span class="s1">&#39;se_r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.024241974166569567,
+<span class="w">                </span><span class="s1">&#39;se_r_p_folds&#39;</span>:<span class="w"> </span><span class="m">1</span>.1915221687336874e-05,
+<span class="w">                </span><span class="s1">&#39;se_train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.39617060533142334,
+<span class="w">                </span><span class="s1">&#39;test_size&#39;</span>:<span class="w"> </span><span class="m">58</span>,
+<span class="w">                </span><span class="s1">&#39;train_mean_mae&#39;</span>:<span class="w"> </span><span class="m">2</span>.6128928956045994,
+<span class="w">                </span><span class="s1">&#39;train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">7</span>.2689576980217385,
+<span class="w">                </span><span class="s1">&#39;train_size&#39;</span>:<span class="w"> </span><span class="m">441</span>,
+<span class="w">                </span><span class="s1">&#39;{modelFS_desc}&#39;</span>:<span class="w"> </span><span class="s1">&#39;None&#39;</span>,
+<span class="w">                </span><span class="s1">&#39;{model_desc}&#39;</span>:<span class="w"> </span><span class="s1">&#39;RidgeCV(alphas=array([  1000,  10000, 100000, 1000000]), cv=None,</span>
+<span class="s1">                     fit_intercept=True, gcv_mode=None, normalize=False, scoring=None,   store_cv_values=False)&#39;</span><span class="o">}}}</span>,
+</pre></div>
+</div>
+<p>The prediction_csv command will produce a csv file called xxx_age_output.predicted_data.csv which includes prediction scores for each outcome and each group_id:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Id,age__withLanguage
+e73b38988d4a277a1ac12c258fb33a14,25.71484278807899
+fb2eecbe942c268e0d47a377dde7831a,27.556797752649086
+2a4ea8a5ac157246feedfcf72edad5ff,25.42848778125374
+6a56f67c249e8e14403b3f40231cdde4,21.951236181408891
+e571dcc7fa1a6f1ebb1aba8d05d39b5c,23.937405646479284
+12508f45aa9c98ae6e6816b030b6b581,21.399554821560564
+</pre></div>
+</div>
+</section>
+<section id="classification">
+<h3>Classification<a class="headerlink" href="#classification" title="Link to this heading"></a></h3>
+<p>Next, we will predict gender. Since this is a binary outcome we switch to classification via logistic regression. Here is the command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span><span class="se">\</span>
+-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra&#39;</span><span class="w"> </span><span class="s1">&#39;feat$1gram$msgs_xxx$user_id$16to16&#39;</span><span class="w"> </span><span class="se">\</span>
+--outcome_table<span class="w"> </span>blog_outcomes<span class="w">  </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w">   </span><span class="se">\</span>
+--outcomes<span class="w"> </span>gender<span class="w"> </span>--output_name<span class="w"> </span>xxx_gender_output<span class="w"> </span><span class="se">\</span>
+--nfold_test_classifiers<span class="w"> </span>--model<span class="w"> </span>lr<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w">  </span>--prediction_csv
+</pre></div>
+</div>
+<p>Brief descriptions of the flags:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_combo_test_classifiers.html"><span class="doc">--nfold_test_classifiers</span></a>: Does K folds of splitting the data into test and training set, trains a model on training set and predicts it on the test set (K-fold cross validation).</p></li>
+</ul>
+<p>At the end of each fold you will see the output:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>*confusion<span class="w"> </span>matrix:
+<span class="o">[[</span><span class="m">17</span><span class="w">  </span><span class="m">2</span><span class="o">]</span>
+<span class="o">[</span><span class="m">12</span><span class="w"> </span><span class="m">19</span><span class="o">]]</span>
+
+*precision<span class="w"> </span>and<span class="w"> </span>recall:
+<span class="w">         </span>precision<span class="w">    </span>recall<span class="w">  </span>f1-score<span class="w">   </span>support
+<span class="w">      </span><span class="m">0</span><span class="w">       </span><span class="m">0</span>.59<span class="w">      </span><span class="m">0</span>.89<span class="w">      </span><span class="m">0</span>.71<span class="w">        </span><span class="m">19</span>
+<span class="w">      </span><span class="m">1</span><span class="w">       </span><span class="m">0</span>.90<span class="w">      </span><span class="m">0</span>.61<span class="w">      </span><span class="m">0</span>.73<span class="w">        </span><span class="m">31</span>
+avg<span class="w"> </span>/<span class="w"> </span>total<span class="w">       </span><span class="m">0</span>.78<span class="w">      </span><span class="m">0</span>.72<span class="w">      </span><span class="m">0</span>.72<span class="w">        </span><span class="m">50</span>
+
+*FOLD<span class="w"> </span>ACC:<span class="w"> </span><span class="m">0</span>.7200<span class="w"> </span><span class="o">(</span>mfclass_acc:<span class="w"> </span><span class="m">0</span>.6200<span class="o">)</span><span class="p">;</span><span class="w"> </span>mfclass:<span class="w"> </span><span class="m">1</span><span class="p">;</span><span class="w"> </span>auc:<span class="w"> </span><span class="m">0</span>.8336
+</pre></div>
+</div>
+<p>At the end of the K folds you will see the output:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">{</span><span class="s1">&#39;gender&#39;</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;acc&#39;</span>:<span class="w"> </span><span class="m">0</span>.73199999999999998,
+<span class="w">                   </span><span class="s1">&#39;auc&#39;</span>:<span class="w"> </span><span class="m">0</span>.84652080652080652,
+<span class="w">                   </span><span class="s1">&#39;f1&#39;</span>:<span class="w"> </span><span class="m">0</span>.75985663082437271,
+<span class="w">                   </span><span class="s1">&#39;folds_acc&#39;</span>:<span class="w"> </span><span class="m">0</span>.73199999999999998,
+<span class="w">                   </span><span class="s1">&#39;folds_auc&#39;</span>:<span class="w"> </span><span class="m">0</span>.84338861809425469,
+<span class="w">                   </span><span class="s1">&#39;folds_f1&#39;</span>:<span class="w"> </span><span class="m">0</span>.7577487943864093,
+<span class="w">                   </span><span class="s1">&#39;folds_mfclass_acc&#39;</span>:<span class="w"> </span><span class="m">0</span>.63000000000000012,
+<span class="w">                   </span><span class="s1">&#39;folds_precision&#39;</span>:<span class="w"> </span><span class="m">0</span>.87205025089102173,
+<span class="w">                   </span><span class="s1">&#39;folds_recall&#39;</span>:<span class="w"> </span><span class="m">0</span>.67282259377235909,
+<span class="w">                   </span><span class="s1">&#39;folds_rho&#39;</span>:<span class="w"> </span><span class="m">0</span>.47423319603178121,
+<span class="w">                   </span><span class="s1">&#39;folds_rho-p&#39;</span>:<span class="w"> </span><span class="m">0</span>.0059028924590036405,
+<span class="w">                   </span><span class="s1">&#39;folds_se_acc&#39;</span>:<span class="w"> </span><span class="m">0</span>.020823064135712589,
+<span class="w">                   </span><span class="s1">&#39;folds_se_auc&#39;</span>:<span class="w"> </span><span class="m">0</span>.015851020617975636,
+<span class="w">                   </span><span class="s1">&#39;folds_se_f1&#39;</span>:<span class="w"> </span><span class="m">0</span>.017977732950626615,
+<span class="w">                   </span><span class="s1">&#39;folds_se_mfclass_acc&#39;</span>:<span class="w"> </span><span class="m">0</span>.03408812109811863,
+<span class="w">                   </span><span class="s1">&#39;folds_se_precision&#39;</span>:<span class="w"> </span><span class="m">0</span>.023172378772080934,
+<span class="w">                   </span><span class="s1">&#39;folds_se_recall&#39;</span>:<span class="w"> </span><span class="m">0</span>.01997606345512792,
+<span class="w">                   </span><span class="s1">&#39;folds_se_rho&#39;</span>:<span class="w"> </span><span class="m">0</span>.041178583963528741,
+<span class="w">                   </span><span class="s1">&#39;folds_se_rho-p&#39;</span>:<span class="w"> </span><span class="m">0</span>.0024991387176062363,
+<span class="w">                   </span><span class="s1">&#39;mfclass&#39;</span>:<span class="w"> </span><span class="s1">&#39;1&#39;</span>,
+<span class="w">                   </span><span class="s1">&#39;mfclass_acc&#39;</span>:<span class="w"> </span><span class="m">0</span>.63,
+<span class="w">                   </span><span class="s1">&#39;num_classes&#39;</span>:<span class="w"> </span><span class="s1">&#39;2&#39;</span>,
+<span class="w">                   </span><span class="s1">&#39;num_features&#39;</span>:<span class="w"> </span><span class="m">67593</span>,
+<span class="w">                   </span><span class="s1">&#39;predictions&#39;</span>:<span class="w"> </span><span class="o">{</span>u<span class="s1">&#39;003ae43fae340174a67ffbcf19da1549&#39;</span>:<span class="w"> </span><span class="m">0</span>,
+<span class="w">                                    </span>...<span class="o">}</span>
+<span class="w">                   </span><span class="s1">&#39;test_size&#39;</span>:<span class="w"> </span><span class="m">50</span>,
+<span class="w">                   </span><span class="s1">&#39;train_size&#39;</span>:<span class="w"> </span><span class="m">450</span>,
+<span class="w">                   </span><span class="s1">&#39;{modelFS_desc}&#39;</span>:<span class="w"> </span><span class="s2">&quot;Pipeline(steps=[(&#39;1_univariate_select&#39;,</span>
+<span class="s2">                         SelectFwe(alpha=30.0, score_func=&lt;function f_classif at 0x7ff58b5bfcf8&gt;)),</span>
+<span class="s2">                         (&#39;2_rpca&#39;, RandomizedPCA(copy=True, iterated_power=3, n_components=200, random_state=42,</span>
+<span class="s2">                         whiten=False))])&quot;</span>,
+<span class="w">                   </span><span class="s1">&#39;{model_desc}&#39;</span>:<span class="w"> </span><span class="s2">&quot;LogisticRegression(C=0.01, class_weight=None, dual=False, fit_intercept=True,</span>
+<span class="s2">                         intercept_scaling=1, max_iter=100, multi_class=&#39;ovr&#39;, n_jobs=1,</span>
+<span class="s2">                         penalty=&#39;l1&#39;, random_state=None, solver=&#39;liblinear&#39;, tol=0.0001,</span>
+<span class="s2">                         verbose=0, warm_start=False)&quot;</span><span class="o">}}}}</span>
+</pre></div>
+</div>
+<p>Finally, the prediction_csv command will produce a csv file called xxx_age_output.predicted_data.csv which includes prediction scores for each outcome and each group_id:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Id,gender__withLanguage
+e73b38988d4a277a1ac12c258fb33a14,0
+fb2eecbe942c268e0d47a377dde7831a,0
+2a4ea8a5ac157246feedfcf72edad5ff,1
+6a56f67c249e8e14403b3f40231cdde4,1
+e571dcc7fa1a6f1ebb1aba8d05d39b5c,0
+</pre></div>
+</div>
+</section>
+<section id="predictive-lexica">
+<h3>Predictive Lexica<a class="headerlink" href="#predictive-lexica" title="Link to this heading"></a></h3>
+<p>In this step we will use one of our data driven lexica to make predictions from out text data. We do this the same way we applied the LIWC and Facebook topics in Step 1 via --add_lex_table. Since this is a weighted lexicon we must use the <a class="reference internal" href="../fwinterface/fwflag_weighted_lexicon.html"><span class="doc">--weighted_lexicon</span></a> flag.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--add_lex_table<span class="w"> </span>-l<span class="w"> </span>dd_emnlp14_ageGender<span class="w"> </span>--weighted_lexicon
+</pre></div>
+</div>
+<p>This will create the feature table feat$cat_dd_emnlp14_ageGender_w$msgs_xxx$user_id$16to16. Looking at the first 10 entries of this table:</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="o">+----+----------------------------------+--------+-------+-------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w">                         </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">        </span><span class="o">|</span>
+<span class="o">+----+----------------------------------+--------+-------+-------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">003ae43fae340174a67ffbcf19da1549</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">GENDER</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">3414</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">2.31201123597329</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">003ae43fae340174a67ffbcf19da1549</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">AGE</span><span class="w">    </span><span class="o">|</span><span class="w">  </span><span class="mi">3708</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">26.7488590924939</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">01f6c25f87600f619e05767bf8942a5f</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">GENDER</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">1224</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">-</span><span class="mf">4.27544591260491</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">01f6c25f87600f619e05767bf8942a5f</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">AGE</span><span class="w">    </span><span class="o">|</span><span class="w">  </span><span class="mi">1338</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">19.3132484926424</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">02be98c1005c0e7605385fbc5009de61</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">GENDER</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">2327</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">1.00734567214878</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">6</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">02be98c1005c0e7605385fbc5009de61</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">AGE</span><span class="w">    </span><span class="o">|</span><span class="w">  </span><span class="mi">2567</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">22.5155537183235</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">7</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">0318cc38971845f7470f34704de7339d</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">GENDER</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">2779</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">1.07764014307349</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">8</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">0318cc38971845f7470f34704de7339d</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">AGE</span><span class="w">    </span><span class="o">|</span><span class="w">  </span><span class="mi">2945</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">20.9815875967542</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">9</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">040b2b154e4074a72d8a7b9697ec76d2</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">GENDER</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">5218</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">1.35815398645287</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">040b2b154e4074a72d8a7b9697ec76d2</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">AGE</span><span class="w">    </span><span class="o">|</span><span class="w">  </span><span class="mi">5559</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">20.6623785068464</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+----------------------------------+--------+-------+-------------------+</span>
+</pre></div>
+</div>
+<p>We see an age and gender score for each use. The group_norm column contains the predicted age and gender value. For the gender value we need only look at the sign of the group_norm. Here a positive values are female predictions and negative values are male predictions. To compare this to the outcome table we use the following MySQL command:</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="n">feat</span><span class="p">.</span><span class="n">group_id</span><span class="p">,</span><span class="w"> </span><span class="n">feat</span><span class="p">.</span><span class="n">feat</span><span class="p">,</span><span class="w"> </span><span class="n">feat</span><span class="p">.</span><span class="n">group_norm</span><span class="p">,</span><span class="w"> </span><span class="n">outcomes</span><span class="p">.</span><span class="n">age</span><span class="p">,</span><span class="w"> </span><span class="n">outcomes</span><span class="p">.</span><span class="n">gender</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">dla_tutorial</span><span class="p">.</span><span class="n">blog_outcomes</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">outcomes</span>
+<span class="k">INNER</span><span class="w"> </span><span class="k">JOIN</span><span class="w"> </span><span class="n">dla_tutorial</span><span class="p">.</span><span class="n">feat$cat_dd_emnlp14_ageGender_w$msgs_xxx$user_id$16to16</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">feat</span>
+<span class="k">ON</span><span class="w"> </span><span class="n">outcomes</span><span class="p">.</span><span class="n">user_id</span><span class="o">=</span><span class="n">feat</span><span class="p">.</span><span class="n">group_id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>which gives the output</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="o">+----------------------------------+--------+-------------------+-----------+--------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w">                         </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">        </span><span class="o">|</span><span class="w"> </span><span class="n">age</span><span class="w">       </span><span class="o">|</span><span class="w"> </span><span class="n">gender</span><span class="w">   </span><span class="o">|</span>
+<span class="o">+----------------------------------+--------+-------------------+-----------+--------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">33522bc535275457a87e20b3d0be71f2</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">GENDER</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">3.23204271891755</span><span class="w"> </span><span class="o">|</span><span class="w">        </span><span class="mi">26</span><span class="w"> </span><span class="o">|</span><span class="w">            </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">33522bc535275457a87e20b3d0be71f2</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">AGE</span><span class="w">    </span><span class="o">|</span><span class="w">  </span><span class="mf">26.8702764242703</span><span class="w"> </span><span class="o">|</span><span class="w">        </span><span class="mi">26</span><span class="w"> </span><span class="o">|</span><span class="w">            </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">d388b5ca68ff9192bab2f6b53a6cab13</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">GENDER</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.992287422430842</span><span class="w"> </span><span class="o">|</span><span class="w">        </span><span class="mi">50</span><span class="w"> </span><span class="o">|</span><span class="w">            </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">d388b5ca68ff9192bab2f6b53a6cab13</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">AGE</span><span class="w">    </span><span class="o">|</span><span class="w">  </span><span class="mf">40.8649261269079</span><span class="w"> </span><span class="o">|</span><span class="w">        </span><span class="mi">50</span><span class="w"> </span><span class="o">|</span><span class="w">            </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">8ad4098a61dfc3e42916a35293802a59</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">GENDER</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">-</span><span class="mf">2.15381597749128</span><span class="w"> </span><span class="o">|</span><span class="w">        </span><span class="mi">18</span><span class="w"> </span><span class="o">|</span><span class="w">            </span><span class="mi">0</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">8ad4098a61dfc3e42916a35293802a59</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">AGE</span><span class="w">    </span><span class="o">|</span><span class="w">  </span><span class="mf">23.6505762607835</span><span class="w"> </span><span class="o">|</span><span class="w">        </span><span class="mi">18</span><span class="w"> </span><span class="o">|</span><span class="w">            </span><span class="mi">0</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">c35536977baa796cdf671697400f16ac</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">GENDER</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">2.60813970285153</span><span class="w"> </span><span class="o">|</span><span class="w">        </span><span class="mi">20</span><span class="w"> </span><span class="o">|</span><span class="w">            </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">c35536977baa796cdf671697400f16ac</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">AGE</span><span class="w">    </span><span class="o">|</span><span class="w">  </span><span class="mf">19.1539536735386</span><span class="w"> </span><span class="o">|</span><span class="w">        </span><span class="mi">20</span><span class="w"> </span><span class="o">|</span><span class="w">            </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">b67875fbdbabb1187715721697517139</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">GENDER</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">-</span><span class="mf">1.55682728995491</span><span class="w"> </span><span class="o">|</span><span class="w">        </span><span class="mi">25</span><span class="w"> </span><span class="o">|</span><span class="w">            </span><span class="mi">0</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">b67875fbdbabb1187715721697517139</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">AGE</span><span class="w">    </span><span class="o">|</span><span class="w">  </span><span class="mf">20.9407575669782</span><span class="w"> </span><span class="o">|</span><span class="w">        </span><span class="mi">25</span><span class="w"> </span><span class="o">|</span><span class="w">            </span><span class="mi">0</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----------------------------------+--------+-------------------+-----------+--------------+</span>
+</pre></div>
+</div>
+<p>One can also create a predictive lexicon using the <a class="reference internal" href="../fwinterface/fwflag_regression_to_lexicon.html"><span class="doc">--regression_to_lexicon</span></a> switch, which is beyond the scope of this tutorial. For more information please read <a class="reference external" href="http://wwbp.org/papers/emnlp2014_developingLexica.pdf">Sap et al. (2014) - Developing Age and Gender Predictive Lexica over Social Media</a>.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

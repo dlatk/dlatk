@@ -3402,8 +3402,6 @@ def permutation_1tail_on_aucs(ytrue, ypredProbs, multiclass=False, classes=None,
             criteria_met += 1
     return criteria_met / float(iters)
 
-    
-
 def bad_paired_bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 4000):
     #computes p-value based on paired bootstrap 
     n = len(ytrue)

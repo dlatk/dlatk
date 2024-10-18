@@ -796,7 +796,7 @@ class RegressionPredictor:
                           weightedEvalOutcome = None, residualizedControls = False, groupsWhere = '',\
                           weightedSample = '', adaptationFactorsName=[], featureSelectionParameters=None,\
                           numOfFactors = [] , factorSelectionType='rfe' , pairedFactors=False, outputName='',\
-                          report=True, integrationMethod='', stratifyFolds = False):
+                          report=True, integrationMethod='', stratifyFolds = False, stratifyPrefixSuperGroups = False):
         """Tests regressors, by cross-validating over folds with different combinations of controls"""
         
         ###################################
@@ -932,8 +932,9 @@ class RegressionPredictor:
                             print(
                             "Warning: Stratifying outcome classes across folds (thus, folds will differ across outcomes)."
                         )
+                            if stratifyPrefixSuperGroups: superGroups = 'prefix' 
                             groupFolds = stratifyGroups(
-                                thisOutcomeGroups, outcomes, nFolds, randomState=DEFAULT_RANDOM_SEED
+                                thisOutcomeGroups, outcomes, nFolds, superGroups=superGroups, randomState=DEFAULT_RANDOM_SEED
                             )
                         #### factors selection, using rfe or pca and from a pool of single factors or paired factors                
                         if factorAdaptation or factorAddition:
@@ -3265,12 +3266,24 @@ def stratifyGroups(groups, outcomes, folds, randSortGroupsFirst = True, randomSt
     superGroupAvg is the function to calculate the average (mean or median likely best)
     """
 
+    #0. check if superGroup mode is prefix, then define supergroups as the pre underscore prefix of the group_id:
+    if superGroups == 'prefix':
+        superGroups = dict()
+        for g in outcomes.keys():
+            superGrpKey = g.split("_")[0]
+            try:
+                superGroups[superGrpKey].append(g)
+            except:
+                superGroups[superGrpKey] = [g]
+                
+        print("StratifyFolds: using prefix for superGroups. first 5 super groups:", list(superGroups.items())[:5])
+    
     #1. Check for super-groups, if so, change outcomes to their means by super group
     if superGroups:
         oldOutcomes = outcomes
         outcomes = dict()
-        for sg, subs_set in sg.items():
-            outcomes[sg] = superGroupAvg([outcomes[gid] for gid in subs_set])
+        for sg, subs_set in superGroups.items():
+            outcomes[sg] = superGroupAvg([oldOutcomes[gid] for gid in subs_set])
         oldGroups = groups
         groups = superGroups.keys()
         
@@ -3294,13 +3307,19 @@ def stratifyGroups(groups, outcomes, folds, randSortGroupsFirst = True, randomSt
 
     #5. If sorted by super-groups then project back to subordinate groups:
     if superGroups:
+        #DEBUG:
+        # print("OUTCOMES PER FOLD SUPERGROUP:")
+        # pprint([sorted([(f, g, outcomes[g]) for g in groupsPerFold[f]], key=lambda tup: tup[2]) for f in groupsPerFold])
         newGroupsPerFold = dict()
         for f, sgs in groupsPerFold.items():
             newGroupsPerFold[f] = []
             for sg in sgs:#extend the list for all subordinates of the sgs in the fold:
                 newGroupsPerFold[f].extend(superGroups[sg])
         groupsPerFold = newGroupsPerFold
-        
+        # print("OUTCOMES PER FOLD ORIG_GROUP:")#DEBUG
+        # pprint([sorted([(f, g, oldOutcomes[g]) for g in groupsPerFold[f]], key=lambda tup: tup[2]) for f in groupsPerFold])
+
+    
     return list(groupsPerFold.values())
 
 

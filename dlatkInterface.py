@@ -692,6 +692,8 @@ def main(fn_args = None):
                        help='Uses the classification coefficients to create a weighted lexicon.')
     group.add_argument('--stratify_folds', action='store_true', dest='stratifyfolds', default=False,
                        help='stratify folds during combo_test_classifiers or combo_test_regression')
+    group.add_argument('--prefix_super_groups', action='store_true', dest='prefixsupergroups', default=False,
+                       help='use group_id prefix as super group for stratify folds')
     group.add_argument('--train_c2r', action='store_true', dest='trainclasstoreg', default=False,
                        help='train a model that goes from classification to prediction')
     group.add_argument('--test_c2r', action='store_true', dest='testclasstoreg', default=False,
@@ -1900,7 +1902,7 @@ def main(fn_args = None):
                                            nFolds = args.folds, savePredictions = (args.pred_csv | args.prob_csv), weightedEvalOutcome = args.weightedeval,
                                            standardize = args.standardize, residualizedControls = args.res_controls, groupsWhere = args.groupswhere,
                                            weightedSample = args.weightedsample, adaptationFactorsName = args.adaptationfactors, featureSelectionParameters=args.featureselectionparams , factorSelectionType=args.factorselectiontype, numOfFactors=args.numoffactors, pairedFactors=args.pairedfactors, outputName = args.outputname, report=args.report, integrationMethod = args.integrationmethod,
-                                           stratifyFolds = args.stratifyfolds)
+                                               stratifyFolds = args.stratifyfolds, stratifyPrefixSuperGroups = args.prefixsupergroups)
         elif args.controladjustreg:
             comboScores = rp.adjustOutcomesFromControls(standardize = args.standardize, sparse = args.sparse,
                                                         allControlsOnly = args.allcontrolsonly, comboSizes = args.controlcombosizes,

@@ -3404,7 +3404,7 @@ def permutation_1tail_on_aucs(ytrue, ypredProbs, multiclass=False, classes=None,
 
     
 
-def paired_bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 4000):
+def bad_paired_bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 4000):
     #computes p-value based on paired bootstrap 
     n = len(ytrue)
     ytrue = np.array(ytrue)
@@ -3420,5 +3420,22 @@ def paired_bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, 
         this_newauc = computeAUC(this_ytrue, this_newprobs, multiclass,  classes = classes)
         this_oldauc = computeAUC(this_ytrue, this_oldprobs, multiclass,  classes = classes)
         if this_newauc < this_oldauc:
+            criteria_met += 1
+    return criteria_met / float(iters)
+
+def paired_bootstrap_1tail_on_aucs(newprobs, oldprobs, ytrue, multiclass=False, classes = None, iters = 4000):
+    #computes p-value based on paired bootstrap
+    #2024-10-17: fixed so only oldprobs is used for null distribution
+    n = len(ytrue)
+    ytrue = np.array(ytrue)
+    target_auc = computeAUC(ytrue, newprobs, multiclass,  classes = classes)
+    criteria_met = 0 #counts how frequent old auc surpassed new auc
+    allids = np.random.randint(n, size=(iters, n))
+    for i in range(iters):
+        ids = allids[i]
+        this_ytrue = ytrue[ids]
+        this_oldprobs = oldprobs[ids]
+        this_oldauc = computeAUC(this_ytrue, this_oldprobs, multiclass,  classes = classes)
+        if this_oldauc > target_auc: #null dist found a better auc
             criteria_met += 1
     return criteria_met / float(iters)

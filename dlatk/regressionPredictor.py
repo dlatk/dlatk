@@ -799,7 +799,7 @@ class RegressionPredictor:
                           weightedEvalOutcome = None, residualizedControls = False, groupsWhere = '',\
                           weightedSample = '', adaptationFactorsName=[], featureSelectionParameters=None,\
                           numOfFactors = [] , factorSelectionType='rfe' , pairedFactors=False, outputName='',\
-                          report=True, integrationMethod='', stratifyFolds = False):
+                          report=True, integrationMethod='', stratifyFolds = False, stratifyPrefixSuperGroups = False):
         """Tests regressors, by cross-validating over folds with different combinations of controls"""
         
         ###################################
@@ -935,8 +935,9 @@ class RegressionPredictor:
                             print(
                             "Warning: Stratifying outcome classes across folds (thus, folds will differ across outcomes)."
                         )
+                            if stratifyPrefixSuperGroups: superGroups = 'prefix' 
                             groupFolds = stratifyGroups(
-                                thisOutcomeGroups, outcomes, nFolds, randomState=DEFAULT_RANDOM_SEED
+                                thisOutcomeGroups, outcomes, nFolds, superGroups=superGroups, randomState=DEFAULT_RANDOM_SEED
                             )
                         #### factors selection, using rfe or pca and from a pool of single factors or paired factors                
                         if factorAdaptation or factorAddition:
@@ -3258,29 +3259,72 @@ def foldN(l, folds):
         else: 
             yield l[i:i+n]
 
-def stratifyGroups(groups, outcomes, folds, randSortGroupsFirst = True, randomState=DEFAULT_RANDOM_SEED):
-    """breaks groups up into folds such that each fold has at most 1 more of a class than other folds """
+def stratifyGroups(groups, outcomes, folds, randSortGroupsFirst = True, randomState=DEFAULT_RANDOM_SEED, superGroups = None, superGroupAvg = lambda i: np.mean(i)):
+    """breaks groups up into folds such that each fold has at most 1 more of a class than other folds 
+    groups are the ids to be put into folds
+    outcomes are the outcomes to make sure are nearly uniform across folds
+    folds is the number of folds
+    randSortGroupsFirst makes sure the groups are randomly sorted before stratifying (in case they had an order already)
+    superGroups is a dictionary with super-groups as keys and a set of lower-order groups as the value. Stratification is done by the average for the super group, keeping all members of a single super group within one fold. 
+    superGroupAvg is the function to calculate the average (mean or median likely best)
+    """
+
+    #0. check if superGroup mode is prefix, then define supergroups as the pre underscore prefix of the group_id:
+    if superGroups == 'prefix':
+        superGroups = dict()
+        for g in outcomes.keys():
+            superGrpKey = g.split("_")[0]
+            try:
+                superGroups[superGrpKey].append(g)
+            except:
+                superGroups[superGrpKey] = [g]
+                
+        print("StratifyFolds: using prefix for superGroups. first 5 super groups:", list(superGroups.items())[:5])
+    
+    #1. Check for super-groups, if so, change outcomes to their means by super group
+    if superGroups:
+        oldOutcomes = outcomes
+        outcomes = dict()
+        for sg, subs_set in superGroups.items():
+            outcomes[sg] = superGroupAvg([oldOutcomes[gid] for gid in subs_set])
+        oldGroups = groups
+        groups = superGroups.keys()
+        
+    #2. Sort by outcome 
     random.seed(randomState)
     xGroups = sorted(list(set(groups) & set(outcomes.keys())))
     if randSortGroupsFirst: #NOTE: this likely a good idea to always be true and remove sort above
         random.shuffle(xGroups) #to make sure starting random. 
-
-    # TODO: get rid of the following problem. DTypes should be fixed at the source. 
-    # outcome_values = [float(val) if not isinstance(val, float) or not isinstance(val, int) else val for val in list(outcomes.values())]
-    # outcome_groups = dict(zip(list(outcomes.keys()), outcome_values))
-    
     outcome_groups = sorted(xGroups, key=lambda g: outcomes[g])
         
+    #3. iterate to create groups per fold:
+    ##TODO: update to round robin:
     groupsPerFold = {f: [] for f in range(folds)}
     # countPerFold = {f: 0 for f in range(folds)}
     for idx, grp in enumerate(outcome_groups):
         groupsPerFold[idx%folds].append(grp)
         
-    # make sure all outcomes aren't together in the groups:
+    #4.  make sure all outcomes aren't together in the groups:
     for gs in list(groupsPerFold.values()):
         random.shuffle(gs)
 
+    #5. If sorted by super-groups then project back to subordinate groups:
+    if superGroups:
+        #DEBUG:
+        # print("OUTCOMES PER FOLD SUPERGROUP:")
+        # pprint([sorted([(f, g, outcomes[g]) for g in groupsPerFold[f]], key=lambda tup: tup[2]) for f in groupsPerFold])
+        newGroupsPerFold = dict()
+        for f, sgs in groupsPerFold.items():
+            newGroupsPerFold[f] = []
+            for sg in sgs:#extend the list for all subordinates of the sgs in the fold:
+                newGroupsPerFold[f].extend(superGroups[sg])
+        groupsPerFold = newGroupsPerFold
+        # print("OUTCOMES PER FOLD ORIG_GROUP:")#DEBUG
+        # pprint([sorted([(f, g, oldOutcomes[g]) for g in groupsPerFold[f]], key=lambda tup: tup[2]) for f in groupsPerFold])
+
+    
     return list(groupsPerFold.values())
+
 
 def hasMultValuesPerItem(listOfD):
     """returns true if the dictionary has a list with more than one element"""

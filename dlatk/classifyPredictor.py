@@ -168,7 +168,7 @@ def computeAUC(ytrue, ypredProbs, multiclass=False, negatives=True, classes=None
     this_auc = 0.0
     if multiclass or len(classes) > 2:
         n_classes = len(classes)
-        ytrue = label_binarize(ytrue, classes=sorted(classes))
+        ytrue = label_binarize(ytrue, classes=sorted(classes))#<--why is this sorted?
 
         fpr = dict()
         tpr = dict()

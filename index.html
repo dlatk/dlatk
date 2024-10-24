@@ -1,0 +1,276 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Differential Language Analysis ToolKit &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="_static/style.css" type="text/css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="install.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#">
+            
+              <img src="_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="install.html#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="install.html#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="install.html#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="install.html#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="install.html#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="papers.html">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="papers.html#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="papers.html#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Differential Language Analysis ToolKit</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="differential-language-analysis-toolkit">
+<h1>Differential Language Analysis ToolKit<a class="headerlink" href="#differential-language-analysis-toolkit" title="Link to this heading"></a></h1>
+<p>DLATK is an end to end human text analysis package, specifically suited for social media and social scientific applications. It is written in Python 3 and developed by the World Well-Being Project at the University of Pennsylvania and Stony Brook University. It contains:</p>
+<ul class="simple">
+<li><p>feature extraction</p></li>
+<li><p>part-of-speech tagging</p></li>
+<li><p>correlation</p></li>
+<li><p>prediction and classification</p></li>
+<li><p>mediation</p></li>
+<li><p>dimensionality reduction and clustering</p></li>
+<li><p>wordcloud visualization</p></li>
+</ul>
+<p>DLATK can utilize:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://huggingface.co/">HuggingFace</a> for transformer language models</p></li>
+<li><p><a class="reference external" href="http://mallet.cs.umass.edu/">Mallet</a> for creating LDA topics</p></li>
+<li><p><a class="reference external" href="http://nlp.stanford.edu/software/lex-parser.shtml">Stanford Parser</a></p></li>
+<li><p><a class="reference external" href="http://www.cs.cmu.edu/~ark/TweetNLP/">CMU's TweetNLP</a></p></li>
+<li><p><a class="reference external" href="http://pandas.pydata.org/">pandas</a> dataframe output</p></li>
+</ul>
+</section>
+<section id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">Packaged Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dlatkinterface_ordered.html">dlatkInterface Flags by type</a></li>
+<li class="toctree-l1"><a class="reference internal" href="papers.html">Papers Utilizing DLATK</a></li>
+</ul>
+</div>
+</section>
+<section id="citations">
+<h1>Citations<a class="headerlink" href="#citations" title="Link to this heading"></a></h1>
+<p>If you use DLATK in your work please cite the following <a class="reference external" href="https://wwbp.org/papers/DLATK_Differential_Language_Analysis_ToolKit.pdf">paper</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>@InProceedings<span class="o">{</span>DLATKemnlp2017,
+<span class="w">  </span><span class="nv">author</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="s2">&quot;Schwartz, H. Andrew</span>
+<span class="s2">      and Giorgi, Salvatore</span>
+<span class="s2">      and Sap, Maarten</span>
+<span class="s2">      and Crutchley, Patrick</span>
+<span class="s2">      and Eichstaedt, Johannes</span>
+<span class="s2">      and Ungar, Lyle&quot;</span>,
+<span class="w">  </span><span class="nv">title</span><span class="w"> </span><span class="o">=</span><span class="w">   </span><span class="s2">&quot;DLATK: Differential Language Analysis ToolKit&quot;</span>,
+<span class="w">  </span><span class="nv">booktitle</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="s2">&quot;Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing: System Demonstrations&quot;</span>,
+<span class="w">  </span><span class="nv">year</span><span class="w"> </span><span class="o">=</span><span class="w">    </span><span class="s2">&quot;2017&quot;</span>,
+<span class="w">  </span><span class="nv">publisher</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="s2">&quot;Association for Computational Linguistics&quot;</span>,
+<span class="w">  </span><span class="nv">pages</span><span class="w"> </span><span class="o">=</span><span class="w">   </span><span class="s2">&quot;55--60&quot;</span>,
+<span class="w">  </span><span class="nv">location</span><span class="w"> </span><span class="o">=</span><span class="w">   </span><span class="s2">&quot;Copenhagen, Denmark&quot;</span>,
+<span class="w">  </span><span class="nv">url</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="s2">&quot;http://aclweb.org/anthology/D17-2010&quot;</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</section>
+<section id="more-information">
+<h1>More Information<a class="headerlink" href="#more-information" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p><a class="reference external" href="http://www.github.com/dlatk/dlatk">DLATK GitHub page</a></p></li>
+<li><p><a class="reference external" href="https://hub.docker.com/r/dlatk/dlatk/">DLATK at DockerHub</a></p></li>
+<li><p><a class="reference external" href="http://www.wwbp.org">World Well-Being Project</a></p></li>
+<li><p><a class="reference external" href="http://hlab.cs.stonybrook.edu/">Human Language Analysis Beings (HLAB) at Stony Brook</a></p></li>
+<li><p><a class="reference external" href="https://cpwb.stanford.edu/">Computational Psychology &amp; Well-Being Lab (CPWB) at Stanford University</a></p></li>
+<li><p><a class="reference internal" href="modules.html"><span class="doc">dlatk</span></a></p></li>
+<li><p><a class="reference internal" href="changelog.html"><span class="doc">Changelog</span></a></p></li>
+</ul>
+<p>DLATK is licensed under a <a class="reference external" href="https://www.gnu.org/licenses/gpl-3.0.en.html">GNU General Public License v3 (GPLv3)</a>.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="install.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

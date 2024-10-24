@@ -1,0 +1,395 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mallet LDA Interface &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="../_static/style.css" type="text/css" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../papers.html">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Mallet LDA Interface</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/tut_lda_full.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mallet-lda-interface">
+<span id="tut-lda"></span><h1>Mallet LDA Interface<a class="headerlink" href="#mallet-lda-interface" title="Link to this heading"></a></h1>
+<p><strong>NOTE: DLATK can now produce LDA topics through a simpler interface:</strong> <a class="reference internal" href="tut_lda.html"><span class="doc">DLATK LDA Interface</span></a><strong>. Although the steps described below are still valid, you are advised to use the new automated interface.</strong></p>
+<p>For a conceptual overview of LDA, see <a class="reference external" href="http://blog.echen.me/2011/08/22/introduction-to-latent-dirichlet-allocation/">this intro</a></p>
+<section id="step-0-get-access-to-mallet">
+<h2>Step 0: Get Access To Mallet<a class="headerlink" href="#step-0-get-access-to-mallet" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>This tutorial uses <a class="reference external" href="http://mallet.cs.umass.edu/">Mallet</a>.</p></li>
+<li><p>Install to your home directory using the following website: <a class="reference external" href="http://mallet.cs.umass.edu/download.php">http://mallet.cs.umass.edu/download.php</a></p></li>
+<li><p>NOTE - if you plan to be running on large datasets (~15M FB messages or similar) you may have to adjust parameters in your mallet script file.  See more info in the &quot;Run LDA with Mallet&quot; step.</p></li>
+</ul>
+</section>
+<section id="step-1-if-necessary-create-sample-tweet-table">
+<h2>Step 1: (If necessary) Create sample tweet table<a class="headerlink" href="#step-1-if-necessary-create-sample-tweet-table" title="Link to this heading"></a></h2>
+<p>If necessary create a message table to run LDA on</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="k">use</span><span class="w"> </span><span class="n">dla_tutorial</span><span class="p">;</span>
+<span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">msgs_lda</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="n">msgs</span><span class="p">;</span>
+<span class="k">insert</span><span class="w"> </span><span class="k">into</span><span class="w"> </span><span class="n">msgs_lda</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">msgs</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="nf">rand</span><span class="p">()</span><span class="o">&lt;</span><span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="mi">6</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>We will create an output folder in your home directory</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>~/lda_tutorial
+</pre></div>
+</div>
+</section>
+<section id="step-2-option-a-create-tokenized-table-in-mysql-and-export-it">
+<h2>Step 2, option A: Create tokenized table in mySQL and Export it<a class="headerlink" href="#step-2-option-a-create-tokenized-table-in-mysql-and-export-it" title="Link to this heading"></a></h2>
+<p>Using the infrastructure to tokenize the messages and print the tokenized messages in a file</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_lda<span class="w"> </span>-c<span class="w"> </span>message_id<span class="w"> </span>--add_tokenized<span class="w">   </span><span class="c1">#creates table *msgs_lda_tok* in *dla_tutorial*</span>
+
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_lda<span class="w"> </span>--print_tokenized_lines<span class="w"> </span>~/lda_tutorial/msgs_lda.txt
+</pre></div>
+</div>
+<p>This will create the file <cite>~/lda_tutorial/msgs_lda.txt</cite>:</p>
+<p>NOTE - if you have newlines in your message this step may cause issues down the line, it is recommended to replace all newlines with a representative character before proceeding</p>
+<p>OPTIONAL: If you want to restrict your LDA words to a subset of words in the corpus (e.g., those said by at least N people, or said in no more than Y percent of messages), you can use the <a class="reference internal" href="../fwinterface/fwflag_feat_whitelist.html"><span class="doc">--feat_whitelist</span></a> flag, eg:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_lda<span class="w"> </span>--print_tokenized_lines<span class="w"> </span>ser1_filt.txt<span class="w"> </span>--feat_whitelist<span class="w"> </span><span class="s1">&#39;feat$1gram$msgs_lda$user_id$16to16$0_005&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-option-b-generate-a-feature-table-and-convert-it-to-a-mallet-appropriate-formatted-text-file">
+<h2>Step 2, option B: Generate a feature table and convert it to a mallet-appropriate formatted text file<a class="headerlink" href="#step-2-option-b-generate-a-feature-table-and-convert-it-to-a-mallet-appropriate-formatted-text-file" title="Link to this heading"></a></h2>
+<p>You can use this step in place of step 2, option A.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_lda<span class="w"> </span>-c<span class="w"> </span>message_id<span class="w"> </span>--add_ngrams<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span>
+
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_lda<span class="w"> </span>-c<span class="w"> </span>message_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$1gram$msgs_lda$message_id$16to16&#39;</span><span class="w"> </span>--print_joined_feature_lines<span class="w"> </span>msgs_lda.txt
+</pre></div>
+</div>
+</section>
+<section id="step-3-format-for-mallet">
+<h2>Step 3: Format for Mallet<a class="headerlink" href="#step-3-format-for-mallet" title="Link to this heading"></a></h2>
+<p>Prepares the messages and tokenizes them again for Mallet, removing stopwords and non English characters. For help use <cite>./bin/mallet import-file --help</cite></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./bin/mallet<span class="w"> </span>import-file<span class="w"> </span>--input<span class="w"> </span>~/lda_tutorial/msgs_lda.txt<span class="w"> </span><span class="se">\</span>
+--token-regex<span class="w"> </span><span class="s2">&quot;(#|@)?(?!(\W)\2+)([a-zA-Z\_\-\&#39;0-9\(-\@]{2,})&quot;</span><span class="w"> </span><span class="se">\</span>
+--output<span class="w"> </span>~/lda_tutorial/msgs_lda.mallet<span class="w"> </span><span class="se">\</span>
+--remove-stopwords<span class="w"> </span>--keep-sequence<span class="w"> </span><span class="o">[</span>--extra-stopwords<span class="w"> </span>EXTRA_STOPWORDS_FILE<span class="o">]</span>
+</pre></div>
+</div>
+<p>This will create the file <cite>~/lda_tutorial/msgs_lda.mallet</cite>.</p>
+</section>
+<section id="step-4-run-lda-with-mallet">
+<h2>Step 4: Run LDA with Mallet<a class="headerlink" href="#step-4-run-lda-with-mallet" title="Link to this heading"></a></h2>
+<p>This is the actual LDA step, which might take a while (4 days and a half on 20 mil tweets) for help do <cite>./bin/mallet train-topics --help</cite></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./bin/mallet<span class="w"> </span>train-topics<span class="w"> </span>--input<span class="w">  </span>~/lda_tutorial/msgs_lda.mallet<span class="w"> </span><span class="se">\</span>
+--alpha<span class="w"> </span><span class="m">5</span><span class="w"> </span>--num-topics<span class="w"> </span><span class="m">2000</span><span class="w"> </span>--optimize-burn-in<span class="w"> </span><span class="m">0</span><span class="w"> </span>--output-model<span class="w"> </span>~/lda_tutorial/msgs_lda.model<span class="w"> </span><span class="se">\</span>
+--output-state<span class="w"> </span>~/lda_tutorial/msgs_lda_state.gz<span class="w"> </span><span class="se">\</span>
+--output-topic-keys<span class="w"> </span>~/lda_tutorial/msgs_lda.keys
+</pre></div>
+</div>
+<p>Here <strong>alpha</strong> is a prior on he number of topics per document. The other hyper-parameter <strong>beta</strong> (which we usually do not change) is a prior on the number of words per topic.</p>
+<p>This creates the following files:</p>
+<ul class="simple">
+<li><p>msgs_lda.model</p></li>
+<li><p>msgs_lda_state.gz</p></li>
+<li><p>msgs_lda.keys</p></li>
+</ul>
+<p>The file <cite>msgs_lda.keys</cite> contains the topics and at this point is it good to inspect them to see if you should change any of the above parameters (number of topics, alpha, beta, etc.)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>head<span class="w"> </span>~/lda_tutorial/msgs_lda.keys
+<span class="m">0</span><span class="w">       </span><span class="m">0</span>.0025<span class="w">  </span>italian<span class="w"> </span>pig<span class="w"> </span>americans<span class="w"> </span>wolf<span class="w"> </span>american<span class="w"> </span>straw<span class="w"> </span>pigs<span class="w"> </span><span class="m">04</span><span class="w"> </span>stick<span class="w"> </span>film<span class="w"> </span>defamation<span class="w"> </span>censored<span class="w"> </span>pinocchio<span class="w"> </span>brick<span class="w"> </span><span class="m">03</span><span class="w"> </span>sopranos<span class="w"> </span>pig<span class="s1">&#39;s offensive june wop</span>
+<span class="s1">1       0.0025  yoga levi yea pages yay morning boy mix lorraine evening bit law she&#39;</span>s<span class="w"> </span>joe<span class="w"> </span>honey<span class="w"> </span>exam<span class="w"> </span>property<span class="w"> </span>study<span class="w"> </span>gay<span class="w"> </span>spring
+<span class="m">2</span><span class="w">       </span><span class="m">0</span>.0025<span class="w">  </span>projection<span class="w"> </span>sng<span class="w"> </span>recap<span class="w"> </span>mtt<span class="w"> </span>dried<span class="w"> </span><span class="m">18</span><span class="w"> </span>sessions<span class="w"> </span>planetpoker<span class="w"> </span><span class="m">5</span>.50<span class="w"> </span>pokerstars<span class="w"> </span>faulty<span class="w"> </span>limit<span class="w"> </span>summary<span class="w"> </span>music-lovers<span class="w"> </span>end-users<span class="w"> </span><span class="m">1540</span>-1608<span class="w"> </span>raritan<span class="w"> </span>tester<span class="w"> </span>dch<span class="w"> </span>brigade
+<span class="m">3</span><span class="w">       </span><span class="m">0</span>.0025<span class="w">  </span>:<span class="o">)</span><span class="w"> </span>urllink<span class="w"> </span>misses<span class="w"> </span>marion<span class="w"> </span>lovely<span class="w"> </span>managed<span class="w"> </span>melbourne<span class="w"> </span>sean<span class="w"> </span>pub<span class="w"> </span>sort<span class="w"> </span>round<span class="w"> </span>rock<span class="w"> </span>bus<span class="w"> </span>:<span class="o">(</span><span class="w"> </span>tent<span class="w"> </span><span class="p">;</span><span class="o">)</span><span class="w"> </span>perth<span class="w"> </span>we<span class="s1">&#39;ve elephant flat</span>
+<span class="s1">4       0.0025  jill alcohol aaaannnndd soorry georgie celica precariously timid mirrors cam defined cat&#39;</span>s<span class="w"> </span>praying<span class="w"> </span>expects<span class="w"> </span>hitler<span class="w"> </span>valley<span class="w"> </span>asses
+<span class="m">5</span><span class="w">       </span><span class="m">0</span>.0025<span class="w">  </span>apc<span class="w"> </span>uhm<span class="w"> </span>downsides<span class="w"> </span>surpression<span class="w"> </span>tly<span class="w"> </span>pary<span class="w"> </span>undies<span class="w"> </span>spybot<span class="w"> </span>band-aids<span class="w"> </span>pow<span class="w"> </span>sprinkles<span class="w"> </span>trashed<span class="w"> </span>bloated<span class="w"> </span>celebrated<span class="w"> </span>paramaters<span class="w"> </span>thas<span class="w"> </span>elses<span class="w"> </span>country<span class="err">&#39;</span>s<span class="w"> </span>immortal<span class="w"> </span>association
+</pre></div>
+</div>
+<p><em>Note</em>: When dealing with giant sets of data, for example creating Facebook topics, one might encounter the error <strong>Exception in thread &quot;main&quot; java.lang.OutOfMemoryError: Java heap space</strong>. You must edit the following line in <strong>~/Mallet/bin/mallet</strong>: <em>MEMORY=1g</em>. You can then change the 1g value upwards – to 2g, 4g, or even higher depending on your system’s RAM, which you can find out by looking up the machine’s system information.</p>
+</section>
+<section id="step-5-add-message-ids-to-state-file">
+<h2>Step 5: Add message ID’s to state file<a class="headerlink" href="#step-5-add-message-ids-to-state-file" title="Link to this heading"></a></h2>
+<p>Adds the message ID’s to the topic distributions and stores the result in lda_topics</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>--add_message_id<span class="w"> </span>~/lda_tutorial/msgs_lda.txt<span class="w"> </span>~/lda_tutorial/msgs_lda_state.gz<span class="w"> </span>--output_name<span class="w"> </span>~/lda_tutorial/lda_topics
+</pre></div>
+</div>
+<p>This creates the file <cite>~/lda_tutorial/lda_topics</cite>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>head<span class="w"> </span>~/lda_tutorial/lda_topics
+<span class="c1">#doc source pos typeindex type topic</span>
+<span class="c1">#alpha : 0.0025 0.0025 0.0025 0.0025 ....</span>
+<span class="c1">#beta : 0.01</span>
+<span class="m">0</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="m">0</span><span class="w"> </span>miss<span class="w"> </span><span class="m">1840</span>
+<span class="m">0</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">1</span><span class="w"> </span>su<span class="w"> </span><span class="m">661</span>
+<span class="m">0</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">2</span><span class="w"> </span>living<span class="w"> </span><span class="m">623</span>
+<span class="m">0</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="m">3</span><span class="w"> </span>skills<span class="w"> </span><span class="m">466</span>
+<span class="m">0</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">4</span><span class="w"> </span>teacher<span class="w"> </span><span class="m">466</span>
+<span class="m">0</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="m">5</span><span class="w"> </span>form<span class="w"> </span><span class="m">1319</span>
+</pre></div>
+</div>
+</section>
+<section id="step-6-import-state-file-into-database">
+<h2>Step 6: Import state file into database<a class="headerlink" href="#step-6-import-state-file-into-database" title="Link to this heading"></a></h2>
+<p>Imports the topic-message probability distributions in a raw format (type of JSON) not readable by DLA</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_lda_tok<span class="w"> </span>--add_lda_messages<span class="w">  </span>~/lda_tutorial/lda_topics
+</pre></div>
+</div>
+<p>This creates the table <strong>msgs_lda_tok_lda$lda_topics</strong> in the database dla_tutorial:</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="k">select</span><span class="w"> </span><span class="n">message</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">msgs_lda_tok_lda$lda_topics</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="o">|</span><span class="w"> </span><span class="err">[{</span><span class="s2">&quot;topic_id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;296&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;doc&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;10&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;term&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;urllink&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;index&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;0&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;term_id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;191&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;message_id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;40&quot;</span><span class="err">}</span><span class="p">,</span><span class="w"> </span><span class="err">{</span><span class="s2">&quot;topic_id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;947&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;doc&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;10&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;term&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;busy&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;index&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;term_id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;249&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;message_id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;40&quot;</span><span class="err">}</span><span class="p">,</span><span class="w"> </span><span class="err">{</span><span class="s2">&quot;topic_id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1804&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;doc&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;10&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;term&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;roadway&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;index&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;2&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;term_id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;250&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;message_id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;40&quot;</span><span class="err">}</span><span class="p">,</span><span class="w"> </span><span class="err">{</span><span class="s2">&quot;topic_id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;296&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;doc&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;10&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;term&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;urllink&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;index&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;3&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;term_id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;191&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;message_id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;40&quot;</span><span class="err">}]</span>
+</pre></div>
+</div>
+<p><em>NOTE</em> - &quot;Duplicate entry 'xxxx' for key 'PRIMARY'&quot; errors may be indicative of an issues with newlines.  See step 2 for a solution.</p>
+</section>
+<section id="step-7-create-topic-word-distributions">
+<h2>Step 7: Create topic-word distributions<a class="headerlink" href="#step-7-create-topic-word-distributions" title="Link to this heading"></a></h2>
+<p>Creates the readable distributions on the messages</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_lda<span class="w"> </span>-m<span class="w"> </span><span class="s1">&#39;msgs_lda_tok_lda$lda_topics&#39;</span><span class="w"> </span>--create_dists
+</pre></div>
+</div>
+<p>This creates the following files:</p>
+<ul class="simple">
+<li><p>msgs_lda_tok_lda.lda_topics.freq.threshed50.loglik.csv</p></li>
+<li><p>msgs_lda_tok_lda.lda_topics.lik.csv</p></li>
+<li><p>msgs_lda_tok_lda.lda_topics.loglik.csv</p></li>
+<li><p>msgs_lda_tok_lda.lda_topics.topicGivenWord.csv</p></li>
+<li><p>msgs_lda_tok_lda.lda_topics.wordGivenTopic.csv</p></li>
+</ul>
+</section>
+<section id="step-8-add-topic-lexicon-to-lexicon-database">
+<h2>Step 8: Add topic-lexicon to lexicon database<a class="headerlink" href="#step-8-add-topic-lexicon-to-lexicon-database" title="Link to this heading"></a></h2>
+<p>Generates the lexicons based on different probability distribution types</p>
+<ul class="simple">
+<li><p>topic given word</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>--lex_interface<span class="w"> </span>--topic_csv<span class="w">  </span><span class="se">\</span>
+--topicfile<span class="o">=</span>/home/user/lda_tutorial/msgs_lda_tok_lda.lda_topics.topicGivenWord.csv<span class="w">  </span><span class="se">\</span>
+-c<span class="w"> </span>msgs_lda_cp
+</pre></div>
+</div>
+<p>This will create the table <cite>msgs_lda_cp</cite> in the database <cite>dlatk_lexica</cite>. You can change the database with the flag <a class="reference internal" href="../fwinterface/fwflag_lexicondb.html"><span class="doc">--lexicondb</span></a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mysql&gt;<span class="w"> </span><span class="k">select</span><span class="w"> </span>*<span class="w"> </span>from<span class="w"> </span>msgs_lda_cp<span class="w"> </span>limit<span class="w"> </span><span class="m">5</span><span class="p">;</span>
++----+----------------+----------+--------------------+
+<span class="p">|</span><span class="w"> </span>id<span class="w"> </span><span class="p">|</span><span class="w"> </span>term<span class="w">           </span><span class="p">|</span><span class="w"> </span>category<span class="w"> </span><span class="p">|</span><span class="w"> </span>weight<span class="w">             </span><span class="p">|</span>
++----+----------------+----------+--------------------+
+<span class="p">|</span><span class="w">  </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>erm<span class="w">            </span><span class="p">|</span><span class="w"> </span><span class="m">274</span><span class="w">      </span><span class="p">|</span><span class="w">             </span><span class="m">0</span>.0625<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">  </span><span class="m">2</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>productively<span class="w">   </span><span class="p">|</span><span class="w"> </span><span class="m">274</span><span class="w">      </span><span class="p">|</span><span class="w">  </span><span class="m">0</span>.333333333333333<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">  </span><span class="m">3</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jared<span class="w">          </span><span class="p">|</span><span class="w"> </span><span class="m">274</span><span class="w">      </span><span class="p">|</span><span class="w">              </span><span class="m">0</span>.125<span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">  </span><span class="m">4</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>book<span class="w">           </span><span class="p">|</span><span class="w"> </span><span class="m">274</span><span class="w">      </span><span class="p">|</span><span class="w">                  </span><span class="m">1</span><span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">  </span><span class="m">5</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sketch<span class="w">         </span><span class="p">|</span><span class="w"> </span><span class="m">274</span><span class="w">      </span><span class="p">|</span><span class="w"> </span><span class="m">0</span>.0909090909090909<span class="w"> </span><span class="p">|</span>
++----+----------------+----------+--------------------+
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>frequency, thresholded to loglik &gt;= 50</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>--lex_interface<span class="w"> </span>--topic_csv<span class="w"> </span><span class="se">\</span>
+--topicfile<span class="o">=</span>~/lda_tutorial/msgs_lda_tok_lda.lda_topics.freq.threshed50.loglik.csv<span class="w"> </span><span class="se">\</span>
+-c<span class="w"> </span>msgs_lda_freq_t50ll
+</pre></div>
+</div>
+<p>This will create the table <cite>msgs_lda_freq_t50ll</cite> in the database <cite>dlatk_lexica</cite>. You can change the database with the flag <a class="reference internal" href="../fwinterface/fwflag_lexicondb.html"><span class="doc">--lexicondb</span></a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mysql&gt;<span class="w"> </span><span class="k">select</span><span class="w"> </span>*<span class="w"> </span>from<span class="w"> </span>msgs_lda_freq_t50ll<span class="w"> </span>limit<span class="w"> </span><span class="m">5</span><span class="p">;</span>
++----+------------------+----------+--------+
+<span class="p">|</span><span class="w"> </span>id<span class="w"> </span><span class="p">|</span><span class="w"> </span>term<span class="w">             </span><span class="p">|</span><span class="w"> </span>category<span class="w"> </span><span class="p">|</span><span class="w"> </span>weight<span class="w"> </span><span class="p">|</span>
++----+------------------+----------+--------+
+<span class="p">|</span><span class="w">  </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>wildest<span class="w">          </span><span class="p">|</span><span class="w"> </span><span class="m">766</span><span class="w">      </span><span class="p">|</span><span class="w">      </span><span class="m">1</span><span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">  </span><span class="m">2</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>kazadoom<span class="w">         </span><span class="p">|</span><span class="w"> </span><span class="m">766</span><span class="w">      </span><span class="p">|</span><span class="w">      </span><span class="m">1</span><span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">  </span><span class="m">3</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sentirnos<span class="w">        </span><span class="p">|</span><span class="w"> </span><span class="m">766</span><span class="w">      </span><span class="p">|</span><span class="w">      </span><span class="m">1</span><span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">  </span><span class="m">4</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>charlie<span class="w">          </span><span class="p">|</span><span class="w"> </span><span class="m">766</span><span class="w">      </span><span class="p">|</span><span class="w">      </span><span class="m">1</span><span class="w"> </span><span class="p">|</span>
+<span class="p">|</span><span class="w">  </span><span class="m">5</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>commondreams.org<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="m">766</span><span class="w">      </span><span class="p">|</span><span class="w">      </span><span class="m">1</span><span class="w"> </span><span class="p">|</span>
++----+------------------+----------+--------+
+</pre></div>
+</div>
+</section>
+<section id="step-9-extract-features-from-lexicon">
+<h2>Step 9: Extract features from lexicon<a class="headerlink" href="#step-9-extract-features-from-lexicon" title="Link to this heading"></a></h2>
+<p>You’re now ready to start using the topic distribution lexicon</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>DATABASE<span class="w"> </span>-t<span class="w"> </span>MESSAGE_TABLE<span class="w"> </span>-c<span class="w"> </span>GROUP_ID<span class="w"> </span>--add_lex_table<span class="w"> </span>-l<span class="w"> </span>msgs_lda_cp<span class="w"> </span>--weighted_lexicon
+</pre></div>
+</div>
+<p>(always extract features using the _cp lexicon. The “freq_t50ll” lexicon is only used when generating topic_tagclouds: <a class="reference internal" href="../fwinterface/fwflag_topic_tagcloud.html"><span class="doc">--topic_tagcloud</span></a> <a class="reference internal" href="../fwinterface/fwflag_topic_lexicon.html"><span class="doc">--topic_lexicon</span></a>)</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

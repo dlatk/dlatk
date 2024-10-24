@@ -1,0 +1,411 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alphabetical list of dlatkInterface Flags &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="_static/style.css" type="text/css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="install.html#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="install.html#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="install.html#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install.html#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="install.html#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="install.html#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="papers.html">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="papers.html#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="papers.html#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="papers.html#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Alphabetical list of dlatkInterface Flags</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/fwinterface.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="alphabetical-list-of-dlatkinterface-flags">
+<span id="dlatkinterface"></span><h1>Alphabetical list of dlatkInterface Flags<a class="headerlink" href="#alphabetical-list-of-dlatkinterface-flags" title="Link to this heading"></a></h1>
+<p><a class="reference internal" href="dlatkinterface_ordered.html"><span class="doc">dlatkInterface Flags by type</span></a></p>
+<section id="flags">
+<h2>Flags<a class="headerlink" href="#flags" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_AUC.html">--AUC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_IDP.html">--IDP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_add_bert.html">--bert_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_add_corp_lex_table.html">--add_corp_lex_table</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_add_emb.html">--emb_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_add_lda_messages.html">--add_lda_messages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_add_lex_table.html">--add_lex_table</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_add_ngrams.html">--add_ngrams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_add_ngrams_from_tokenized.html">--add_ngrams_from_tokenized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_add_parses.html">--add_parses</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_add_pos_ngram_table.html">--add_pos_ngram_table</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_add_pos_table.html">--add_pos_table</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_add_segmented.html">--add_segmented</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_add_sent_per_row.html">--add_sent_per_row</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_add_sent_tokenized.html">--add_sent_tokenized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_add_tokenized.html">--add_tokenized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_add_tweetpos.html">--add_tweetpos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_add_tweettok.html">--add_tweettok</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_aggregate_feats_by_new_group.html">--aggregate_feats_by_new_group</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_all_controls_only.html">--all_controls_only</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_anscombe.html">--anscombe</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_barplot.html">--barplot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_bert_layer_aggregation.html">--bert_layer_aggregation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_bert_layers.html">--bert_layers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_bert_model.html">--bert_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_bert_msg_aggregation.html">--bert_msg_aggregation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_blacklist.html">--blacklist</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_boolean.html">--boolean</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_bootstrapp.html">--bootstrapp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_c.html">-g</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_categorical.html">--categorical</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_cca.html">--cca</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_cca_outcomes_vs_controls.html">--cca_outcomes_vs_controls</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_cca_penalty_feats.html">--cca_penalty_feats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_cca_penalty_outcomes.html">--cca_penalty_outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_cca_permute.html">--cca_permute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_cca_predict_components.html">--cca_predict_components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_classification_to_lexicon.html">--classification_to_lexicon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_clean_messages.html">--clean_messages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_cohens_d.html">--cohens_d</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_colabify.html">--colabify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_colloc_table.html">--colloc_table</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_combine_feat_tables.html">--combine_feat_tables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_combo_test_classifiers.html">--nfold_test_classifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_combo_test_regression.html">--nfold_test_regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_control_adjust_outcomes_regression.html">--control_adjust_outcomes_regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_control_combo_sizes.html">--control_combo_sizes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_corp_topic_tagcloud.html">--corp_topic_tagcloud</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_correlate.html">--correlate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_create_rand_group_sample.html">--create_random_sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_create_rand_sample.html">--create_random_sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_csv.html">--csv</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_d.html">-d</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_date_field.html">--date_field</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_db_engine.html">--db_engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_deduplicate.html">--deduplicate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_desc_tables.html">--describe_tables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_descplot.html">--descplot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_emb_layer_aggregation.rst.html">--emb_layer_aggregation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_emb_layers.html">--emb_layers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_emb_model.html">--emb_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_emb_msg_aggregation.html">--emb_msg_aggregation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_encoding.html">--encoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_estimate_lda_topics.html">--estimate_lda_topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_extension.html">--extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_f.html">-f</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_f..html">-f.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_feat_as_control.html">--feat_as_control</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_feat_as_outcome.html">--feat_as_outcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_feat_as_path_start.html">--feat_as_path_start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_feat_blacklist.html">--feat_blacklist</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_feat_colloc_filter.html">--feat_colloc_filter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_feat_correl_filter.html">--feat_correl_filter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_feat_flexibin.html">--feat_flexibin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_feat_names.html">--feat_names</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_feat_occ_filter.html">--feat_occ_filter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_feat_whitelist.html">--feat_whitelist</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_feature_selection.html">--feature_selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_feature_selection_string.html">--feature_selection_string</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_feature_type_name.html">--feature_type_name</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_fit_reducer.html">--fit_reducer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_flexiplot_file.html">--flexiplot_file</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_folds.html">--folds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_freq.html">--freq</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_from_file.html">--from_file</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_group_freq_thresh.html">--group_freq_thresh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_include_sub_collocs.html">--include_sub_collocs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_interaction_ddla.html">--interaction_ddla</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_interaction_ddla_pvalue.html">--interaction_ddla_pvalue</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_interactions.html">--interactions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_keep_low_variance_outcomes.html">--keep_low_variance_outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_l.html">-l</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_language_filter.html">--language_filter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_lda_alpha.html">--lda_alpha</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_lda_beta.html">--lda_beta</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_lda_iterations.html">--lda_iterations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_lda_lexicon_name.html">--lda_lexicon_name</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_lex_anscombe.html">--lex_anscombe</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_lex_interface.html">--lex_interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_lexicondb.html">--lexicondb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_load_model.html">--load_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_loessplot.html">--loessplot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_log.html">--log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_logistic_reg.html">--logistic_reg</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_ls.html">--show_feature_tables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_make_topic_wordclouds.html">--make_topic_wordclouds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_make_wordclouds.html">--make_wordclouds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_mallet_path.html">--mallet_path</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_max_tagcloud_words.html">--max_tagcloud_words</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_mediation.html">--mediation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_mediation_boot.html">--mediation_boot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_mediation_boot_num.html">--mediation_boot_num</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_mediation_csv.html">--mediation_csv</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_mediation_method.html">--mediation_method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_mediation_no_summary.html">--mediation_no_summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_mediators.html">--mediators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_message_field.html">--message_field</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_messageid_field.html">--messageid_field</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_model.html">--model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_multiclass.html">--multiclass</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_mysql_config_file.html">--mysql_config_file</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_n_components.html">--n_components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_no_correction.html">--no_correction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_no_features.html">--no_features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_no_lang.html">--no_lang</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_no_lda_lexicon.html">--no_lda_lexicon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_no_lda_stopping.html">--no_lda_stopping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_no_metafeats.html">--no_metafeats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_no_standardize.html">--no_standardize</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_no_tagcloud_filter.html">--no_tagcloud_filter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_no_unicode.html">--no_unicode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_num_stopwords.html">--num_stopwords</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_num_topics.html">--num_topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_nvalue.html">--nvalue</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_outcome_controls.html">--outcome_controls</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_outcome_fields.html">--outcome_fields</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_outcome_interaction.html">--outcome_interaction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_outcome_table.html">--outcome_table</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_outcome_with_outcome.html">--outcome_with_outcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_outcome_with_outcome_only.html">--outcome_with_outcome_only</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_outcomes.html">--outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_outliers_to_mean.html">--outliers_to_mean</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_output_name.html">--output_name</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_p_correction.html">--p_correction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_p_value.html">--p_value</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_path_starts.html">--path_starts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_picklefile.html">--picklefile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_predict_classification_to_outcome_table.html">--predict_classification_to_outcome_table</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_predict_classifiers.html">--predict_classifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_predict_classifiers_to_feats.html">--predict_classifiers_to_feats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_predict_probabilities_to_feats.html">--predict_classifiers_to_feats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_predict_regression.html">--predict_regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_predict_regression_to_feats.html">--predict_regression_to_feats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_predict_regression_to_outcome_table.html">--predict_regression_to_outcome_table</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_prediction_csv.html">--prediction_csv</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_print_joined_feature_lines.html">--print_joined_feature_lines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_print_tokenized_lines.html">--print_tokenized_lines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_reduced_lexicon.html">--reduced_lexicon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_reducer_to_lexicon.html">--reducer_to_lexicon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_regression_to_lexicon.html">--regression_to_lexicon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_rmatrix.html">--rmatrix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_roc.html">--roc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_save_lda_files.html">--save_lda_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_save_model.html">--save_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_scatterplot.html">--scatterplot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_segmentation_model.html">--segmentation_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_set_p_occ.html">--set_p_occ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_set_pmi_threshold.html">--set_pmi_threshold</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_show_tables.html">--show_tables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_sort.html">--sort</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_spam_filter.html">--spam_filter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_sparse.html">--sparse</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_spearman.html">--spearman</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_sqrt.html">--sqrt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_stratify_folds.html">--stratify_folds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_super_topics.html">--super_topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_t.html">-t</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_tagcloud.html">--tagcloud</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_tagcloud_colorscheme.html">--tagcloud_colorscheme</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_tagcloud_filter.html">--tagcloud_filter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_test_classifiers.html">--test_classifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_test_regression.html">--test_regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_tf_idf.html">--tf_idf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_to_file.html">--to_file</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_topic_lexicon.html">--topic_lexicon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_topic_tagcloud.html">--topic_tagcloud</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_train_classifiers.html">--train_classifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_train_regression.html">--train_regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_ttest_feat_tables.html">--ttest_feat_tables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_use_collocs.html">--use_collocs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_view_tables.html">--view_tables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_weighted_lexicon.html">--weighted_lexicon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_where.html">--where</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_whitelist.html">--whitelist</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_word_table.html">--word_table</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fwinterface/fwflag_zScoreGroup.html">--zScoreGroup</a></li>
+</ul>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

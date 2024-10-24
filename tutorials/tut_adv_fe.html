@@ -1,0 +1,593 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced Feature Extraction &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="../_static/style.css" type="text/css" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../papers.html">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Advanced Feature Extraction</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/tut_adv_fe.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="advanced-feature-extraction">
+<span id="tut-adv-fe"></span><h1>Advanced Feature Extraction<a class="headerlink" href="#advanced-feature-extraction" title="Link to this heading"></a></h1>
+<p>This is an overview of the different feature extraction methods. Each method needs the following flags:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_d.html"><span class="doc">-d</span></a>: the database we are using</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_t.html"><span class="doc">-t</span></a>: the table inside the database where our text lives (aka the message table)</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_c.html"><span class="doc">-g</span></a>: the table column we will be grouping the text by (aka group)</p></li>
+</ul>
+<p>We start with a message table called &quot;msgs&quot; (available in the packaged data):</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">describe</span><span class="w"> </span><span class="n">msgs</span><span class="p">;</span>
+<span class="o">+--------------+------------------+------+-----+---------+----------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">Field</span><span class="w">        </span><span class="o">|</span><span class="w"> </span><span class="k">Type</span><span class="w">             </span><span class="o">|</span><span class="w"> </span><span class="no">Null</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">Key</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">Default</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">Extra</span><span class="w">          </span><span class="o">|</span>
+<span class="o">+--------------+------------------+------+-----+---------+----------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">message_id</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="kt">int</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span><span class="w">          </span><span class="o">|</span><span class="w"> </span><span class="k">NO</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="n">PRI</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="no">NULL</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="k">auto_increment</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">user_id</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="kt">int</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="k">unsigned</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">YES</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">MUL</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="no">NULL</span><span class="w">    </span><span class="o">|</span><span class="w">                </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="kt">date</span><span class="w">         </span><span class="o">|</span><span class="w"> </span><span class="kt">varchar</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="n">YES</span><span class="w">  </span><span class="o">|</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="no">NULL</span><span class="w">    </span><span class="o">|</span><span class="w">                </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">created_time</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">datetime</span><span class="w">         </span><span class="o">|</span><span class="w"> </span><span class="n">YES</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">MUL</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="no">NULL</span><span class="w">    </span><span class="o">|</span><span class="w">                </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">message</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="kt">text</span><span class="w">             </span><span class="o">|</span><span class="w"> </span><span class="n">YES</span><span class="w">  </span><span class="o">|</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="no">NULL</span><span class="w">    </span><span class="o">|</span><span class="w">                </span><span class="o">|</span>
+<span class="o">+--------------+------------------+------+-----+---------+----------------+</span>
+</pre></div>
+</div>
+<section id="n-grams-collocations-tf-idf-and-more">
+<h2>N-grams, Collocations, Tf-idf and more<a class="headerlink" href="#n-grams-collocations-tf-idf-and-more" title="Link to this heading"></a></h2>
+<section id="unigrams">
+<h3>Unigrams<a class="headerlink" href="#unigrams" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_add_ngrams.html"><span class="doc">--add_ngrams</span></a></p></li>
+<li><p>-n</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_ngrams<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">feat$1gram$msgs$user_id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="o">+----+----------+-----------+-------+----------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">           </span><span class="o">|</span>
+<span class="o">+----+----------+-----------+-------+----------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">wonderful</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000953288846520496</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">let</span><span class="w">       </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000953288846520496</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">promotion</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000953288846520496</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">assured</span><span class="w">   </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000953288846520496</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">lime</span><span class="w">      </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000953288846520496</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+----------+-----------+-------+----------------------+</span>
+</pre></div>
+</div>
+<p>This also creates a &quot;meta&quot; table called feat$meta_1gram$msgs$user_id which contains average 1gram length, average 1grams per message and total 1grams:</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">feat$meta_1gram$msgs$user_id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="o">+----+----------+------------------+-------+------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w">             </span><span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">       </span><span class="o">|</span>
+<span class="o">+----+----------+------------------+-------+------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">_avg1gramLength</span><span class="w">  </span><span class="o">|</span><span class="w">     </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">3.76549094375596</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">_avg1gramsPerMsg</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">81</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">80.6923076923077</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">_total1grams</span><span class="w">     </span><span class="o">|</span><span class="w">  </span><span class="mi">1049</span><span class="w"> </span><span class="o">|</span><span class="w">             </span><span class="mi">1049</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w">   </span><span class="mi">174357</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">_avg1gramLength</span><span class="w">  </span><span class="o">|</span><span class="w">     </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">3.73343605546995</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w">   </span><span class="mi">174357</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">_avg1gramsPerMsg</span><span class="w"> </span><span class="o">|</span><span class="w">   </span><span class="mi">216</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">216.333333333333</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+----------+------------------+-------+------------------+</span>
+</pre></div>
+</div>
+</section>
+<section id="n-grams">
+<h3>N-grams<a class="headerlink" href="#n-grams" title="Link to this heading"></a></h3>
+<p>This command will make separate feature tables for each &quot;n&quot;.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_add_ngrams.html"><span class="doc">--add_ngrams</span></a></p></li>
+<li><p>-n</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_ngrams<span class="w"> </span>-n<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">3</span>
+</pre></div>
+</div>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">feat$2gram$msgs$user_id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="o">+----+----------+------------------+-------+----------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w">             </span><span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">           </span><span class="o">|</span>
+<span class="o">+----+----------+------------------+-------+----------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="kt">time</span><span class="w">        </span><span class="o">|</span><span class="w">     </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.00193050193050193</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">email</span><span class="w"> </span><span class="p">,</span><span class="w">          </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000965250965250965</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">comfortable</span><span class="w"> </span><span class="k">than</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000965250965250965</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="n">something</span><span class="w">     </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000965250965250965</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">charecter</span><span class="w"> </span><span class="p">,</span><span class="w">      </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000965250965250965</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+----------+------------------+-------+----------------------+</span>
+
+<span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">feat$3gram$msgs$user_id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="o">+----+----------+-------------------+-------+----------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w">              </span><span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">           </span><span class="o">|</span>
+<span class="o">+----+----------+-------------------+-------+----------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="n">did</span><span class="w"> </span><span class="n">something</span><span class="w">   </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000977517106549365</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">my</span><span class="w"> </span><span class="k">old</span><span class="w">         </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000977517106549365</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">,</span><span class="w"> </span><span class="n">lots</span><span class="w"> </span><span class="k">of</span><span class="w">         </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000977517106549365</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="k">some</span><span class="w"> </span><span class="n">babies</span><span class="w">   </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000977517106549365</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">stumbled</span><span class="w"> </span><span class="n">across</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000977517106549365</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+----------+-------------------+-------+----------------------+</span>
+</pre></div>
+</div>
+</section>
+<section id="n-grams-from-other-tokenizers">
+<h3>N-grams From Other Tokenizers<a class="headerlink" href="#n-grams-from-other-tokenizers" title="Link to this heading"></a></h3>
+<p>DLATK uses <a class="reference external" href="https://github.com/dlatk/happierfuntokenizing">Happier Fun Tokenizer</a> as its standard tokenizer. It also has the option of using the <a class="reference external" href="http://www.cs.cmu.edu/~ark/TweetNLP/">TweetNLP</a> tokenizer with the <a class="reference internal" href="../fwinterface/fwflag_add_tweettok.html"><span class="doc">--add_tweettok</span></a> flag. One can go straight to a feature table from a message table, via Happier Fun Tokenizer, with <a class="reference internal" href="../fwinterface/fwflag_add_ngrams.html"><span class="doc">--add_ngrams</span></a>. Alternatively, one can go from a tokenized table via <a class="reference internal" href="../fwinterface/fwflag_add_tweettok.html"><span class="doc">--add_tweettok</span></a> or <a class="reference internal" href="../fwinterface/fwflag_add_tokenized.html"><span class="doc">--add_tokenized</span></a> (or any other tokenizer you wish to use) to a feature table with <a class="reference internal" href="../fwinterface/fwflag_add_ngrams_from_tokenized.html"><span class="doc">--add_ngrams_from_tokenized</span></a></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_tok<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_ngrams_from_tokenized<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">feat$1gram$msgs_tok$user_id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="o">+----+----------+-------------+-------+----------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w">        </span><span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">           </span><span class="o">|</span>
+<span class="o">+----+----------+-------------+-------+----------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">nod</span><span class="w">         </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000953288846520496</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">pub</span><span class="w">         </span><span class="o">|</span><span class="w">    </span><span class="mi">11</span><span class="w"> </span><span class="o">|</span><span class="w">   </span><span class="mf">0.0104861773117255</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">destruction</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000953288846520496</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">else</span><span class="w">        </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000953288846520496</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nv">?</span><span class="w">           </span><span class="o">|</span><span class="w">     </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.00381315538608198</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+----------+-------------+-------+----------------------+</span>
+</pre></div>
+</div>
+</section>
+<section id="feature-occurrence-filter">
+<h3>Feature Occurrence Filter<a class="headerlink" href="#feature-occurrence-filter" title="Link to this heading"></a></h3>
+<p>This removes rare features. Specifically, it filters features so as to keep only those features which are used by X percentage of groups or more. The missing features are aggregated into a feature called &lt;OOV&gt; which contains the value and group norm data for all the missing features. The percentage X is set with the --set_p_occ flag.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_feat_occ_filter.html"><span class="doc">--feat_occ_filter</span></a></p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_set_p_occ.html"><span class="doc">--set_p_occ</span></a></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgs$user_id&#39;</span><span class="w"> </span>--feat_occ_filter<span class="w"> </span>--set_p_occ<span class="w"> </span>.05<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span>
+</pre></div>
+</div>
+<p>Note the use of --group_freq_thresh. This is one of the only feature extraction methods where this flag is considered.</p>
+</section>
+<section id="character-n-grams">
+<h3>Character n-grams<a class="headerlink" href="#character-n-grams" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>--add_char_ngrams</p></li>
+<li><p>-n</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_char_ngrams<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_char_ngrams<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w"> </span>--combine_feat_tables<span class="w"> </span>1to2Cgram
+</pre></div>
+</div>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">feat$1to2Cgram$msgs$user_id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="o">+----+----------+------+-------+---------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">          </span><span class="o">|</span>
+<span class="o">+----+----------+------+-------+---------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w">      </span><span class="o">|</span><span class="w">   </span><span class="mi">898</span><span class="w"> </span><span class="o">|</span><span class="w">   </span><span class="mf">0.184659675097676</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">v</span><span class="w">    </span><span class="o">|</span><span class="w">    </span><span class="mi">45</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.00925354719309068</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">d</span><span class="w">    </span><span class="o">|</span><span class="w">   </span><span class="mi">125</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.0257042977585852</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">;</span><span class="w">    </span><span class="o">|</span><span class="w">     </span><span class="mi">9</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.00185070943861814</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">y</span><span class="w">    </span><span class="o">|</span><span class="w">    </span><span class="mi">71</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.0146000411268764</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+----------+------+-------+---------------------+</span>
+</pre></div>
+</div>
+</section>
+<section id="tf-idf-tables">
+<h3>TF-IDF Tables<a class="headerlink" href="#tf-idf-tables" title="Link to this heading"></a></h3>
+<p>Creates new feature table where the group_norm is the tf-idf score</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_tf_idf.html"><span class="doc">--tf_idf</span></a></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$1gram$msgs$user_id&#39;</span><span class="w"> </span>--tf_idf
+</pre></div>
+</div>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">feat$tf_idf_1gram$msgs$user_id</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;;</span>
+<span class="o">+---------+----------+-----------+-------+--------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">         </span><span class="o">|</span>
+<span class="o">+---------+----------+-----------+-------+--------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">307349</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">2033616</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">delivered</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.0000878334772103</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">278647</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">4144593</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">crap</span><span class="w">      </span><span class="o">|</span><span class="w">     </span><span class="mi">6</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.000998442620366</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">1043863</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">3482840</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">story</span><span class="w">     </span><span class="o">|</span><span class="w">     </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.000334689956064</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">1150911</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">2876677</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">uh</span><span class="w">        </span><span class="o">|</span><span class="w">     </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.000141436336165</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">283547</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">3711805</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">crosses</span><span class="w">   </span><span class="o">|</span><span class="w">     </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.000827587016091</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+---------+----------+-----------+-------+--------------------+</span>
+</pre></div>
+</div>
+</section>
+<section id="collocations-and-pointwise-mutual-information">
+<h3>Collocations and Pointwise Mutual Information<a class="headerlink" href="#collocations-and-pointwise-mutual-information" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_feat_colloc_filter.html"><span class="doc">--feat_colloc_filter</span></a></p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_set_pmi_threshold.html"><span class="doc">--set_pmi_threshold</span></a></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># creates the table feat$1to3gram$msgs$user_id</span>
+./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgs$user_id&#39;</span><span class="w"> </span>--feat_colloc_filter<span class="w"> </span>--set_pmi_threshold<span class="w"> </span><span class="m">6</span>.0
+</pre></div>
+</div>
+</section>
+<section id="transformed-tables">
+<h3>Transformed Tables<a class="headerlink" href="#transformed-tables" title="Link to this heading"></a></h3>
+<p>These switches transform the feature table during feature extraction and therefore need least one feature extraction command: --add_ngrams, --add_lex_table, etc.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_anscombe.html"><span class="doc">--anscombe</span></a></p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_boolean.html"><span class="doc">--boolean</span></a></p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_log.html"><span class="doc">--log</span></a></p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_sqrt.html"><span class="doc">--sqrt</span></a></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># produces the table feat$1gram$msgs$user_id$16to8</span>
+./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_ngrams<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="w"> </span>--anscombe
+
+<span class="c1"># produces the table feat$1gram$msgs$user_id$16to4</span>
+./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_ngrams<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="w"> </span>--sqrt
+
+<span class="c1"># produces the table feat$1gram$msgs$user_id$16to3</span>
+./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_ngrams<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="w"> </span>--log
+
+<span class="c1"># produces the table feat$1gram$msgs$user_id$16to1</span>
+./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_ngrams<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="w"> </span>--boolean
+</pre></div>
+</div>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">feat$1gram$msgs$user_id$16to8</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="o">+-----+----------+------+-------+---------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">    </span><span class="o">|</span>
+<span class="o">+-----+----------+------+-------+---------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">188</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">!</span><span class="w">    </span><span class="o">|</span><span class="w">     </span><span class="mi">8</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">1.23713590324</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">296</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">$</span><span class="w">    </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">1.22630059748</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">204</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;    |     2 | 1.22785435243 |</span>
+<span class="s1">| 223 |    28451 | *    |     4 | 1.23095597872 |</span>
+<span class="s1">|  38 |    28451 | ,    |    53 | 1.30464448623 |</span>
+<span class="s1">+-----+----------+------+-------+---------------+</span>
+
+<span class="s1">mysql&gt; select * from feat$1gram$msgs$user_id$16to4 limit 5;</span>
+<span class="s1">+-----+----------+------+-------+-----------------+</span>
+<span class="s1">| id  | group_id | feat | value | group_norm      |</span>
+<span class="s1">+-----+----------+------+-------+-----------------+</span>
+<span class="s1">| 275 |    28451 | !    |     8 | 0.0873287511199 |</span>
+<span class="s1">| 245 |    28451 | $    |     1 | 0.0308753760547 |</span>
+<span class="s1">| 414 |    28451 | &#39;</span><span class="w">    </span><span class="o">|</span><span class="w">     </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">   </span><span class="mf">0.04366437556</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">239</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">*</span><span class="w">    </span><span class="o">|</span><span class="w">     </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.0617507521094</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">45</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">,</span><span class="w">    </span><span class="o">|</span><span class="w">    </span><span class="mi">53</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.224776130551</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+-----+----------+------+-------+-----------------+</span>
+
+<span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">feat$1gram$msgs$user_id$16to3</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="o">+-----+----------+------+-------+-------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">        </span><span class="o">|</span>
+<span class="o">+-----+----------+------+-------+-------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">278</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">!</span><span class="w">    </span><span class="o">|</span><span class="w">     </span><span class="mi">8</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.00759737747394</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">244</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">$</span><span class="w">    </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000952834755272</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">265</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;    |     2 |  0.00190476248065 |</span>
+<span class="s1">| 171 |    28451 | *    |     4 |  0.00380590373768 |</span>
+<span class="s1">| 283 |    28451 | ,    |    53 |   0.0492893813166 |</span>
+<span class="s1">+-----+----------+------+-------+-------------------+</span>
+
+
+<span class="s1">mysql&gt; select * from feat$1gram$msgs$user_id$16to1 limit 5;</span>
+<span class="s1">+-----+----------+------+-------+------------+</span>
+<span class="s1">| id  | group_id | feat | value | group_norm |</span>
+<span class="s1">+-----+----------+------+-------+------------+</span>
+<span class="s1">|  51 |    28451 | !    |     8 |          1 |</span>
+<span class="s1">| 148 |    28451 | $    |     1 |          1 |</span>
+<span class="s1">| 105 |    28451 | &#39;</span><span class="w">    </span><span class="o">|</span><span class="w">     </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">          </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">277</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">*</span><span class="w">    </span><span class="o">|</span><span class="w">     </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w">          </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">304</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">,</span><span class="w">    </span><span class="o">|</span><span class="w">    </span><span class="mi">53</span><span class="w"> </span><span class="o">|</span><span class="w">          </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+-----+----------+------+-------+------------+</span>
+</pre></div>
+</div>
+</section>
+<section id="word-tables">
+<h3>Word Tables<a class="headerlink" href="#word-tables" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_word_table.html"><span class="doc">--word_table</span></a></p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a></p></li>
+</ul>
+<p>The word table is used to select groups that meet a certain language useage threshold. This is what we call the &quot;group frequency threshold&quot;, as specified by the --group_freq_thresh flag. It says that we will only consider groups who use at least N words (typically 1 when working at the message level, 500 when working at the user level and 40,000 when working with communities). The word table is automatically queried based on the -t and -g flag. For example, given the following base command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id
+</pre></div>
+</div>
+<p>DLATK will query the table &quot;feat$1gram$msgs$user_id&quot;. The flag --word_table overrides this. It is especially useful when working with large data when the standard word table will not fit into memory. In this case we often use a feature occurrence filtered table (filtered at a small threshold). For example</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--word_table<span class="w"> </span><span class="s1">&#39;feat$1gram$msgs$user_id$0_01&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="lexica">
+<h3>Lexica<a class="headerlink" href="#lexica" title="Link to this heading"></a></h3>
+<p>DLATK supports both unweighted and weighted lexica. Here is an example of an unweighted lexicon. Note that the MySQL table still contains the column &quot;weight&quot; which is set to 1 everywhere. This is unnecessary but sometimes more insightful to be explicit.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># creates the table feat$cat_LIWC2015$msgs$user_id$1gra</span>
+./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_lex_table<span class="w"> </span>-l<span class="w"> </span>LIWC2015
+</pre></div>
+</div>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">dlatk_lexica</span><span class="p">.</span><span class="n">LIWC2015</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="o">+----+------+----------+--------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">term</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">category</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">weight</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+------+----------+--------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">he</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="n">PPRON</span><span class="w">    </span><span class="o">|</span><span class="w">      </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">he</span><span class="s1">&#39;d | PPRON    |      1 |</span>
+<span class="s1">|  3 | he&#39;</span><span class="n">s</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PPRON</span><span class="w">    </span><span class="o">|</span><span class="w">      </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">her</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">PPRON</span><span class="w">    </span><span class="o">|</span><span class="w">      </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">hers</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PPRON</span><span class="w">    </span><span class="o">|</span><span class="w">      </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+------+----------+--------+</span>
+
+<span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">feat$cat_met_a30_2000_cp_w$msgs$user_id$1gra</span><span class="w">  </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="o">+----+----------+------+-------+--------------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">               </span><span class="o">|</span>
+<span class="o">+----+----------+------+-------+--------------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">298</span><span class="w">  </span><span class="o">|</span><span class="w">     </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.0000000217525421774642</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">278</span><span class="w">  </span><span class="o">|</span><span class="w">     </span><span class="mi">6</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mf">0.000150407662892745</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">295</span><span class="w">  </span><span class="o">|</span><span class="w">    </span><span class="mi">17</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mf">0.000545379245206831</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">1375</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">47</span><span class="w"> </span><span class="o">|</span><span class="w">       </span><span class="mf">0.0010413347897739</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">276</span><span class="w">  </span><span class="o">|</span><span class="w">    </span><span class="mi">15</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mf">0.000299298548129527</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+----------+------+-------+--------------------------+</span>
+</pre></div>
+</div>
+<p>Here is an example of a weighted lexicon. Note the use of the --weighted_lexicon flag. Here we are using LDA Facebook topics which are available <a class="reference external" href="http://wwbp.org/data.html">here</a>).</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_add_lex_table.html"><span class="doc">--add_lex_table</span></a></p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_weighted_lexicon.html"><span class="doc">--weighted_lexicon</span></a></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># creates the table feat$cat_met_a30_2000_cp_w$msgs$user_id$1gra</span>
+./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_lex_table<span class="w"> </span>-l<span class="w"> </span>met_a30_2000_cp<span class="w"> </span>--weighted_lexicon
+</pre></div>
+</div>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">dlatk_lexica</span><span class="p">.</span><span class="n">met_a30_2000_cp</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="o">+----+---------+----------+--------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">term</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">category</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">weight</span><span class="w">             </span><span class="o">|</span>
+<span class="o">+----+---------+----------+--------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">ce</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="mi">344</span><span class="w">      </span><span class="o">|</span><span class="w">  </span><span class="mf">0.000162284972412</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">concept</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">344</span><span class="w">      </span><span class="o">|</span><span class="w">  </span><span class="mf">0.000556947925369</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">cough</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="mi">344</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="mf">0.0000711541198235</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">bring</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="mi">344</span><span class="w">      </span><span class="o">|</span><span class="w">   </span><span class="mf">0.00570741964554</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">finest</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="mi">344</span><span class="w">      </span><span class="o">|</span><span class="w">  </span><span class="mf">0.000520020800832</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+---------+----------+--------------------+</span>
+
+<span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">feat$cat_met_a30_2000_cp_w$msgs$user_id$1gra</span><span class="w">  </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="o">+----+----------+------+-------+--------------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">               </span><span class="o">|</span>
+<span class="o">+----+----------+------+-------+--------------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">298</span><span class="w">  </span><span class="o">|</span><span class="w">     </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.0000000217525421774642</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">278</span><span class="w">  </span><span class="o">|</span><span class="w">     </span><span class="mi">6</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mf">0.000150407662892745</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">295</span><span class="w">  </span><span class="o">|</span><span class="w">    </span><span class="mi">17</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mf">0.000545379245206831</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">1375</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">47</span><span class="w"> </span><span class="o">|</span><span class="w">       </span><span class="mf">0.0010413347897739</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="mi">28451</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">276</span><span class="w">  </span><span class="o">|</span><span class="w">    </span><span class="mi">15</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mf">0.000299298548129527</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+----------+------+-------+--------------------------+</span>
+</pre></div>
+</div>
+</section>
+<section id="combining-feature-tables">
+<h3>Combining Feature Tables<a class="headerlink" href="#combining-feature-tables" title="Link to this heading"></a></h3>
+<p>Combine multiple feature tables into a single table.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_combine_feat_tables.html"><span class="doc">--combine_feat_tables</span></a></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$1gram$msgs$user_id&#39;</span><span class="w"> </span><span class="s1">&#39;feat$2gram$msgs$user_id&#39;</span><span class="w"> </span><span class="s1">&#39;feat$3gram$msgs$user_id&#39;</span><span class="w"> </span>--combine_feat_tables<span class="w"> </span>1to3gram
+</pre></div>
+</div>
+<p>This also works during ngram extraction:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_ngrams<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">3</span><span class="w"> </span>--combine_feat_tables<span class="w"> </span>1to3gram
+</pre></div>
+</div>
+</section>
+</section>
+<section id="part-of-speech">
+<h2>Part of Speech<a class="headerlink" href="#part-of-speech" title="Link to this heading"></a></h2>
+<section id="part-of-speech-usage">
+<h3>Part of Speech Usage<a class="headerlink" href="#part-of-speech-usage" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_add_pos_table.html"><span class="doc">--add_pos_table</span></a></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_pos_table
+</pre></div>
+</div>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">feat$pos$msgs$user_id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="o">+----+----------+------+-------+----------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">           </span><span class="o">|</span>
+<span class="o">+----+----------+------+-------+----------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">2300555</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">RP</span><span class="w">   </span><span class="o">|</span><span class="w">    </span><span class="mi">12</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.00575539568345324</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">2300555</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="w">   </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000479616306954436</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">2300555</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PRP</span><span class="w">  </span><span class="o">|</span><span class="w">   </span><span class="mi">107</span><span class="w"> </span><span class="o">|</span><span class="w">   </span><span class="mf">0.0513189448441247</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">2300555</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">CC</span><span class="w">   </span><span class="o">|</span><span class="w">    </span><span class="mi">61</span><span class="w"> </span><span class="o">|</span><span class="w">   </span><span class="mf">0.0292565947242206</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">2300555</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">WRB</span><span class="w">  </span><span class="o">|</span><span class="w">    </span><span class="mi">15</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.00719424460431655</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+----------+------+-------+----------------------+</span>
+</pre></div>
+</div>
+</section>
+<section id="part-of-speech-n-grams">
+<h3>Part of Speech N-grams<a class="headerlink" href="#part-of-speech-n-grams" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_add_pos_ngram_table.html"><span class="doc">--add_pos_ngram_table</span></a></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_pos_ngram_table
+</pre></div>
+</div>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">feat$1gram_pos$msgs$user_id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="o">+----+----------+----------------------+-------+----------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w">                 </span><span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">           </span><span class="o">|</span>
+<span class="o">+----+----------+----------------------+-------+----------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">2300555</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">shiiiennntaaaahhh</span><span class="o">/</span><span class="n">NN</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000479616306954436</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">2300555</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">thx</span><span class="o">/</span><span class="n">VBN</span><span class="w">              </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000479616306954436</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">2300555</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">aku</span><span class="o">/</span><span class="n">NN</span><span class="w">               </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000479616306954436</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">2300555</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">passgae</span><span class="o">/</span><span class="n">NN</span><span class="w">           </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000479616306954436</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mi">2300555</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">feel</span><span class="o">/</span><span class="n">VBP</span><span class="w">             </span><span class="o">|</span><span class="w">     </span><span class="mi">6</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.00287769784172662</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+----------+----------------------+-------+----------------------+</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

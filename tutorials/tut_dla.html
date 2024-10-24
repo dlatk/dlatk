@@ -1,0 +1,539 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Differential Language Analysis (DLA) Tutorial &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="../_static/style.css" type="text/css" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../papers.html">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Differential Language Analysis (DLA) Tutorial</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/tut_dla.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="differential-language-analysis-dla-tutorial">
+<span id="tut-dla"></span><h1>Differential Language Analysis (DLA) Tutorial<a class="headerlink" href="#differential-language-analysis-dla-tutorial" title="Link to this heading"></a></h1>
+<p>In Differential Language Analysis (DLA) we correlate patterns in language with other characteristics such as gender, or voting results.  We may look at text broken down by user, county or individual message among other things.  You can see more about the conceptual aspect of DLA in this <a class="reference external" href="https://www.google.com/url?q=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DZdTeDED9h-w">Youtube Video</a> and in this journal paper, <a class="reference external" href="http://wwbp.org/papers/sam2013-dla.pdf">Toward Personality Insights from Language Exploration in Social Media</a>.</p>
+<p>In this tutorial we will walk you through the process of running DLA using the dlatkInterface.py interface tool. Before running DLA here are some questions to ask yourself:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>What text am I using?</dt><dd><ul>
+<li><p>twitter, facebook, blogs</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>What relationships am I looking at?</dt><dd><ul>
+<li><p>LIWC category prevalence VS voting habits</p></li>
+<li><p>Usage of the word “I” VS narcissism score on personality quiz</p></li>
+<li><p>What words correlate with extraversion score on a personality quiz</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>How will I group my data?</dt><dd><ul>
+<li><p>by message, by user, by country, by hour</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Answers for this tutorial:</p>
+<ul class="simple">
+<li><p>We will be using text from blogs (a subset of data from <a class="reference external" href="http://u.cs.biu.ac.il/~koppel/BlogCorpus.htm">this corpus</a>).</p></li>
+<li><p>We will look at age and gender and how they correlate with n-grams and Facebook topics.</p></li>
+<li><p>We will group the data at the user level.</p></li>
+</ul>
+<p><strong>Difference between mysql and dlatk</strong>: You will be using our infrastructure code (which is primarily written in Python) and MySQL. If you are new to using a terminal this can be confusing. You will start every command with <strong>dlatkInterface.py</strong>. As the name suggests, this is an interface to a much larger set of code called dlatk. The <em>.py</em> tells you that this is a Python file. On the other hand, <strong>MySQL</strong> is a database management system. You access the MySQL command line interface by typing <strong>mysql</strong> in your terminal. MySQL commands only work in the MySQL command line interface, just as dlatkInterface only works in the terminal. Anytime you are asked to run a MySQL command you must first type <em>mysql</em>. To exit you simply type <em>exit</em>. You should also note that all MySQL commands end with a semicolon. When running this tutorial it might be helpful to have two terminal windows open, one for MySQL and another for dlatk.</p>
+<section id="step-0-prepare">
+<h2>STEP 0 - Prepare<a class="headerlink" href="#step-0-prepare" title="Link to this heading"></a></h2>
+<p>The text we will use is the mysql database <strong>dla_tutorial</strong> and in the table <strong>msgs</strong>.  We will copy it to a new table using the following <strong>mysql</strong> commands:</p>
+<p><strong>Replace xxx with your initials so that your message table name is unique and your results don’t get messed up with anyone else’s results!!</strong></p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="k">USE</span><span class="w"> </span><span class="n">dla_tutorial</span><span class="p">;</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">msgs_xxx</span><span class="w"> </span><span class="k">LIKE</span><span class="w"> </span><span class="n">msgs</span><span class="p">;</span>
+<span class="k">INSERT</span><span class="w"> </span><span class="k">INTO</span><span class="w"> </span><span class="n">msgs_xxx</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">msgs</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>The relationships we will look at are ngram usage versus age and gender.  We will also look at Facebook topics versus age and gender.  This outcome data is stored in the table <strong>dla_tutorial.blog_outcomes</strong> in the columns <strong>age</strong> and  <strong>gender</strong>.</p>
+<p>We will group our data by user. You can see both the message table and the outcome table have a column called <strong>user_id</strong>.</p>
+</section>
+<section id="step-1-feature-extraction">
+<h2>STEP 1 - Feature Extraction<a class="headerlink" href="#step-1-feature-extraction" title="Link to this heading"></a></h2>
+<section id="generate-1-to-3-gram-features">
+<h3>Generate 1 to 3-gram Features<a class="headerlink" href="#generate-1-to-3-gram-features" title="Link to this heading"></a></h3>
+<p>This step generates a quantitative summary of a body of text.  It basically does word/n-gram counts on a group by group basis.  It also normalizes by group, so at the end of this you can answer questions like “what proportion of words used by USER 234459 were the word ‘the’”.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1">##EXPECTED OUTPUT TABLES</span>
+<span class="c1">#feat$1gram$msgs_xxx$user_id</span>
+<span class="c1">#feat$2gram$msgs_xxx$user_id</span>
+<span class="c1">#feat$3gram$msgs_xxx$user_id</span>
+<span class="c1">#feat$1to3gram$msgs_xxx$user_id</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_ngrams<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">3</span><span class="w"> </span>--combine_feat_tables<span class="w"> </span>1to3gram
+</pre></div>
+</div>
+<p>The above command will produce four tables: one for each 'n' and then a table which combines everything (the 1gram, 2gram and 3gram tables). Next we will remove rare features from the combined table using the following:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1">##EXPECTED OUTPUT TABLES</span>
+<span class="c1">#feat$1to3gram$msgs_xxx$user_id$0_05</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgs_xxx$user_id&#39;</span><span class="w"> </span>--feat_occ_filter<span class="w"> </span>--set_p_occ<span class="w"> </span><span class="m">0</span>.05<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span>
+</pre></div>
+</div>
+<p>This command removes any feature used by less than 5% of groups. Note that we are using the <a class="reference internal" href="../fwinterface/fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a> flag as well which says we are only looking at groups with at least 500 words.</p>
+<p>Brief descriptions of the flags:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_d.html"><span class="doc">-d</span></a>: the database we are using</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_t.html"><span class="doc">-t</span></a>: the table inside the database where our text lives</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_c.html"><span class="doc">-g</span></a>: the table column we will be grouping the text by</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_add_ngrams.html"><span class="doc">--add_ngrams</span></a>: the flag which starts the ngram extraction process</p></li>
+<li><p><span class="xref std std-doc">../fwinterface/fwflag_n</span>: the value or values for <em>n</em> in ngrams</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_feat_occ_filter.html"><span class="doc">--feat_occ_filter</span></a>: This tells us to ignore features which occur in a small percentage of groups</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_set_p_occ.html"><span class="doc">--set_p_occ</span></a>: The percentage value for the feature occurrence filter</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a>: Ignore groups which do not contain a certain number of words</p></li>
+</ul>
+<p>To view the columns in your feature table use the following <strong>mysql</strong> command:</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="k">describe</span><span class="w"> </span><span class="n">feat$1gram$msgs_xxx$user_id</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>This will give you the following output</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="o">+------------+---------------------+------+-----+---------+----------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">Field</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="k">Type</span><span class="w">                </span><span class="o">|</span><span class="w"> </span><span class="no">Null</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">Key</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">Default</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">Extra</span><span class="w">          </span><span class="o">|</span>
+<span class="o">+------------+---------------------+------+-----+---------+----------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w">         </span><span class="o">|</span><span class="w"> </span><span class="kt">bigint</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span><span class="w"> </span><span class="k">unsigned</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">NO</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="n">PRI</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="no">NULL</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="k">auto_increment</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="kt">varchar</span><span class="p">(</span><span class="mi">45</span><span class="p">)</span><span class="w">         </span><span class="o">|</span><span class="w"> </span><span class="n">YES</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">MUL</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="no">NULL</span><span class="w">    </span><span class="o">|</span><span class="w">                </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w">       </span><span class="o">|</span><span class="w"> </span><span class="kt">varchar</span><span class="p">(</span><span class="mi">28</span><span class="p">)</span><span class="w">         </span><span class="o">|</span><span class="w"> </span><span class="n">YES</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">MUL</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="no">NULL</span><span class="w">    </span><span class="o">|</span><span class="w">                </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="kt">int</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span><span class="w">             </span><span class="o">|</span><span class="w"> </span><span class="n">YES</span><span class="w">  </span><span class="o">|</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="no">NULL</span><span class="w">    </span><span class="o">|</span><span class="w">                </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">double</span><span class="w">              </span><span class="o">|</span><span class="w"> </span><span class="n">YES</span><span class="w">  </span><span class="o">|</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="no">NULL</span><span class="w">    </span><span class="o">|</span><span class="w">                </span><span class="o">|</span>
+<span class="o">+------------+---------------------+------+-----+---------+----------------+</span>
+</pre></div>
+</div>
+<p>Summary of the columns:</p>
+<ul class="simple">
+<li><p><strong>id</strong>: numeric value of a sql table row</p></li>
+<li><p><strong>group_id</strong>: user ids from your message table</p></li>
+<li><p><strong>feat</strong>: the 1grams</p></li>
+<li><p><strong>value</strong>: the number of times the 1gram occurred within the group</p></li>
+<li><p><strong>group_norm</strong>: the value divided by the total number of features for this group</p></li>
+</ul>
+<p>To view the features tables use the following command in <strong>mysql</strong>. This will show every column value in the first 10 rows.</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">dla_tutorial</span><span class="p">.</span><span class="n">feat$1to3gram$msgs_xxx$user_id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+<span class="o">+----+----------------------------------+-----------+-------+----------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_id</span><span class="w">                         </span><span class="o">|</span><span class="w"> </span><span class="n">feat</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">group_norm</span><span class="w">           </span><span class="o">|</span>
+<span class="o">+----+----------------------------------+-----------+-------+----------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">003ae43fae340174a67ffbcf19da1549</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">neighbors</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000260010400416017</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">003ae43fae340174a67ffbcf19da1549</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">all</span><span class="w">       </span><span class="o">|</span><span class="w">    </span><span class="mi">15</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.00390015600624025</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">003ae43fae340174a67ffbcf19da1549</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">jason</span><span class="w">     </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000260010400416017</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">003ae43fae340174a67ffbcf19da1549</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">&lt;</span><span class="n">newline</span><span class="o">&gt;</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.00130005200208008</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">003ae43fae340174a67ffbcf19da1549</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">caused</span><span class="w">    </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000260010400416017</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">6</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">003ae43fae340174a67ffbcf19da1549</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">beware</span><span class="w">    </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000260010400416017</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">7</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">003ae43fae340174a67ffbcf19da1549</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">bull</span><span class="w">      </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000260010400416017</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">8</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">003ae43fae340174a67ffbcf19da1549</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">focus</span><span class="w">     </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000260010400416017</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">9</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">003ae43fae340174a67ffbcf19da1549</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">yellow</span><span class="w">    </span><span class="o">|</span><span class="w">     </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mf">0.000260010400416017</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">003ae43fae340174a67ffbcf19da1549</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">four</span><span class="w">      </span><span class="o">|</span><span class="w">     </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="mf">0.00078003120124805</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+----------------------------------+-----------+-------+----------------------+</span>
+</pre></div>
+</div>
+<p>You can also compare the sizes of the two tables to see the effect of --feat_occ_filter:</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="nf">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">feat</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">dla_tutorial</span><span class="p">.</span><span class="n">feat$1to3gram$msgs_xxx$user_id</span><span class="p">;</span>
+<span class="o">+----------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="nf">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">feat</span><span class="p">)</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----------------------+</span>
+<span class="o">|</span><span class="w">                </span><span class="mi">65593</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----------------------+</span>
+
+<span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="nf">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">feat</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">dla_tutorial</span><span class="p">.</span><span class="n">feat$1to3gram$msgs_xxx$user_id$0_05</span><span class="p">;</span>
+<span class="o">+----------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="nf">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">feat</span><span class="p">)</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----------------------+</span>
+<span class="o">|</span><span class="w">                 </span><span class="mi">1872</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----------------------+</span>
+</pre></div>
+</div>
+<p>What would you expect the count to be if you had used a set_p_occ value of 0.01?</p>
+<p>Given the definition of group norm above, what would you expect to get if you summed all of the group norms for a single group? Verify your answer with the following <strong>mysql</strong> command:</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="k">select</span><span class="w"> </span><span class="n">group_id</span><span class="p">,</span><span class="w"> </span><span class="nf">sum</span><span class="p">(</span><span class="n">group_norm</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">dla_tutorial</span><span class="p">.</span><span class="n">feat$1gram$msgs_xxx$user_id</span><span class="w"> </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">group_id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="generate-1to3-gram-features">
+<h3>Generate 1to3-gram Features<a class="headerlink" href="#generate-1to3-gram-features" title="Link to this heading"></a></h3>
+<p>Now we will generate a 1-3 gram table which will contain all 1grams, 2grams 3grams for each user. This next command will create four tables, one table for each ngram and one combined table containing every table created during the process.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1">##EXPECTED OUTPUT TABLES</span>
+<span class="c1">#feat$1gram$msgs_xxx$user_id</span>
+<span class="c1">#feat$2gram$msgs_xxx$user_id</span>
+<span class="c1">#feat$3gram$msgs_xxx$user_id</span>
+<span class="c1">#feat$1to3gram$msgs_xxx$user_id</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_ngrams<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">3</span><span class="w"> </span>--combine_feat_tables<span class="w"> </span>1to3gram
+</pre></div>
+</div>
+<p>The argument to the <a class="reference internal" href="../fwinterface/fwflag_combine_feat_tables.html"><span class="doc">--combine_feat_tables</span></a> flag is used to name the combined table. We used 1to3gram which have us the feature table feat$1to3gram$msgs_xxx$user_id.</p>
+</section>
+<section id="generate-lexicon-topic-features">
+<h3>Generate Lexicon (topic) Features<a class="headerlink" href="#generate-lexicon-topic-features" title="Link to this heading"></a></h3>
+<p>This step <strong>uses the 1gram feature table</strong> that was used in step 1a in addition to some topic definitions.  It calculates a value that characterizes how strongly each topic was present in the text of a given group.  Sometimes this is as simple as aggregating counts.  Sometimes there is a weighting factor involved.  We will use a weighted, data driven lexicon like our 2000 Facebook topics (topics are distributed with this release). These topics were created from Facebook data using Latent Dirichlet allocation (LDA). <a class="reference external" href="https://en.wikipedia.org/wiki/Latent_Dirichlet_allocation">Go here</a> for more info on LDA. Also see our <a class="reference internal" href="tut_lda.html"><span class="doc">DLATK LDA Interface</span></a>. The Facebook topic table in dlatk_lexica looks like</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">dlatk_lexica</span><span class="p">.</span><span class="n">met_a30_2000_cp</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+<span class="o">+----+---------+----------+--------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">term</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">category</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">weight</span><span class="w">             </span><span class="o">|</span>
+<span class="o">+----+---------+----------+--------------------+</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">ce</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="mi">344</span><span class="w">      </span><span class="o">|</span><span class="w">  </span><span class="mf">0.000162284972412</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">concept</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">344</span><span class="w">      </span><span class="o">|</span><span class="w">  </span><span class="mf">0.000556947925369</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">cough</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="mi">344</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="mf">0.0000711541198235</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">bring</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="mi">344</span><span class="w">      </span><span class="o">|</span><span class="w">   </span><span class="mf">0.00570741964554</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">finest</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="mi">344</span><span class="w">      </span><span class="o">|</span><span class="w">  </span><span class="mf">0.000520020800832</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">6</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">human</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="mi">344</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="mf">0.0000762679547477</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">7</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">winds</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="mi">344</span><span class="w">      </span><span class="o">|</span><span class="w">   </span><span class="mf">0.00839234198794</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">8</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">faster</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="mi">344</span><span class="w">      </span><span class="o">|</span><span class="w">  </span><span class="mf">0.000218674830527</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w">  </span><span class="mi">9</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">halfway</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">344</span><span class="w">      </span><span class="o">|</span><span class="w">  </span><span class="mf">0.000872790748418</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">blow</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="mi">344</span><span class="w">      </span><span class="o">|</span><span class="w">    </span><span class="mf">0.0120238095238</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+----+---------+----------+--------------------+</span>
+</pre></div>
+</div>
+<p>Every lex table will have the columns: id, term, category and (optionally) weight. In an unweighted lexica (for example <a class="reference external" href="http://www.liwc.net/">LIWC</a> (Linguistic Inquiry and Word Count)) the weight column is set to 1 or we can remove the weight column completely.</p>
+<p>Since this lexica was produced using a data driven approach we make no attempt to label the categories and give them numerical ids. The Facebook lexica contains weights in the form of conditional probabilities. We now apply this to our message set:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># EXPECTED OUTPUT TABLE</span>
+<span class="c1"># feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>--add_lex_table<span class="w"> </span>-l<span class="w"> </span>met_a30_2000_cp<span class="w"> </span>--weighted_lexicon
+</pre></div>
+</div>
+<p>Brief descriptions of the flags:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_add_lex_table.html"><span class="doc">--add_lex_table</span></a>:</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_l.html"><span class="doc">-l</span></a>:</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_weighted_lexicon.html"><span class="doc">--weighted_lexicon</span></a>:</p></li>
+</ul>
+<p>Note - dlatk pieces together the expected name of the 1gram table using the information you give it in the -d, -t, and -g options
+Note - in the table name <em>met_a30_2000_cp</em>, met stands for messages english tokenizen, a30 stands for alpha = 30 (a tuning parameter in the LDA process) and 2000 means there are 2000 topics.</p>
+<p>In general use the following syntax (<em>dlatk_lexica</em> is a database where all of our lexica are stored):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1">## GENERAL SYNTAX FOR CREATING LEXICON FEATURE TABLES</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>&lt;database&gt;<span class="w"> </span>-t<span class="w"> </span>&lt;message_table&gt;<span class="w"> </span>-g<span class="w"> </span>&lt;group_column&gt;<span class="w"> </span>--add_lex_table<span class="w"> </span>-l<span class="w"> </span>&lt;topic_tbl_from_dlatk_lexica&gt;<span class="w"> </span><span class="o">[</span>--weighted_lexicon<span class="o">]</span>
+</pre></div>
+</div>
+<p>Again, you can view the tables with the following <strong>mysql</strong> commands:</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">dla_tutorial</span><span class="p">.</span><span class="n">feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>What should the group norms sum to for a single group in the lexicon tables? Will this be the same as above? Why or why not?</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="k">select</span><span class="w"> </span><span class="n">group_id</span><span class="p">,</span><span class="w"> </span><span class="nf">sum</span><span class="p">(</span><span class="n">group_norm</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">dla_tutorial</span><span class="p">.</span><span class="n">feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra</span><span class="w"> </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">group_id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="step-2-insights-dla-correlate-features-with-outcomes">
+<h2>STEP 2 - Insights (DLA): Correlate features with outcomes<a class="headerlink" href="#step-2-insights-dla-correlate-features-with-outcomes" title="Link to this heading"></a></h2>
+<p>Before we take a look at language correlates we first look at our outcomes and their relationships. Here we correlate only the outcomes and output to a correlation matrix in html or csv format.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span><span class="se">\</span>
+--correlate<span class="w"> </span>--csv<span class="w"> </span>--rmatrix<span class="w"> </span>--sort<span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span><span class="se">\</span>
+--outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span>is_student<span class="w"> </span>is_education<span class="w"> </span>is_technology<span class="w"> </span><span class="se">\</span>
+--outcome_with_outcome_only<span class="w"> </span>--output<span class="w"> </span>~/correlations
+</pre></div>
+</div>
+<p>Brief descriptions of the flags:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a>: MySQL table where out extra-linquistic data lives</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_outcomes.html"><span class="doc">--outcomes</span></a>: MySQL column names</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_outcome_with_outcome_only.html"><span class="doc">--outcome_with_outcome_only</span></a>: says that we are ignoring language and are only looking at the outcomes</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_rmatrix.html"><span class="doc">--rmatrix</span></a>: Produces a correlation matrix in HTML format</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_csv.html"><span class="doc">--csv</span></a>: Produces a correlation matrix in csv format</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_sort.html"><span class="doc">--sort</span></a>: Appends a table to the HTML or csv with correlations sorted by effect size</p></li>
+</ul>
+<p>Output will be written to the file <strong>correlations.csv</strong> and <strong>correlations.html</strong>. The csv output should look like</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>feature,age,p,N,CI_l,CI_u,freq,gender,p,N,CI_l,CI_u,freq,is_education,p,N,CI_l,CI_u,freq,is_student,p,N,CI_l,CI_u,freq,is_technology,p,N,CI_l,CI_u,freq
+outcome_age,1.0,0.0,1000,1.0,1.0,1000,0.013089769277,0.679288049345,1000,-0.048943029258,0.0750219732934,1000,0.172756193994,9.62582613937e-08,1000,0.111962191762,0.232261824573,1000,-0.45911352125,6.87199798082e-53,1000,-0.50668539378,-0.408754348795,1000,0.117238226305,0.000337894917181,1000,0.0556496028558,0.177938062241,1000
+outcome_gender,0.013089769277,0.679288049345,1000,-0.048943029258,0.0750219732934,1000,1.0,0.0,1000,1.0,1.0,1000,-0.161206890368,4.95925394952e-07,1000,-0.220991447954,-0.100215331046,1000,-0.0221719208099,0.483710711985,1000,-0.0840494768068,0.0398759714239,1000,0.065154589658,0.0492504223304,1000,0.00317432871342,0.126636171693,1000
+outcome_is_education,0.172756193994,6.41721742624e-08,1000,0.111962191762,0.232261824573,1000,-0.161206890368,7.43888092428e-07,1000,-0.220991447954,-0.100215331046,1000,1.0,0.0,1000,1.0,1.0,1000,-0.14424303335,7.7633413628e-06,1000,-0.204408282607,-0.0829920718038,1000,-0.0537304778134,0.0894683992084,1000,-0.115339374305,0.00829021870801,1000
+outcome_is_student,-0.45911352125,6.87199798082e-53,1000,-0.50668539378,-0.408754348795,1000,-0.0221719208099,0.604638389981,1000,-0.0840494768068,0.0398759714239,1000,-0.14424303335,5.8225060221e-06,1000,-0.204408282607,-0.0829920718038,1000,1.0,0.0,1000,1.0,1.0,1000,-0.141292966419,1.82280081643e-05,1000,-0.20152088984,-0.0800006243256,1000
+outcome_is_technology,0.117238226305,0.000253421187886,1000,0.0556496028558,0.177938062241,1000,0.065154589658,0.0656672297739,1000,0.00317432871342,0.126636171693,1000,-0.0537304778134,0.0894683992084,1000,-0.115339374305,0.00829021870801,1000,-0.141292966419,9.11400408216e-06,1000,-0.20152088984,-0.0800006243256,1000,1.0,0.0,1000,1.0,1.0,1000
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="../fwinterface/fwflag_sort.html"><span class="doc">--sort</span></a> will append the following to the bottom of the csv:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>SORTED:
+rank,age,r,p,N,CI_l,CI_u,freq,gender,r,p,N,CI_l,CI_u,freq,is_education,r,p,N,CI_l,CI_u,freq,is_student,r,p,N,CI_l,CI_u,freq,is_technology,r,p,N,CI_l,CI_u,freq
+<span class="m">1</span>,outcome_age,1.0,0.0,1000,1.0,1.0,1000,outcome_gender,1.0,0.0,1000,1.0,1.0,1000,outcome_is_education,1.0,0.0,1000,1.0,1.0,1000,outcome_is_student,1.0,0.0,1000,1.0,1.0,1000,outcome_is_technology,1.0,0.0,1000,1.0,1.0,1000
+<span class="m">2</span>,outcome_is_education,0.172756193994,6.41721742624e-08,1000,0.111962191762,0.232261824573,1000,outcome_is_technology,0.065154589658,0.0656672297739,1000,0.00317432871342,0.126636171693,1000,outcome_age,0.172756193994,9.62582613937e-08,1000,0.111962191762,0.232261824573,1000,outcome_gender,-0.0221719208099,0.483710711985,1000,-0.0840494768068,0.0398759714239,1000,outcome_age,0.117238226305,0.000337894917181,1000,0.0556496028558,0.177938062241,1000
+<span class="m">3</span>,outcome_is_technology,0.117238226305,0.000253421187886,1000,0.0556496028558,0.177938062241,1000,outcome_age,0.013089769277,0.679288049345,1000,-0.048943029258,0.0750219732934,1000,outcome_is_technology,-0.0537304778134,0.0894683992084,1000,-0.115339374305,0.00829021870801,1000,outcome_is_technology,-0.141292966419,9.11400408216e-06,1000,-0.20152088984,-0.0800006243256,1000,outcome_gender,0.065154589658,0.0492504223304,1000,0.00317432871342,0.126636171693,1000
+<span class="m">4</span>,outcome_gender,0.013089769277,0.679288049345,1000,-0.048943029258,0.0750219732934,1000,outcome_is_student,-0.0221719208099,0.604638389981,1000,-0.0840494768068,0.0398759714239,1000,outcome_is_student,-0.14424303335,5.8225060221e-06,1000,-0.204408282607,-0.0829920718038,1000,outcome_is_education,-0.14424303335,7.7633413628e-06,1000,-0.204408282607,-0.0829920718038,1000,outcome_is_education,-0.0537304778134,0.0894683992084,1000,-0.115339374305,0.00829021870801,1000
+<span class="m">5</span>,outcome_is_student,-0.45911352125,6.87199798082e-53,1000,-0.50668539378,-0.408754348795,1000,outcome_is_education,-0.161206890368,7.43888092428e-07,1000,-0.220991447954,-0.100215331046,1000,outcome_gender,-0.161206890368,4.95925394952e-07,1000,-0.220991447954,-0.100215331046,1000,outcome_age,-0.45911352125,6.87199798082e-53,1000,-0.50668539378,-0.408754348795,1000,outcome_is_student,-0.141292966419,1.82280081643e-05,1000,-0.20152088984,-0.0800006243256,1000
+rank,age,r,p,N,CI_l,CI_u,freq,gender,r,p,N,CI_l,CI_u,freq,is_education,r,p,N,CI_l,CI_u,freq,is_student,r,p,N,CI_l,CI_u,freq,is_technology,r,p,N,CI_l,CI_u,freq
+</pre></div>
+</div>
+<p>The HTML file should look like this when opened in a browser:
+Attach:rmatrix_output.png</p>
+<p>In this example, positive value for age correlates with older age, and negative correlates with younger. Similarly, a positive value for gender indicates correlation with female, and a negative value correlates with male.</p>
+<p>Next we look at language correlates and begin with 1to3grams:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span><span class="se">\</span>
+-f<span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgs_xxx$user_id$0_05&#39;</span><span class="w"> </span><span class="se">\</span>
+--outcome_table<span class="w"> </span>blog_outcomes<span class="w">  </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span><span class="se">\</span>
+--outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span>--output_name<span class="w"> </span>xxx_output<span class="w"> </span><span class="se">\</span>
+--tagcloud<span class="w"> </span>--make_wordclouds
+</pre></div>
+</div>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Outcome</p></th>
+<th class="head"><p>Positive Correlation</p></th>
+<th class="head"><p>Negative Correlation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Gender</p></td>
+<td><p><img alt="gender_1to3pos" src="../_static/gender_1to3pos.png" /></p></td>
+<td><p><img alt="gender_1to3neg" src="../_static/gender_1to3neg.png" /></p></td>
+</tr>
+<tr class="row-odd"><td><p>Age</p></td>
+<td><p><img alt="age_1to3pos" src="../_static/age_1to3pos.png" /></p></td>
+<td><p><img alt="age_1to3neg" src="../_static/age_1to3neg.png" /></p></td>
+</tr>
+</tbody>
+</table>
+<p>Finally using the Facebook topics and creating topic tag clouds:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span><span class="se">\</span>
+-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra&#39;</span><span class="w"> </span><span class="se">\</span>
+--outcome_table<span class="w"> </span>blog_outcomes<span class="w">  </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span><span class="se">\</span>
+--outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span>--output_name<span class="w"> </span>fbtopic_output<span class="w"> </span><span class="se">\</span>
+--topic_tagcloud<span class="w"> </span>--make_topic_wordcloud<span class="w"> </span>--topic_lexicon<span class="w"> </span>met_a30_2000_freq_t50ll<span class="w"> </span><span class="se">\</span>
+--tagcloud_colorscheme<span class="w"> </span>bluered
+</pre></div>
+</div>
+<p>Brief descriptions of the flags:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_topic_tagcloud.html"><span class="doc">--topic_tagcloud</span></a>:</p></li>
+<li><p><span class="xref std std-doc">../fwinterface/fwflag_make_topic_wordcloud</span>:</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_topic_lexicon.html"><span class="doc">--topic_lexicon</span></a>:</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_tagcloud_colorscheme.html"><span class="doc">--tagcloud_colorscheme</span></a>:</p></li>
+</ul>
+<p>The following line will be printed to the screen:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Yielding<span class="w"> </span>norms<span class="w"> </span>with<span class="w"> </span>zeros<span class="w"> </span><span class="o">(</span><span class="m">1000</span><span class="w"> </span>groups<span class="w"> </span>*<span class="w"> </span><span class="m">2000</span><span class="w"> </span>feats<span class="o">)</span>.
+</pre></div>
+</div>
+<p>This tells us that we have 1000 users (since our -g field is user_id) each with 2000 features. The 2000 features comes from the fact that we are working with 2000 Facebook topics.  Looking in MySQL we see that we have 500 users total in our dataset:</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="nf">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">user_id</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">msgs_xxx</span><span class="p">;</span>
+<span class="o">+-------------------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="nf">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">user_id</span><span class="p">)</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+-------------------------+</span>
+<span class="o">|</span><span class="w">                    </span><span class="mi">1000</span><span class="w"> </span><span class="o">|</span>
+<span class="o">+-------------------------+</span>
+</pre></div>
+</div>
+<p>This means that every user in our dataset passes the group frequency threshold, i.e., each user has at least 500 words. If we were to set the group frequency threshold to 5000 we would see:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Yielding<span class="w"> </span>norms<span class="w"> </span>with<span class="w"> </span>zeros<span class="w"> </span><span class="o">(</span><span class="m">125</span><span class="w"> </span>groups<span class="w"> </span>*<span class="w"> </span><span class="m">2000</span><span class="w"> </span>feats<span class="o">)</span>.
+</pre></div>
+</div>
+<p>Output will be written to the file <strong>fbtopic_output_topic_tagcloud.txt</strong>. The topic tagcloud output will be in a directory called <em>fbtopic_output_topic_tagcloud_wordclouds</em></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Outcome</p></th>
+<th class="head"><p>Positive Correlation</p></th>
+<th class="head"><p>Negative Correlation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Gender</p></td>
+<td><p><img alt="gender_pos" src="../_static/gender_pos.png" /></p></td>
+<td><p><img alt="gender_neg" src="../_static/gender_neg.png" /></p></td>
+</tr>
+<tr class="row-odd"><td><p>Age</p></td>
+<td><p><img alt="age_pos" src="../_static/age_pos.png" /></p></td>
+<td><p><img alt="age_neg" src="../_static/age_neg.png" /></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="continuing-on">
+<h2>Continuing on...<a class="headerlink" href="#continuing-on" title="Link to this heading"></a></h2>
+<p>More information about dlatk's interface can be found in the following places:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../dlatkinterface_ordered.html"><span class="doc">dlatkInterface Flags by type</span></a></p></li>
+<li><p>Next tutorial: <a class="reference internal" href="tut_pred.html"><span class="doc">Intro Prediction / Classification / Predictive Lexica</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

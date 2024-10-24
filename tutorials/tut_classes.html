@@ -1,0 +1,310 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Working with DLATK&#39;s Classes &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="../_static/style.css" type="text/css" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../papers.html">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Working with DLATK's Classes</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/tut_classes.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="working-with-dlatk-s-classes">
+<span id="tut-classes"></span><h1>Working with DLATK's Classes<a class="headerlink" href="#working-with-dlatk-s-classes" title="Link to this heading"></a></h1>
+<p>DLATK contains the following classes:  <em>FeatureWorker</em>, <em>FeatureGetter</em>, <em>FeatureRefiner</em>, <em>FeatureExtractor</em>, <em>OutcomeGetter</em>, <em>OutcomeAnalyzer</em>, <em>ClassifyPredictor</em> and <em>RegressionPredictor</em>. Instead of working with dlatkInterface one can work directly with one of these classes.</p>
+<section id="working-with-classes">
+<h2>Working with classes<a class="headerlink" href="#working-with-classes" title="Link to this heading"></a></h2>
+<p>With the exception of <em>FeatureWorker</em> all classes can be created as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dlatk.featureExtractor</span> <span class="kn">import</span> <span class="n">FeatureExtractor</span>
+<span class="n">fe</span> <span class="o">=</span> <span class="n">FeatureExtractor</span><span class="p">()</span> <span class="c1"># use default values set in dlaConstants</span>
+<span class="n">fe</span> <span class="o">=</span> <span class="n">FeatureExtractor</span><span class="p">(</span><span class="n">corpdb</span><span class="o">=</span><span class="s2">&quot;someDB&quot;</span><span class="p">,</span> <span class="n">corptable</span><span class="o">=</span><span class="s2">&quot;someTB&quot;</span><span class="p">,</span> <span class="n">correl_field</span><span class="o">=</span><span class="s2">&quot;someField&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="c1"># specify values</span>
+</pre></div>
+</div>
+<p><em>FeatureWorker</em> does not allow you to use default values so you must do the following:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dlatk.featureWorker</span> <span class="kn">import</span> <span class="n">FeatureWorker</span>
+<span class="n">fw</span> <span class="o">=</span> <span class="n">FeatureWorker</span><span class="p">(</span><span class="n">corpdb</span><span class="o">=</span><span class="s2">&quot;someDB&quot;</span><span class="p">,</span> <span class="n">corptable</span><span class="o">=</span><span class="s2">&quot;someTB&quot;</span><span class="p">,</span> <span class="n">correl_field</span><span class="o">=</span><span class="s2">&quot;someField&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Both  <em>FeatureGetter</em>, <em>OutcomeGetter</em> and <em>OutcomeAnalyzer</em> allow you to pass an init file. This file is a simple text file where the constants are defined. Init file must have the line <strong>[constants]</strong> at the top. Also note that none of the strings are quoted. For lists (such as lists of outcome variables) use commas to separate values. Sample init file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>constants<span class="o">]</span>
+<span class="nv">corpdb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>dla_tutorial
+<span class="nv">corptable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>msgs
+<span class="nv">correl_field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>user_id
+<span class="nv">feattable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>feat<span class="nv">$1</span>gram<span class="nv">$msgs$user_id$16</span>to16<span class="nv">$0</span>_01
+<span class="nv">outcometable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>blog_outcomes
+<span class="nv">outcomefields</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>age,<span class="w"> </span>is_education
+<span class="nv">outcomecontrols</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>gender
+</pre></div>
+</div>
+<p>To initialize one of these classes using an init file do the following:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fg</span> <span class="o">=</span> <span class="n">FeatureGetter</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">&#39;/path/to/init/file&#39;</span><span class="p">)</span>
+<span class="n">og</span> <span class="o">=</span> <span class="n">OutcomeGetter</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">&#39;/path/to/init/file&#39;</span><span class="p">)</span>
+<span class="n">oa</span> <span class="o">=</span> <span class="n">OutcomeAnalyzer</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">&#39;/path/to/init/file&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="using-featurestar">
+<h2>Using FeatureStar<a class="headerlink" href="#using-featurestar" title="Link to this heading"></a></h2>
+<p>This option allows you to create instances of <em>FeatureWorker</em>, <em>FeatureGetter</em>, <em>FeatureRefiner</em>, <em>FeatureExtractor</em>, <em>OutcomeGetter</em>, <em>OutcomeAnalyzer</em>, <em>ClassifyPredictor</em> and <em>RegressionPredictor</em>.</p>
+<p>Initialize a FeatureStar object:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dlatk.featureStar</span> <span class="kn">import</span> <span class="n">FeatureStar</span>
+
+<span class="c1"># get instances of all classes</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="p">()</span> <span class="c1"># defaults specified in dlaConstants</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="p">(</span><span class="n">corpdb</span><span class="o">=</span><span class="s2">&quot;someDB&quot;</span><span class="p">,</span> <span class="n">corptable</span><span class="o">=</span><span class="s2">&quot;someTB&quot;</span><span class="p">,</span> <span class="n">correl_field</span><span class="o">=</span><span class="s2">&quot;someField&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="c1"># specify values</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">&#39;/path/to/init/file&#39;</span><span class="p">)</span> <span class="c1"># pass values from file</span>
+</pre></div>
+</div>
+<p>To initalize FeatureStar with an init file, simply add the following line under <strong>[constants]</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">init</span> <span class="o">=</span> <span class="n">fg</span><span class="p">,</span> <span class="n">og</span>
+</pre></div>
+</div>
+<p>This is a comma separated line with the initials of the classes you want to instantiate. So the above command will give you a FeatureGetter and an OutcomeGetter</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># add line &#39;init = fg, og&#39; to init file</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">&#39;/path/to/init/file&#39;</span><span class="p">)</span> <span class="c1"># this will return only a FeatureGetter and OutcomeGetter</span>
+</pre></div>
+</div>
+<p>Or you can pass this list as a parameter</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># get certain classes with defaults</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;fg&#39;</span><span class="p">,</span> <span class="s1">&#39;og&#39;</span><span class="p">])</span>
+
+<span class="c1"># get instances of subset of classes</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">&#39;/path/to/init/file&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;fg&#39;</span><span class="p">,</span> <span class="s1">&#39;og&#39;</span><span class="p">])</span> <span class="c1"># get only a FeatureGetter and OutcomeGetter</span>
+
+<span class="n">fs</span><span class="o">.</span><span class="n">allFW</span>
+<span class="o">&gt;</span> <span class="p">{</span><span class="s1">&#39;FeatureWorker&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;FeatureRefiner&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+<span class="s1">&#39;FeatureGetter&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">FeatureWorker</span><span class="o">.</span><span class="n">featureGetter</span><span class="o">.</span><span class="n">FeatureGetter</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x7f87e75e13d0</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="s1">&#39;OutcomeGetter&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">FeatureWorker</span><span class="o">.</span><span class="n">outcomeGetter</span><span class="o">.</span><span class="n">OutcomeGetter</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x7f87e75e1390</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="s1">&#39;OutcomeAnalyzer&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;FeatureExtractor&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+<span class="s1">&#39;ClassifyPredictor&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;RegressionPredictor&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>You can retrieve FeatureStars attributes (i.e., all DLATK objects) in the following way</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># retrieve a FeatureWorker</span>
+<span class="n">fw</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">fw</span>
+<span class="n">fw</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">&#39;FeatureWorker&#39;</span><span class="p">]</span>
+
+<span class="c1"># retrieve a FeatureGetter</span>
+<span class="n">fg</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">fg</span>
+<span class="n">fg</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">&#39;FeatureGetter&#39;</span><span class="p">]</span>
+
+<span class="c1"># retrieve a FeatureRefiner</span>
+<span class="n">fr</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">fr</span>
+<span class="n">fr</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">&#39;FeatureRefiner&#39;</span><span class="p">]</span>
+
+<span class="c1"># retrieve a FeatureExtractor</span>
+<span class="n">fe</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">fe</span>
+<span class="n">fe</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">&#39;FeatureExtractor&#39;</span><span class="p">]</span>
+
+<span class="c1"># retrieve a OutcomeGetter</span>
+<span class="n">og</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">og</span>
+<span class="n">og</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">&#39;OutcomeGetter&#39;</span><span class="p">]</span>
+
+<span class="c1"># retrieve a OutcomeAnalyzer</span>
+<span class="n">oa</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">oa</span>
+<span class="n">oa</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">&#39;OutcomeAnalyzer&#39;</span><span class="p">]</span>
+
+<span class="c1"># retrieve a RegressionPredictor</span>
+<span class="n">oa</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">rp</span>
+<span class="n">oa</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">&#39;RegressionPredictor&#39;</span><span class="p">]</span>
+
+<span class="c1"># retrieve a ClassifyPredictor</span>
+<span class="n">oa</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">cp</span>
+<span class="n">oa</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">&#39;ClassifyPredictor&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

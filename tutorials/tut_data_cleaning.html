@@ -1,0 +1,293 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Cleaning &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="../_static/style.css" type="text/css" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../papers.html">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Data Cleaning</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/tut_data_cleaning.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="data-cleaning">
+<span id="tut-data-cleaning"></span><h1>Data Cleaning<a class="headerlink" href="#data-cleaning" title="Link to this heading"></a></h1>
+<p>This is an overview of the different methods for cleaning text data. Each method needs the following flags:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_d.html"><span class="doc">-d</span></a>: the database we are using</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_t.html"><span class="doc">-t</span></a>: the table inside the database where our text lives (aka the message table)</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_c.html"><span class="doc">-g</span></a>: the table column we will be grouping the text by (aka group)</p></li>
+</ul>
+<p>We start with a message table called &quot;msgs&quot; (available in the packaged data):</p>
+<div class="highlight-mysql notranslate"><div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span><span class="w"> </span><span class="k">describe</span><span class="w"> </span><span class="n">msgs</span><span class="p">;</span>
+<span class="o">+--------------+------------------+------+-----+---------+----------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">Field</span><span class="w">        </span><span class="o">|</span><span class="w"> </span><span class="k">Type</span><span class="w">             </span><span class="o">|</span><span class="w"> </span><span class="no">Null</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">Key</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">Default</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">Extra</span><span class="w">          </span><span class="o">|</span>
+<span class="o">+--------------+------------------+------+-----+---------+----------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="n">message_id</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="kt">int</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span><span class="w">          </span><span class="o">|</span><span class="w"> </span><span class="k">NO</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="n">PRI</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="no">NULL</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="k">auto_increment</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">user_id</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="kt">int</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="k">unsigned</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">YES</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">MUL</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="no">NULL</span><span class="w">    </span><span class="o">|</span><span class="w">                </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="kt">date</span><span class="w">         </span><span class="o">|</span><span class="w"> </span><span class="kt">varchar</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="n">YES</span><span class="w">  </span><span class="o">|</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="no">NULL</span><span class="w">    </span><span class="o">|</span><span class="w">                </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">created_time</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">datetime</span><span class="w">         </span><span class="o">|</span><span class="w"> </span><span class="n">YES</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">MUL</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="no">NULL</span><span class="w">    </span><span class="o">|</span><span class="w">                </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">message</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="kt">text</span><span class="w">             </span><span class="o">|</span><span class="w"> </span><span class="n">YES</span><span class="w">  </span><span class="o">|</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="no">NULL</span><span class="w">    </span><span class="o">|</span><span class="w">                </span><span class="o">|</span>
+<span class="o">+--------------+------------------+------+-----+---------+----------------+</span>
+</pre></div>
+</div>
+<section id="language-filtering">
+<h2>Language Filtering<a class="headerlink" href="#language-filtering" title="Link to this heading"></a></h2>
+<p>Uses the <a class="reference external" href="https://github.com/saffsd/langid.py">langid</a> python package. For each message it will assign a confidence and keep the message if the confidence is over 0.80. By default this will lowercase your messages before running through langid.</p>
+<p>This will create a new table whose name is taken from the -t flag and appends &quot;_en&quot;.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_language_filter.html"><span class="doc">--language_filter</span></a></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># creates the table msgs_en</span>
+./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--language_filter<span class="w"> </span>en
+</pre></div>
+</div>
+<p>Adding the <a class="reference internal" href="../fwinterface/fwflag_clean_messages.html"><span class="doc">--clean_messages</span></a> flag will remove URLs and &#64;-mentions before applying the language filter, which improves the language classification</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># creates the table msgs_en</span>
+./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--language_filter<span class="w"> </span>en<span class="w"> </span>--clean_messages
+</pre></div>
+</div>
+</section>
+<section id="deduplicating">
+<h2>Deduplicating<a class="headerlink" href="#deduplicating" title="Link to this heading"></a></h2>
+<p>Removes tweets which contains the same first 6 tokens as another message within the same group (-c) (therefore each group id should have more than one row in your MySQL table). This will create a new table whose name is taken from the -t flag and appends &quot;_dedup&quot;.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_deduplicate.html"><span class="doc">--deduplicate</span></a></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># creates the table msgs_dedup</span>
+./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--deduplicate
+</pre></div>
+</div>
+<p>To also replace URLs (with &lt;URL&gt;) and &#64;-mentions (with &lt;USER&gt;) add the <a class="reference internal" href="../fwinterface/fwflag_clean_messages.html"><span class="doc">--clean_messages</span></a> flag (this helps the language classification task):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--deduplicate<span class="w"> </span>--clean_messages
+</pre></div>
+</div>
+</section>
+<section id="removing-urls-and-mentions">
+<h2>Removing URLs and &#64;-mentions<a class="headerlink" href="#removing-urls-and-mentions" title="Link to this heading"></a></h2>
+<p>When using <a class="reference internal" href="../fwinterface/fwflag_clean_messages.html"><span class="doc">--clean_messages</span></a> alone it will create a new table whose name is taken from the <a class="reference internal" href="../fwinterface/fwflag_t.html"><span class="doc">-t</span></a> flag and appends &quot;_an&quot;.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_clean_messages.html"><span class="doc">--clean_messages</span></a></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># creates the table msgs_an</span>
+./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--clean_messages
+</pre></div>
+</div>
+</section>
+<section id="spam-filtering">
+<h2>Spam Filtering<a class="headerlink" href="#spam-filtering" title="Link to this heading"></a></h2>
+<p>If any message contains one of the spam words it is marked as spam (is_spam = 1, otherwise is_spam = 0). If number of spam messages / total message &gt; THRESHOLD then user is removed from new message table.</p>
+<p>Spam words = 'share', 'win', 'check', 'enter', 'products', 'awesome', 'prize', 'sweeps', 'bonus', 'gift'</p>
+<p>This will create a new table whose name is taken from the -t flag and appends &quot;_nospam&quot;.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../fwinterface/fwflag_spam_filter.html"><span class="doc">--spam_filter</span></a></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># creates the table msgs_nospam</span>
+./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--spam_filter<span class="w"> </span><span class="m">0</span>.1
+</pre></div>
+</div>
+</section>
+<section id="real-world-example">
+<h2>Real World Example<a class="headerlink" href="#real-world-example" title="Link to this heading"></a></h2>
+<p>Using both the language filter and the deduplication filters typically yeild nice results (both with the <a class="reference internal" href="../fwinterface/fwflag_clean_messages.html"><span class="doc">--clean_messages</span></a> flag):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># creates the table msgs_en</span>
+./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--language_filter<span class="w"> </span>en<span class="w"> </span>--clean_messages
+
+<span class="c1"># creates the table msgs_en_dedup</span>
+./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_en<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--deduplicate<span class="w"> </span>--clean_messages
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

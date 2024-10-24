@@ -1,0 +1,394 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DLATK with ConvoKit &mdash; DLATK 1.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" href="../_static/style.css" type="text/css" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/dlatk_logo_square.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#recommended-install">Recommended Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-install">Full Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#setup">Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#linux">Linux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#osx-with-brew">OSX (with brew)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-pip">Install (pip)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-anaconda">Install (Anaconda)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-github">Install (GitHub)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#install-other-dependencies">Install Other Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#load-nltk-corpus">Load NLTK corpus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-stanford-parser">Install Stanford Parser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-tweet-nlp-v0-3-ark-tweet-nlp-0-3">Install Tweet NLP v0.3 (ark-tweet-nlp-0.3)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#python-modules-optional">Python Modules (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#install-the-ibm-wordcloud-jar-file-optional">Install the IBM Wordcloud jar file (optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../install.html#mallet-optional">Mallet (optional)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#full-list-of-dependencies">Full List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other">Other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#python-optional">Python (optional)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#other-optional">Other (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#python-version-support">Python version support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#command-line-interface">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#mysql-configuration">MySQL Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#sample-datasets">Sample Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../install.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../install.html#install-issues">Install Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/dlatk/dlatk/">Github Repo</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing">Getting started in Colab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#text-cleaning-and-transformations">Text Cleaning and Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#viewing-your-data-and-output">Viewing your data and output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#lda-with-mallet">LDA with Mallet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#data-engines">Data Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#other-topics">Other Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#video-tutorials">Video Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Packaged Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#language-data">Language Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#blog-authorship-corpus">Blog Authorship Corpus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lexica">Lexica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#age-and-gender-lexica">Age and Gender Lexica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#perma-lexicon">PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#spanish-perma-lexicon">Spanish PERMA Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#other-lexica">Other Lexica</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets.html#lda-topics">LDA Topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../datasets.html#facebook-topics">2000 Facebook Topics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dlatkinterface_ordered.html">dlatkInterface Flags by type</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-extraction">Feature Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#feature-refinement">Feature Refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#language-insights">Language Insights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#clustering">Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dlatkinterface_ordered.html#classification">Classification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dlatkinterface_ordered.html#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../papers.html">Papers Utilizing DLATK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#dlatk-paper">DLATK Paper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../papers.html#peer-reviewed-publications">Peer Reviewed Publications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id1">2020</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id2">2019</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id3">2018</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id4">2017</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id11">2016</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id21">2015</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id26">2014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../papers.html#id32">2013</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DLATK</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">DLATK with ConvoKit</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/tut_convokit.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dlatk-with-convokit">
+<span id="tut-convokit"></span><h1>DLATK with ConvoKit<a class="headerlink" href="#dlatk-with-convokit" title="Link to this heading"></a></h1>
+<p>In this tutorial we will import a ConvoKit data set, extract features, and run Differential Language Analysis (DLA).</p>
+<section id="step-1-import-data">
+<h2>Step 1 - Import Data<a class="headerlink" href="#step-1-import-data" title="Link to this heading"></a></h2>
+<p>Data must be formatted according to <a class="reference external" href="https://convokit.cornell.edu/documentation/data_format.html">ConvoKit standards</a>. In particular, DLATK will import three tables: <strong>utterances</strong>, <strong>speakers</strong>, and <strong>conversations</strong>. The json files <em>corpus.json</em> and <em>index.json</em> are ignored.</p>
+<p>ConvoKit comes packaged with <a class="reference external" href="https://convokit.cornell.edu/documentation/datasets.html">several data sets</a>. We will use the <a class="reference external" href="https://convokit.cornell.edu/documentation/movie.html">Cornell Movie–Dialogs Corpus</a> for this tutorial, which you can download <a class="reference external" href="https://zissou.infosci.cornell.edu/convokit/datasets/movie-corpus/">here</a>. To import the data you need to pass the path to the downloaded (and unzipped) corpus directory.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>dlatk/tools/importmethods.py<span class="w"> </span>--add_convokit<span class="w"> </span>/path/to/downloaded/data/movie-corpus
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Note that wherever you run the above command from, DLATK will create a sqlite database file called <em>movie-corpus.db</em>. You will need the full path to this file for subsequent DLATK commands.</p>
+</div>
+<p>You will then see the following printed to your terminal</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>CREATE<span class="w"> </span>TABLE<span class="w"> </span>utterances<span class="w"> </span><span class="o">(</span>message_id<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>conversation_id<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>message<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>speaker<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>movie_id<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>parsed<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>reply_to<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>timestamp<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>vectors<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">))</span><span class="p">;</span>
+Importing<span class="w"> </span>data,<span class="w"> </span>reading<span class="w"> </span>/path/to/downloaded/data/movie-corpus/utterances.jsonl<span class="w"> </span>file
+<span class="w">    </span>Wrote<span class="w"> </span><span class="m">10000</span><span class="w"> </span>lines
+<span class="w">    </span>Wrote<span class="w"> </span><span class="m">20000</span><span class="w"> </span>lines
+...
+<span class="w">    </span>Wrote<span class="w"> </span><span class="m">300000</span><span class="w"> </span>lines
+CREATE<span class="w"> </span>TABLE<span class="w"> </span>speakers<span class="w"> </span><span class="o">(</span>speaker<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>character_name<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>movie_idx<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>movie_name<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>gender<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>credit_pos<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>vectors<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">))</span><span class="p">;</span>
+Importing<span class="w"> </span>data,<span class="w"> </span>reading<span class="w"> </span>/path/to/downloaded/data/movie-corpus/speakers.json<span class="w"> </span>file
+CREATE<span class="w"> </span>TABLE<span class="w"> </span>conversations<span class="w"> </span><span class="o">(</span>conversation_id<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>movie_idx<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>movie_name<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>release_year<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>rating<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>votes<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>genre<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>vectors<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">))</span><span class="p">;</span>
+Importing<span class="w"> </span>data,<span class="w"> </span>reading<span class="w"> </span>/path/to/downloaded/data/movie-corpus/conversations.json<span class="w"> </span>file
+</pre></div>
+</div>
+<p>You can then view your data by using sqlite from the command line:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sqlite3<span class="w"> </span>movie-corpus.db
+
+sqlite&gt;<span class="w"> </span>.tables
+conversations<span class="w">  </span>speakers<span class="w">       </span>utterances
+
+sqlite&gt;<span class="w"> </span>.schema<span class="w"> </span>utterances
+CREATE<span class="w"> </span>TABLE<span class="w"> </span>utterances<span class="w"> </span><span class="o">(</span>message_id<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>conversation_id<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>message<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>speaker<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>movie_id<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>parsed<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>reply_to<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>timestamp<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>vectors<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">))</span><span class="p">;</span>
+
+sqlite&gt;<span class="w"> </span>SELECT<span class="w"> </span>*<span class="w"> </span>FROM<span class="w"> </span>speakers<span class="w"> </span>limit<span class="w"> </span><span class="m">3</span><span class="p">;</span>
+u0<span class="p">|</span>BIANCA<span class="p">|</span>m0<span class="p">|</span><span class="m">10</span><span class="w"> </span>things<span class="w"> </span>i<span class="w"> </span>hate<span class="w"> </span>about<span class="w"> </span>you<span class="p">|</span>f<span class="p">|</span><span class="m">4</span><span class="p">|</span><span class="o">[]</span>
+u2<span class="p">|</span>CAMERON<span class="p">|</span>m0<span class="p">|</span><span class="m">10</span><span class="w"> </span>things<span class="w"> </span>i<span class="w"> </span>hate<span class="w"> </span>about<span class="w"> </span>you<span class="p">|</span>m<span class="p">|</span><span class="m">3</span><span class="p">|</span><span class="o">[]</span>
+u3<span class="p">|</span>CHASTITY<span class="p">|</span>m0<span class="p">|</span><span class="m">10</span><span class="w"> </span>things<span class="w"> </span>i<span class="w"> </span>hate<span class="w"> </span>about<span class="w"> </span>you<span class="p">|</span>?<span class="p">|</span>?<span class="p">|</span><span class="o">[]</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-extract-features-with-dlatk">
+<h2>Step 2 - Extract Features with DLATK<a class="headerlink" href="#step-2-extract-features-with-dlatk" title="Link to this heading"></a></h2>
+<p>Now that your data is uploaded, you can extract features. The <strong>utterances</strong> table is contains the full turn-level conversation data. Two items have been renamed to follow DLATK conventions: <cite>id</cite> is now <cite>message_id</cite> and <cite>text</cite> is now <cite>message</cite>.</p>
+<p>DLATK allows one to extract features at various levels by simply changing the group flag <a class="reference internal" href="../fwinterface/fwflag_c.html"><span class="doc">-g</span></a> (i.e., the group or correl field specifies the level of feature aggregation). We have outcomes for both the speaker (in the <strong>speakers</strong> table) and conversations (in the <strong>conversations</strong> table). For this tutorial we will proceed with a <em>speaker</em> level analysis.</p>
+<p>First, we extract unigrams at the speaker level:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>--engine<span class="w"> </span>sqlite<span class="w"> </span>-d<span class="w"> </span>/path/to/db/movie-corpus<span class="w"> </span>-t<span class="w"> </span>utterances<span class="w"> </span>-g<span class="w"> </span>speaker<span class="w"> </span>--add_ngrams<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span>
+
+-----
+DLATK<span class="w"> </span>Interface<span class="w"> </span>Initiated:<span class="w"> </span><span class="m">2024</span>-03-26<span class="w"> </span><span class="m">18</span>:32:10
+-----
+Connecting<span class="w"> </span>to<span class="w"> </span>SQLite<span class="w"> </span>database:<span class="w"> </span>/path/to/db/movie-corpus.db
+query:<span class="w"> </span>PRAGMA<span class="w"> </span>table_info<span class="o">(</span>utterances<span class="o">)</span>
+SQL<span class="w"> </span>Query:<span class="w"> </span>DROP<span class="w"> </span>TABLE<span class="w"> </span>IF<span class="w"> </span>EXISTS<span class="w"> </span>feat<span class="nv">$1</span>gram<span class="nv">$utterances$speaker</span>
+SQL<span class="w"> </span>Query:<span class="w"> </span>CREATE<span class="w"> </span>TABLE<span class="w"> </span>feat<span class="nv">$1</span>gram<span class="nv">$utterances$speaker</span><span class="w"> </span><span class="o">(</span><span class="w"> </span>id<span class="w"> </span>INTEGER<span class="w"> </span>PRIMARY<span class="w"> </span>KEY,<span class="w"> </span>group_id<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>feat<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">36</span><span class="o">)</span>,<span class="w"> </span>value<span class="w"> </span>INTEGER,<span class="w"> </span>group_norm<span class="w"> </span>DOUBLE<span class="o">)</span>
+...
+
+finding<span class="w"> </span>messages<span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="m">8890</span><span class="w"> </span><span class="s1">&#39;speaker&#39;</span>s
+<span class="o">[</span><span class="m">0</span>%<span class="o">]</span><span class="w"> </span>Inserted<span class="w"> </span><span class="m">401</span><span class="w"> </span>total<span class="w"> </span>ngram<span class="w"> </span>rows<span class="w"> </span>covering<span class="w"> </span><span class="m">1</span><span class="w"> </span>speakers
+Messages<span class="w"> </span>Read:<span class="w"> </span>5k
+Messages<span class="w"> </span>Read:<span class="w"> </span>10k
+Messages<span class="w"> </span>Read:<span class="w"> </span>15k
+<span class="o">[</span><span class="m">5</span>%<span class="o">]</span><span class="w"> </span>Inserted<span class="w"> </span><span class="m">78283</span><span class="w"> </span>total<span class="w"> </span>ngram<span class="w"> </span>rows<span class="w"> </span>covering<span class="w"> </span><span class="m">445</span><span class="w"> </span>speakers
+...
+<span class="w"> </span><span class="o">[</span><span class="m">95</span>%<span class="o">]</span><span class="w"> </span>Inserted<span class="w"> </span><span class="m">1356583</span><span class="w"> </span>total<span class="w"> </span>ngram<span class="w"> </span>rows<span class="w"> </span>covering<span class="w"> </span><span class="m">8446</span><span class="w"> </span>speakers
+Messages<span class="w"> </span>Read:<span class="w"> </span>285k
+Messages<span class="w"> </span>Read:<span class="w"> </span>290k
+Messages<span class="w"> </span>Read:<span class="w"> </span>295k
+Done<span class="w"> </span>Reading<span class="w"> </span>/<span class="w"> </span>Inserting.
+Adding<span class="w"> </span>Keys<span class="w"> </span><span class="o">(</span><span class="k">if</span><span class="w"> </span>goes<span class="w"> </span>to<span class="w"> </span>keycache,<span class="w"> </span><span class="k">then</span><span class="w"> </span>decrease<span class="w"> </span>MAX_TO_DISABLE_KEYS<span class="w"> </span>or<span class="w"> </span>run<span class="w"> </span>myisamchk<span class="w"> </span>-n<span class="o">)</span>.
+Done
+
+-------
+Settings:
+
+Database<span class="w"> </span>-<span class="w"> </span>/path/to/db/movie-corpus
+Corpus<span class="w"> </span>-<span class="w"> </span>utterances
+Group<span class="w"> </span>ID<span class="w"> </span>-<span class="w"> </span>speaker
+Feature<span class="w"> </span>table<span class="o">(</span>s<span class="o">)</span><span class="w"> </span>-<span class="w"> </span>feat<span class="nv">$1</span>gram<span class="nv">$utterances$speaker</span>
+-------
+Interface<span class="w"> </span>Runtime:<span class="w"> </span><span class="m">1390</span>.21<span class="w"> </span>seconds
+DLATK<span class="w"> </span>exits<span class="w"> </span>with<span class="w"> </span>success!<span class="w"> </span>A<span class="w"> </span>good<span class="w"> </span>day<span class="w"> </span>indeed<span class="w">  </span>¯<span class="se">\_</span><span class="o">(</span>ツ<span class="o">)</span>_/¯.
+</pre></div>
+</div>
+<p>Now we have unigrams extracted for each speaker in the corpus. We can view this table using the command line:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sqlite3<span class="w"> </span>movie-corpus.db
+
+sqlite&gt;<span class="w"> </span>.tables
+conversations<span class="w">                       </span>speakers
+feat<span class="nv">$1</span>gram<span class="nv">$utterances$speaker</span><span class="w">       </span>utterances
+feat<span class="nv">$meta_1gram$utterances$speaker</span>
+
+sqlite&gt;<span class="w"> </span>SELECT<span class="w"> </span>*<span class="w"> </span>FROM<span class="w"> </span>feat<span class="nv">$1</span>gram<span class="nv">$utterances$speaker</span><span class="w"> </span>LIMIT<span class="w"> </span><span class="m">5</span><span class="p">;</span>
+<span class="m">1</span><span class="p">|</span>u0<span class="p">|</span>they<span class="p">|</span><span class="m">1</span><span class="p">|</span><span class="m">0</span>.000859845227858985
+<span class="m">2</span><span class="p">|</span>u0<span class="p">|</span><span class="k">do</span><span class="p">|</span><span class="m">3</span><span class="p">|</span><span class="m">0</span>.00257953568357696
+<span class="m">3</span><span class="p">|</span>u0<span class="p">|</span>not<span class="p">|</span><span class="m">11</span><span class="p">|</span><span class="m">0</span>.00945829750644884
+<span class="m">4</span><span class="p">|</span>u0<span class="p">|</span>!<span class="p">|</span><span class="m">9</span><span class="p">|</span><span class="m">0</span>.00773860705073087
+<span class="m">5</span><span class="p">|</span>u0<span class="p">|</span>i<span class="p">|</span><span class="m">44</span><span class="p">|</span><span class="m">0</span>.0378331900257954
+</pre></div>
+</div>
+<p>To extract features at the utterance or conversation level you simply change the <a class="reference internal" href="../fwinterface/fwflag_c.html"><span class="doc">-g</span></a> flag:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>--engine<span class="w"> </span>sqlite<span class="w"> </span>-d<span class="w"> </span>/path/to/db/movie-corpus<span class="w"> </span>-t<span class="w"> </span>utterances<span class="w"> </span>-g<span class="w"> </span>message_id<span class="w"> </span>--add_ngrams<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span>
+
+dlatkInterface.py<span class="w"> </span>--engine<span class="w"> </span>sqlite<span class="w"> </span>-d<span class="w"> </span>/path/to/db/movie-corpus<span class="w"> </span>-t<span class="w"> </span>utterances<span class="w"> </span>-g<span class="w"> </span>conversation_id<span class="w"> </span>--add_ngrams<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+<p>Next, we will remove rare features. This next command will remove features which are used by less than 5% of groups (i.e., speakers). We set the <a class="reference internal" href="../fwinterface/fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a> flag to 0 so that we include all speakers.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>--engine<span class="w"> </span>sqlite<span class="w"> </span>-d<span class="w"> </span>/path/to/db/movie-corpus<span class="w"> </span>-t<span class="w"> </span>utterances<span class="w"> </span>-g<span class="w"> </span>speaker<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$1gram$utterances$speaker&#39;</span><span class="w"> </span>--feat_occ_filter<span class="w"> </span>--set_p_occ<span class="w"> </span><span class="m">0</span>.05<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">0</span>
+
+-----
+DLATK<span class="w"> </span>Interface<span class="w"> </span>Initiated:<span class="w"> </span><span class="m">2024</span>-03-26<span class="w"> </span><span class="m">19</span>:05:26
+-----
+Connecting<span class="w"> </span>to<span class="w"> </span>SQLite<span class="w"> </span>database:<span class="w"> </span>/path/to/db/movie-corpus.db
+feat<span class="nv">$1</span>gram<span class="nv">$utterances$speaker</span><span class="w"> </span><span class="o">[</span>threshold:<span class="w"> </span><span class="m">444</span><span class="o">]</span>
+SQL<span class="w"> </span>Query:<span class="w"> </span>DROP<span class="w"> </span>TABLE<span class="w"> </span>IF<span class="w"> </span>EXISTS<span class="w"> </span>feat<span class="nv">$1</span>gram<span class="nv">$utterances$speaker$0</span>_05
+feat<span class="nv">$1</span>gram<span class="nv">$utterances$speaker</span><span class="w"> </span>&lt;new<span class="w"> </span>table<span class="w"> </span>feat<span class="nv">$1</span>gram<span class="nv">$utterances$speaker$0</span>_05<span class="w"> </span>will<span class="w"> </span>have<span class="w"> </span><span class="m">561</span><span class="w"> </span>distinct<span class="w"> </span>features.&gt;
+SQL<span class="w"> </span>Query:<span class="w"> </span>CREATE<span class="w"> </span>TABLE<span class="w"> </span>feat<span class="nv">$1</span>gram<span class="nv">$utterances$speaker$0</span>_05<span class="w"> </span><span class="o">(</span><span class="w"> </span>id<span class="w"> </span>INTEGER<span class="w"> </span>PRIMARY<span class="w"> </span>KEY,<span class="w"> </span>group_id<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>feat<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">36</span><span class="o">)</span>,<span class="w"> </span>value<span class="w"> </span>INTEGER,<span class="w"> </span>group_norm<span class="w"> </span>DOUBLE<span class="o">)</span>
+<span class="m">0</span>.1m<span class="w"> </span>feature<span class="w"> </span>instances<span class="w"> </span>written
+...
+<span class="m">0</span>.8m<span class="w"> </span>feature<span class="w"> </span>instances<span class="w"> </span>written
+Done<span class="w"> </span>inserting.
+Enabling<span class="w"> </span>keys.
+<span class="k">done</span>.
+-------
+Settings:
+
+Database<span class="w"> </span>-<span class="w"> </span>/path/to/db/movie-corpus
+Corpus<span class="w"> </span>-<span class="w"> </span>utterances
+Group<span class="w"> </span>ID<span class="w"> </span>-<span class="w"> </span>speaker
+Feature<span class="w"> </span>table<span class="o">(</span>s<span class="o">)</span><span class="w"> </span>-<span class="w"> </span>feat<span class="nv">$1</span>gram<span class="nv">$utterances$speaker$0</span>_05
+-------
+Interface<span class="w"> </span>Runtime:<span class="w"> </span><span class="m">6</span>.44<span class="w"> </span>seconds
+DLATK<span class="w"> </span>exits<span class="w"> </span>with<span class="w"> </span>success!<span class="w"> </span>A<span class="w"> </span>good<span class="w"> </span>day<span class="w"> </span>indeed<span class="w">  </span>¯<span class="se">\_</span><span class="o">(</span>ツ<span class="o">)</span>_/¯.
+</pre></div>
+</div>
+</section>
+<section id="step-2-correlate-features-with-outcomes">
+<h2>Step 2 - Correlate Features with Outcomes<a class="headerlink" href="#step-2-correlate-features-with-outcomes" title="Link to this heading"></a></h2>
+<p>Here we will look at words which are used differentially across genders. Before doing this, we need to clean the gender data in the <strong>speakers</strong> table.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sqlite&gt;<span class="w"> </span><span class="k">select</span><span class="w"> </span>distinct<span class="w"> </span>gender<span class="w"> </span>from<span class="w"> </span>speakers<span class="p">;</span>
+f
+m
+?
+M
+F
+sqlite&gt;<span class="w"> </span>update<span class="w"> </span>speakers<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;f&#39;</span><span class="w"> </span>where<span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;F&#39;</span><span class="p">;</span>
+sqlite&gt;<span class="w"> </span>update<span class="w"> </span>speakers<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;m&#39;</span><span class="w"> </span>where<span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;M&#39;</span><span class="p">;</span>
+sqlite&gt;<span class="w"> </span>update<span class="w"> </span>speakers<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>null<span class="w"> </span>where<span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;?&#39;</span><span class="p">;</span>
+sqlite&gt;<span class="w"> </span><span class="k">select</span><span class="w"> </span>distinct<span class="w"> </span>gender<span class="w"> </span>from<span class="w"> </span>speakers<span class="p">;</span>
+f
+m
+</pre></div>
+</div>
+<p>Now we can use DLATK to correlate unigram features with the binary gender outcome. We will perform DLA using a logistic regression and will visualize these correlations with a wordcloud. The <a class="reference internal" href="../fwinterface/fwflag_categorical.html"><span class="doc">--categorical</span></a> will convert the text string in the <em>gender</em> column to a one-hot encoding, where females are 1 and males are 0. Null entries are dropped.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>--engine<span class="w"> </span>sqlite<span class="w"> </span>-d<span class="w"> </span>/path/to/db/movie-corpus<span class="w"> </span>-t<span class="w"> </span>utterances<span class="w"> </span>-g<span class="w"> </span>speaker<span class="w"> </span><span class="se">\</span>
+-f<span class="w"> </span><span class="s1">&#39;feat$1gram$utterances$speaker$0_5&#39;</span><span class="w"> </span><span class="se">\</span>
+--outcome_table<span class="w"> </span>speakers<span class="w"> </span>--outcomes<span class="w"> </span>gender<span class="w"> </span>--categorical<span class="w"> </span>gender<span class="w"> </span><span class="se">\</span>
+--correlate<span class="w"> </span>--logistic_regression<span class="w"> </span>--tagcloud<span class="w"> </span>--make_wordclouds<span class="w"> </span><span class="se">\</span>
+--output<span class="w"> </span>gender_wordclouds
+
+...
+Yielding<span class="w"> </span>data<span class="w"> </span>over<span class="w"> </span><span class="o">[</span><span class="s1">&#39;gender__f&#39;</span><span class="o">]</span>,<span class="w"> </span>adjusting<span class="w"> </span><span class="k">for</span>:<span class="w"> </span><span class="o">[]</span>.
+Yielding<span class="w"> </span>norms<span class="w"> </span>with<span class="w"> </span>zeros<span class="w"> </span><span class="o">(</span><span class="m">1073</span><span class="w"> </span>groups<span class="w"> </span>*<span class="w"> </span><span class="m">561</span><span class="w"> </span>feats<span class="o">)</span>.
+<span class="w">    </span><span class="m">200</span><span class="w"> </span>features<span class="w"> </span>correlated
+<span class="w">    </span><span class="m">400</span><span class="w"> </span>features<span class="w"> </span>correlated
+...
+outputting<span class="w"> </span>tagcloud<span class="w"> </span>to:<span class="w"> </span>gender_wordclouds_tagcloud.txt
+Wordcloud<span class="w"> </span>created<span class="w"> </span>at:<span class="w"> </span>gender_wordclouds_tagcloud_wordclouds/gender__f_pos.B_0.164-0.507_wc.png
+Wordcloud<span class="w"> </span>created<span class="w"> </span>at:<span class="w"> </span>gender_wordclouds_tagcloud_wordclouds/gender__f_neg.B_0.167-0.470_wc.png
+</pre></div>
+</div>
+<p>From the above output we see that we are correlating 561 features across 1073 observations (speakers). The names of the files show use the full range of coefficient values, e.g. 0.164 to 0.507 for the words in the positive wordcloud. Wordclouds are shown below:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Outcome</p></th>
+<th class="head"><p>Positive Correlation (female)</p></th>
+<th class="head"><p>Negative Correlation (male)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Gender</p></td>
+<td><p><img alt="gender_ck_1pos" src="../_static/gender_ck_1pos.png" /></p></td>
+<td><p><img alt="gender_ck_1neg" src="../_static/gender_ck_1neg.png" /></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, H. Andrew Schwartz and Salvatore Giorgi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

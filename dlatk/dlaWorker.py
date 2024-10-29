@@ -129,6 +129,8 @@ class DLAWorker(object):
         db_type = self.db_type
         db_idx = db_type_to_idx[db_type]
         db_name = self.lexicondb
+        print("db_namedb_namedb_namedb_name", db_name)
+        print("db_typedb_typedb_typedb_type", db_type)
 
         if db_type == "sqlite":
             default_dir = path.join("/content", "sqlite_data") if path.exists("/content") else path.join(path.expanduser('~'), "sqlite_data")

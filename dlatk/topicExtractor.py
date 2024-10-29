@@ -23,6 +23,15 @@ except:
     dlac.warn("TopicExtractor: gensim Mallet wrapper unavailable, using Mallet directly.")
     pass
 
+try:
+    from gensim.models.coherencemodel import CoherenceModel
+    from gensim.corpora import Dictionary
+except:
+    CoherenceModel = None
+    Dictionary = None
+    dlac.warn("TopicExtractor: gensim CoherenceModel unavailable, cannot compute topic coherence.")
+    pass
+
 from numpy import log2, isnan
 
 try:
@@ -139,9 +148,110 @@ class TopicExtractor(FeatureExtractor):
                     newLLs[topic][word] = topic_word_freq[topic][word]
         self.printDistToCSV(newLLs, filename+'.freq.threshed50.loglik.csv')
 
+        print("Topic Metrics:")
+        CoherenceModel = None
+        if CoherenceModel:
+            u_mass, c_v, c_uci, c_npmi = self.topic_coherence(self.ldaMsgTable, newLLs)
+            print("\tU_Mass coherence: " + ".3f" % u_mass)
+            print("\tC_V coherence: " + ".3f" % c_v)
+            print("\tC_uci coherence: " + ".3f" % c_uci)
+            print("\tC_npmi coherence: " + ".3f" % c_npmi)
+        else:
+            
+            dlac.warn("TopicExtractor: gensim CoherenceModel unavailable, cannot compute topic coherence.")
+
+        L = 30
+        tu = None
+        tu = self.topic_uniqueness(newLLs, L=30, renorm=True)
+        if tu:
+            print("\tTopic Uniqueness ({L}): ".format(L=L) + ".3f" % tu)
+            
         #TODO: print topics to tables:
         #id, topic, term, pcond, lik, loglik
 
+    def topic_coherence(msg_table, topics_dict):
+        '''
+            msg_table (str): name of message table used to estimate topics
+            topics_dict (dict): dictionary keyed on topic then on word, with weight as value
+
+            topic_table (str): name of table with representative words of topics
+        '''
+
+        # print("- Reading corpus -")
+        # corpus_query = f'''SELECT * from {msg_table} limit 10000;'''
+        # corpus_df = pd.read_sql(corpus_query, engine)
+        # messages_li = corpus_df['message'].tolist()
+
+        # print("- Tokenizing corpus -")
+        # texts = []
+        # for msg in messages_li:
+        #     if msg is None:
+        #         msg = ''
+        #     texts.append(msg.split())
+
+        # print("- Reading topics -")
+        # topics_query = f'''SELECT * from {topic_table};'''
+        # topics_df = pd.read_sql(topics_query, engine)
+        # topics_li = topics_df['termy'].tolist()
+
+        topics = []
+        for topic in topics_li:
+            topics.append(topic.split(', '))
+
+        dictionary = Dictionary(texts)
+
+        print("- Computing u_mass -")
+        cm1 = CoherenceModel(topics=topics, texts=texts, dictionary=dictionary, coherence='u_mass')
+        u_mass = cm1.get_coherence()
+
+        print("- Computing c_v -")
+        cm2 = CoherenceModel(topics=topics, texts=texts, dictionary=dictionary, coherence='c_v')
+        c_v = cm2.get_coherence()
+
+        print("- Computing c_uci -")
+        cm3 = CoherenceModel(topics=topics, texts=texts, dictionary=dictionary, coherence='c_uci')
+        c_uci = cm3.get_coherence()
+
+        print("- Computing c_npmi -")
+        cm4 = CoherenceModel(topics=topics, texts=texts, dictionary=dictionary, coherence='c_npmi')
+        c_npmi = cm4.get_coherence()
+
+        return u_mass, c_v, c_uci, c_npmi
+
+    def topic_uniqueness(topics_dict, L, renorm=False):
+        '''
+            topics_dict (dict): dictionary keyed on topic then on word, with weight as value
+            L (int): number of top words to consider
+            renorm (boolean): renormalize topic uniqueness to between 0 and 1, 
+                            otherwise topic uniqueness is between 1 / len(topics_dict) and 1
+        '''
+
+        K = len(topics_dict)
+        if L == 0 or K == 0:
+            print("Both L and K must be non-zero, when calculating topic uniqueness")
+            return None
+        
+        # sort the dict
+        sorted_topics_dict = dict()
+        for topic, words in topics_dict.items():
+            sorted_words = [k for k, v in sorted(words.items(), key=lambda item: item[1], reverse=True)][0:L]
+            sorted_topics_dict[topic] = {word: words[word] for word in sorted_words}
+        
+        topic_scores = dict()
+        for topic, words in sorted_topics_dict.items():
+            this_score = 0
+            for word in words:
+                cnt_l_k = 0
+                for topic_inner, words_inner in sorted_topics_dict.items():
+                    if word in words_inner:
+                        cnt_l_k += 1
+                this_score += 1 / float(cnt_l_k)
+            topic_scores[topic] = this_score/float(L)
+
+        TU = sum([v for k,v  in topic_scores.items()]) / float(K)
+        if renorm:
+            TU = (TU - 1 / float(K)) / float((1 - 1 / float(K)))
+        return TU
 
     @staticmethod
     def printDistToCSV(dist, fileName):

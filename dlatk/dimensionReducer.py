@@ -218,6 +218,8 @@ class DimensionReducer:
             sys.exit()
         if modelName == "lda":
             component_name = "nb_topics"
+        elif modelName == "sc":
+            component_name = "n_clusters"
         else:
             component_name = "n_components"
         try:

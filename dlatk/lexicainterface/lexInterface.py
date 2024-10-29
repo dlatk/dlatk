@@ -402,6 +402,7 @@ class Lexicon(object):
         self.mysql_config_file = mysql_config_file
         self.encoding = encoding
         self.use_unicode = use_unicode
+        print("self.lex_db_type", self.lex_db_type, self.lexicon_db)
 
         self.engine = DataEngine(self.lexicon_db, self.mysql_config_file, self.encoding, self.use_unicode, self.lex_db_type)
         (self.dbConn, self.dbCursor, self.dictCursor) = self.engine.connect()

@@ -193,30 +193,33 @@ class TopicExtractor(FeatureExtractor):
         # topics_query = f'''SELECT * from {topic_table};'''
         # topics_df = pd.read_sql(topics_query, engine)
         # topics_li = topics_df['termy'].tolist()
+        print("msg_table", msg_table)
+        print("topics_dict", topics_dict)
+        return
 
-        topics = []
-        for topic in topics_li:
-            topics.append(topic.split(', '))
+        # topics = []
+        # for topic in topics_li:
+        #     topics.append(topic.split(', '))
 
-        dictionary = Dictionary(texts)
+        # dictionary = Dictionary(texts)
 
-        print("- Computing u_mass -")
-        cm1 = CoherenceModel(topics=topics, texts=texts, dictionary=dictionary, coherence='u_mass')
-        u_mass = cm1.get_coherence()
+        # print("- Computing u_mass -")
+        # cm1 = CoherenceModel(topics=topics, texts=texts, dictionary=dictionary, coherence='u_mass')
+        # u_mass = cm1.get_coherence()
 
-        print("- Computing c_v -")
-        cm2 = CoherenceModel(topics=topics, texts=texts, dictionary=dictionary, coherence='c_v')
-        c_v = cm2.get_coherence()
+        # print("- Computing c_v -")
+        # cm2 = CoherenceModel(topics=topics, texts=texts, dictionary=dictionary, coherence='c_v')
+        # c_v = cm2.get_coherence()
 
-        print("- Computing c_uci -")
-        cm3 = CoherenceModel(topics=topics, texts=texts, dictionary=dictionary, coherence='c_uci')
-        c_uci = cm3.get_coherence()
+        # print("- Computing c_uci -")
+        # cm3 = CoherenceModel(topics=topics, texts=texts, dictionary=dictionary, coherence='c_uci')
+        # c_uci = cm3.get_coherence()
 
-        print("- Computing c_npmi -")
-        cm4 = CoherenceModel(topics=topics, texts=texts, dictionary=dictionary, coherence='c_npmi')
-        c_npmi = cm4.get_coherence()
+        # print("- Computing c_npmi -")
+        # cm4 = CoherenceModel(topics=topics, texts=texts, dictionary=dictionary, coherence='c_npmi')
+        # c_npmi = cm4.get_coherence()
 
-        return u_mass, c_v, c_uci, c_npmi
+        # return u_mass, c_v, c_uci, c_npmi
 
     def topic_uniqueness(self, topics_dict, L, renorm=False):
         '''

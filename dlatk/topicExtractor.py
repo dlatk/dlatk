@@ -164,7 +164,7 @@ class TopicExtractor(FeatureExtractor):
         tu = None
         tu = self.topic_uniqueness(newLLs, L=30, renorm=True)
         if tu:
-            print("\tTopic Uniqueness ({L}): ".format(L=str(L)) + ".3f" % tu)
+            print("\tTopic Uniqueness ({L}): ".format(L=str(L)) + "%.3f" % tu)
             
         #TODO: print topics to tables:
         #id, topic, term, pcond, lik, loglik

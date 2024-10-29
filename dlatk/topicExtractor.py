@@ -158,18 +158,18 @@ class TopicExtractor(FeatureExtractor):
             print("\tC_npmi coherence: " + ".3f" % c_npmi)
         else:
             
-            dlac.warn("TopicExtractor: gensim CoherenceModel unavailable, cannot compute topic coherence.")
+            dlac.warn("\tTopicExtractor: gensim CoherenceModel unavailable, cannot compute topic coherence.")
 
         L = 30
         tu = None
         tu = self.topic_uniqueness(newLLs, L=30, renorm=True)
         if tu:
-            print("\tTopic Uniqueness ({L}): ".format(L=L) + ".3f" % tu)
+            print("\tTopic Uniqueness ({L}): ".format(L=str(L)) + ".3f" % tu)
             
         #TODO: print topics to tables:
         #id, topic, term, pcond, lik, loglik
 
-    def topic_coherence(msg_table, topics_dict):
+    def topic_coherence(self, msg_table, topics_dict):
         '''
             msg_table (str): name of message table used to estimate topics
             topics_dict (dict): dictionary keyed on topic then on word, with weight as value
@@ -218,7 +218,7 @@ class TopicExtractor(FeatureExtractor):
 
         return u_mass, c_v, c_uci, c_npmi
 
-    def topic_uniqueness(topics_dict, L, renorm=False):
+    def topic_uniqueness(self, topics_dict, L, renorm=False):
         '''
             topics_dict (dict): dictionary keyed on topic then on word, with weight as value
             L (int): number of top words to consider

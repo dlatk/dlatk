@@ -10,6 +10,7 @@ import argparse
 import time
 import subprocess
 from pprint import pprint
+import numpy as np
 from numpy import isnan, sqrt, log
 from configparser import SafeConfigParser
 import gzip
@@ -490,6 +491,16 @@ def main(fn_args = None):
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
     group.add_argument('--add_embedding', '--add_emb_feat',  '--add_bert', action='store_true', dest='embaddfeat',
                        help='add BERT mean features (optionally add min, max, --bert_model large)')
+    group.add_argument('--add_pipeline', '--add_pipeline_feat', action='store_true', dest='addpipeline',
+                   help='Add transformer pipeline features (e.g., named entity recognition, sentiment analysis)')
+    group.add_argument('--pipeline_task', type=str, default='ner', dest='pipelinetask',
+                    help='The specific task for the transformer pipeline (e.g., ner, sentiment-analysis)')
+    group.add_argument('--pipeline_table_name', type=str, default=None, dest='pipelinetablename',
+                    help='Custom name for the feature table created from pipeline output')
+    group.add_argument('--max_tokens', type=int, default=255, dest='maxtokens',
+                    help='Maximum tokens per segment')
+    group.add_argument('--aggregate_func', type=str, default='mean', dest='aggregatefunc',
+                    help='The aggregation function to use (e.g., mean, max, min)')
     group.add_argument('--lexicon_normalization', '--lex_norm', '--dict_norm', action='store_true', help='Use weighting over lexicon terms (instead of over all terms).')
     group.add_argument('--multicategory_normalization', '--liwc_normalization', '--liwc_norm', action='store_true', help='Use weighting over lexicon terms across terms in all categories. Similar to --lexicon_normalization but totals are across all lexicon categories.')
 
@@ -1105,6 +1116,10 @@ def main(fn_args = None):
         if not fe: fe = FE()
         args.feattable = fe.addLDAFeatTable(args.addldafeattable, valueFunc = args.valuefunc)
 
+    if args.addpipeline:
+        if not fe: fe = FE()
+        args.pipelineTable = fe.add_pipeline(modelName=args.embmodel,tokenizerName=args.tokenizermodel,modelClass=args.embclass,pipelineTask=args.pipelinetask,batchSize=args.batchsize,maxTokensPerSeg=args.maxtokens,customTableName=args.pipelinetablename,valueFunc=args.valuefunc, aggregateFunc=eval(f"np.{args.aggregatefunc}"))
+    
     if args.addpnames:
         if not fe: fe = FE()
         namesLex = lexInterface.Lexicon(mysql_config_file=args.mysqlconfigfile)

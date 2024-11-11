@@ -1664,8 +1664,7 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
-
-    def add_pipeline(self, modelName=None, tokenizerName=None, modelClass=None, pipelineTask='ner', batchSize=dlac.GPU_BATCH_SIZE, maxTokensPerSeg=255, customTableName=None, valueFunc=lambda d: d, aggregateFunc=np.mean):
+    def addPipeline(self, modelName=None, tokenizerName=None, modelClass=None, pipelineTask='ner', batchSize=dlac.GPU_BATCH_SIZE, maxTokensPerSeg=255, customTableName=None, valueFunc=lambda d: d, aggregateFunc=np.mean):
         '''
             Adds transformer pipeline annotator with batching, GPU support, and aggregation by group_id
             ----------------------------------
@@ -1704,12 +1703,13 @@ class FeatureExtractor(DLAWorker):
         else:
             # Fallback to generic AutoModel if specific model class is not provided
             modelClass = modelClass or AutoModel
+            tokenizerClass = AutoTokenizer
 
         # Load Tokenizer
         try:
             tokenizer = tokenizerClass.from_pretrained(tokenizerName)
         except Exception as e:
-            raise RuntimeError(f"Error loading tokenizer '{tokenizerName}': {e}")
+            raise RuntimeError("Error loading tokenizer '{}': {}".format(tokenizerName, e))
 
         # Validate task compatibility and set model
         try:
@@ -1727,7 +1727,7 @@ class FeatureExtractor(DLAWorker):
 
             # Check for task compatibility
             if pipelineTask in SUPPORTED_MODELS and not isinstance(model, SUPPORTED_MODELS[pipelineTask]):
-                raise ValueError(f"Incompatible model class '{model.__class__.__name__}' for task '{pipelineTask}'. Expected model class: '{SUPPORTED_MODELS[pipelineTask].__name__}'.")
+                raise ValueError("Incompatible model class '{}' for task '{}'. Expected model class: '{}'.".format(model.__class__.__name__, pipelineTask, SUPPORTED_MODELS[pipelineTask].__name__))
 
             # Further validation on model attributes
             if pipelineTask == 'sentiment-analysis' and not hasattr(model.config, 'id2label'):
@@ -1737,7 +1737,7 @@ class FeatureExtractor(DLAWorker):
 
         except Exception as e:
             # If error, fall back to default model and class
-            dlac.warn(f"Warning: {e}. Falling back to default model for task '{pipelineTask}'.")
+            dlac.warn("Warning: {}. Falling back to default model for task '{}'.".format(e, pipelineTask))
             modelName, model_class, tokenizer_class = DEFAULT_MODELS.get(pipelineTask, ('bert-base-uncased', AutoModel, AutoTokenizer))
             model = model_class.from_pretrained(modelName)
             tokenizer = tokenizer_class.from_pretrained(tokenizerName)
@@ -1758,20 +1758,20 @@ class FeatureExtractor(DLAWorker):
                 device=device
             )
         except Exception as e:
-            raise RuntimeError(f"Error initializing pipeline for task '{pipelineTask}' with model '{modelName}': {e}")
+            raise RuntimeError("Error initializing pipeline for task '{}' with model '{}': {}".format(pipelineTask, modelName, e))
 
         # Create table for annotations
         if customTableName is None:
             modelName = modelName.split('/')[-1] if '/' in modelName else modelName
-            customTableName = f"{modelName}_{pipelineTask}"
+            customTableName = "{}_{}".format(modelName, pipelineTask)
 
         annTableName = self.createFeatureTable(customTableName, "VARCHAR(12)", 'DOUBLE', None, valueFunc, correlField=self.correl_field)
 
         # SQL query for fetching rows
-        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, self.corptable, self.correl_field)
+        usql = """SELECT {} FROM {} GROUP BY {}""".format(self.correl_field, self.corptable, self.correl_field)
         cfRows = FeatureExtractor.noneToNull(self.data_engine.execute_get_list(usql))
 
-        dlac.warn("Finding messages for %d '%s's" % (len(cfRows), self.correl_field))
+        dlac.warn("Finding messages for {} '{}'s".format(len(cfRows), self.correl_field))
         self.data_engine.disable_table_keys(annTableName)
 
         # Process each group_id (cf_id)
@@ -1805,17 +1805,16 @@ class FeatureExtractor(DLAWorker):
 
                                 for ann in annotations:
                                     if isinstance(ann, dict):
-                                        if pipelineTask == 'ner':
-                                            key = 'entity'
-                                        else:
-                                            key = 'label'
+                                        key = 'entity' if pipelineTask == 'ner' else 'label'
                                         feature_key = ann.get(key, pipelineTask)
                                         feature_value = ann.get('score', 1.0)
-                                        annotation_list.append((feature_key, feature_value, message_ids[batch_idx]))
+                                        if len(feature_key) > 12:
+                                            feature_key = feature_key[:12]
+                                        annotation_list.append((feature_key, feature_value))
                                     else:
-                                        print(f"Warning: Unexpected type {type(ann)} for annotation")
+                                        print("Warning: Unexpected type {} for annotation".format(type(ann)))
                         except Exception as e:
-                            print(f"Error processing annotations: {e}")
+                            print("Error processing annotations: {}".format(e))
                             
                         message_batch = []
                         message_ids = []
@@ -1825,45 +1824,53 @@ class FeatureExtractor(DLAWorker):
                 batch_annotations = pipe(message_batch)
                 try:
                     for batch_idx, annotations in enumerate(batch_annotations):
-                        # Ensure annotations is always a list
                         if not isinstance(annotations, list):
                             annotations = [annotations]
 
                         for ann in annotations:
                             if isinstance(ann, dict):
-                                if pipelineTask == 'ner':
-                                    key = 'entity'
-                                else:
-                                    key = 'label'
+                                key = 'entity' if pipelineTask == 'ner' else 'label'
                                 feature_key = ann.get(key, pipelineTask)
                                 feature_value = ann.get('score', 1.0)
-                                annotation_list.append((feature_key, feature_value, message_ids[batch_idx]))
+                                if len(feature_key) > 12:
+                                    feature_key = feature_key[:12]
+                                annotation_list.append((feature_key, feature_value))
                             else:
-                                print(f"Warning: Unexpected type {type(ann)} for annotation")
+                                print("Warning: Unexpected type {} for annotation".format(type(ann)))
                 except Exception as e:
-                    print(f"Error processing annotations: {e}")
+                    print("Error processing annotations: {}".format(e))
 
             # Aggregate results by group_id
             if annotation_list:
                 aggregated_annotations = {}
-                for feature_key, feature_value, message_id in annotation_list:
+                for feature_key, feature_value in annotation_list:
                     if feature_key not in aggregated_annotations:
                         aggregated_annotations[feature_key] = []
                     aggregated_annotations[feature_key].append(feature_value)
 
+                rows = [] 
                 for feature_key, values in aggregated_annotations.items():
                     aggregated_value = aggregateFunc(values)
-                    wsql = f"INSERT INTO {annTableName} (group_id, feat, value, group_norm) VALUES (%s, %s, %s, %s)"
-                    mm.executeWriteMany(
-                        self.corpdb,
-                        self.dbCursor,
-                        wsql,
-                        [(cf_id, feature_key, aggregated_value, valueFunc(aggregated_value))],
-                        writeCursor=self.dbConn.cursor(),
-                        charset=self.encoding,
-                        use_unicode=self.use_unicode,
-                        mysql_config_file=self.mysql_config_file
-                    )
+                    normalized_value = valueFunc(aggregated_value)
+
+                    # Append a tuple for each row to be inserted into `rows`
+                    rows.append((
+                        feature_key,
+                        float(aggregated_value),
+                        float(normalized_value)
+                    ))
+                    
+                # Create insert query for this group_id and set 'group_id' via set_values
+                try:
+                    insert_query = self.qb.create_insert_query(annTableName).set_values([
+                        ("group_id", cf_id),
+                        ("feat", ""),
+                        ("value", ""),
+                        ("group_norm", "")
+                    ])
+                    insert_query.execute_query(rows)
+                except Exception as e:
+                    dlac.warn("MYSQL Corpus DB ERROR on INSERT INTO {} for group_id {}: {}".format(annTableName, cf_id, e))
 
         dlac.warn("Done reading/inserting aggregated annotations.")
         dlac.warn("Adding Keys.")

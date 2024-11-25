@@ -210,7 +210,7 @@ def main(fn_args = None):
                        help='range of group id\'s to include in binning.')
     group.add_argument('--mask_table', type=str, metavar='TABLE', dest='masktable', default=None,
                        help='Table containing which groups run in various bins (for ttest).')
-    group.add_argument('--embedding_model', '--emb_model', '--bert_model', type=str, metavar='NAME', dest='embmodel', default=dlac.DEF_EMB_MODEL,
+    group.add_argument('--embedding_model', '--emb_model', '--bert_model', type=str, metavar='NAME', dest='embmodel', default=None,
                        help='Contextual Embedding model to use for extracting features.')
     group.add_argument('--emb_class', type=str, metavar='NAME', dest='embclass', default=None,
                        help='Contextual Embedding model class to use for extracting features.', choices=dlac.EMB_CLASS)
@@ -493,7 +493,7 @@ def main(fn_args = None):
                        help='add BERT mean features (optionally add min, max, --bert_model large)')
     group.add_argument('--add_pipeline', '--add_pipeline_feat', action='store_true', dest='addPipeline',
                    help='Add transformer pipeline features (e.g., named entity recognition, sentiment analysis)')
-    group.add_argument('--pipeline_task', type=str, default='ner', dest='pipelinetask',
+    group.add_argument('--pipeline_task', type=str,dest='pipelinetask',
                     help='The specific task for the transformer pipeline (e.g., ner, sentiment-analysis)')
     group.add_argument('--pipeline_table_name', type=str, default=None, dest='pipelinetablename',
                     help='Custom name for the feature table created from pipeline output')

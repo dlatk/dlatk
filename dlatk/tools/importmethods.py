@@ -2,6 +2,7 @@ import csv
 import json
 import os, sys
 import argparse
+from collections import defaultdict
 try:
     from MySQLdb import Warning
     from MySQLdb.cursors import SSCursor
@@ -152,6 +153,12 @@ def importConvoKit(database, table, pathToCorpus, db_type, mysql_config_file=dla
     data_engine.dataEngine.importConvoKit(pathToCorpus)
     return
 
+def exportConvoKit(database, outputPath, feature_tables, db_type,  mysql_config_file=dlac.MYSQL_CONFIG_FILE, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH):
+    data_engine = DataEngine(database, mysql_config_file, encoding, use_unicode, db_type)
+    data_engine.connect()
+    data_engine.dataEngine.exportConvoKit(outputPath , feature_tables)
+    return
+
 def main():
 
     parser = argparse.ArgumentParser(description='Import / export methods for DLATK')
@@ -162,6 +169,8 @@ def main():
     # file flags
     parser.add_argument('--csv_file', dest='csv_file', default=DEFAULT_CSV_FILE, help='Name and path to CSV file')
     parser.add_argument('--json_file', dest='json_file', default=DEFAULT_JSON_FILE, help='Name and path to JSON file')
+    parser.add_argument('--export_output_path', dest='export_output_path', default='.', help='Directory where exported JSON/JSONL files will be saved') 
+    parser.add_argument('--feature_tables', dest='feature_tables', default=None, help='Optional list of feature table names.')
 
     # action flags
     parser.add_argument('--csv_to_mysql', action='store_true', dest='csv_to_mysql', default=False, help='Import CSV to MySQL')
@@ -179,7 +188,8 @@ def main():
     parser.add_argument('--convokit_corpus', dest='convokit_corpus', default="", help='Path to ConvoKit formatted data.')
     parser.add_argument('--convokit_to_sqlite', action='store_true', dest='convokit_to_sqlite', default=False, help='Import ConvoKit corpus to SQLite')
     parser.add_argument('--convokit_to_mysql', action='store_true', dest='convokit_to_mysql', default=False, help='Import ConvoKit corpus to MySQL')
-
+    parser.add_argument('--export_convokit_to_sqlite', action='store_true', dest='export_convokit_to_sqlite', default=False, help='Export ConvoKit data from SQLite to JSON/JSONL')
+    parser.add_argument('--export_convokit_to_mysql', action='store_true', dest='export_convokit_to_mysql', default=False, help='Export ConvoKit data from MySQL to JSON/JSONL') 
     args = parser.parse_args()
 
     # check that flags are properly set
@@ -187,15 +197,20 @@ def main():
         print("You must choose a database -d")
         sys.exit(1)
 
-    if not args.table and not (args.convokit_to_sqlite or args.convokit_to_mysql):
+    if not args.table and not (args.convokit_to_sqlite or args.convokit_to_mysql or args.export_convokit_to_mysql or args.export_convokit_to_sqlite):
         print("You must choose a table -t")
+        sys.exit(1)
+
+    # Check for ConvoKit export dependencies
+    if (args.export_convokit_to_sqlite or args.export_convokit_to_mysql) and not args.export_output_path:
+        print("You must specify an output path using --export_output_path")
         sys.exit(1)
 
     if (args.convokit_to_sqlite or args.convokit_to_mysql) and not args.convokit_corpus:
         print("You must use --convokit_corpus with --convokit_to_sqlite or --convokit_to_mysql")
         sys.exit(1)
 
-    if not (args.csv_to_mysql or args.json_to_mysql or args.mysql_to_csv or args.append_csv_to_mysql or args.csv_to_sqlite or args.convokit_to_sqlite or args.convokit_to_mysql or args.sqlite_to_csv):
+    if not (args.csv_to_mysql or args.json_to_mysql or args.mysql_to_csv or args.append_csv_to_mysql or args.csv_to_sqlite or args.convokit_to_sqlite or args.convokit_to_mysql or args.sqlite_to_csv or args.export_convokit_to_sqlite or args.export_convokit_to_mysql ):
         print("You must choose some action: --csv_to_mysql, --append_csv_to_mysql, --json_to_mysql or --mysql_to_csv, --sqlite_to_csv, or --csv_to_sqlite or --convokit_to_mysql or --sqlite_to_csv")
         sys.exit() 
 
@@ -242,6 +257,13 @@ def main():
             sys.exit(1)
         print("Writing {db}.{table} to {csv}".format(db=args.db, table=args.table, csv=args.csv_file))
         sqliteToCSV(args.db, args.table, args.csv_file)
+    elif args.export_convokit_to_mysql:
+        print("Exporting ConvoKit data from MySQL to JSONL")
+        exportConvoKit(args.db,  args.export_output_path, args.feature_tables,db_type='mysql')
+        print(args.feature_tables)
+    elif args.export_convokit_to_sqlite:
+        print("Exporting ConvoKit data from SQLite to JSONL")
+        exportConvoKit(args.db,  args.export_output_path,args.feature_tables,db_type='sqlite')
 
 if __name__ == "__main__":
     main()

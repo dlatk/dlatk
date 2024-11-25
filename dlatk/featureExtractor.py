@@ -1664,7 +1664,7 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
-    def addPipeline(self, modelName=None, tokenizerName=None, modelClass=None, pipelineTask='ner', batchSize=dlac.GPU_BATCH_SIZE, maxTokensPerSeg=255, customTableName=None, valueFunc=lambda d: d, aggregateFunc=np.mean):
+    def addPipeline(self, modelName=None, tokenizerName=None, modelClass=None, pipelineTask=None, batchSize=dlac.GPU_BATCH_SIZE, maxTokensPerSeg=255, customTableName=None, valueFunc=lambda d: d, aggregateFunc=np.mean):
         '''
             Adds transformer pipeline annotator with batching, GPU support, and aggregation by group_id
             ----------------------------------
@@ -1682,66 +1682,18 @@ class FeatureExtractor(DLAWorker):
 
         # Import necessary modules within the function
         try:
-            from transformers import pipeline, AutoTokenizer, AutoModel, AutoModelForTokenClassification, AutoModelForSequenceClassification
+            from transformers import pipeline, AutoTokenizer,AutoModelForTokenClassification, AutoModelForSequenceClassification
             import torch
         except ImportError as e:
             dlac.warn("warning: unable to import transformers pipeline or torch")
             dlac.warn("Please install the transformers and torch libraries.")
             raise ImportError("Necessary libraries for transformers pipeline are missing.") from e
 
-        # Default model and tokenizer suggestions if none are provided or in case of errors
         DEFAULT_MODELS = {
             'ner': ('dbmdz/bert-large-cased-finetuned-conll03-english', AutoModelForTokenClassification, AutoTokenizer),
             'sentiment-analysis': ('distilbert-base-uncased-finetuned-sst-2-english', AutoModelForSequenceClassification, AutoTokenizer),
             'text-classification': ('distilbert-base-uncased-finetuned-sst-2-english', AutoModelForSequenceClassification, AutoTokenizer),
         }
-
-        # Set defaults if modelName or tokenizerName is not provided
-        if modelName is None or tokenizerName is None:
-            modelName, modelClass, tokenizerClass = DEFAULT_MODELS.get(pipelineTask, ('bert-base-uncased', AutoModel, AutoTokenizer))
-            tokenizerName = modelName
-        else:
-            # Fallback to generic AutoModel if specific model class is not provided
-            modelClass = modelClass or AutoModel
-            tokenizerClass = AutoTokenizer
-
-        # Load Tokenizer
-        try:
-            tokenizer = tokenizerClass.from_pretrained(tokenizerName)
-        except Exception as e:
-            raise RuntimeError("Error loading tokenizer '{}': {}".format(tokenizerName, e))
-
-        # Validate task compatibility and set model
-        try:
-            SUPPORTED_MODELS = {
-                'ner': AutoModelForTokenClassification,
-                'sentiment-analysis': AutoModelForSequenceClassification,
-                'text-classification': AutoModelForSequenceClassification,
-            }
-            
-            # Dynamically set model class if not explicitly specified
-            model_class = modelClass or SUPPORTED_MODELS.get(pipelineTask, AutoModel)
-
-            # Initialize model with compatibility checks
-            model = model_class.from_pretrained(modelName)
-
-            # Check for task compatibility
-            if pipelineTask in SUPPORTED_MODELS and not isinstance(model, SUPPORTED_MODELS[pipelineTask]):
-                raise ValueError("Incompatible model class '{}' for task '{}'. Expected model class: '{}'.".format(model.__class__.__name__, pipelineTask, SUPPORTED_MODELS[pipelineTask].__name__))
-
-            # Further validation on model attributes
-            if pipelineTask == 'sentiment-analysis' and not hasattr(model.config, 'id2label'):
-                raise ValueError("Selected model lacks `id2label` mapping, needed for sentiment analysis.")
-            elif pipelineTask == 'ner' and 'TokenClassification' not in model.__class__.__name__:
-                raise ValueError("NER tasks require a Token Classification model (e.g., AutoModelForTokenClassification).")
-
-        except Exception as e:
-            # If error, fall back to default model and class
-            dlac.warn("Warning: {}. Falling back to default model for task '{}'.".format(e, pipelineTask))
-            modelName, model_class, tokenizer_class = DEFAULT_MODELS.get(pipelineTask, ('bert-base-uncased', AutoModel, AutoTokenizer))
-            model = model_class.from_pretrained(modelName)
-            tokenizer = tokenizer_class.from_pretrained(tokenizerName)
-
         # Set device for GPU if available
         device = 0 if torch.cuda.is_available() else -1
         if device == 0:
@@ -1749,26 +1701,50 @@ class FeatureExtractor(DLAWorker):
         else:
             dlac.warn("CUDA is not available, using CPU.")
 
-        # Initialize the pipeline
+        # Initialize the pipeline based on provided parameters
         try:
-            pipe = pipeline(
-                task=pipelineTask,
-                model=model,
-                tokenizer=tokenizer,
-                device=device
-            )
+            # If only modelClass is specified, attempt to use the default tokenizer
+            if modelClass and not tokenizerName:
+                dlac.warn("Only modelClass '{}' specified. Attempting to use the default tokenizer.".format(modelClass.__name__))
+                tokenizer = AutoTokenizer.from_pretrained(modelName or DEFAULT_MODELS[pipelineTask][0])
+            
+            # Initialize pipeline based on available inputs
+            if modelName and pipelineTask:
+                dlac.warn("Initializing pipeline with model '{}' and task '{}'.".format(modelName, pipelineTask))
+                pipe = pipeline(task=pipelineTask, model=modelName, device=device)
+            elif modelName:
+                dlac.warn("Initializing pipeline with model '{}'.".format(modelName))
+                pipe = pipeline(model=modelName, device=device)
+            elif pipelineTask:
+                dlac.warn("Initializing pipeline for task '{}'.".format(pipelineTask))
+                default_model_name, _, _ = DEFAULT_MODELS.get(pipelineTask)
+                pipe = pipeline(task=pipelineTask, device=device)
+            else:
+                dlac.warn("No modelName or pipelineTask specified. Using default 'ner' task.")
+                default_model_name, _, _ = DEFAULT_MODELS.get('ner')
+                pipe = pipeline(task='ner', model=default_model_name, device=device)
+
         except Exception as e:
-            raise RuntimeError("Error initializing pipeline for task '{}' with model '{}': {}".format(pipelineTask, modelName, e))
+            dlac.warn("Error initializing pipeline: {}. Falling back to default model.".format(e))
+            if pipelineTask == None:
+                pipelineTask = 'ner'
+            default_model_name, default_model_class, default_tokenizer_class = DEFAULT_MODELS.get('ner')
+            tokenizer = default_tokenizer_class.from_pretrained(default_model_name)
+            pipe = pipeline(task=pipelineTask, model=default_model_name, tokenizer=tokenizer, device=device)
 
         # Create table for annotations
         if customTableName is None:
             modelName = modelName.split('/')[-1] if '/' in modelName else modelName
-            customTableName = "{}_{}".format(modelName, pipelineTask)
+            # Abbreviate modelName by taking the first letter of each word split by '-'
+            modelAbbrev = ''.join([word[0] for word in modelName.split('-')])
+            # Abbreviate pipelineTask by taking the first letter of each word split by '_'
+            taskAbbrev = ''.join([word[0] for word in pipelineTask.split('_')])
+            customTableName = "{}_{}".format(modelAbbrev, taskAbbrev)
 
         annTableName = self.createFeatureTable(customTableName, "VARCHAR(12)", 'DOUBLE', None, valueFunc, correlField=self.correl_field)
 
         # SQL query for fetching rows
-        usql = """SELECT {} FROM {} GROUP BY {}""".format(self.correl_field, self.corptable, self.correl_field)
+        usql = "SELECT {} FROM {} GROUP BY {}".format(self.correl_field, self.corptable, self.correl_field)
         cfRows = FeatureExtractor.noneToNull(self.data_engine.execute_get_list(usql))
 
         dlac.warn("Finding messages for {} '{}'s".format(len(cfRows), self.correl_field))

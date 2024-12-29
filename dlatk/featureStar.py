@@ -128,7 +128,7 @@ class FeatureStar(object):
 			self.oa = OutcomeAnalyzer(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, cattobinfields, cattointfields, group_freq_thresh, featureMappingTable, featureMappingLex, output_name, wordTable) if 'oa' in init else None
 			self.rp = RegressionPredictor(self.og, self.fg, model) if 'rp' in init else None
 			self.cp = ClassifyPredictor(self.og, self.fg, model) if 'cp' in init else None
-                        self.dr = DimensionReducer(self.fg, model, og=self.og, n_components=n_components) if 'dr' in init else None
+			self.dr = DimensionReducer(self.fg, model, og=self.og, n_components=n_components) if 'dr' in init else None
                         #fg, modelName="nmf", og=None, n_components=None):
 		else: 
 			if isinstance(featureTable, str):
@@ -142,7 +142,7 @@ class FeatureStar(object):
 			self.oa = OutcomeAnalyzer(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, group_freq_thresh, featureMappingTable, featureMappingLex, output_name, wordTable)
 			self.rp = RegressionPredictor(self.og, self.fg, model)
 			self.cp = ClassifyPredictor(self.og, self.fg, model)
-                        self.dr = ClassifyPredictor(self.fg, model, og=self.og, n_components=n_components)
+			self.dr = ClassifyPredictor(self.fg, model, og=self.og, n_components=n_components)
 		
 		self.allDLATK = {
 			"FeatureGetter": self.fg,

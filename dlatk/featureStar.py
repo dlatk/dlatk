@@ -32,6 +32,8 @@ class FeatureStar(object):
 
 	rp : RegressionPredictor object
 
+        dr : DimensionReducer object
+
 	allFW : dict
 		Dictionary containing all of the above attributes keyed on object name
 

@@ -145,15 +145,16 @@ class FeatureStar(object):
                         self.dr = ClassifyPredictor(self.fg, model, og=self.og, n_components=n_components)
 		
 		self.allDLATK = {
-				"FeatureGetter": self.fg,
-				"MessageTransformer": self.mt,
-				"FeatureExtractor": self.fe,
-				"FeatureRefiner": self.fr,
-				"OutcomeGetter": self.og,
-				"OutcomeAnalyzer": self.oa,
-				"RegressionPredictor": self.rp,
-				"ClassifyPredictor": self.cp,
-			}
+			"FeatureGetter": self.fg,
+			"MessageTransformer": self.mt,
+			"FeatureExtractor": self.fe,
+			"FeatureRefiner": self.fr,
+			"OutcomeGetter": self.og,
+			"OutcomeAnalyzer": self.oa,
+			"RegressionPredictor": self.rp,
+			"ClassifyPredictor": self.cp,
+                        "DimensionReducer": self.dr,
+		}
 
 	def combineDFs(self, fg=None, og=None, fillNA=True):
 		"""Method for combining a feature table with an outcome table in a single dataframe

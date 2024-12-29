@@ -904,6 +904,9 @@ def main(fn_args = None):
     def OA():
         return OutcomeAnalyzer(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname, outcome_adaptation_factors=args.adaptationfactors)
 
+    def DR(fg, og):
+        return DimensionReducer(fg, args.model, og, args.n_components)
+    
     def FR():
         return FeatureRefiner(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
 
@@ -1869,7 +1872,7 @@ def main(fn_args = None):
     if args.fitreducer or args.reducertolexicon or args.supertopics or args.transformdrtofeats:
         if not og: og = OG()
         if not fg: fg = FG()
-        dr = DimensionReducer(fg, args.model, og, args.n_components)
+        if not dr: dr = DR(fg, og) 
     if args.supertopics and not args.lextable:
         print("WARNING: you must use -l with --super_topics")
         sys.exit(1)
@@ -2101,7 +2104,7 @@ def main(fn_args = None):
 
     if args.transformdrtofeats and dr:
         if not fe: fe = FE()
-        dr.transform(sparse = args.sparse, standardize = args.standardize, writeToFeats = args.transformdrtofeats, fe = fe)
+        args.feattable = dr.transform(sparse = args.sparse, standardize = args.standardize, writeToFeats = args.transformdrtofeats, fe = fe)
         
     if args.reducertolexicon or args.supertopics:
         if args.reducertolexicon:

@@ -126,7 +126,7 @@ class DimensionReducer:
         #'nmf' : { 'n_components': 15, 'init': 'nndsvd', 'sparseness': None, 'beta': 1, 'eta' : 0.1, 'tol': .0001, 'max_iter' : 200, 'nls_max_iter': 2000, 'random_state' :42 },
         #'nmf' : { 'n_components': 30, 'init': 'nndsvd', 'solver':'cd', 'l1_ratio': 0.95, 'alpha': 10, 'max_iter' : 200, 'random_state' :42 },
         "nmf": {"n_components": 30, "init": "nndsvd", "random_state": 42},
-        "pca": {"n_components": "mle", "whiten": False},
+        "pca": {"whiten": False},
         #'pca' : { 'n_components': 'mle', 'whiten': True},
         #'sparsepca': {'n_components':None, 'alpha':1, 'ridge_alpha':0.01, 'method': 'lars', 'n_jobs':4, 'random_state':42},
         "sparsepca": {
@@ -482,6 +482,7 @@ class DimensionReducer:
                 cluster=cluster, X=X, scaler=scaler, fSelector=fSelector
             )
 
+        fTables = []
         for outcomeName, outcomeX in transformedX.items():
             if not isinstance(outcomeX, csr_array):
                 dictX = dict()
@@ -546,11 +547,15 @@ class DimensionReducer:
                         query.execute_query(rows)
                         written += len(rows)
                         print("   %d feature rows written" % written)
+                    fTables.append(featureTableName)
 
             else:
                 raise NotImplementedError
 
-        return transformedX
+        if writeToFeats:
+            return fTables
+        else:
+            return transformedX
 
     def _transform(self, cluster, X, scaler=None, fSelector=None, y=None):
         if scaler:

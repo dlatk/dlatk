@@ -741,9 +741,9 @@ def main(fn_args = None):
     group.add_argument('--useXControls', dest='usexcontrols',action="store_true", default = False,
                        help='Use controls stored in X matrix when predicting CCA components to SQL')
 
-    group.add_argument('--save_models', action='store_true', dest='savemodels', default=False,
+    group.add_argument('--save_models', '--save', action='store_true', dest='savemodels', default=False,
                        help='saves predictive models (uses --picklefile)')
-    group.add_argument('--load_models', action='store_true', dest='loadmodels', default=False,
+    group.add_argument('--load_models', '--load', action='store_true', dest='loadmodels', default=False,
                        help='loads predictive models (uses --picklefile)')
 
 

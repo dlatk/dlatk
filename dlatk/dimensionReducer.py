@@ -234,12 +234,16 @@ class DimensionReducer:
                     )
                 for controlName, controlValues in controls.items():
                     controls[controlName] = dict([(g, controlValues[g]) for g in groups])
-            print("[number of groups: %d]" % len(groups))
+            print("  [DR: number of groups: %d]" % len(groups))
             controlValues = list(controls.values())  # list of dictionaries of group=>group_norm
         elif restrictToGroups:
-            print("[Not using outcomes]")
+            print("  [Not using outcomes]")
             groups = restrictToGroups
-
+        else:
+            #TODO: get this working without an outcomeGetter
+            controlValues = []
+            print("  [No outcome getter present; dim-reducer may not work correct]")
+            
         # 2. get data for X:
         (groupNorms, featureNames) = (None, None)
         if sparse:
@@ -249,6 +253,7 @@ class DimensionReducer:
 
         self.featureNames = list(groupNorms.keys())  # holds the order to expect features
         groupNormValues = list(groupNorms.values())  # list of dictionaries of group => group_norm
+        #print(str(self.featureGetter), 'len(groupNormValues)', str(len(groupNormValues)))#DEBUG
 
         #     this will return a dictionary of dictionaries
 
@@ -309,7 +314,7 @@ class DimensionReducer:
             print(" after feature selection: (N, features): %s" % str(X.shape))
 
         # no grid search
-        print("[Doing clustering using : %s]" % self.modelName.lower())
+        print("[Fitting reducer using : %s]" % self.modelName.lower())
         cluster = eval(self.modelToClassName[self.modelName.lower()] + "()")
         if "lda" in self.modelName.lower():
             self.params["lda"]["dictionary"] = self.featureNames

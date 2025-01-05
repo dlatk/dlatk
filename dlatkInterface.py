@@ -1442,6 +1442,17 @@ def main(fn_args = None):
         print("Created output filename: %s" % outputFile)
         return outputFile
 
+    def pprintCorrelsPerOutcome(correls, maxP=0.05):
+        for outcomeField, featRs in correls.items():
+            print("\n%s:" % outcomeField)
+            cnt = 0
+            for featR in featRs.items():
+                if featR[1][1] < args.maxP: cnt +=1
+            #pprint(featRs)#debug
+            pprint(sorted(list(featRs.items()), key= lambda f: f[1][0] if not isnan(f[1][0]) else 0),depth=3, compact=True)
+            print("\n%d features significant at p < %s" % (cnt, args.maxP))
+
+    
     #Feature Only options:
     if args.top_messages:
       if not args.feattable:
@@ -1627,14 +1638,7 @@ def main(fn_args = None):
     #"""
     if args.correlate:
         pprint(args)
-        for outcomeField, featRs in correls.items():
-            print("\n%s:" % outcomeField)
-            cnt = 0
-            for featR in featRs.items():
-                if featR[1][1] < args.maxP: cnt +=1
-            #pprint(featRs)#debug
-            pprint(sorted(list(featRs.items()), key= lambda f: f[1][0] if not isnan(f[1][0]) else 0),depth=3, compact=True)
-            print("\n%d features significant at p < %s" % (cnt, args.maxP))
+        pprintCorrelsPerOutcome(correls, maxP=args.maxP) 
     #"""
     if args.rmatrix and not args.cca:
         if args.outputname:

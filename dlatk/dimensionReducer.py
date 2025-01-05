@@ -417,7 +417,7 @@ class DimensionReducer:
     #     return
 
     def transform(
-        self, standardize=True, sparse=False, restrictToGroups=None, writeToFeats=False, fe=None
+            self, standardize=True, sparse=False, restrictToGroups=None, writeToFeats=False, fe=None,  refitScaler=False
     ):
         ##TODO: add groupsWhere parameter
         groups = []
@@ -473,7 +473,7 @@ class DimensionReducer:
                     self.scalers[outcomeName],
                     self.fSelectors[outcomeName],
                 )
-                transformedX[outcomeName] = self._transform(cluster, scaler, fSelector)
+                transformedX[outcomeName] = self._transform(cluster, scaler, fSelector, refitScaler=refitScaler)
         else:
             X, group_ids = alignDictsAsX(
                 groupNormValues + controlValues, sparse, returnKeyList=True
@@ -484,7 +484,7 @@ class DimensionReducer:
                 self.fSelectors["noOutcome"],
             )
             transformedX["noOutcome"] = self._transform(
-                cluster=cluster, X=X, scaler=scaler, fSelector=fSelector
+                cluster=cluster, X=X, scaler=scaler, fSelector=fSelector, refitScaler=refitScaler
             )
 
         fTables = []
@@ -526,7 +526,7 @@ class DimensionReducer:
                     for feat in featNames:
                         preds = transformedX[outcomeName][feat]
 
-                        print("[Inserting Predictions as Feature values for feature: %s]" % feat)
+                        print("[Inserting transformation as feature values for feature: %s]" % feat)
                         #wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
                         query = fe.qb.create_insert_query(featureTableName).set_values([("group_id",""),("feat",feat),("value",""),("group_norm","")])
                         for k, v in preds.items():
@@ -562,10 +562,14 @@ class DimensionReducer:
         else:
             return transformedX
 
-    def _transform(self, cluster, X, scaler=None, fSelector=None, y=None):
+    def _transform(self, cluster, X, scaler=None, fSelector=None, y=None, refitScaler=False):
         if scaler:
-            print("[ Running Scaler]:%s\n" % str(scaler))
-            X = scaler.transform(X)
+            if refitScaler:
+                print("[ Refitting and Running Scaler]:%s\n" % str(scaler))
+                X = scaler.fit_transform(X)
+            else:
+                print("[ Running Scaler]:%s\n" % str(scaler))
+                X = scaler.transform(X)
         if fSelector:
             print("[ Running feature selector]:%s\n" % str(fSelector))
             X = fSelector.transform(X)

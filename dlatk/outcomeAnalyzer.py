@@ -2215,7 +2215,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             sortedFreqs = sorted([v[OutcomeAnalyzer.freq_idx] for (w, v) in rList])
             rList = [(w, int(((v[OutcomeAnalyzer.r_idx]-minR)/diff)*maxWords) + smallDataBump, (1+sortedFreqs.index(v[OutcomeAnalyzer.freq_idx]))) for (w, v) in rList]
         else:
-            rList = [(w, int(((v[OutcomeAnalyzer.r_idx]-minR)/diff)*maxWords) + smallDataBump, v[OutcomeAnalyzer.freq_idx] if len(v) > correls_length - 1 else None) for (w, v) in rList]
+            rList = [(w, int(((v[OutcomeAnalyzer.r_idx]-minR)/diff)*maxWords) + smallDataBump, v[OutcomeAnalyzer.freq_idx] if len(v) > OutcomeAnalyzer.correls_length - 1 else None) for (w, v) in rList]
 
         maxFreq = 0
         if rList[0][2]:

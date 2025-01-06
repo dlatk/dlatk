@@ -1447,10 +1447,10 @@ def main(fn_args = None):
             print("\n%s:" % outcomeField)
             cnt = 0
             for featR in featRs.items():
-                if featR[1][1] < args.maxP: cnt +=1
+                if featR[1][1] < maxP: cnt +=1
             #pprint(featRs)#debug
             pprint(sorted(list(featRs.items()), key= lambda f: f[1][0] if not isnan(f[1][0]) else 0),depth=3, compact=True)
-            print("\n%d features significant at p < %s" % (cnt, args.maxP))
+            print("\n%d features significant at p < %s" % (cnt, maxP))
 
     
     #Feature Only options:

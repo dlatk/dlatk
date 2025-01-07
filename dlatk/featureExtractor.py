@@ -1725,13 +1725,26 @@ class FeatureExtractor(DLAWorker):
                 pipe = pipeline(task='ner', model=default_model_name, device=device)
 
         except Exception as e:
-            dlac.warn("Error initializing pipeline: {}. Falling back to default model.".format(e))
-            if pipelineTask == None:
-                pipelineTask = 'ner'
-            default_model_name, default_model_class, default_tokenizer_class = DEFAULT_MODELS.get('ner')
-            tokenizer = default_tokenizer_class.from_pretrained(default_model_name)
-            pipe = pipeline(task=pipelineTask, model=default_model_name, tokenizer=tokenizer, device=device)
+            error_message = str(e)
+            dlac.warn("Error initializing pipeline: {}.".format(error_message))
 
+            # Check for specific error related to `pipeline_tag`
+            if "does not seem to have a correct `pipeline_tag`" in error_message:
+                dlac.warn("As the model '{}' does not have a correct `pipeline_tag`. Trying task 'sentiment-analysis'.".format(modelName))
+                try:
+                    pipelineTask = 'sentiment-analysis'
+                    pipe = pipeline(task=pipelineTask, model=modelName, device=device)
+                except Exception as fallback_error:
+                    dlac.warn("Error initializing pipeline with task 'sentiment-analysis': {}.".format(fallback_error))
+                    # Let the outer fallback handle any additional errors
+                    raise fallback_error  # This will hit the next `else` block for fallback.
+            else:
+                dlac.warn("Unrecoverable error. Falling back to default model.")
+                # Fall back to default model
+                pipelineTask = 'ner'
+                default_model_name, default_model_class, default_tokenizer_class = DEFAULT_MODELS.get('ner')
+                tokenizer = default_tokenizer_class.from_pretrained(default_model_name)
+                pipe = pipeline(task=pipelineTask, model=default_model_name, tokenizer=tokenizer, device=device)
         # Create table for annotations
         if customTableName is None:
             modelName = modelName.split('/')[-1] if '/' in modelName else modelName

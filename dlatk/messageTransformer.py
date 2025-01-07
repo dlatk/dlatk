@@ -451,8 +451,12 @@ class MessageTransformer(DLAWorker):
                             sentRows[-1][messageIdIndex] = str(rows[i][messageIdIndex]) + "_" + str(j).zfill(2)
                             sentRows[-1][messageIndex] = parse
                     elif i < len(parses):
-                        sentRows.append(rows[i])#debug: take out copy if eveyrthing ok to run faster
-                        sentRows[i][messageIndex] = str(parses[i])
+                        sentRows.append(list(rows[i]))#debug: take out copy if eveyrthing ok to run faster
+                        try:
+                            sentRows[i][messageIndex] = str(parses[i])
+                        except:
+                            dlac.warn("error with message: {message_id}. Dropping from results.".format(message_id=messageIdIndex))
+                            continue
                     else:
                         dlac.warn("   warning: row %d: %s has no parse; last parse %d: %s" % (i, str(rows[i]), len(parses) - 1, str(parses[-1])))
 

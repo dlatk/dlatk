@@ -11,7 +11,7 @@ from .outcomeAnalyzer import OutcomeAnalyzer
 from .regressionPredictor import RegressionPredictor
 from .classifyPredictor import ClassifyPredictor
 from .messageTransformer import MessageTransformer
-
+from .dimensionReducer import DimensionReducer
 
 class FeatureStar(object):
 	"""Generic class for importing an instance of each class in DLATK
@@ -31,6 +31,8 @@ class FeatureStar(object):
 	cp : ClassifyPredictor object
 
 	rp : RegressionPredictor object
+
+        dr : DimensionReducer object
 
 	allFW : dict
 		Dictionary containing all of the above attributes keyed on object name
@@ -100,12 +102,12 @@ class FeatureStar(object):
 		if initList:
 			init = initList
 		else:
-			init = [o.strip() for o in parser.get('constants','init').split(",")] if parser.has_option('constants','init') else ['fw', 'fg', 'fe', 'fr', 'og', 'oa', 'rp', 'cp']
+			init = [o.strip() for o in parser.get('constants','init').split(",")] if parser.has_option('constants','init') else ['fw', 'fg', 'fe', 'fr', 'og', 'oa', 'rp', 'cp', 'dr']
 		return cls(db_type=db_type, corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_config_file=mysql_config_file, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, featureTable=featureTable, featNames=featNames, date_field=date_field, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, group_freq_thresh=group_freq_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable, model=model, feature_selection=feature_selection, feature_selection_string = feature_selection_string, init=init)
 
 
 	##INIT##
-	def __init__(self, db_type=dlac.DB_TYPE, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_config_file=dlac.MYSQL_CONFIG_FILE, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb=dlac.DEF_LEXICON_DB, featureTable=dlac.DEF_FEAT_TABLE, featNames=dlac.DEF_FEAT_NAMES, date_field=dlac.DEF_DATE_FIELD, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls = dlac.DEF_OUTCOME_CONTROLS, outcome_interaction = dlac.DEF_OUTCOME_CONTROLS, cattobinfields=[], cattointfields=[], group_freq_thresh = None, featureMappingTable='', featureMappingLex='',  output_name='', wordTable=None, model=dlac.DEF_MODEL, feature_selection='', feature_selection_string = '', init=None):
+	def __init__(self, db_type=dlac.DB_TYPE, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_config_file=dlac.MYSQL_CONFIG_FILE, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb=dlac.DEF_LEXICON_DB, featureTable=dlac.DEF_FEAT_TABLE, featNames=dlac.DEF_FEAT_NAMES, date_field=dlac.DEF_DATE_FIELD, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls = dlac.DEF_OUTCOME_CONTROLS, outcome_interaction = dlac.DEF_OUTCOME_CONTROLS, cattobinfields=[], cattointfields=[], group_freq_thresh = None, featureMappingTable='', featureMappingLex='',  output_name='', wordTable=None, model=dlac.DEF_MODEL, feature_selection='', feature_selection_string = '', n_components=None, init=None):
 		
 		if feature_selection_string or feature_selection:
 			RegressionPredictor.featureSelectionString = feature_selection if feature_selection else feature_selection_string
@@ -122,10 +124,12 @@ class FeatureStar(object):
 			self.mt = MessageTransformer(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable = wordTable) if 'mt' in init else None
 			self.fe = FeatureExtractor(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, wordTable=wordTable) if 'fe' in init else None
 			self.fr = FeatureRefiner(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable=wordTable) if 'fr' in init else None
-			self.og = OutcomeGetter(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, cattobinfields, cattointfields, group_freq_thresh, featureMappingTable, featureMappingLex, wordTable) if 'og' in init else None
-			self.oa = OutcomeAnalyzer(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, cattobinfields, cattointfields, group_freq_thresh, featureMappingTable, featureMappingLex, output_name, wordTable) if 'oa' in init else None
+			self.og = OutcomeGetter(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, cattobinfields, cattointfields, group_freq_thresh, featureMappingTable, featureMappingLex, wordTable=wordTable) if 'og' in init else None
+			self.oa = OutcomeAnalyzer(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, cattobinfields, cattointfields, group_freq_thresh, featureMappingTable, featureMappingLex, output_name=output_name, wordTable=wordTable) if 'oa' in init else None
 			self.rp = RegressionPredictor(self.og, self.fg, model) if 'rp' in init else None
 			self.cp = ClassifyPredictor(self.og, self.fg, model) if 'cp' in init else None
+			self.dr = DimensionReducer(self.fg, model, og=self.og, n_components=n_components) if 'dr' in init else None
+                        #fg, modelName="nmf", og=None, n_components=None):
 		else: 
 			if isinstance(featureTable, str):
 				self.fg = FeatureGetter(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, featureTable, featNames, wordTable)
@@ -138,17 +142,19 @@ class FeatureStar(object):
 			self.oa = OutcomeAnalyzer(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, group_freq_thresh, featureMappingTable, featureMappingLex, output_name, wordTable)
 			self.rp = RegressionPredictor(self.og, self.fg, model)
 			self.cp = ClassifyPredictor(self.og, self.fg, model)
+			self.dr = ClassifyPredictor(self.fg, model, og=self.og, n_components=n_components)
 		
 		self.allDLATK = {
-				"FeatureGetter": self.fg,
-				"MessageTransformer": self.mt,
-				"FeatureExtractor": self.fe,
-				"FeatureRefiner": self.fr,
-				"OutcomeGetter": self.og,
-				"OutcomeAnalyzer": self.oa,
-				"RegressionPredictor": self.rp,
-				"ClassifyPredictor": self.cp,
-			}
+			"FeatureGetter": self.fg,
+			"MessageTransformer": self.mt,
+			"FeatureExtractor": self.fe,
+			"FeatureRefiner": self.fr,
+			"OutcomeGetter": self.og,
+			"OutcomeAnalyzer": self.oa,
+			"RegressionPredictor": self.rp,
+			"ClassifyPredictor": self.cp,
+                        "DimensionReducer": self.dr,
+		}
 
 	def combineDFs(self, fg=None, og=None, fillNA=True):
 		"""Method for combining a feature table with an outcome table in a single dataframe

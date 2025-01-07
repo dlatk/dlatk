@@ -32,6 +32,7 @@ from sklearn.linear_model import Ridge, RidgeCV, LinearRegression, Lasso, LassoC
     ElasticNet, ElasticNetCV, Lars, LassoLars, LassoLarsCV, SGDRegressor,  \
     PassiveAggressiveRegressor
 from sklearn.svm import SVR
+from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import StratifiedKFold, KFold, ShuffleSplit, train_test_split, GridSearchCV 
 from sklearn.decomposition import MiniBatchSparsePCA, PCA, KernelPCA, NMF, FactorAnalysis
 from sklearn import metrics
@@ -378,13 +379,17 @@ class RegressionPredictor:
             ],
         'extratrees':[
             #{'n_estimators': [20], 'n_jobs': [10], 'random_state': [DEFAULT_RANDOM_SEED], 'compute_importances' : [True]},
-            {'n_estimators': [1000], 'n_jobs': [12], 'random_state': [DEFAULT_RANDOM_SEED]},
+            {'n_estimators': [1200], 'n_jobs': [12], 'random_state': [DEFAULT_RANDOM_SEED]},
             ],
         'par':[
             #{'C': [.01], 'random_state': [DEFAULT_RANDOM_SEED], 'verbose': [1], 'shuffle': [False], 'epsilon': [0.01], 'n_iter': [10]},
             {'C': [.01, .1, .001], 'random_state': [DEFAULT_RANDOM_SEED], 'verbose': [1], 'shuffle': [False], 'epsilon': [0.01, .1, 1], 'n_iter': [10]},
             ],
-        
+        'mlp': [ #multi-layer perceptron
+            #{'alpha': [0.1, 0.001, 1.0, 0.01, 10, 100], 'solver': ['lbfgs'], 'hidden_layer_sizes':[(30,10)], 'random_state': [DEFAULT_RANDOM_SEED]},
+            #{'alpha': np.logspace(-1.5, 1.5, 5), 'learning_rate_init': [0.001], 'solver': ['sgd'], 'hidden_layer_sizes':[(10,10)], 'max_iter': [700], 'n_iter_no_change': [10], 'random_state': [DEFAULT_RANDOM_SEED]},],
+            #{'alpha': [1000, 100, 10000, 10, 100000, 1], 'learning_rate_init': [0.001], 'solver': ['sgd'], 'hidden_layer_sizes':[(10,10)], 'max_iter': [700], 'n_iter_no_change': [10], 'random_state': [DEFAULT_RANDOM_SEED]},]
+            {'alpha': [1000, 100, 10000, 10, 100000, 1], 'hidden_layer_sizes':[(10,5)], 'random_state': [DEFAULT_RANDOM_SEED]},]
        }
     modelToClassName = {
         'lasso' : 'Lasso',
@@ -414,6 +419,7 @@ class RegressionPredictor:
         'sgdregressor': 'SGDRegressor',
         'extratrees': 'ExtraTreesRegressor',
         'par': 'PassiveAggressiveRegressor',
+        'mlp': 'MLPRegressor',
         }
     
     modelToCoeffsName = {
@@ -448,7 +454,8 @@ class RegressionPredictor:
         'sgdregressor': 'coef_',
         'extratrees': 'feature_importances_',
         'par': 'coef_',
-        'randomizedlasso': 'scores_'
+        'randomizedlasso': 'scores_',
+        'mlp': 'coef_'
         }
     #cvJobs = 3 #when lots of data 
     #cvJobs = 6 #normal
@@ -967,7 +974,7 @@ class RegressionPredictor:
                                     self.addToReport(outputName+'_.report' , Str = "\n= %s (NO lang.) (r: %d)=\n%s\n_"%(outcomeName, r, '-'*(len(outcomeName)+14)))
                             else: #no controls in this iteration
                                 continue
-                            testStats = {'R2_folds': [], 'r_folds': [], 'r_p_folds': [], 'mse_folds': [], 'mae_folds': [], 'train_mean_mae_folds': []}
+                            testStats = {'R2_folds': [], 'r_folds': [], 'r_p_folds': [], 'rho_folds': [], 'rho_p_folds': [], 'mse_folds': [], 'mae_folds': [], 'train_mean_mae_folds': []}#ADDED 11/24
 
                             if wOutcome:
                                 testStats.update({'rwghtd_folds' : [], 'rwghtd_p_folds' : []})
@@ -1140,8 +1147,12 @@ class RegressionPredictor:
                                 if report: self.addToReport(outputName+'_.result', Str = "  *FOLD: %d  R^2: %.4f (MSE: %.4f; MAE: %.4f; mean train mae: %.4f)\n_"% (testChunk, R2, mse, mae, train_mean_mae))
                                 testStats['R2_folds'].append(R2)
                                 (pearsr, r_p) = pearsonr(ytest, ypred)
+                                (rho, rho_p) = spearmanr(ytest, ypred)
                                 testStats['r_folds'].append(pearsr)
                                 testStats['r_p_folds'].append(r_p)
+                                testStats['rho_folds'].append(rho)
+                                testStats['rho_p_folds'].append(rho_p)
+
                                 testStats['train_mean_mae_folds'].append(train_mean_mae)
                                 testStats['mse_folds'].append(mse)
                                 testStats['mae_folds'].append(mae)
@@ -1292,7 +1303,7 @@ class RegressionPredictor:
                         scores[outcomeName] = dict()
 
                     print("\n= %s (NO lang.)=\n%s"%(outcomeName, '-'*(len(outcomeName)+14)))
-                    testStats = {'R2_folds': [], 'r_folds': [], 'r_p_folds': [], 'mse_folds': [], 'mae_folds': [], 'train_mean_mae_folds': []}
+                    testStats = {'R2_folds': [], 'r_folds': [], 'r_p_folds': [], 'rho_folds': [], 'rho_p_folds': [], 'mse_folds': [], 'mae_folds': [], 'train_mean_mae_folds': []}#ADDED 11/24
 
                     predictions = {}
 
@@ -1801,6 +1812,7 @@ class RegressionPredictor:
                         written += len(rows)
                         print("   %d feature rows written" % written)
                         rows = []
+                        
             # if there's rows left
             if rows:
                 query.execute_query(rows)

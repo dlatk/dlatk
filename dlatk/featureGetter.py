@@ -318,10 +318,10 @@ class FeatureGetter(DLAWorker):
         else: 
             gnlist = self.getGroupNorms()
         gns = dict()
-        print("USING BLACKLIST (from getgroupnorms): %s" %str(blacklist))
         for tup in gnlist:
             (gid, feat, gn) = tup
             if blacklist:
+                print("USING BLACKLIST (from getgroupnorms): %s" %str(blacklist))
                 if not any(r.match(feat) for r in blacklist):
                     if not feat in gns: gns[feat] = dict()
                     gns[feat][gid] = gn

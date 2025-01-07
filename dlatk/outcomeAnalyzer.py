@@ -99,7 +99,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         return cls(db_type=db_type, corpdb=corpdb, corptable=corptable, correl_field=correl_field, mysql_config_file=mysql_config_file, message_field=message_field, messageid_field=messageid_field, encoding=encoding, use_unicode=use_unicode, lexicondb=lexicondb, outcome_table=outcome_table, outcome_value_fields=outcome_value_fields, outcome_controls=outcome_controls, outcome_interaction=outcome_interaction, outcome_categories=outcome_categories, multiclass_outcome=multiclass_outcome, group_freq_thresh=group_freq_thresh, low_variance_thresh=low_variance_thresh, featureMappingTable=featureMappingTable, featureMappingLex=featureMappingLex,  output_name=output_name, wordTable=wordTable)
 
     def __init__(self, db_type=dlac.DB_TYPE, corpdb=dlac.DEF_CORPDB, corptable=dlac.DEF_CORPTABLE, correl_field=dlac.DEF_CORREL_FIELD, mysql_config_file=dlac.MYSQL_CONFIG_FILE, message_field=dlac.DEF_MESSAGE_FIELD, messageid_field=dlac.DEF_MESSAGEID_FIELD, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH, lexicondb=dlac.DEF_LEXICON_DB, outcome_table=dlac.DEF_OUTCOME_TABLE, outcome_value_fields=[dlac.DEF_OUTCOME_FIELD], outcome_controls=dlac.DEF_OUTCOME_CONTROLS, outcome_interaction=dlac.DEF_OUTCOME_CONTROLS, outcome_categories = [], multiclass_outcome = [], group_freq_thresh=None, low_variance_thresh=dlac.DEF_LOW_VARIANCE_THRESHOLD, featureMappingTable='', featureMappingLex='',  output_name='', wordTable = None, outcome_adaptation_factors = []):
-        super(OutcomeAnalyzer, self).__init__(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, outcome_categories, multiclass_outcome, group_freq_thresh, low_variance_thresh, featureMappingTable, featureMappingLex,  wordTable, outcome_adaptation_factors = outcome_adaptation_factors)
+        super(OutcomeAnalyzer, self).__init__(db_type, corpdb, corptable, correl_field, mysql_config_file, message_field, messageid_field, encoding, use_unicode, lexicondb, outcome_table, outcome_value_fields, outcome_controls, outcome_interaction, outcome_categories, multiclass_outcome, group_freq_thresh, low_variance_thresh, featureMappingTable, featureMappingLex, wordTable, outcome_adaptation_factors = outcome_adaptation_factors)
         self.output_name = output_name
 
     def printGroupsAndOutcomesToCSV(self, featGetter, outputfile, where = '', freqs = False):
@@ -2215,7 +2215,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             sortedFreqs = sorted([v[OutcomeAnalyzer.freq_idx] for (w, v) in rList])
             rList = [(w, int(((v[OutcomeAnalyzer.r_idx]-minR)/diff)*maxWords) + smallDataBump, (1+sortedFreqs.index(v[OutcomeAnalyzer.freq_idx]))) for (w, v) in rList]
         else:
-            rList = [(w, int(((v[OutcomeAnalyzer.r_idx]-minR)/diff)*maxWords) + smallDataBump, v[OutcomeAnalyzer.freq_idx] if len(v) > correls_length - 1 else None) for (w, v) in rList]
+            rList = [(w, int(((v[OutcomeAnalyzer.r_idx]-minR)/diff)*maxWords) + smallDataBump, v[OutcomeAnalyzer.freq_idx] if len(v) > OutcomeAnalyzer.correls_length - 1 else None) for (w, v) in rList]
 
         maxFreq = 0
         if rList[0][2]:

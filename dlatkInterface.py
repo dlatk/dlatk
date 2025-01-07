@@ -752,9 +752,9 @@ def main(fn_args = None):
     group.add_argument('--useXControls', dest='usexcontrols',action="store_true", default = False,
                        help='Use controls stored in X matrix when predicting CCA components to SQL')
 
-    group.add_argument('--save_models', action='store_true', dest='savemodels', default=False,
+    group.add_argument('--save_models', '--save', action='store_true', dest='savemodels', default=False,
                        help='saves predictive models (uses --picklefile)')
-    group.add_argument('--load_models', action='store_true', dest='loadmodels', default=False,
+    group.add_argument('--load_models', '--load', action='store_true', dest='loadmodels', default=False,
                        help='loads predictive models (uses --picklefile)')
 
 
@@ -915,6 +915,9 @@ def main(fn_args = None):
     def OA():
         return OutcomeAnalyzer(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname, outcome_adaptation_factors=args.adaptationfactors)
 
+    def DR(fg, og):
+        return DimensionReducer(fg, args.model, og, args.n_components)
+    
     def FR():
         return FeatureRefiner(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
 
@@ -1454,6 +1457,17 @@ def main(fn_args = None):
         print("Created output filename: %s" % outputFile)
         return outputFile
 
+    def pprintCorrelsPerOutcome(correls, maxP=0.05):
+        for outcomeField, featRs in correls.items():
+            print("\n%s:" % outcomeField)
+            cnt = 0
+            for featR in featRs.items():
+                if featR[1][1] < maxP: cnt +=1
+            #pprint(featRs)#debug
+            pprint(sorted(list(featRs.items()), key= lambda f: f[1][0] if not isnan(f[1][0]) else 0),depth=3, compact=True)
+            print("\n%d features significant at p < %s" % (cnt, maxP))
+
+    
     #Feature Only options:
     if args.top_messages:
       if not args.feattable:
@@ -1639,14 +1653,7 @@ def main(fn_args = None):
     #"""
     if args.correlate:
         pprint(args)
-        for outcomeField, featRs in correls.items():
-            print("\n%s:" % outcomeField)
-            cnt = 0
-            for featR in featRs.items():
-                if featR[1][1] < args.maxP: cnt +=1
-            #pprint(featRs)#debug
-            pprint(sorted(list(featRs.items()), key= lambda f: f[1][0] if not isnan(f[1][0]) else 0),depth=3, compact=True)
-            print("\n%d features significant at p < %s" % (cnt, args.maxP))
+        pprintCorrelsPerOutcome(correls, maxP=args.maxP) 
     #"""
     if args.rmatrix and not args.cca:
         if args.outputname:
@@ -1884,7 +1891,7 @@ def main(fn_args = None):
     if args.fitreducer or args.reducertolexicon or args.supertopics or args.transformdrtofeats:
         if not og: og = OG()
         if not fg: fg = FG()
-        dr = DimensionReducer(fg, args.model, og, args.n_components)
+        if not dr: dr = DR(fg, og) 
     if args.supertopics and not args.lextable:
         print("WARNING: you must use -l with --super_topics")
         sys.exit(1)
@@ -2116,7 +2123,7 @@ def main(fn_args = None):
 
     if args.transformdrtofeats and dr:
         if not fe: fe = FE()
-        dr.transform(sparse = args.sparse, standardize = args.standardize, writeToFeats = args.transformdrtofeats, fe = fe)
+        args.feattable = dr.transform(sparse = args.sparse, standardize = args.standardize, writeToFeats = args.transformdrtofeats, fe = fe)
         
     if args.reducertolexicon or args.supertopics:
         if args.reducertolexicon:

@@ -1274,6 +1274,7 @@ class FeatureExtractor(DLAWorker):
                             'distilbert-base-multilingual-cased': 'DistilBert', 'distilbert-base-cased-distilled-squad': 'DistilBert',
                             'albert-base-v2': 'Albert', 'albert-large-v2': 'Albert', 'albert-xlarge-v2': 'Albert', 'albert-xxlarge-v2': 'Albert',
                             'xlm-roberta-base': 'XLMRoberta', 'xlm-roberta-large': 'XLMRoberta', #'t5-small': 'T5', 't5-base': 'T5', 't5-large': 'T5', 
+                            'mxbai-embed-large-v1': 'auto',
         }
 
         MODEL_DICT = {

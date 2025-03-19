@@ -1274,7 +1274,6 @@ class FeatureRefiner(FeatureGetter):
         df_group_counts = {feat: count for feat, count in selectQuery.execute_query()}
 
         print("Loading ufeat data...")
-        feat_iter =  db_eng.execute("SELECT id, feat FROM {} WHERE count > 1".format(ufeat_multigram_table))
         selectQuery = self.qb.create_select_query(ufeat_multigram_table).set_fields(["id", "feat"]).where("count > 1")
         feat_iter = selectQuery.execute_query()
 

@@ -40,7 +40,7 @@ MAX_SQL_SELECT = 1000000 # how many rows are selected at a time
 VARCHAR_WORD_LENGTH = 36 #length to allocate var chars per words
 LOWERCASE_ONLY = True #if the db is case insensitive, set to True
 MAX_TO_DISABLE_KEYS = 100000 #number of groups * n must be less than this to disable keys
-MAX_SQL_PRINT_CHARS = 256
+MAX_SQL_PRINT_CHARS = 512
 
 ##Corpus Settings:
 DEF_CORPDB = None
@@ -204,6 +204,7 @@ DEF_MAX_MED_SUMMARY_SIZE = 10 # maximum number of results to print in summary fo
 
 ##LDA settings
 DEF_LDA_MSG_TABLE = 'messages_en_lda$msgs_en_tok_a30'
+DEF_MALLET_PATH = "/opt/mallet/bin/mallet"
 
 ##Language filtering settings
 AVAILABLE_LANGUAGES = """

@@ -157,13 +157,13 @@ SETUP_REQUIRES = [
 ]
 INSTALL_REQUIRES = [
   'nltk>=3.1,<=3.8.1', 
-  'numpy<=1.25.2', 
-  'pandas>=0.17.1,<=1.5.3', 
-  'patsy>=0.2.1,<=0.5.6', 
+  'numpy<=2.0.2', 
+  'pandas>=0.17.1,<=2.2.2', 
+  'patsy>=0.2.1,<=1.0.1', 
   'python-dateutil>=2.5.0,<=2.8.2', 
-  'scikit-learn<=1.1.3', 
-  'scipy>=0.13.3,<=1.11.4',
-  'statsmodels>=0.5.0,<=0.14.1'
+  'scikit-learn<=1.6.1', 
+  'scipy>=0.13.3,<=1.14.1',
+  'statsmodels>=0.5.0,<=0.14.4'
 ]
 
 if os.getenv("COLAB_RELEASE_TAG") is None:

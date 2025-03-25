@@ -172,7 +172,7 @@ if os.getenv("COLAB_RELEASE_TAG") is None:
     subprocess.check_output(["mysql", "--version"])
     INSTALL_REQUIRES.append([
       'mysqlclient<=2.1.1', 
-      'SQLAlchemy>=0.9.9,<=2.0.20'])
+      'SQLAlchemy>=0.9.9,<=2.0.39'])
 
   except FileNotFoundError as e:
     prompt = """
@@ -188,11 +188,11 @@ EXTRAS_REQUIRE = {
   'image': ['image<=1.5.33'],
   'jsonrpclib-pelix': ['jsonrpclib-pelix>=0.2.8'],
   'langid': ['langid>=1.1.4,<=1.1.6'],
-  'matplotlib': ['matplotlib>=1.3.1,<=3.7.1'],
-  'rpy2': ['rpy2<=3.5.2'],
+  'matplotlib': ['matplotlib>=1.3.1,<=3.10.0'],
+  'rpy2': ['rpy2<=3.5.17'],
   'simplejson': ['simplejson>=3.3.1'],
   'textstat': ['textstat>=0.6.1'],
-  'wordcloud':  ['wordcloud>=1.1.3,<=1.9.3']
+  'wordcloud':  ['wordcloud>=1.1.3,<=1.9.4']
 }
 
 SCRIPTS = ['dlatkInterface.py']

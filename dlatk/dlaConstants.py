@@ -23,7 +23,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.linear_model import LogisticRegression
 import statsmodels.stats.multitest as mt
 
-DB_TYPE = "sqlite" if os["COLAB_RELEASE_TAG"] else "mysql"
+DB_TYPE = "sqlite" if os.getenv("COLAB_RELEASE_TAG") else "mysql"
 
 MYSQL_CONFIG_FILE = ""
 mycnf_file = Path(str(Path.home()) + "/.my.cnf")

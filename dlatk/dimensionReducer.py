@@ -522,8 +522,9 @@ class DimensionReducer:
                     )
 
                     written = 0
-                    rows = []
+                    insert_batch_size = 60000
                     for feat in featNames:
+                        rows = []
                         preds = transformedX[outcomeName][feat]
 
                         print("[Inserting transformation as feature values for feature: %s]" % feat)
@@ -531,27 +532,28 @@ class DimensionReducer:
                         query = fe.qb.create_insert_query(featureTableName).set_values([("group_id",""),("feat",feat),("value",""),("group_norm","")])
                         for k, v in preds.items():
                             rows.append((k, v, v))
-                            if len(rows) >  60000 or len(rows) >= len(preds):
+                            if len(rows) >=  insert_batch_size: # or len(rows) >= len(preds):
                                 query.execute_query(rows)
                                 #mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
                                 written += len(rows)
                                 print("   %d feature rows written" % written)
                                 rows = []
-                    # if there's rows left
-                    if rows:
-                        # mm.executeWriteMany(
-                        #     fe.corpdb,
-                        #     fe.dbCursor,
-                        #     wsql,
-                        #     rows,
-                        #     writeCursor=fe.dbConn.cursor(),
-                        #     charset=fe.encoding,
-                        #     use_unicode=fe.use_unicode,
-                        # )
-                        #mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
-                        query.execute_query(rows)
-                        written += len(rows)
-                        print("   %d feature rows written" % written)
+                        # if there's rows left
+                        if rows:
+                            # mm.executeWriteMany(
+                            #     fe.corpdb,
+                            #     fe.dbCursor,
+                            #     wsql,
+                            #     rows,
+                            #     writeCursor=fe.dbConn.cursor(),
+                            #     charset=fe.encoding,
+                            #     use_unicode=fe.use_unicode,
+                            # )
+                            #mm.executeWriteMany(fe.corpdb, fe.dbCursor, wsql, rows, writeCursor=fe.dbConn.cursor(), charset=fe.encoding, use_unicode=fe.use_unicode, mysql_config_file=fe.mysql_config_file)
+                            query.execute_query(rows)
+                            written += len(rows)
+                            print("   %d feature rows written" % written)
+                            print("[Finished Inserting for feature: %s]" % feat)
                     fTables.append(featureTableName)
 
             else:

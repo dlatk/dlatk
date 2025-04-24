@@ -1743,21 +1743,37 @@ class FeatureExtractor(DLAWorker):
             #stores the sequence of message_id corresponding to the message embeddings for applying aggregation later 
             for messageRow in messageRows:
                 message_id = messageRow[0]
-                messageSent = messageRow[1]
 
-                if ((message_id not in mids) and (len(messageSent) > 0)):
+                try:
+                    messageSents = loads(messageRow[1])
+                except NameError: 
+                    dlac.warn("Error: Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
+                    sys.exit(1)
+                except json.JSONDecodeError:
+                    dlac.warn("WARNING: JSONDecodeError on %s. Skipping Message"%str(messageRow))
+                    continue
+                except:
+                    dlac.warn("Warning: cannot load message, skipping")
+                    continue
+
+                if ((message_id not in mids) and (len(messageSents) > 0)):
                     msgs+=1
                     i = 0
-                    tokens = tokenizeWithLengthWarning(messageSent, tokenizer)
+                    messageSents = ' '.join(messageSents)
+                    tokens = tokenizeWithLengthWarning(messageSents, tokenizer)
                     input_sents.append(torch.tensor(tokens['input_ids'], dtype=torch.long).squeeze(0))
                     attention_mask.append(tokens['attention_mask'].squeeze(0))
                     message_id_seq.append([message_id, len(tokens)])
+
                 
                 if msgs % int(dlac.PROGRESS_AFTER_ROWS/5) == 0: #progress update
                     dlac.warn("Messages Read: %.2f k" % (msgs/1000.0))
                 mids.add(message_id)
                 midList.append(message_id)
             
+            if(input_sents == []):
+                dlac.warn("Warning: Empty message")
+                continue
 
             #Number of Batches
             num_batches = int(np.ceil(len(input_sents)/batch_size))

@@ -160,9 +160,9 @@ INSTALL_REQUIRES = [
   'numpy<=2.0.2', 
   'pandas>=0.17.1,<=2.2.2', 
   'patsy>=0.2.1,<=1.0.1', 
-  'python-dateutil>=2.5.0,<=2.8.2', 
+  'python-dateutil>=2.5.0,<=2.9.1', 
   'scikit-learn<=1.6.1', 
-  'scipy>=0.13.3,<=1.14.1',
+  'scipy>=0.13.3,<=1.15.3',
   'statsmodels>=0.5.0,<=0.14.4'
 ]
 
@@ -172,7 +172,7 @@ if os.getenv("COLAB_RELEASE_TAG") is None:
     subprocess.check_output(["mysql", "--version"])
     INSTALL_REQUIRES.append([
       'mysqlclient<=2.1.1', 
-      'SQLAlchemy>=0.9.9,<=2.0.39'])
+      'SQLAlchemy>=0.9.9,<=2.0.40'])
 
   except FileNotFoundError as e:
     prompt = """

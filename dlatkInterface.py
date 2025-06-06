@@ -2123,7 +2123,7 @@ def main(fn_args = None):
         prediction_table = "p_{}${}".format(
             rp.modelName[:4] if args.predictRtoOutcomeTable else cp.modelName[:4],
             args.predictRtoOutcomeTable if args.predictRtoOutcomeTable else args.predictCtoOutcomeTable)
-        printMessagesAndPredictions(dlaw, prediction_table, args.outcometable, args.outcomefields)
+        #printMessagesAndPredictions(dlaw, prediction_table, args.outcometable, args.outcomefields)
 
     ##Plot Actions:
     if args.makealltopicwordclouds:

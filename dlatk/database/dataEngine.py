@@ -1,6 +1,7 @@
 from ..mysqlmethods import mysqlMethods as mm
 from ..sqlitemethods import sqliteMethods as sm
 from .. import dlaConstants as dlac
+from collections import defaultdict
 from subprocess import check_output
 import random
 import sys
@@ -420,7 +421,7 @@ class DataEngine(object):
                     with open(jsonFile) as f:
                         data = json.load(f)
                     
-                    columnNames, sample = self.flattenJSON(data, table, numRowsToKeep=1000)
+                    columnNames, sample = self.flattenJSON(data, table, numRowsToKeep=40000)
                     columnDescription, numColumns = self.get_column_description(columnNames, sample)
                     columnDescription = self.createColDescription([c[0] for c in columnDescription], [c[1] for c in columnDescription], table)
                     createSQL = """CREATE TABLE {table} ({colDesc});""".format(table=table, colDesc=columnDescription)
@@ -602,6 +603,270 @@ class DataEngine(object):
 
         return
 
+    def exportConvoKit(self, outputPath, feature_tables=None):
+        """
+        Exports data from the database to ConvoKit-compatible JSON/JSONL files,
+        adding extracted features to the 'meta' field of the appropriate table.
+
+        Parameters:
+            outputPath (str): Directory where the JSON files will be saved.
+        """
+
+        if not outputPath.endswith("/"):
+            outputPath += "/"
+
+        # Ensure the output directory exists
+        os.makedirs(outputPath, exist_ok=True)
+
+        # Define main tables to export
+        main_tables = ["utterances", "speakers", "conversations"]
+
+        # Initialize dictionaries to hold records for each table
+        records_dicts = {table: {} for table in main_tables}
+
+        # First, fetch and store all records for each main table
+        for main_table in main_tables:
+            jsonFile = os.path.join(outputPath, main_table + (".jsonl" if main_table == "utterances" else ".json"))
+
+            # Check if the main table exists
+            if not self.tableExists(main_table):
+                print("Table '{}' does not exist in the database. Skipping export for this table.".format(main_table))
+                continue
+
+            print("Exporting table '{}' to '{}'...".format(main_table, jsonFile))
+            # Fetch all records from the main table
+            columns, rows = self.fetchAllRecords(main_table)
+
+            if main_table == "utterances":
+                records_dicts[main_table] = [dict(zip(columns, row)) for row in rows]
+            else:
+                key_field = "speaker" if main_table == "speakers" else "conversation_id"
+                for row in rows:
+                    record = dict(zip(columns, row))
+                    key = record.get(key_field)
+                    if key:
+                        records_dicts[main_table][key] = record
+                    else:
+                        print("Record missing key field '{}': {}".format(key_field, record))
+
+        # Now, handle feature extraction and merging based on group_id_col
+        if feature_tables is None:
+            feature_tables = self.getFeatureTables("utterances")
+        else:
+            feature_tables = feature_tables.split(',')
+
+        # Fetch all features from each feature table and organize them
+        features_by_group = self.fetchFeatures(feature_tables, "utterances")
+
+        # Identify all group_id columns used in feature tables
+        group_id_columns = self.getGroupIdColumns("utterances")
+        if not group_id_columns:
+            print("No group_id columns found for table 'utterances'. Skipping feature merging.")
+        else:
+            # Process each group_id_col separately
+            for group_id_col in group_id_columns:
+                print("Processing features based on group_id column '{}'.".format(group_id_col))
+
+                # Determine the target table based on group_id_col
+                if group_id_col == "speaker":
+                    target_table = "speakers"
+                    is_jsonl = False
+                elif group_id_col == "conversation_id":
+                    target_table = "conversations"
+                    is_jsonl = False
+                elif group_id_col == "message_id":
+                    target_table = "utterances"
+                    is_jsonl = True
+                else:
+                    print("Unknown group_id_col '{}'. Skipping.".format(group_id_col))
+                    continue
+
+                print("Adding features to '{}' based on '{}'.".format(target_table, group_id_col))
+
+                # Open the appropriate JSON file for writing/updating
+                jsonFile = os.path.join(outputPath, target_table + (".jsonl" if is_jsonl else ".json"))
+
+                if is_jsonl:
+                    # For utterances, write each record as a JSONL line
+                    with open(jsonFile, 'w', encoding='utf-8') as f:
+                        for record in records_dicts[target_table]:
+                            group_id_val = record.get(group_id_col)
+                            if group_id_val and group_id_val in features_by_group:
+                                features = features_by_group[group_id_val]
+                                for primary_key, feats in features.items():
+                                    feature_key = primary_key.split("_")[0]
+                                    if feature_key not in record:
+                                        record[feature_key] = feats
+                                    else:
+                                        if isinstance(record[feature_key], dict) and isinstance(feats, dict):
+                                            record[feature_key].update(feats)
+                                        else:
+                                            raise TypeError("Conflict at key '{}': both must be dictionaries to merge.".format(feature_key))
+
+                            f.write(json.dumps(record) + "\n")
+                    print("Exported '{}' to '{}' with features added to 'meta'.".format(target_table, jsonFile))
+                else:
+                    # For speakers and conversations, update the dictionary and write once
+                    for key, record in records_dicts[target_table].items():
+                        if key in features_by_group:
+                            features = features_by_group[key]
+                            for primary_key, feats in features.items():
+                                feature_key = primary_key.split("_")[0]
+                                if feature_key not in record:
+                                    record[feature_key] = feats
+                                else:
+                                    if isinstance(record[feature_key], dict) and isinstance(feats, dict):
+                                        record[feature_key].update(feats)
+                                    else:
+                                        raise TypeError("Conflict at key '{}': both must be dictionaries to merge.".format(feature_key))
+
+                    # Write the updated records to JSON file
+                    with open(jsonFile, 'w', encoding='utf-8') as f:
+                        json.dump(records_dicts[target_table], f, indent=4)
+                    print("Exported '{}' to '{}' with features added to 'meta'.".format(target_table, jsonFile))
+
+        # Finally, export the records that are not related to features
+        for main_table in main_tables:
+            if main_table == "utterances":
+                jsonFile = os.path.join(outputPath, main_table + ".jsonl")
+                with open(jsonFile, 'w', encoding='utf-8') as f:
+                    for record in records_dicts[main_table]:
+                        f.write(json.dumps(record) + "\n")
+                print("Final export of '{}' completed.".format(main_table))
+            else:
+                jsonFile = os.path.join(outputPath, main_table + ".json")
+                with open(jsonFile, 'w', encoding='utf-8') as f:
+                    json.dump(records_dicts[main_table], f, indent=4)
+                print("Final export of '{}' completed.".format(main_table))
+
+        print("Export completed.")
+        return
+
+    def fetchAllRecords(self, table_name):
+        """
+        Fetches all records from a specified table.
+
+        Parameters:
+            table_name (str): Name of the table to fetch.
+
+        Returns:
+            tuple: (columns, rows)
+                - columns (list): List of column names.
+                - rows (list of tuples): List of records.
+        """
+
+        describe_output = self.describeTable(table_name)
+        if self.db_type == 'mysql':
+            columns = [col[0] for col in describe_output]
+        elif self.db_type == 'sqlite':
+            columns = [col[1] for col in describe_output]
+
+        select_query = "SELECT * FROM {} LIMIT 2;".format(table_name)
+        rows = self.execute_get_list(select_query)
+        return columns, rows
+
+    def getFeatureTables(self, main_table):
+        """
+        Retrieves all feature tables related to the main_table based on naming convention.
+
+        Parameters:
+            main_table (str): The main table name (e.g., 'utterances').
+
+        Returns:
+            list: List of feature table names.
+        """
+        like_pattern = "feat$%${}$%".format(main_table)
+        if self.db_type == 'mysql':
+            fetched_rows = self.execute_get_list("""
+                SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES 
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE '{}';
+                """.format(like_pattern))
+        elif self.db_type == 'sqlite':
+            fetched_rows = self.execute_get_list("""
+                SELECT name FROM sqlite_master 
+                WHERE type='table' AND name LIKE 'feat$%$%$%';
+                """)
+        else:
+            raise ValueError("Unsupported database type.")
+
+        tables = [row[0] for row in fetched_rows]
+
+        feature_tables = [
+            table for table in tables
+            if len(table.split('$')) > 2 and table.split('$')[2] == main_table and not table.startswith('feat$meta_')
+        ]
+        return feature_tables
+
+    def parseFeatureTableName(self, feature_table, main_table):
+        """
+        Parses the feature table name to extract feature_type and group_id.
+
+        Parameters:
+            feature_table (str): The feature table name (e.g., 'feat$1gram$utterances$speaker').
+            main_table (str): The main table name (e.g., 'utterances').
+
+        Returns:
+            tuple: (feature_type, group_id)
+        """
+        parts = feature_table.split('$')
+        if len(parts) != 4 or parts[2] != main_table:
+            raise ValueError("Invalid feature table name format: {}".format(feature_table))
+        feature_type = parts[1]
+        group_id = parts[3]
+        return feature_type, group_id
+
+    def getGroupIdColumns(self, main_table):
+        """
+        Identifies the group_id columns in the main_table.
+
+        Parameters:
+            main_table (str): The main table name (e.g., 'utterances').
+
+        Returns:
+            list: List of group_id column names.
+        """
+        feature_tables = self.getFeatureTables(main_table)
+        group_ids = set()
+        for ft in feature_tables:
+            try:
+                _, group_id = self.parseFeatureTableName(ft, main_table)
+                group_ids.add(group_id)
+            except ValueError as e:
+                print(e)
+        return list(group_ids)
+
+    def fetchFeatures(self, feature_tables, main_table):
+        """
+        Fetches and organizes feature data from feature tables.
+
+        Parameters:
+            feature_tables (list): List of feature table names.
+            main_table (str): The main table name.
+
+        Returns:
+            dict: {group_id_val: {feature_key: {feat: {value, group_norm}}}}
+        """
+        features_by_group = defaultdict(lambda: defaultdict(dict))
+
+        for feature_table in feature_tables:
+            try:
+                feature_type, group_id = self.parseFeatureTableName(feature_table, main_table)
+            except ValueError as e:
+                print(e)
+                continue
+
+            # Fetch features: group_id, feat, value, group_norm
+            select_query = "SELECT group_id, feat, value, group_norm FROM {};".format(feature_table)
+            feature_rows = self.execute_get_list(select_query)
+
+            for group_id_val, feat, value, group_norm in feature_rows:
+                feature_key = "{}_{}".format(feature_type, group_id)
+                features_by_group[group_id_val][feature_key][feat] = {
+                    "value": value,
+                    "group_norm": group_norm
+                }
+
+        return features_by_group
 
 class MySqlDataEngine(DataEngine):
     """

@@ -1665,6 +1665,210 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Done\n")
         return featureTableName
 
+    def addPipeline(self, modelName=None, tokenizerName=None, modelClass=None, pipelineTask=None, batchSize=dlac.GPU_BATCH_SIZE, maxTokensPerSeg=255, customTableName=None, valueFunc=lambda d: d, aggregateFunc=np.mean):
+        '''
+            Adds transformer pipeline annotator with batching, GPU support, and aggregation by group_id
+            ----------------------------------
+            Args:
+                modelName (str): model name or path of transformer (huggingface supported) model
+                tokenizerName (str): tokenizer name or path of the tokenizer (huggingface supported)
+                modelClass (str): The model class of the transformer model
+                pipelineTask (str): The task for the Hugging Face pipeline (e.g., 'ner', 'sentiment-analysis')
+                batchSize (int): batch size for GPU processing
+                maxTokensPerSeg (int): Maximum tokens per segment
+                customTableName (str): custom feature table name (if None, it will be generated automatically)
+                valueFunc (func): a function that applies a transformation to the value
+                aggregateFunc (func): function to aggregate pipeline results across messages within the same group_id (default is mean)
+        '''
+
+        # Import necessary modules within the function
+        try:
+            from transformers import pipeline, AutoTokenizer,AutoModelForTokenClassification, AutoModelForSequenceClassification
+            import torch
+        except ImportError as e:
+            dlac.warn("warning: unable to import transformers pipeline or torch")
+            dlac.warn("Please install the transformers and torch libraries.")
+            raise ImportError("Necessary libraries for transformers pipeline are missing.") from e
+
+        DEFAULT_MODELS = {
+            'ner': ('dbmdz/bert-large-cased-finetuned-conll03-english', AutoModelForTokenClassification, AutoTokenizer),
+            'sentiment-analysis': ('distilbert-base-uncased-finetuned-sst-2-english', AutoModelForSequenceClassification, AutoTokenizer),
+            'text-classification': ('distilbert-base-uncased-finetuned-sst-2-english', AutoModelForSequenceClassification, AutoTokenizer),
+        }
+        # Set device for GPU if available
+        device = 0 if torch.cuda.is_available() else -1
+        if device == 0:
+            dlac.warn("CUDA is available, using GPU.")
+        else:
+            dlac.warn("CUDA is not available, using CPU.")
+
+        # Initialize the pipeline based on provided parameters
+        try:
+            # If only modelClass is specified, attempt to use the default tokenizer
+            if modelClass and not tokenizerName:
+                dlac.warn("Only modelClass '{}' specified. Attempting to use the default tokenizer.".format(modelClass.__name__))
+                tokenizer = AutoTokenizer.from_pretrained(modelName or DEFAULT_MODELS[pipelineTask][0])
+            
+            # Initialize pipeline based on available inputs
+            if modelName and pipelineTask:
+                dlac.warn("Initializing pipeline with model '{}' and task '{}'.".format(modelName, pipelineTask))
+                pipe = pipeline(task=pipelineTask, model=modelName, device=device)
+            elif modelName:
+                dlac.warn("Initializing pipeline with model '{}'.".format(modelName))
+                pipe = pipeline(model=modelName, device=device)
+            elif pipelineTask:
+                dlac.warn("Initializing pipeline for task '{}'.".format(pipelineTask))
+                default_model_name, _, _ = DEFAULT_MODELS.get(pipelineTask)
+                pipe = pipeline(task=pipelineTask, device=device)
+            else:
+                dlac.warn("No modelName or pipelineTask specified. Using default 'ner' task.")
+                default_model_name, _, _ = DEFAULT_MODELS.get('ner')
+                pipe = pipeline(task='ner', model=default_model_name, device=device)
+
+        except Exception as e:
+            error_message = str(e)
+            dlac.warn("Error initializing pipeline: {}.".format(error_message))
+
+            # Check for specific error related to `pipeline_tag`
+            if "does not seem to have a correct `pipeline_tag`" in error_message:
+                dlac.warn("As the model '{}' does not have a correct `pipeline_tag`. Trying task 'sentiment-analysis'.".format(modelName))
+                try:
+                    pipelineTask = 'sentiment-analysis'
+                    pipe = pipeline(task=pipelineTask, model=modelName, device=device)
+                except Exception as fallback_error:
+                    dlac.warn("Error initializing pipeline with task 'sentiment-analysis': {}.".format(fallback_error))
+                    # Let the outer fallback handle any additional errors
+                    raise fallback_error  # This will hit the next `else` block for fallback.
+            else:
+                dlac.warn("Unrecoverable error. Falling back to default model.")
+                # Fall back to default model
+                pipelineTask = 'ner'
+                default_model_name, default_model_class, default_tokenizer_class = DEFAULT_MODELS.get('ner')
+                tokenizer = default_tokenizer_class.from_pretrained(default_model_name)
+                pipe = pipeline(task=pipelineTask, model=default_model_name, tokenizer=tokenizer, device=device)
+        # Create table for annotations
+        if customTableName is None:
+            modelName = modelName.split('/')[-1] if '/' in modelName else modelName
+            # Abbreviate modelName by taking the first letter of each word split by '-'
+            modelAbbrev = ''.join([word[0] for word in modelName.split('-')])
+            # Abbreviate pipelineTask by taking the first letter of each word split by '_'
+            taskAbbrev = ''.join([word[0] for word in pipelineTask.split('_')])
+            customTableName = "{}_{}".format(modelAbbrev, taskAbbrev)
+
+        annTableName = self.createFeatureTable(customTableName, "VARCHAR(12)", 'DOUBLE', None, valueFunc, correlField=self.correl_field)
+
+        # SQL query for fetching rows
+        usql = "SELECT {} FROM {} GROUP BY {}".format(self.correl_field, self.corptable, self.correl_field)
+        cfRows = FeatureExtractor.noneToNull(self.data_engine.execute_get_list(usql))
+
+        dlac.warn("Finding messages for {} '{}'s".format(len(cfRows), self.correl_field))
+        self.data_engine.disable_table_keys(annTableName)
+
+        # Process each group_id (cf_id)
+        for cfRow in cfRows:
+            cf_id = cfRow[0]
+            messageRows = self.getMessagesForCorrelField(cf_id, messageTable=self.corptable, warnMsg=True)
+
+            # Initialize lists to store messages and their ids for batching
+            message_batch = []
+            message_ids = []
+            annotation_list = []
+
+            # Collect messages in batches
+            for messageRow in messageRows:
+                message_id = messageRow[0]
+                message = messageRow[1]
+
+                if message:
+                    message_batch.append(message)
+                    message_ids.append(message_id)
+
+                    # If batch is full, process the batch
+                    if len(message_batch) == batchSize:
+                        batch_annotations = pipe(message_batch)
+                        # Collect annotations for all messages in the batch
+                        try:
+                            for batch_idx, annotations in enumerate(batch_annotations):
+                                # Ensure annotations is always a list
+                                if not isinstance(annotations, list):
+                                    annotations = [annotations]
+
+                                for ann in annotations:
+                                    if isinstance(ann, dict):
+                                        key = 'entity' if pipelineTask == 'ner' else 'label'
+                                        feature_key = ann.get(key, pipelineTask)
+                                        feature_value = ann.get('score', 1.0)
+                                        if len(feature_key) > 12:
+                                            feature_key = feature_key[:12]
+                                        annotation_list.append((feature_key, feature_value))
+                                    else:
+                                        print("Warning: Unexpected type {} for annotation".format(type(ann)))
+                        except Exception as e:
+                            print("Error processing annotations: {}".format(e))
+                            
+                        message_batch = []
+                        message_ids = []
+
+            # Process remaining messages in the last batch
+            if message_batch:
+                batch_annotations = pipe(message_batch)
+                try:
+                    for batch_idx, annotations in enumerate(batch_annotations):
+                        if not isinstance(annotations, list):
+                            annotations = [annotations]
+
+                        for ann in annotations:
+                            if isinstance(ann, dict):
+                                key = 'entity' if pipelineTask == 'ner' else 'label'
+                                feature_key = ann.get(key, pipelineTask)
+                                feature_value = ann.get('score', 1.0)
+                                if len(feature_key) > 12:
+                                    feature_key = feature_key[:12]
+                                annotation_list.append((feature_key, feature_value))
+                            else:
+                                print("Warning: Unexpected type {} for annotation".format(type(ann)))
+                except Exception as e:
+                    print("Error processing annotations: {}".format(e))
+
+            # Aggregate results by group_id
+            if annotation_list:
+                aggregated_annotations = {}
+                for feature_key, feature_value in annotation_list:
+                    if feature_key not in aggregated_annotations:
+                        aggregated_annotations[feature_key] = []
+                    aggregated_annotations[feature_key].append(feature_value)
+
+                rows = [] 
+                for feature_key, values in aggregated_annotations.items():
+                    aggregated_value = aggregateFunc(values)
+                    normalized_value = valueFunc(aggregated_value)
+
+                    # Append a tuple for each row to be inserted into `rows`
+                    rows.append((
+                        feature_key,
+                        float(aggregated_value),
+                        float(normalized_value)
+                    ))
+                    
+                # Create insert query for this group_id and set 'group_id' via set_values
+                try:
+                    insert_query = self.qb.create_insert_query(annTableName).set_values([
+                        ("group_id", cf_id),
+                        ("feat", ""),
+                        ("value", ""),
+                        ("group_norm", "")
+                    ])
+                    insert_query.execute_query(rows)
+                except Exception as e:
+                    dlac.warn("MYSQL Corpus DB ERROR on INSERT INTO {} for group_id {}: {}".format(annTableName, cf_id, e))
+
+        dlac.warn("Done reading/inserting aggregated annotations.")
+        dlac.warn("Adding Keys.")
+        self.data_engine.enable_table_keys(annTableName)
+        dlac.warn("Done\n")
+        return annTableName
+
+
 
 
     ##HELPER METHODS##

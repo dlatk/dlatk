@@ -1676,6 +1676,8 @@ class FeatureExtractor(DLAWorker):
         if layersToKeep != [-1]:
             dlac.warn("WARNING: you are taking embeddings from layer(s) other than the final layer, SentenceTransformer cosine similarity may not be preserved")
 
+        if "/" not in modelName:
+            modelName = "sentence-transformers/" + modelName
         tokenizerName = modelName if tokenizerName is None else tokenizerName
         tokenizer = AutoTokenizer.from_pretrained(tokenizerName)
         model = SentenceTransformer(modelName)

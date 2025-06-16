@@ -78,8 +78,11 @@ class FeatureRefiner(FeatureGetter):
 
         return featlabel_tablename
 
-    def createCombinedFeatureTable(self, featureName = None, featureTables = [], tableName = None):
-        """Create a new feature table by combining others"""
+    def createCombinedFeatureTable(self, featureName = None, featureTables = [], tableName = None, appendWithNewID = False):
+        """Create a new feature table by combining others
+        appendWithNewID: will update the group id for each table so appending rather than union
+        """
+        
 
         #get best feat column type:
         intGrabber = re.compile(r'\d+')
@@ -119,21 +122,27 @@ class FeatureRefiner(FeatureGetter):
             for table in featureTables:
                 names.append(featNameGrabber.match(table).group(1))
             featureName = '_'.join(names)
-        featureTableName = self.createFeatureTable(featureName, "VARCHAR(%d)"%longestInt, valueType, tableName, valueFunc, extension=pocc)
+        featureTableName = self.createFeatureTable(featureName, "VARCHAR(%d)"%longestInt, valueType, tableName, valueFunc, extension=pocc, correl_fieldType = 'VARCHAR(120)' if appendWithNewID else None)
         # Maarten: todo: test if too long and don't disable keys
         self.data_engine.disable_table_keys(featureTableName) #for faster, when enough space for repair by sorting
         
         insert_idx_start = 0
         insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
+        tnum = 0 #for appending
         for fTable in featureTables:
             if self.db_type == "sqlite":
                 insertQuery = self.qb.create_insert_query(featureTableName).set_values([("group_id", ""),("feat", ""),("value", ""),("group_norm", "")])
                 selectQuery = self.qb.create_select_query(fTable).set_fields(["group_id", "feat", "value", "group_norm"])
                 rows = selectQuery.execute_query()
+                if appendWithNewID:
+                    rows = [[str(tnum)+"_"+str(r[0])]+r[1:] for r in rows]
                 insertQuery.execute_query(rows)
             elif self.db_type == "mysql":
                 sql = "INSERT INTO %s (group_id, feat, value, group_norm) SELECT group_id, feat, value, group_norm from %s;"%(featureTableName, fTable)
+                if appendWithNewID:#appends tables instead of union
+                    sql = "INSERT INTO %s (group_id, feat, value, group_norm) SELECT CONCAT('%s_',group_id), feat, value, group_norm from %s;"%(featureTableName, tnum, fTable)
                 self.data_engine.execute(sql)
+            tnum += 1
         
         self.data_engine.enable_table_keys(featureTableName)
 
@@ -822,7 +831,7 @@ class FeatureRefiner(FeatureGetter):
             return 'char(2)'
         return None
 
-    def createFeatureTable(self, featureName, featureType = 'VARCHAR(64)', valueType = 'INTEGER', tableName = None, valueFunc = None, correlField=None, extension = None):
+    def createFeatureTable(self, featureName, featureType = 'VARCHAR(64)', valueType = 'INTEGER', tableName = None, valueFunc = None, correlField=None, extension = None, correl_fieldType = None):
         """Creates a feature table based on self data and feature name"""
         
         #create table name
@@ -839,8 +848,9 @@ class FeatureRefiner(FeatureGetter):
         query = self.qb.create_select_query("information_schema.columns").set_fields(["column_type"]).where(where_conditions)
 
         correlField = self.getCorrelFieldType(self.correl_field) if not correlField else correlField
-        correl_fieldType = query.execute_query()[0][0] if not correlField else correlField
-
+        if not correl_fieldType:
+            correl_fieldType = query.execute_query()[0][0] if not correlField else correlField
+        
         #create sql
         dropTable = self.qb.create_drop_query(tableName)
         # featureType = "VARCHAR(30)" # MAARTEN

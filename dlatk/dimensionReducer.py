@@ -126,7 +126,7 @@ class DimensionReducer:
         #'nmf' : { 'n_components': 15, 'init': 'nndsvd', 'sparseness': None, 'beta': 1, 'eta' : 0.1, 'tol': .0001, 'max_iter' : 200, 'nls_max_iter': 2000, 'random_state' :42 },
         #'nmf' : { 'n_components': 30, 'init': 'nndsvd', 'solver':'cd', 'l1_ratio': 0.95, 'alpha': 10, 'max_iter' : 200, 'random_state' :42 },
         "nmf": {"n_components": 30, "init": "nndsvd", "random_state": 42},
-        "pca": {"n_components": "mle", "whiten": False},
+        "pca": {"whiten": False},
         #'pca' : { 'n_components': 'mle', 'whiten': True},
         #'sparsepca': {'n_components':None, 'alpha':1, 'ridge_alpha':0.01, 'method': 'lars', 'n_jobs':4, 'random_state':42},
         "sparsepca": {
@@ -234,12 +234,16 @@ class DimensionReducer:
                     )
                 for controlName, controlValues in controls.items():
                     controls[controlName] = dict([(g, controlValues[g]) for g in groups])
-            print("[number of groups: %d]" % len(groups))
+            print("  [DR: number of groups: %d]" % len(groups))
             controlValues = list(controls.values())  # list of dictionaries of group=>group_norm
         elif restrictToGroups:
-            print("[Not using outcomes]")
+            print("  [Not using outcomes]")
             groups = restrictToGroups
-
+        else:
+            #TODO: get this working without an outcomeGetter
+            controlValues = []
+            print("  [No outcome getter present; dim-reducer may not work correct]")
+            
         # 2. get data for X:
         (groupNorms, featureNames) = (None, None)
         if sparse:
@@ -249,6 +253,7 @@ class DimensionReducer:
 
         self.featureNames = list(groupNorms.keys())  # holds the order to expect features
         groupNormValues = list(groupNorms.values())  # list of dictionaries of group => group_norm
+        #print(str(self.featureGetter), 'len(groupNormValues)', str(len(groupNormValues)))#DEBUG
 
         #     this will return a dictionary of dictionaries
 
@@ -309,7 +314,7 @@ class DimensionReducer:
             print(" after feature selection: (N, features): %s" % str(X.shape))
 
         # no grid search
-        print("[Doing clustering using : %s]" % self.modelName.lower())
+        print("[Fitting reducer using : %s]" % self.modelName.lower())
         cluster = eval(self.modelToClassName[self.modelName.lower()] + "()")
         if "lda" in self.modelName.lower():
             self.params["lda"]["dictionary"] = self.featureNames
@@ -412,7 +417,7 @@ class DimensionReducer:
     #     return
 
     def transform(
-        self, standardize=True, sparse=False, restrictToGroups=None, writeToFeats=False, fe=None
+            self, standardize=True, sparse=False, restrictToGroups=None, writeToFeats=False, fe=None,  refitScaler=False
     ):
         ##TODO: add groupsWhere parameter
         groups = []
@@ -468,7 +473,7 @@ class DimensionReducer:
                     self.scalers[outcomeName],
                     self.fSelectors[outcomeName],
                 )
-                transformedX[outcomeName] = self._transform(cluster, scaler, fSelector)
+                transformedX[outcomeName] = self._transform(cluster, scaler, fSelector, refitScaler=refitScaler)
         else:
             X, group_ids = alignDictsAsX(
                 groupNormValues + controlValues, sparse, returnKeyList=True
@@ -479,9 +484,10 @@ class DimensionReducer:
                 self.fSelectors["noOutcome"],
             )
             transformedX["noOutcome"] = self._transform(
-                cluster=cluster, X=X, scaler=scaler, fSelector=fSelector
+                cluster=cluster, X=X, scaler=scaler, fSelector=fSelector, refitScaler=refitScaler
             )
 
+        fTables = []
         for outcomeName, outcomeX in transformedX.items():
             if not isinstance(outcomeX, csr_array):
                 dictX = dict()
@@ -520,7 +526,7 @@ class DimensionReducer:
                     for feat in featNames:
                         preds = transformedX[outcomeName][feat]
 
-                        print("[Inserting Predictions as Feature values for feature: %s]" % feat)
+                        print("[Inserting transformation as feature values for feature: %s]" % feat)
                         #wsql = """INSERT INTO """+featureTableName+""" (group_id, feat, value, group_norm) values (%s, '"""+feat+"""', %s, %s)"""
                         query = fe.qb.create_insert_query(featureTableName).set_values([("group_id",""),("feat",feat),("value",""),("group_norm","")])
                         for k, v in preds.items():
@@ -546,16 +552,24 @@ class DimensionReducer:
                         query.execute_query(rows)
                         written += len(rows)
                         print("   %d feature rows written" % written)
+                    fTables.append(featureTableName)
 
             else:
                 raise NotImplementedError
 
-        return transformedX
+        if writeToFeats:
+            return fTables
+        else:
+            return transformedX
 
-    def _transform(self, cluster, X, scaler=None, fSelector=None, y=None):
+    def _transform(self, cluster, X, scaler=None, fSelector=None, y=None, refitScaler=False):
         if scaler:
-            print("[ Running Scaler]:%s\n" % str(scaler))
-            X = scaler.transform(X)
+            if refitScaler:
+                print("[ Refitting and Running Scaler]:%s\n" % str(scaler))
+                X = scaler.fit_transform(X)
+            else:
+                print("[ Running Scaler]:%s\n" % str(scaler))
+                X = scaler.transform(X)
         if fSelector:
             print("[ Running feature selector]:%s\n" % str(fSelector))
             X = fSelector.transform(X)

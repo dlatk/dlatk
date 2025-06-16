@@ -83,7 +83,7 @@ def appendCSVtoMySQL(csvFile, database, table, ignoreLines=0, dbCursor=None):
     return
 
 # SQLite methods
-def csvToSQLite(csvFile, database, table, columnDescription, ignoreLines=0, mysql_config_file=dlac.MYSQL_CONFIG_FILE, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH):
+def csvToSQLite(csvFile, database, table, mysql_config_file=dlac.MYSQL_CONFIG_FILE, encoding=dlac.DEF_ENCODING, use_unicode=dlac.DEF_UNICODE_SWITCH):
     data_engine = DataEngine(database, mysql_config_file, encoding, use_unicode, "sqlite")
     (dbConn, dbCursor, dictCursor) = data_engine.connect()
 
@@ -212,9 +212,6 @@ def main():
             print("Importing {csv} to {db}.{table}".format(db=args.db, table=args.table, csv=args.csv_file))
             csvToMySQL(args.csv_file, args.db, args.table)
         elif args.csv_to_sqlite:
-            if not args.column_description:
-                print("You must specify a column description --column_description")
-                sys.exit(1)
             print("Importing {csv} to {db}.{table}".format(db=args.db, table=args.table, csv=args.csv_file))
             csvToSQLite(args.csv_file, args.db, args.table, args.column_description, ignoreLines=args.ignore_lines)
         else:

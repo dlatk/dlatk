@@ -82,9 +82,9 @@ def extend_table(db_eng, table_name, new_columns, if_exists="skip"):
     '''
     if if_exists != "skip":
         raise NotImplementedError
-    db_schema = db_eng.url.database
-    rows = db_eng.execute("SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s' AND COLUMN_NAME = '%s'" % (db_schema, table_name, list(new_columns.keys())[0]))
-    if rows.rowcount == 0:
+    db_schema = db_eng.corpdb
+    rows = db_eng.execute_get_list("SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s' AND COLUMN_NAME = '%s'" % (db_schema, table_name, list(new_columns.keys())[0]))
+    if not rows:
         print("Adding new columns to table {}...".format(table_name))
         add_column_phrase = ", ".join(["ADD COLUMN {} {}".format(column_name, new_columns[column_name]) for column_name in new_columns])
         db_eng.execute("ALTER TABLE {} {}".format(table_name, add_column_phrase))
@@ -156,12 +156,18 @@ def mysql_update(db_eng, db_table, dict_iterator, unique_column="id", log_every=
     :param unique_column: the column name for unique column, probably the id field
     '''
     first_row = next(dict_iterator)
-    update_columns = list(first_row.keys())
-    del update_columns[update_columns.index(unique_column)]
-    update_statements = ", ".join(["{} = %s".format(col) for col in update_columns])
-    update_sql = "UPDATE {} SET {} WHERE {} = %s".format(db_table,update_statements,unique_column)
-    ###
-    _mysql_update_row(db_eng, update_sql, first_row, unique_column, update_columns)
+    update_columns = [column for column in first_row.keys() if column != unique_column]
+
+    update_statements = ", ".join(["{} = %s".format(column) for column in update_columns])
+    update_sql = "UPDATE {} SET {} WHERE {} = %s".format(db_table, update_statements, unique_column)
+    print(update_sql)
+
+    try:
+        value = [first_row[column] if column in first_row else None for column in update_columns] + [first_row[unique_column]]
+        db_eng.execute_write_many(update_sql, [value])
+    except Exception as e:
+        logging.warning("Error updating data: {}{}".format(type(e), e))
+
     count = 0
     starttime = time.time()
     for row in dict_iterator:
@@ -169,7 +175,12 @@ def mysql_update(db_eng, db_table, dict_iterator, unique_column="id", log_every=
         if count % log_every == 0:
             time_elapsed = time.time() - starttime
             print("{} rows updated in {}s...".format(count, time_elapsed))
-        _mysql_update_row(db_eng, update_sql, row, unique_column, update_columns)
+
+        try:
+            value = [row[column] if column in row else None for column in update_columns] + [row[unique_column]]
+            db_eng.execute_write_many(update_sql, [value])
+        except Exception as e:
+            logging.warning("Error updating data: {}{}".format(type(e), e))
 
 def _mysql_update_row(db_eng, update_sql, row, unique_column, update_columns):
     '''Helper function for mysql_update'''
@@ -179,7 +190,7 @@ def _mysql_update_row(db_eng, update_sql, row, unique_column, update_columns):
     update_values = [row[column] if column in row else None for column in update_columns]
     values = update_values + [unique_value]
     try:
-        db_eng.execute(update_sql, values)
+        db_eng.execute(update_sql)
     except Exception as e:
         logging.warning("Error updating data: {}{}".format(type(e), e))
 
@@ -199,7 +210,7 @@ def mysql_multitable(db_eng, dict_iter, table_prefix, table_column, table_column
     while len(batch) > 0:
         df_batch = pd.DataFrame(batch)
         df_batch["batch_num"] = batch_num
-        first_line = dict(df_batch.ix[0])
+        first_line = dict(df_batch.iloc[0])
         table_name = table_prefix + table_column_transform(first_line[table_column])
         try:
             if template_table:

@@ -1,6 +1,7 @@
 import glob
 import os
 import re
+import math
 
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -118,5 +119,19 @@ def print_wordclouds(wordcloud_folder):
         axes[i].set_axis_off()
         axes[i].set_title(image.split('/')[-1])
         axes[i].imshow(mpimg.imread(image))
+
+    return
+
+def print_topic_wordclouds(wordcloud_folder, num_topics, images_per_row):
+
+    images = glob.glob(os.path.join(wordcloud_folder, '*.png'))
+    to_display = images[:min(num_topics, len(images))]
+
+    fig, axes = plt.subplots(math.ceil(num_topics/images_per_row), images_per_row, figsize=(18, 8))
+    for index, image in enumerate(images):
+
+        axes[int(index/images_per_row), index%images_per_row].set_axis_off()
+        axes[int(index/images_per_row), index%images_per_row].set_title(image.split('/')[-1])
+        axes[int(index/images_per_row), index%images_per_row].imshow(mpimg.imread(image))
 
     return

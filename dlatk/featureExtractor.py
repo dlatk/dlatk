@@ -1622,14 +1622,26 @@ class FeatureExtractor(DLAWorker):
         def tokenizeWithLengthWarning(text, tokenizer):
             nonlocal sentTruncationWarning
             max_length = tokenizer.model_max_length
-            
-            tokens = tokenizer(
-                text,
-                return_tensors="pt",
-                truncation=True,
-                max_length=max_length,
-            ).to('cuda')
-
+            if max_length > 1_000_000:  # arbitrary large sentinel cutoff
+                max_length = 512
+            try: 
+                tokens = tokenizer(
+                    text,
+                    return_tensors="pt",
+                    truncation=True,
+                    max_length=max_length,
+                ).to('cuda')
+            except OverflowError:
+                print("=== OVERFLOW DETECTED ===")
+                print(f"Type: {type(text)}")
+                if isinstance(text, list):
+                    for idx, t in enumerate(text):
+                        print(f"[{idx}] Length (chars): {len(t)}")
+                        print(f"Content preview: {t[:500]}{'...' if len(t) > 500 else ''}")
+                else:
+                    print(f"Length (chars): {len(text)}")
+                    print(f"Content preview: {text[:500]}{'...' if len(text) > 500 else ''}")
+                raise
             if not sentTruncationWarning:
                 # Check if truncation occurred
                 num_tokens = len(tokenizer.encode(text, add_special_tokens=True))

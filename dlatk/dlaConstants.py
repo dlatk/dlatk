@@ -138,6 +138,7 @@ DEF_EMB_MODEL='bert-base-uncased'
 DEF_EMB_AGGREGATION=['mean']
 DEF_EMB_LAYER_AGGREGATION=['concatenate']
 DEF_EMB_LAYERS=[-2]
+DEF_SENT_EMB_LAYERS=[-1]
 DEF_TRANS_WORD_AGGREGATION = ['mean']
 GPU_BATCH_SIZE = 32
 EMB_OPTIONS = ['bert-base-uncased', 'bert-large-uncased', 'bert-base-cased', 'bert-large-cased', 'SpanBERT/spanbert-base-cased', 'SpanBERT/spanbert-large-cased', 

@@ -200,3 +200,22 @@ There's a natural question we've glossed over here: what exactly do the BERT fea
         +----+----------+------+-----------------------+-----------------------+
 
 The names of the ``feat`` column may seem a bit opaque at first, but they are simple to interpret: the number indicates the index of the dimension in the BERT embedding vector, while the ``me`` indicates that the message embeddings were aggregated using the mean. If you have specified multiple message aggregations, these will appear as separate features. Since BERT produces vectors of length 768, this means each ``group_id`` will have ``768 * [number of message aggregations]`` features. Each dimension of the aggregated BERT embedding vector then serves as a distinct feature in the predictive model.
+
+
+Sentence Transformers
+-------------
+
+DLATK also allows for the user of Sentence Transformers. Sentence Transformers embed language at a sentence level and (when using the last layer) have been fine tuned to preserve cosine similarity. This means that the embeddings for similar sentences are projected closer to one another in the embedding space than sentences that are less related.
+
+Note: Sentence Transformers requires Python 3.9
+
+In DLATK, Sentence Transformers function the same way as regular transformers, with a few notable differences.
+First, use the ``--add_sent_emb_feat`` instead of the ``--add_emb_feat`` flag as in the sample command below. All other arguments/flags should function the same as regular Transformers. 
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id --add_sent_emb_feat --emb_model sentence-transformers/all-MiniLM-L6-v2
+
+#. Sentence transformers only have message and user level aggregation
+#. The default layer for sentence transformers is the last layer (as this layer possesses the cosine similarity property), as opposed to the second to last layer (It is unknown how much the cosine similarity is preserved when layer aggregation is used)
+#. You can find a list of sentence transformer models `here <https://huggingface.co/sentence-transformers#:~:text=for%20semantic%20search-,Models,126,-Sort%3A%C2%A0%20Recently/>`_

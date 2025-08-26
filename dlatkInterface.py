@@ -206,7 +206,7 @@ def main(fn_args = None):
                        help='Aggregations to use with Contextual embedding model (e.g. mean, min, max).')
     group.add_argument('--embedding_word_aggregation', '--word_aggregation', '--bert_word_aggregation', type=str, metavar='AGG', nargs='+', dest='transwordaggs', default=dlac.DEF_TRANS_WORD_AGGREGATION,
                        help='Aggregations to use for words (e.g. mean or concatenate).')
-    group.add_argument('--embedding_layers', '--emb_layers', '--bert_layers', type=int, metavar='LAYER', nargs='+', dest='emblayers', default=dlac.DEF_EMB_LAYERS,
+    group.add_argument('--embedding_layers', '--emb_layers', '--bert_layers', type=int, metavar='LAYER', nargs='+', dest='emblayers', default=None,
                        help='layers from Contextual model to keep.')
     group.add_argument('--embedding_no_context', '--emb_no_context', '--bert_no_context', action='store_true', dest='embnocontext', default=False,
                        help='encoded without considering context.')
@@ -474,6 +474,8 @@ def main(fn_args = None):
                        help='add an people names feature table. (two agrs: NAMES_LEX, ENGLISH_LEX, can flag: sqrt)')
     group.add_argument('--add_embedding', '--add_emb_feat',  '--add_bert', action='store_true', dest='embaddfeat',
                        help='add BERT mean features (optionally add min, max, --bert_model large)')
+    group.add_argument('--add_sentence_embedding', '--add_sent_emb_feat',  '--add_sbert', '--add_cosine_emb', '--add_msg_emb', action='store_true', dest='sembaddfeat',
+                       help='add sBERT mean features (optionally add min, max, --bert_model large)')
     group.add_argument('--lexicon_normalization', '--lex_norm', '--dict_norm', action='store_true', help='Use weighting over lexicon terms (instead of over all terms).')
     group.add_argument('--multicategory_normalization', '--liwc_normalization', '--liwc_norm', action='store_true', help='Use weighting over lexicon terms across terms in all categories. Similar to --lexicon_normalization but totals are across all lexicon categories.')
 
@@ -1088,8 +1090,13 @@ def main(fn_args = None):
 
     if args.embaddfeat:
         if not fe: fe = FE()
-        args.feattable = fe.addEmbTable(modelName = args.embmodel, tokenizerName=args.tokenizermodel, modelClass = args.embclass, batchSize=args.batchsize, aggregations=args.embaggs, layersToKeep=args.emblayers, noContext=args.embnocontext, layerAggregations = args.emblayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc, customTableName = args.embtablename, keepMsgFeats = args.embkeepmsg)
+        args.feattable = fe.addEmbTable(modelName = args.embmodel, tokenizerName=args.tokenizermodel, modelClass = args.embclass, batchSize=args.batchsize, aggregations=args.embaggs, layersToKeep=args.emblayers if args.emblayers else dlac.DEF_EMB_LAYERS, noContext=args.embnocontext, layerAggregations = args.emblayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc, customTableName = args.embtablename, keepMsgFeats = args.embkeepmsg)
     
+    if args.sembaddfeat:
+        if not fe: fe = FE()
+        args.feattable = fe.addSentenceEmbTable(modelName = args.embmodel, tokenizerName=args.tokenizermodel, modelClass = args.embclass, batchSize=args.batchsize, aggregations=args.embaggs, layersToKeep=args.emblayers if args.emblayers else dlac.DEF_SENT_EMB_LAYERS, noContext=args.embnocontext, layerAggregations = args.emblayeraggs, wordAggregations=args.transwordaggs, valueFunc = args.valuefunc, customTableName = args.embtablename, keepMsgFeats = args.embkeepmsg)
+    
+
     if args.addldafeattable:
         if not fe: fe = FE()
         args.feattable = fe.addLDAFeatTable(args.addldafeattable, valueFunc = args.valuefunc)

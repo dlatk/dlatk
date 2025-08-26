@@ -1453,7 +1453,7 @@ class FeatureExtractor(DLAWorker):
                 if len(token_type_ids)>0:
                     token_type_ids_padded = token_type_ids_padded.long()
                 attention_mask_padded = attention_mask_padded.long()
-                
+
                 #print (input_ids_padded.shape, token_type_ids_padded.shape, attention_mask_padded.shape)
                 encSelectLayers_temp = []
                 with torch.no_grad():
@@ -1535,7 +1535,9 @@ class FeatureExtractor(DLAWorker):
                         sub_msg_lagg_ = np.concatenate(sub_msg_lagg, axis=-1) 
                     #Getting the mean of all tokens representation
                     #TODO: add word agg list and do eval
+
                     sub_msg_lagg_wagg = np.mean(sub_msg_lagg_, axis=0) #Shape: (hidden dim, lagg)
+
                     #ReShaping: (1, hidden dim, lagg)
                     sub_msg_lagg_wagg = sub_msg_lagg_wagg.reshape(1, sub_msg_lagg_wagg.shape[0], sub_msg_lagg_wagg.shape[1]) 
                     #Sentence representations
@@ -1579,7 +1581,298 @@ class FeatureExtractor(DLAWorker):
         dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
         self.data_engine.enable_table_keys(embTableName)#rebuilds keys
         dlac.warn("Done\n")
-        return embTableName;       
+        return embTableName;  
+
+
+
+    def addSentenceEmbTable(self, modelName, tokenizerName, modelClass=None, batchSize=dlac.GPU_BATCH_SIZE, aggregations = ['mean'], layersToKeep = [8,9,10,11], maxTokensPerSeg=255, noContext=True, layerAggregations = ['concatenate'], wordAggregations = ['mean'], keepMsgFeats = False, customTableName = None, valueFunc = lambda d: d):
+        '''
+            Adds sentence transformer embeddings
+            ---------------------------
+            Args:
+                modelName (str): model name or path of transformer (huggingface supported) model
+                tokenizerName (str): tokenizer name or path of the tokenizer (huggingface supported)
+                modelClass (str): The model class of the transformer model
+                aggregations (List[str]): Aggregation to apply on correl field level
+                layersToKeep (List[int]): Transformer Layers to extract the embeddings from
+                layerAggregations (List[str]): Aggregation to apply over transformer layers' representations
+                keepMsgFeats (bool): Store message level transformer representations
+                customTableName (str): custom feature table name (if None, then it will be generated automatically)
+                batchSize (int): batch size for GPU processing
+        '''
+        
+        sentTruncationWarning = False
+
+        def parse_layers(layers, num_hidden_layers):
+            """
+                Checks the validity of the input layer number
+                Turns negative layer idx into equivalent positive and sorts layer numbers in ascending order
+            """
+            for lyr in layers:
+                if (lyr > num_hidden_layers):
+                    print ("You have supplied a layer number %s greater than the total number of layers (%s) in the model. Retry with valid layer number(s)."%(lyr, num_hidden_layers))
+                    sys.exit()
+
+            layers = [(lyr%num_hidden_layers)+1 if lyr<0 else lyr for lyr in layers]
+            #removing duplicate layer inputs
+            layers = sorted(list(set(layers)))
+
+            return layers
+
+        def tokenizeWithLengthWarning(text, tokenizer):
+            nonlocal sentTruncationWarning
+            max_length = tokenizer.model_max_length
+            if max_length > 1_000_000:  # arbitrary large sentinel cutoff
+                max_length = 512
+            try: 
+                tokens = tokenizer(
+                    text,
+                    return_tensors="pt",
+                    truncation=True,
+                    max_length=max_length,
+                ).to('cuda')
+            except OverflowError:
+                print("=== OVERFLOW DETECTED ===")
+                print(f"Type: {type(text)}")
+                if isinstance(text, list):
+                    for idx, t in enumerate(text):
+                        print(f"[{idx}] Length (chars): {len(t)}")
+                        print(f"Content preview: {t[:500]}{'...' if len(t) > 500 else ''}")
+                else:
+                    print(f"Length (chars): {len(text)}")
+                    print(f"Content preview: {text[:500]}{'...' if len(text) > 500 else ''}")
+                raise
+            if not sentTruncationWarning:
+                # Check if truncation occurred
+                num_tokens = len(tokenizer.encode(text, add_special_tokens=True))
+                if num_tokens > max_length:
+                    print("Warning: Truncation occurred for input: ", text[:40], "... Not Warning again")
+                    sentTruncationWarning = True
+
+            return tokens
+
+        def addSentTokenized(messageRows):
+
+            try:
+                import nltk.data
+                import sys
+            except ImportError:
+                print("warning: unable to import nltk.tree or nltk.corpus or nltk.data")
+            sentDetector = nltk.data.load('tokenizers/punkt/english.pickle')
+            messages = list(map(lambda x: x[1], messageRows))
+            parses = []
+            for m_id, message in messageRows:
+                if message is not None: parses.append([m_id, json.dumps(sentDetector.tokenize(tc.removeNonUTF8(tc.treatNewlines(message.strip()))))])
+            return parses
+
+        sentTok_onthefly = False if self.data_engine.tableExists(self.corptable+'_stoks') else True
+        sentTable = self.corptable if sentTok_onthefly else self.corptable+'_stoks'
+        if sentTok_onthefly: dlac.warn("WARNING: run --add_sent_tokenized on the message table to avoid tokenizing it every time you generate embeddings")
+        
+        try:
+            import torch
+            from torch.nn.utils.rnn import pad_sequence
+            from transformers import AutoConfig, AutoModel, AutoTokenizer
+            from transformers import TransfoXLTokenizer, TransfoXLModel, BertModel, BertTokenizer, OpenAIGPTModel, OpenAIGPTTokenizer
+            from transformers import GPT2Model, GPT2Tokenizer, XLNetModel, XLNetTokenizer, DistilBertModel, DistilBertTokenizer
+            from transformers import RobertaModel, RobertaTokenizer, XLMModel, XLMTokenizer, XLMRobertaModel, XLMRobertaTokenizer
+            from transformers import AlbertModel, AlbertTokenizer, T5Model, T5Tokenizer
+            from sentence_transformers import SentenceTransformer
+
+            #from transformers import ElectraModel, ElectraTokenizer
+        except ImportError:
+           dlac.warn("warning: unable to import torch or transformers or sentence_transformers")
+           dlac.warn("Please install pytorch and transformers and sentence_transformers.")
+           sys.exit(1)
+
+        if layersToKeep != [-1]:
+            dlac.warn("WARNING: you are taking embeddings from layer(s) other than the final layer, SentenceTransformer cosine similarity may not be preserved")
+
+        tokenizerName = modelName if tokenizerName is None else tokenizerName
+        tokenizer = AutoTokenizer.from_pretrained(tokenizerName)
+        model = SentenceTransformer(modelName)
+
+        #Fix for gpt2
+        pad_token_id = tokenizer.pad_token_id if tokenizer.pad_token_id else 0
+        model.eval()
+        cuda = True
+        try:
+            model.to('cuda')
+            batch_size=batchSize
+        except:
+            dlac.warn(" unable to use CUDA (GPU) for BERT")
+            batch_size=batchSize
+            cuda = False
+        dlac.warn("Done.")
+        # Access the transformer model (which is based on Hugging Face's transformer models)
+        layersToKeep = parse_layers(layersToKeep, model[0].auto_model.config.num_hidden_layers)
+        layersToKeep = np.array(layersToKeep, dtype='int')
+
+        #TODO: Change the model name later
+        #NOC NOT IMPLEMENTED
+        noc = ''
+        if noContext: noc = 'noc_'#adds noc to name if no context
+        if customTableName is None:
+            modelName = modelName.split('/')[-1] if '/' in modelName else modelName
+            modelPieces = modelName.split('-')
+            modelNameShort = modelPieces[0] + '_' + '_'.join([s[:2] for s in modelPieces[1:]])\
+                            + '_' + noc+''.join([str(ag[:2]) for ag in aggregations])+'L'+'L'.join([str(l) for l in layersToKeep])+''.join([str(ag[:2]) for ag in layerAggregations]) + 'n'
+        else:
+            modelNameShort = customTableName
+
+        if keepMsgFeats:
+            embTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', None, valueFunc, correlField='message_id')
+        else:
+            embTableName = self.createFeatureTable(modelNameShort, "VARCHAR(12)", 'DOUBLE', None, valueFunc)
+
+        #SELECT / LOOP ON CORREL FIELD FIRST:
+        usql = """SELECT %s FROM %s GROUP BY %s""" % (self.correl_field, sentTable, self.correl_field)
+        msgs = 0#keeps track of the number of messages read
+        cfRows = FeatureExtractor.noneToNull(self.data_engine.execute_get_list(usql))#SSCursor woudl be better, but it loses connection
+
+        ##iterate through correl_ids (group id):
+        dlac.warn("finding messages for %d '%s's"%(len(cfRows), self.correl_field))
+        self.data_engine.disable_table_keys(embTableName)#for faster, when enough space for repair by sorting
+        lengthWarned = False #whether the length warning has been printed yet
+        #Each User: ( #message aggregations, #layers, #Word aggregations, hidden size)
+        for cfRow in cfRows:
+
+            #user_id
+            cf_id = cfRow[0]
+            mids = set() #currently seen message ids
+            midList = [] #only for keepMsgFeats
+
+            #grab sents by messages for that correl field:
+            messageRows = self.getMessagesForCorrelField(cf_id, messageTable = sentTable, warnMsg=True)
+            if sentTok_onthefly:
+                messageRows = addSentTokenized(messageRows)
+            
+            input_sents = []
+            token_type_ids = []
+            attention_mask = []
+            message_id_seq = []
+
+            #stores the sequence of message_id corresponding to the message embeddings for applying aggregation later 
+            for messageRow in messageRows:
+                message_id = messageRow[0]
+
+                try:
+                    messageSents = loads(messageRow[1])
+                except NameError: 
+                    dlac.warn("Error: Cannot import jsonrpclib or simplejson in order to get sentences for Bert")
+                    sys.exit(1)
+                except json.JSONDecodeError:
+                    dlac.warn("WARNING: JSONDecodeError on %s. Skipping Message"%str(messageRow))
+                    continue
+                except:
+                    dlac.warn("Warning: cannot load message, skipping")
+                    continue
+
+                if ((message_id not in mids) and (len(messageSents) > 0)):
+                    msgs+=1
+                    i = 0
+                    messageSents = ' '.join(messageSents)
+                    tokens = tokenizeWithLengthWarning(messageSents, tokenizer)
+                    input_sents.append(torch.tensor(tokens['input_ids'], dtype=torch.long).squeeze(0))
+                    attention_mask.append(tokens['attention_mask'].squeeze(0))
+                    message_id_seq.append([message_id, len(tokens)])
+
+                
+                if msgs % int(dlac.PROGRESS_AFTER_ROWS/5) == 0: #progress update
+                    dlac.warn("Messages Read: %.2f k" % (msgs/1000.0))
+                mids.add(message_id)
+                midList.append(message_id)
+            
+            if(input_sents == []):
+                dlac.warn("Warning: Empty message")
+                continue
+
+            #Number of Batches
+            num_batches = int(np.ceil(len(input_sents)/batch_size))
+            encSelectLayers = []
+            transformer = model[0].auto_model
+            pooling_layer = model[1]
+            try:
+                normalize_layer = model[2]
+            except:
+                pass
+        
+
+
+            for i in range(num_batches):
+                encSelectLayers_temp = []
+
+                input_ids_padded = pad_sequence(input_sents[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=pad_token_id)
+                attention_mask_padded = pad_sequence(attention_mask[i*batch_size:(i+1)*batch_size], batch_first = True, padding_value=0)
+                if cuda:
+                    input_ids_padded = input_ids_padded.to('cuda') 
+                    attention_mask_padded = attention_mask_padded.to('cuda')
+                input_ids_padded = input_ids_padded.long()
+                attention_mask_padded = attention_mask_padded.long()
+                
+                with torch.no_grad():
+                    outputs = transformer(input_ids=input_ids_padded, attention_mask=attention_mask_padded, output_hidden_states=True)
+                    hidden_states = outputs.hidden_states
+                
+                for lyr in layersToKeep:
+                    # Apply pooling
+                    emb = pooling_layer({"token_embeddings": hidden_states[lyr], "attention_mask": attention_mask_padded})
+                    # Apply normalization
+                    try:
+                        emb = normalize_layer(emb)
+                    except:
+                        pass
+                    encSelectLayers_temp.append(emb["sentence_embedding"].detach().cpu().numpy())
+
+                encSelectLayers.append(np.transpose(np.array(encSelectLayers_temp),(1,2,0)))
+
+            i = 0
+            msg_rep = encSelectLayers
+            
+            #Layer aggregation followed by word aggregation
+            user_rep = []
+            for i in range(len(msg_rep)):
+                sub_msg = msg_rep[i]
+                sub_msg_lagg = []
+                for lagg in layerAggregations:
+                    if lagg == 'concatenate':
+                        sub_msg_lagg.append(sub_msg)
+                    else:
+                        sub_msg_lagg.append(eval("np."+lagg+"(sub_msg, axis=-1)").reshape(sub_msg.shape[0], sub_msg.shape[1], 1) )
+                    sub_msg_lagg_ = np.concatenate(sub_msg_lagg, axis=-1)
+                user_rep.append(sub_msg_lagg_.reshape(sub_msg_lagg_.shape[0], -1))
+            user_rep = np.vstack(user_rep)
+            if user_rep.shape[0] == 0:
+                continue
+            #Flatten the features [layer aggregations] to a single dimension.
+            if len(user_rep)>0:
+                embFeats = dict()
+                if keepMsgFeats: #just store message embeddings
+                    embRows = []
+                    for mid, msg in zip(midList, user_rep):
+                        embRows.extend([(str(mid), str(k), v, valueFunc(v)) for (k, v) in enumerate(msg)])
+                    wsql = """INSERT INTO """+embTableName+""" (group_id, feat, value, group_norm) values (%s, %s, %s, %s)"""
+                    mm.executeWriteMany(self.corpdb, self.dbCursor, wsql, embRows, writeCursor=self.dbConn.cursor(), charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)
+                    
+                else:#Applying message aggregations
+                    for ag in aggregations:
+                        thisAg = eval("np."+ag+"(user_rep, axis=0)")
+                        embFeats.update([(str(k)+ag[:2], v) for (k, v) in enumerate(thisAg)])
+                        insert_idx_start = 0
+                        insert_idx_end = dlac.MYSQL_BATCH_INSERT_SIZE
+                        query = self.qb.create_insert_query(embTableName).set_values([("group_id",str(cf_id)),("feat",""),("value",""),("group_norm","")])
+                        embRows = [(k, float(v), valueFunc(float(v))) for k, v in embFeats.items()] #adds group_norm and applies freq filter
+                        while insert_idx_start < len(embRows):
+                            insert_rows = embRows[insert_idx_start:min(insert_idx_end, len(embRows))]
+                            query.execute_query(insert_rows)
+                            insert_idx_start += dlac.MYSQL_BATCH_INSERT_SIZE
+                            insert_idx_end += dlac.MYSQL_BATCH_INSERT_SIZE
+            
+        dlac.warn("Done Reading / Inserting.")
+        dlac.warn("Adding Keys (if goes to keycache, then decrease MAX_TO_DISABLE_KEYS or run myisamchk -n).")
+        self.data_engine.enable_table_keys(embTableName)#rebuilds keys
+        dlac.warn("Done\n")
+        return embTableName;     
 
     
     def addFleschKincaidTable(self, tableName = None, valueFunc = lambda d: d, removeXML = True, removeURL = True):

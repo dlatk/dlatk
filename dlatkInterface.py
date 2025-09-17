@@ -11,7 +11,7 @@ import time
 import subprocess
 from pprint import pprint
 from numpy import isnan, sqrt, log
-from configparser import SafeConfigParser
+from configparser import ConfigParser as SafeConfigParser
 import gzip
 from pathlib import Path
 
@@ -2256,7 +2256,7 @@ Group ID - {}'''.format(args.corpdb, args.corptable, args.correl_field)
         dlac.warn("Control(s) - {}".format(' '.join([args.outcomecontrols[index] for index in range(min(3, len(args.outcomecontrols)))])))
 
     dlac.warn("-------\nInterface Runtime: %.2f seconds"% float(time.time() - start_time))
-    dlac.warn("DLATK exits with success! A good day indeed  ¯\_(ツ)_/¯.")
+    dlac.warn("DLATK exits with success! A good day indeed  ¯\\\\_(ツ)_/¯.")
 
 if __name__ == "__main__":
     main()

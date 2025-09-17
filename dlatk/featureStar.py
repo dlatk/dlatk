@@ -1,5 +1,5 @@
 import pandas as pd
-from configparser import SafeConfigParser
+from configparser import ConfigParser as SafeConfigParser
 
 #infrastructure
 from . import dlaConstants as dlac

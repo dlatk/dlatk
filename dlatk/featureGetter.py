@@ -1,4 +1,4 @@
-from configparser import SafeConfigParser
+from configparser import ConfigParser as SafeConfigParser
 try:
     import MySQLdb
 except:

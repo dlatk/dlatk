@@ -7,7 +7,7 @@ except:
 import pandas as pd
 import numpy as np
 from math import isclose
-from configparser import SafeConfigParser
+from configparser import ConfigParser as SafeConfigParser
 
 from .dlaWorker import DLAWorker
 from . import dlaConstants as dlac

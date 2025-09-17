@@ -6,7 +6,7 @@ import gzip
 import multiprocessing
 from itertools import combinations
 from pprint import pprint
-from configparser import SafeConfigParser
+from configparser import ConfigParser as SafeConfigParser
 
 #math / stats:
 from math import floor

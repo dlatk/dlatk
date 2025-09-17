@@ -104,7 +104,7 @@ Developed by the [World Well-Being Project](http://www.wwbp.org) based out of th
 """
 
 DISTNAME = "dlatk"
-VERSION = "1.3.1"
+VERSION = "1.4.1"
 
 PACKAGES = [
     "dlatk",
@@ -154,8 +154,8 @@ INSTALL_REQUIRES = [
     "python-dateutil>=2.5.0,<3.0",
 
     # NumPy
-    'numpy>=1.20,<1.26; python_version<"3.12"',
-    'numpy>=1.26; python_version>="3.12"',
+    'numpy>=1.20,<2.0; python_version<"3.12"',
+    'numpy>=2.0; python_version>="3.12"',
 
     # pandas
     'pandas>=1.2,<2.0; python_version<"3.12"',
@@ -166,7 +166,7 @@ INSTALL_REQUIRES = [
 
     # scikit-learn
     'scikit-learn>=1.0,<=1.1.3; python_version<"3.12"',
-    'scikit-learn>=1.4,<1.6; python_version>="3.12"',
+    'scikit-learn>=1.4; python_version>="3.12"',
 
     # SciPy
     'scipy>=1.8,<=1.11.4; python_version<"3.12"',

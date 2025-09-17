@@ -59,3 +59,6 @@ bash regression.sh -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --outcome_t
 
 #Test classification
 bash classification.sh -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --outcome_table $OT --outcomes $CO  --group_freq_thresh 500 -f $FEAT_TABLE --output_name ${PREDICT_OUTPUT}/classification --feature_selection magic_sauce
+
+#Sentence Transformer
+bash sentence_transformer.sh

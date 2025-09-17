@@ -19,5 +19,24 @@ gives
 
     Usage - bash add_ngrams.sh -d <DB> -t <TABLE> -c <GROUP_FIELD> --group_freq_thresh <GFT> --set_p_occ <OCC> --set_pmi_threshold <PMI>
 
+## Master script (`unit_tests.sh`) example:
+
+```bash
+bash unit_tests.sh \
+  -e mysql \
+  -d dla_tutorial \
+  -t msgs \
+  -c user_id \
+  -f 'feat$1gram$msgs$user_id' \
+  -l lda50_cp \
+  --freq_table lda50_freq_t50ll \
+  --outcome_table toy_outcomes \
+  --classification_outcome y_bin \
+  --regression_outcome y_real \
+  --output_folder unit_out
+```
+
+NOTE: this is when we have all table generated in realated flag 
+
 
 

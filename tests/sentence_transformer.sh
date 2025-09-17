@@ -26,10 +26,6 @@ fi
 import sys; sys.exit(0 if sys.version_info >= (3,9) else 1)
 PY
 
-if [[ ! -f "$DLATK" ]] && ! command -v dlatkInterface.py >/dev/null 2>&1; then
-  echo "SKIP: dlatkInterface.py not found (run from repo root or install DLATK)"
-  exit 0
-fi
 
 # MySQL connection (defaults to ~/.my.cnf if present)
 MYSQL_HOST="${MYSQL_HOST:-localhost}"
@@ -217,12 +213,90 @@ PY
 
   if [[ $rc -eq 0 ]]; then
     echo "PASS: $MODEL"
+	if [[ "$MODEL" == "sentence-transformers/stsb-distilroberta-base-v2" || \
+		"$MODEL" == "sentence-transformers/bert-base-nli-mean-tokens" ]]; then
+
+	local TMP_U1
+    TMP_U1="$(mktemp -t dlatk_u1.XXXXXX)" || { echo "mktemp failed"; return 1; }
+    mysql_exec "USE \`$DB\`; SELECT feat, value
+                FROM \`$FEAT_TABLE\`
+                WHERE group_id='u1';" > "$TMP_U1"
+
+    # Sanity: ensure we got rows
+    if ! grep -q . "$TMP_U1"; then
+      echo "FAIL: vector match — no rows returned for u1 from $FEAT_TABLE"
+      rm -f "$TMP_U1"
+      return 1
+    fi
+
+    # Python: rebuild dense vector in index order and compare to ST output
+    "$PYTHON_BIN" - "$MODEL" "$TMP_U1" <<'PY'
+import sys, json, math, re
+from collections import defaultdict
+
+model = sys.argv[1]
+path  = sys.argv[2]
+
+# 1) Load DB vector rows -> dense vector ordered by numeric part of "feat" (e.g., "0me","1me",...)
+rows = []
+with open(path, "r", encoding="utf-8") as f:
+    for line in f:
+        feat, val = line.rstrip("\n").split("\t")
+        m = re.match(r"^(\d+)me$", feat)
+        if not m: 
+            # Skip any non-me pooled entries if present
+            continue
+        idx = int(m.group(1))
+        rows.append((idx, float(val)))
+
+if not rows:
+    print(json.dumps({"ok": False, "reason": "no pooled features matched '*me'"}))
+    sys.exit(1)
+
+rows.sort(key=lambda x: x[0])
+import numpy as np
+db_vec = np.array([v for _, v in rows], dtype="float64")
+
+# 2) Recompute reference embedding for the same sentence used for u1
+#    (exact string from the INSERT above)
+sentence = "A man is playing a guitar."
+
+from sentence_transformers import SentenceTransformer
+ref_model = SentenceTransformer(model, device="cpu")
+ref_vec = ref_model.encode(sentence, convert_to_numpy=True)
+
+# 3) Cosine similarity
+def cos(a, b):
+    an = np.linalg.norm(a) or 1.0
+    bn = np.linalg.norm(b) or 1.0
+    return float(np.dot(a, b) / (an * bn))
+
+sim = cos(db_vec, ref_vec)
+
+ok = sim >= 0.995  # tighten/loosen if needed
+print(json.dumps({"model": model,
+                  "dim_db": int(db_vec.shape[0]),
+                  "dim_ref": int(ref_vec.shape[0]),
+                  "cos_sim": sim,
+                  "ok": ok}))
+sys.exit(0 if ok else 1)
+PY
+    rc_match=$?
+    rm -f "$TMP_U1"
+
+    if [[ $rc_match -ne 0 ]]; then
+      echo "FAIL: vector match for $MODEL"
+      return 1
+    else
+      echo "PASS: vector match for $MODEL"
+    fi
+  fi
+
   else
     echo "FAIL: $MODEL"
   fi
   return $rc
 }
-
 fail=0
 for m in "${MODELS[@]}"; do
   check_model "$m" || fail=1

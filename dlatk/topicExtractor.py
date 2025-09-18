@@ -17,10 +17,6 @@ from dlatk import dlaConstants as dlac
 
 try:
     from gensim import corpora
-except Exception:
-    corpora = None
-
-try:
     from dlatk.ldamallet import LdaMallet
 except:
     LdaMallet = object

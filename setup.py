@@ -154,8 +154,8 @@ INSTALL_REQUIRES = [
     "python-dateutil>=2.5.0,<3.0",
 
     # NumPy
-    'numpy>=1.20,<2.0; python_version<="3.12"',
-    'numpy>=2.0; python_version>"3.12"',
+    'numpy>=1.20,<2.0; python_version<"3.12"',
+    'numpy>=2.0; python_version>="3.12"',
 
     # pandas
     'pandas>=1.2,<2.0; python_version<"3.12"',

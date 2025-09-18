@@ -7,7 +7,8 @@ import struct
 import string
 from glob import glob
 from random import uniform as runif
-import imp, sys
+import importlib.util, sys
+from importlib.machinery import PathFinder
 from pathlib import Path
 
 import subprocess
@@ -185,10 +186,14 @@ def wordcloud(word_list, freq_list, output_prefix='test',
                 check_call(["rm", pdfFile])
 
     elif wordcloud_algorithm == 'amueller':   #new wordcloud function
-        f, pathname, desc = imp.find_module('wordcloud', sys.path[1:])
-        wc = imp.load_module('wc', f, pathname, desc)
-        if f is not None:
-            f.close()
+        spec = PathFinder.find_spec('wordcloud', path=sys.path[1:])
+        if spec is None or spec.loader is None:
+            raise ModuleNotFoundError(
+                "Could not find amueller's 'wordcloud' (skipping local module)."
+            )
+        wc = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(wc)
+
         #explicitly import amueller's wordcloud library
         #for all intents that block above is equivalent to: import wordcloud as wc
         #this is needed as both the local module and amueller's package are both called 'wordcloud'

@@ -3,7 +3,7 @@ import csv
 import json
 import time
 import multiprocessing
-import imp
+import importlib
 import sys
 import os
 import re
@@ -497,7 +497,7 @@ class MessageTransformer(DLAWorker):
         whiteListFeatTable : :obj:`str`, optional
             name of white list feature table.
         """
-        imp.reload(sys)
+        importlib.reload(sys)
         if not self.use_unicode: sys.setdefaultencoding('utf8')
         sql = """SELECT %s, %s  from %s""" % (self.messageid_field, self.message_field,self.corptable+'_tok')
         messagesEnc = mm.executeGetList(self.corpdb, self.dbCursor, sql, charset=self.encoding, use_unicode=self.use_unicode, mysql_config_file=self.mysql_config_file)

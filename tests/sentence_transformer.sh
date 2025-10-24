@@ -32,6 +32,7 @@ MYSQL_HOST="${MYSQL_HOST:-localhost}"
 MYSQL_PORT="${MYSQL_PORT:-3306}"
 MYSQL_USER="${MYSQL_USER:-}"
 MYSQL_PWD="${MYSQL_PWD:-}"  
+MYSQL_SOCKET="${MYSQL_SOCKET:-/var/run/mysqld/mysqld.sock}"
 
 DB="dla_tutorial"
 TABLE="msgs_sts$RANDOM"

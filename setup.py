@@ -165,8 +165,7 @@ INSTALL_REQUIRES = [
     "patsy>=0.5.1,<=0.5.6",
 
     # scikit-learn
-    'scikit-learn>=1.0,<=1.1.3; python_version<"3.12"',
-    'scikit-learn>=1.4; python_version>="3.12"',
+    'scikit-learn>=1.0; python_version>"3.10"',
 
     # SciPy
     'scipy>=1.8,<=1.11.4; python_version<"3.12"',

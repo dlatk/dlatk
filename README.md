@@ -2,6 +2,8 @@
 
 DLATK is an end to end human text analysis package for Python 3. It is specifically *suited for social media, Psychology, and health research*, developed originally for projects out of the University of Pennsylvania, Stony Brook University, and Stanford University.  Currently, it has been used in over 100 peer-reviewed publicaitons (many from before there was an article to reference).
 
+*The quickest way to see DLATK in action is via our [Colab Tutorial on DLA](https://colab.research.google.com/drive/10WMCmnKzwywZR7s2et5xx9CcoWBNmhLY?usp=sharing).*
+
 Dlatk is designed to handle the multi-level nature of language (words belong to documents, written by people, within communities) that makes it particularly useful for psychological and social science. 
 
 Some examples of what DLATK can perform:

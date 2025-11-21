@@ -251,6 +251,10 @@ if __name__ == "__main__":
             )   
 
             print(result.stdout)
+            # Print errors if any exist
+            if result.stderr:
+                print("Logs/Errors:", result.stderr)
         except Exception as e:
             print(f"[Colabify skipped] {e}")
+
 

@@ -243,7 +243,14 @@ if __name__ == "__main__":
         try:
             import dlatk  # noqa: F401
             dlatk_path = __import__("dlatk").__path__[0]
-            subprocess.run(["bash", os.path.join(dlatk_path, "tools", "colabify.sh"), dlatk_path], check=False)
+            result = subprocess.run(
+                ["bash", os.path.join(dlatk_path, "tools", "colabify.sh"), dlatk_path], 
+                capture_output=True, 
+                text=True, 
+                check=False
+            )   
+
+            print(result.stdout)
         except Exception as e:
             print(f"[Colabify skipped] {e}")
 

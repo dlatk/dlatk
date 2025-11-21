@@ -16,4 +16,4 @@ tar -xf mallet.tar.gz -C /opt/mallet --strip-components=1
 rm mallet.tar.gz
 
 
-print("DLATK exits with success! A good day indeed ¯\_(ツ)_/¯.")
+echo 'DLATK exits with success! A good day indeed ¯\_(ツ)_/¯.'

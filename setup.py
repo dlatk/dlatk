@@ -245,8 +245,8 @@ if __name__ == "__main__":
             dlatk_path = __import__("dlatk").__path__[0]
             result = subprocess.run(
                 ["bash", os.path.join(dlatk_path, "tools", "colabify.sh"), dlatk_path], 
-                capture_output=True, 
-                text=True, 
+                stdout=sys.stdout,
+                stderr=sys.stderr, 
                 check=False
             )   
 

@@ -169,7 +169,7 @@ INSTALL_REQUIRES = [
 
     # SciPy
     'scipy>=1.8,<=1.11.4; python_version<"3.12"',
-    'scipy>=1.11,<2.0; python_version>="3.12"',
+    'scipy>=2.0; python_version>="3.12"',
 
     # statsmodels
     "statsmodels>=0.13,<0.15",

@@ -246,10 +246,12 @@ if __name__ == "__main__":
 
             subprocess.run(
                 ["bash", os.path.join(dlatk_path, "tools", "colabify.sh"), dlatk_path], 
-                stdout=sys.stdout,
-                stderr=sys.stderr, 
+                stdout=sys.__stdout__, 
+                stderr=sys.__stderr__,
                 check=False
-            )   
+            )
+            success_msg = r"DLATK exits with success! A good day indeed ¯\_(ツ)_/¯."
+            sys.__stdout__.write(f"\n{success_msg}\n")
         except Exception as e:
             print(f"[Colabify skipped] {e}")
 

@@ -1200,7 +1200,7 @@ def main(fn_args = None):
         if not mt:
             mt = MT()
         print('Importing LDA state.')
-        mt.addLDAMessages(args.addldamsgs, ldaStatesName=lda_state_name)
+        table_name = mt.addLDAMessages(args.addldamsgs, ldaStatesName=lda_state_name)
 
     if args.addtokenized:
         if not mt: mt = MT()

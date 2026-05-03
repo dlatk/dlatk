@@ -389,7 +389,7 @@ class RegressionPredictor:
             #{'alpha': [0.1, 0.001, 1.0, 0.01, 10, 100], 'solver': ['lbfgs'], 'hidden_layer_sizes':[(30,10)], 'random_state': [DEFAULT_RANDOM_SEED]},
             #{'alpha': np.logspace(-1.5, 1.5, 5), 'learning_rate_init': [0.001], 'solver': ['sgd'], 'hidden_layer_sizes':[(10,10)], 'max_iter': [700], 'n_iter_no_change': [10], 'random_state': [DEFAULT_RANDOM_SEED]},],
             #{'alpha': [1000, 100, 10000, 10, 100000, 1], 'learning_rate_init': [0.001], 'solver': ['sgd'], 'hidden_layer_sizes':[(10,10)], 'max_iter': [700], 'n_iter_no_change': [10], 'random_state': [DEFAULT_RANDOM_SEED]},]
-            {'alpha': [1000, 100, 10000, 10, 100000, 1], 'hidden_layer_sizes':[(10,5)], 'random_state': [DEFAULT_RANDOM_SEED]},]
+            {'alpha': [1000, 100, 10000, 10], 'hidden_layer_sizes':[(10,5)], 'random_state': [DEFAULT_RANDOM_SEED], 'max_iter': [700], 'n_iter_no_change': [10]},]
        }
     modelToClassName = {
         'lasso' : 'Lasso',

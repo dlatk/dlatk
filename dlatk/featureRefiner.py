@@ -1375,3 +1375,307 @@ class FeatureRefiner(FeatureGetter):
 
         return tableName
 
+    def createIDPSmoothedFeatTable(
+        self,
+        backgroundFeatTable,
+        alpha0,
+        tableName=None,
+        suffix='idp',
+        write_zero_smoothed_feats=True,
+        include_oov_bgfeats_as_zeros=False,
+        background_group_id=None,
+        batch_size=10000,
+        set_as_feature_table=True):
+        """
+        Create a new feature table where `value` is preserved from the target
+        feature table, but `group_norm` is replaced with an informative
+        Dirichlet prior (IDP) smoothed probability. CREATED with GPT5.3
+
+        Smoothed estimate:
+            p_hat(group, feat) =
+                (target_count(group, feat) + alpha0 * background_prob(feat))
+                /
+                (target_group_total(group) + alpha0)
+
+        Defaults:
+            write_zero_smoothed_feats=True
+                Write dense group_id x output_vocab rows, including zero-count
+                target observations.
+
+            include_oov_bgfeats_as_zeros=False
+                Output vocabulary is limited to the union of features appearing
+                anywhere in the target table.
+
+        If include_oov_bgfeats_as_zeros=True, the output vocabulary becomes:
+            target_vocab union background_vocab
+
+        This can greatly increase the table size.
+        """
+
+        from collections import defaultdict
+
+        if alpha0 <= 0:
+            raise ValueError("alpha0 must be positive.")
+
+        targetFeatTable = self.featureTable
+        de = self.data_engine
+        alpha0 = float(alpha0)
+
+        if tableName is None:
+            alphaLabel = str(alpha0).replace('.', '_').replace('-', 'n')
+            denseLabel = 'dense' if write_zero_smoothed_feats else 'sparse'
+            vocabLabel = 'bgvocab' if include_oov_bgfeats_as_zeros else 'targetvocab'
+            tableName = "%s$%sA%s_%s_%s" % (
+                targetFeatTable,
+                suffix,
+                alphaLabel,
+                denseLabel,
+                vocabLabel
+            )
+
+        if not de.tableExists(targetFeatTable):
+            raise ValueError("Target feature table does not exist: %s" % targetFeatTable)
+
+        if not de.tableExists(backgroundFeatTable):
+            raise ValueError("Background feature table does not exist: %s" % backgroundFeatTable)
+
+        if include_oov_bgfeats_as_zeros and not write_zero_smoothed_feats:
+            dlac.warn(
+                "include_oov_bgfeats_as_zeros=True has limited effect when "
+                "write_zero_smoothed_feats=False: background-only features affect "
+                "the prior normalization but are not written as rows."
+            )
+
+        # ------------------------------------------------------------------
+        # 1. Create output feature table using the general feature-table path.
+        # ------------------------------------------------------------------
+
+        targetColTypes = de.getTableColumnNameTypes(targetFeatTable)
+
+        featType = targetColTypes.get('feat', 'VARCHAR(128)')
+        groupIdType = targetColTypes.get('group_id', 'VARCHAR(128)')
+        valueType = targetColTypes.get('value', 'INTEGER')
+
+        if de.tableExists(tableName):
+            de.dropTable(tableName)
+
+        if hasattr(self, 'createFeatureTable'):
+            newTable = self.createFeatureTable(
+                featureName=suffix,
+                featType=featType,
+                valueType=valueType,
+                tableName=tableName
+            )
+        else:
+            newTable = de.createFeatureTable(
+                tableName=tableName,
+                groupIdType=groupIdType,
+                featType=featType,
+                valueType=valueType,
+                includeFeatNorm=False
+            )
+
+        # ------------------------------------------------------------------
+        # 2. One pass over the target table.
+        #
+        #    targetCounts[(group_id, feat)] = observed value
+        #    groupTotals[group_id] = total observed count for group
+        #    targetFeats = target-table vocabulary
+        # ------------------------------------------------------------------
+
+        dlac.warn("Reading target feature rows from %s" % targetFeatTable)
+
+        targetCounts = {}
+        groupTotals = defaultdict(float)
+        targetFeats = set()
+
+        for row in de.iterRows(targetFeatTable, columns=['group_id', 'feat', 'value']):
+            group_id = row['group_id']
+            feat = row['feat']
+            value = float(row['value'] or 0.0)
+
+            targetCounts[(group_id, feat)] = value
+            groupTotals[group_id] += value
+            targetFeats.add(feat)
+
+        if not groupTotals:
+            raise ValueError("Target feature table has no rows: %s" % targetFeatTable)
+
+        if not targetFeats:
+            raise ValueError("Target feature table has no features: %s" % targetFeatTable)
+
+        # ------------------------------------------------------------------
+        # 3. One pass over the background table.
+        #
+        #    If include_oov_bgfeats_as_zeros=False, only keep background counts
+        #    for target-vocabulary features.
+        #
+        #    If True, keep all background features and expand the output vocab.
+        # ------------------------------------------------------------------
+
+        dlac.warn("Reading background feature counts from %s" % backgroundFeatTable)
+
+        bgWhere = None
+        if background_group_id is not None:
+            bgWhere = {'group_id': background_group_id}
+
+        bgCounts = defaultdict(float)
+
+        for row in de.iterRows(
+                backgroundFeatTable,
+                columns=['group_id', 'feat', 'value'],
+                where=bgWhere):
+            feat = row['feat']
+
+            if not include_oov_bgfeats_as_zeros and feat not in targetFeats:
+                continue
+
+            bgCounts[feat] += float(row['value'] or 0.0)
+
+        if include_oov_bgfeats_as_zeros:
+            outputFeats = targetFeats | set(bgCounts.keys())
+        else:
+            outputFeats = set(targetFeats)
+
+        if not outputFeats:
+            raise ValueError("Output vocabulary is empty.")
+
+        bgTotal = sum(bgCounts.get(feat, 0.0) for feat in outputFeats)
+
+        if bgTotal <= 0:
+            raise ValueError(
+                "Background feature table has no usable positive counts over "
+                "the selected output vocabulary. Check backgroundFeatTable, "
+                "background_group_id, and include_oov_bgfeats_as_zeros."
+            )
+
+        bgProb = {
+            feat: bgCounts.get(feat, 0.0) / bgTotal
+            for feat in outputFeats
+        }
+
+        dlac.warn(
+            "IDP smoothing %s using %s; alpha0=%s; bgTotal=%s; "
+            "groups=%d; target_vocab=%d; output_vocab=%d; dense=%s; "
+            "include_oov_bgfeats_as_zeros=%s"
+            % (
+                targetFeatTable,
+                backgroundFeatTable,
+                str(alpha0),
+                str(bgTotal),
+                len(groupTotals),
+                len(targetFeats),
+                len(outputFeats),
+                str(write_zero_smoothed_feats),
+                str(include_oov_bgfeats_as_zeros)
+            )
+        )
+
+        # ------------------------------------------------------------------
+        # 4. Single row generator.
+        #
+        #    Dense mode:
+        #        all group_id x outputFeats rows.
+        #
+        #    Sparse mode:
+        #        only observed target rows.
+        #
+        #    The smoothing formula is written only once.
+        # ------------------------------------------------------------------
+
+        def iterCandidateRows():
+            if write_zero_smoothed_feats:
+                for group_id, groupTotal in groupTotals.items():
+                    for feat in outputFeats:
+                        yield (
+                            group_id,
+                            feat,
+                            targetCounts.get((group_id, feat), 0.0),
+                            groupTotal
+                        )
+            else:
+                for (group_id, feat), value in targetCounts.items():
+                    yield (
+                        group_id,
+                        feat,
+                        value,
+                        groupTotals[group_id]
+                    )
+
+        def iterSmoothedRows():
+            for group_id, feat, value, groupTotal in iterCandidateRows():
+                groupNorm = (
+                    value + alpha0 * bgProb.get(feat, 0.0)
+                ) / (
+                    groupTotal + alpha0
+                )
+
+                yield {
+                    'group_id': group_id,
+                    'feat': feat,
+                    'value': value,
+                    'group_norm': groupNorm
+                }
+
+        # ------------------------------------------------------------------
+        # 5. Batch insert rows.
+        # ------------------------------------------------------------------
+
+        if write_zero_smoothed_feats:
+            dlac.warn(
+                "Writing dense IDP-smoothed table with up to %d rows "
+                "(%d groups x %d features)."
+                % (
+                    len(groupTotals) * len(outputFeats),
+                    len(groupTotals),
+                    len(outputFeats)
+                )
+            )
+        else:
+            dlac.warn(
+                "Writing sparse IDP-smoothed table with %d observed target rows."
+                % len(targetCounts)
+            )
+
+        outRows = []
+        rowsWritten = 0
+
+        for smoothedRow in iterSmoothedRows():
+            outRows.append(smoothedRow)
+
+            if len(outRows) >= batch_size:
+                de.insertRows(
+                    newTable,
+                    outRows,
+                    columns=['group_id', 'feat', 'value', 'group_norm']
+                )
+                rowsWritten += len(outRows)
+                outRows = []
+
+                if rowsWritten % 100000 == 0:
+                    dlac.warn("%d IDP-smoothed feature rows written" % rowsWritten)
+
+        if outRows:
+            de.insertRows(
+                newTable,
+                outRows,
+                columns=['group_id', 'feat', 'value', 'group_norm']
+            )
+            rowsWritten += len(outRows)
+
+        # ------------------------------------------------------------------
+        # 6. Index through the data engine.
+        # ------------------------------------------------------------------
+
+        de.addIndex(newTable, ['group_id'])
+        de.addIndex(newTable, ['feat'])
+
+        dlac.warn(
+            "Done creating IDP-smoothed feature table %s with %d rows."
+            % (newTable, rowsWritten)
+        )
+
+        if set_as_feature_table:
+            self.featureTable = newTable
+
+        return newTable

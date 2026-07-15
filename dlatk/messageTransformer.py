@@ -164,14 +164,30 @@ class MessageTransformer(DLAWorker):
         selectQuery = self.qb.create_select_query(self.corptable).where(where_condition).set_fields(columnNames)
         rows = selectQuery.execute_query()
 
-        #generate row data:
+        # Warn once if messageid_field is non-unique in corptable: the IN(...) query then returns
+        # multiple corptable rows per LDA document (e.g. topics learned per user_day while rows are
+        # message segments). We must write each document's topic list only ONCE, otherwise
+        # createDistributions counts every token N times (N = rows sharing that messageid).
+        if not getattr(self, '_ldaFanoutWarned', False) and len(rows) > len(message_ids):
+            dlac.warn("messageid_field '%s' is not unique in %s: collapsing %d rows to %d LDA "
+                      "documents (writing each topic list once). If you intended one LDA document "
+                      "per table row, use a messageid_field that is unique per row."
+                      % (self.messageid_field, self.corptable, len(rows), len(message_ids)))
+            self._ldaFanoutWarned = True
+
+        #generate row data: exactly one row per LDA document (keep first non-empty match per messageid)
         newRows = []
+        seenIds = set()
         for row in rows:
+            msgId = str(row[messageIdIndex])
+            if msgId in seenIds:
+                continue
             if row[messageIndex] and not row[messageIndex].isspace():
                 newRow = list(row)
-                newRow[messageIndex] = json.dumps(ldas[str(row[messageIdIndex])])
+                newRow[messageIndex] = json.dumps(ldas[msgId])
                 newRows.append(newRow)
-                
+                seenIds.add(msgId)
+
         #insert
         insertQuery = self.qb.create_insert_query(tableName).set_values([(name, '') for name in columnNames])
         insertQuery.execute_query(newRows)
@@ -205,6 +221,7 @@ class MessageTransformer(DLAWorker):
         ldas = dict() #stored ldas currently being looked at
         msgsAtTime = 100
         msgsWritten = 0
+        self._ldaFanoutWarned = False #one-shot warning if messageid_field is non-unique in corptable
 
         ##iterate through file:
         for line in fin:

@@ -446,7 +446,7 @@ class MessageTransformer(DLAWorker):
                 insertQuery = self.qb.create_insert_query(tableName).set_values([(name, '') for name in columnNames])
                 for i in range(len(rows)):
                     if sentPerRow:
-                        for j, parse in enumerate(ast.literal_eval(parses[i]), 1):
+                        for j, parse in enumerate(json.loads(parses[i]), 1):
                             sentRows.append(list(rows[i]))
                             sentRows[-1][messageIdIndex] = str(rows[i][messageIdIndex]) + "_" + str(j).zfill(2)
                             sentRows[-1][messageIndex] = parse

@@ -306,7 +306,13 @@ class InsertQuery(Query):
 		str: a built INSERT query
 		"""
 		if self.selectQuery is not None:
-			insertQuery = "INSERT INTO {} {}".format(self.table, self.selectQuery.toString())
+			# if explicit target columns were given (set_values), emit them so the SELECT's
+			# columns map to the intended columns rather than every column (e.g. auto-increment id)
+			if self.values:
+				fields = ", ".join(f[0] for f in self.values)
+				insertQuery = "INSERT INTO {} ({}) {}".format(self.table, fields, self.selectQuery.toString())
+			else:
+				insertQuery = "INSERT INTO {} {}".format(self.table, self.selectQuery.toString())
 			return insertQuery
 
 		if self.data_engine.db_type == "mysql":

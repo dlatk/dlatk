@@ -1,0 +1,40 @@
+.. _fwflag_copy_table:
+=============
+--copy_table
+=============
+Switch
+======
+
+--copy_table OLD_TABLE NEW_TABLE
+
+Description
+===========
+
+Copies ``OLD_TABLE`` to a new table ``NEW_TABLE`` within the same database. Aliased as ``--create_copied_table``.
+
+Argument and Default Value
+==========================
+
+Exactly two table names (``nargs=2``): the source table, then the destination table. Default: ``None``.
+
+Details
+=======
+
+**Known issue — broken in SQLite mode (copies zero rows).** ``DLAWorker.createCopiedTable()`` correctly issues ``DROP TABLE``, ``CREATE TABLE ... LIKE ...``, and ``INSERT INTO new_table SELECT * FROM old_table`` through the ``QueryBuilder``/``DataEngine`` abstraction. Verified: after running ``--copy_table msgs100u msgs100u_copy`` against a SQLite corpus, the new table is created with the correct schema but ends up with **0 rows**, even though the source table has rows and the command reports success.
+
+Root cause (traced): the SQLite backend's generic single-statement ``execute()`` (used for the ``INSERT ... SELECT`` here) never calls ``sqlite3.Connection.commit()`` — only the bulk ``execute_write_many()`` path (used for feature-table population) does. Python's ``sqlite3`` module implicitly commits pending work before a DDL statement (which is why the ``CREATE TABLE`` itself is visible), but a plain ``INSERT`` executed this way is silently lost once the connection closes without an explicit commit. This likely affects any other DLATK operation that does a single-statement ``INSERT ... SELECT`` in SQLite mode, not just this switch — ``--copy_table`` is simply the easiest case to reproduce it with. Not an issue in MySQL mode (autocommit is on by default there).
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	# Works correctly against MySQL; against SQLite, creates msgs_copy with 0 rows (see Known issue above)
+	dlatkInterface.py -d dla_tutorial --copy_table msgs msgs_copy

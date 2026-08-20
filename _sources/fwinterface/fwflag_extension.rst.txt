@@ -5,13 +5,22 @@
 Switch
 ======
 
---view_tables string
+--extension EXTENSION
 
 Description
 ===========
 
 String added to the end of the feature table name. Typical use case is when creating tables from non-standard word tables.
 
+Argument and Default Value
+==========================
+
+A string. Default: ``None`` (no extension added).
+
+Details
+=======
+
+Appended, with a leading ``$``, to the generated feature table name so runs against a non-default :doc:`fwflag_word_table` don't collide with the table that would be produced from the default word table.
 
 Other Switches
 ==============

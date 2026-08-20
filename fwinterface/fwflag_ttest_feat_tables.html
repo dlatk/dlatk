@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -184,21 +184,33 @@
 </section>
 <section id="argument-and-default-value">
 <h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
-<p>None</p>
+<p>No argument. Boolean switch, default: <code class="docutils literal notranslate"><span class="pre">False</span></code>. Requires exactly two tables passed to <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a>.</p>
 </section>
 <section id="details">
 <h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
+<p>For each feature present in both tables, runs a paired t-test on the <code class="docutils literal notranslate"><span class="pre">group_norm</span></code> values across matching <code class="docutils literal notranslate"><span class="pre">group_id</span></code>s, reporting t, p, and Cohen's d. Only <code class="docutils literal notranslate"><span class="pre">group_id</span></code>s present in both tables and passing <a class="reference internal" href="fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a> are used as paired observations.</p>
+<p><strong>Known issue — you must pass a positive</strong> <a class="reference internal" href="fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a>. <code class="docutils literal notranslate"><span class="pre">featureGetter.ttestWithOtherFG()</span></code> gates its per-group frequency check behind a plain <code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">groupFreqThresh:</span></code>, so <code class="docutils literal notranslate"><span class="pre">--group_freq_thresh</span> <span class="pre">0</span></code> (the usual way to mean &quot;no threshold&quot; elsewhere in DLATK) — and simply omitting the flag, since it then defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code> — both leave the eligible-groups set empty and the command fails with <code class="docutils literal notranslate"><span class="pre">AssertionError:</span> <span class="pre">No</span> <span class="pre">groups</span> <span class="pre">passing</span> <span class="pre">frequency</span> <span class="pre">threshold</span></code>. Verified: the same command with <code class="docutils literal notranslate"><span class="pre">--group_freq_thresh</span> <span class="pre">1</span></code> runs to completion and produces real <code class="docutils literal notranslate"><span class="pre">{feature:</span> <span class="pre">{'N',</span> <span class="pre">'d',</span> <span class="pre">'p',</span> <span class="pre">'t'}}</span></code> results.</p>
+<p><strong>Known issue — ``--csv`` is a no-op here.</strong> The code for this switch is <code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">args.csv:</span> <span class="pre">#add</span> <span class="pre">this</span> <span class="pre">/</span> <span class="pre">#can</span> <span class="pre">use</span> <span class="pre">something</span> <span class="pre">similar</span> <span class="pre">to</span> <span class="pre">OG</span> <span class="pre">correlMatrix</span> <span class="pre">/</span> <span class="pre">pass</span></code> — a stub that was never implemented. Verified: running with <code class="docutils literal notranslate"><span class="pre">--csv</span> <span class="pre">--output_name</span> <span class="pre">...</span></code> produces no file at all; results only ever go to stdout via <code class="docutils literal notranslate"><span class="pre">pprint()</span></code>, regardless of <code class="docutils literal notranslate"><span class="pre">--csv</span></code> or <a class="reference internal" href="fwflag_output_name.html"><span class="doc">--output_name</span></a>.</p>
 </section>
 <section id="other-switches">
 <h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>
-<p>Required Switches:
-Requires two feature tables to be given after <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> Optional Switches:
-<a class="reference internal" href="fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a> is applied to both feature tables; only group_ids present in both and passing GFT will be taken as valid observations
-<a class="reference internal" href="fwflag_csv.html"><span class="doc">--csv</span></a> writes output (t, p, and effect size d for each feature) to a file</p>
+<p>Required Switches:</p>
+<ul class="simple">
+<li><p>Two feature tables given to <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a></p></li>
+<li><p><a class="reference internal" href="fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a> (must be a positive integer — see Known issue above)</p></li>
+</ul>
+<p>Optional Switches:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="fwflag_mask_table.html"><span class="doc">--mask_table</span></a></p></li>
+</ul>
 </section>
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
-<p>fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> tester7 <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> statuses_er1 <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a> study_code <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> 'feat$cat_statuses_er1_cp_w$statuses_6moBB$study_code$16to16' 'feat$cat_statuses_er1_cp_w$statuses_6moAB$study_code$16to16' <a class="reference internal" href="#"><span class="doc">--ttest_feat_tables</span></a> <a class="reference internal" href="fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a> 100 <a class="reference internal" href="fwflag_csv.html"><span class="doc">--csv</span></a> <a class="reference internal" href="fwflag_output_name.html"><span class="doc">--output_name</span></a> /localdata/patrick/pregDLA/ttest_res/before_after</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>tester7<span class="w"> </span>-t<span class="w"> </span>statuses_er1<span class="w"> </span>-c<span class="w"> </span>study_code<span class="w"> </span><span class="se">\</span>
+-f<span class="w"> </span><span class="s1">'feat$cat_statuses_er1_cp_w$statuses_6moBB$study_code$16to16'</span><span class="w"> </span><span class="s1">'feat$cat_statuses_er1_cp_w$statuses_6moAB$study_code$16to16'</span><span class="w"> </span><span class="se">\</span>
+--ttest_feat_tables<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">100</span>
+</pre></div>
+</div>
 </section>
 </section>
 

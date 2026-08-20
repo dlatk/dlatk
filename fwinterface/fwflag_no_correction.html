@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -184,9 +184,11 @@
 </section>
 <section id="argument-and-default-value">
 <h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
+<p>No argument. Sets <code class="docutils literal notranslate"><span class="pre">p_correction_method</span></code> to <code class="docutils literal notranslate"><span class="pre">''</span></code> (empty string), overriding whatever <a class="reference internal" href="fwflag_p_correction.html"><span class="doc">--p_correction</span></a> was set to (default: Benjamini-Hochberg).</p>
 </section>
 <section id="details">
 <h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
+<p>Applies to <a class="reference internal" href="fwflag_correlate.html"><span class="doc">--correlate</span></a> and related reporting switches (<a class="reference internal" href="fwflag_rmatrix.html"><span class="doc">--rmatrix</span></a>, <a class="reference internal" href="fwflag_csv.html"><span class="doc">--csv</span></a>, tagcloud/wordcloud output). Replaces the deprecated <code class="docutils literal notranslate"><span class="pre">--no_bonf</span></code> flag, which now just prints a message pointing here — as does <a class="reference internal" href="fwflag_no_bonferroni.html"><span class="doc">--no_bonferroni</span></a>, which is also broken and immediately exits the program (verified; see that page). <code class="docutils literal notranslate"><span class="pre">--no_correction</span></code> itself works correctly and is the only one of the three you should use.</p>
 </section>
 </section>
 

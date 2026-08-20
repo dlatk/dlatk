@@ -1,0 +1,47 @@
+.. _fwflag_print_numgroups:
+===================
+--print_numgroups
+===================
+Switch
+======
+
+--print_numgroups
+
+Description
+===========
+
+Prints the number of groups available for each outcome field.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+**Known issue — crashes when used on its own.** The handler is:
+
+.. code-block:: python
+
+    if args.printnumgroups:
+        pprint(args)
+        if not oa: oa = OA()
+        if not fg: fg = FG()
+        pprint(('number of groups per outcome:', og.numGroupsPerOutcome(fg, args.printcsv)))
+
+It initializes ``oa``/``fg`` if missing, but never initializes ``og`` (the ``OutcomeGetter``) — yet it's ``og.numGroupsPerOutcome(...)`` that's called. Verified: ``--print_numgroups`` fails with ``AttributeError: 'NoneType' object has no attribute 'numGroupsPerOutcome'`` both on its own and combined with :doc:`fwflag_correlate` (which only initializes ``oa``/``fg``, not ``og``, either). No working combination was found; as of this writing there is no way to run this switch successfully.
+
+Separately, note ``args.printcsv`` (i.e. :doc:`fwflag_print_csv`'s value) is passed in as ``numGroupsPerOutcome``'s ``outputfile`` argument, but that function never uses its ``outputfile`` parameter — output always goes to stdout via ``pprint()`` regardless of what (if anything) you pass to ``--print_csv``.
+
+Other Switches
+==============
+
+Required Switches:
+
+* None (flag currently cannot complete successfully — see Known issue above)
+
+Example Commands
+================
+
+Not usable as of this writing — see Known issue above.

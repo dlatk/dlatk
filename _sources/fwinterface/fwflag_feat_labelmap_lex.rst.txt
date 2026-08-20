@@ -1,0 +1,42 @@
+.. _fwflag_feat_labelmap_lex:
+=====================
+--feat_labelmap_lex
+=====================
+Switch
+======
+
+--feat_labelmap_lex LEXICON
+
+Description
+===========
+
+Name of a topic lexicon to derive feature labels from (e.g. showing each LDA topic's top words instead of its raw numeric id), used when displaying results.
+
+Argument and Default Value
+==========================
+
+A lexicon table name. Default: ``''``.
+
+Details
+=======
+
+Can be supplied directly, or built automatically: when :doc:`fwflag_make_topic_labelmap_lex` is used, ``FeatureRefiner.makeTopicLabelMap(topiclexicon, numtopicwords, weightedlexicon)`` is called and its result is written into ``args.featlabelmaplex`` for you, using :doc:`fwflag_num_topic_words` top words per topic. See :doc:`fwflag_feat_labelmap_table` for the alternative, hand-built mapping table.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_make_topic_labelmap_lex` (builds this automatically from :doc:`fwflag_topic_lexicon`)
+* :doc:`fwflag_num_topic_words`
+* :doc:`fwflag_feat_labelmap_table` (alternative source of labels)
+* :doc:`fwflag_bracket_labels` (currently non-functional — see that page)
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$cat_2000topics$msgs$user_id' \
+	--outcome_table blog_outcomes --outcomes age --topic_lexicon met_a30_2000_freq_t50ll \
+	--make_topic_labelmap_lex --correlate

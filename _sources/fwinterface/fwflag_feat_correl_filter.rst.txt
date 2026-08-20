@@ -15,10 +15,12 @@ Removes features that do not pass correlation significance tests with given outc
 Argument and Default Value
 ==========================
 
-None
+No argument. Boolean switch, default: ``False``.
 
 Details
 =======
+
+Runs a correlation significance test between every feature in :doc:`fwflag_f` and each outcome in :doc:`fwflag_outcomes`, then keeps only the features that pass. Uses the same p-value correction as :doc:`fwflag_correlate` (see :doc:`fwflag_p_correction`, :doc:`fwflag_no_correction`). Unlike :doc:`fwflag_feat_occ_filter`, filtering here is based on statistical association with an outcome rather than raw occurrence counts.
 
 
 Other Switches

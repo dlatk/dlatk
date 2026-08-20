@@ -12,6 +12,16 @@ Description
 
 Generates a csv output when using the :doc:`fwflag_correlate` switch.
 
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Writes the same correlation matrix that would otherwise only print to screen (or, with :doc:`fwflag_rmatrix`, to an R-friendly text file) out to a ``.csv`` file next to :doc:`fwflag_output_name`. Also used by other reporting switches such as :doc:`fwflag_ttest_feat_tables` to write their results to csv instead of stdout.
+
 Other Switches
 ==============
 

@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -180,8 +180,8 @@
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dlatk.featureGetter</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureGetter</span>
 
 <span class="n">fg</span> <span class="o">=</span> <span class="n">FeatureGetter</span><span class="p">()</span>  <span class="c1"># use defaults set in dlaConstants.py</span>
-<span class="n">fg</span> <span class="o">=</span> <span class="n">FeatureGetter</span><span class="p">(</span><span class="n">corpdb</span><span class="o">=</span><span class="s2">&quot;someDB&quot;</span><span class="p">,</span> <span class="n">corptable</span><span class="o">=</span><span class="s2">&quot;someTB&quot;</span><span class="p">,</span> <span class="n">correl_field</span><span class="o">=</span><span class="s2">&quot;someField&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="c1"># specify values</span>
-<span class="n">fg</span> <span class="o">=</span> <span class="n">FeatureGetter</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">&#39;/path/to/init/file&#39;</span><span class="p">)</span> <span class="c1"># pass values from file</span>
+<span class="n">fg</span> <span class="o">=</span> <span class="n">FeatureGetter</span><span class="p">(</span><span class="n">corpdb</span><span class="o">=</span><span class="s2">"someDB"</span><span class="p">,</span> <span class="n">corptable</span><span class="o">=</span><span class="s2">"someTB"</span><span class="p">,</span> <span class="n">correl_field</span><span class="o">=</span><span class="s2">"someField"</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="c1"># specify values</span>
+<span class="n">fg</span> <span class="o">=</span> <span class="n">FeatureGetter</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">'/path/to/init/file'</span><span class="p">)</span> <span class="c1"># pass values from file</span>
 </pre></div>
 </div>
 <p>Init file must have the line <cite>[constants]</cite> at the top. Also note that none of the strings are quoted. For lists (such as lists of outcome variables) use commas to separate values. Sample init file:</p>
@@ -197,10 +197,10 @@
 <h2>Getting feature tables as dataframes<a class="headerlink" href="#getting-feature-tables-as-dataframes" title="Link to this heading"></a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fg</span> <span class="o">=</span> <span class="n">FeatureGetter</span><span class="p">()</span>
 
-<span class="n">fg_gns</span> <span class="o">=</span> <span class="n">fg</span><span class="o">.</span><span class="n">getGroupNormsAsDF</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="c1"># group norms as dataframe</span>
-<span class="n">fg_vals</span> <span class="o">=</span> <span class="n">fg</span><span class="o">.</span><span class="n">getValuesAsDF</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
-<span class="n">fg_zgns</span> <span class="o">=</span> <span class="n">fg</span><span class="o">.</span><span class="n">getGroupNormsWithZerosAsDF</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="p">[],</span> <span class="n">where</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">pivot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sparse</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">fg_vgns</span> <span class="o">=</span> <span class="n">fg</span><span class="o">.</span><span class="n">getValuesAndGroupNormsAsDF</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="n">fg_gns</span> <span class="o">=</span> <span class="n">fg</span><span class="o">.</span><span class="n">getGroupNormsAsDF</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="s1">''</span><span class="p">)</span> <span class="c1"># group norms as dataframe</span>
+<span class="n">fg_vals</span> <span class="o">=</span> <span class="n">fg</span><span class="o">.</span><span class="n">getValuesAsDF</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="s1">''</span><span class="p">)</span>
+<span class="n">fg_zgns</span> <span class="o">=</span> <span class="n">fg</span><span class="o">.</span><span class="n">getGroupNormsWithZerosAsDF</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="p">[],</span> <span class="n">where</span><span class="o">=</span><span class="s1">''</span><span class="p">,</span> <span class="n">pivot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sparse</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">fg_vgns</span> <span class="o">=</span> <span class="n">fg</span><span class="o">.</span><span class="n">getValuesAndGroupNormsAsDF</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="s1">''</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -209,10 +209,10 @@
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">og</span> <span class="o">=</span> <span class="n">OutcomeGetter</span><span class="p">()</span>
 
 <span class="c1"># outcome table as dataframe</span>
-<span class="n">og_vals</span> <span class="o">=</span> <span class="n">og</span><span class="o">.</span><span class="n">getGroupAndOutcomeValuesAsDF</span><span class="p">(</span><span class="n">outcomeField</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="n">og_vals</span> <span class="o">=</span> <span class="n">og</span><span class="o">.</span><span class="n">getGroupAndOutcomeValuesAsDF</span><span class="p">(</span><span class="n">outcomeField</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="s1">''</span><span class="p">)</span>
 
 <span class="c1"># outcome table as dataframe with group freq thresh applied</span>
-<span class="n">og_out</span> <span class="o">=</span> <span class="n">og</span><span class="o">.</span><span class="n">getGroupsAndOutcomesAsDF</span><span class="p">(</span><span class="n">groupThresh</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">lexicon_count_table</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">groupsWhere</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">sparse</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">og_out</span> <span class="o">=</span> <span class="n">og</span><span class="o">.</span><span class="n">getGroupsAndOutcomesAsDF</span><span class="p">(</span><span class="n">groupThresh</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">lexicon_count_table</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">groupsWhere</span> <span class="o">=</span> <span class="s1">''</span><span class="p">,</span> <span class="n">sparse</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -222,7 +222,7 @@
 <section id="features">
 <h3>Features<a class="headerlink" href="#features" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dlatk.featureGetter</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureGetter</span>
-<span class="n">fg</span> <span class="o">=</span> <span class="n">FeatureGetter</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s2">&quot;testInitFile.txt&quot;</span><span class="p">)</span>
+<span class="n">fg</span> <span class="o">=</span> <span class="n">FeatureGetter</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s2">"testInitFile.txt"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Get group Norms:</p>
@@ -255,7 +255,7 @@
                                        <span class="n">group_norm</span>
 <span class="n">group_id</span>                         <span class="n">feat</span>
 <span class="mi">003</span><span class="n">ae43fae340174a67ffbcf19da1549</span> <span class="err">!</span>       <span class="mf">0.096464</span>
-                                 <span class="s2">&quot;       0.000780</span>
+                                 <span class="s2">"       0.000780</span>
                                  <span class="c1">#       0.000000</span>
                                  <span class="c1">#12     0.000000</span>
                                  <span class="err">$</span>       <span class="mf">0.000000</span>
@@ -284,7 +284,7 @@
                                             <span class="n">group_norm</span>
      <span class="n">group_id</span>                         <span class="n">feat</span>
      <span class="mi">003</span><span class="n">ae43fae340174a67ffbcf19da1549</span> <span class="err">!</span>       <span class="mf">0.096464</span>
-                                      <span class="s2">&quot;       0.000780</span>
+                                      <span class="s2">"       0.000780</span>
                                       <span class="c1">#       0.000000</span>
                                       <span class="c1">#12     0.000000</span>
                                       <span class="err">$</span>       <span class="mf">0.000000</span>
@@ -308,7 +308,7 @@
 </div>
 <p>Initialize:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dlatk.outcomeGetter</span><span class="w"> </span><span class="kn">import</span> <span class="n">OutcomeGetter</span>
-<span class="n">og</span> <span class="o">=</span> <span class="n">OutcomeGetter</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">&#39;testInitFile.txt&#39;</span><span class="p">)</span>
+<span class="n">og</span> <span class="o">=</span> <span class="n">OutcomeGetter</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">'testInitFile.txt'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Get outcomes and controls:</p>
@@ -340,7 +340,7 @@
 <h2>Features and Outcomes in one dataframe<a class="headerlink" href="#features-and-outcomes-in-one-dataframe" title="Link to this heading"></a></h2>
 <p>Initialize:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dlatk.featureStar</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureStar</span>
-<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">&#39;testInitFile.txt&#39;</span><span class="p">)</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">'testInitFile.txt'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Get both dataframe with all info:</p>

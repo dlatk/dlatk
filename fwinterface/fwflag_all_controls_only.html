@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -188,10 +188,11 @@
 </section>
 <section id="argument-and-default-value">
 <h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
-<p>None</p>
+<p>No argument. Boolean switch, default: <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p>
 </section>
 <section id="details">
 <h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
+<p>Since the default is already <code class="docutils literal notranslate"><span class="pre">True</span></code>, this switch mainly exists for symmetry with <a class="reference internal" href="fwflag_all_control_combinations.html"><span class="doc">--all_control_combinations</span></a>, which sets the same underlying value to <code class="docutils literal notranslate"><span class="pre">False</span></code> so that <a class="reference internal" href="fwflag_control_combo_sizes.html"><span class="doc">--control_combo_sizes</span></a> combinations are tried instead of (or in addition to) the full control set.</p>
 </section>
 <section id="other-switches">
 <h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>
@@ -208,7 +209,7 @@
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Only runs including all controls (and no controls, which is done by default):</span>
-dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>tester7<span class="w"> </span>-t<span class="w"> </span>statuses_er1<span class="w"> </span>-c<span class="w"> </span>study_code<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_statuses_er1_cp_w$statuses_er1$study_code$16to16&#39;</span><span class="w"> </span>--outcome_table<span class="w"> </span>outcomesFinal_femOnly<span class="w"> </span>--outcomes<span class="w"> </span>PREGNANCY<span class="w"> </span>--controls<span class="w"> </span>isWhite<span class="w"> </span>isBlack<span class="w"> </span>isHispanic<span class="w"> </span>ageTercile0<span class="w"> </span>ageTercile1<span class="w"> </span>ageTercile2<span class="w"> </span>age<span class="w"> </span>--combo_test_classif<span class="w"> </span>--all_controls_only<span class="w"> </span>--model<span class="w"> </span>lr<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--csv<span class="w"> </span>--output_name<span class="w"> </span>./output
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>tester7<span class="w"> </span>-t<span class="w"> </span>statuses_er1<span class="w"> </span>-c<span class="w"> </span>study_code<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$cat_statuses_er1_cp_w$statuses_er1$study_code$16to16'</span><span class="w"> </span>--outcome_table<span class="w"> </span>outcomesFinal_femOnly<span class="w"> </span>--outcomes<span class="w"> </span>PREGNANCY<span class="w"> </span>--controls<span class="w"> </span>isWhite<span class="w"> </span>isBlack<span class="w"> </span>isHispanic<span class="w"> </span>ageTercile0<span class="w"> </span>ageTercile1<span class="w"> </span>ageTercile2<span class="w"> </span>age<span class="w"> </span>--combo_test_classif<span class="w"> </span>--all_controls_only<span class="w"> </span>--model<span class="w"> </span>lr<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--csv<span class="w"> </span>--output_name<span class="w"> </span>./output
 </pre></div>
 </div>
 </section>

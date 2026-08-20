@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -209,52 +209,52 @@
 <section id="first-pass">
 <h3>First Pass<a class="headerlink" href="#first-pass" title="Link to this heading"></a></h3>
 <p>As a first pass we will use 2000 LDA Facebook topics (available at wwbp.org) with the <em>ridgefirstpasscv</em> model. In <em>regressionPredictor.py</em> you can find the parameters for the <em>ridgefirstpasscv</em> model:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;ridgefirstpasscv&#39;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s1">&#39;alphas&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mf">.01</span><span class="p">,</span> <span class="mf">.0001</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">1000000</span><span class="p">])},</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s1">'ridgefirstpasscv'</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s1">'alphas'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mf">.01</span><span class="p">,</span> <span class="mf">.0001</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">1000000</span><span class="p">])},</span>
             <span class="p">],</span>
 </pre></div>
 </div>
 <p>This specifies a range of Ridge Regression penalization parameters <em>alpha</em> and uses the sci-kit learn RidgeCV class. Note that we start with 1, iterate through smaller values and end with larger values. You will notice this same style when looking at other models in <em>regressionPredictor.py</em>. When the RidgeCV class finds two penalities with the same results it will default to the first parameter. By setting the first parameter to 1 we ensure that we will not default to a boundary case.</p>
 <p>The full call to <em>dlatkInterface</em> is as follows:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--combo_test_regression<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--model<span class="w"> </span>ridgefirstpasscv
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16'</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--combo_test_regression<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--model<span class="w"> </span>ridgefirstpasscv
 </pre></div>
 </div>
 <p>We run 10-fold cross validation, using the 2000 Facebook topics and consider only users with 500 or more words. The final output should look something like:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>TEST<span class="w"> </span>COMPLETE<span class="o">]</span>
 
-<span class="o">{</span><span class="s1">&#39;age&#39;</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;N&#39;</span>:<span class="w"> </span><span class="m">978</span>,
-<span class="w">  </span><span class="s1">&#39;R&#39;</span>:<span class="w"> </span>nan,
-<span class="w">  </span><span class="s1">&#39;R2&#39;</span>:<span class="w"> </span>-0.88992485335879401,
-<span class="w">  </span><span class="s1">&#39;R2_folds&#39;</span>:<span class="w"> </span>-0.96270830361273707,
-<span class="w">  </span><span class="s1">&#39;mae&#39;</span>:<span class="w"> </span><span class="m">8</span>.5336986508333688,
-<span class="w">  </span><span class="s1">&#39;mae_folds&#39;</span>:<span class="w"> </span><span class="m">8</span>.5281778935127832,
-<span class="w">  </span><span class="s1">&#39;mse&#39;</span>:<span class="w"> </span><span class="m">130</span>.66895432831001,
-<span class="w">  </span><span class="s1">&#39;mse_folds&#39;</span>:<span class="w"> </span><span class="m">130</span>.30072681531286,
-<span class="w">  </span><span class="s1">&#39;num_features&#39;</span>:<span class="w"> </span><span class="m">2000</span>,
-<span class="w">  </span><span class="s1">&#39;r&#39;</span>:<span class="w"> </span><span class="m">0</span>.40222682541212029,
-<span class="w">  </span><span class="s1">&#39;r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.40305582938481005,
-<span class="w">  </span><span class="s1">&#39;r_p&#39;</span>:<span class="w"> </span><span class="m">2</span>.4971926509824059e-39,
-<span class="w">  </span><span class="s1">&#39;r_p_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.0012968155250152563,
-<span class="w">  </span><span class="s1">&#39;rho&#39;</span>:<span class="w"> </span><span class="m">0</span>.45284615270670103,
-<span class="w">  </span><span class="s1">&#39;rho_p&#39;</span>:<span class="w"> </span><span class="m">1</span>.288374195668318e-50,
-<span class="w">  </span><span class="s1">&#39;se_R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.14099512415343221,
-<span class="w">  </span><span class="s1">&#39;se_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.16581363417963907,
-<span class="w">  </span><span class="s1">&#39;se_mse_folds&#39;</span>:<span class="w"> </span><span class="m">7</span>.7572038557968686,
-<span class="w">  </span><span class="s1">&#39;se_r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.026510802106572903,
-<span class="w">  </span><span class="s1">&#39;se_r_p_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.00086305723986972909,
-<span class="w">  </span><span class="s1">&#39;se_train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.20067386714575627,
-<span class="w">  </span><span class="s1">&#39;test_size&#39;</span>:<span class="w"> </span><span class="m">105</span>,
-<span class="w">  </span><span class="s1">&#39;train_mean_mae&#39;</span>:<span class="w"> </span><span class="m">8</span>.8679725446432318,
-<span class="w">  </span><span class="s1">&#39;train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">6</span>.4643151489350172,
-<span class="w">  </span><span class="s1">&#39;train_size&#39;</span>:<span class="w"> </span><span class="m">873</span>,
-<span class="w">  </span><span class="s1">&#39;{modelFS_desc}&#39;</span>:<span class="w"> </span><span class="s1">&#39;None&#39;</span>,
-<span class="w">  </span><span class="s1">&#39;{model_desc}&#39;</span>:<span class="w"> </span><span class="s1">&#39;RidgeCV(alphas=array([ 1.00000e+00,  &#39;</span>
-<span class="w">                  </span><span class="s1">&#39;1.00000e-02,  1.00000e-04,  &#39;</span>
-<span class="w">                  </span><span class="s1">&#39;1.00000e+02,     1.00000e+04,  &#39;</span>
-<span class="w">                  </span><span class="s1">&#39;1.00000e+06]),   cv=None, &#39;</span>
-<span class="w">                  </span><span class="s1">&#39;fit_intercept=True, gcv_mode=None, &#39;</span>
-<span class="w">                  </span><span class="s1">&#39;normalize=False,   scoring=None, &#39;</span>
-<span class="w">                  </span><span class="s1">&#39;store_cv_values=False)&#39;</span><span class="o">}}}}</span>
+<span class="o">{</span><span class="s1">'age'</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">'N'</span>:<span class="w"> </span><span class="m">978</span>,
+<span class="w">  </span><span class="s1">'R'</span>:<span class="w"> </span>nan,
+<span class="w">  </span><span class="s1">'R2'</span>:<span class="w"> </span>-0.88992485335879401,
+<span class="w">  </span><span class="s1">'R2_folds'</span>:<span class="w"> </span>-0.96270830361273707,
+<span class="w">  </span><span class="s1">'mae'</span>:<span class="w"> </span><span class="m">8</span>.5336986508333688,
+<span class="w">  </span><span class="s1">'mae_folds'</span>:<span class="w"> </span><span class="m">8</span>.5281778935127832,
+<span class="w">  </span><span class="s1">'mse'</span>:<span class="w"> </span><span class="m">130</span>.66895432831001,
+<span class="w">  </span><span class="s1">'mse_folds'</span>:<span class="w"> </span><span class="m">130</span>.30072681531286,
+<span class="w">  </span><span class="s1">'num_features'</span>:<span class="w"> </span><span class="m">2000</span>,
+<span class="w">  </span><span class="s1">'r'</span>:<span class="w"> </span><span class="m">0</span>.40222682541212029,
+<span class="w">  </span><span class="s1">'r_folds'</span>:<span class="w"> </span><span class="m">0</span>.40305582938481005,
+<span class="w">  </span><span class="s1">'r_p'</span>:<span class="w"> </span><span class="m">2</span>.4971926509824059e-39,
+<span class="w">  </span><span class="s1">'r_p_folds'</span>:<span class="w"> </span><span class="m">0</span>.0012968155250152563,
+<span class="w">  </span><span class="s1">'rho'</span>:<span class="w"> </span><span class="m">0</span>.45284615270670103,
+<span class="w">  </span><span class="s1">'rho_p'</span>:<span class="w"> </span><span class="m">1</span>.288374195668318e-50,
+<span class="w">  </span><span class="s1">'se_R2_folds'</span>:<span class="w"> </span><span class="m">0</span>.14099512415343221,
+<span class="w">  </span><span class="s1">'se_mae_folds'</span>:<span class="w"> </span><span class="m">0</span>.16581363417963907,
+<span class="w">  </span><span class="s1">'se_mse_folds'</span>:<span class="w"> </span><span class="m">7</span>.7572038557968686,
+<span class="w">  </span><span class="s1">'se_r_folds'</span>:<span class="w"> </span><span class="m">0</span>.026510802106572903,
+<span class="w">  </span><span class="s1">'se_r_p_folds'</span>:<span class="w"> </span><span class="m">0</span>.00086305723986972909,
+<span class="w">  </span><span class="s1">'se_train_mean_mae_folds'</span>:<span class="w"> </span><span class="m">0</span>.20067386714575627,
+<span class="w">  </span><span class="s1">'test_size'</span>:<span class="w"> </span><span class="m">105</span>,
+<span class="w">  </span><span class="s1">'train_mean_mae'</span>:<span class="w"> </span><span class="m">8</span>.8679725446432318,
+<span class="w">  </span><span class="s1">'train_mean_mae_folds'</span>:<span class="w"> </span><span class="m">6</span>.4643151489350172,
+<span class="w">  </span><span class="s1">'train_size'</span>:<span class="w"> </span><span class="m">873</span>,
+<span class="w">  </span><span class="s1">'{modelFS_desc}'</span>:<span class="w"> </span><span class="s1">'None'</span>,
+<span class="w">  </span><span class="s1">'{model_desc}'</span>:<span class="w"> </span><span class="s1">'RidgeCV(alphas=array([ 1.00000e+00,  '</span>
+<span class="w">                  </span><span class="s1">'1.00000e-02,  1.00000e-04,  '</span>
+<span class="w">                  </span><span class="s1">'1.00000e+02,     1.00000e+04,  '</span>
+<span class="w">                  </span><span class="s1">'1.00000e+06]),   cv=None, '</span>
+<span class="w">                  </span><span class="s1">'fit_intercept=True, gcv_mode=None, '</span>
+<span class="w">                  </span><span class="s1">'normalize=False,   scoring=None, '</span>
+<span class="w">                  </span><span class="s1">'store_cv_values=False)'</span><span class="o">}}}}</span>
 --
 Interface<span class="w"> </span>Runtime:<span class="w"> </span><span class="m">98</span>.57<span class="w"> </span>seconds
 DLATK<span class="w"> </span>exits<span class="w"> </span>with<span class="w"> </span>success!<span class="w"> </span>A<span class="w"> </span>good<span class="w"> </span>day<span class="w"> </span>indeed<span class="w">  </span>¯<span class="se">\_</span><span class="o">(</span>ツ<span class="o">)</span>_/¯.
@@ -266,58 +266,58 @@ DLATK<span class="w"> </span>exits<span class="w"> </span>with<span class="w"> <
 <li><p><a class="reference internal" href="../fwinterface/fwflag_feature_selection_string.html"><span class="doc">--feature_selection_string</span></a></p></li>
 </ul>
 <p>We will use our <em>magic_sauce</em> pipeline which uses a pipeline of univariate feature selection (with a family wise error rate of 60) and Randomized PCA:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Pipeline</span><span class="p">([(</span><span class="s2">&quot;1_mean_value_filter&quot;</span><span class="p">,</span> <span class="n">OccurrenceThreshold</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mf">100.0</span><span class="p">))),</span> <span class="p">(</span><span class="s2">&quot;2_univariate_select&quot;</span><span class="p">,</span> <span class="n">SelectFwe</span><span class="p">(</span><span class="n">f_regression</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">60.0</span><span class="p">)),</span> <span class="p">(</span><span class="s2">&quot;3_rpca&quot;</span><span class="p">,</span> <span class="n">RandomizedPCA</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="nb">max</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">featureGetters</span><span class="p">))),</span> <span class="nb">min</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">whiten</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">iterated_power</span><span class="o">=</span><span class="mi">3</span><span class="p">))])</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Pipeline</span><span class="p">([(</span><span class="s2">"1_mean_value_filter"</span><span class="p">,</span> <span class="n">OccurrenceThreshold</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mf">100.0</span><span class="p">))),</span> <span class="p">(</span><span class="s2">"2_univariate_select"</span><span class="p">,</span> <span class="n">SelectFwe</span><span class="p">(</span><span class="n">f_regression</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">60.0</span><span class="p">)),</span> <span class="p">(</span><span class="s2">"3_rpca"</span><span class="p">,</span> <span class="n">RandomizedPCA</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="nb">max</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">featureGetters</span><span class="p">))),</span> <span class="nb">min</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">whiten</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">iterated_power</span><span class="o">=</span><span class="mi">3</span><span class="p">))])</span>
 </pre></div>
 </div>
 <p>We rerun the first command with the addition of the <a class="reference internal" href="../fwinterface/fwflag_feature_selection.html"><span class="doc">--feature_selection</span></a> flag:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--combo_test_regression<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--model<span class="w"> </span>ridgefirstpass<span class="w"> </span>--feature_selection<span class="w"> </span>magic_sauce
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16'</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--combo_test_regression<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--model<span class="w"> </span>ridgefirstpass<span class="w"> </span>--feature_selection<span class="w"> </span>magic_sauce
 </pre></div>
 </div>
 <p>which gives us the following output:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>TEST<span class="w"> </span>COMPLETE<span class="o">]</span>
 
-<span class="o">{</span><span class="s1">&#39;age&#39;</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;N&#39;</span>:<span class="w"> </span><span class="m">978</span>,
-<span class="w">  </span><span class="s1">&#39;R&#39;</span>:<span class="w"> </span><span class="m">0</span>.61078813837532941,
-<span class="w">  </span><span class="s1">&#39;R2&#39;</span>:<span class="w"> </span><span class="m">0</span>.37306214998000053,
-<span class="w">  </span><span class="s1">&#39;R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.36172845861240155,
-<span class="w">  </span><span class="s1">&#39;mae&#39;</span>:<span class="w"> </span><span class="m">4</span>.884718059241858,
-<span class="w">  </span><span class="s1">&#39;mae_folds&#39;</span>:<span class="w"> </span><span class="m">4</span>.882525635420599,
-<span class="w">  </span><span class="s1">&#39;mse&#39;</span>:<span class="w"> </span><span class="m">43</span>.346333662611386,
-<span class="w">  </span><span class="s1">&#39;mse_folds&#39;</span>:<span class="w"> </span><span class="m">43</span>.319316495428431,
-<span class="w">  </span><span class="s1">&#39;num_features&#39;</span>:<span class="w"> </span><span class="m">2000</span>,
-<span class="w">  </span><span class="s1">&#39;r&#39;</span>:<span class="w"> </span><span class="m">0</span>.6225268232718818,
-<span class="w">  </span><span class="s1">&#39;r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.62849684211444135,
-<span class="w">  </span><span class="s1">&#39;r_p&#39;</span>:<span class="w"> </span><span class="m">5</span>.0851259142747209e-106,
-<span class="w">  </span><span class="s1">&#39;r_p_folds&#39;</span>:<span class="w"> </span><span class="m">5</span>.3572426774038191e-10,
-<span class="w">  </span><span class="s1">&#39;rho&#39;</span>:<span class="w"> </span><span class="m">0</span>.66881845157843556,
-<span class="w">  </span><span class="s1">&#39;rho_p&#39;</span>:<span class="w"> </span><span class="m">8</span>.1125738610915348e-128,
-<span class="w">  </span><span class="s1">&#39;se_R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.019350854084730935,
-<span class="w">  </span><span class="s1">&#39;se_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.15951572834767661,
-<span class="w">  </span><span class="s1">&#39;se_mse_folds&#39;</span>:<span class="w"> </span><span class="m">2</span>.6529378160101356,
-<span class="w">  </span><span class="s1">&#39;se_r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.019365962321772998,
-<span class="w">  </span><span class="s1">&#39;se_r_p_folds&#39;</span>:<span class="w"> </span><span class="m">2</span>.8069174191858989e-10,
-<span class="w">  </span><span class="s1">&#39;se_train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.20067386714575627,
-<span class="w">  </span><span class="s1">&#39;test_size&#39;</span>:<span class="w"> </span><span class="m">105</span>,
-<span class="w">  </span><span class="s1">&#39;train_mean_mae&#39;</span>:<span class="w"> </span><span class="m">3</span>.3734409296293868,
-<span class="w">  </span><span class="s1">&#39;train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">6</span>.4643151489350172,
-<span class="w">  </span><span class="s1">&#39;train_size&#39;</span>:<span class="w"> </span><span class="m">873</span>,
-<span class="w">  </span><span class="s1">&#39;{modelFS_desc}&#39;</span>:<span class="w"> </span><span class="s2">&quot;Pipeline(steps=[(&#39;1_mean_value_filter&#39;, &quot;</span>
-<span class="w">                    </span><span class="s1">&#39;OccurrenceThreshold(threshold=2954)), &#39;</span>
-<span class="w">                    </span><span class="s2">&quot;(&#39;2_univariate_select&#39;, &quot;</span>
-<span class="w">                    </span><span class="s1">&#39;SelectFwe(alpha=60.0, &#39;</span>
-<span class="w">                    </span><span class="s1">&#39;score_func=&lt;function f_regression at &#39;</span>
-<span class="w">                    </span><span class="s2">&quot;0x7fd8667328c8&gt;)), (&#39;3_rpca&#39;, &quot;</span>
-<span class="w">                    </span><span class="s1">&#39;RandomizedPCA(copy=True, &#39;</span>
-<span class="w">                    </span><span class="s1">&#39;iterated_power=3, max_components=None,    &#39;</span>
-<span class="w">                    </span><span class="s1">&#39;n_components=793, random_state=42, &#39;</span>
-<span class="w">                    </span><span class="s1">&#39;whiten=False))])&#39;</span>,
-<span class="w">  </span><span class="s1">&#39;{model_desc}&#39;</span>:<span class="w"> </span><span class="s1">&#39;RidgeCV(alphas=array([ 1.00000e+00,  &#39;</span>
-<span class="w">                  </span><span class="s1">&#39;1.00000e-02,  1.00000e-04,  &#39;</span>
-<span class="w">                  </span><span class="s1">&#39;1.00000e+02,     1.00000e+04,  &#39;</span>
-<span class="w">                  </span><span class="s1">&#39;1.00000e+06]),   cv=None, &#39;</span>
-<span class="w">                  </span><span class="s1">&#39;fit_intercept=True, gcv_mode=None, &#39;</span>
-<span class="w">                  </span><span class="s1">&#39;normalize=False,   scoring=None, &#39;</span>
-<span class="w">                  </span><span class="s1">&#39;store_cv_values=False)&#39;</span><span class="o">}}}}</span>
+<span class="o">{</span><span class="s1">'age'</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">'N'</span>:<span class="w"> </span><span class="m">978</span>,
+<span class="w">  </span><span class="s1">'R'</span>:<span class="w"> </span><span class="m">0</span>.61078813837532941,
+<span class="w">  </span><span class="s1">'R2'</span>:<span class="w"> </span><span class="m">0</span>.37306214998000053,
+<span class="w">  </span><span class="s1">'R2_folds'</span>:<span class="w"> </span><span class="m">0</span>.36172845861240155,
+<span class="w">  </span><span class="s1">'mae'</span>:<span class="w"> </span><span class="m">4</span>.884718059241858,
+<span class="w">  </span><span class="s1">'mae_folds'</span>:<span class="w"> </span><span class="m">4</span>.882525635420599,
+<span class="w">  </span><span class="s1">'mse'</span>:<span class="w"> </span><span class="m">43</span>.346333662611386,
+<span class="w">  </span><span class="s1">'mse_folds'</span>:<span class="w"> </span><span class="m">43</span>.319316495428431,
+<span class="w">  </span><span class="s1">'num_features'</span>:<span class="w"> </span><span class="m">2000</span>,
+<span class="w">  </span><span class="s1">'r'</span>:<span class="w"> </span><span class="m">0</span>.6225268232718818,
+<span class="w">  </span><span class="s1">'r_folds'</span>:<span class="w"> </span><span class="m">0</span>.62849684211444135,
+<span class="w">  </span><span class="s1">'r_p'</span>:<span class="w"> </span><span class="m">5</span>.0851259142747209e-106,
+<span class="w">  </span><span class="s1">'r_p_folds'</span>:<span class="w"> </span><span class="m">5</span>.3572426774038191e-10,
+<span class="w">  </span><span class="s1">'rho'</span>:<span class="w"> </span><span class="m">0</span>.66881845157843556,
+<span class="w">  </span><span class="s1">'rho_p'</span>:<span class="w"> </span><span class="m">8</span>.1125738610915348e-128,
+<span class="w">  </span><span class="s1">'se_R2_folds'</span>:<span class="w"> </span><span class="m">0</span>.019350854084730935,
+<span class="w">  </span><span class="s1">'se_mae_folds'</span>:<span class="w"> </span><span class="m">0</span>.15951572834767661,
+<span class="w">  </span><span class="s1">'se_mse_folds'</span>:<span class="w"> </span><span class="m">2</span>.6529378160101356,
+<span class="w">  </span><span class="s1">'se_r_folds'</span>:<span class="w"> </span><span class="m">0</span>.019365962321772998,
+<span class="w">  </span><span class="s1">'se_r_p_folds'</span>:<span class="w"> </span><span class="m">2</span>.8069174191858989e-10,
+<span class="w">  </span><span class="s1">'se_train_mean_mae_folds'</span>:<span class="w"> </span><span class="m">0</span>.20067386714575627,
+<span class="w">  </span><span class="s1">'test_size'</span>:<span class="w"> </span><span class="m">105</span>,
+<span class="w">  </span><span class="s1">'train_mean_mae'</span>:<span class="w"> </span><span class="m">3</span>.3734409296293868,
+<span class="w">  </span><span class="s1">'train_mean_mae_folds'</span>:<span class="w"> </span><span class="m">6</span>.4643151489350172,
+<span class="w">  </span><span class="s1">'train_size'</span>:<span class="w"> </span><span class="m">873</span>,
+<span class="w">  </span><span class="s1">'{modelFS_desc}'</span>:<span class="w"> </span><span class="s2">"Pipeline(steps=[('1_mean_value_filter', "</span>
+<span class="w">                    </span><span class="s1">'OccurrenceThreshold(threshold=2954)), '</span>
+<span class="w">                    </span><span class="s2">"('2_univariate_select', "</span>
+<span class="w">                    </span><span class="s1">'SelectFwe(alpha=60.0, '</span>
+<span class="w">                    </span><span class="s1">'score_func=&lt;function f_regression at '</span>
+<span class="w">                    </span><span class="s2">"0x7fd8667328c8&gt;)), ('3_rpca', "</span>
+<span class="w">                    </span><span class="s1">'RandomizedPCA(copy=True, '</span>
+<span class="w">                    </span><span class="s1">'iterated_power=3, max_components=None,    '</span>
+<span class="w">                    </span><span class="s1">'n_components=793, random_state=42, '</span>
+<span class="w">                    </span><span class="s1">'whiten=False))])'</span>,
+<span class="w">  </span><span class="s1">'{model_desc}'</span>:<span class="w"> </span><span class="s1">'RidgeCV(alphas=array([ 1.00000e+00,  '</span>
+<span class="w">                  </span><span class="s1">'1.00000e-02,  1.00000e-04,  '</span>
+<span class="w">                  </span><span class="s1">'1.00000e+02,     1.00000e+04,  '</span>
+<span class="w">                  </span><span class="s1">'1.00000e+06]),   cv=None, '</span>
+<span class="w">                  </span><span class="s1">'fit_intercept=True, gcv_mode=None, '</span>
+<span class="w">                  </span><span class="s1">'normalize=False,   scoring=None, '</span>
+<span class="w">                  </span><span class="s1">'store_cv_values=False)'</span><span class="o">}}}}</span>
 --
 Interface<span class="w"> </span>Runtime:<span class="w"> </span><span class="m">114</span>.71<span class="w"> </span>seconds
 DLATK<span class="w"> </span>exits<span class="w"> </span>with<span class="w"> </span>success!<span class="w"> </span>A<span class="w"> </span>good<span class="w"> </span>day<span class="w"> </span>indeed<span class="w">  </span>¯<span class="se">\_</span><span class="o">(</span>ツ<span class="o">)</span>_/¯.
@@ -333,8 +333,8 @@ DLATK<span class="w"> </span>exits<span class="w"> </span>with<span class="w"> <
 <span class="o">[</span>Train<span class="w"> </span>size:<span class="w"> </span><span class="m">881</span><span class="w">    </span>Test<span class="w"> </span>size:<span class="w"> </span><span class="m">97</span><span class="o">]</span>
 <span class="o">[</span>Applying<span class="w"> </span>StandardScaler<span class="w"> </span>to<span class="w"> </span>X<span class="o">[</span><span class="m">0</span><span class="o">]</span>:<span class="w"> </span>StandardScaler<span class="o">(</span><span class="nv">copy</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">with_mean</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">with_std</span><span class="o">=</span>True<span class="o">)]</span>
 <span class="w"> </span>X<span class="o">[</span><span class="m">0</span><span class="o">]</span>:<span class="w"> </span><span class="o">(</span>N,<span class="w"> </span>features<span class="o">)</span>:<span class="w"> </span><span class="o">(</span><span class="m">881</span>,<span class="w"> </span><span class="m">2000</span><span class="o">)</span>
-<span class="o">[</span>Applying<span class="w"> </span>Feature<span class="w"> </span>Selection<span class="w"> </span>to<span class="w"> </span>X:<span class="w"> </span>Pipeline<span class="o">(</span><span class="nv">steps</span><span class="o">=[(</span><span class="s1">&#39;1_mean_value_filter&#39;</span>,<span class="w"> </span>OccurrenceThreshold<span class="o">(</span><span class="nv">threshold</span><span class="o">=</span><span class="m">2968</span><span class="o">))</span>,<span class="w"> </span><span class="o">(</span><span class="s1">&#39;2_univariate_select&#39;</span>,<span class="w"> </span>Selec
-tFwe<span class="o">(</span><span class="nv">alpha</span><span class="o">=</span><span class="m">60</span>.0,<span class="w"> </span><span class="nv">score_func</span><span class="o">=</span>&lt;<span class="k">function</span><span class="w"> </span>f_regression<span class="w"> </span>at<span class="w"> </span>0x7fd8667328c8&gt;<span class="o">))</span>,<span class="w"> </span><span class="o">(</span><span class="s1">&#39;3_rpca&#39;</span>,<span class="w"> </span>RandomizedPCA<span class="o">(</span><span class="nv">copy</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">iterated_power</span><span class="o">=</span><span class="m">3</span>,<span class="w"> </span><span class="nv">max_components</span>
+<span class="o">[</span>Applying<span class="w"> </span>Feature<span class="w"> </span>Selection<span class="w"> </span>to<span class="w"> </span>X:<span class="w"> </span>Pipeline<span class="o">(</span><span class="nv">steps</span><span class="o">=[(</span><span class="s1">'1_mean_value_filter'</span>,<span class="w"> </span>OccurrenceThreshold<span class="o">(</span><span class="nv">threshold</span><span class="o">=</span><span class="m">2968</span><span class="o">))</span>,<span class="w"> </span><span class="o">(</span><span class="s1">'2_univariate_select'</span>,<span class="w"> </span>Selec
+tFwe<span class="o">(</span><span class="nv">alpha</span><span class="o">=</span><span class="m">60</span>.0,<span class="w"> </span><span class="nv">score_func</span><span class="o">=</span>&lt;<span class="k">function</span><span class="w"> </span>f_regression<span class="w"> </span>at<span class="w"> </span>0x7fd8667328c8&gt;<span class="o">))</span>,<span class="w"> </span><span class="o">(</span><span class="s1">'3_rpca'</span>,<span class="w"> </span>RandomizedPCA<span class="o">(</span><span class="nv">copy</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">iterated_power</span><span class="o">=</span><span class="m">3</span>,<span class="w"> </span><span class="nv">max_components</span>
 <span class="o">=</span>None,
 <span class="w">       </span><span class="nv">n_components</span><span class="o">=</span><span class="m">800</span>,<span class="w"> </span><span class="nv">random_state</span><span class="o">=</span><span class="m">42</span>,<span class="w"> </span><span class="nv">whiten</span><span class="o">=</span>False<span class="o">))])]</span>
 SET<span class="w"> </span>THRESHOLD<span class="w"> </span><span class="m">2968</span>
@@ -348,56 +348,56 @@ model:<span class="w"> </span>RidgeCV<span class="o">(</span><span class="nv">al
 </pre></div>
 </div>
 <p>For each fold the RidgeCV class chose <em>alpha</em> = 10000 so for our next pass we will choose the <em>ridgehighcv</em> model:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;ridgehighcv&#39;</span><span class="p">:</span> <span class="p">[</span>
-    <span class="p">{</span><span class="s1">&#39;alphas&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">100000</span><span class="p">,</span> <span class="mi">1000000</span><span class="p">])},</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s1">'ridgehighcv'</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s1">'alphas'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">100000</span><span class="p">,</span> <span class="mi">1000000</span><span class="p">])},</span>
 <span class="p">],</span>
 </pre></div>
 </div>
 <p>The command then becomes</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--combo_test_regression<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--model<span class="w"> </span>ridgehighcv<span class="w"> </span>--feature_selection<span class="w"> </span>magic_sauce
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16'</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--combo_test_regression<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--model<span class="w"> </span>ridgehighcv<span class="w"> </span>--feature_selection<span class="w"> </span>magic_sauce
 </pre></div>
 </div>
 <p>which gives the output:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">{</span><span class="s1">&#39;age&#39;</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;N&#39;</span>:<span class="w"> </span><span class="m">978</span>,
-<span class="w">      </span><span class="s1">&#39;R&#39;</span>:<span class="w"> </span><span class="m">0</span>.6279876727085858,
-<span class="w">      </span><span class="s1">&#39;R2&#39;</span>:<span class="w"> </span><span class="m">0</span>.39436851707394593,
-<span class="w">      </span><span class="s1">&#39;R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.37710881124945012,
-<span class="w">      </span><span class="s1">&#39;mae&#39;</span>:<span class="w"> </span><span class="m">4</span>.8017728082382849,
-<span class="w">      </span><span class="s1">&#39;mae_folds&#39;</span>:<span class="w"> </span><span class="m">4</span>.7992072704676758,
-<span class="w">      </span><span class="s1">&#39;mse&#39;</span>:<span class="w"> </span><span class="m">41</span>.873216515253354,
-<span class="w">      </span><span class="s1">&#39;mse_folds&#39;</span>:<span class="w"> </span><span class="m">41</span>.857939340623183,
-<span class="w">      </span><span class="s1">&#39;num_features&#39;</span>:<span class="w"> </span><span class="m">2000</span>,
-<span class="w">      </span><span class="s1">&#39;r&#39;</span>:<span class="w"> </span><span class="m">0</span>.63275749683012394,
-<span class="w">      </span><span class="s1">&#39;r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.63739741140546302,
-<span class="w">      </span><span class="s1">&#39;r_p&#39;</span>:<span class="w"> </span><span class="m">1</span>.614437770178403e-110,
-<span class="w">      </span><span class="s1">&#39;r_p_folds&#39;</span>:<span class="w"> </span><span class="m">5</span>.732582650282395e-10,
-<span class="w">      </span><span class="s1">&#39;rho&#39;</span>:<span class="w"> </span><span class="m">0</span>.68505102312465327,
-<span class="w">      </span><span class="s1">&#39;rho_p&#39;</span>:<span class="w"> </span><span class="m">1</span>.991911281360676e-136,
-<span class="w">      </span><span class="s1">&#39;se_R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.028505009510342232,
-<span class="w">      </span><span class="s1">&#39;se_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.156478519231599,
-<span class="w">      </span><span class="s1">&#39;se_mse_folds&#39;</span>:<span class="w"> </span><span class="m">2</span>.2790368274979054,
-<span class="w">      </span><span class="s1">&#39;se_r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.018905676945535039,
-<span class="w">      </span><span class="s1">&#39;se_r_p_folds&#39;</span>:<span class="w"> </span><span class="m">4</span>.232561097638729e-10,
-<span class="w">      </span><span class="s1">&#39;se_train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.20067386714575627,
-<span class="w">      </span><span class="s1">&#39;test_size&#39;</span>:<span class="w"> </span><span class="m">105</span>,
-<span class="w">      </span><span class="s1">&#39;train_mean_mae&#39;</span>:<span class="w"> </span><span class="m">4</span>.7403932140338458,
-<span class="w">      </span><span class="s1">&#39;train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">6</span>.4643151489350172,
-<span class="w">      </span><span class="s1">&#39;train_size&#39;</span>:<span class="w"> </span><span class="m">873</span>,
-<span class="w">      </span><span class="s1">&#39;{modelFS_desc}&#39;</span>:<span class="w"> </span><span class="s2">&quot;Pipeline(steps=[(&#39;1_mean_value_filter&#39;, &quot;</span>
-<span class="w">                        </span><span class="s1">&#39;OccurrenceThreshold(threshold=2954)), &#39;</span>
-<span class="w">                        </span><span class="s2">&quot;(&#39;2_univariate_select&#39;, &quot;</span>
-<span class="w">                        </span><span class="s1">&#39;SelectFwe(alpha=60.0, &#39;</span>
-<span class="w">                        </span><span class="s1">&#39;score_func=&lt;function f_regression at &#39;</span>
-<span class="w">                        </span><span class="s2">&quot;0x7f0f75de38c8&gt;)), (&#39;3_rpca&#39;, &quot;</span>
-<span class="w">                        </span><span class="s1">&#39;RandomizedPCA(copy=True, &#39;</span>
-<span class="w">                        </span><span class="s1">&#39;iterated_power=3, max_components=None,    &#39;</span>
-<span class="w">                        </span><span class="s1">&#39;n_components=793, random_state=42, &#39;</span>
-<span class="w">                        </span><span class="s1">&#39;whiten=False))])&#39;</span>,
-<span class="w">      </span><span class="s1">&#39;{model_desc}&#39;</span>:<span class="w"> </span><span class="s1">&#39;RidgeCV(alphas=array([   10,   100,    1,  &#39;</span>
-<span class="w">                      </span><span class="s1">&#39;1000,  10000, 100000, 1000000]),   cv=None, &#39;</span>
-<span class="w">                      </span><span class="s1">&#39;fit_intercept=True, gcv_mode=None, &#39;</span>
-<span class="w">                      </span><span class="s1">&#39;normalize=False,   scoring=None, &#39;</span>
-<span class="w">                      </span><span class="s1">&#39;store_cv_values=False)&#39;</span><span class="o">}}}}</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">{</span><span class="s1">'age'</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">'N'</span>:<span class="w"> </span><span class="m">978</span>,
+<span class="w">      </span><span class="s1">'R'</span>:<span class="w"> </span><span class="m">0</span>.6279876727085858,
+<span class="w">      </span><span class="s1">'R2'</span>:<span class="w"> </span><span class="m">0</span>.39436851707394593,
+<span class="w">      </span><span class="s1">'R2_folds'</span>:<span class="w"> </span><span class="m">0</span>.37710881124945012,
+<span class="w">      </span><span class="s1">'mae'</span>:<span class="w"> </span><span class="m">4</span>.8017728082382849,
+<span class="w">      </span><span class="s1">'mae_folds'</span>:<span class="w"> </span><span class="m">4</span>.7992072704676758,
+<span class="w">      </span><span class="s1">'mse'</span>:<span class="w"> </span><span class="m">41</span>.873216515253354,
+<span class="w">      </span><span class="s1">'mse_folds'</span>:<span class="w"> </span><span class="m">41</span>.857939340623183,
+<span class="w">      </span><span class="s1">'num_features'</span>:<span class="w"> </span><span class="m">2000</span>,
+<span class="w">      </span><span class="s1">'r'</span>:<span class="w"> </span><span class="m">0</span>.63275749683012394,
+<span class="w">      </span><span class="s1">'r_folds'</span>:<span class="w"> </span><span class="m">0</span>.63739741140546302,
+<span class="w">      </span><span class="s1">'r_p'</span>:<span class="w"> </span><span class="m">1</span>.614437770178403e-110,
+<span class="w">      </span><span class="s1">'r_p_folds'</span>:<span class="w"> </span><span class="m">5</span>.732582650282395e-10,
+<span class="w">      </span><span class="s1">'rho'</span>:<span class="w"> </span><span class="m">0</span>.68505102312465327,
+<span class="w">      </span><span class="s1">'rho_p'</span>:<span class="w"> </span><span class="m">1</span>.991911281360676e-136,
+<span class="w">      </span><span class="s1">'se_R2_folds'</span>:<span class="w"> </span><span class="m">0</span>.028505009510342232,
+<span class="w">      </span><span class="s1">'se_mae_folds'</span>:<span class="w"> </span><span class="m">0</span>.156478519231599,
+<span class="w">      </span><span class="s1">'se_mse_folds'</span>:<span class="w"> </span><span class="m">2</span>.2790368274979054,
+<span class="w">      </span><span class="s1">'se_r_folds'</span>:<span class="w"> </span><span class="m">0</span>.018905676945535039,
+<span class="w">      </span><span class="s1">'se_r_p_folds'</span>:<span class="w"> </span><span class="m">4</span>.232561097638729e-10,
+<span class="w">      </span><span class="s1">'se_train_mean_mae_folds'</span>:<span class="w"> </span><span class="m">0</span>.20067386714575627,
+<span class="w">      </span><span class="s1">'test_size'</span>:<span class="w"> </span><span class="m">105</span>,
+<span class="w">      </span><span class="s1">'train_mean_mae'</span>:<span class="w"> </span><span class="m">4</span>.7403932140338458,
+<span class="w">      </span><span class="s1">'train_mean_mae_folds'</span>:<span class="w"> </span><span class="m">6</span>.4643151489350172,
+<span class="w">      </span><span class="s1">'train_size'</span>:<span class="w"> </span><span class="m">873</span>,
+<span class="w">      </span><span class="s1">'{modelFS_desc}'</span>:<span class="w"> </span><span class="s2">"Pipeline(steps=[('1_mean_value_filter', "</span>
+<span class="w">                        </span><span class="s1">'OccurrenceThreshold(threshold=2954)), '</span>
+<span class="w">                        </span><span class="s2">"('2_univariate_select', "</span>
+<span class="w">                        </span><span class="s1">'SelectFwe(alpha=60.0, '</span>
+<span class="w">                        </span><span class="s1">'score_func=&lt;function f_regression at '</span>
+<span class="w">                        </span><span class="s2">"0x7f0f75de38c8&gt;)), ('3_rpca', "</span>
+<span class="w">                        </span><span class="s1">'RandomizedPCA(copy=True, '</span>
+<span class="w">                        </span><span class="s1">'iterated_power=3, max_components=None,    '</span>
+<span class="w">                        </span><span class="s1">'n_components=793, random_state=42, '</span>
+<span class="w">                        </span><span class="s1">'whiten=False))])'</span>,
+<span class="w">      </span><span class="s1">'{model_desc}'</span>:<span class="w"> </span><span class="s1">'RidgeCV(alphas=array([   10,   100,    1,  '</span>
+<span class="w">                      </span><span class="s1">'1000,  10000, 100000, 1000000]),   cv=None, '</span>
+<span class="w">                      </span><span class="s1">'fit_intercept=True, gcv_mode=None, '</span>
+<span class="w">                      </span><span class="s1">'normalize=False,   scoring=None, '</span>
+<span class="w">                      </span><span class="s1">'store_cv_values=False)'</span><span class="o">}}}}</span>
 </pre></div>
 </div>
 <p>This time <em>alpha</em> = 1000 is chosen for most of the folds and we see a jump in Pearson r. If we wanted to set this value for good we could switch the model to <em>ridge1000</em> but as we are going to try a few more iterations we will keep the <em>ridgehighcv</em> model.</p>
@@ -406,51 +406,51 @@ model:<span class="w"> </span>RidgeCV<span class="o">(</span><span class="nv">al
 <section id="third-pass">
 <h3>Third Pass<a class="headerlink" href="#third-pass" title="Link to this heading"></a></h3>
 <p>In this next pass we will add additional feature sets. The 2000 Facebook topics are the best place to start but additional information can be found in the 1to3gram tables. We will add both a relative frequecy table (16to16) and a boolean table (16to1). We will also make sure these tables have rare words removed so as to not use too many features and overfit the model. Details on how to create these tables can be found in <a class="reference internal" href="tut_adv_fe.html"><span class="doc">Advanced Feature Extraction</span></a>. Choosing the correct number and type of features is outside the scope of this tutorial.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgs$user_id$16to16$0_1&#39;</span><span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgs$user_id$16to1$0_1&#39;</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--combo_test_regression<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--model<span class="w"> </span>ridgehighcv<span class="w"> </span>--feature_selection<span class="w"> </span>magic_sauce
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16'</span><span class="w"> </span><span class="s1">'feat$1to3gram$msgs$user_id$16to16$0_1'</span><span class="w"> </span><span class="s1">'feat$1to3gram$msgs$user_id$16to1$0_1'</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--combo_test_regression<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--model<span class="w"> </span>ridgehighcv<span class="w"> </span>--feature_selection<span class="w"> </span>magic_sauce
 </pre></div>
 </div>
 <p>Before looking at the output you should note the order of your feature tables. This order is <em>VERY</em> important when you go to build your final model, which is explained in the next section.</p>
 <p>The output should look like:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">{</span><span class="s1">&#39;age&#39;</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;N&#39;</span>:<span class="w"> </span><span class="m">978</span>,
-<span class="w">      </span><span class="s1">&#39;R&#39;</span>:<span class="w"> </span><span class="m">0</span>.65328970316714685,
-<span class="w">      </span><span class="s1">&#39;R2&#39;</span>:<span class="w"> </span><span class="m">0</span>.42678743626421878,
-<span class="w">      </span><span class="s1">&#39;R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.41097464037854003,
-<span class="w">      </span><span class="s1">&#39;mae&#39;</span>:<span class="w"> </span><span class="m">4</span>.7327336968238978,
-<span class="w">      </span><span class="s1">&#39;mae_folds&#39;</span>:<span class="w"> </span><span class="m">4</span>.7325620923091893,
-<span class="w">      </span><span class="s1">&#39;mse&#39;</span>:<span class="w"> </span><span class="m">39</span>.631780162099723,
-<span class="w">      </span><span class="s1">&#39;mse_folds&#39;</span>:<span class="w"> </span><span class="m">39</span>.631679282044317,
-<span class="w">      </span><span class="s1">&#39;num_features&#39;</span>:<span class="w"> </span><span class="m">18394</span>,
-<span class="w">      </span><span class="s1">&#39;r&#39;</span>:<span class="w"> </span><span class="m">0</span>.65400913034708874,
-<span class="w">      </span><span class="s1">&#39;r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.66135842980913795,
-<span class="w">      </span><span class="s1">&#39;r_p&#39;</span>:<span class="w"> </span><span class="m">1</span>.9997143428258404e-120,
-<span class="w">      </span><span class="s1">&#39;r_p_folds&#39;</span>:<span class="w"> </span><span class="m">1</span>.194981277707842e-11,
-<span class="w">      </span><span class="s1">&#39;rho&#39;</span>:<span class="w"> </span><span class="m">0</span>.69474789987194996,
-<span class="w">      </span><span class="s1">&#39;rho_p&#39;</span>:<span class="w"> </span><span class="m">7</span>.612360070325049e-142,
-<span class="w">      </span><span class="s1">&#39;se_R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.020842882578666778,
-<span class="w">      </span><span class="s1">&#39;se_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.11834531391511936,
-<span class="w">      </span><span class="s1">&#39;se_mse_folds&#39;</span>:<span class="w"> </span><span class="m">1</span>.9002353374669132,
-<span class="w">      </span><span class="s1">&#39;se_r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.014106368216269394,
-<span class="w">      </span><span class="s1">&#39;se_r_p_folds&#39;</span>:<span class="w"> </span><span class="m">9</span>.4034265034747871e-12,
-<span class="w">      </span><span class="s1">&#39;se_train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.20067386714575627,
-<span class="w">      </span><span class="s1">&#39;test_size&#39;</span>:<span class="w"> </span><span class="m">105</span>,
-<span class="w">      </span><span class="s1">&#39;train_mean_mae&#39;</span>:<span class="w"> </span><span class="m">4</span>.6141474094178232,
-<span class="w">      </span><span class="s1">&#39;train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">6</span>.4643151489350172,
-<span class="w">      </span><span class="s1">&#39;train_size&#39;</span>:<span class="w"> </span><span class="m">873</span>,
-<span class="w">      </span><span class="s1">&#39;{modelFS_desc}&#39;</span>:<span class="w"> </span><span class="s2">&quot;Pipeline(steps=[(&#39;1_mean_value_filter&#39;, &quot;</span>
-<span class="w">                        </span><span class="s1">&#39;OccurrenceThreshold(threshold=2954)), &#39;</span>
-<span class="w">                        </span><span class="s2">&quot;(&#39;2_univariate_select&#39;, &quot;</span>
-<span class="w">                        </span><span class="s1">&#39;SelectFwe(alpha=60.0, &#39;</span>
-<span class="w">                        </span><span class="s1">&#39;score_func=&lt;function f_regression at &#39;</span>
-<span class="w">                        </span><span class="s2">&quot;0x7fa9b599e8c8&gt;)), (&#39;3_rpca&#39;, &quot;</span>
-<span class="w">                        </span><span class="s1">&#39;RandomizedPCA(copy=True, &#39;</span>
-<span class="w">                        </span><span class="s1">&#39;iterated_power=3, max_components=None,    &#39;</span>
-<span class="w">                        </span><span class="s1">&#39;n_components=281, random_state=42, &#39;</span>
-<span class="w">                        </span><span class="s1">&#39;whiten=False))])&#39;</span>,
-<span class="w">      </span><span class="s1">&#39;{model_desc}&#39;</span>:<span class="w"> </span><span class="s1">&#39;RidgeCV(alphas=array([   10,   100,    1,  &#39;</span>
-<span class="w">                      </span><span class="s1">&#39;1000,  10000, 100000, 1000000]),   cv=None, &#39;</span>
-<span class="w">                      </span><span class="s1">&#39;fit_intercept=True, gcv_mode=None, &#39;</span>
-<span class="w">                      </span><span class="s1">&#39;normalize=False,   scoring=None, &#39;</span>
-<span class="w">                      </span><span class="s1">&#39;store_cv_values=False)&#39;</span><span class="o">}}}}</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">{</span><span class="s1">'age'</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">'N'</span>:<span class="w"> </span><span class="m">978</span>,
+<span class="w">      </span><span class="s1">'R'</span>:<span class="w"> </span><span class="m">0</span>.65328970316714685,
+<span class="w">      </span><span class="s1">'R2'</span>:<span class="w"> </span><span class="m">0</span>.42678743626421878,
+<span class="w">      </span><span class="s1">'R2_folds'</span>:<span class="w"> </span><span class="m">0</span>.41097464037854003,
+<span class="w">      </span><span class="s1">'mae'</span>:<span class="w"> </span><span class="m">4</span>.7327336968238978,
+<span class="w">      </span><span class="s1">'mae_folds'</span>:<span class="w"> </span><span class="m">4</span>.7325620923091893,
+<span class="w">      </span><span class="s1">'mse'</span>:<span class="w"> </span><span class="m">39</span>.631780162099723,
+<span class="w">      </span><span class="s1">'mse_folds'</span>:<span class="w"> </span><span class="m">39</span>.631679282044317,
+<span class="w">      </span><span class="s1">'num_features'</span>:<span class="w"> </span><span class="m">18394</span>,
+<span class="w">      </span><span class="s1">'r'</span>:<span class="w"> </span><span class="m">0</span>.65400913034708874,
+<span class="w">      </span><span class="s1">'r_folds'</span>:<span class="w"> </span><span class="m">0</span>.66135842980913795,
+<span class="w">      </span><span class="s1">'r_p'</span>:<span class="w"> </span><span class="m">1</span>.9997143428258404e-120,
+<span class="w">      </span><span class="s1">'r_p_folds'</span>:<span class="w"> </span><span class="m">1</span>.194981277707842e-11,
+<span class="w">      </span><span class="s1">'rho'</span>:<span class="w"> </span><span class="m">0</span>.69474789987194996,
+<span class="w">      </span><span class="s1">'rho_p'</span>:<span class="w"> </span><span class="m">7</span>.612360070325049e-142,
+<span class="w">      </span><span class="s1">'se_R2_folds'</span>:<span class="w"> </span><span class="m">0</span>.020842882578666778,
+<span class="w">      </span><span class="s1">'se_mae_folds'</span>:<span class="w"> </span><span class="m">0</span>.11834531391511936,
+<span class="w">      </span><span class="s1">'se_mse_folds'</span>:<span class="w"> </span><span class="m">1</span>.9002353374669132,
+<span class="w">      </span><span class="s1">'se_r_folds'</span>:<span class="w"> </span><span class="m">0</span>.014106368216269394,
+<span class="w">      </span><span class="s1">'se_r_p_folds'</span>:<span class="w"> </span><span class="m">9</span>.4034265034747871e-12,
+<span class="w">      </span><span class="s1">'se_train_mean_mae_folds'</span>:<span class="w"> </span><span class="m">0</span>.20067386714575627,
+<span class="w">      </span><span class="s1">'test_size'</span>:<span class="w"> </span><span class="m">105</span>,
+<span class="w">      </span><span class="s1">'train_mean_mae'</span>:<span class="w"> </span><span class="m">4</span>.6141474094178232,
+<span class="w">      </span><span class="s1">'train_mean_mae_folds'</span>:<span class="w"> </span><span class="m">6</span>.4643151489350172,
+<span class="w">      </span><span class="s1">'train_size'</span>:<span class="w"> </span><span class="m">873</span>,
+<span class="w">      </span><span class="s1">'{modelFS_desc}'</span>:<span class="w"> </span><span class="s2">"Pipeline(steps=[('1_mean_value_filter', "</span>
+<span class="w">                        </span><span class="s1">'OccurrenceThreshold(threshold=2954)), '</span>
+<span class="w">                        </span><span class="s2">"('2_univariate_select', "</span>
+<span class="w">                        </span><span class="s1">'SelectFwe(alpha=60.0, '</span>
+<span class="w">                        </span><span class="s1">'score_func=&lt;function f_regression at '</span>
+<span class="w">                        </span><span class="s2">"0x7fa9b599e8c8&gt;)), ('3_rpca', "</span>
+<span class="w">                        </span><span class="s1">'RandomizedPCA(copy=True, '</span>
+<span class="w">                        </span><span class="s1">'iterated_power=3, max_components=None,    '</span>
+<span class="w">                        </span><span class="s1">'n_components=281, random_state=42, '</span>
+<span class="w">                        </span><span class="s1">'whiten=False))])'</span>,
+<span class="w">      </span><span class="s1">'{model_desc}'</span>:<span class="w"> </span><span class="s1">'RidgeCV(alphas=array([   10,   100,    1,  '</span>
+<span class="w">                      </span><span class="s1">'1000,  10000, 100000, 1000000]),   cv=None, '</span>
+<span class="w">                      </span><span class="s1">'fit_intercept=True, gcv_mode=None, '</span>
+<span class="w">                      </span><span class="s1">'normalize=False,   scoring=None, '</span>
+<span class="w">                      </span><span class="s1">'store_cv_values=False)'</span><span class="o">}}}}</span>
 </pre></div>
 </div>
 <p>Again we see <em>r</em> and <em>R</em> fairly close to each other and also see a nice bump in performance over the topics alone model (r=0.63 to 0.65).</p>
@@ -469,7 +469,7 @@ model:<span class="w"> </span>RidgeCV<span class="o">(</span><span class="nv">al
 <li><p><a class="reference internal" href="../fwinterface/fwflag_picklefile.html"><span class="doc">--picklefile</span></a></p></li>
 </ul>
 <p>Our final command looks like:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgs$user_id$16to16$0_1&#39;</span><span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgs$user_id$16to1$0_1&#39;</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--train_regression<span class="w"> </span>--model<span class="w"> </span>ridge1000<span class="w"> </span>--feature_selection<span class="w"> </span>magic_sauce<span class="w"> </span>--save_model<span class="w"> </span>--picklefile<span class="w"> </span>~/age.2000fbtopics.1to3grams.16to16.16to1.ridge1000.magic_sauce.gft500.pickle
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16'</span><span class="w"> </span><span class="s1">'feat$1to3gram$msgs$user_id$16to16$0_1'</span><span class="w"> </span><span class="s1">'feat$1to3gram$msgs$user_id$16to1$0_1'</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--train_regression<span class="w"> </span>--model<span class="w"> </span>ridge1000<span class="w"> </span>--feature_selection<span class="w"> </span>magic_sauce<span class="w"> </span>--save_model<span class="w"> </span>--picklefile<span class="w"> </span>~/age.2000fbtopics.1to3grams.16to16.16to1.ridge1000.magic_sauce.gft500.pickle
 </pre></div>
 </div>
 <p>which gives the output:</p>

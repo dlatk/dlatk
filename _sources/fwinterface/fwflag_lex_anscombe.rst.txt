@@ -10,23 +10,19 @@ Switch
 Description
 ===========
 
-Apply a transformation to the group norm before
+Applies an Anscombe transformation to the lexicon/category value produced by :doc:`fwflag_add_lex_table`.
 
 Argument and Default Value
 ==========================
 
-extracting from boolean words (or other types of transformations for that matter)
-If the lexicon was build to measure if a word W appears in a group (vs. what percentage of that group's word use was made up of this word W)
-Before, you would simply run the extraction, not being able to do that.
-For more information on the anscombe transformation see documentation for --anscombe
+No argument. Boolean switch, default: ``False`` (no transform applied to the lexicon value).
 
 Details
 =======
 
-extracting from boolean words (or other types of transformations for that matter)
-If the lexicon was build to measure if a word W appears in a group (vs. what percentage of that group's word use was made up of this word W)
-Before, you would simply run the extraction, not being able to do that.
-For more information on the anscombe transformation see documentation for :doc:`fwflag_anscombe`
+Applies the Anscombe transformation (``2*sqrt(x + 3/8)``) to the final lexicon/category value produced by :doc:`fwflag_add_lex_table` (or :doc:`fwflag_add_corp_lex_table`), as opposed to :doc:`fwflag_anscombe` which transforms the underlying word/ngram frequencies that feed into that value. This is useful when the lexicon's raw counts are sparse/low, since the Anscombe transform stabilizes variance better than a plain square root in that regime.
+
+Verified: folds a suffix into the lexicon name portion of the table, joined with an underscore rather than a ``$``, e.g. ``feat$cat_met_a30_2000_cp_w_16to8$msgs$user_id`` for a weighted lexicon (``int(2*sqrt(16 + 3/8)) == 8``). See :doc:`fwflag_lex_sqrt` for the general naming mechanism.
 
 Other Switches
 ==============
@@ -42,8 +38,7 @@ None
 
 Example Commands
 ================
-.. code-block:: doc:`fwflag_block`:: python
 
+.. code-block:: bash
 
- # Correlates 1grams with age for every user
- ./fwInterface.py :doc:`fwflag_d` DB :doc:`fwflag_t` msgs_table :doc:`fwflag_c` groupId :doc:`fwflag_add_lex_table` :doc:`fwflag_l` myLexTable :doc:`fwflag_lex_anscombe`
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_lex_table -l met_a30_2000_cp --weighted_lexicon --lex_anscombe

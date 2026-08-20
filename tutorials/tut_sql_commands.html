@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -191,7 +191,7 @@
 <p><strong>Example 1</strong>: See user level features for the message table <em>msgs</em>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--show_feature_tables
 
-SQL<span class="w"> </span>QUERY:<span class="w"> </span>SHOW<span class="w"> </span>TABLES<span class="w"> </span>FROM<span class="w"> </span>dla_tutorial<span class="w"> </span>LIKE<span class="w"> </span><span class="s1">&#39;feat$%$msgs$user_id$%&#39;</span>
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>SHOW<span class="w"> </span>TABLES<span class="w"> </span>FROM<span class="w"> </span>dla_tutorial<span class="w"> </span>LIKE<span class="w"> </span><span class="s1">'feat$%$msgs$user_id$%'</span>
 Found<span class="w"> </span><span class="m">4</span><span class="w"> </span>available<span class="w"> </span>feature<span class="w"> </span>tables
 feat<span class="nv">$1</span>gram<span class="nv">$msgs$user_id$16</span>to1
 feat<span class="nv">$1</span>gram<span class="nv">$msgs$user_id$16</span>to16
@@ -200,9 +200,9 @@ feat<span class="nv">$meta_1gram$msgs$user_id$16</span>to1
 </pre></div>
 </div>
 <p><strong>Example 2</strong>: See features extracted at any level for the message table <em>msgs</em>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;%&#39;</span><span class="w"> </span>--ls
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span><span class="s1">'%'</span><span class="w"> </span>--ls
 
-SQL<span class="w"> </span>QUERY:<span class="w"> </span>SHOW<span class="w"> </span>TABLES<span class="w"> </span>FROM<span class="w"> </span>dla_tutorial<span class="w"> </span>LIKE<span class="w"> </span><span class="s1">&#39;feat$%$msgs$%$%&#39;</span>
+SQL<span class="w"> </span>QUERY:<span class="w"> </span>SHOW<span class="w"> </span>TABLES<span class="w"> </span>FROM<span class="w"> </span>dla_tutorial<span class="w"> </span>LIKE<span class="w"> </span><span class="s1">'feat$%$msgs$%$%'</span>
 Found<span class="w"> </span><span class="m">6</span><span class="w"> </span>available<span class="w"> </span>feature<span class="w"> </span>tables
 feat<span class="nv">$1</span>gram<span class="nv">$msgs$message_id$16</span>to1
 feat<span class="nv">$1</span>gram<span class="nv">$msgs$user_id$16</span>to1
@@ -228,7 +228,7 @@ dummy_table
 msgs
 msgs_rand
 
-dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w">  </span>--show_tables<span class="w"> </span><span class="s1">&#39;blog%&#39;</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w">  </span>--show_tables<span class="w"> </span><span class="s1">'blog%'</span>
 
 Found<span class="w"> </span><span class="m">2</span><span class="w"> </span>available<span class="w"> </span>tables
 blog_outcomes
@@ -283,12 +283,12 @@ SQL<span class="w"> </span>QUERY:<span class="w"> </span>DESCRIBE<span class="w"
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">   </span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>--view_tables
 <span class="w">   </span>...
 <span class="w">   </span>SQL<span class="w"> </span>QUERY:<span class="w"> </span><span class="k">select</span><span class="w"> </span>column_name<span class="w"> </span>from<span class="w"> </span>information_schema.columns
-<span class="w">       </span>where<span class="w"> </span><span class="nv">table_schema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;dla_tutorial&#39;</span><span class="w"> </span>and<span class="w"> </span><span class="nv">table_name</span><span class="o">=</span><span class="s1">&#39;msgs&#39;</span>
+<span class="w">       </span>where<span class="w"> </span><span class="nv">table_schema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'dla_tutorial'</span><span class="w"> </span>and<span class="w"> </span><span class="nv">table_name</span><span class="o">=</span><span class="s1">'msgs'</span>
 <span class="w">   </span>SQL<span class="w"> </span>QUERY:<span class="w"> </span>SELECT<span class="w"> </span>*<span class="w"> </span>FROM<span class="w"> </span>msgs<span class="w"> </span>LIMIT<span class="w"> </span><span class="m">5</span>
 message_id<span class="w">        </span>user_id<span class="w">           </span>date<span class="w">   </span>created_time<span class="w">        </span>message
 <span class="w">         </span><span class="m">1</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">31</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-31<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>can<span class="w"> </span>you<span class="w"> </span>bel
 <span class="w">         </span><span class="m">2</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">25</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-25<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>miss<span class="w"> </span>su<span class="w">  </span>us
-<span class="w">         </span><span class="m">3</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">24</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-24<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>i<span class="err">&#39;</span>m<span class="w"> </span>lookin
+<span class="w">         </span><span class="m">3</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">24</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-24<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>i<span class="err">'</span>m<span class="w"> </span>lookin
 <span class="w">         </span><span class="m">4</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">24</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-24<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>what<span class="w"> </span>a<span class="w"> </span><span class="nb">time</span>
 <span class="w">         </span><span class="m">5</span><span class="w">        </span><span class="m">3991108</span><span class="w"> </span><span class="m">01</span>,August,2004<span class="w"> </span><span class="m">2004</span>-08-01<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>i<span class="w"> </span>cannot<span class="w"> </span>be
 </pre></div>
@@ -296,17 +296,17 @@ message_id<span class="w">        </span>user_id<span class="w">           </spa
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">   </span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>--view_tables<span class="w"> </span>blog_outcomes
 <span class="w">   </span>...
 <span class="w">   </span>SQL<span class="w"> </span>QUERY:<span class="w"> </span><span class="k">select</span><span class="w"> </span>column_name<span class="w"> </span>from<span class="w"> </span>information_schema.columns
-<span class="w">       </span>where<span class="w"> </span><span class="nv">table_schema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;dla_tutorial&#39;</span><span class="w"> </span>and<span class="w"> </span><span class="nv">table_name</span><span class="o">=</span><span class="s1">&#39;msgs&#39;</span>
+<span class="w">       </span>where<span class="w"> </span><span class="nv">table_schema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'dla_tutorial'</span><span class="w"> </span>and<span class="w"> </span><span class="nv">table_name</span><span class="o">=</span><span class="s1">'msgs'</span>
 <span class="w">   </span>SQL<span class="w"> </span>QUERY:<span class="w"> </span>SELECT<span class="w"> </span>*<span class="w"> </span>FROM<span class="w"> </span>msgs<span class="w"> </span>LIMIT<span class="w"> </span><span class="m">5</span>
 message_id<span class="w">        </span>user_id<span class="w">           </span>date<span class="w">   </span>created_time<span class="w">        </span>message
 <span class="w">         </span><span class="m">1</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">31</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-31<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>can<span class="w"> </span>you<span class="w"> </span>bel
 <span class="w">         </span><span class="m">2</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">25</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-25<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>miss<span class="w"> </span>su<span class="w">  </span>us
-<span class="w">         </span><span class="m">3</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">24</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-24<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>i<span class="s1">&#39;m lookin</span>
+<span class="w">         </span><span class="m">3</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">24</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-24<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>i<span class="s1">'m lookin</span>
 <span class="s1">         4        3991108   24,July,2004 2004-07-24 00:    what a time</span>
 <span class="s1">         5        3991108 01,August,2004 2004-08-01 00:    i cannot be</span>
 
 <span class="s1">   SQL QUERY: select column_name from information_schema.columns</span>
-<span class="s1">               where table_schema = &#39;</span>dla_tutorial<span class="s1">&#39; and table_name=&#39;</span>blog_outcomes<span class="err">&#39;</span>
+<span class="s1">               where table_schema = '</span>dla_tutorial<span class="s1">' and table_name='</span>blog_outcomes<span class="err">'</span>
 <span class="w">   </span>SQL<span class="w"> </span>QUERY:<span class="w"> </span>SELECT<span class="w"> </span>*<span class="w"> </span>FROM<span class="w"> </span>blog_outcomes<span class="w"> </span>LIMIT<span class="w"> </span><span class="m">5</span>
 <span class="w">           </span>user_id<span class="w">         </span>gender<span class="w">     </span>gender_cat<span class="w">            </span>age<span class="w">           </span>occu<span class="w">           </span>sign<span class="w">      </span>is_indunk<span class="w">     </span>is_student<span class="w">   </span>is_education<span class="w">  </span>is_technology
 <span class="w">           </span><span class="m">3991108</span><span class="w">              </span><span class="m">1</span><span class="w">         </span>female<span class="w">             </span><span class="m">17</span><span class="w">         </span>indUnk<span class="w">            </span>Leo<span class="w">              </span><span class="m">1</span><span class="w">              </span><span class="m">0</span><span class="w">              </span><span class="m">0</span><span class="w">              </span><span class="m">0</span>

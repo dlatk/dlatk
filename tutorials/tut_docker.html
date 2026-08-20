@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -211,7 +211,7 @@ mysql<span class="w">               </span><span class="m">5</span>.5<span class
 
 &gt;<span class="w"> </span>docker<span class="w"> </span>ps
 CONTAINER<span class="w"> </span>ID<span class="w">        </span>IMAGE<span class="w">               </span>COMMAND<span class="w">                  </span>CREATED<span class="w">             </span>STATUS<span class="w">              </span>PORTS<span class="w">                    </span>NAMES
-552954e73844<span class="w">        </span>mysql<span class="w">               </span><span class="s2">&quot;docker-entrypoint...&quot;</span><span class="w">   </span><span class="m">5</span><span class="w"> </span>minutes<span class="w"> </span>ago<span class="w">       </span>Up<span class="w"> </span><span class="m">5</span><span class="w"> </span>minutes<span class="w">        </span><span class="m">0</span>.0.0.0:3306-&gt;3306/tcp<span class="w">   </span>mysql_v5
+552954e73844<span class="w">        </span>mysql<span class="w">               </span><span class="s2">"docker-entrypoint..."</span><span class="w">   </span><span class="m">5</span><span class="w"> </span>minutes<span class="w"> </span>ago<span class="w">       </span>Up<span class="w"> </span><span class="m">5</span><span class="w"> </span>minutes<span class="w">        </span><span class="m">0</span>.0.0.0:3306-&gt;3306/tcp<span class="w">   </span>mysql_v5
 </pre></div>
 </div>
 <p>Note that this is running on port <cite>3306</cite>. Here is the command broken down:</p>
@@ -224,9 +224,9 @@ CONTAINER<span class="w"> </span>ID<span class="w">        </span>IMAGE<span cla
 </ul>
 <p>You can see which IP the MySQL container is running on via:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>docker<span class="w"> </span>inspect<span class="w"> </span>mysql_v5<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>IPAddress
-<span class="w">    </span><span class="s2">&quot;SecondaryIPAddresses&quot;</span>:<span class="w"> </span>null,
-<span class="w">    </span><span class="s2">&quot;IPAddress&quot;</span>:<span class="w"> </span><span class="s2">&quot;172.17.0.2&quot;</span>,
-<span class="w">            </span><span class="s2">&quot;IPAddress&quot;</span>:<span class="w"> </span><span class="s2">&quot;172.17.0.2&quot;</span>,
+<span class="w">    </span><span class="s2">"SecondaryIPAddresses"</span>:<span class="w"> </span>null,
+<span class="w">    </span><span class="s2">"IPAddress"</span>:<span class="w"> </span><span class="s2">"172.17.0.2"</span>,
+<span class="w">            </span><span class="s2">"IPAddress"</span>:<span class="w"> </span><span class="s2">"172.17.0.2"</span>,
 </pre></div>
 </div>
 <p>Both of these can be used to configure a graphical SQL client such as Heidi, MySQL Workbench or Sequel Pro.</p>
@@ -246,7 +246,7 @@ Oracle<span class="w"> </span>is<span class="w"> </span>a<span class="w"> </span
 affiliates.<span class="w"> </span>Other<span class="w"> </span>names<span class="w"> </span>may<span class="w"> </span>be<span class="w"> </span>trademarks<span class="w"> </span>of<span class="w"> </span>their<span class="w"> </span>respective
 owners.
 
-Type<span class="w"> </span><span class="s1">&#39;help;&#39;</span><span class="w"> </span>or<span class="w"> </span><span class="s1">&#39;\h&#39;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span>help.<span class="w"> </span>Type<span class="w"> </span><span class="s1">&#39;\c&#39;</span><span class="w"> </span>to<span class="w"> </span>clear<span class="w"> </span>the<span class="w"> </span>current<span class="w"> </span>input<span class="w"> </span>statement.
+Type<span class="w"> </span><span class="s1">'help;'</span><span class="w"> </span>or<span class="w"> </span><span class="s1">'\h'</span><span class="w"> </span><span class="k">for</span><span class="w"> </span>help.<span class="w"> </span>Type<span class="w"> </span><span class="s1">'\c'</span><span class="w"> </span>to<span class="w"> </span>clear<span class="w"> </span>the<span class="w"> </span>current<span class="w"> </span>input<span class="w"> </span>statement.
 
 mysql&gt;<span class="w"> </span>show<span class="w"> </span>databases<span class="p">;</span>
 +--------------------+
@@ -278,7 +278,7 @@ Server<span class="w"> </span>version:<span class="w"> </span><span class="m">5<
 
 Copyright<span class="w"> </span><span class="o">(</span>c<span class="o">)</span><span class="w"> </span><span class="m">2000</span>,<span class="w"> </span><span class="m">2017</span>,<span class="w"> </span>Oracle,<span class="w"> </span>MariaDB<span class="w"> </span>Corporation<span class="w"> </span>Ab<span class="w"> </span>and<span class="w"> </span>others.
 
-Type<span class="w"> </span><span class="s1">&#39;help;&#39;</span><span class="w"> </span>or<span class="w"> </span><span class="s1">&#39;\h&#39;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span>help.<span class="w"> </span>Type<span class="w"> </span><span class="s1">&#39;\c&#39;</span><span class="w"> </span>to<span class="w"> </span>clear<span class="w"> </span>the<span class="w"> </span>current<span class="w"> </span>input<span class="w"> </span>statement.
+Type<span class="w"> </span><span class="s1">'help;'</span><span class="w"> </span>or<span class="w"> </span><span class="s1">'\h'</span><span class="w"> </span><span class="k">for</span><span class="w"> </span>help.<span class="w"> </span>Type<span class="w"> </span><span class="s1">'\c'</span><span class="w"> </span>to<span class="w"> </span>clear<span class="w"> </span>the<span class="w"> </span>current<span class="w"> </span>input<span class="w"> </span>statement.
 
 MySQL<span class="w"> </span><span class="o">[(</span>none<span class="o">)]</span>&gt;<span class="w"> </span>show<span class="w"> </span>databases<span class="p">;</span>
 +--------------------+
@@ -307,7 +307,7 @@ Server<span class="w"> </span>version:<span class="w"> </span><span class="m">5<
 
 Copyright<span class="w"> </span><span class="o">(</span>c<span class="o">)</span><span class="w"> </span><span class="m">2000</span>,<span class="w"> </span><span class="m">2017</span>,<span class="w"> </span>Oracle,<span class="w"> </span>MariaDB<span class="w"> </span>Corporation<span class="w"> </span>Ab<span class="w"> </span>and<span class="w"> </span>others.
 
-Type<span class="w"> </span><span class="s1">&#39;help;&#39;</span><span class="w"> </span>or<span class="w"> </span><span class="s1">&#39;\h&#39;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span>help.<span class="w"> </span>Type<span class="w"> </span><span class="s1">&#39;\c&#39;</span><span class="w"> </span>to<span class="w"> </span>clear<span class="w"> </span>the<span class="w"> </span>current<span class="w"> </span>input<span class="w"> </span>statement.
+Type<span class="w"> </span><span class="s1">'help;'</span><span class="w"> </span>or<span class="w"> </span><span class="s1">'\h'</span><span class="w"> </span><span class="k">for</span><span class="w"> </span>help.<span class="w"> </span>Type<span class="w"> </span><span class="s1">'\c'</span><span class="w"> </span>to<span class="w"> </span>clear<span class="w"> </span>the<span class="w"> </span>current<span class="w"> </span>input<span class="w"> </span>statement.
 
 MySQL<span class="w"> </span><span class="o">[(</span>none<span class="o">)]</span>&gt;<span class="w"> </span>show<span class="w"> </span>databases<span class="p">;</span>
 +--------------------+

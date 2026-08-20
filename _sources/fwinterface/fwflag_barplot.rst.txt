@@ -15,10 +15,14 @@ Produce correlation barplots.
 Argument and Default Value
 ==========================
 
-None
+No argument. Boolean switch, default: ``False``.
 
 Details
 =======
+
+Runs the same correlation as :doc:`fwflag_correlate` and plots the top features per outcome (5 by default) as a bar chart via ``rFeaturePlot``. Output is written to :doc:`fwflag_output_name` if given, otherwise to a generated filename under ``--output_dir``.
+
+**Known issue:** as of this writing, ``oa.barPlot()`` does ``from rFeaturePlot import FeaturePlotter``, but no ``rFeaturePlot`` module or ``FeaturePlotter`` class exists anywhere in the ``dlatk`` package or its declared dependencies. Running ``--barplot`` currently always fails with ``ModuleNotFoundError: No module named 'rFeaturePlot'``.
 
 
 Other Switches
@@ -29,7 +33,7 @@ Required Switches:
 * :doc:`fwflag_outcomes`
 * :doc:`fwflag_outcome_table`
 * :doc:`fwflag_f`
-* :doc:`fwflag_feature_names`
+* :doc:`fwflag_feat_names`
 
 Example Commands
 ================

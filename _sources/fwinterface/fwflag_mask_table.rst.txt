@@ -1,0 +1,42 @@
+.. _fwflag_mask_table:
+==============
+--mask_table
+==============
+Switch
+======
+
+--mask_table TABLE
+
+Description
+===========
+
+A table indicating which groups belong to which "mask" (subset), for running :doc:`fwflag_ttest_feat_tables` separately within each mask rather than over all groups at once.
+
+Argument and Default Value
+==========================
+
+A table name. Default: ``None`` (no masking; one ttest run over all shared groups).
+
+Details
+=======
+
+Expected format: one column matching your :doc:`fwflag_c` group field, and one additional column per mask, with a ``1``/``0`` (or truthy) value marking whether each group belongs to that mask. A separate paired t-test is run per mask, intersected with the groups passing :doc:`fwflag_group_freq_thresh` in both feature tables.
+
+**Likely SQLite issue (not run):** ``FeatureGetter.ttestWithOtherFG()`` reads the mask table using ``mm.getTableColumnNameList()`` and ``mm.executeGetList()`` — calls straight into ``mysqlmethods``, bypassing the ``DataEngine``/``QueryBuilder`` abstraction that gives the rest of DLATK its SQLite support. This suggests ``--mask_table`` (and possibly all of ``--ttest_feat_tables``'s masking path) only works against a real MySQL connection. Not independently reproduced in SQLite mode — flagged from reading the source, not from a failing run.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_ttest_feat_tables`
+* :doc:`fwflag_group_freq_thresh`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id \
+	-f 'feat$1gram$msgs_before$user_id' 'feat$1gram$msgs_after$user_id' \
+	--ttest_feat_tables --group_freq_thresh 100 --mask_table region_masks

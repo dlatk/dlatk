@@ -1,0 +1,38 @@
+.. _fwflag_no_outcomes:
+=============
+--no_outcomes
+=============
+Switch
+======
+
+--no_outcomes
+
+Description
+===========
+
+Clears the outcome fields list, overriding any :doc:`fwflag_outcomes` set via an init file (:doc:`fwflag_from_file`).
+
+Argument and Default Value
+==========================
+
+No argument. Sets ``outcomefields`` to ``[]`` (``action='store_const', const=[]``).
+
+Details
+=======
+
+Useful when an init file already defines a default set of outcomes and you want to run a command with none, without editing the file. Command-line flag order matters with argparse ``store_const``: whichever of ``--no_outcomes`` / ``--outcomes`` is parsed last wins if both are given.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_from_file`
+* :doc:`fwflag_outcomes`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py --from_file ~/my_project.ini --no_outcomes --show_tables

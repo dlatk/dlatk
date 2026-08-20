@@ -15,8 +15,12 @@ Adds a Huggingface Transformer feature table.
 Argument and Default Value
 ==========================
 
+No argument. Boolean switch, default: ``False``.
+
 Details
 =======
+
+Alias for :doc:`fwflag_add_bert` (``--add_bert``, ``--add_embedding``); all three flags run the same code path, which extracts contextual embedding features for every message using a Huggingface Transformer model and aggregates them into a feature table, one row per group. The model defaults to ``bert-base-uncased`` (:doc:`fwflag_emb_model`) but any Huggingface model name works, e.g. ``roberta-base`` or ``distilbert-base-uncased``.
 
 Other Switches
 ==============

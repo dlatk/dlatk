@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -195,17 +195,17 @@
 <p>Output</p>
 <p>Per fold, you will get a bunch of things printed to stdout. See <a class="reference internal" href="fwflag_predict_classifiers.html"><span class="doc">--predict_classifiers</span></a> for explanations.</p>
 <p>At the end of the folds, you'll get something looking like this:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">{</span><span class="s1">&#39;gender&#39;</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;acc&#39;</span>:<span class="w"> </span><span class="m">0</span>.86367966775116722,
-<span class="w">                  </span><span class="s1">&#39;auc&#39;</span>:<span class="w"> </span><span class="m">0</span>.85393467507425691,
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">{</span><span class="s1">'gender'</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">'acc'</span>:<span class="w"> </span><span class="m">0</span>.86367966775116722,
+<span class="w">                  </span><span class="s1">'auc'</span>:<span class="w"> </span><span class="m">0</span>.85393467507425691,
 <span class="w">                  </span>...
 </pre></div>
 </div>
 <p>If there were controls included, you get</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">{</span><span class="s1">&#39;gender&#39;</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;acc&#39;</span>:<span class="w"> </span><span class="m">0</span>.898,
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">{</span><span class="s1">'gender'</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">'acc'</span>:<span class="w"> </span><span class="m">0</span>.898,
 <span class="w">                  </span>...<span class="o">}}</span>,
-<span class="w">         </span><span class="o">(</span><span class="s1">&#39;age&#39;</span>,<span class="o">)</span>:<span class="w"> </span><span class="o">{</span><span class="m">0</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;acc&#39;</span>:<span class="w"> </span><span class="m">0</span>.898,
+<span class="w">         </span><span class="o">(</span><span class="s1">'age'</span>,<span class="o">)</span>:<span class="w"> </span><span class="o">{</span><span class="m">0</span>:<span class="w"> </span><span class="o">{</span><span class="s1">'acc'</span>:<span class="w"> </span><span class="m">0</span>.898,
 <span class="w">                        </span>...<span class="o">}</span>,
-<span class="w">                    </span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;acc&#39;</span>:<span class="w"> </span><span class="m">0</span>.898,
+<span class="w">                    </span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">'acc'</span>:<span class="w"> </span><span class="m">0</span>.898,
 <span class="w">                        </span>...<span class="o">}}</span>
 <span class="o">}}</span>
 </pre></div>
@@ -236,9 +236,9 @@
 </section>
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Runs 10-fold cross validation on predicting the users&#39; genders from 1grams.</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Runs 10-fold cross validation on predicting the users' genders from 1grams.</span>
 <span class="c1"># This essentially will tell you how well your model &amp; features do at predicting gender.</span>
-dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$1gram$messages_en$user_id$16to16$0_01&#39;</span><span class="w"> </span><span class="se">\</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1gram$messages_en$user_id$16to16$0_01'</span><span class="w"> </span><span class="se">\</span>
 --outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>gender<span class="w"> </span>--combo_test_classifiers<span class="w"> </span>--model<span class="w"> </span>linear-svc<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span>
 </pre></div>
 </div>

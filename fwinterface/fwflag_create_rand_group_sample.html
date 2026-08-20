@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>--create_random_sample &mdash; DLATK 1.3.0 documentation</title>
+  <title>--create_rand_group_sample &mdash; DLATK 1.3.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" href="../_static/style.css" type="text/css" />
@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -162,7 +162,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">--create_random_sample</li>
+      <li class="breadcrumb-item active">--create_rand_group_sample</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/fwinterface/fwflag_create_rand_group_sample.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -172,35 +172,23 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="create-random-sample">
-<span id="fwflag-create-rand-sample"></span><h1>--create_random_sample<a class="headerlink" href="#create-random-sample" title="Link to this heading"></a></h1>
+  <section id="create-rand-group-sample">
+<span id="fwflag-create-rand-group-sample"></span><h1>--create_rand_group_sample<a class="headerlink" href="#create-rand-group-sample" title="Link to this heading"></a></h1>
 <section id="switch">
 <h2>Switch<a class="headerlink" href="#switch" title="Link to this heading"></a></h2>
-<p>--create_random_sample percentage [random_seed]</p>
+<p>Not a real switch.</p>
 </section>
 <section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h2>
-<p>Creates a new table with a random subset of rows from the table specified by <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a>. New table has <em>_rand</em> appended to the table name.</p>
-<p>You must specify the percentage of rows to keep. Optionally you can give a random seed, which is 42 by default.</p>
+<p><code class="docutils literal notranslate"><span class="pre">--create_rand_group_sample</span></code> does not exist in <code class="docutils literal notranslate"><span class="pre">dlatkInterface.py</span></code>. This page is a leftover duplicate of <a class="reference internal" href="fwflag_create_rand_sample.html"><span class="doc">--create_random_sample</span></a>; use <code class="docutils literal notranslate"><span class="pre">--create_random_sample</span></code>/<code class="docutils literal notranslate"><span class="pre">--create_rand_sample</span></code> instead.</p>
 </section>
-<section id="other-switches">
-<h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>
-<p>Required Switches:</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a></p></li>
-<li><p><a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a></p></li>
-</ul>
+<section id="argument-and-default-value">
+<h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
+<p>See <a class="reference internal" href="fwflag_create_rand_sample.html"><span class="doc">--create_random_sample</span></a>.</p>
 </section>
-<section id="example-commands">
-<h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
-<p>Example 1: create the table <em>msgs_rand</em> that contains a random 10% of the rows in <em>msgs</em>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>--create_random_sample<span class="w"> </span>.10
-</pre></div>
-</div>
-<p>Example 2: create the table <em>blog_outcomes_rand</em> that contains a random 10% of the rows in <em>blog_outcomes</em> with the random seed 567:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>blog_outcomes<span class="w"> </span>--create_random_sample<span class="w"> </span>.50<span class="w"> </span><span class="m">567</span>
-</pre></div>
-</div>
+<section id="details">
+<h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
+<p>See <a class="reference internal" href="fwflag_create_rand_sample.html"><span class="doc">--create_random_sample</span></a> for the real switch and its usage.</p>
 </section>
 </section>
 

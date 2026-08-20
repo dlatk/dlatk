@@ -15,11 +15,12 @@ Outputs a certain group's zScore for all feats, which group is determined by the
 Argument and Default Value
 ==========================
 
-none
+No argument. Boolean switch, default: ``False``.
 
 Details
 =======
 
+Used with :doc:`fwflag_correlate` in place of the default correlation metric; :doc:`fwflag_IDP` takes priority over this switch if both are given, and this switch takes priority over ``--AUC``. The single outcome in :doc:`fwflag_outcomes` must be boolean. For each feature, reports that feature's group-level value for the (first) group whose outcome is ``True`` — this is meant to represent that group's z-score relative to the rest of the population, so it is most useful when exactly one group has a ``True`` outcome.
 
 Other Switches
 ==============

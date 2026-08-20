@@ -1,0 +1,38 @@
+.. _fwflag_num_topic_words:
+===================
+--num_topic_words
+===================
+Switch
+======
+
+--num_topic_words N
+
+Description
+===========
+
+Number of top words to use as the label for each topic, in topic tagclouds and topic label maps.
+
+Argument and Default Value
+==========================
+
+An integer. Default: ``15`` (``dlac.DEF_MAX_TOP_TC_WORDS``).
+
+Details
+=======
+
+Used in several places: :doc:`fwflag_topic_tagcloud`/:doc:`fwflag_corp_topic_tagcloud` output (``maxWords``), :doc:`fwflag_make_topic_labelmap_lex` (``FeatureRefiner.makeTopicLabelMap(topiclexicon, numtopicwords, weightedlexicon)``), and topic wordcloud rendering (``wordcloud.makeLexiconTopicWordclouds(..., max_words=...)``).
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_topic_tagcloud`, :doc:`fwflag_corp_topic_tagcloud`, :doc:`fwflag_make_topic_labelmap_lex`, :doc:`fwflag_make_topic_wordclouds`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --topic_tagcloud --topic_lexicon met_a30_2000_freq_t50ll --num_topic_words 10

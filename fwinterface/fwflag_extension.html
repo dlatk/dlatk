@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -176,11 +176,19 @@
 <span id="fwflag-extension"></span><h1>--extension<a class="headerlink" href="#extension" title="Link to this heading"></a></h1>
 <section id="switch">
 <h2>Switch<a class="headerlink" href="#switch" title="Link to this heading"></a></h2>
-<p>--view_tables string</p>
+<p>--extension EXTENSION</p>
 </section>
 <section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h2>
 <p>String added to the end of the feature table name. Typical use case is when creating tables from non-standard word tables.</p>
+</section>
+<section id="argument-and-default-value">
+<h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
+<p>A string. Default: <code class="docutils literal notranslate"><span class="pre">None</span></code> (no extension added).</p>
+</section>
+<section id="details">
+<h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
+<p>Appended, with a leading <code class="docutils literal notranslate"><span class="pre">$</span></code>, to the generated feature table name so runs against a non-default <a class="reference internal" href="fwflag_word_table.html"><span class="doc">--word_table</span></a> don't collide with the table that would be produced from the default word table.</p>
 </section>
 <section id="other-switches">
 <h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>
@@ -193,7 +201,7 @@
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
 <p>Create the table <em>feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16$0_01</em> using a non-default word table <em>feat$1gram$msgs$16to16$0_01</em>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--add_lex_table<span class="w"> </span>-l<span class="w"> </span>met_a30_2000_cp<span class="w"> </span>--weighted_lexicon<span class="w"> </span>--extension<span class="w"> </span><span class="s1">&#39;0_01&#39;</span><span class="w"> </span>--word_table<span class="w"> </span><span class="s1">&#39;feat$1gram$msgs$16to16$0_01&#39;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--add_lex_table<span class="w"> </span>-l<span class="w"> </span>met_a30_2000_cp<span class="w"> </span>--weighted_lexicon<span class="w"> </span>--extension<span class="w"> </span><span class="s1">'0_01'</span><span class="w"> </span>--word_table<span class="w"> </span><span class="s1">'feat$1gram$msgs$16to16$0_01'</span>
 </pre></div>
 </div>
 </section>

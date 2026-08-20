@@ -47,7 +47,8 @@ Other important details:
 * Non-default words tables can be specified using the :doc:`fwflag_word_table` flag. 
 * If the group frequency threshold is set to zero then groups are queried from your message table (:doc:`fwflag_t`).
 * This flag is used in all non-feature extraction type DLATK commands, except for feature occurrence filtering (:doc:`../fwinterface/fwflag_feat_occ_filter`). 
-* For document (or message, sentence, very short text, etc.) analysis setting a group frequency threshold greater than zero can cause the MySQL server to time out. As a work around you can make sure no documents are empty and then set `--group_freq_thresh 0`. 
+* For document (or message, sentence, very short text, etc.) analysis setting a group frequency threshold greater than zero can cause the MySQL server to time out. As a work around you can make sure no documents are empty and then set `--group_freq_thresh 0`.
+* **Exception, verified:** :doc:`fwflag_ttest_feat_tables` treats ``0`` the same as "unset" (a plain ``if groupFreqThresh:`` check), so ``--group_freq_thresh 0`` there always fails with ``AssertionError: No groups passing frequency threshold``. A positive integer is required for that specific switch — see the Known issue on its page.
 
 
 Other Switches

@@ -1,0 +1,42 @@
+.. _fwflag_lex_log:
+==========
+--lex_log
+==========
+Switch
+======
+
+--lex_log
+
+Description
+===========
+
+Applies a log transformation (``log(x + 1)``) to the final lexicon/category value produced by :doc:`fwflag_add_lex_table` (or :doc:`fwflag_add_corp_lex_table`), as opposed to :doc:`fwflag_log` which transforms the underlying word/ngram frequencies that feed into that value.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False`` (no transform applied to the lexicon value).
+
+Details
+=======
+
+Verified: folds a suffix into the lexicon name portion of the table, joined with an underscore rather than a ``$``, e.g. ``feat$cat_met_a30_2000_cp_w_16to2$msgs$user_id`` for a weighted lexicon. The number is ``int(log(16 + 1))`` — truncated, not rounded — which is ``2``, not ``3``. See :doc:`fwflag_lex_sqrt` for the general naming mechanism.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_add_lex_table` or :doc:`fwflag_add_corp_lex_table`
+* :doc:`fwflag_l` LEX_TABLE
+
+Optional Switches:
+
+* :doc:`fwflag_lex_sqrt`, :doc:`fwflag_lex_boolean`, :doc:`fwflag_lex_anscombe` (mutually exclusive alternatives — only one lexicon value transform can be active at a time)
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_lex_table -l met_a30_2000_cp --weighted_lexicon --lex_log

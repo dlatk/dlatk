@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -181,6 +181,14 @@
 <section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h2>
 <p>Produces data for making topic Wordles. You must use a topic based feature table. For a NON topic based word cloud see <a class="reference internal" href="fwflag_tagcloud.html"><span class="doc">--tagcloud</span></a>.</p>
+</section>
+<section id="argument-and-default-value">
+<h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
+<p>No argument. Boolean switch, default: <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p>
+</section>
+<section id="details">
+<h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
+<p>Aliased as <code class="docutils literal notranslate"><span class="pre">--corp_topic_wordcloud</span></code>. Runs the exact same correlation and tagcloud-data pipeline as <a class="reference internal" href="fwflag_topic_tagcloud.html"><span class="doc">--topic_tagcloud</span></a>; the only difference is where the per-topic word lists come from for <a class="reference internal" href="fwflag_topic_lexicon.html"><span class="doc">--topic_lexicon</span></a> — this switch reads them from the corpus database (<code class="docutils literal notranslate"><span class="pre">-d</span></code>/<code class="docutils literal notranslate"><span class="pre">--corpdb</span></code>) instead of the separate lexicon database (<a class="reference internal" href="fwflag_lexicondb.html"><span class="doc">--lexicondb</span></a>). Use this when your topic lexicon lives in the same database as your corpus.</p>
 </section>
 <section id="other-switches">
 <h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>

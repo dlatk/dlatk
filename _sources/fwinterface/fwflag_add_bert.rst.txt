@@ -15,8 +15,14 @@ Adds a BERT feature table.
 Argument and Default Value
 ==========================
 
+No argument. Boolean switch, default: ``False``.
+
 Details
 =======
+
+Aliases: :doc:`fwflag_add_emb` (``--add_embedding``, ``--add_emb_feat``). Extracts contextual embedding features for every message using a Huggingface Transformer model (BERT by default) and aggregates them into a feature table, one row per group.
+
+By default this uses ``bert-base-uncased`` (:doc:`fwflag_bert_model`), the mean of the second-to-last layer (:doc:`fwflag_bert_layers`), and mean word/message aggregation (:doc:`fwflag_bert_msg_aggregation`). Use ``--batch_size`` (default 32) to change how many messages are embedded per GPU batch.
 
 Other Switches
 ==============

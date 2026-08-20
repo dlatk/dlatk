@@ -15,10 +15,14 @@ Produce histograms and boxplots for specified outcomes.
 Argument and Default Value
 ==========================
 
-None
+No argument. Boolean switch, default: ``False``.
 
 Details
 =======
+
+Writes one histogram (``<file>_<outcome>_hist.png``) and one boxplot (``<file>_<outcome>_box.png``) per outcome in :doc:`fwflag_outcomes`, using the raw values from :doc:`fwflag_outcome_table`. Files are written to :doc:`fwflag_output_name` if given, otherwise to a generated filename under ``--output_dir``. Useful as a sanity check on outcome distributions before running :doc:`fwflag_correlate` or a prediction workflow.
+
+**Known issue:** as of this writing, this switch calls ``StatsPlotter(args.corpdb)``, but ``StatsPlotter.__init__`` takes ``(heights=700, widths=700)`` — no database argument — so the corpus name is passed in as the plot height. It then calls ``sp.plotDescStats(outcome_to_values, len(groups), outputFile)`` against a signature of ``plotDescStats(dataDict, filename=None, n_breaks=None, ...)``, so the group count lands in ``filename`` and the real output path lands in ``n_breaks``. ``--descplot`` does not currently produce usable output.
 
 
 Other Switches

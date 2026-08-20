@@ -1,0 +1,42 @@
+.. _fwflag_probability_csv:
+===================
+--probability_csv
+===================
+Switch
+======
+
+--probability_csv
+
+Description
+===========
+
+Writes predicted class probabilities (rather than hard class labels) to a separate csv, for classification predictions. Aliased as ``--prob_csv``.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Used together with :doc:`fwflag_prediction_csv`: ``savePredictions = (args.pred_csv | args.prob_csv)`` gates whether predictions are saved at all, and the two together decide whether hard labels, probabilities, or both get written.
+
+Other Switches
+==============
+
+Required Switches:
+
+* One of the classification prediction switches, e.g. :doc:`fwflag_combo_test_classifiers`, :doc:`fwflag_predict_classifiers`
+
+Optional Switches:
+
+* :doc:`fwflag_prediction_csv`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes is_student --combo_test_classifiers --probability_csv --output_name ./out

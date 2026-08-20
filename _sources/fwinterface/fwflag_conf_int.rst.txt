@@ -1,0 +1,38 @@
+.. _fwflag_conf_int:
+============
+--conf_int
+============
+Switch
+======
+
+--conf_int BOOL
+
+Description
+===========
+
+Include a 95% confidence interval (``CI_l``, ``CI_u``) for each correlation in :doc:`fwflag_correlate` output.
+
+Argument and Default Value
+==========================
+
+A boolean (``True``/``False``). Default: ``True``.
+
+Details
+=======
+
+Verified: a plain ``--correlate --csv`` run with no flags given already includes ``CI_l``/``CI_u`` columns, confirming the default of ``True``. Note the argparse type is ``bool``, so on the command line ``--conf_int False`` does **not** disable it — Python's ``bool("False")`` is truthy (any non-empty string is ``True``); only an empty string argument would evaluate to ``False``. In practice there's no documented way to turn this off from the command line.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_correlate`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --correlate --csv

@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -213,13 +213,13 @@
 <p>These are two toy examples where we correlate language features with gender but only consider males. You probably don't want to do this in practice.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># run DLA over only males</span>
 dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span><span class="se">\</span>
---outcomes<span class="w"> </span>gender<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$1gram$msgs$user_id$16to16&#39;</span><span class="w"> </span>--correlate<span class="w"> </span>--where<span class="w"> </span><span class="s2">&quot;gender = 0&quot;</span><span class="w"> </span>--keep_low_variance
+--outcomes<span class="w"> </span>gender<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs$user_id$16to16'</span><span class="w"> </span>--correlate<span class="w"> </span>--where<span class="w"> </span><span class="s2">"gender = 0"</span><span class="w"> </span>--keep_low_variance
 </pre></div>
 </div>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># use 1grams to predict the gender of only males via 10-fold cross validation</span>
 dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span><span class="se">\</span>
---outcomes<span class="w"> </span>gender<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$1gram$msgs$user_id$16to16&#39;</span><span class="w"> </span>--combo_test_regression<span class="w"> </span><span class="se">\</span>
---folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--where<span class="w"> </span><span class="s2">&quot;gender = 0&quot;</span><span class="w"> </span>--keep_low_variance
+--outcomes<span class="w"> </span>gender<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs$user_id$16to16'</span><span class="w"> </span>--combo_test_regression<span class="w"> </span><span class="se">\</span>
+--folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--where<span class="w"> </span><span class="s2">"gender = 0"</span><span class="w"> </span>--keep_low_variance
 </pre></div>
 </div>
 </section>

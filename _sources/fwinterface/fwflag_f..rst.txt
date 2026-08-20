@@ -10,13 +10,13 @@ Feature table; usually given as -f.
 Description
 ===========
 
-null
+Not a real switch. ``-f.`` is how :doc:`fwflag_f` sometimes appears at the end of a sentence in prose documentation; this page exists so that notation resolves to something instead of a broken link.
 
 Argument and Default Value
 ==========================
 
-null
+See :doc:`fwflag_f`.
 
 Details
 =======
-Feature table; usually given as :doc:`fwflag_f`. 
+Feature table; usually given as :doc:`fwflag_f`.

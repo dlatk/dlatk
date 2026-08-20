@@ -1,0 +1,39 @@
+.. _fwflag_sample1:
+==========
+--sample1
+==========
+Switch
+======
+
+--sample1 GROUP [GROUP ...]
+
+Description
+===========
+
+The first group of group-ids to use in a :doc:`fwflag_comparative_tagcloud` comparison.
+
+Argument and Default Value
+==========================
+
+One or more group-id values (matching your :doc:`fwflag_c` field), or ``*`` to mean all groups in the feature table. Default: ``[]``.
+
+Details
+=======
+
+Both ``--sample1`` and :doc:`fwflag_sample2` must be given for :doc:`fwflag_comparative_tagcloud` to run at all — see the Known-required note on that page.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_comparative_tagcloud`
+* :doc:`fwflag_sample2`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--comparative_tagcloud --sample1 user123 user456 --sample2 user789 user321 --make_wordclouds

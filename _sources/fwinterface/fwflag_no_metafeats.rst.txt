@@ -15,10 +15,12 @@ If given, do not extract meta features (word, message length) with ngrams.
 Argument and Default Value
 ==========================
 
-None
+No argument. Sets ``metafeats`` to ``False``; default (flag absent) is ``True``.
 
 Details
 =======
+
+By default, :doc:`fwflag_add_ngrams` produces both the n-gram table (e.g. ``feat$1gram$...``) and a parallel meta-features table (``feat$meta_1gram$...``) with word/message-length statistics. Passing this switch skips creation of the meta table.
 
 
 Other Switches

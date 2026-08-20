@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -181,7 +181,7 @@
 <h3>Prediction<a class="headerlink" href="#prediction" title="Link to this heading"></a></h3>
 <p>Next, we will try predicting age and gender with the above features. Since age is a continuous variable and gender binary we will use two different methods. We begin with predicting age. Here is the basic command for prediction:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span><span class="se">\</span>
--f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra&#39;</span><span class="w"> </span><span class="s1">&#39;feat$1gram$msgs_xxx$user_id&#39;</span><span class="w"> </span><span class="se">\</span>
+-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra'</span><span class="w"> </span><span class="s1">'feat$1gram$msgs_xxx$user_id'</span><span class="w"> </span><span class="se">\</span>
 --outcome_table<span class="w"> </span>blog_outcomes<span class="w">  </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span><span class="se">\</span>
 --outcomes<span class="w"> </span>age<span class="w"> </span>--output_name<span class="w"> </span>xxx_age_output<span class="w">  </span><span class="se">\</span>
 --nfold_test_regression<span class="w"> </span>--model<span class="w"> </span>ridgecv<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span>
@@ -222,34 +222,34 @@ predict:<span class="w"> </span>regression<span class="w"> </span>intercept:<spa
 </div>
 <p>which is the average score over all folds.</p>
 <p>Finally, once each outcome is finished, you will see the following output (only if --prediction_csv is NOT used):</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">{</span><span class="s1">&#39;age&#39;</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;N&#39;</span>:<span class="w"> </span><span class="m">499</span>,
-<span class="w">                </span><span class="s1">&#39;R&#39;</span>:<span class="w"> </span><span class="m">0</span>.54865313166717689,
-<span class="w">                </span><span class="s1">&#39;R2&#39;</span>:<span class="w"> </span><span class="m">0</span>.3010202588882005,
-<span class="w">                </span><span class="s1">&#39;R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.3136392251334551,
-<span class="w">                </span><span class="s1">&#39;mae&#39;</span>:<span class="w"> </span><span class="m">5</span>.5102667175760027,
-<span class="w">                </span><span class="s1">&#39;mae_folds&#39;</span>:<span class="w"> </span><span class="m">5</span>.4962114905936383,
-<span class="w">                </span><span class="s1">&#39;mse&#39;</span>:<span class="w"> </span><span class="m">77</span>.727807054395043,
-<span class="w">                </span><span class="s1">&#39;mse_folds&#39;</span>:<span class="w"> </span><span class="m">76</span>.30786952879339,
-<span class="w">                </span><span class="s1">&#39;num_features&#39;</span>:<span class="w"> </span><span class="m">67558</span>,
-<span class="w">                </span><span class="s1">&#39;r&#39;</span>:<span class="w"> </span><span class="m">0</span>.64961384918228648,
-<span class="w">                </span><span class="s1">&#39;r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.68141019974698003,
-<span class="w">                </span><span class="s1">&#39;r_p&#39;</span>:<span class="w"> </span><span class="m">3</span>.7941701177133611e-61,
-<span class="w">                </span><span class="s1">&#39;r_p_folds&#39;</span>:<span class="w"> </span><span class="m">1</span>.4329061542488414e-05,
-<span class="w">                </span><span class="s1">&#39;rho&#39;</span>:<span class="w"> </span><span class="m">0</span>.72770801319050482,
-<span class="w">                </span><span class="s1">&#39;rho_p&#39;</span>:<span class="w"> </span><span class="m">2</span>.034045921063826e-83,
-<span class="w">                </span><span class="s1">&#39;se_R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.022425595182743487,
-<span class="w">                </span><span class="s1">&#39;se_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.31528063131662087,
-<span class="w">                </span><span class="s1">&#39;se_mse_folds&#39;</span>:<span class="w"> </span><span class="m">13</span>.616220914873225,
-<span class="w">                </span><span class="s1">&#39;se_r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.024241974166569567,
-<span class="w">                </span><span class="s1">&#39;se_r_p_folds&#39;</span>:<span class="w"> </span><span class="m">1</span>.1915221687336874e-05,
-<span class="w">                </span><span class="s1">&#39;se_train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.39617060533142334,
-<span class="w">                </span><span class="s1">&#39;test_size&#39;</span>:<span class="w"> </span><span class="m">58</span>,
-<span class="w">                </span><span class="s1">&#39;train_mean_mae&#39;</span>:<span class="w"> </span><span class="m">2</span>.6128928956045994,
-<span class="w">                </span><span class="s1">&#39;train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">7</span>.2689576980217385,
-<span class="w">                </span><span class="s1">&#39;train_size&#39;</span>:<span class="w"> </span><span class="m">441</span>,
-<span class="w">                </span><span class="s1">&#39;{modelFS_desc}&#39;</span>:<span class="w"> </span><span class="s1">&#39;None&#39;</span>,
-<span class="w">                </span><span class="s1">&#39;{model_desc}&#39;</span>:<span class="w"> </span><span class="s1">&#39;RidgeCV(alphas=array([  1000,  10000, 100000, 1000000]), cv=None,</span>
-<span class="s1">                     fit_intercept=True, gcv_mode=None, normalize=False, scoring=None,   store_cv_values=False)&#39;</span><span class="o">}}}</span>,
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">{</span><span class="s1">'age'</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">'N'</span>:<span class="w"> </span><span class="m">499</span>,
+<span class="w">                </span><span class="s1">'R'</span>:<span class="w"> </span><span class="m">0</span>.54865313166717689,
+<span class="w">                </span><span class="s1">'R2'</span>:<span class="w"> </span><span class="m">0</span>.3010202588882005,
+<span class="w">                </span><span class="s1">'R2_folds'</span>:<span class="w"> </span><span class="m">0</span>.3136392251334551,
+<span class="w">                </span><span class="s1">'mae'</span>:<span class="w"> </span><span class="m">5</span>.5102667175760027,
+<span class="w">                </span><span class="s1">'mae_folds'</span>:<span class="w"> </span><span class="m">5</span>.4962114905936383,
+<span class="w">                </span><span class="s1">'mse'</span>:<span class="w"> </span><span class="m">77</span>.727807054395043,
+<span class="w">                </span><span class="s1">'mse_folds'</span>:<span class="w"> </span><span class="m">76</span>.30786952879339,
+<span class="w">                </span><span class="s1">'num_features'</span>:<span class="w"> </span><span class="m">67558</span>,
+<span class="w">                </span><span class="s1">'r'</span>:<span class="w"> </span><span class="m">0</span>.64961384918228648,
+<span class="w">                </span><span class="s1">'r_folds'</span>:<span class="w"> </span><span class="m">0</span>.68141019974698003,
+<span class="w">                </span><span class="s1">'r_p'</span>:<span class="w"> </span><span class="m">3</span>.7941701177133611e-61,
+<span class="w">                </span><span class="s1">'r_p_folds'</span>:<span class="w"> </span><span class="m">1</span>.4329061542488414e-05,
+<span class="w">                </span><span class="s1">'rho'</span>:<span class="w"> </span><span class="m">0</span>.72770801319050482,
+<span class="w">                </span><span class="s1">'rho_p'</span>:<span class="w"> </span><span class="m">2</span>.034045921063826e-83,
+<span class="w">                </span><span class="s1">'se_R2_folds'</span>:<span class="w"> </span><span class="m">0</span>.022425595182743487,
+<span class="w">                </span><span class="s1">'se_mae_folds'</span>:<span class="w"> </span><span class="m">0</span>.31528063131662087,
+<span class="w">                </span><span class="s1">'se_mse_folds'</span>:<span class="w"> </span><span class="m">13</span>.616220914873225,
+<span class="w">                </span><span class="s1">'se_r_folds'</span>:<span class="w"> </span><span class="m">0</span>.024241974166569567,
+<span class="w">                </span><span class="s1">'se_r_p_folds'</span>:<span class="w"> </span><span class="m">1</span>.1915221687336874e-05,
+<span class="w">                </span><span class="s1">'se_train_mean_mae_folds'</span>:<span class="w"> </span><span class="m">0</span>.39617060533142334,
+<span class="w">                </span><span class="s1">'test_size'</span>:<span class="w"> </span><span class="m">58</span>,
+<span class="w">                </span><span class="s1">'train_mean_mae'</span>:<span class="w"> </span><span class="m">2</span>.6128928956045994,
+<span class="w">                </span><span class="s1">'train_mean_mae_folds'</span>:<span class="w"> </span><span class="m">7</span>.2689576980217385,
+<span class="w">                </span><span class="s1">'train_size'</span>:<span class="w"> </span><span class="m">441</span>,
+<span class="w">                </span><span class="s1">'{modelFS_desc}'</span>:<span class="w"> </span><span class="s1">'None'</span>,
+<span class="w">                </span><span class="s1">'{model_desc}'</span>:<span class="w"> </span><span class="s1">'RidgeCV(alphas=array([  1000,  10000, 100000, 1000000]), cv=None,</span>
+<span class="s1">                     fit_intercept=True, gcv_mode=None, normalize=False, scoring=None,   store_cv_values=False)'</span><span class="o">}}}</span>,
 </pre></div>
 </div>
 <p>The prediction_csv command will produce a csv file called xxx_age_output.predicted_data.csv which includes prediction scores for each outcome and each group_id:</p>
@@ -267,7 +267,7 @@ e571dcc7fa1a6f1ebb1aba8d05d39b5c,23.937405646479284
 <h3>Classification<a class="headerlink" href="#classification" title="Link to this heading"></a></h3>
 <p>Next, we will predict gender. Since this is a binary outcome we switch to classification via logistic regression. Here is the command:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span><span class="se">\</span>
--f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra&#39;</span><span class="w"> </span><span class="s1">&#39;feat$1gram$msgs_xxx$user_id$16to16&#39;</span><span class="w"> </span><span class="se">\</span>
+-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra'</span><span class="w"> </span><span class="s1">'feat$1gram$msgs_xxx$user_id$16to16'</span><span class="w"> </span><span class="se">\</span>
 --outcome_table<span class="w"> </span>blog_outcomes<span class="w">  </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w">   </span><span class="se">\</span>
 --outcomes<span class="w"> </span>gender<span class="w"> </span>--output_name<span class="w"> </span>xxx_gender_output<span class="w"> </span><span class="se">\</span>
 --nfold_test_classifiers<span class="w"> </span>--model<span class="w"> </span>lr<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w">  </span>--prediction_csv
@@ -292,41 +292,41 @@ avg<span class="w"> </span>/<span class="w"> </span>total<span class="w">       
 </pre></div>
 </div>
 <p>At the end of the K folds you will see the output:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">{</span><span class="s1">&#39;gender&#39;</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;acc&#39;</span>:<span class="w"> </span><span class="m">0</span>.73199999999999998,
-<span class="w">                   </span><span class="s1">&#39;auc&#39;</span>:<span class="w"> </span><span class="m">0</span>.84652080652080652,
-<span class="w">                   </span><span class="s1">&#39;f1&#39;</span>:<span class="w"> </span><span class="m">0</span>.75985663082437271,
-<span class="w">                   </span><span class="s1">&#39;folds_acc&#39;</span>:<span class="w"> </span><span class="m">0</span>.73199999999999998,
-<span class="w">                   </span><span class="s1">&#39;folds_auc&#39;</span>:<span class="w"> </span><span class="m">0</span>.84338861809425469,
-<span class="w">                   </span><span class="s1">&#39;folds_f1&#39;</span>:<span class="w"> </span><span class="m">0</span>.7577487943864093,
-<span class="w">                   </span><span class="s1">&#39;folds_mfclass_acc&#39;</span>:<span class="w"> </span><span class="m">0</span>.63000000000000012,
-<span class="w">                   </span><span class="s1">&#39;folds_precision&#39;</span>:<span class="w"> </span><span class="m">0</span>.87205025089102173,
-<span class="w">                   </span><span class="s1">&#39;folds_recall&#39;</span>:<span class="w"> </span><span class="m">0</span>.67282259377235909,
-<span class="w">                   </span><span class="s1">&#39;folds_rho&#39;</span>:<span class="w"> </span><span class="m">0</span>.47423319603178121,
-<span class="w">                   </span><span class="s1">&#39;folds_rho-p&#39;</span>:<span class="w"> </span><span class="m">0</span>.0059028924590036405,
-<span class="w">                   </span><span class="s1">&#39;folds_se_acc&#39;</span>:<span class="w"> </span><span class="m">0</span>.020823064135712589,
-<span class="w">                   </span><span class="s1">&#39;folds_se_auc&#39;</span>:<span class="w"> </span><span class="m">0</span>.015851020617975636,
-<span class="w">                   </span><span class="s1">&#39;folds_se_f1&#39;</span>:<span class="w"> </span><span class="m">0</span>.017977732950626615,
-<span class="w">                   </span><span class="s1">&#39;folds_se_mfclass_acc&#39;</span>:<span class="w"> </span><span class="m">0</span>.03408812109811863,
-<span class="w">                   </span><span class="s1">&#39;folds_se_precision&#39;</span>:<span class="w"> </span><span class="m">0</span>.023172378772080934,
-<span class="w">                   </span><span class="s1">&#39;folds_se_recall&#39;</span>:<span class="w"> </span><span class="m">0</span>.01997606345512792,
-<span class="w">                   </span><span class="s1">&#39;folds_se_rho&#39;</span>:<span class="w"> </span><span class="m">0</span>.041178583963528741,
-<span class="w">                   </span><span class="s1">&#39;folds_se_rho-p&#39;</span>:<span class="w"> </span><span class="m">0</span>.0024991387176062363,
-<span class="w">                   </span><span class="s1">&#39;mfclass&#39;</span>:<span class="w"> </span><span class="s1">&#39;1&#39;</span>,
-<span class="w">                   </span><span class="s1">&#39;mfclass_acc&#39;</span>:<span class="w"> </span><span class="m">0</span>.63,
-<span class="w">                   </span><span class="s1">&#39;num_classes&#39;</span>:<span class="w"> </span><span class="s1">&#39;2&#39;</span>,
-<span class="w">                   </span><span class="s1">&#39;num_features&#39;</span>:<span class="w"> </span><span class="m">67593</span>,
-<span class="w">                   </span><span class="s1">&#39;predictions&#39;</span>:<span class="w"> </span><span class="o">{</span>u<span class="s1">&#39;003ae43fae340174a67ffbcf19da1549&#39;</span>:<span class="w"> </span><span class="m">0</span>,
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">{</span><span class="s1">'gender'</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">'acc'</span>:<span class="w"> </span><span class="m">0</span>.73199999999999998,
+<span class="w">                   </span><span class="s1">'auc'</span>:<span class="w"> </span><span class="m">0</span>.84652080652080652,
+<span class="w">                   </span><span class="s1">'f1'</span>:<span class="w"> </span><span class="m">0</span>.75985663082437271,
+<span class="w">                   </span><span class="s1">'folds_acc'</span>:<span class="w"> </span><span class="m">0</span>.73199999999999998,
+<span class="w">                   </span><span class="s1">'folds_auc'</span>:<span class="w"> </span><span class="m">0</span>.84338861809425469,
+<span class="w">                   </span><span class="s1">'folds_f1'</span>:<span class="w"> </span><span class="m">0</span>.7577487943864093,
+<span class="w">                   </span><span class="s1">'folds_mfclass_acc'</span>:<span class="w"> </span><span class="m">0</span>.63000000000000012,
+<span class="w">                   </span><span class="s1">'folds_precision'</span>:<span class="w"> </span><span class="m">0</span>.87205025089102173,
+<span class="w">                   </span><span class="s1">'folds_recall'</span>:<span class="w"> </span><span class="m">0</span>.67282259377235909,
+<span class="w">                   </span><span class="s1">'folds_rho'</span>:<span class="w"> </span><span class="m">0</span>.47423319603178121,
+<span class="w">                   </span><span class="s1">'folds_rho-p'</span>:<span class="w"> </span><span class="m">0</span>.0059028924590036405,
+<span class="w">                   </span><span class="s1">'folds_se_acc'</span>:<span class="w"> </span><span class="m">0</span>.020823064135712589,
+<span class="w">                   </span><span class="s1">'folds_se_auc'</span>:<span class="w"> </span><span class="m">0</span>.015851020617975636,
+<span class="w">                   </span><span class="s1">'folds_se_f1'</span>:<span class="w"> </span><span class="m">0</span>.017977732950626615,
+<span class="w">                   </span><span class="s1">'folds_se_mfclass_acc'</span>:<span class="w"> </span><span class="m">0</span>.03408812109811863,
+<span class="w">                   </span><span class="s1">'folds_se_precision'</span>:<span class="w"> </span><span class="m">0</span>.023172378772080934,
+<span class="w">                   </span><span class="s1">'folds_se_recall'</span>:<span class="w"> </span><span class="m">0</span>.01997606345512792,
+<span class="w">                   </span><span class="s1">'folds_se_rho'</span>:<span class="w"> </span><span class="m">0</span>.041178583963528741,
+<span class="w">                   </span><span class="s1">'folds_se_rho-p'</span>:<span class="w"> </span><span class="m">0</span>.0024991387176062363,
+<span class="w">                   </span><span class="s1">'mfclass'</span>:<span class="w"> </span><span class="s1">'1'</span>,
+<span class="w">                   </span><span class="s1">'mfclass_acc'</span>:<span class="w"> </span><span class="m">0</span>.63,
+<span class="w">                   </span><span class="s1">'num_classes'</span>:<span class="w"> </span><span class="s1">'2'</span>,
+<span class="w">                   </span><span class="s1">'num_features'</span>:<span class="w"> </span><span class="m">67593</span>,
+<span class="w">                   </span><span class="s1">'predictions'</span>:<span class="w"> </span><span class="o">{</span>u<span class="s1">'003ae43fae340174a67ffbcf19da1549'</span>:<span class="w"> </span><span class="m">0</span>,
 <span class="w">                                    </span>...<span class="o">}</span>
-<span class="w">                   </span><span class="s1">&#39;test_size&#39;</span>:<span class="w"> </span><span class="m">50</span>,
-<span class="w">                   </span><span class="s1">&#39;train_size&#39;</span>:<span class="w"> </span><span class="m">450</span>,
-<span class="w">                   </span><span class="s1">&#39;{modelFS_desc}&#39;</span>:<span class="w"> </span><span class="s2">&quot;Pipeline(steps=[(&#39;1_univariate_select&#39;,</span>
+<span class="w">                   </span><span class="s1">'test_size'</span>:<span class="w"> </span><span class="m">50</span>,
+<span class="w">                   </span><span class="s1">'train_size'</span>:<span class="w"> </span><span class="m">450</span>,
+<span class="w">                   </span><span class="s1">'{modelFS_desc}'</span>:<span class="w"> </span><span class="s2">"Pipeline(steps=[('1_univariate_select',</span>
 <span class="s2">                         SelectFwe(alpha=30.0, score_func=&lt;function f_classif at 0x7ff58b5bfcf8&gt;)),</span>
-<span class="s2">                         (&#39;2_rpca&#39;, RandomizedPCA(copy=True, iterated_power=3, n_components=200, random_state=42,</span>
-<span class="s2">                         whiten=False))])&quot;</span>,
-<span class="w">                   </span><span class="s1">&#39;{model_desc}&#39;</span>:<span class="w"> </span><span class="s2">&quot;LogisticRegression(C=0.01, class_weight=None, dual=False, fit_intercept=True,</span>
-<span class="s2">                         intercept_scaling=1, max_iter=100, multi_class=&#39;ovr&#39;, n_jobs=1,</span>
-<span class="s2">                         penalty=&#39;l1&#39;, random_state=None, solver=&#39;liblinear&#39;, tol=0.0001,</span>
-<span class="s2">                         verbose=0, warm_start=False)&quot;</span><span class="o">}}}}</span>
+<span class="s2">                         ('2_rpca', RandomizedPCA(copy=True, iterated_power=3, n_components=200, random_state=42,</span>
+<span class="s2">                         whiten=False))])"</span>,
+<span class="w">                   </span><span class="s1">'{model_desc}'</span>:<span class="w"> </span><span class="s2">"LogisticRegression(C=0.01, class_weight=None, dual=False, fit_intercept=True,</span>
+<span class="s2">                         intercept_scaling=1, max_iter=100, multi_class='ovr', n_jobs=1,</span>
+<span class="s2">                         penalty='l1', random_state=None, solver='liblinear', tol=0.0001,</span>
+<span class="s2">                         verbose=0, warm_start=False)"</span><span class="o">}}}}</span>
 </pre></div>
 </div>
 <p>Finally, the prediction_csv command will produce a csv file called xxx_age_output.predicted_data.csv which includes prediction scores for each outcome and each group_id:</p>

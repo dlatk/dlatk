@@ -1,0 +1,38 @@
+.. _fwflag_colloc_column:
+=================
+--colloc_column
+=================
+Switch
+======
+
+--colloc_column COLUMN
+
+Description
+===========
+
+Column in :doc:`fwflag_colloc_table` that holds the collocation text, used when extracting features with :doc:`fwflag_use_collocs`.
+
+Argument and Default Value
+==========================
+
+A column name. Default: ``"feat"`` (``dlac.DEF_COLUMN_COLLOC``).
+
+Details
+=======
+
+Passed straight through to ``FeatureExtractor._getCollocsFromTable(colloc_table, pmi_threshold, colloc_column, ...)``, which selects collocation strings from this column, filtered by :doc:`fwflag_set_pmi_threshold` (or :doc:`fwflag_colloc_pmi_thresh`). Only relevant if your collocation table uses a non-default column name.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_use_collocs`
+* :doc:`fwflag_colloc_table`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --use_collocs --colloc_table my_collocs --colloc_column collocation

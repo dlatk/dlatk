@@ -15,11 +15,12 @@ Uses Informative Dirichlet Prior (see references) in correlations with binary ou
 Argument and Default Value
 ==========================
 
-None
+No argument. Boolean switch, default: ``False``.
 
 Details
 =======
 
+When set, :doc:`fwflag_correlate` computes group-level associations with ``oa.IDP_correlate`` instead of the standard Pearson/Spearman path. Only one metric switch is used per run: :doc:`fwflag_IDP` is checked before :doc:`fwflag_zScoreGroup` and :doc:`fwflag_AUC`; if none of those three are given, :doc:`fwflag_correlate` falls back to its default regression/correlation logic, which separately chooses between :doc:`fwflag_logistic_reg`, :doc:`fwflag_cohens_d`, :doc:`fwflag_spearman`, or Pearson R.
 
 Other Switches
 ==============

@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -183,6 +183,14 @@
 <p>See all available non-feature tables in a given database</p>
 <p>SQL style wildcards ('%') will work with the optional <em>like</em> argument</p>
 </section>
+<section id="argument-and-default-value">
+<h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
+<p>An optional SQL <code class="docutils literal notranslate"><span class="pre">LIKE</span></code>-style pattern string. Default: <code class="docutils literal notranslate"><span class="pre">False</span></code> when the flag is absent; <code class="docutils literal notranslate"><span class="pre">True</span></code> (matches everything) when given with no pattern.</p>
+</section>
+<section id="details">
+<h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
+<p>Runs a MySQL <code class="docutils literal notranslate"><span class="pre">SHOW</span> <span class="pre">TABLES</span> <span class="pre">[LIKE</span> <span class="pre">'pattern']</span></code> against <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> and prints the results; excludes feature tables, which are listed separately by <a class="reference internal" href="fwflag_ls.html"><span class="doc">--show_feature_tables</span></a>. This is a read-only inspection switch.</p>
+</section>
 <section id="other-switches">
 <h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>
 <p>Required Switches:</p>
@@ -204,7 +212,7 @@ msgs_rand
 </pre></div>
 </div>
 <p>Show all non-feature tables that begin with <em>blog</em>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w">  </span>--show_tables<span class="w"> </span><span class="s1">&#39;blog%&#39;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w">  </span>--show_tables<span class="w"> </span><span class="s1">'blog%'</span>
 
 Found<span class="w"> </span><span class="m">2</span><span class="w"> </span>available<span class="w"> </span>tables
 blog_outcomes

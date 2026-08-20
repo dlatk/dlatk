@@ -1,0 +1,39 @@
+.. _fwflag_min_abs_effect_size:
+======================
+--min_abs_effect_size
+======================
+Switch
+======
+
+--min_abs_effect_size R
+
+Description
+===========
+
+Minimum absolute effect size (correlation magnitude) a feature must have to be included in topic tagcloud output. Aliased as ``--min_es``.
+
+Argument and Default Value
+==========================
+
+A float. Default: ``0.0`` (no filtering).
+
+Details
+=======
+
+Passed as ``minAbsEffectSize`` to ``oa.printTopicTagCloudData()`` — only affects :doc:`fwflag_topic_tagcloud`/:doc:`fwflag_corp_topic_tagcloud` output, not the plain :doc:`fwflag_tagcloud`.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_topic_tagcloud` or :doc:`fwflag_corp_topic_tagcloud`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --topic_tagcloud --topic_lexicon met_a30_2000_freq_t50ll \
+	--min_abs_effect_size 0.05

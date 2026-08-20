@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -182,6 +182,14 @@
 <h2>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h2>
 <p>Show data from MySQL tables. Will print the first five rows of the tables specified by <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a>, <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> and <a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a> if any of those flags are present. Also takes optional positional arguments and prints the description of those tables as well.</p>
 </section>
+<section id="argument-and-default-value">
+<h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
+<p>Zero or more table names as positional arguments. Default: <code class="docutils literal notranslate"><span class="pre">False</span></code> (not given).</p>
+</section>
+<section id="details">
+<h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
+<p>Runs <code class="docutils literal notranslate"><span class="pre">SELECT</span> <span class="pre">*</span> <span class="pre">...</span> <span class="pre">LIMIT</span> <span class="pre">5</span></code> on each table and prints the result; this is a read-only inspection switch and does not modify any tables. Aliased as <code class="docutils literal notranslate"><span class="pre">--view_data</span></code>. For column-level descriptions instead of sample rows, see <a class="reference internal" href="fwflag_desc_tables.html"><span class="doc">--describe_tables</span></a>.</p>
+</section>
 <section id="other-switches">
 <h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>
 <p>Required Switches:</p>
@@ -200,12 +208,12 @@
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">   </span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>--view_tables
 <span class="w">   </span>...
 <span class="w">   </span>SQL<span class="w"> </span>QUERY:<span class="w"> </span><span class="k">select</span><span class="w"> </span>column_name<span class="w"> </span>from<span class="w"> </span>information_schema.columns
-<span class="w">       </span>where<span class="w"> </span><span class="nv">table_schema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;dla_tutorial&#39;</span><span class="w"> </span>and<span class="w"> </span><span class="nv">table_name</span><span class="o">=</span><span class="s1">&#39;msgs&#39;</span>
+<span class="w">       </span>where<span class="w"> </span><span class="nv">table_schema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'dla_tutorial'</span><span class="w"> </span>and<span class="w"> </span><span class="nv">table_name</span><span class="o">=</span><span class="s1">'msgs'</span>
 <span class="w">   </span>SQL<span class="w"> </span>QUERY:<span class="w"> </span>SELECT<span class="w"> </span>*<span class="w"> </span>FROM<span class="w"> </span>msgs<span class="w"> </span>LIMIT<span class="w"> </span><span class="m">5</span>
 message_id<span class="w">        </span>user_id<span class="w">           </span>date<span class="w">   </span>created_time<span class="w">        </span>message
 <span class="w">         </span><span class="m">1</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">31</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-31<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>can<span class="w"> </span>you<span class="w"> </span>bel
 <span class="w">         </span><span class="m">2</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">25</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-25<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>miss<span class="w"> </span>su<span class="w">  </span>us
-<span class="w">         </span><span class="m">3</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">24</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-24<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>i<span class="err">&#39;</span>m<span class="w"> </span>lookin
+<span class="w">         </span><span class="m">3</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">24</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-24<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>i<span class="err">'</span>m<span class="w"> </span>lookin
 <span class="w">         </span><span class="m">4</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">24</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-24<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>what<span class="w"> </span>a<span class="w"> </span><span class="nb">time</span>
 <span class="w">         </span><span class="m">5</span><span class="w">        </span><span class="m">3991108</span><span class="w"> </span><span class="m">01</span>,August,2004<span class="w"> </span><span class="m">2004</span>-08-01<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>i<span class="w"> </span>cannot<span class="w"> </span>be
 </pre></div>
@@ -213,17 +221,17 @@ message_id<span class="w">        </span>user_id<span class="w">           </spa
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">   </span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>--view_tables<span class="w"> </span>blog_outcomes
 <span class="w">   </span>...
 <span class="w">   </span>SQL<span class="w"> </span>QUERY:<span class="w"> </span><span class="k">select</span><span class="w"> </span>column_name<span class="w"> </span>from<span class="w"> </span>information_schema.columns
-<span class="w">       </span>where<span class="w"> </span><span class="nv">table_schema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;dla_tutorial&#39;</span><span class="w"> </span>and<span class="w"> </span><span class="nv">table_name</span><span class="o">=</span><span class="s1">&#39;msgs&#39;</span>
+<span class="w">       </span>where<span class="w"> </span><span class="nv">table_schema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'dla_tutorial'</span><span class="w"> </span>and<span class="w"> </span><span class="nv">table_name</span><span class="o">=</span><span class="s1">'msgs'</span>
 <span class="w">   </span>SQL<span class="w"> </span>QUERY:<span class="w"> </span>SELECT<span class="w"> </span>*<span class="w"> </span>FROM<span class="w"> </span>msgs<span class="w"> </span>LIMIT<span class="w"> </span><span class="m">5</span>
 message_id<span class="w">        </span>user_id<span class="w">           </span>date<span class="w">   </span>created_time<span class="w">        </span>message
 <span class="w">         </span><span class="m">1</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">31</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-31<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>can<span class="w"> </span>you<span class="w"> </span>bel
 <span class="w">         </span><span class="m">2</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">25</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-25<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>miss<span class="w"> </span>su<span class="w">  </span>us
-<span class="w">         </span><span class="m">3</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">24</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-24<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>i<span class="s1">&#39;m lookin</span>
+<span class="w">         </span><span class="m">3</span><span class="w">        </span><span class="m">3991108</span><span class="w">   </span><span class="m">24</span>,July,2004<span class="w"> </span><span class="m">2004</span>-07-24<span class="w"> </span><span class="m">00</span>:<span class="w">    </span>i<span class="s1">'m lookin</span>
 <span class="s1">         4        3991108   24,July,2004 2004-07-24 00:    what a time</span>
 <span class="s1">         5        3991108 01,August,2004 2004-08-01 00:    i cannot be</span>
 
 <span class="s1">   SQL QUERY: select column_name from information_schema.columns</span>
-<span class="s1">               where table_schema = &#39;</span>dla_tutorial<span class="s1">&#39; and table_name=&#39;</span>blog_outcomes<span class="err">&#39;</span>
+<span class="s1">               where table_schema = '</span>dla_tutorial<span class="s1">' and table_name='</span>blog_outcomes<span class="err">'</span>
 <span class="w">   </span>SQL<span class="w"> </span>QUERY:<span class="w"> </span>SELECT<span class="w"> </span>*<span class="w"> </span>FROM<span class="w"> </span>blog_outcomes<span class="w"> </span>LIMIT<span class="w"> </span><span class="m">5</span>
 <span class="w">           </span>user_id<span class="w">         </span>gender<span class="w">     </span>gender_cat<span class="w">            </span>age<span class="w">           </span>occu<span class="w">           </span>sign<span class="w">      </span>is_indunk<span class="w">     </span>is_student<span class="w">   </span>is_education<span class="w">  </span>is_technology
 <span class="w">           </span><span class="m">3991108</span><span class="w">              </span><span class="m">1</span><span class="w">         </span>female<span class="w">             </span><span class="m">17</span><span class="w">         </span>indUnk<span class="w">            </span>Leo<span class="w">              </span><span class="m">1</span><span class="w">              </span><span class="m">0</span><span class="w">              </span><span class="m">0</span><span class="w">              </span><span class="m">0</span>

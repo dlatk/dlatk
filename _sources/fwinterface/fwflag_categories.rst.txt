@@ -1,0 +1,39 @@
+.. _fwflag_categories:
+=============
+--categories
+=============
+Switch
+======
+
+--categories CATEGORY [CATEGORY ...]
+
+Description
+===========
+
+Restricts a lexicon-driven black/white list (see :doc:`fwflag_blacklist`/:doc:`fwflag_whitelist`) to specific categories from the lexicon table given by :doc:`fwflag_l`.
+
+Argument and Default Value
+==========================
+
+One or more category names/ids as they appear in the lexicon table's ``category`` column. Default: none (all categories used).
+
+Details
+=======
+
+Verified: used together with :doc:`fwflag_l` and :doc:`fwflag_whitelist` (or :doc:`fwflag_blacklist`), this builds a white/black list of the individual *words* belonging to the given lexicon categories, for filtering a word/ngram-level feature table (e.g. ``feat$1gram$...``) — not for filtering an already-built category-level table (``feat$cat_...``), which has no use for this switch since its features already are the category names. Pass ``*`` to mean all categories in the lexicon table.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_l` LEX_TABLE
+* :doc:`fwflag_whitelist` or :doc:`fwflag_blacklist`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age -l met_a30_2000_cp --categories 344 --whitelist --correlate

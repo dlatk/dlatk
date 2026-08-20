@@ -1,0 +1,38 @@
+.. _fwflag_no_controls:
+=============
+--no_controls
+=============
+Switch
+======
+
+--no_controls
+
+Description
+===========
+
+Clears the outcome-controls list, overriding any :doc:`fwflag_outcome_controls` set via an init file (:doc:`fwflag_from_file`).
+
+Argument and Default Value
+==========================
+
+No argument. Sets ``outcomecontrols`` to ``[]`` (``action='store_const', const=[]``).
+
+Details
+=======
+
+Same mechanism as :doc:`fwflag_no_outcomes`, for controls instead of outcomes. Useful when an init file already defines default controls and you want to run a command with none, without editing the file.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_from_file`
+* :doc:`fwflag_outcome_controls`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py --from_file ~/my_project.ini --no_controls --correlate

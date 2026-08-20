@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -184,10 +184,11 @@
 </section>
 <section id="argument-and-default-value">
 <h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
-<p>None</p>
+<p>No argument. Boolean switch, default: <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p>
 </section>
 <section id="details">
 <h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
+<p>When set, <a class="reference internal" href="fwflag_correlate.html"><span class="doc">--correlate</span></a> computes group-level associations with <code class="docutils literal notranslate"><span class="pre">oa.IDP_correlate</span></code> instead of the standard Pearson/Spearman path. Only one metric switch is used per run: <a class="reference internal" href="#"><span class="doc">--IDP</span></a> is checked before <a class="reference internal" href="fwflag_zScoreGroup.html"><span class="doc">--zScoreGroup</span></a> and <a class="reference internal" href="fwflag_AUC.html"><span class="doc">--AUC</span></a>; if none of those three are given, <a class="reference internal" href="fwflag_correlate.html"><span class="doc">--correlate</span></a> falls back to its default regression/correlation logic, which separately chooses between <a class="reference internal" href="fwflag_logistic_reg.html"><span class="doc">--logistic_reg</span></a>, <a class="reference internal" href="fwflag_cohens_d.html"><span class="doc">--cohens_d</span></a>, <a class="reference internal" href="fwflag_spearman.html"><span class="doc">--spearman</span></a>, or Pearson R.</p>
 </section>
 <section id="other-switches">
 <h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>

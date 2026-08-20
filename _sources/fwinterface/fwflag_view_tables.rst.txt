@@ -10,7 +10,17 @@ Switch
 Description
 ===========
 
-Show data from MySQL tables. Will print the first five rows of the tables specified by :doc:`fwflag_t`, :doc:`fwflag_f` and :doc:`fwflag_outcome_table` if any of those flags are present. Also takes optional positional arguments and prints the description of those tables as well. 
+Show data from MySQL tables. Will print the first five rows of the tables specified by :doc:`fwflag_t`, :doc:`fwflag_f` and :doc:`fwflag_outcome_table` if any of those flags are present. Also takes optional positional arguments and prints the description of those tables as well.
+
+Argument and Default Value
+==========================
+
+Zero or more table names as positional arguments. Default: ``False`` (not given).
+
+Details
+=======
+
+Runs ``SELECT * ... LIMIT 5`` on each table and prints the result; this is a read-only inspection switch and does not modify any tables. Aliased as ``--view_data``. For column-level descriptions instead of sample rows, see :doc:`fwflag_desc_tables`.
 
 Other Switches
 ==============

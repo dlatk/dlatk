@@ -1,0 +1,44 @@
+.. _fwflag_lex_sqrt:
+===========
+--lex_sqrt
+===========
+Switch
+======
+
+--lex_sqrt
+
+Description
+===========
+
+Applies a square-root transformation to the final lexicon/category value produced by :doc:`fwflag_add_lex_table` (or :doc:`fwflag_add_corp_lex_table`), as opposed to :doc:`fwflag_sqrt` which transforms the underlying word/ngram frequencies that feed into that value.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False`` (no transform applied to the lexicon value).
+
+Details
+=======
+
+Verified: unlike :doc:`fwflag_sqrt` (which adds a trailing ``$16to16``-style segment), ``--lex_sqrt`` folds its suffix directly into the lexicon name portion of the table, joined with an underscore, e.g. ``feat$cat_met_a30_2000_cp_w_16to4$msgs$user_id`` — no ``$`` before ``16to4``. The number is ``int(featValueFunc(16))`` (truncated, not rounded) — for ``sqrt`` this coincides with rounding since ``sqrt(16) == 4.0`` exactly, but :doc:`fwflag_lex_log` shows the truncation clearly (``int(log(17)) == 2``, not ``3``).
+
+``--sqrt`` and ``--lex_sqrt`` can be combined in the same command — they're two independent value functions (``valueFunc`` for the underlying word/ngram counts, ``featValueFunc`` for the resulting lexicon category value) passed into the same feature-extraction call, and each can add its own suffix.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_add_lex_table` or :doc:`fwflag_add_corp_lex_table`
+* :doc:`fwflag_l` LEX_TABLE
+
+Optional Switches:
+
+* :doc:`fwflag_lex_log`, :doc:`fwflag_lex_boolean`, :doc:`fwflag_lex_anscombe` (mutually exclusive alternatives — only one lexicon value transform can be active at a time)
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_lex_table -l met_a30_2000_cp --weighted_lexicon --lex_sqrt

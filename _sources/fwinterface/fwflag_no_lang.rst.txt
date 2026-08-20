@@ -15,10 +15,12 @@ Runs --combo_test_regression or --combo_test_classifiers without language featur
 Argument and Default Value
 ==========================
 
-None
+No argument. Boolean switch, default: ``False``.
 
 Details
 =======
+
+Drops the language (n-gram/lexicon) feature table from the model, leaving only the outcome controls, so :doc:`fwflag_combo_test_regression`/:doc:`fwflag_combo_test_classifiers` can report how well controls alone predict the outcome as a baseline against the language-inclusive models.
 
 
 Other Switches

@@ -20,4 +20,8 @@ MySQL database name
 Details
 =======
 
-This allows you to specify which database your message table and perhaps feature table(s) are in. Make sure you have at least “select” MySQL privileges to it. Note that this is different from the corpus databases specified in :doc:`fwflag_d`. 
+This allows you to specify which database your message table and perhaps feature table(s) are in. Make sure you have at least “select” MySQL privileges to it. Note that this is different from the corpus databases specified in :doc:`fwflag_d`.
+
+In SQLite mode (see :doc:`../../tutorials/tut_dataengine`), this should normally be just a bare database name (no path, no ``.db`` extension), e.g. ``--lexicondb dlatk_lexica``, with the file living in ``~/sqlite_data/`` (or ``/content/sqlite_data``).
+
+**Known issue:** as of this writing, passing a path or a ``.db``-suffixed value here in SQLite mode does not work as the data-engine tutorial describes. ``DLAWorker.load_lexicon()`` unconditionally joins whatever you pass with the default ``sqlite_data`` directory (``self.lexicondb = path.join(default_dir, db_name)``), so an absolute/relative path or explicit ``.db`` suffix resolves to a nonexistent file (verified: it silently creates an empty, wrongly-named ``.db.db`` file at that path) rather than the file you actually pointed at. When the resulting lookup fails, the code falls back to trying a MySQL connection instead of erroring, which is a confusing failure mode if you don't have MySQL running.

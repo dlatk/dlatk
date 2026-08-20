@@ -20,6 +20,8 @@ None.
 Details
 =======
 
+**Known issue:** as of this writing, the code behind this switch calls ``fr.createTableWithBinnedFeats(..., args.gender, args.genderattack, ...)``, but neither ``--gender`` nor ``--genderattack`` is registered as a CLI flag anywhere in ``dlatkInterface.py``. Running ``--feat_flexibin`` currently always fails with ``AttributeError: 'Namespace' object has no attribute 'gender'``.
+
 
 Other Switches
 ==============

@@ -1,0 +1,42 @@
+.. _fwflag_topic_lex_method:
+====================
+--topic_lex_method
+====================
+Switch
+======
+
+--topic_lex_method METHOD
+
+Description
+===========
+
+Method used to build a topic lexicon from a topic file via :doc:`fwflag_add_topiclex_from_topicfile`.
+
+Argument and Default Value
+==========================
+
+Must be one of ``"csv_lik"`` or ``"standard"``. Default: ``"csv_lik"`` (``dlac.DEF_TOPIC_LEX_METHOD``).
+
+Details
+=======
+
+Passed straight through to ``FeatureExtractor.addTopicLexFromTopicFile(topicfile, topiclexicon, topiclexmethod, threshold)``, which branches on this string to pick the topic-file parser. No validation is done on the value itself, so a typo silently falls through to the ``"csv_lik"``-style branch rather than raising an error.
+
+**Note:** :doc:`fwflag_add_topiclex_from_topicfile` (the switch that actually consumes this value) is currently broken for an unrelated reason — see the Known issue on that page — so this switch has no working consumer as of this writing even when supplied correctly.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_add_topiclex_from_topicfile`
+* :doc:`fwflag_topic_file`
+* :doc:`fwflag_topic_lexicon`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial --add_topiclex_from_topicfile --topic_file /path/to/topics.keys \
+	--topic_lexicon my_new_topics --topic_lex_method standard

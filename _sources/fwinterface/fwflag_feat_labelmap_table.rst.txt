@@ -1,0 +1,39 @@
+.. _fwflag_feat_labelmap_table:
+=======================
+--feat_labelmap_table
+=======================
+Switch
+======
+
+--feat_labelmap_table TABLE
+
+Description
+===========
+
+Name of a table mapping raw feature names (e.g. LDA topic ids) to human-readable labels, used when displaying results (e.g. correlation output, tagclouds).
+
+Argument and Default Value
+==========================
+
+A table name. Default: ``''``.
+
+Details
+=======
+
+Passed through to :doc:`fwflag_outcome_table`-adjacent classes (``OutcomeGetter``/``OutcomeAnalyzer``) as ``featureMappingTable``. See :doc:`fwflag_feat_labelmap_lex` for the alternative, lexicon-derived source of labels (built automatically from :doc:`fwflag_topic_lexicon` when using LDA topic features), which is far more commonly used in practice than a hand-built mapping table.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_feat_labelmap_lex` (alternative source of labels)
+* :doc:`fwflag_bracket_labels` (currently non-functional — see that page)
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$cat_2000topics$msgs$user_id' \
+	--outcome_table blog_outcomes --outcomes age --feat_labelmap_table topic_labels --correlate

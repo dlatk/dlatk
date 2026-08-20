@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -180,21 +180,16 @@
 </section>
 <section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h2>
-<p>Apply a transformation to the group norm before</p>
+<p>Applies an Anscombe transformation to the lexicon/category value produced by <a class="reference internal" href="fwflag_add_lex_table.html"><span class="doc">--add_lex_table</span></a>.</p>
 </section>
 <section id="argument-and-default-value">
 <h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
-<p>extracting from boolean words (or other types of transformations for that matter)
-If the lexicon was build to measure if a word W appears in a group (vs. what percentage of that group's word use was made up of this word W)
-Before, you would simply run the extraction, not being able to do that.
-For more information on the anscombe transformation see documentation for --anscombe</p>
+<p>No argument. Boolean switch, default: <code class="docutils literal notranslate"><span class="pre">False</span></code> (no transform applied to the lexicon value).</p>
 </section>
 <section id="details">
 <h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
-<p>extracting from boolean words (or other types of transformations for that matter)
-If the lexicon was build to measure if a word W appears in a group (vs. what percentage of that group's word use was made up of this word W)
-Before, you would simply run the extraction, not being able to do that.
-For more information on the anscombe transformation see documentation for <a class="reference internal" href="fwflag_anscombe.html"><span class="doc">--anscombe</span></a></p>
+<p>Applies the Anscombe transformation (<code class="docutils literal notranslate"><span class="pre">2*sqrt(x</span> <span class="pre">+</span> <span class="pre">3/8)</span></code>) to the final lexicon/category value produced by <a class="reference internal" href="fwflag_add_lex_table.html"><span class="doc">--add_lex_table</span></a> (or <a class="reference internal" href="fwflag_add_corp_lex_table.html"><span class="doc">--add_corp_lex_table</span></a>), as opposed to <a class="reference internal" href="fwflag_anscombe.html"><span class="doc">--anscombe</span></a> which transforms the underlying word/ngram frequencies that feed into that value. This is useful when the lexicon's raw counts are sparse/low, since the Anscombe transform stabilizes variance better than a plain square root in that regime.</p>
+<p>Verified: folds a suffix into the lexicon name portion of the table, joined with an underscore rather than a <code class="docutils literal notranslate"><span class="pre">$</span></code>, e.g. <code class="docutils literal notranslate"><span class="pre">feat$cat_met_a30_2000_cp_w_16to8$msgs$user_id</span></code> for a weighted lexicon (<code class="docutils literal notranslate"><span class="pre">int(2*sqrt(16</span> <span class="pre">+</span> <span class="pre">3/8))</span> <span class="pre">==</span> <span class="pre">8</span></code>). See <a class="reference internal" href="fwflag_lex_sqrt.html"><span class="doc">--lex_sqrt</span></a> for the general naming mechanism.</p>
 </section>
 <section id="other-switches">
 <h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>
@@ -208,6 +203,9 @@ For more information on the anscombe transformation see documentation for <a cla
 </section>
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--add_lex_table<span class="w"> </span>-l<span class="w"> </span>met_a30_2000_cp<span class="w"> </span>--weighted_lexicon<span class="w"> </span>--lex_anscombe
+</pre></div>
+</div>
 </section>
 </section>
 

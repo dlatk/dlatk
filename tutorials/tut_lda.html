@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -209,14 +209,14 @@
 <h2>Step 3: Estimate LDA topics<a class="headerlink" href="#step-3-estimate-lda-topics" title="Link to this heading"></a></h2>
 <p>A minimal command for estimating LDA topics is shown below:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_lda<span class="w"> </span>-c<span class="w"> </span>message_id<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>-f<span class="w"> </span><span class="s1">&#39;feat$1gram$msgs_lda$message_id$16to16&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs_lda$message_id$16to16'</span><span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--estimate_lda_topics<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--lda_lexicon_name<span class="w"> </span>my_lda_lexicon
 </pre></div>
 </div>
 <p>However, it is important to realize that the command above will estimate LDA topics using PyMallet, which is in general <em>much</em> slower than Mallet. To use Mallet for topic estimation, you can use the following command:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_lda<span class="w"> </span>-c<span class="w"> </span>message_id<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>-f<span class="w"> </span><span class="s1">&#39;feat$1gram$msgs_lda$message_id$16to16&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs_lda$message_id$16to16'</span><span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--estimate_lda_topics<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--lda_lexicon_name<span class="w"> </span>my_lda_lexicon<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--mallet_path<span class="w"> </span>/path/to/mallet/bin/mallet
@@ -225,7 +225,7 @@
 <p>Be sure to replace <code class="docutils literal notranslate"><span class="pre">/path/to/mallet/bin/mallet</span></code> with the correct path to which you installed Mallet in Step 0.</p>
 <p>It is good practice to refrain from storing the topics as a lexicon until after you have reviewed them. While the interim LDA estimation files are typically stored in your <code class="docutils literal notranslate"><span class="pre">/tmp</span></code> directory, you can specify a different directory to allow you to more easily review the topics you have estimated. The following command will store these files in the <code class="docutils literal notranslate"><span class="pre">lda_files</span></code> directory and prevent creating a topic lexicon:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_lda<span class="w"> </span>-c<span class="w"> </span>message_id<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>-f<span class="w"> </span><span class="s1">&#39;feat$1gram$msgs_lda$message_id$16to16&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs_lda$message_id$16to16'</span><span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--estimate_lda_topics<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--save_lda_files<span class="w"> </span>lda_files
 <span class="w">    </span>--no_lda_lexicon<span class="w"> </span><span class="se">\</span>

@@ -14,6 +14,16 @@ See all available non-feature tables in a given database
 
 SQL style wildcards ('%') will work with the optional *like* argument
 
+Argument and Default Value
+==========================
+
+An optional SQL ``LIKE``-style pattern string. Default: ``False`` when the flag is absent; ``True`` (matches everything) when given with no pattern.
+
+Details
+=======
+
+Runs a MySQL ``SHOW TABLES [LIKE 'pattern']`` against :doc:`fwflag_d` and prints the results; excludes feature tables, which are listed separately by :doc:`fwflag_ls`. This is a read-only inspection switch.
+
 Other Switches
 ==============
 

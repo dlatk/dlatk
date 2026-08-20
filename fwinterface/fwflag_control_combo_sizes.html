@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -176,17 +176,37 @@
 <span id="fwflag-control-combo-sizes"></span><h1>--control_combo_sizes<a class="headerlink" href="#control-combo-sizes" title="Link to this heading"></a></h1>
 <section id="switch">
 <h2>Switch<a class="headerlink" href="#switch" title="Link to this heading"></a></h2>
-<p>Alias for --control_combo_sizes</p>
+<p>--control_combo_sizes N [N2 ...]</p>
+<p>Also aliased as <code class="docutils literal notranslate"><span class="pre">--combo_sizes</span></code>.</p>
 </section>
 <section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h2>
+<p>Specifies the sizes of control combinations to try when running <a class="reference internal" href="fwflag_combo_test_regression.html"><span class="doc">--nfold_test_regression</span></a> or <a class="reference internal" href="fwflag_combo_test_classifiers.html"><span class="doc">--nfold_test_classifiers</span></a>. For each <code class="docutils literal notranslate"><span class="pre">N</span></code> given, every combination of <code class="docutils literal notranslate"><span class="pre">N</span></code> controls drawn from <a class="reference internal" href="fwflag_outcome_controls.html"><span class="doc">--outcome_controls</span></a> is tried as its own model.</p>
 </section>
 <section id="argument-and-default-value">
 <h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
+<p>One or more integers. Default: <code class="docutils literal notranslate"><span class="pre">[]</span></code> (no combo sizes; only the no-controls and all-controls models are run).</p>
 </section>
 <section id="details">
 <h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
-<p>Alias for <a class="reference internal" href="#"><span class="doc">--control_combo_sizes</span></a></p>
+<p>For example, <code class="docutils literal notranslate"><span class="pre">--outcome_controls</span> <span class="pre">age</span> <span class="pre">gender</span> <span class="pre">income</span> <span class="pre">--control_combo_sizes</span> <span class="pre">1</span> <span class="pre">2</span></code> runs every single-control model (<code class="docutils literal notranslate"><span class="pre">age</span></code>, <code class="docutils literal notranslate"><span class="pre">gender</span></code>, <code class="docutils literal notranslate"><span class="pre">income</span></code>) and every pair (<code class="docutils literal notranslate"><span class="pre">age+gender</span></code>, <code class="docutils literal notranslate"><span class="pre">age+income</span></code>, <code class="docutils literal notranslate"><span class="pre">gender+income</span></code>), in addition to the default no-controls and all-controls models. This is a way to explore how much of an outcome's variance is explained by each control (or pair of controls) without hand-writing every combination.</p>
+<p><a class="reference internal" href="fwflag_all_controls_only.html"><span class="doc">--all_controls_only</span></a> restricts this to only the all-controls model, equivalent to passing every control's count as <code class="docutils literal notranslate"><span class="pre">N</span></code>.</p>
+</section>
+<section id="other-switches">
+<h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>
+<p>Required Switches:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="fwflag_outcome_controls.html"><span class="doc">--outcome_controls</span></a></p></li>
+<li><p>One of <a class="reference internal" href="fwflag_combo_test_classifiers.html"><span class="doc">--nfold_test_classifiers</span></a> or <a class="reference internal" href="fwflag_combo_test_regression.html"><span class="doc">--nfold_test_regression</span></a></p></li>
+</ul>
+</section>
+<section id="example-commands">
+<h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs$user_id$16to16'</span><span class="w"> </span><span class="se">\</span>
+--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--outcome_controls<span class="w"> </span>gender<span class="w"> </span>is_student<span class="w"> </span>is_education<span class="w"> </span><span class="se">\</span>
+--combo_test_regression<span class="w"> </span>--control_combo_sizes<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span><span class="w"> </span>--output_name<span class="w"> </span>./output
+</pre></div>
+</div>
 </section>
 </section>
 

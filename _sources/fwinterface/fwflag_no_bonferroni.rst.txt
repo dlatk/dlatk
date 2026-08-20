@@ -1,0 +1,48 @@
+.. _fwflag_no_bonferroni:
+================
+--no_bonferroni
+================
+Switch
+======
+
+--no_bonferroni
+
+Description
+===========
+
+Intended to turn off Bonferroni correction of p-values (setting ``bonferroni = False``), separately from the overall p-value correction method controlled by :doc:`fwflag_p_correction`/:doc:`fwflag_no_correction`.
+
+Argument and Default Value
+==========================
+
+No argument. Sets ``bonferroni`` to ``False``; default (flag absent) is ``True``.
+
+Details
+=======
+
+**Known issue — this flag currently does not work at all.** Right after argument parsing, ``dlatkInterface.py`` runs:
+
+.. code-block:: python
+
+    if not args.bonferroni:
+      print("--no_bonf has been depricated. Default p correction method is now Benjamini, Hochberg. Please use --no_correction instead of --no_bonf.")
+      sys.exit(1)
+
+Since ``--no_bonferroni`` sets ``args.bonferroni`` to ``False``, this check fires for ``--no_bonferroni`` itself, not just the older deprecated ``--no_bonf`` alias the message refers to. Verified: any command that includes ``--no_bonferroni`` prints this message and exits immediately with status 1, before running anything else in the command — no correlation, no feature extraction, nothing. Use :doc:`fwflag_no_correction` instead, which actually works and is the documented replacement.
+
+Other Switches
+==============
+
+Required Switches:
+
+* None (but see above — do not use this switch)
+
+Example Commands
+================
+
+Do not use ``--no_bonferroni``. Use :doc:`fwflag_no_correction` instead:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --correlate --no_correction

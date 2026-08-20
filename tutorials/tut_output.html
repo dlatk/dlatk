@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -212,7 +212,7 @@ rank,age,r,p,N,CI_l,CI_u,freq,gender,r,p,N,CI_l,CI_u,freq,is_education,r,p,N,CI_
 <ul class="simple">
 <li><p><a class="reference internal" href="../fwinterface/fwflag_prediction_csv.html"><span class="doc">--prediction_csv</span></a>:</p></li>
 </ul>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w">  </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w">  </span>--combo_test_regression<span class="w">  </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--output<span class="w"> </span>~/prediction.values<span class="w"> </span>--prediction_csv
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w">  </span>-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16'</span><span class="w">  </span>--combo_test_regression<span class="w">  </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--output<span class="w"> </span>~/prediction.values<span class="w"> </span>--prediction_csv
 </pre></div>
 </div>
 <p>The above command produces the file <cite>prediction.values.predicted_data.csv</cite>:</p>
@@ -232,9 +232,9 @@ rank,age,r,p,N,CI_l,CI_u,freq,gender,r,p,N,CI_l,CI_u,freq,is_education,r,p,N,CI_
 <h3>Probabilities<a class="headerlink" href="#probabilities" title="Link to this heading"></a></h3>
 <p>Output classification probabilities to a csv.</p>
 <ul class="simple">
-<li><p><span class="xref std std-doc">../fwinterface/fwflag_probability_csv</span>:</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_probability_csv.html"><span class="doc">--probability_csv</span></a>:</p></li>
 </ul>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w">  </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w">  </span>--combo_test_classif<span class="w">  </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>is_student<span class="w"> </span>is_education<span class="w"> </span>is_technology<span class="w"> </span>--output<span class="w"> </span>~/probability.values<span class="w"> </span>--probability_csv
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w">  </span>-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16'</span><span class="w">  </span>--combo_test_classif<span class="w">  </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>is_student<span class="w"> </span>is_education<span class="w"> </span>is_technology<span class="w"> </span>--output<span class="w"> </span>~/probability.values<span class="w"> </span>--probability_csv
 </pre></div>
 </div>
 <p>The above command produces the file <cite>probability.values.prediction_probabilities.csv</cite>:</p>
@@ -255,7 +255,7 @@ rank,age,r,p,N,CI_l,CI_u,freq,gender,r,p,N,CI_l,CI_u,freq,is_education,r,p,N,CI_
 <ul class="simple">
 <li><p><a class="reference internal" href="../fwinterface/fwflag_csv.html"><span class="doc">--csv</span></a>:</p></li>
 </ul>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w">  </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w">  </span>--combo_test_regression<span class="w">  </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--output<span class="w"> </span>~/regression.metrics<span class="w"> </span>--csv
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w">  </span>-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16'</span><span class="w">  </span>--combo_test_regression<span class="w">  </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--output<span class="w"> </span>~/regression.metrics<span class="w"> </span>--csv
 </pre></div>
 </div>
 <p>The above command produces the file <cite>regression.metrics.variance_data.csv</cite>:</p>
@@ -287,7 +287,7 @@ rank,age,r,p,N,CI_l,CI_u,freq,gender,r,p,N,CI_l,CI_u,freq,is_education,r,p,N,CI_
 <li><p><a class="reference internal" href="../fwinterface/fwflag_tagcloud.html"><span class="doc">--tagcloud</span></a>: Produces data for making Wordle tag clouds, saved in text files</p></li>
 <li><p><a class="reference internal" href="../fwinterface/fwflag_make_wordclouds.html"><span class="doc">--make_wordclouds</span></a>: Creates pngs from the text file output</p></li>
 </ul>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$1gram$msgs$user_id$16to16&#39;</span><span class="w"> </span>--tagcloud<span class="w"> </span>--make_wordclouds<span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span>is_student<span class="w"> </span>is_education<span class="w"> </span>is_technology<span class="w"> </span>--output<span class="w"> </span>~/1to3grams
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs$user_id$16to16'</span><span class="w"> </span>--tagcloud<span class="w"> </span>--make_wordclouds<span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span>is_student<span class="w"> </span>is_education<span class="w"> </span>is_technology<span class="w"> </span>--output<span class="w"> </span>~/1to3grams
 </pre></div>
 </div>
 <p>creates the following files:</p>
@@ -309,7 +309,7 @@ rank,age,r,p,N,CI_l,CI_u,freq,gender,r,p,N,CI_l,CI_u,freq,is_education,r,p,N,CI_
 <li><p><a class="reference internal" href="../fwinterface/fwflag_topic_tagcloud.html"><span class="doc">--topic_tagcloud</span></a>: Produces data for making topic Wordles, saved in text files</p></li>
 <li><p><a class="reference internal" href="../fwinterface/fwflag_make_topic_wordclouds.html"><span class="doc">--make_topic_wordclouds</span></a>: Creates pngs from the text file output</p></li>
 </ul>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w">  </span>--topic_tagcloud<span class="w"> </span>--make_topic_wordclouds<span class="w">  </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span>is_student<span class="w"> </span>is_education<span class="w"> </span>is_technology<span class="w"> </span>--output<span class="w"> </span>~/fbtopics<span class="w"> </span>--topic_lexicon<span class="w"> </span>met_a30_2000_freq_t50ll
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16'</span><span class="w">  </span>--topic_tagcloud<span class="w"> </span>--make_topic_wordclouds<span class="w">  </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span>is_student<span class="w"> </span>is_education<span class="w"> </span>is_technology<span class="w"> </span>--output<span class="w"> </span>~/fbtopics<span class="w"> </span>--topic_lexicon<span class="w"> </span>met_a30_2000_freq_t50ll
 </pre></div>
 </div>
 <p>creates the following directories where the topic clouds are printed:</p>
@@ -343,7 +343,7 @@ fbtopics_topic_tagcloud_wordclouds/is_technology
 <li><p><a class="reference internal" href="../fwinterface/fwflag_picklefile.html"><span class="doc">--picklefile</span></a></p></li>
 <li><p><a class="reference internal" href="../fwinterface/fwflag_save_model.html"><span class="doc">--save_model</span></a></p></li>
 </ul>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$1gram$msgs$user_id$16to16&#39;</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--train_regression<span class="w"> </span>--save_model<span class="w"> </span>--picklefile<span class="w"> </span>age.pickle
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs$user_id$16to16'</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--train_regression<span class="w"> </span>--save_model<span class="w"> </span>--picklefile<span class="w"> </span>age.pickle
 </pre></div>
 </div>
 <p>Load a predictive model to a pickle file with:</p>
@@ -354,7 +354,7 @@ fbtopics_topic_tagcloud_wordclouds/is_technology
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Loads the regression model in age.pickle, and uses the features to predict the ages of the users in</span>
 <span class="c1"># blog_outcomes, and compares the predicted ages to the actual ages in the table.</span>
 
-dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$1gram$msgs$user_id$16to16&#39;</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--train_regression<span class="w"> </span>--load_model<span class="w"> </span>--picklefile<span class="w"> </span>age.pickle
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs$user_id$16to16'</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--train_regression<span class="w"> </span>--load_model<span class="w"> </span>--picklefile<span class="w"> </span>age.pickle
 </pre></div>
 </div>
 </section>

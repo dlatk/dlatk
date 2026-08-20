@@ -1,0 +1,43 @@
+.. _fwflag_pickle:
+=========
+--pickle
+=========
+Switch
+======
+
+--pickle
+
+Description
+===========
+
+Generates a pickle file of the correlation-matrix-style output, alongside the html/csv output.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+**Not to be confused with the pickled-model workflow** (:doc:`tut_pickle_build`/:doc:`tut_pickle_apply`) — that uses entirely different switches: :doc:`fwflag_save_model` (an argparse-abbreviation of ``--save_models``/``--save``), :doc:`fwflag_load_model` (likewise for ``--load_models``/``--load``), and :doc:`fwflag_picklefile`. Those work correctly and are unrelated to this page. ``--pickle`` (``dest='pickle'``, no relation to ``args.picklefile``) is a much narrower, separate switch.
+
+**Verified scope — narrower than it looks:** ``--pickle`` is only checked inside the :doc:`fwflag_cca` output path (``if args.rmatrix: ... if args.pickle: ...`` under the CCA branch of ``dlatkInterface.py``) — confirmed by grepping every ``args.pickle`` reference in the codebase; there is exactly one, right there. It has **no effect** when used with the ordinary :doc:`fwflag_correlate` workflow — confirmed by running ``--correlate --csv --rmatrix --pickle`` and observing only ``.csv``/``.html`` files were written, no ``.pickle``. If you need the general :doc:`fwflag_correlate` output as a Python object, there is currently no built-in pickle switch for that path; use the csv output instead.
+
+When combined with :doc:`fwflag_cca` and :doc:`fwflag_rmatrix`, it writes ``<outputFile>.feat.pickle`` and ``<outputFile>.outcome.pickle`` versions of the feature/outcome correlation matrices.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_cca`
+* :doc:`fwflag_rmatrix`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age gender --cca --rmatrix --pickle --output_name ./cca_out

@@ -1,0 +1,42 @@
+.. _fwflag_fold_column:
+==============
+--fold_column
+==============
+Switch
+======
+
+--fold_column FIELD
+
+Description
+===========
+
+A column in :doc:`fwflag_outcome_table` giving pre-assigned fold labels to use for cross-validation in prediction/classification, instead of DLATK randomly splitting groups into folds.
+
+Argument and Default Value
+==========================
+
+A column name. Default: ``None`` (random folds). Aliased as ``--fold_labels``.
+
+Details
+=======
+
+Passed straight through to ``OutcomeGetter(..., fold_column=args.fold_column)``, so every group's fold membership comes from this column's value rather than a random assignment — useful for reproducible splits, or splits that must respect a grouping (e.g. no user split across folds if pre-aggregated by some other unit). Use :doc:`fwflag_test_folds` to restrict evaluation to a subset of the fold values found in this column.
+
+Other Switches
+==============
+
+Required Switches:
+
+* One of :doc:`fwflag_combo_test_regression`, :doc:`fwflag_combo_test_classifiers`, or another cross-validated prediction switch
+
+Optional Switches:
+
+* :doc:`fwflag_test_folds`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --fold_column predefined_fold --combo_test_regression

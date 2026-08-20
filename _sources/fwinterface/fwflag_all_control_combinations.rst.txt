@@ -1,0 +1,40 @@
+.. _fwflag_all_control_combinations:
+============================
+--all_control_combinations
+============================
+Switch
+======
+
+--all_control_combinations
+
+Description
+===========
+
+Runs every possible subset of :doc:`fwflag_outcome_controls` as its own model in :doc:`fwflag_combo_test_regression`/:doc:`fwflag_combo_test_classifiers`, instead of only the no-controls and all-controls models.
+
+Argument and Default Value
+==========================
+
+No argument. Sets ``allcontrolsonly`` to ``False``; default (flag absent) is ``True``.
+
+Details
+=======
+
+The opposite of :doc:`fwflag_all_controls_only` (same underlying ``allcontrolsonly`` variable, set to ``False`` here vs ``True`` there — whichever is parsed last on the command line wins if both are given). With many controls, the number of subsets grows combinatorially (``2^n``); for a controlled subset of sizes instead, use :doc:`fwflag_control_combo_sizes`.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_outcome_controls`
+* One of :doc:`fwflag_combo_test_classifiers` or :doc:`fwflag_combo_test_regression`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --outcome_controls gender is_student \
+	--combo_test_regression --all_control_combinations

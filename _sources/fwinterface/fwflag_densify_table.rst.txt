@@ -1,0 +1,36 @@
+.. _fwflag_densify_table:
+================
+--densify_table
+================
+Switch
+======
+
+--densify_table ROW_COLUMN COL_COLUMN VALUE_COLUMN
+
+Description
+===========
+
+Pivots a long-format table (e.g. a feature table, with ``group_id, feat, group_norm``-style rows) into a dense, wide csv — one row per distinct value of ``ROW_COLUMN``, one column per distinct value of ``COL_COLUMN``, filled with ``VALUE_COLUMN``.
+
+Argument and Default Value
+==========================
+
+Exactly three column names (``nargs=3``): row column, column column, value column. Default: ``None``.
+
+Details
+=======
+
+**Known issue — always crashes, in both MySQL and SQLite modes.** ``OutcomeAnalyzer.tableToDenseCsv()`` calls ``mm.executeGetList1(self.corpdb, self.dbCursor, row_sql, charset=..., use_unicode=..., mysql_config_file=self.mysql_config_file)``, but ``mysqlmethods.executeGetList1()``'s actual signature is ``(db, dbCursor, sql, warnQuery=False, charset=..., use_unicode=...)`` — it has no ``mysql_config_file`` parameter at all. Verified: running this switch against a table that otherwise exists still fails immediately with ``TypeError: executeGetList1() got an unexpected keyword argument 'mysql_config_file'``, before any SQL is even generated. This is a plain Python argument mismatch, not a database-dialect issue, so it is not specific to SQLite mode.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_t`, :doc:`fwflag_c`
+* :doc:`fwflag_f` or another existing table
+
+Example Commands
+================
+
+Not usable as of this writing — see Known issue above.

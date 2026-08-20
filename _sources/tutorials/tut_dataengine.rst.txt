@@ -2,7 +2,7 @@
 Data Engines
 ************
 
-DLATK offers two types of data engines: MySQL and SQLite. 
+DLATK offers two types of data engines: MySQL and SQLite / CSV. 
 
 
 MySQL
@@ -43,8 +43,92 @@ Note, that if the file ``~/.my.cnf`` does not exist then MySQL will use the foll
 * Password: No password
 * Host: ``localhost``
 
+
 SQLite
 ======
+
+DLATK is also able to use data in SQLite format. To use this option you must specify the SQLite engine with:
+
+.. code-block:: bash
+
+	dlatkInterface.py ... --db_engine sqlite ...
+
+You must pass the full path to the SQLite database file. You can include or omit the **.db** extension, so the following are equivalent:
+
+.. code-block:: bash
+
+	dlatkInterface.py ... --db_engine sqlite -d /path/to/database ...
+	dlatkInterface.py ... --db_engine sqlite -d /path/to/database.db ...
+
+If no path is given, then the database is assume to be in the folder `/content/sqlite_data` or `~/sqlite_data`:
+
+.. code-block:: bash
+
+	dlatkInterface.py ... --db_engine sqlite -d database ...
+
+Then all message, feature, and outcome tables are assumed to exist inside the database:
+
+.. code-block:: bash
+
+	dlatkInterface.py ... --db_engine sqlite -d database -t messages ... -f feat$1gram$messages$user_id ... --outcome_table outcomes ...
+
+The lexicon database can also be set with just a name or a full path. If no path is given then it is assumed the database is in the directories `/content/sqlite_data` or `~/sqlite_data`. In the following example, **lexdb** is the name of the database and **lexicon** is the name of the table:
+
+.. code-block:: bash
+
+	dlatkInterface.py ... --lexicondb lexdb -l lexicon ...
+	dlatkInterface.py ... --lexicondb /path/to/lexdb -l lexicon ...
+	dlatkInterface.py ... --lexicondb /path/to/lexdb.db -l lexicon ...
+
+
+CSV
+====
+
+DLATK is also able to use data in CSV or SQLite format. Here, you simply include the .csv extension in your message table (which we call **messages** in this example):
+
+.. code-block:: bash
+
+	dlatkInterface.py ... -t messages.csv ...
+
+.. note::
+	In reality, under the hood, DLATK will take your CSV data and upload it to a SQLite for easier querying. The SQLite table will have the same name as specified by -t. 
+
+.. note::
+	If the -d flag isn't used then DLATK will automatically create a database with the same name as your corpus table (-t). This database will be created in the folder `/content/sqlite_data` or `~/sqlite_data`. 
+
+Alternatively, if you do specify a database you then there are two options. First, you can pass a database name only. This will open a database with the given name in the directories `/content/sqlite_data` or `~/sqlite_data`. 
+
+.. code-block:: bash
+
+	dlatkInterface.py ... -d database  -t messages.csv ...
+
+The second method is to specify a full path:
+
+.. code-block:: bash
+
+	dlatkInterface.py ... -d /path/to/database  -t messages.csv ...
+
+Outcome tables can also be in CSV format:
+
+.. code-block:: bash
+
+	dlatkInterface.py ... --outcome_table outcomes.csv ...
+
+.. note::
+	Similar to message tables, the outcomes CSV will be uploaded to SQLite, in a table with the same name as the CSV file. Again, as above, the same behavior applied to the database and -d flag.
+
+Lexica can also be in CSV format:
+
+.. code-block:: bash
+
+	dlatkInterface.py ... -l lexicon.csv ...
+
+
+.. warning::
+	In all of these commands, the data is uploaded to SQLite once and then the CSV is ignored. So any changes to the CSV after running your first DLATK command will not be reflected in your data. If your CSV file is updated and you want DLATK to run on the new file you must: manually delete the tables from the SQLite database or specify a new database name (since DLATK will automatically create this new database for you, nothing else needs to be done). 
+
+Using Packaged Datasets in SQLite
+=================================
 
 The data packaged with DLATK is formatted for MySQL. To use SQLite you must first convert these MySQL dumps to a SQLite database. You can do this with the `mysql2sqlite <https://github.com/dumblob/mysql2sqlite>`_ package. Clone this package with
 

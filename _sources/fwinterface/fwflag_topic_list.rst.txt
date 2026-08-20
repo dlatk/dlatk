@@ -1,0 +1,42 @@
+.. _fwflag_topic_list:
+=============
+--topic_list
+=============
+Switch
+======
+
+--topic_list TOPIC [TOPIC ...]
+
+Description
+===========
+
+List of topics to group together in a plot, when plotting a binned feature table built with :doc:`fwflag_feat_flexibin`.
+
+Argument and Default Value
+==========================
+
+One or more topic names/ids. Default: ``''`` (none).
+
+Details
+=======
+
+Passed to ``OutcomeGetter.buildBatchPlotFile(corpdb, feattable, topiclist)``, which is only reached after the (currently broken — see :doc:`fwflag_feat_flexibin`) binning step. :doc:`fwflag_flexiplot_file` takes precedence over this if both are given.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_feat_flexibin`
+
+Optional Switches:
+
+* :doc:`fwflag_flexiplot_file`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--feat_flexibin --num_bins 10 --group_id_range 0 100 --topic_list 344 512

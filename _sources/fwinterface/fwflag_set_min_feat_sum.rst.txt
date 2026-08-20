@@ -1,0 +1,43 @@
+.. _fwflag_set_min_feat_sum:
+====================
+--set_min_feat_sum
+====================
+Switch
+======
+
+--set_min_feat_sum N
+
+Description
+===========
+
+The minimum total occurrence a feature must have, summed across all groups, to be kept — an alternative/companion to :doc:`fwflag_set_p_occ`'s percentage-of-groups threshold.
+
+Argument and Default Value
+==========================
+
+An integer. Default: ``0`` (``dlac.DEF_MIN_FEAT_SUM``) — no filtering.
+
+Details
+=======
+
+Marked ``#TODO: Deprecate?`` in the source next to its ``add_argument`` call, for what that's worth. Used together with :doc:`fwflag_feat_occ_filter` and :doc:`fwflag_set_p_occ` — passed as ``fr.createTableWithRemovedFeats(pocc, minfeatsum, groupfreqthresh, ...)``, i.e. both thresholds are applied together when refining a feature table.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_feat_occ_filter`
+
+Optional Switches:
+
+* :doc:`fwflag_set_p_occ`
+* :doc:`fwflag_group_freq_thresh`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--feat_occ_filter --set_min_feat_sum 50

@@ -1,0 +1,38 @@
+.. _fwflag_not_show_feat_freqs:
+=====================
+--not_show_feat_freqs
+=====================
+Switch
+======
+
+--not_show_feat_freqs
+
+Description
+===========
+
+Removes each feature's raw frequency count from :doc:`fwflag_correlate` output.
+
+Argument and Default Value
+==========================
+
+No argument. Sets ``showfeatfreqs`` to ``False``; default (flag absent) is ``True``.
+
+Details
+=======
+
+This is the switch that actually changes behavior — frequencies are shown by default (see :doc:`fwflag_show_feat_freqs`), so this is the one to pass if you want a smaller/simpler output without the ``freq`` column.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_show_feat_freqs` (the default; this flag's opposite)
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --correlate --csv --not_show_feat_freqs

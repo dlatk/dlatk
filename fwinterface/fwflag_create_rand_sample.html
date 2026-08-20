@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -182,6 +182,14 @@
 <h2>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h2>
 <p>Creates a new table with a random subset of rows from the table specified by <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a>. New table has <em>_rand</em> appended to the table name.</p>
 <p>You must specify the percentage of rows to keep. Optionally you can give a random seed, which is 42 by default.</p>
+</section>
+<section id="argument-and-default-value">
+<h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
+<p>A percentage as a decimal (e.g. <code class="docutils literal notranslate"><span class="pre">.10</span></code> for 10%), followed by an optional integer random seed. Default seed: <code class="docutils literal notranslate"><span class="pre">42</span></code>.</p>
+</section>
+<section id="details">
+<h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
+<p>Aliased as <code class="docutils literal notranslate"><span class="pre">--create_rand_sample</span></code>. Runs a random sample query against the table given by <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> and materializes the result as a new table named <code class="docutils literal notranslate"><span class="pre">&lt;table&gt;_rand</span></code>. Unlike <a class="reference internal" href="fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a>, sampling here is row-based, not grouped by <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a>.</p>
 </section>
 <section id="other-switches">
 <h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>

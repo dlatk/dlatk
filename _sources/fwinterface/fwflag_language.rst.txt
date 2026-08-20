@@ -1,0 +1,37 @@
+.. _fwflag_language:
+=============
+--language
+=============
+Switch
+======
+
+--language {en,zh}
+
+Description
+===========
+
+Language of the corpus, used to select the right tokenizer/parser. Aliased as ``--lang``.
+
+Argument and Default Value
+==========================
+
+One of ``en`` or ``zh`` (argparse ``choices``). Default: ``en`` (``dlac.DEF_LANG``).
+
+Details
+=======
+
+Any other value is rejected by argparse itself before DLATK even runs (``error: argument --language/--lang: invalid choice``). Affects tokenization in :doc:`fwflag_add_tokenized`/:doc:`fwflag_add_ngrams` and any other message-processing step that depends on language-specific rules.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_no_lang` (unrelated — excludes language features from a prediction run, not a language selector)
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d chinese_corpus -t msgs -c user_id --language zh --add_tokenized

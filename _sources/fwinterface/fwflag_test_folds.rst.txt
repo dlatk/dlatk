@@ -1,0 +1,39 @@
+.. _fwflag_test_folds:
+=============
+--test_folds
+=============
+Switch
+======
+
+--test_folds FOLD [FOLD ...]
+
+Description
+===========
+
+Restricts cross-validated testing to only these fold values, when using :doc:`fwflag_fold_column` for pre-assigned folds.
+
+Argument and Default Value
+==========================
+
+One or more integers. Default: ``None`` (test all folds found in :doc:`fwflag_fold_column`).
+
+Details
+=======
+
+Passed as ``testFolds=args.test_folds`` into the prediction/classification cross-validation call. Only meaningful together with :doc:`fwflag_fold_column` — with DLATK's default random folding there are no stable fold ids to select by.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_fold_column`
+* One of :doc:`fwflag_combo_test_regression`, :doc:`fwflag_combo_test_classifiers`, or another cross-validated prediction switch
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --fold_column predefined_fold --test_folds 1 2 3 --combo_test_regression

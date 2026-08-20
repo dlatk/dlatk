@@ -21,10 +21,12 @@ where N is the number of controls specified with --outcome_controls.
 Argument and Default Value
 ==========================
 
-None
+No argument. Boolean switch, default: ``True``.
 
 Details
 =======
+
+Since the default is already ``True``, this switch mainly exists for symmetry with :doc:`fwflag_all_control_combinations`, which sets the same underlying value to ``False`` so that :doc:`fwflag_control_combo_sizes` combinations are tried instead of (or in addition to) the full control set.
 
 
 Other Switches

@@ -1,0 +1,38 @@
+.. _fwflag_clean_cloud:
+==============
+--clean_cloud
+==============
+Switch
+======
+
+--clean_cloud
+
+Description
+===========
+
+Censors profanity/slurs in tagcloud output by replacing their middle characters with ``***`` (e.g. ``f**k``).
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Passed as ``cleanCloud`` into ``oa.printTagCloudData()`` / ``oa.printTopicTagCloudData()`` / ``wordcloud.makeLexiconTopicWordclouds()`` — applies to :doc:`fwflag_tagcloud`, :doc:`fwflag_topic_tagcloud`, and :doc:`fwflag_corp_topic_tagcloud` alike.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_tagcloud`, :doc:`fwflag_topic_tagcloud`, or :doc:`fwflag_corp_topic_tagcloud`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --tagcloud --clean_cloud --make_wordclouds

@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -189,7 +189,8 @@
 <section id="details">
 <h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
 <p>If no feature table is given then a scatter plot is created for each pair of variables listed in <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a>.</p>
-<p>If a feature table is given then a scatter plot is created for every pair of variables (feat, outcome), where feat is specified by <span class="xref std std-doc">fwflag_feature_names</span>? and outcome is specified by <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a>.</p>
+<p>If a feature table is given then a scatter plot is created for every pair of variables (feat, outcome), where feat is specified by <a class="reference internal" href="fwflag_feat_names.html"><span class="doc">--feat_names</span></a> and outcome is specified by <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a>.</p>
+<p><strong>Known issue:</strong> as of this writing, the code behind this switch checks <code class="docutils literal notranslate"><span class="pre">args.hist2d</span></code> inside its loop, but the <code class="docutils literal notranslate"><span class="pre">--hist2d</span></code> flag's registration is commented out in <code class="docutils literal notranslate"><span class="pre">dlatkInterface.py</span></code> so <code class="docutils literal notranslate"><span class="pre">hist2d</span></code> is never set on <code class="docutils literal notranslate"><span class="pre">args</span></code>. Running <code class="docutils literal notranslate"><span class="pre">--scatterplot</span></code> currently always fails with <code class="docutils literal notranslate"><span class="pre">AttributeError:</span> <span class="pre">'Namespace'</span> <span class="pre">object</span> <span class="pre">has</span> <span class="pre">no</span> <span class="pre">attribute</span> <span class="pre">'hist2d'</span></code>.</p>
 </section>
 <section id="other-switches">
 <h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>

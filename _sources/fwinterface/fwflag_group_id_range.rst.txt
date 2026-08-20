@@ -1,0 +1,42 @@
+.. _fwflag_group_id_range:
+==================
+--group_id_range
+==================
+Switch
+======
+
+--group_id_range MIN MAX
+
+Description
+===========
+
+Range of group ids to include when binning a feature table with :doc:`fwflag_feat_flexibin`.
+
+Argument and Default Value
+==========================
+
+Exactly two floats (``nargs=2``): a minimum and a maximum. Default: ``None``.
+
+Details
+=======
+
+Passed to ``FeatureRefiner.createTableWithBinnedFeats(num_bins, group_id_range, ...)`` alongside :doc:`fwflag_num_bins`. Required together with ``--num_bins`` and :doc:`fwflag_f`.
+
+**Note:** :doc:`fwflag_feat_flexibin` itself is currently broken for an unrelated reason — see the Known issue on that page — so this switch has no working consumer as of this writing even when supplied correctly.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_feat_flexibin`
+* :doc:`fwflag_num_bins`
+* :doc:`fwflag_f`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--feat_flexibin --num_bins 10 --group_id_range 0 100

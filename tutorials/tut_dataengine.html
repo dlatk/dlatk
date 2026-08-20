@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -174,7 +174,7 @@
              
   <section id="data-engines">
 <h1>Data Engines<a class="headerlink" href="#data-engines" title="Link to this heading"></a></h1>
-<p>DLATK offers two types of data engines: MySQL and SQLite.</p>
+<p>DLATK offers two types of data engines: MySQL and SQLite / CSV.</p>
 <section id="mysql">
 <h2>MySQL<a class="headerlink" href="#mysql" title="Link to this heading"></a></h2>
 <p>MySQL is the default data engine. Settings are passed to the data engine through a configuration file. By default DLATK tries to read from <code class="docutils literal notranslate"><span class="pre">~/.my.cnf</span></code>. You can pass a configuration file to DLATK with <a class="reference internal" href="../fwinterface/fwflag_mysql_config_file.html"><span class="doc">--mysql_config_file</span></a>. For example, if your config file was located at <code class="docutils literal notranslate"><span class="pre">/home/your_username/mysql/config.txt</span></code> then you would add the following to your command:</p>
@@ -194,8 +194,8 @@ pip<span class="w"> </span>install<span class="w"> </span>SQLAlchemy
 </pre></div>
 </div>
 <p>The following versions are known to work with DLATK v1.2.0 in Python 3.8:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;mysqlclient==2.0.1&#39;</span>
-pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;SQLAlchemy==1.3.20&#39;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">'mysqlclient==2.0.1'</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s1">'SQLAlchemy==1.3.20'</span>
 </pre></div>
 </div>
 <p>Note, that if the file <code class="docutils literal notranslate"><span class="pre">~/.my.cnf</span></code> does not exist then MySQL will use the following defaults:</p>
@@ -207,6 +207,71 @@ pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;
 </section>
 <section id="sqlite">
 <h2>SQLite<a class="headerlink" href="#sqlite" title="Link to this heading"></a></h2>
+<p>DLATK is also able to use data in SQLite format. To use this option you must specify the SQLite engine with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>...<span class="w"> </span>--db_engine<span class="w"> </span>sqlite<span class="w"> </span>...
+</pre></div>
+</div>
+<p>You must pass the full path to the SQLite database file. You can include or omit the <strong>.db</strong> extension, so the following are equivalent:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>...<span class="w"> </span>--db_engine<span class="w"> </span>sqlite<span class="w"> </span>-d<span class="w"> </span>/path/to/database<span class="w"> </span>...
+dlatkInterface.py<span class="w"> </span>...<span class="w"> </span>--db_engine<span class="w"> </span>sqlite<span class="w"> </span>-d<span class="w"> </span>/path/to/database.db<span class="w"> </span>...
+</pre></div>
+</div>
+<p>If no path is given, then the database is assume to be in the folder <cite>/content/sqlite_data</cite> or <cite>~/sqlite_data</cite>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>...<span class="w"> </span>--db_engine<span class="w"> </span>sqlite<span class="w"> </span>-d<span class="w"> </span>database<span class="w"> </span>...
+</pre></div>
+</div>
+<p>Then all message, feature, and outcome tables are assumed to exist inside the database:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>...<span class="w"> </span>--db_engine<span class="w"> </span>sqlite<span class="w"> </span>-d<span class="w"> </span>database<span class="w"> </span>-t<span class="w"> </span>messages<span class="w"> </span>...<span class="w"> </span>-f<span class="w"> </span>feat<span class="nv">$1</span>gram<span class="nv">$messages$user_id</span><span class="w"> </span>...<span class="w"> </span>--outcome_table<span class="w"> </span>outcomes<span class="w"> </span>...
+</pre></div>
+</div>
+<p>The lexicon database can also be set with just a name or a full path. If no path is given then it is assumed the database is in the directories <cite>/content/sqlite_data</cite> or <cite>~/sqlite_data</cite>. In the following example, <strong>lexdb</strong> is the name of the database and <strong>lexicon</strong> is the name of the table:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>...<span class="w"> </span>--lexicondb<span class="w"> </span>lexdb<span class="w"> </span>-l<span class="w"> </span>lexicon<span class="w"> </span>...
+dlatkInterface.py<span class="w"> </span>...<span class="w"> </span>--lexicondb<span class="w"> </span>/path/to/lexdb<span class="w"> </span>-l<span class="w"> </span>lexicon<span class="w"> </span>...
+dlatkInterface.py<span class="w"> </span>...<span class="w"> </span>--lexicondb<span class="w"> </span>/path/to/lexdb.db<span class="w"> </span>-l<span class="w"> </span>lexicon<span class="w"> </span>...
+</pre></div>
+</div>
+</section>
+<section id="csv">
+<h2>CSV<a class="headerlink" href="#csv" title="Link to this heading"></a></h2>
+<p>DLATK is also able to use data in CSV or SQLite format. Here, you simply include the .csv extension in your message table (which we call <strong>messages</strong> in this example):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>...<span class="w"> </span>-t<span class="w"> </span>messages.csv<span class="w"> </span>...
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In reality, under the hood, DLATK will take your CSV data and upload it to a SQLite for easier querying. The SQLite table will have the same name as specified by -t.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the -d flag isn't used then DLATK will automatically create a database with the same name as your corpus table (-t). This database will be created in the folder <cite>/content/sqlite_data</cite> or <cite>~/sqlite_data</cite>.</p>
+</div>
+<p>Alternatively, if you do specify a database you then there are two options. First, you can pass a database name only. This will open a database with the given name in the directories <cite>/content/sqlite_data</cite> or <cite>~/sqlite_data</cite>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>...<span class="w"> </span>-d<span class="w"> </span>database<span class="w">  </span>-t<span class="w"> </span>messages.csv<span class="w"> </span>...
+</pre></div>
+</div>
+<p>The second method is to specify a full path:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>...<span class="w"> </span>-d<span class="w"> </span>/path/to/database<span class="w">  </span>-t<span class="w"> </span>messages.csv<span class="w"> </span>...
+</pre></div>
+</div>
+<p>Outcome tables can also be in CSV format:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>...<span class="w"> </span>--outcome_table<span class="w"> </span>outcomes.csv<span class="w"> </span>...
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Similar to message tables, the outcomes CSV will be uploaded to SQLite, in a table with the same name as the CSV file. Again, as above, the same behavior applied to the database and -d flag.</p>
+</div>
+<p>Lexica can also be in CSV format:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>...<span class="w"> </span>-l<span class="w"> </span>lexicon.csv<span class="w"> </span>...
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>In all of these commands, the data is uploaded to SQLite once and then the CSV is ignored. So any changes to the CSV after running your first DLATK command will not be reflected in your data. If your CSV file is updated and you want DLATK to run on the new file you must: manually delete the tables from the SQLite database or specify a new database name (since DLATK will automatically create this new database for you, nothing else needs to be done).</p>
+</div>
+</section>
+<section id="using-packaged-datasets-in-sqlite">
+<h2>Using Packaged Datasets in SQLite<a class="headerlink" href="#using-packaged-datasets-in-sqlite" title="Link to this heading"></a></h2>
 <p>The data packaged with DLATK is formatted for MySQL. To use SQLite you must first convert these MySQL dumps to a SQLite database. You can do this with the <a class="reference external" href="https://github.com/dumblob/mysql2sqlite">mysql2sqlite</a> package. Clone this package with</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/dumblob/mysql2sqlite.git
 </pre></div>

@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -185,11 +185,11 @@
 <section id="argument-and-default-value">
 <h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
 <p>Argument is an integer number. Unless specified the default value is set based on the the follow rules (based on the argument to the <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a> flag):</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">field</span> <span class="ow">in</span> <span class="n">correl_field</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;mess&quot;</span><span class="p">,</span> <span class="s2">&quot;msg&quot;</span><span class="p">])</span> <span class="ow">or</span> <span class="n">correl_field</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">field</span> <span class="ow">in</span> <span class="n">correl_field</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"mess"</span><span class="p">,</span> <span class="s2">"msg"</span><span class="p">])</span> <span class="ow">or</span> <span class="n">correl_field</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"id"</span><span class="p">):</span>
     <span class="n">group_freq_thresh</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="n">field</span> <span class="ow">in</span> <span class="n">correl_field</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;usr&quot;</span><span class="p">,</span> <span class="s2">&quot;auth&quot;</span><span class="p">]):</span>
+<span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="n">field</span> <span class="ow">in</span> <span class="n">correl_field</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"user"</span><span class="p">,</span> <span class="s2">"usr"</span><span class="p">,</span> <span class="s2">"auth"</span><span class="p">]):</span>
     <span class="n">group_freq_thresh</span> <span class="o">=</span> <span class="mi">500</span>
-<span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="n">field</span> <span class="ow">in</span> <span class="n">correl_field</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;county&quot;</span><span class="p">,</span> <span class="s2">&quot;cnty&quot;</span><span class="p">,</span> <span class="s2">&quot;cty&quot;</span><span class="p">,</span> <span class="s2">&quot;fips&quot;</span><span class="p">]):</span>
+<span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="n">field</span> <span class="ow">in</span> <span class="n">correl_field</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"county"</span><span class="p">,</span> <span class="s2">"cnty"</span><span class="p">,</span> <span class="s2">"cty"</span><span class="p">,</span> <span class="s2">"fips"</span><span class="p">]):</span>
     <span class="n">group_freq_thresh</span> <span class="o">=</span> <span class="mi">40000</span>
 <span class="k">else</span><span class="p">:</span>
     <span class="n">group_freq_thresh</span> <span class="o">=</span> <span class="mi">500</span>
@@ -210,6 +210,7 @@
 <li><p>If the group frequency threshold is set to zero then groups are queried from your message table (<a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a>).</p></li>
 <li><p>This flag is used in all non-feature extraction type DLATK commands, except for feature occurrence filtering (<a class="reference internal" href="fwflag_feat_occ_filter.html"><span class="doc">--feat_occ_filter</span></a>).</p></li>
 <li><p>For document (or message, sentence, very short text, etc.) analysis setting a group frequency threshold greater than zero can cause the MySQL server to time out. As a work around you can make sure no documents are empty and then set <cite>--group_freq_thresh 0</cite>.</p></li>
+<li><p><strong>Exception, verified:</strong> <a class="reference internal" href="fwflag_ttest_feat_tables.html"><span class="doc">--ttest_feat_tables</span></a> treats <code class="docutils literal notranslate"><span class="pre">0</span></code> the same as &quot;unset&quot; (a plain <code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">groupFreqThresh:</span></code> check), so <code class="docutils literal notranslate"><span class="pre">--group_freq_thresh</span> <span class="pre">0</span></code> there always fails with <code class="docutils literal notranslate"><span class="pre">AssertionError:</span> <span class="pre">No</span> <span class="pre">groups</span> <span class="pre">passing</span> <span class="pre">frequency</span> <span class="pre">threshold</span></code>. A positive integer is required for that specific switch — see the Known issue on its page.</p></li>
 </ul>
 </section>
 <section id="other-switches">
@@ -222,13 +223,13 @@
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
 <p>This first example we subset the feature table to only those features used by 5% of groups, when considering only groups with 500 words or more. This creates the table <cite>feat$1to3gram$msgs$user_id$16to16$0_05</cite>.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgs$user_id$16to16&#39;</span><span class="w"> </span><span class="se">\</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1to3gram$msgs$user_id$16to16'</span><span class="w"> </span><span class="se">\</span>
 --feat_occ_filter<span class="w"> </span>--set_p_occ<span class="w"> </span><span class="m">0</span>.05<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span>
 </pre></div>
 </div>
 <p>In this example we correlate age and gender with 1to3grams, only considering users with 500 or more words:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span><span class="se">\</span>
--f<span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgs$user_id$16to16$0_05&#39;</span><span class="w"> </span><span class="se">\</span>
+-f<span class="w"> </span><span class="s1">'feat$1to3gram$msgs$user_id$16to16$0_05'</span><span class="w"> </span><span class="se">\</span>
 --outcome_table<span class="w"> </span>blog_outcomes<span class="w">  </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span><span class="se">\</span>
 --outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span>--output_name<span class="w"> </span>xxx_output<span class="w"> </span><span class="se">\</span>
 --tagcloud<span class="w"> </span>--make_wordclouds

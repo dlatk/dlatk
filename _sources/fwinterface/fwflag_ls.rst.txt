@@ -16,6 +16,16 @@ SQL style wildcards ('%') will work with both :doc:`fwflag_t` and :doc:`fwflag_c
 
 Aliases: --show_feat_tables and --ls
 
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Runs a ``SHOW TABLES ... LIKE 'feat$%$<corptable>$<correl_field>$%'`` query and prints every matching feature table name; this is a read-only inspection switch and does not create or modify any tables.
+
 Other Switches
 ==============
 

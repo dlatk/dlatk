@@ -1,0 +1,41 @@
+.. _fwflag_print_csv:
+=============
+--print_csv
+=============
+Switch
+======
+
+--print_csv FILENAME
+
+Description
+===========
+
+Prints the group-normalized feature/outcome values used for correlation to a csv file.
+
+Argument and Default Value
+==========================
+
+A file path. Default: ``None``.
+
+Details
+=======
+
+**Known issue — MySQL-only, crashes under SQLite.** ``oa.printGroupsAndOutcomesToCSV()`` checks the feature table exists via ``mm.tableExists(...)`` — a call straight into ``mysqlmethods``, bypassing the ``DataEngine``/``QueryBuilder`` abstraction used everywhere else for SQLite support. Verified: under a SQLite corpus this fails immediately with ``sqlite3.OperationalError: near "show": syntax error`` (the generated ``SHOW TABLES``-style query is MySQL syntax).
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_t`, :doc:`fwflag_c`
+* :doc:`fwflag_f`
+* :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	# Works against MySQL; fails against SQLite (see Known issue above)
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --print_csv ./groups_and_outcomes.csv

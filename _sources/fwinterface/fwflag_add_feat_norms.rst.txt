@@ -1,0 +1,41 @@
+.. _fwflag_add_feat_norms:
+================
+--add_feat_norms
+================
+Switch
+======
+
+--add_feat_norms
+
+Description
+===========
+
+Adds a ``feat_norms`` summary (mean/std of each feature's ``group_norm`` across groups) to an existing feature table given by :doc:`fwflag_f`.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Calls ``FeatureRefiner.addFeatNorms(groupFreqThresh, setGFTWarning)`` — respects :doc:`fwflag_group_freq_thresh` the same way most refinement actions do.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_f`
+
+Optional Switches:
+
+* :doc:`fwflag_group_freq_thresh`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' --add_feat_norms

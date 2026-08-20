@@ -10,7 +10,17 @@ Switch
 Description
 ===========
 
-Describe MySQL tables. Will print the description of the tables specified by :doc:`fwflag_t`, :doc:`fwflag_f` and :doc:`fwflag_outcome_table` if any of those flags are present. Also takes optional positional arguments and prints the description of those tables as well. 
+Describe MySQL tables. Will print the description of the tables specified by :doc:`fwflag_t`, :doc:`fwflag_f` and :doc:`fwflag_outcome_table` if any of those flags are present. Also takes optional positional arguments and prints the description of those tables as well.
+
+Argument and Default Value
+==========================
+
+Zero or more table names as positional arguments. Default: ``False`` (not given).
+
+Details
+=======
+
+Runs a MySQL ``DESCRIBE`` on each table and prints the result; this is a read-only inspection switch and does not modify any tables. Aliased as ``--describe_tables``.
 
 Other Switches
 ==============

@@ -1,0 +1,45 @@
+.. _fwflag_multir:
+=========
+--multir
+=========
+Switch
+======
+
+--multir
+
+Description
+===========
+
+Multivariate regression: regresses each feature on all requested outcomes simultaneously (one model per feature, all outcomes as predictors — the reverse direction of :doc:`fwflag_correlate`, which fits one model per outcome/feature pair).
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Calls ``oa.multRegressionWithFeatures(fg, spearman, p_correction_method, blacklist, whitelist, showfeatfreqs, outcomeWithOutcome, interactions=args.interactions)``. This is the switch :doc:`fwflag_interactions` requires — without ``--multir``, ``--interactions`` has no effect. With :doc:`fwflag_csv`, writes results via ``oa.writeSignificantCoeffs4dVis()`` to a ``..multiprint..`` file for use with 4dVis-style visualization, using :doc:`fwflag_output_name`/``--output_dir`` the same way as other correlate-family output.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_f`
+* :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes`
+
+Optional Switches:
+
+* :doc:`fwflag_interactions`
+* :doc:`fwflag_csv`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age gender --multir --interactions --csv --output_name ./multir_out

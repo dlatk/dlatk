@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -200,7 +200,7 @@
 </pre></div>
 </div>
 <p><a class="reference internal" href="#"><span class="doc">--correlate</span></a> prints out the following tuples to the stdout:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">(</span><span class="s2">&quot;feature&quot;</span>,<span class="w"> </span><span class="o">(</span>pearson-r,<span class="w"> </span>p-value,<span class="w"> </span><span class="o">(</span>confidence<span class="w"> </span>interval<span class="w"> </span>left,<span class="w"> </span>confidence<span class="w"> </span>interval<span class="w"> </span>right<span class="o">)</span>,<span class="w"> </span>number<span class="w"> </span>of<span class="w"> </span>groups/sample<span class="w"> </span>size,<span class="w"> </span>total<span class="w"> </span>count<span class="w"> </span>of<span class="w"> </span><span class="s2">&quot;feature&quot;</span><span class="o">)</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">(</span><span class="s2">"feature"</span>,<span class="w"> </span><span class="o">(</span>pearson-r,<span class="w"> </span>p-value,<span class="w"> </span><span class="o">(</span>confidence<span class="w"> </span>interval<span class="w"> </span>left,<span class="w"> </span>confidence<span class="w"> </span>interval<span class="w"> </span>right<span class="o">)</span>,<span class="w"> </span>number<span class="w"> </span>of<span class="w"> </span>groups/sample<span class="w"> </span>size,<span class="w"> </span>total<span class="w"> </span>count<span class="w"> </span>of<span class="w"> </span><span class="s2">"feature"</span><span class="o">)</span>
 </pre></div>
 </div>
 </section>
@@ -236,7 +236,7 @@
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Correlates LIWC lexical features with age and gender for every user in masterstats_andy_r10k</span>
-dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>fb20<span class="w"> </span>-t<span class="w"> </span>messages_en<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--outcome_table<span class="w"> </span>masterstats_andy_r10k<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_LIWC2007$messages_en$user_id$16to16&#39;</span><span class="w"> </span>--correlate
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>fb20<span class="w"> </span>-t<span class="w"> </span>messages_en<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--outcome_table<span class="w"> </span>masterstats_andy_r10k<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$cat_LIWC2007$messages_en$user_id$16to16'</span><span class="w"> </span>--correlate
 </pre></div>
 </div>
 </section>

@@ -15,10 +15,12 @@ Write prediction results in a separate csv.
 Argument and Default Value
 ==========================
 
-null
+No argument. Boolean switch, default: ``False``.
 
 Details
 =======
+
+Aliased as ``--pred_csv``. Used with the ``predict_*``/``combo_test_*`` prediction switches; writes the per-group predicted values (``yhat``) to a csv next to :doc:`fwflag_output_name` instead of only printing summary metrics. For classifiers, see also ``--probability_csv``/``--prob_csv`` to write predicted class probabilities instead of hard labels.
 
 
 Example Commands

@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -184,10 +184,12 @@
 </section>
 <section id="argument-and-default-value">
 <h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
-<p>None</p>
+<p>No argument. Boolean switch, default: <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p>
 </section>
 <section id="details">
 <h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
+<p>Writes one histogram (<code class="docutils literal notranslate"><span class="pre">&lt;file&gt;_&lt;outcome&gt;_hist.png</span></code>) and one boxplot (<code class="docutils literal notranslate"><span class="pre">&lt;file&gt;_&lt;outcome&gt;_box.png</span></code>) per outcome in <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a>, using the raw values from <a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a>. Files are written to <a class="reference internal" href="fwflag_output_name.html"><span class="doc">--output_name</span></a> if given, otherwise to a generated filename under <code class="docutils literal notranslate"><span class="pre">--output_dir</span></code>. Useful as a sanity check on outcome distributions before running <a class="reference internal" href="fwflag_correlate.html"><span class="doc">--correlate</span></a> or a prediction workflow.</p>
+<p><strong>Known issue:</strong> as of this writing, this switch calls <code class="docutils literal notranslate"><span class="pre">StatsPlotter(args.corpdb)</span></code>, but <code class="docutils literal notranslate"><span class="pre">StatsPlotter.__init__</span></code> takes <code class="docutils literal notranslate"><span class="pre">(heights=700,</span> <span class="pre">widths=700)</span></code> — no database argument — so the corpus name is passed in as the plot height. It then calls <code class="docutils literal notranslate"><span class="pre">sp.plotDescStats(outcome_to_values,</span> <span class="pre">len(groups),</span> <span class="pre">outputFile)</span></code> against a signature of <code class="docutils literal notranslate"><span class="pre">plotDescStats(dataDict,</span> <span class="pre">filename=None,</span> <span class="pre">n_breaks=None,</span> <span class="pre">...)</span></code>, so the group count lands in <code class="docutils literal notranslate"><span class="pre">filename</span></code> and the real output path lands in <code class="docutils literal notranslate"><span class="pre">n_breaks</span></code>. <code class="docutils literal notranslate"><span class="pre">--descplot</span></code> does not currently produce usable output.</p>
 </section>
 <section id="other-switches">
 <h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>

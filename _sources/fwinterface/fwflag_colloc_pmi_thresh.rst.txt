@@ -1,0 +1,42 @@
+.. _fwflag_colloc_pmi_thresh:
+====================
+--colloc_pmi_thresh
+====================
+Switch
+======
+
+--colloc_pmi_thresh PMI
+
+Description
+===========
+
+The PMI (pointwise mutual information) threshold above which a multigram from :doc:`fwflag_colloc_table` is treated as a valid collocation, when extracting features with :doc:`fwflag_use_collocs`.
+
+Argument and Default Value
+==========================
+
+A float. Default: ``3.0`` (``dlac.DEF_PMI``, same default as :doc:`fwflag_set_pmi_threshold`).
+
+Details
+=======
+
+Looks at the ``feat_colloc_filter`` column of the collocation table you specify with :doc:`fwflag_colloc_table`. Distinct from :doc:`fwflag_set_pmi_threshold`, which is used when *building* a collocation table (:doc:`fwflag_feat_colloc_filter`) in the first place, not when consuming one via ``--use_collocs``.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_use_collocs`
+* :doc:`fwflag_colloc_table`
+
+Optional Switches:
+
+* :doc:`fwflag_colloc_column`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --use_collocs --colloc_table my_collocs --colloc_pmi_thresh 5.0

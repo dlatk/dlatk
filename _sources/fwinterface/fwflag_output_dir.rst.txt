@@ -1,0 +1,45 @@
+.. _fwflag_output_dir:
+=============
+--output_dir
+=============
+Switch
+======
+
+--output_dir DIRECTORY
+
+Description
+===========
+
+Folder to write output files (plots, tagcloud data, correlation matrices, etc.) into, when you haven't given an explicit filename via :doc:`fwflag_output_name`. Use one or the other, not both.
+
+Argument and Default Value
+==========================
+
+A directory path. Default: current directory (``.``), via ``dlac.DEF_OUTPUT_DIR``.
+
+Details
+=======
+
+When :doc:`fwflag_output_name` is not given, ``makeOutputFilename()`` builds a filename by joining ``--output_dir`` with pieces describing the run (feature table, outcomes, controls, etc.) — e.g. ``./out_test/feat.1to3gram.msgs100u.user_id.age``.
+
+**Known issue:** for the :doc:`fwflag_correlate` + :doc:`fwflag_rmatrix`/:doc:`fwflag_csv` output path specifically, ``dlatkInterface.py`` then wraps that already-prefixed filename in a second ``os.path.join(args.outputdir, ...)`` call, doubling the directory (e.g. ``./out_test/./out_test/....csv``) and crashing with ``FileNotFoundError`` since that doubled path doesn't exist. Verified by running ``--correlate --csv --output_dir ./out_test`` with no ``--output_name``. **Workaround:** always pass :doc:`fwflag_output_name` explicitly when using ``--correlate`` with ``--csv``/``--rmatrix`` — that path bypasses ``--output_dir`` entirely and works correctly.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_output_name` (takes precedence over this switch if both are given)
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	# Broken as of this writing (see Known issue above):
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --correlate --csv --output_dir ./results
+
+	# Works: use --output_name instead
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --correlate --csv --output_name ./results/corr

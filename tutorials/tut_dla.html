@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -236,7 +236,7 @@ dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<
 <p>The above command will produce four tables: one for each 'n' and then a table which combines everything (the 1gram, 2gram and 3gram tables). Next we will remove rare features from the combined table using the following:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1">##EXPECTED OUTPUT TABLES</span>
 <span class="c1">#feat$1to3gram$msgs_xxx$user_id$0_05</span>
-dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgs_xxx$user_id&#39;</span><span class="w"> </span>--feat_occ_filter<span class="w"> </span>--set_p_occ<span class="w"> </span><span class="m">0</span>.05<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1to3gram$msgs_xxx$user_id'</span><span class="w"> </span>--feat_occ_filter<span class="w"> </span>--set_p_occ<span class="w"> </span><span class="m">0</span>.05<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span>
 </pre></div>
 </div>
 <p>This command removes any feature used by less than 5% of groups. Note that we are using the <a class="reference internal" href="../fwinterface/fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a> flag as well which says we are only looking at groups with at least 500 words.</p>
@@ -246,7 +246,7 @@ dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<
 <li><p><a class="reference internal" href="../fwinterface/fwflag_t.html"><span class="doc">-t</span></a>: the table inside the database where our text lives</p></li>
 <li><p><a class="reference internal" href="../fwinterface/fwflag_c.html"><span class="doc">-g</span></a>: the table column we will be grouping the text by</p></li>
 <li><p><a class="reference internal" href="../fwinterface/fwflag_add_ngrams.html"><span class="doc">--add_ngrams</span></a>: the flag which starts the ngram extraction process</p></li>
-<li><p><span class="xref std std-doc">../fwinterface/fwflag_n</span>: the value or values for <em>n</em> in ngrams</p></li>
+<li><p><a class="reference internal" href="../fwinterface/fwflag_n.html"><span class="doc">-n</span></a>: the value or values for <em>n</em> in ngrams</p></li>
 <li><p><a class="reference internal" href="../fwinterface/fwflag_feat_occ_filter.html"><span class="doc">--feat_occ_filter</span></a>: This tells us to ignore features which occur in a small percentage of groups</p></li>
 <li><p><a class="reference internal" href="../fwinterface/fwflag_set_p_occ.html"><span class="doc">--set_p_occ</span></a>: The percentage value for the feature occurrence filter</p></li>
 <li><p><a class="reference internal" href="../fwinterface/fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a>: Ignore groups which do not contain a certain number of words</p></li>
@@ -421,7 +421,7 @@ Attach:rmatrix_output.png</p>
 <p>In this example, positive value for age correlates with older age, and negative correlates with younger. Similarly, a positive value for gender indicates correlation with female, and a negative value correlates with male.</p>
 <p>Next we look at language correlates and begin with 1to3grams:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span><span class="se">\</span>
--f<span class="w"> </span><span class="s1">&#39;feat$1to3gram$msgs_xxx$user_id$0_05&#39;</span><span class="w"> </span><span class="se">\</span>
+-f<span class="w"> </span><span class="s1">'feat$1to3gram$msgs_xxx$user_id$0_05'</span><span class="w"> </span><span class="se">\</span>
 --outcome_table<span class="w"> </span>blog_outcomes<span class="w">  </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span><span class="se">\</span>
 --outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span>--output_name<span class="w"> </span>xxx_output<span class="w"> </span><span class="se">\</span>
 --tagcloud<span class="w"> </span>--make_wordclouds
@@ -447,7 +447,7 @@ Attach:rmatrix_output.png</p>
 </table>
 <p>Finally using the Facebook topics and creating topic tag clouds:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-g<span class="w"> </span>user_id<span class="w"> </span><span class="se">\</span>
--f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra&#39;</span><span class="w"> </span><span class="se">\</span>
+-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs_xxx$user_id$1gra'</span><span class="w"> </span><span class="se">\</span>
 --outcome_table<span class="w"> </span>blog_outcomes<span class="w">  </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span><span class="se">\</span>
 --outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span>--output_name<span class="w"> </span>fbtopic_output<span class="w"> </span><span class="se">\</span>
 --topic_tagcloud<span class="w"> </span>--make_topic_wordcloud<span class="w"> </span>--topic_lexicon<span class="w"> </span>met_a30_2000_freq_t50ll<span class="w"> </span><span class="se">\</span>

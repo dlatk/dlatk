@@ -15,7 +15,12 @@ Makes word clouds from topcs. This needs an output topic tagcloud file. For NON 
 Argument and Default Value
 ==========================
 
-None
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Aliased as ``--make_topic_tagclouds``. Reads the data file produced by :doc:`fwflag_topic_tagcloud` or :doc:`fwflag_corp_topic_tagcloud` and renders each topic as a word cloud image, sized by the words' weight within that topic's lexicon entry.
 
 Other Switches
 ==============

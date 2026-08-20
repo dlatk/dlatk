@@ -1,0 +1,43 @@
+.. _fwflag_print_freq_csv:
+==================
+--print_freq_csv
+==================
+Switch
+======
+
+--print_freq_csv FILENAME
+
+Description
+===========
+
+Prints raw group frequencies (rather than group-normalized values) to a csv file — otherwise the same as :doc:`fwflag_print_csv`.
+
+Argument and Default Value
+==========================
+
+A file path. Default: ``None``.
+
+Details
+=======
+
+**Known issue — the filename you pass is ignored.** ``dlatkInterface.py`` calls ``oa.printGroupsAndOutcomesToCSV(fg, args.printcsv, freqs=True)`` — using ``args.printcsv`` (the value of :doc:`fwflag_print_csv`) instead of ``args.printfreqcsv``. Verified: running ``--print_freq_csv ./x.csv`` alone (without also passing ``--print_csv``) results in ``args.printcsv`` being ``None``, which then fails the same way described below rather than writing to ``./x.csv``.
+
+**Known issue — also MySQL-only.** This calls the same ``oa.printGroupsAndOutcomesToCSV()`` as :doc:`fwflag_print_csv`, which checks table existence via a direct ``mysqlmethods`` call rather than the SQLite-aware abstraction. Verified: fails with ``sqlite3.OperationalError: near "show": syntax error`` under a SQLite corpus.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_t`, :doc:`fwflag_c`
+* :doc:`fwflag_f`
+* :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	# Broken as of this writing (see Known issues above) — filename is silently swapped and MySQL only works
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --print_freq_csv ./freqs.csv

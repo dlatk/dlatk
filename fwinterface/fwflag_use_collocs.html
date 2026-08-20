@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -205,12 +205,12 @@
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Extract and filter in one command</span>
-dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--add_ngrams<span class="w"> </span>--use_collocs<span class="w"> </span>--colloc_table<span class="w"> </span><span class="s1">&#39;ufeat$pmi$msgs$lnpmi0_15&#39;</span><span class="w"> </span>--feat_occ_filter<span class="w"> </span>--set_p_occ<span class="w"> </span><span class="m">0</span>.05
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--add_ngrams<span class="w"> </span>--use_collocs<span class="w"> </span>--colloc_table<span class="w"> </span><span class="s1">'ufeat$pmi$msgs$lnpmi0_15'</span><span class="w"> </span>--feat_occ_filter<span class="w"> </span>--set_p_occ<span class="w"> </span><span class="m">0</span>.05
 
 
 
 <span class="c1"># Add a filter to a table that was generated using collocs, (requires specifying the word table for group_frequency calculation)</span>
-dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="err">&#39;</span>feat<span class="nv">$colloc$msgs$user_id$16</span>to16’<span class="w"> </span>--word_table<span class="w"> </span>’feat<span class="nv">$colloc$msgs$user_id$16</span>to16’<span class="w"> </span>--feat_occ_filter<span class="w"> </span>--set_p_occ<span class="w"> </span><span class="m">0</span>.05
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="err">'</span>feat<span class="nv">$colloc$msgs$user_id$16</span>to16’<span class="w"> </span>--word_table<span class="w"> </span>’feat<span class="nv">$colloc$msgs$user_id$16</span>to16’<span class="w"> </span>--feat_occ_filter<span class="w"> </span>--set_p_occ<span class="w"> </span><span class="m">0</span>.05
 </pre></div>
 </div>
 <p>Example outputs:</p>

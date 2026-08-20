@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -189,6 +189,8 @@
 <section id="details">
 <h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
 <p>This allows you to specify which database your message table and perhaps feature table(s) are in. Make sure you have at least “select” MySQL privileges to it. Note that this is different from the corpus databases specified in <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a>.</p>
+<p>In SQLite mode (see <a class="reference internal" href="../tutorials/tut_dataengine.html"><span class="doc">Data Engines</span></a>), this should normally be just a bare database name (no path, no <code class="docutils literal notranslate"><span class="pre">.db</span></code> extension), e.g. <code class="docutils literal notranslate"><span class="pre">--lexicondb</span> <span class="pre">dlatk_lexica</span></code>, with the file living in <code class="docutils literal notranslate"><span class="pre">~/sqlite_data/</span></code> (or <code class="docutils literal notranslate"><span class="pre">/content/sqlite_data</span></code>).</p>
+<p><strong>Known issue:</strong> as of this writing, passing a path or a <code class="docutils literal notranslate"><span class="pre">.db</span></code>-suffixed value here in SQLite mode does not work as the data-engine tutorial describes. <code class="docutils literal notranslate"><span class="pre">DLAWorker.load_lexicon()</span></code> unconditionally joins whatever you pass with the default <code class="docutils literal notranslate"><span class="pre">sqlite_data</span></code> directory (<code class="docutils literal notranslate"><span class="pre">self.lexicondb</span> <span class="pre">=</span> <span class="pre">path.join(default_dir,</span> <span class="pre">db_name)</span></code>), so an absolute/relative path or explicit <code class="docutils literal notranslate"><span class="pre">.db</span></code> suffix resolves to a nonexistent file (verified: it silently creates an empty, wrongly-named <code class="docutils literal notranslate"><span class="pre">.db.db</span></code> file at that path) rather than the file you actually pointed at. When the resulting lookup fails, the code falls back to trying a MySQL connection instead of erroring, which is a confusing failure mode if you don't have MySQL running.</p>
 </section>
 </section>
 

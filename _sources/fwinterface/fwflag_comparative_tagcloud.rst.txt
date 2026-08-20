@@ -1,0 +1,40 @@
+.. _fwflag_comparative_tagcloud:
+========================
+--comparative_tagcloud
+========================
+Switch
+======
+
+--comparative_tagcloud
+
+Description
+===========
+
+Produces a tagcloud comparing two samples of groups against each other directly, rather than correlating features against an outcome. Aliased as ``--comparative_wordcloud``.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Requires both :doc:`fwflag_sample1` and :doc:`fwflag_sample2` to be given — the check is ``if args.compTagcloud and args.compTCsample1 and args.compTCsample2:``, so this switch alone does nothing without both samples. Internally calls ``oa.IDPcomparison(fg, sample1, sample2, ...)``, the same Informative Dirichlet Prior machinery as :doc:`fwflag_IDP`, comparing word usage between the two group sets instead of against a numeric/binary outcome.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_sample1`
+* :doc:`fwflag_sample2`
+* :doc:`fwflag_f`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--comparative_tagcloud --sample1 user123 user456 --sample2 user789 user321 --make_wordclouds

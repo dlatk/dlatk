@@ -10,8 +10,17 @@ Switch
 Description
 ===========
 
-To be used in Mediation analysis when the "path start" variables are located inside the feature table. If :doc:`fwflag_path_starts` is not present then all features in the feature table will be considered. 
+To be used in Mediation analysis when the "path start" variables are located inside the feature table. If :doc:`fwflag_path_starts` is not present then all features in the feature table will be considered.
 
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Set this when the feature table given by :doc:`fwflag_f` holds the mediation path-start (independent) variables instead of, or in addition to, ``--path_starts``. Combine with :doc:`fwflag_feat_as_control` and/or :doc:`fwflag_feat_as_outcome` when several mediation roles live in feature tables.
 
 Other Switches
 ==============

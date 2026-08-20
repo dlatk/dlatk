@@ -1,0 +1,38 @@
+.. _fwflag_weighted_sample:
+==================
+--weighted_sample
+==================
+Switch
+======
+
+--weighted_sample FIELD
+
+Description
+===========
+
+A field in :doc:`fwflag_outcome_table` to use as per-group sample weights during regression training (e.g. survey/demographic weights).
+
+Argument and Default Value
+==========================
+
+An outcome-table column name. Default: ``''`` (``dlac.DEF_WEIGHTS``, no weighting).
+
+Details
+=======
+
+The named field is automatically appended to the requested outcomes (``args.outcomefields.append(args.weightedsample)``), then pulled back out and used as ``sample_weight`` when fitting the underlying scikit-learn regressor in ``RegressionPredictor.train()`` — every group's error contributes to the loss in proportion to its weight instead of equally.
+
+Other Switches
+==============
+
+Required Switches:
+
+* One of the regression training switches, e.g. :doc:`fwflag_train_regression`, :doc:`fwflag_combo_test_regression`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --weighted_sample survey_weight --combo_test_regression

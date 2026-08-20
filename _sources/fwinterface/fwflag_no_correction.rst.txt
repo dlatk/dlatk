@@ -15,8 +15,9 @@ Turns off p correction
 Argument and Default Value
 ==========================
 
-
+No argument. Sets ``p_correction_method`` to ``''`` (empty string), overriding whatever :doc:`fwflag_p_correction` was set to (default: Benjamini-Hochberg).
 
 Details
 =======
 
+Applies to :doc:`fwflag_correlate` and related reporting switches (:doc:`fwflag_rmatrix`, :doc:`fwflag_csv`, tagcloud/wordcloud output). Replaces the deprecated ``--no_bonf`` flag, which now just prints a message pointing here — as does :doc:`fwflag_no_bonferroni`, which is also broken and immediately exits the program (verified; see that page). ``--no_correction`` itself works correctly and is the only one of the three you should use.

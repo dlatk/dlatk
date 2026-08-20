@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -216,7 +216,7 @@
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Uses model and disease values to predict component distribution per county, and outputting the county values into</span>
 <span class="c1"># both the DELETEME MySQL table and the deleteMe.csv file.</span>
-dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>county_disease<span class="w"> </span>-t<span class="w"> </span>messages_en<span class="w"> </span>-c<span class="w"> </span>cnty<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$messages_en$cnty$16to16&#39;</span><span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">0</span><span class="w"> </span>--outcome_table<span class="w"> </span>topDeaths_comp_0910<span class="w"> </span>--outcomes<span class="w"> </span>01hea_aar<span class="w"> </span>02mal_aar<span class="w"> </span>03chr_aar<span class="w"> </span>04cer_aar<span class="w"> </span>05acc_aar<span class="w"> </span>06alz_aar<span class="w"> </span>07dia_aar<span class="w"> </span>08nep_aar<span class="w"> </span>09flu_aar<span class="w"> </span>10sel_aar<span class="w"> </span>11sep_aar<span class="w"> </span>12liv_aar<span class="w"> </span>13hyp_aar<span class="w"> </span>14par_aar<span class="w"> </span>15pne_aar<span class="w">  </span>--cca_predict_components<span class="w"> </span>--load_model<span class="w"> </span>--picklefile<span class="w"> </span>diseasesOnd6s4.K10.X0_4.Z0_4.gft0.pickle<span class="w"> </span>--to_sql_table<span class="w"> </span>DELETEME<span class="w"> </span>--csv<span class="w"> </span>--output_name<span class="w"> </span>deleteMe.csv
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>county_disease<span class="w"> </span>-t<span class="w"> </span>messages_en<span class="w"> </span>-c<span class="w"> </span>cnty<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$messages_en$cnty$16to16'</span><span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">0</span><span class="w"> </span>--outcome_table<span class="w"> </span>topDeaths_comp_0910<span class="w"> </span>--outcomes<span class="w"> </span>01hea_aar<span class="w"> </span>02mal_aar<span class="w"> </span>03chr_aar<span class="w"> </span>04cer_aar<span class="w"> </span>05acc_aar<span class="w"> </span>06alz_aar<span class="w"> </span>07dia_aar<span class="w"> </span>08nep_aar<span class="w"> </span>09flu_aar<span class="w"> </span>10sel_aar<span class="w"> </span>11sep_aar<span class="w"> </span>12liv_aar<span class="w"> </span>13hyp_aar<span class="w"> </span>14par_aar<span class="w"> </span>15pne_aar<span class="w">  </span>--cca_predict_components<span class="w"> </span>--load_model<span class="w"> </span>--picklefile<span class="w"> </span>diseasesOnd6s4.K10.X0_4.Z0_4.gft0.pickle<span class="w"> </span>--to_sql_table<span class="w"> </span>DELETEME<span class="w"> </span>--csv<span class="w"> </span>--output_name<span class="w"> </span>deleteMe.csv
 </pre></div>
 </div>
 </section>

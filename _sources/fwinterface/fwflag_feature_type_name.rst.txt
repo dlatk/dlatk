@@ -5,9 +5,19 @@
 Switch
 ======
 
---feature_type_name
+--feature_type_name STRING
+
+Description
+===========
+
+Customizes the name of the feature type embedded in the output feature table's name.
+
+Argument and Default Value
+==========================
+
+A string. Default: ``None`` (falls back to the feature-specific default, e.g. ``"colloc"`` when used with :doc:`fwflag_use_collocs`).
 
 Details
 =======
 
-Modifies :doc:`fwflag_use_collocs` 
+Modifies :doc:`fwflag_use_collocs`, which otherwise names the resulting collocation feature table ``feat$colloc$...``; passing e.g. ``--feature_type_name mwe`` produces ``feat$mwe$...`` instead.

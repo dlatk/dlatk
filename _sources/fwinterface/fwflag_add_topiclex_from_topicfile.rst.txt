@@ -1,0 +1,37 @@
+.. _fwflag_add_topiclex_from_topicfile:
+================================
+--add_topiclex_from_topicfile
+================================
+Switch
+======
+
+--add_topiclex_from_topicfile
+
+Description
+===========
+
+Creates a lexicon table from a topic file (e.g. Mallet output).
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+**Known issue — this flag always crashes.** Its handler in ``dlatkInterface.py`` runs ``if args.lexthresh == None: args.lexthresh = float('-inf')`` before calling ``fe.addTopicLexFromTopicFile(...)``, but no ``--lex_thresh`` (or any other flag) registers a ``lexthresh`` destination anywhere in the argument parser — despite the flag's own ``--help`` text listing ``--lex_thresh`` as required. Verified: running this switch with valid :doc:`fwflag_topic_file`, :doc:`fwflag_topic_lexicon`, and :doc:`fwflag_topic_lex_method` values still fails immediately with ``AttributeError: 'Namespace' object has no attribute 'lexthresh'``. There is currently no way to invoke this switch successfully from the command line.
+
+Other Switches
+==============
+
+Required Switches (per the non-functional help text):
+
+* :doc:`fwflag_topic_file`
+* :doc:`fwflag_topic_lexicon`
+* :doc:`fwflag_topic_lex_method`
+
+Example Commands
+================
+
+Not usable as of this writing — see Known issue above.

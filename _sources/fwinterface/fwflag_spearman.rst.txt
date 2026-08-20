@@ -15,10 +15,12 @@ Returns Spearman correlation instead of Pearson R
 Argument and Default Value
 ==========================
 
-None
+No argument. Boolean switch, default: ``False`` (Pearson).
 
 Details
 =======
+
+Applies to :doc:`fwflag_correlate` and anywhere else a correlation metric is chosen (see :doc:`fwflag_IDP` for the full metric priority order). Spearman is a rank correlation, so it is less sensitive to outliers and non-linear (but monotonic) relationships than Pearson R.
 
 
 Other Switches

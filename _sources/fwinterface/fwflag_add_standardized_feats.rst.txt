@@ -1,0 +1,41 @@
+.. _fwflag_add_standardized_feats:
+========================
+--add_standardized_feats
+========================
+Switch
+======
+
+--add_standardized_feats
+
+Description
+===========
+
+Creates a new feature table with each feature's ``group_norm`` z-scored (standardized) across groups. Aliased as ``--add_std_feats``.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Calls ``FeatureRefiner.createStandardizedFeatTable(groupFreqThresh, setGFTWarning)`` and sets ``args.feattable`` to the new table, so it can be chained with a following action (e.g. :doc:`fwflag_correlate`) in the same command.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_f`
+
+Optional Switches:
+
+* :doc:`fwflag_group_freq_thresh`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' --add_standardized_feats

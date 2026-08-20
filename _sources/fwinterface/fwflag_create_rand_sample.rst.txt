@@ -12,7 +12,17 @@ Description
 
 Creates a new table with a random subset of rows from the table specified by :doc:`../fwinterface/fwflag_t`. New table has *_rand* appended to the table name.
 
-You must specify the percentage of rows to keep. Optionally you can give a random seed, which is 42 by default. 
+You must specify the percentage of rows to keep. Optionally you can give a random seed, which is 42 by default.
+
+Argument and Default Value
+==========================
+
+A percentage as a decimal (e.g. ``.10`` for 10%), followed by an optional integer random seed. Default seed: ``42``.
+
+Details
+=======
+
+Aliased as ``--create_rand_sample``. Runs a random sample query against the table given by :doc:`fwflag_t` and materializes the result as a new table named ``<table>_rand``. Unlike :doc:`fwflag_group_freq_thresh`, sampling here is row-based, not grouped by :doc:`fwflag_c`.
 
 Other Switches
 ==============

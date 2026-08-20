@@ -16,13 +16,20 @@ Makes word clouds. This needs an output topic tagcloud file. For topic word clou
 Argument and Default Value
 ==========================
 
-None
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Aliased as ``--make_tagclouds``. Reads the data file produced by :doc:`fwflag_tagcloud` and renders it as a word cloud image, sized by each word's correlation/weight. For topic-based word clouds see :doc:`fwflag_make_topic_wordclouds`.
 
 Other Switches
 ==============
 
 Required Switches:
-* :doc:`fwflag_topic_tagcloud` Optional Switches:
+* :doc:`fwflag_tagcloud`
+
+Optional Switches:
 * :doc:`fwflag_tagcloud_colorscheme` 
 
 Example Commands

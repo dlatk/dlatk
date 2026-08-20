@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -181,6 +181,14 @@
 <section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h2>
 <p>Describe MySQL tables. Will print the description of the tables specified by <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a>, <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> and <a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a> if any of those flags are present. Also takes optional positional arguments and prints the description of those tables as well.</p>
+</section>
+<section id="argument-and-default-value">
+<h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
+<p>Zero or more table names as positional arguments. Default: <code class="docutils literal notranslate"><span class="pre">False</span></code> (not given).</p>
+</section>
+<section id="details">
+<h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
+<p>Runs a MySQL <code class="docutils literal notranslate"><span class="pre">DESCRIBE</span></code> on each table and prints the result; this is a read-only inspection switch and does not modify any tables. Aliased as <code class="docutils literal notranslate"><span class="pre">--describe_tables</span></code>.</p>
 </section>
 <section id="other-switches">
 <h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>

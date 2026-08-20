@@ -1,0 +1,35 @@
+.. _fwflag_bracket_labels:
+================
+--bracket_labels
+================
+Switch
+======
+
+--bracket_labels
+
+Description
+===========
+
+Intended to wrap :doc:`fwflag_feat_labelmap_lex`/:doc:`fwflag_feat_labelmap_table` feature labels in brackets.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``''`` (falsy).
+
+Details
+=======
+
+**Known issue — this flag currently has no effect at all.** ``dlatkInterface.py`` never reads ``args.bracketlabels`` anywhere. The one place that consumes a ``bracketlabels`` parameter, ``OutcomeGetter.getFeatureMapping()``, is always called with it hardcoded to ``False`` (``self.featureMapping = self.getFeatureMapping(featureMappingTable, featureMappingLex, False)`` in ``outcomeGetter.py``), regardless of what you pass on the command line. Verified by grepping the full call chain — there is no path from ``args.bracketlabels`` to that function.
+
+Other Switches
+==============
+
+Required Switches:
+
+* None (flag currently does nothing)
+
+Example Commands
+================
+
+Not usable — this switch is parsed but has no effect on any command.

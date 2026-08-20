@@ -1,0 +1,42 @@
+.. _fwflag_num_bins:
+============
+--num_bins
+============
+Switch
+======
+
+--num_bins N
+
+Description
+===========
+
+Number of bins to split a feature's group range into, when building a binned feature table with :doc:`fwflag_feat_flexibin`.
+
+Argument and Default Value
+==========================
+
+An integer. Default: ``None``.
+
+Details
+=======
+
+Passed to ``FeatureRefiner.createTableWithBinnedFeats(num_bins, group_id_range, ...)``. Required together with :doc:`fwflag_group_id_range` and :doc:`fwflag_f` — if any of the three is missing, ``--feat_flexibin`` silently does nothing (``if not args.numbins or not args.groupidrange or not args.feattable: continue``-style guard).
+
+**Note:** :doc:`fwflag_feat_flexibin` itself is currently broken for an unrelated reason — see the Known issue on that page — so this switch has no working consumer as of this writing even when supplied correctly.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_feat_flexibin`
+* :doc:`fwflag_group_id_range`
+* :doc:`fwflag_f`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--feat_flexibin --num_bins 10 --group_id_range 0 100

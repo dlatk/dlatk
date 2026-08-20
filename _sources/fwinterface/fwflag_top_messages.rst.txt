@@ -1,0 +1,42 @@
+.. _fwflag_top_messages:
+===============
+--top_messages
+===============
+Switch
+======
+
+--top_messages [N]
+
+Description
+===========
+
+For each lexicon category in :doc:`fwflag_l`, finds the top ``N`` individual messages that score highest for that category, using a message-level feature table.
+
+Argument and Default Value
+==========================
+
+An optional integer (``nargs='?'``). If given with no value, or omitted entirely, uses ``dlac.DEF_TOP_MESSAGES``. Default when the flag is absent entirely: ``False`` (switch off).
+
+Details
+=======
+
+Verified end-to-end. Requires a **message-level** feature table (i.e. built with ``-c message_id``, not a higher-level group like ``user_id``) passed via :doc:`fwflag_f`, of the category-scored form produced by :doc:`fwflag_add_lex_table`. Writes ``<output_name>_topmsgs.csv`` with columns ``message_id, message, category, top_words`` — one row per top message per category, alongside the category's top-weighted words from the lexicon for context. :doc:`fwflag_group_freq_thresh` is applied via ``getGroupWordCounts()`` before selecting top messages.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_f` (a message-level, lexicon-category feature table)
+* :doc:`fwflag_l`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c message_id --add_ngrams -n 1
+	dlatkInterface.py -d dla_tutorial -t msgs -c message_id --add_lex_table -l met_a30_2000_cp --weighted_lexicon
+	dlatkInterface.py -d dla_tutorial -t msgs -c message_id \
+	-f 'feat$cat_met_a30_2000_cp_w$msgs$message_id$1gra' -l met_a30_2000_cp \
+	--top_messages 5 --output_name ./top_msgs

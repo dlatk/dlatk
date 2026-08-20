@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -197,7 +197,7 @@
 <li><p><a class="reference internal" href="fwflag_rmatrix.html"><span class="doc">--rmatrix</span></a></p></li>
 <li><p><a class="reference internal" href="fwflag_csv.html"><span class="doc">--csv</span></a></p></li>
 <li><p><a class="reference internal" href="fwflag_prediction_csv.html"><span class="doc">--prediction_csv</span></a></p></li>
-<li><p><span class="xref std std-doc">../fwinterface/fwflag_probability_csv</span></p></li>
+<li><p><a class="reference internal" href="fwflag_probability_csv.html"><span class="doc">--probability_csv</span></a></p></li>
 <li><p><a class="reference internal" href="fwflag_tagcloud.html"><span class="doc">--tagcloud</span></a> and <a class="reference internal" href="fwflag_make_wordclouds.html"><span class="doc">--make_wordclouds</span></a></p></li>
 <li><p><a class="reference internal" href="fwflag_topic_tagcloud.html"><span class="doc">--topic_tagcloud</span></a> and <a class="reference internal" href="fwflag_make_topic_wordclouds.html"><span class="doc">--make_topic_wordclouds</span></a></p></li>
 </ul>
@@ -206,7 +206,7 @@
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
 <p>This commands will create topic word clouds correlated with age and gender and place them in the <cite>age_and_gender_clouds</cite> directory:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span><span class="se">\</span>
--f<span class="w"> </span><span class="s1">&#39;feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16&#39;</span><span class="w"> </span><span class="se">\</span>
+-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16'</span><span class="w"> </span><span class="se">\</span>
 <span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w">  </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span><span class="se">\</span>
 <span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span>--output_name<span class="w"> </span>age_and_gender_clouds<span class="w"> </span><span class="se">\</span>
 <span class="w"> </span>--topic_tagcloud<span class="w"> </span>--make_topic_wordcloud<span class="w"> </span>--topic_lexicon<span class="w"> </span>met_a30_2000_freq_t50ll<span class="w"> </span><span class="se">\</span>

@@ -1,0 +1,41 @@
+.. _fwflag_n:
+======
+-n
+======
+Switch
+======
+
+-n N [N2 ...]
+
+Description
+===========
+
+The value(s) of *n* to use when extracting n-gram features with :doc:`fwflag_add_ngrams`/:doc:`fwflag_add_ngrams_from_tokenized`. Aliased as ``--set_n``.
+
+Argument and Default Value
+==========================
+
+One or more integers. Default: ``[1]`` (unigrams only).
+
+Details
+=======
+
+Verified: ``dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1 2 3`` creates ``feat$1gram$...``, ``feat$2gram$...``, and ``feat$3gram$...`` tables, one per value of ``-n``. Combine with :doc:`fwflag_combine_feat_tables` to also produce a single merged table across all of them (e.g. a ``1to3gram`` table).
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_add_ngrams` or :doc:`fwflag_add_ngrams_from_tokenized`
+
+Optional Switches:
+
+* :doc:`fwflag_combine_feat_tables`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1 2 3 --combine_feat_tables 1to3gram

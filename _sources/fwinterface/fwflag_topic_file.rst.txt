@@ -1,0 +1,42 @@
+.. _fwflag_topic_file:
+=============
+--topic_file
+=============
+Switch
+======
+
+--topic_file FILENAME
+
+Description
+===========
+
+Path to a topic file (e.g. Mallet's ``.keys``/composition output) to build a topic lexicon table from, via :doc:`fwflag_add_topiclex_from_topicfile`.
+
+Argument and Default Value
+==========================
+
+A file path. Default: ``''``.
+
+Details
+=======
+
+Required together with :doc:`fwflag_topic_lexicon` (used here as the *new* lexicon table name to create, not an existing one to read) and :doc:`fwflag_topic_lex_method` — the code checks ``if not args.topicfile or not args.topiclexicon or not args.topiclexmethod: <skip>`` before calling ``FeatureExtractor.addTopicLexFromTopicFile(topicfile, topiclexicon, topiclexmethod, lexthresh)``.
+
+**Note:** :doc:`fwflag_add_topiclex_from_topicfile` (the switch that actually consumes this value) is currently broken for an unrelated reason — see the Known issue on that page — so this switch has no working consumer as of this writing even when supplied correctly.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_add_topiclex_from_topicfile`
+* :doc:`fwflag_topic_lexicon` (name for the new lexicon table)
+* :doc:`fwflag_topic_lex_method`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial --add_topiclex_from_topicfile --topic_file /path/to/topics.keys \
+	--topic_lexicon my_new_topics --topic_lex_method csv_lik

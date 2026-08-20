@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -272,43 +272,43 @@
 </div>
 <p>This will create the table <code class="docutils literal notranslate"><span class="pre">feat$bert_ba_un_meL10con$msgs_xxx$user_id$16to16</span></code> in the <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> database. How do you make use of these features?</p>
 <p>The answer is, essentially, like any other feature table in DLATK! (See <a class="reference internal" href="tut_pred.html"><span class="doc">Intro Prediction / Classification / Predictive Lexica</span></a> if you don't know how to use feature tables.) For example, let's say you want to predict age from the <code class="docutils literal notranslate"><span class="pre">blog_outcomes</span></code> table in the <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> database (just like in <a class="reference internal" href="tut_pred.html"><span class="doc">Intro Prediction / Classification / Predictive Lexica</span></a>). This would look like:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$bert_ba_un_meL10con$msgs_xxx$user_id$16to16&#39;</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--output_name<span class="w"> </span>xxx_age_output<span class="w"> </span>--nfold_test_regression<span class="w"> </span>--model<span class="w"> </span>ridgecv<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs_xxx<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$bert_ba_un_meL10con$msgs_xxx$user_id$16to16'</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--output_name<span class="w"> </span>xxx_age_output<span class="w"> </span>--nfold_test_regression<span class="w"> </span>--model<span class="w"> </span>ridgecv<span class="w"> </span>--folds<span class="w"> </span><span class="m">10</span>
 </pre></div>
 </div>
 <p>This will run a ridge regression model through 10-fold cross validation, predicting age, and using BERT embeddings as features in the model. You should see lots of output, ending with something like this:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>TEST<span class="w"> </span>COMPLETE<span class="o">]</span>
 
-<span class="o">{</span><span class="s1">&#39;age&#39;</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;N&#39;</span>:<span class="w"> </span><span class="m">978</span>,
-<span class="w">          </span><span class="s1">&#39;R&#39;</span>:<span class="w"> </span><span class="m">0</span>.6618386965904822,
-<span class="w">          </span><span class="s1">&#39;R2&#39;</span>:<span class="w"> </span><span class="m">0</span>.43803046030458836,
-<span class="w">          </span><span class="s1">&#39;R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.4233643081827411,
-<span class="w">          </span><span class="s1">&#39;mae&#39;</span>:<span class="w"> </span><span class="m">4</span>.619034298134363,
-<span class="w">          </span><span class="s1">&#39;mae_folds&#39;</span>:<span class="w"> </span><span class="m">4</span>.616423448270654,
-<span class="w">          </span><span class="s1">&#39;mse&#39;</span>:<span class="w"> </span><span class="m">38</span>.854440157161314,
-<span class="w">          </span><span class="s1">&#39;mse_folds&#39;</span>:<span class="w"> </span><span class="m">38</span>.820150245521624,
-<span class="w">          </span><span class="s1">&#39;num_features&#39;</span>:<span class="w"> </span><span class="m">768</span>,
-<span class="w">          </span><span class="s1">&#39;r&#39;</span>:<span class="w"> </span><span class="m">0</span>.6621098985283438,
-<span class="w">          </span><span class="s1">&#39;r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.6694097453791333,
-<span class="w">          </span><span class="s1">&#39;r_p&#39;</span>:<span class="w"> </span><span class="m">2</span>.0416764169778933e-124,
-<span class="w">          </span><span class="s1">&#39;r_p_folds&#39;</span>:<span class="w"> </span><span class="m">1</span>.783371417616072e-11,
-<span class="w">          </span><span class="s1">&#39;rho&#39;</span>:<span class="w"> </span><span class="m">0</span>.7107187086007063,
-<span class="w">          </span><span class="s1">&#39;rho_p&#39;</span>:<span class="w"> </span><span class="m">2</span>.9543434601896134e-151,
-<span class="w">          </span><span class="s1">&#39;se_R2_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.02206729102836306,
-<span class="w">          </span><span class="s1">&#39;se_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.11535169076175808,
-<span class="w">          </span><span class="s1">&#39;se_mse_folds&#39;</span>:<span class="w"> </span><span class="m">1</span>.859884969097588,
-<span class="w">          </span><span class="s1">&#39;se_r_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.01581679229802067,
-<span class="w">          </span><span class="s1">&#39;se_r_p_folds&#39;</span>:<span class="w"> </span><span class="m">9</span>.484973024855944e-12,
-<span class="w">          </span><span class="s1">&#39;se_train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">0</span>.20067386714575627,
-<span class="w">          </span><span class="s1">&#39;test_size&#39;</span>:<span class="w"> </span><span class="m">105</span>,
-<span class="w">          </span><span class="s1">&#39;train_mean_mae&#39;</span>:<span class="w"> </span><span class="m">4</span>.335374453708489,
-<span class="w">          </span><span class="s1">&#39;train_mean_mae_folds&#39;</span>:<span class="w"> </span><span class="m">6</span>.464315148935017,
-<span class="w">          </span><span class="s1">&#39;train_size&#39;</span>:<span class="w"> </span><span class="m">873</span>,
-<span class="w">          </span><span class="s1">&#39;{modelFS_desc}&#39;</span>:<span class="w"> </span><span class="s1">&#39;None&#39;</span>,
-<span class="w">          </span><span class="s1">&#39;{model_desc}&#39;</span>:<span class="w"> </span><span class="s1">&#39;RidgeCV(alphas=array([1.e+03, 1.e-01, &#39;</span>
-<span class="w">                          </span><span class="s1">&#39;1.e+00, 1.e+01, 1.e+02, 1.e+04, 1.e+05]),   &#39;</span>
-<span class="w">                          </span><span class="s1">&#39;cv=None, fit_intercept=True, gcv_mode=None, &#39;</span>
-<span class="w">                          </span><span class="s1">&#39;normalize=False,   scoring=None, &#39;</span>
-<span class="w">                          </span><span class="s1">&#39;store_cv_values=False)&#39;</span><span class="o">}}}}</span>
+<span class="o">{</span><span class="s1">'age'</span>:<span class="w"> </span><span class="o">{()</span>:<span class="w"> </span><span class="o">{</span><span class="m">1</span>:<span class="w"> </span><span class="o">{</span><span class="s1">'N'</span>:<span class="w"> </span><span class="m">978</span>,
+<span class="w">          </span><span class="s1">'R'</span>:<span class="w"> </span><span class="m">0</span>.6618386965904822,
+<span class="w">          </span><span class="s1">'R2'</span>:<span class="w"> </span><span class="m">0</span>.43803046030458836,
+<span class="w">          </span><span class="s1">'R2_folds'</span>:<span class="w"> </span><span class="m">0</span>.4233643081827411,
+<span class="w">          </span><span class="s1">'mae'</span>:<span class="w"> </span><span class="m">4</span>.619034298134363,
+<span class="w">          </span><span class="s1">'mae_folds'</span>:<span class="w"> </span><span class="m">4</span>.616423448270654,
+<span class="w">          </span><span class="s1">'mse'</span>:<span class="w"> </span><span class="m">38</span>.854440157161314,
+<span class="w">          </span><span class="s1">'mse_folds'</span>:<span class="w"> </span><span class="m">38</span>.820150245521624,
+<span class="w">          </span><span class="s1">'num_features'</span>:<span class="w"> </span><span class="m">768</span>,
+<span class="w">          </span><span class="s1">'r'</span>:<span class="w"> </span><span class="m">0</span>.6621098985283438,
+<span class="w">          </span><span class="s1">'r_folds'</span>:<span class="w"> </span><span class="m">0</span>.6694097453791333,
+<span class="w">          </span><span class="s1">'r_p'</span>:<span class="w"> </span><span class="m">2</span>.0416764169778933e-124,
+<span class="w">          </span><span class="s1">'r_p_folds'</span>:<span class="w"> </span><span class="m">1</span>.783371417616072e-11,
+<span class="w">          </span><span class="s1">'rho'</span>:<span class="w"> </span><span class="m">0</span>.7107187086007063,
+<span class="w">          </span><span class="s1">'rho_p'</span>:<span class="w"> </span><span class="m">2</span>.9543434601896134e-151,
+<span class="w">          </span><span class="s1">'se_R2_folds'</span>:<span class="w"> </span><span class="m">0</span>.02206729102836306,
+<span class="w">          </span><span class="s1">'se_mae_folds'</span>:<span class="w"> </span><span class="m">0</span>.11535169076175808,
+<span class="w">          </span><span class="s1">'se_mse_folds'</span>:<span class="w"> </span><span class="m">1</span>.859884969097588,
+<span class="w">          </span><span class="s1">'se_r_folds'</span>:<span class="w"> </span><span class="m">0</span>.01581679229802067,
+<span class="w">          </span><span class="s1">'se_r_p_folds'</span>:<span class="w"> </span><span class="m">9</span>.484973024855944e-12,
+<span class="w">          </span><span class="s1">'se_train_mean_mae_folds'</span>:<span class="w"> </span><span class="m">0</span>.20067386714575627,
+<span class="w">          </span><span class="s1">'test_size'</span>:<span class="w"> </span><span class="m">105</span>,
+<span class="w">          </span><span class="s1">'train_mean_mae'</span>:<span class="w"> </span><span class="m">4</span>.335374453708489,
+<span class="w">          </span><span class="s1">'train_mean_mae_folds'</span>:<span class="w"> </span><span class="m">6</span>.464315148935017,
+<span class="w">          </span><span class="s1">'train_size'</span>:<span class="w"> </span><span class="m">873</span>,
+<span class="w">          </span><span class="s1">'{modelFS_desc}'</span>:<span class="w"> </span><span class="s1">'None'</span>,
+<span class="w">          </span><span class="s1">'{model_desc}'</span>:<span class="w"> </span><span class="s1">'RidgeCV(alphas=array([1.e+03, 1.e-01, '</span>
+<span class="w">                          </span><span class="s1">'1.e+00, 1.e+01, 1.e+02, 1.e+04, 1.e+05]),   '</span>
+<span class="w">                          </span><span class="s1">'cv=None, fit_intercept=True, gcv_mode=None, '</span>
+<span class="w">                          </span><span class="s1">'normalize=False,   scoring=None, '</span>
+<span class="w">                          </span><span class="s1">'store_cv_values=False)'</span><span class="o">}}}}</span>
 </pre></div>
 </div>
 <p>Comparing these results against those from <a class="reference internal" href="tut_pred.html"><span class="doc">Intro Prediction / Classification / Predictive Lexica</span></a>, we can see that BERT features get a Pearson r of 0.6621, outperforming LDA topics + unigrams, which get an r of 0.6496.</p>

@@ -15,18 +15,19 @@ Enables interactions with multivariate regression.
 Argument and Default Value
 ==========================
 
-None
+No argument. Boolean switch, default: ``False``.
 
 Details
 =======
 
+When set, pairwise interaction terms between all features are added to the design matrix before fitting the multiple regression, so the model can capture non-additive effects between features rather than only their independent contributions.
 
 Other Switches
 ==============
 
 Required Switches:
 
-* :doc:`fwflag_multir`
+* ``--multir``
 
 Optional Switches:
 

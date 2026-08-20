@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -231,7 +231,7 @@ SQL<span class="w"> </span>Query:<span class="w"> </span>DROP<span class="w"> </
 SQL<span class="w"> </span>Query:<span class="w"> </span>CREATE<span class="w"> </span>TABLE<span class="w"> </span>feat<span class="nv">$1</span>gram<span class="nv">$utterances$speaker</span><span class="w"> </span><span class="o">(</span><span class="w"> </span>id<span class="w"> </span>INTEGER<span class="w"> </span>PRIMARY<span class="w"> </span>KEY,<span class="w"> </span>group_id<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">255</span><span class="o">)</span>,<span class="w"> </span>feat<span class="w"> </span>VARCHAR<span class="o">(</span><span class="m">36</span><span class="o">)</span>,<span class="w"> </span>value<span class="w"> </span>INTEGER,<span class="w"> </span>group_norm<span class="w"> </span>DOUBLE<span class="o">)</span>
 ...
 
-finding<span class="w"> </span>messages<span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="m">8890</span><span class="w"> </span><span class="s1">&#39;speaker&#39;</span>s
+finding<span class="w"> </span>messages<span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="m">8890</span><span class="w"> </span><span class="s1">'speaker'</span>s
 <span class="o">[</span><span class="m">0</span>%<span class="o">]</span><span class="w"> </span>Inserted<span class="w"> </span><span class="m">401</span><span class="w"> </span>total<span class="w"> </span>ngram<span class="w"> </span>rows<span class="w"> </span>covering<span class="w"> </span><span class="m">1</span><span class="w"> </span>speakers
 Messages<span class="w"> </span>Read:<span class="w"> </span>5k
 Messages<span class="w"> </span>Read:<span class="w"> </span>10k
@@ -281,7 +281,7 @@ dlatkInterface.py<span class="w"> </span>--engine<span class="w"> </span>sqlite<
 </pre></div>
 </div>
 <p>Next, we will remove rare features. This next command will remove features which are used by less than 5% of groups (i.e., speakers). We set the <a class="reference internal" href="../fwinterface/fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a> flag to 0 so that we include all speakers.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>--engine<span class="w"> </span>sqlite<span class="w"> </span>-d<span class="w"> </span>/path/to/db/movie-corpus<span class="w"> </span>-t<span class="w"> </span>utterances<span class="w"> </span>-g<span class="w"> </span>speaker<span class="w"> </span>-f<span class="w"> </span><span class="s1">&#39;feat$1gram$utterances$speaker&#39;</span><span class="w"> </span>--feat_occ_filter<span class="w"> </span>--set_p_occ<span class="w"> </span><span class="m">0</span>.05<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">0</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>--engine<span class="w"> </span>sqlite<span class="w"> </span>-d<span class="w"> </span>/path/to/db/movie-corpus<span class="w"> </span>-t<span class="w"> </span>utterances<span class="w"> </span>-g<span class="w"> </span>speaker<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1gram$utterances$speaker'</span><span class="w"> </span>--feat_occ_filter<span class="w"> </span>--set_p_occ<span class="w"> </span><span class="m">0</span>.05<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">0</span>
 
 -----
 DLATK<span class="w"> </span>Interface<span class="w"> </span>Initiated:<span class="w"> </span><span class="m">2024</span>-03-26<span class="w"> </span><span class="m">19</span>:05:26
@@ -319,9 +319,9 @@ m
 ?
 M
 F
-sqlite&gt;<span class="w"> </span>update<span class="w"> </span>speakers<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;f&#39;</span><span class="w"> </span>where<span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;F&#39;</span><span class="p">;</span>
-sqlite&gt;<span class="w"> </span>update<span class="w"> </span>speakers<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;m&#39;</span><span class="w"> </span>where<span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;M&#39;</span><span class="p">;</span>
-sqlite&gt;<span class="w"> </span>update<span class="w"> </span>speakers<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>null<span class="w"> </span>where<span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;?&#39;</span><span class="p">;</span>
+sqlite&gt;<span class="w"> </span>update<span class="w"> </span>speakers<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'f'</span><span class="w"> </span>where<span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'F'</span><span class="p">;</span>
+sqlite&gt;<span class="w"> </span>update<span class="w"> </span>speakers<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'m'</span><span class="w"> </span>where<span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'M'</span><span class="p">;</span>
+sqlite&gt;<span class="w"> </span>update<span class="w"> </span>speakers<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>null<span class="w"> </span>where<span class="w"> </span><span class="nv">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'?'</span><span class="p">;</span>
 sqlite&gt;<span class="w"> </span><span class="k">select</span><span class="w"> </span>distinct<span class="w"> </span>gender<span class="w"> </span>from<span class="w"> </span>speakers<span class="p">;</span>
 f
 m
@@ -329,13 +329,13 @@ m
 </div>
 <p>Now we can use DLATK to correlate unigram features with the binary gender outcome. We will perform DLA using a logistic regression and will visualize these correlations with a wordcloud. The <a class="reference internal" href="../fwinterface/fwflag_categorical.html"><span class="doc">--categorical</span></a> will convert the text string in the <em>gender</em> column to a one-hot encoding, where females are 1 and males are 0. Null entries are dropped.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>--engine<span class="w"> </span>sqlite<span class="w"> </span>-d<span class="w"> </span>/path/to/db/movie-corpus<span class="w"> </span>-t<span class="w"> </span>utterances<span class="w"> </span>-g<span class="w"> </span>speaker<span class="w"> </span><span class="se">\</span>
--f<span class="w"> </span><span class="s1">&#39;feat$1gram$utterances$speaker$0_5&#39;</span><span class="w"> </span><span class="se">\</span>
+-f<span class="w"> </span><span class="s1">'feat$1gram$utterances$speaker$0_5'</span><span class="w"> </span><span class="se">\</span>
 --outcome_table<span class="w"> </span>speakers<span class="w"> </span>--outcomes<span class="w"> </span>gender<span class="w"> </span>--categorical<span class="w"> </span>gender<span class="w"> </span><span class="se">\</span>
 --correlate<span class="w"> </span>--logistic_regression<span class="w"> </span>--tagcloud<span class="w"> </span>--make_wordclouds<span class="w"> </span><span class="se">\</span>
 --output<span class="w"> </span>gender_wordclouds
 
 ...
-Yielding<span class="w"> </span>data<span class="w"> </span>over<span class="w"> </span><span class="o">[</span><span class="s1">&#39;gender__f&#39;</span><span class="o">]</span>,<span class="w"> </span>adjusting<span class="w"> </span><span class="k">for</span>:<span class="w"> </span><span class="o">[]</span>.
+Yielding<span class="w"> </span>data<span class="w"> </span>over<span class="w"> </span><span class="o">[</span><span class="s1">'gender__f'</span><span class="o">]</span>,<span class="w"> </span>adjusting<span class="w"> </span><span class="k">for</span>:<span class="w"> </span><span class="o">[]</span>.
 Yielding<span class="w"> </span>norms<span class="w"> </span>with<span class="w"> </span>zeros<span class="w"> </span><span class="o">(</span><span class="m">1073</span><span class="w"> </span>groups<span class="w"> </span>*<span class="w"> </span><span class="m">561</span><span class="w"> </span>feats<span class="o">)</span>.
 <span class="w">    </span><span class="m">200</span><span class="w"> </span>features<span class="w"> </span>correlated
 <span class="w">    </span><span class="m">400</span><span class="w"> </span>features<span class="w"> </span>correlated

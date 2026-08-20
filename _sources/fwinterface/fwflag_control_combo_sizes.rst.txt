@@ -5,17 +5,40 @@
 Switch
 ======
 
-Alias for --control_combo_sizes
+--control_combo_sizes N [N2 ...]
+
+Also aliased as ``--combo_sizes``.
 
 Description
 ===========
 
+Specifies the sizes of control combinations to try when running :doc:`fwflag_combo_test_regression` or :doc:`fwflag_combo_test_classifiers`. For each ``N`` given, every combination of ``N`` controls drawn from :doc:`fwflag_outcome_controls` is tried as its own model.
 
 Argument and Default Value
 ==========================
 
+One or more integers. Default: ``[]`` (no combo sizes; only the no-controls and all-controls models are run).
 
 Details
 =======
 
-Alias for :doc:`fwflag_control_combo_sizes` 
+For example, ``--outcome_controls age gender income --control_combo_sizes 1 2`` runs every single-control model (``age``, ``gender``, ``income``) and every pair (``age+gender``, ``age+income``, ``gender+income``), in addition to the default no-controls and all-controls models. This is a way to explore how much of an outcome's variance is explained by each control (or pair of controls) without hand-writing every combination.
+
+:doc:`fwflag_all_controls_only` restricts this to only the all-controls model, equivalent to passing every control's count as ``N``.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_outcome_controls`
+* One of :doc:`fwflag_combo_test_classifiers` or :doc:`fwflag_combo_test_regression`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --outcome_controls gender is_student is_education \
+	--combo_test_regression --control_combo_sizes 1 2 --folds 10 --output_name ./output

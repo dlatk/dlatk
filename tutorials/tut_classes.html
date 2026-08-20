@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -180,12 +180,12 @@
 <p>With the exception of <em>FeatureWorker</em> all classes can be created as follows:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dlatk.featureExtractor</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureExtractor</span>
 <span class="n">fe</span> <span class="o">=</span> <span class="n">FeatureExtractor</span><span class="p">()</span> <span class="c1"># use default values set in dlaConstants</span>
-<span class="n">fe</span> <span class="o">=</span> <span class="n">FeatureExtractor</span><span class="p">(</span><span class="n">corpdb</span><span class="o">=</span><span class="s2">&quot;someDB&quot;</span><span class="p">,</span> <span class="n">corptable</span><span class="o">=</span><span class="s2">&quot;someTB&quot;</span><span class="p">,</span> <span class="n">correl_field</span><span class="o">=</span><span class="s2">&quot;someField&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="c1"># specify values</span>
+<span class="n">fe</span> <span class="o">=</span> <span class="n">FeatureExtractor</span><span class="p">(</span><span class="n">corpdb</span><span class="o">=</span><span class="s2">"someDB"</span><span class="p">,</span> <span class="n">corptable</span><span class="o">=</span><span class="s2">"someTB"</span><span class="p">,</span> <span class="n">correl_field</span><span class="o">=</span><span class="s2">"someField"</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="c1"># specify values</span>
 </pre></div>
 </div>
 <p><em>FeatureWorker</em> does not allow you to use default values so you must do the following:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dlatk.featureWorker</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureWorker</span>
-<span class="n">fw</span> <span class="o">=</span> <span class="n">FeatureWorker</span><span class="p">(</span><span class="n">corpdb</span><span class="o">=</span><span class="s2">&quot;someDB&quot;</span><span class="p">,</span> <span class="n">corptable</span><span class="o">=</span><span class="s2">&quot;someTB&quot;</span><span class="p">,</span> <span class="n">correl_field</span><span class="o">=</span><span class="s2">&quot;someField&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+<span class="n">fw</span> <span class="o">=</span> <span class="n">FeatureWorker</span><span class="p">(</span><span class="n">corpdb</span><span class="o">=</span><span class="s2">"someDB"</span><span class="p">,</span> <span class="n">corptable</span><span class="o">=</span><span class="s2">"someTB"</span><span class="p">,</span> <span class="n">correl_field</span><span class="o">=</span><span class="s2">"someField"</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Both  <em>FeatureGetter</em>, <em>OutcomeGetter</em> and <em>OutcomeAnalyzer</em> allow you to pass an init file. This file is a simple text file where the constants are defined. Init file must have the line <strong>[constants]</strong> at the top. Also note that none of the strings are quoted. For lists (such as lists of outcome variables) use commas to separate values. Sample init file:</p>
@@ -200,9 +200,9 @@
 </pre></div>
 </div>
 <p>To initialize one of these classes using an init file do the following:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fg</span> <span class="o">=</span> <span class="n">FeatureGetter</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">&#39;/path/to/init/file&#39;</span><span class="p">)</span>
-<span class="n">og</span> <span class="o">=</span> <span class="n">OutcomeGetter</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">&#39;/path/to/init/file&#39;</span><span class="p">)</span>
-<span class="n">oa</span> <span class="o">=</span> <span class="n">OutcomeAnalyzer</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">&#39;/path/to/init/file&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fg</span> <span class="o">=</span> <span class="n">FeatureGetter</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">'/path/to/init/file'</span><span class="p">)</span>
+<span class="n">og</span> <span class="o">=</span> <span class="n">OutcomeGetter</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">'/path/to/init/file'</span><span class="p">)</span>
+<span class="n">oa</span> <span class="o">=</span> <span class="n">OutcomeAnalyzer</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">'/path/to/init/file'</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -214,8 +214,8 @@
 
 <span class="c1"># get instances of all classes</span>
 <span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="p">()</span> <span class="c1"># defaults specified in dlaConstants</span>
-<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="p">(</span><span class="n">corpdb</span><span class="o">=</span><span class="s2">&quot;someDB&quot;</span><span class="p">,</span> <span class="n">corptable</span><span class="o">=</span><span class="s2">&quot;someTB&quot;</span><span class="p">,</span> <span class="n">correl_field</span><span class="o">=</span><span class="s2">&quot;someField&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="c1"># specify values</span>
-<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">&#39;/path/to/init/file&#39;</span><span class="p">)</span> <span class="c1"># pass values from file</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="p">(</span><span class="n">corpdb</span><span class="o">=</span><span class="s2">"someDB"</span><span class="p">,</span> <span class="n">corptable</span><span class="o">=</span><span class="s2">"someTB"</span><span class="p">,</span> <span class="n">correl_field</span><span class="o">=</span><span class="s2">"someField"</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="c1"># specify values</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">'/path/to/init/file'</span><span class="p">)</span> <span class="c1"># pass values from file</span>
 </pre></div>
 </div>
 <p>To initalize FeatureStar with an init file, simply add the following line under <strong>[constants]</strong>:</p>
@@ -223,57 +223,57 @@
 </pre></div>
 </div>
 <p>This is a comma separated line with the initials of the classes you want to instantiate. So the above command will give you a FeatureGetter and an OutcomeGetter</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># add line &#39;init = fg, og&#39; to init file</span>
-<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">&#39;/path/to/init/file&#39;</span><span class="p">)</span> <span class="c1"># this will return only a FeatureGetter and OutcomeGetter</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># add line 'init = fg, og' to init file</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">'/path/to/init/file'</span><span class="p">)</span> <span class="c1"># this will return only a FeatureGetter and OutcomeGetter</span>
 </pre></div>
 </div>
 <p>Or you can pass this list as a parameter</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># get certain classes with defaults</span>
-<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;fg&#39;</span><span class="p">,</span> <span class="s1">&#39;og&#39;</span><span class="p">])</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="p">[</span><span class="s1">'fg'</span><span class="p">,</span> <span class="s1">'og'</span><span class="p">])</span>
 
 <span class="c1"># get instances of subset of classes</span>
-<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">&#39;/path/to/init/file&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;fg&#39;</span><span class="p">,</span> <span class="s1">&#39;og&#39;</span><span class="p">])</span> <span class="c1"># get only a FeatureGetter and OutcomeGetter</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureStar</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s1">'/path/to/init/file'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'fg'</span><span class="p">,</span> <span class="s1">'og'</span><span class="p">])</span> <span class="c1"># get only a FeatureGetter and OutcomeGetter</span>
 
 <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span>
-<span class="o">&gt;</span> <span class="p">{</span><span class="s1">&#39;FeatureWorker&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;FeatureRefiner&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-<span class="s1">&#39;FeatureGetter&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">FeatureWorker</span><span class="o">.</span><span class="n">featureGetter</span><span class="o">.</span><span class="n">FeatureGetter</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x7f87e75e13d0</span><span class="o">&gt;</span><span class="p">,</span>
-<span class="s1">&#39;OutcomeGetter&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">FeatureWorker</span><span class="o">.</span><span class="n">outcomeGetter</span><span class="o">.</span><span class="n">OutcomeGetter</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x7f87e75e1390</span><span class="o">&gt;</span><span class="p">,</span>
-<span class="s1">&#39;OutcomeAnalyzer&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;FeatureExtractor&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-<span class="s1">&#39;ClassifyPredictor&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;RegressionPredictor&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+<span class="o">&gt;</span> <span class="p">{</span><span class="s1">'FeatureWorker'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">'FeatureRefiner'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+<span class="s1">'FeatureGetter'</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">FeatureWorker</span><span class="o">.</span><span class="n">featureGetter</span><span class="o">.</span><span class="n">FeatureGetter</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x7f87e75e13d0</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="s1">'OutcomeGetter'</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">FeatureWorker</span><span class="o">.</span><span class="n">outcomeGetter</span><span class="o">.</span><span class="n">OutcomeGetter</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x7f87e75e1390</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="s1">'OutcomeAnalyzer'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">'FeatureExtractor'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+<span class="s1">'ClassifyPredictor'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">'RegressionPredictor'</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
 </pre></div>
 </div>
 <p>You can retrieve FeatureStars attributes (i.e., all DLATK objects) in the following way</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># retrieve a FeatureWorker</span>
 <span class="n">fw</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">fw</span>
-<span class="n">fw</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">&#39;FeatureWorker&#39;</span><span class="p">]</span>
+<span class="n">fw</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">'FeatureWorker'</span><span class="p">]</span>
 
 <span class="c1"># retrieve a FeatureGetter</span>
 <span class="n">fg</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">fg</span>
-<span class="n">fg</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">&#39;FeatureGetter&#39;</span><span class="p">]</span>
+<span class="n">fg</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">'FeatureGetter'</span><span class="p">]</span>
 
 <span class="c1"># retrieve a FeatureRefiner</span>
 <span class="n">fr</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">fr</span>
-<span class="n">fr</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">&#39;FeatureRefiner&#39;</span><span class="p">]</span>
+<span class="n">fr</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">'FeatureRefiner'</span><span class="p">]</span>
 
 <span class="c1"># retrieve a FeatureExtractor</span>
 <span class="n">fe</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">fe</span>
-<span class="n">fe</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">&#39;FeatureExtractor&#39;</span><span class="p">]</span>
+<span class="n">fe</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">'FeatureExtractor'</span><span class="p">]</span>
 
 <span class="c1"># retrieve a OutcomeGetter</span>
 <span class="n">og</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">og</span>
-<span class="n">og</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">&#39;OutcomeGetter&#39;</span><span class="p">]</span>
+<span class="n">og</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">'OutcomeGetter'</span><span class="p">]</span>
 
 <span class="c1"># retrieve a OutcomeAnalyzer</span>
 <span class="n">oa</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">oa</span>
-<span class="n">oa</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">&#39;OutcomeAnalyzer&#39;</span><span class="p">]</span>
+<span class="n">oa</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">'OutcomeAnalyzer'</span><span class="p">]</span>
 
 <span class="c1"># retrieve a RegressionPredictor</span>
 <span class="n">oa</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">rp</span>
-<span class="n">oa</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">&#39;RegressionPredictor&#39;</span><span class="p">]</span>
+<span class="n">oa</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">'RegressionPredictor'</span><span class="p">]</span>
 
 <span class="c1"># retrieve a ClassifyPredictor</span>
 <span class="n">oa</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">cp</span>
-<span class="n">oa</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">&#39;ClassifyPredictor&#39;</span><span class="p">]</span>
+<span class="n">oa</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">allFW</span><span class="p">[</span><span class="s1">'ClassifyPredictor'</span><span class="p">]</span>
 </pre></div>
 </div>
 </section>

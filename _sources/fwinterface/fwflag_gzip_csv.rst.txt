@@ -1,0 +1,42 @@
+.. _fwflag_gzip_csv:
+============
+--gzip_csv
+============
+Switch
+======
+
+--gzip_csv FILENAME
+
+Description
+===========
+
+Extracts n-gram features directly from a gzipped CSV file of messages, instead of a message table given by :doc:`fwflag_t`.
+
+Argument and Default Value
+==========================
+
+Path to a ``.csv.gz`` file. Default: ``''`` (not used).
+
+Details
+=======
+
+Verified from source: this switch is only checked *inside* the :doc:`fwflag_add_ngrams` code path (``if args.addngrams: ... elif args.gzipcsv: ...``), so you must pass ``--add_ngrams`` together with ``--gzip_csv`` — it is not a standalone alternative to it. Routes to ``FeatureExtractor.addNGramTableGzipCsv()`` with a hardcoded column layout (message-id column 3, group-id column 0, message column 19) — this is a fixed-format bulk-import path for a specific corpus layout, not a general-purpose CSV reader. Use :doc:`fwflag_n` to control which n-gram sizes are extracted.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`
+* :doc:`fwflag_add_ngrams`
+
+Optional Switches:
+
+* :doc:`fwflag_n`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -c user_id --add_ngrams --gzip_csv /path/to/messages.csv.gz -n 1

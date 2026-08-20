@@ -12,6 +12,16 @@ Description
 
 Produces data for making topic Wordles. You must use a topic based feature table. For a NON topic based word cloud see :doc:`fwflag_tagcloud`.
 
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Aliased as ``--corp_topic_wordcloud``. Runs the exact same correlation and tagcloud-data pipeline as :doc:`fwflag_topic_tagcloud`; the only difference is where the per-topic word lists come from for :doc:`fwflag_topic_lexicon` — this switch reads them from the corpus database (``-d``/``--corpdb``) instead of the separate lexicon database (:doc:`fwflag_lexicondb`). Use this when your topic lexicon lives in the same database as your corpus.
+
 Other Switches
 ==============
 

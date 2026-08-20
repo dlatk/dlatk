@@ -15,8 +15,8 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
-      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -191,7 +191,7 @@
 <p>This switch uses the result from add_parses or add_tweetpos, and extracts ngrams from the POS tagged table.
 Splits the POS tagged message on whitespace, then lowercases the word but not the POS.
 Similar to add_ngrams but appends the POS that the ngram was used as.</p>
-<p>Note that this can't be used with <span class="xref std std-doc">fwflag_n</span>, it only works with n = 1.</p>
+<p>Note that this can't be used with <a class="reference internal" href="fwflag_n.html"><span class="doc">-n</span></a>, it only works with n = 1.</p>
 </section>
 <section id="other-switches">
 <h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>
@@ -208,7 +208,7 @@ Similar to add_ngrams but appends the POS that the ngram was used as.</p>
 </section>
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Simply extracts 1gram (with POS) from the message table &quot;msgs_r10k&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Simply extracts 1gram (with POS) from the message table "msgs_r10k"</span>
 <span class="c1"># Uses the fact that msgs_r10k_pos exists.</span>
 <span class="c1"># Creates: feat$1gram_pos$msgs_r10k$user_id$16to16</span>
 dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>fb20<span class="w"> </span>-t<span class="w"> </span>msgs_r10k<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--add_pos_ngram_table

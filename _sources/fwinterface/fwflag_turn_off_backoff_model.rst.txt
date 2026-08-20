@@ -1,0 +1,40 @@
+.. _fwflag_turn_off_backoff_model:
+==========================
+--turn_off_backoff_model
+==========================
+Switch
+======
+
+--turn_off_backoff_model
+
+Description
+===========
+
+Turns off the automatic "backoff" to a logistic/linear model when a prediction run has only a small number of features, forcing DLATK to use whatever :doc:`fwflag_model` specifies instead.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False`` (backoff model enabled).
+
+Details
+=======
+
+Verified: ran cleanly as part of a full :doc:`fwflag_combo_test_regression` run alongside :doc:`fwflag_combined_models` and :doc:`fwflag_residualized_controls`, with no observed change in output structure — the backoff behavior only kicks in for feature counts too small to matter on typical corpora.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_model`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age --combo_test_regression --turn_off_backoff_model

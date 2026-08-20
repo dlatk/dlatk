@@ -1,0 +1,40 @@
+.. _fwflag_combined_models:
+==================
+--combined_models
+==================
+Switch
+======
+
+--combined_models MODEL [MODEL ...]
+
+Description
+===========
+
+Model(s) to combine when using a multi-feature-set prediction (e.g. ``svc``, ``linear-svc``, ``ridge``, ``linear``).
+
+Argument and Default Value
+==========================
+
+One or more model name strings. Default: ``dlac.DEF_COMB_MODELS``.
+
+Details
+=======
+
+Verified: ran cleanly as part of a full :doc:`fwflag_combo_test_regression` run (``--combined_models ridge linear``) — output showed ``[COMBINED FEATS: Training regression model: ridgecv]`` reflecting the combined-model path.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_model`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age --combo_test_regression --combined_models ridge linear

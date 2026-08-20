@@ -199,6 +199,11 @@ It is usually better to either use <a class="reference internal" href="fwflag_co
 </section>
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
+<p>Using the packaged <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> dataset (see <a class="reference internal" href="../tutorials/tut_dla.html"><span class="doc">Differential Language Analysis (DLA) Tutorial</span></a>): trains a regression model on 4/5ths of the users to predict age from 1grams, then predicts on the remaining 1/5th and compares to the real ages.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs$user_id$16to16$0_01'</span><span class="w"> </span><span class="se">\</span>
+--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--test_regression
+</pre></div>
+</div>
 </section>
 </section>
 

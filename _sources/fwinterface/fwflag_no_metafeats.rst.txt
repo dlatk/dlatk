@@ -32,9 +32,12 @@ None
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
 
-./fwInterface.py :doc:`fwflag_d` 2004blogs :doc:`fwflag_t` messages :doc:`fwflag_c` user_id :doc:`fwflag_add_ngrams` :doc:`fwflag_no_metafeats` 
-Without :doc:`fwflag_no_metafeats`, this would create both feat$1gram$messages$user_id$16to16 (the 1:doc:`fwflag_gram` table) and feat$meta_1gram$messages$user_id$16to16. :doc:`fwflag_no_metafeats` turns off creation of the latter.
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams --no_metafeats
+
+Without ``--no_metafeats``, this would create both ``feat$1gram$msgs$user_id`` (the 1gram table) and ``feat$meta_1gram$msgs$user_id``. ``--no_metafeats`` turns off creation of the latter.
 

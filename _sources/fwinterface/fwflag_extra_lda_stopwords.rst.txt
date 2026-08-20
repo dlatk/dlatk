@@ -1,0 +1,47 @@
+.. _fwflag_extra_lda_stopwords:
+=======================
+--extra_lda_stopwords
+=======================
+Switch
+======
+
+--extra_lda_stopwords FILENAME
+
+Description
+===========
+
+Path to a file of additional stopwords to remove before LDA topic estimation, on top of the automatically-detected ones.
+
+Argument and Default Value
+==========================
+
+A file path. Default: ``None``.
+
+Details
+=======
+
+Verified end-to-end with real Mallet: one word per line. Confirmed with a 2-word file (``love``, ``work``) — DLATK printed ``Removed an additional 2 extra stopwords: {'work', 'love'}`` alongside its own automatically-detected stopword list (frequent words/punctuation).
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_estimate_lda_topics`
+
+Optional Switches:
+
+* :doc:`fwflag_num_stopwords`, :doc:`fwflag_no_lda_stopping`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_lda`):
+
+.. code-block:: bash
+
+	echo -e "love\nwork" > extra_stopwords.txt
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id' \
+	--estimate_lda_topics --num_topics 100 --no_lda_lexicon \
+	--mallet_path /opt/homebrew/bin/mallet --save_lda_files ./lda_out \
+	--extra_lda_stopwords extra_stopwords.txt

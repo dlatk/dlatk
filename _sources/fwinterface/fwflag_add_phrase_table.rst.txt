@@ -1,0 +1,43 @@
+.. _fwflag_add_phrase_table:
+==================
+--add_phrase_table
+==================
+Switch
+======
+
+--add_phrase_table
+
+Description
+===========
+
+Adds constituent and phrase feature tables, extracted from a Stanford Parser constituency-parse table (built by :doc:`fwflag_add_parses`).
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``. Can be combined with :doc:`fwflag_sqrt`/:doc:`fwflag_anscombe`.
+
+Details
+=======
+
+Requires a ``<message_table>_const`` (parse) table to already exist, built by :doc:`fwflag_add_parses`, which itself requires an external Stanford Parser installation (see the Install Stanford Parser section in :doc:`../../install`) — not something installable via pip.
+
+**Known issue — also MySQL-only regardless of the above.** ``FeatureExtractor.addPhraseTable()`` checks for the parse table via ``mm.tableExists(...)``, a raw ``mysqlmethods`` call. Verified: fails immediately with ``sqlite3.OperationalError: near "show": syntax error`` under a SQLite corpus, before even reaching the "parse table missing" check.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_add_parses` (must be run first)
+
+Example Commands
+================
+
+Requires MySQL and a prior ``--add_parses`` run — not runnable against the packaged SQLite ``dla_tutorial`` dataset:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_parses
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_phrase_table

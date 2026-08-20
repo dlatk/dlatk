@@ -1,0 +1,41 @@
+.. _fwflag_fs_params:
+=============
+--fs_params
+=============
+Switch
+======
+
+--fs_params
+
+Description
+===========
+
+Enables passing explicit feature-selection parameters via :doc:`fwflag_k_best`/:doc:`fwflag_pca_comp`, bundled into a ``{'kbest': ..., 'pca': ...}`` dict.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Verified: running with ``--fs_params --k_best 10 --pca_comp 5`` completed a full :doc:`fwflag_combo_test_regression` run without error. The resulting ``featureSelectionParameters`` dict is passed through to ``RegressionPredictor.testControlCombos()``, but its concrete effect on the feature-selection pipeline wasn't independently confirmed in the output (``{modelFS_desc}`` still showed ``None`` in this run) — it likely only changes behavior when combined with a real :doc:`fwflag_feature_selection` pipeline that consumes these values.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_k_best`, :doc:`fwflag_pca_comp`
+* :doc:`fwflag_feature_selection`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age --combo_test_regression --fs_params --k_best 10 --pca_comp 5

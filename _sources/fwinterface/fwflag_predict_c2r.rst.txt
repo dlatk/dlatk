@@ -1,0 +1,43 @@
+.. _fwflag_predict_c2r:
+===============
+--predict_c2r
+===============
+Switch
+======
+
+--predict_c2r
+
+Description
+===========
+
+Predicts with a trained "classify-to-regression" model.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Same underlying ``ClassifyToRegressionPredictor`` as :doc:`fwflag_train_c2r`/:doc:`fwflag_test_c2r` — see the verified requirement there: it looks up outcomes via a ``bin_<outcome>`` column name (e.g. ``bin_age``), not the plain outcome column. Not independently exercised past that point in this pass.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_f`
+* :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes` (with a matching ``bin_<outcome>`` column present)
+* :doc:`fwflag_train_c2r` (a trained c2r model)
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`), assuming a ``bin_age`` column exists in ``blog_outcomes``:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age --predict_c2r

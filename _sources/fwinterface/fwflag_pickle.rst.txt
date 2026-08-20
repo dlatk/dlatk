@@ -24,7 +24,7 @@ Details
 
 **Verified scope — narrower than it looks:** ``--pickle`` is only checked inside the :doc:`fwflag_cca` output path (``if args.rmatrix: ... if args.pickle: ...`` under the CCA branch of ``dlatkInterface.py``) — confirmed by grepping every ``args.pickle`` reference in the codebase; there is exactly one, right there. It has **no effect** when used with the ordinary :doc:`fwflag_correlate` workflow — confirmed by running ``--correlate --csv --rmatrix --pickle`` and observing only ``.csv``/``.html`` files were written, no ``.pickle``. If you need the general :doc:`fwflag_correlate` output as a Python object, there is currently no built-in pickle switch for that path; use the csv output instead.
 
-When combined with :doc:`fwflag_cca` and :doc:`fwflag_rmatrix`, it writes ``<outputFile>.feat.pickle`` and ``<outputFile>.outcome.pickle`` versions of the feature/outcome correlation matrices.
+When combined with :doc:`fwflag_cca` and :doc:`fwflag_rmatrix`, the code path would write ``<outputFile>.feat.pickle`` and ``<outputFile>.outcome.pickle`` versions of the feature/outcome correlation matrices — **but this is unreachable as of this writing**, since ``--cca`` itself always crashes before producing any results (a scoping bug unrelated to this switch — see the Known issue on :doc:`fwflag_cca`).
 
 Other Switches
 ==============

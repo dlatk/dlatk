@@ -1,0 +1,42 @@
+.. _fwflag_factor_addition:
+===================
+--factor_addition
+===================
+Switch
+======
+
+--factor_addition
+
+Description
+===========
+
+Appends the selected adaptation factors to the language features, rather than only using them to adapt the language features.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``. Can be used alone (sets internal ``integrationMethod`` to ``"plus"``) or combined with :doc:`fwflag_factor_adaptation`/:doc:`fwflag_res_factor_adaptation` (appending ``"_plus"`` to their integration method instead).
+
+Details
+=======
+
+Verified: ran successfully combined with :doc:`fwflag_res_factor_adaptation`, :doc:`fwflag_paired_factors`, and ``--factor_selection_type pca``. When given alone (without ``--factor_adaptation``/``--res_factor_adaptation``) and no :doc:`fwflag_adaptation_factors`, falls back to using all of :doc:`fwflag_outcome_controls` as the factor pool.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_factor_adaptation`, :doc:`fwflag_res_factor_adaptation`
+* :doc:`fwflag_adaptation_factors`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age --outcome_controls gender is_student \
+	--combo_test_regression --factor_addition --adaptation_factors gender is_student

@@ -1,0 +1,42 @@
+.. _fwflag_lda_msg_tbl:
+==============
+-m
+==============
+Switch
+======
+
+-m TABLE
+
+Description
+===========
+
+Name of the LDA-labeled message table to create or read. Aliased as ``--lda_msg_tbl``.
+
+Argument and Default Value
+==========================
+
+A table name. Default: ``"messages_en_lda$msgs_en_tok_a30"`` (``dlac.DEF_LDA_MSG_TABLE``) — almost always overridden in practice.
+
+Details
+=======
+
+Verified end-to-end with real Mallet, via :doc:`fwflag_estimate_lda_topics` with :doc:`fwflag_lda_lexicon_name` set: the table actually created (by ``MessageTransformer.addLDAMessages()``, triggered internally rather than via ``-m`` directly) followed the pattern ``<corptable>_lda$<lda_lexicon_name>`` — e.g. ``msgs_lda$testtopics`` — not the literal ``-m`` value in that flow. ``-m``/``--lda_msg_tbl`` is instead used to point ``TopicExtractor`` at an *existing* LDA message table for downstream steps that consume one.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_estimate_lda_topics`, :doc:`fwflag_lda_lexicon_name`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_lda`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id' \
+	--estimate_lda_topics --num_topics 100 --lda_lexicon_name dla_topics \
+	--mallet_path /opt/homebrew/bin/mallet --save_lda_files ./lda_out
+	# creates msgs_lda$dla_topics, which subsequent commands can point at with -m msgs_lda$dla_topics

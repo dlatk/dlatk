@@ -1,0 +1,35 @@
+.. _fwflag_weighted_eval:
+================
+--weighted_eval
+================
+Switch
+======
+
+--weighted_eval COLUMN
+
+Description
+===========
+
+Intended to weight the evaluation (test-set scoring) of a prediction run by an outcome-table column, using weighted least squares.
+
+Argument and Default Value
+==========================
+
+A column name. Default: ``None``.
+
+Details
+=======
+
+**Known issue — always crashes when actually triggered.** ``RegressionPredictor.testControlCombos()`` calls ``sm.WLS(zscore(ytest), zscore(ypred), weights).fit()`` (statsmodels' Weighted Least Squares), but ``regressionPredictor.py`` never imports anything named ``sm`` — no ``import statsmodels.api as sm`` anywhere in the file. Verified: running ``--combo_test_regression --weighted_eval <column>`` completes the first fold's normal (unweighted) prediction successfully, then crashes with ``NameError: name 'sm' is not defined`` as soon as it tries to compute the weighted evaluation. There is currently no way to get a weighted evaluation result from this switch.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_combo_test_regression`
+
+Example Commands
+================
+
+Not usable as of this writing — see Known issue above.

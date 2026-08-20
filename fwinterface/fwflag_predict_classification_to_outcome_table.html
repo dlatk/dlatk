@@ -200,14 +200,12 @@ If you used SVC for instance, it will look like p_svc$ARGUMENT.</p>
 <p>Required Switches:
 <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a>, <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a>, <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a>, <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> <a class="reference internal" href="fwflag_load_model.html"><span class="doc">--load_model</span></a> and <a class="reference internal" href="fwflag_picklefile.html"><span class="doc">--picklefile</span></a>
 Example Commands
-================
-.. code:doc:<cite>fwflag_block</cite>:: python</p>
-<blockquote>
-<div><p># Loads the classification model in deleteMeGender.pickle, and uses the features to predict the genders of the users in
-# feat$1gram$messages_en$user_id$16to16$0_01, and inserts those values into a table called p_svc$deleteMe.
-~/fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> fb20 <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> messages_en <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a> user_id <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> 'feat$1gram$messages_en$user_id$16to16$0_01'
-<a class="reference internal" href="fwflag_load_model.html"><span class="doc">--load_model</span></a> <a class="reference internal" href="fwflag_picklefile.html"><span class="doc">--picklefile</span></a> deleteMeGender.pickle <a class="reference internal" href="fwflag_predict_regression_to_outcome_table.html"><span class="doc">--predict_regression_to_outcome_table</span></a> deleteMe</p>
-</div></blockquote>
+================</p>
+<p>Using the packaged <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> dataset (see <a class="reference internal" href="../tutorials/tut_pickle_apply.html"><span class="doc">Applying A Pickle Model</span></a>): loads the classification model in <code class="docutils literal notranslate"><span class="pre">is_student.pickle</span></code>, uses the 1grams in <code class="docutils literal notranslate"><span class="pre">feat$1gram$msgs$user_id$16to16$0_01</span></code> to predict whether users are students, and inserts those values into a table called <code class="docutils literal notranslate"><span class="pre">p_svc$lbp_is_student</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs$user_id$16to16$0_01'</span><span class="w"> </span><span class="se">\</span>
+--load_model<span class="w"> </span>--picklefile<span class="w"> </span>is_student.pickle<span class="w"> </span>--predict_classification_to_outcome_table<span class="w"> </span>lbp_is_student
+</pre></div>
+</div>
 </section>
 </section>
 

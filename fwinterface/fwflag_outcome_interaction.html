@@ -202,15 +202,20 @@ group_norm * xxxxx from yyyy - corresponds to B3</p>
 <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a> <a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a> Optional Switches:
 <a class="reference internal" href="fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a> <a class="reference internal" href="fwflag_outcome_controls.html"><span class="doc">--outcome_controls</span></a>
 Example Commands
-================
-.. code:doc:<cite>fwflag_block</cite>:: python</p>
-<blockquote>
-<div><p># Correlates 1grams with age for every user
-~/fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> twitterGH <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> msgs_en <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a> msa_id <a class="reference internal" href="fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a> 20000 </p>
-<blockquote>
-<div><p><a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> 'feat$cat_met_a30_2000_cp_w$msgs_en$msa_id$16to16' <a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a> jordan_msa <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a> LSmean_wavg <a class="reference internal" href="fwflag_interactions.html"><span class="doc">--interactions</span></a> <a class="reference internal" href="#"><span class="doc">--outcome_interaction</span></a> Rpercent_2008 <span class="xref std std-doc">fwflag_output_interaction_terms</span> <a class="reference internal" href="fwflag_outcome_controls.html"><span class="doc">--outcome_controls</span></a> median_age_wavg percent_white_wavg mean_income_wavg_log percent_bachelors_wavg <a class="reference internal" href="fwflag_output_name.html"><span class="doc">--output_name</span></a> fb2000_intr <a class="reference internal" href="fwflag_rmatrix.html"><span class="doc">--rmatrix</span></a> <a class="reference internal" href="fwflag_sort.html"><span class="doc">--sort</span></a> <a class="reference internal" href="fwflag_whitelist.html"><span class="doc">--whitelist</span></a> <a class="reference internal" href="fwflag_feat_whitelist.html"><span class="doc">--feat_whitelist</span></a> 1543 1087 418 943 1309 18 1826 904 1145 1843 648 277 404 785 752 285 1283 91 230 1529 445 1447 1149 1023 800</p>
-</div></blockquote>
-</div></blockquote>
+================</p>
+<p>Using the packaged <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> dataset (see <a class="reference internal" href="../tutorials/tut_dla.html"><span class="doc">Differential Language Analysis (DLA) Tutorial</span></a>): correlates Facebook topics with age, including an interaction term with gender, and controlling for whether the user is a student.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span><span class="se">\</span>
+-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16'</span><span class="w"> </span><span class="se">\</span>
+--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span><span class="se">\</span>
+--outcomes<span class="w"> </span>age<span class="w"> </span><span class="se">\</span>
+--outcome_interaction<span class="w"> </span>gender<span class="w"> </span><span class="se">\</span>
+--output_interaction_terms<span class="w"> </span><span class="se">\</span>
+--outcome_controls<span class="w"> </span>is_student<span class="w"> </span><span class="se">\</span>
+--output_name<span class="w"> </span>./fbtopics_age_gender_interaction<span class="w"> </span><span class="se">\</span>
+--rmatrix<span class="w"> </span>--sort<span class="w"> </span><span class="se">\</span>
+--whitelist<span class="w"> </span>--feat_whitelist<span class="w"> </span><span class="m">344</span><span class="w"> </span><span class="m">512</span><span class="w"> </span><span class="m">621</span><span class="w"> </span><span class="m">883</span><span class="w"> </span><span class="m">1023</span>
+</pre></div>
+</div>
 </section>
 </section>
 

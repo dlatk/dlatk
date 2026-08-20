@@ -1,0 +1,35 @@
+.. _fwflag_hist2d:
+==========
+--hist2d
+==========
+Switch
+======
+
+--hist2d
+
+Description
+===========
+
+Intended to plot a 2D histogram of a feature against an outcome, alongside :doc:`fwflag_scatterplot`.
+
+Argument and Default Value
+==========================
+
+No argument.
+
+Details
+=======
+
+**Not actually a usable flag.** ``--hist2d``'s ``add_argument()`` registration is commented out in ``dlatkInterface.py`` (dead code) — you cannot pass ``--hist2d`` on the command line at all; argparse will reject it as unrecognized. It's referenced live as ``args.hist2d`` inside :doc:`fwflag_scatterplot`'s code, which is exactly why that switch always crashes with ``AttributeError: 'Namespace' object has no attribute 'hist2d'`` — see the Known issue on that page.
+
+Other Switches
+==============
+
+Required Switches:
+
+* None — this flag cannot be passed on the command line at all.
+
+Example Commands
+================
+
+Not usable — ``--hist2d`` is not a registered command-line flag.

@@ -1,0 +1,40 @@
+.. _fwflag_useXControls:
+===============
+--useXControls
+===============
+Switch
+======
+
+--useXControls
+
+Description
+===========
+
+With :doc:`fwflag_cca_predict_components`, includes the control variables alongside the X (feature-side) component predictions in the output.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Passed as ``useXControls`` to ``CCA.predictCompsToSQL()``. **Unreachable as of this writing** — see the Known issue on :doc:`fwflag_cca`: the ``CCA`` class always crashes on construction/use due to a confirmed ``rpy2`` scoping bug, verified with R and ``rpy2`` both installed and working.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_cca_predict_components`
+* :doc:`fwflag_load_model`, :doc:`fwflag_picklefile`
+
+Optional Switches:
+
+* :doc:`fwflag_useXFeats`, :doc:`fwflag_to_sql_table`
+
+Example Commands
+================
+
+Not usable as of this writing — see the Known issue on :doc:`fwflag_cca`.

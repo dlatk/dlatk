@@ -1,0 +1,41 @@
+.. _fwflag_output_interaction_terms:
+============================
+--output_interaction_terms
+============================
+Switch
+======
+
+--output_interaction_terms
+
+Description
+===========
+
+When using :doc:`fwflag_outcome_interaction`, also outputs the interaction term's own coefficients as r-values alongside the outcome's coefficients, instead of only the outcome coefficients.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Passed as ``outputInteraction`` into ``oa.correlateWithFeatures()``, the same standard :doc:`fwflag_correlate` path used when no special metric switch (:doc:`fwflag_IDP`/:doc:`fwflag_zScoreGroup`/``--AUC``) is active.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_outcome_interaction`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --outcome_interaction gender \
+	--output_interaction_terms --correlate --rmatrix

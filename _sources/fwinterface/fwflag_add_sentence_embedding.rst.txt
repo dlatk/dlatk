@@ -1,0 +1,41 @@
+.. _fwflag_add_sentence_embedding:
+==========================
+--add_sentence_embedding
+==========================
+Switch
+======
+
+--add_sentence_embedding
+
+Description
+===========
+
+Adds sentence-embedding (e.g. sBERT) mean features, one row per group. Aliased as ``--add_sent_emb_feat``, ``--add_sbert``, ``--add_cosine_emb``, ``--add_msg_emb``.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``. Uses the same :doc:`fwflag_embedding_model`/:doc:`fwflag_emb_class`/:doc:`fwflag_tokenizer_model`/:doc:`fwflag_batch_size` switches as :doc:`fwflag_add_bert`.
+
+Details
+=======
+
+**Known issue — requires a CUDA GPU, unconditionally, even on CPU-only or Apple Silicon (MPS) machines.** ``FeatureExtractor.tokenizeWithLengthWarning()`` (used only by this switch's ``addSentenceEmbTable()``, not by the regular :doc:`fwflag_add_bert`/:doc:`fwflag_add_emb` path, which has its own separate, CPU-safe tokenization) calls ``tokenizer(text, ...).to('cuda')`` with no check for ``torch.cuda.is_available()`` and no CPU/MPS fallback. Verified: on a machine without CUDA, this crashes immediately with ``AssertionError: Torch not compiled with CUDA enabled``, regardless of model choice. Not usable on non-CUDA hardware as of this writing.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+
+Example Commands
+================
+
+Requires a CUDA-enabled GPU — not usable on CPU-only/Apple Silicon machines, see Known issue above:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_sentence_embedding \
+	--embedding_model sentence-transformers/all-MiniLM-L6-v2 --emb_class auto \
+	--tokenizer_model sentence-transformers/all-MiniLM-L6-v2

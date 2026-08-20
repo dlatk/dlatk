@@ -32,6 +32,12 @@ Required Switches:
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
-	  ./dlatkInterface.py -d twitterGH -t messages_en -c cty_id -f 'feat$cat_met_a30_2000_cp_w$messages_en$cty_id$16to16' --outcome_table nejm_intersect_small50k --mediation --path_start 'hsgradHC03_VC93ACS3yr$10'  --outcomes 'ucd_I25_1_atheroHD$0910_ageadj' --mediators  '1051' --mediation_boot --mediation_boot_num 10000
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --group_freq_thresh 500 \
+	--mediation --path_start is_student --outcomes age --mediators 344 \
+	--mediation_boot --mediation_boot_num 10000

@@ -1,0 +1,46 @@
+.. _fwflag_create_dists:
+===============
+--create_dists
+===============
+Switch
+======
+
+--create_dists
+
+Description
+===========
+
+Creates topic-word conditional-probability and log-likelihood distributions from an estimated LDA model, and (unless :doc:`fwflag_no_lda_lexicon` is given) loads them into a topic lexicon table.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``. Automatically set to ``True`` whenever :doc:`fwflag_estimate_lda_topics` is used — you don't normally need to pass it directly.
+
+Details
+=======
+
+Verified end-to-end with real Mallet output: writes four CSVs into :doc:`fwflag_save_lda_files` — ``lda.topicGivenWord.csv``, ``lda.loglik.csv``, ``lda.wordGivenTopic.csv``, and ``lda.freq.threshed50.loglik.csv`` — then (unless ``--no_lda_lexicon``) loads ``lda.topicGivenWord.csv`` as a topic lexicon via :doc:`fwflag_lda_lexicon_name`.
+
+**Caveat:** on a very small test corpus (100 short documents), the distribution CSVs came back with header rows only and no topic data, which then crashed the topic-lexicon-loading step with ``TypeError: 'NoneType' object is not iterable``. Not fully root-caused — likely an artifact of too little data for the internal frequency threshold (``threshed50`` suggests a minimum-occurrence cutoff) rather than a general bug, but worth knowing if you see the same on a small corpus. Use :doc:`fwflag_no_lda_lexicon` to skip lexicon creation if you just need the distribution CSVs.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_estimate_lda_topics` (the usual way this gets triggered)
+* :doc:`fwflag_no_lda_lexicon`
+* :doc:`fwflag_lda_lexicon_name`
+* :doc:`fwflag_save_lda_files`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_lda`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id' \
+	--estimate_lda_topics --num_topics 100 --no_lda_lexicon \
+	--mallet_path /opt/homebrew/bin/mallet --save_lda_files ./lda_out

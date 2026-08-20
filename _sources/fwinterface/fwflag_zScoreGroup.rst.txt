@@ -25,9 +25,17 @@ Used with :doc:`fwflag_correlate` in place of the default correlation metric; :d
 Other Switches
 ==============
 
+Required Switches:
+
+* :doc:`fwflag_correlate`
+* A single boolean :doc:`fwflag_outcomes` field
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
 
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes is_student --correlate --zScoreGroup

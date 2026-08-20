@@ -188,16 +188,22 @@
 </section>
 <section id="details">
 <h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
+<p>The argparse type is <code class="docutils literal notranslate"><span class="pre">bool</span></code>, so on the command line <code class="docutils literal notranslate"><span class="pre">--nvalue</span> <span class="pre">False</span></code> does <strong>not</strong> disable it — Python's <code class="docutils literal notranslate"><span class="pre">bool(&quot;False&quot;)</span></code> is truthy (any non-empty string is <code class="docutils literal notranslate"><span class="pre">True</span></code>). In practice there's no documented way to turn this off from the command line; <code class="docutils literal notranslate"><span class="pre">N</span></code> is reported by default and stays on. See <a class="reference internal" href="fwflag_conf_int.html"><span class="doc">--conf_int</span></a>, which has the same argparse quirk.</p>
 </section>
 <section id="other-switches">
 <h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>
-<p>Required Switches:
-None
-Optional Switches:
-<a class="reference internal" href="fwflag_csv.html"><span class="doc">--csv</span></a> <a class="reference internal" href="fwflag_rmatrix.html"><span class="doc">--rmatrix</span></a>
-Example Commands
-================
-.. code:doc:<cite>fwflag_block</cite>:: python</p>
+<p>Optional Switches:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="fwflag_csv.html"><span class="doc">--csv</span></a>, <a class="reference internal" href="fwflag_rmatrix.html"><span class="doc">--rmatrix</span></a></p></li>
+</ul>
+</section>
+<section id="example-commands">
+<h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
+<p>Using the packaged <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> dataset (see <a class="reference internal" href="../tutorials/tut_dla.html"><span class="doc">Differential Language Analysis (DLA) Tutorial</span></a>):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs$user_id$16to16'</span><span class="w"> </span><span class="se">\</span>
+--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--correlate<span class="w"> </span>--rmatrix<span class="w"> </span>--csv
+</pre></div>
+</div>
 </section>
 </section>
 

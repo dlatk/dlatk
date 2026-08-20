@@ -1,0 +1,42 @@
+.. _fwflag_factor_selection_type:
+=========================
+--factor_selection_type
+=========================
+Switch
+======
+
+--factor_selection_type TYPE
+
+Description
+===========
+
+Method used to select adaptation factors for :doc:`fwflag_factor_adaptation`/:doc:`fwflag_res_factor_adaptation`: ``pca`` or ``rfe``.
+
+Argument and Default Value
+==========================
+
+A string. Default: ``"rfe"``.
+
+Details
+=======
+
+**Known issue — the default (``rfe``) is broken.** ``RegressionPredictor.selectAdaptationFactors()`` calls ``RFE(model, nFactors)`` positionally, but the installed scikit-learn (1.6.1) requires ``n_features_to_select`` as a keyword-only argument. Verified: leaving this at its default ``rfe`` crashes with ``TypeError: __init__() takes 2 positional arguments but 3 were given`` as soon as factor selection runs. **Workaround, verified working:** pass ``--factor_selection_type pca`` explicitly — this avoids the broken ``RFE`` call entirely and completes normally.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_factor_adaptation` or :doc:`fwflag_res_factor_adaptation`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`) — use ``pca``, not the broken default:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age --outcome_controls gender is_student \
+	--combo_test_regression --factor_adaptation --adaptation_factors gender is_student \
+	--num_of_factors 1 --factor_selection_type pca

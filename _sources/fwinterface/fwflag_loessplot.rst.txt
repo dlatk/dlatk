@@ -34,19 +34,23 @@ Required Switches:
 
 Optional Switches:
 
-* :doc:`fwflag_output_dir`
+* :doc:`fwflag_output_dir` or :doc:`fwflag_output_name`
 * :doc:`fwflag_spearman`
 * :doc:`fwflag_group_freq_thresh`
-* :doc:`fwflag_no_bonferroni`
 * :doc:`fwflag_p_correction`
 * :doc:`fwflag_blacklist`
 * :doc:`fwflag_whitelist`
 * :doc:`fwflag_show_feat_freqs`
 * :doc:`fwflag_not_show_feat_freqs`
-* :doc:`fwflag_output_dir`
-* :doc:`fwflag_output_name`
 * :doc:`fwflag_topic_lexicon`
 
 Example Commands
 ================
-.. code-block:: doc:`fwflag_block`:: python
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16$0_01' \
+	--outcome_table blog_outcomes --outcomes age --group_freq_thresh 500 \
+	--loessplot good great happy sad --output_name ./loess_output

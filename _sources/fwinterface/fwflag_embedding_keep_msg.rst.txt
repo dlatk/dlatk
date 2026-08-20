@@ -1,0 +1,39 @@
+.. _fwflag_embedding_keep_msg:
+=======================
+--embedding_keep_msg
+=======================
+Switch
+======
+
+--embedding_keep_msg
+
+Description
+===========
+
+Stores the embeddings as a **message-level** feature table (grouped by :doc:`fwflag_messageid_field`) instead of the usual group-level aggregation, when extracting features with :doc:`fwflag_add_bert`/:doc:`fwflag_add_emb`. Aliased as ``--emb_keep_msg``.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+**Known issue — broken in SQLite mode.** With this switch, ``FeatureExtractor.addEmbTable()`` writes rows via ``mm.executeWriteMany(...)`` using SQL built with MySQL's ``%s`` parameter placeholders — SQLite's driver expects ``?`` instead. Verified: fails with ``sqlite3.OperationalError: near "%": syntax error`` right at the insert step, after the destination table (``feat$...$<corptable>$message_id``) is already created empty. This is the same placeholder-style bug confirmed for :doc:`fwflag_predict_cv_to_feats`. The default (group-level) path does not hit this — confirmed working without this flag. Works against MySQL.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_add_bert` or :doc:`fwflag_add_emb`
+
+Example Commands
+================
+
+Requires MySQL — broken against SQLite, see Known issue above:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_bert --embedding_keep_msg

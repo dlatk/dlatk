@@ -1,0 +1,47 @@
+.. _fwflag_add_outcome_feats:
+==================
+--add_outcome_feats
+==================
+Switch
+======
+
+--add_outcome_feats
+
+Description
+===========
+
+Creates a feature table out of the outcome values themselves, one "feature" per outcome column — useful for feeding outcome-table values into feature-table-oriented tooling (e.g. :doc:`fwflag_ttest_feat_tables`, mediation with :doc:`fwflag_feat_as_outcome`).
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``. No group-frequency threshold is applied when reading outcomes for this (``getGroupsAndOutcomes(0)``, hardcoded), regardless of :doc:`fwflag_group_freq_thresh`. If :doc:`fwflag_outcome_controls` is also given, those are pulled in as features too.
+
+Details
+=======
+
+Verified table naming: with ``--outcome_table users100 --outcomes age is_indUnk``, creates ``feat$out_users100_age_iI$msgs$user_id`` — the outcome table name, then each outcome name (abbreviated to its capitalized-letter initials for multi-word/underscored names beyond the first).
+
+**Known issue — broken in SQLite mode.** ``FeatureExtractor.addOutcomeFeatTable()`` calls ``mm.disableTableKeys(...)`` directly before inserting. Verified: the destination table is created but stays empty, then the run fails with ``sqlite3.OperationalError: near "DISABLE": syntax error``. Works against MySQL.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes`
+
+Optional Switches:
+
+* :doc:`fwflag_outcome_controls`
+
+Example Commands
+================
+
+Requires MySQL — broken against SQLite, see Known issue above:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --outcome_table blog_outcomes \
+	--outcomes age is_student --add_outcome_feats

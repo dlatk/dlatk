@@ -1,0 +1,41 @@
+.. _fwflag_topic_tagcloud_colorscheme:
+==============================
+--topic_tagcloud_colorscheme
+==============================
+Switch
+======
+
+--topic_tagcloud_colorscheme SCHEME
+
+Description
+===========
+
+Color scheme to use when generating topic tagclouds/wordclouds. Aliased as ``--topic_wordcloud_colorscheme``.
+
+Argument and Default Value
+==========================
+
+A string. Default: ``"blue"``. Also accepts ``multi``, ``red``, ``red-random``, ``redblue``, ``bluered``.
+
+Details
+=======
+
+Distinct from the plain :doc:`fwflag_tagcloud_colorscheme`, which applies to non-topic-based :doc:`fwflag_tagcloud` output — this one only affects :doc:`fwflag_topic_tagcloud`/:doc:`fwflag_corp_topic_tagcloud`.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_topic_tagcloud` or :doc:`fwflag_corp_topic_tagcloud`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --topic_tagcloud --topic_lexicon met_a30_2000_freq_t50ll \
+	--topic_tagcloud_colorscheme bluered

@@ -10,44 +10,37 @@ Switch
 Description
 ===========
 
-Dictates format of correlation output --correlate
+Dictates format of correlation output for :doc:`fwflag_correlate` — produces an HTML correlation matrix (and, with :doc:`fwflag_csv`, a csv version as well).
 
 Argument and Default Value
 ==========================
 
-None
+No argument. Boolean switch, default: ``False``.
 
 Details
-=======Contents [hide]Switch
-Description
-    Argument and Default Value
-    
-Other Switches
-==============
-    
-Example Commands
-================
-.. code:doc:`fwflag_block`:: python
-Switch
+=======
 
-:doc:`fwflag_rmatrix` 
-Description
-
-Dictates format of correlation output :doc:`fwflag_correlate` 
-Argument and Default Value
-
-None
-
+Without ``--rmatrix``, :doc:`fwflag_correlate` output goes to stdout as a Python dict. With it, results are also written to ``<output_name>.html`` (and ``.csv`` if :doc:`fwflag_csv` is also given).
 
 Other Switches
 ==============
+
+Required Switches:
+
+* :doc:`fwflag_correlate`
 
 Optional Switches:
-:doc:`fwflag_csv` :doc:`fwflag_sort` 
+
+* :doc:`fwflag_csv`
+* :doc:`fwflag_sort`
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
 
- ./fwInterface.py :doc:`fwflag_H` wwbp :doc:`fwflag_d` testing :doc:`fwflag_t` msgs :doc:`fwflag_c` user_id :doc:`fwflag_f` feat$1to3gram$msgs$user_id$16to16 :doc:`fwflag_outcome_table` users :doc:`fwflag_outcomes` age salary \ 
- :doc:`fwflag_output_name` test_correlation :doc:`fwflag_rmatrix` :doc:`fwflag_csv` :doc:`fwflag_sort` 
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age gender \
+	--output_name test_correlation --correlate --rmatrix --csv --sort

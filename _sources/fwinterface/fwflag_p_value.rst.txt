@@ -30,16 +30,18 @@ Optional Switches:
 :doc:`fwflag_correlate` :doc:`fwflag_tagcloud` :doc:`fwflag_topic_tagcloud` :doc:`fwflag_DDLATagcloud`? 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
 
- # Create topic tagclouds
- ./fwInterface.py :doc:`fwflag_d` county_addiction :doc:`fwflag_t` msgs_2011to13 :doc:`fwflag_c` cnty :doc:`fwflag_word_table` 'feat$1gram$msgs_2011to13$cnty$16to16$0_1' :doc:`fwflag_group_freq_thresh` 40000 :doc:`fwflag_f` \ 
- 'feat$cat_met_a30_2000_cp_w$msgs_2011to13$cnty$16to16' :doc:`fwflag_outcome_table` main_interest_vars_controls :doc:`fwflag_outcomes` ExcessDrink_Percent :doc:`fwflag_no_bonf` \ 
- :doc:`fwflag_p_correction` simes :doc:`fwflag_topic_tagcloud` :doc:`fwflag_make_topic_wordclouds` :doc:`fwflag_topic_lexicon` met_a30_2000_freq_t50ll :doc:`fwflag_csv` :doc:`fwflag_output_name` ~/xxx_output :doc:`fwflag_p_value` 0.001
+.. code-block:: bash
 
+	# Create topic tagclouds
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --group_freq_thresh 500 \
+	-f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' --outcome_table blog_outcomes --outcomes age \
+	--p_correction simes --topic_tagcloud --make_topic_wordclouds \
+	--topic_lexicon met_a30_2000_freq_t50ll --csv --output_name ~/xxx_output --p_value 0.001
 
- # Correlate features with outcome
- ./fwInterface.py :doc:`fwflag_d` county_addiction :doc:`fwflag_t` msgs_2011to13 :doc:`fwflag_c` cnty :doc:`fwflag_word_table` 'feat$1gram$msgs_2011to13$cnty$16to16$0_1' :doc:`fwflag_group_freq_thresh` 40000 :doc:`fwflag_f` \ 
- 'feat$cat_met_a30_2000_cp_w$msgs_2011to13$cnty$16to16' :doc:`fwflag_outcome_table` main_interest_vars_controls :doc:`fwflag_outcomes` ExcessDrink_Percent :doc:`fwflag_no_bonf` \ 
- :doc:`fwflag_p_correction` simes :doc:`fwflag_correlate` :doc:`fwflag_p_value` 0.001
+	# Correlate features with outcome
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --group_freq_thresh 500 \
+	-f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' --outcome_table blog_outcomes --outcomes age \
+	--no_correction --p_correction simes --correlate --p_value 0.001

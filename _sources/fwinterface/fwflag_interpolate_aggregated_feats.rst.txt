@@ -1,0 +1,44 @@
+.. _fwflag_interpolate_aggregated_feats:
+================================
+--interpolate_aggregated_feats
+================================
+Switch
+======
+
+--interpolate_aggregated_feats DAYS
+
+Description
+===========
+
+Aggregates message-level features up to a new group-by field, interpolating across the given number of days for groups with sparse/missing dates. Aliased as ``--interpolate_feats``.
+
+Argument and Default Value
+==========================
+
+A float — the number of days to interpolate across. Default: ``None``.
+
+Details
+=======
+
+**Verified requirement:** the feature table given by :doc:`fwflag_f` must be at the **message level** (grouped by your :doc:`fwflag_messageid_field`, not e.g. ``user_id``) — ``FeatureRefiner.createInterpolatedFeatTable()`` asserts this explicitly and fails with ``AssertionError: Interpolate currently only works if interpolating message-level features`` otherwise.
+
+**Known issue — broken in SQLite mode.** Once past that check, it calls ``mm.getTableColumnNameTypes(...)``, which queries ``information_schema.columns`` — not supported by SQLite. Verified: fails with ``sqlite3.OperationalError: no such table: information_schema.columns``. Works against MySQL.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_f` (a message-level feature table)
+* :doc:`fwflag_date_field`
+
+Example Commands
+================
+
+Requires MySQL — broken against SQLite, see Known issue above:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$message_id' \
+	--date_field date --interpolate_aggregated_feats 3

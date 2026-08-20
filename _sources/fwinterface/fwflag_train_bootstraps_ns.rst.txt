@@ -1,0 +1,42 @@
+.. _fwflag_train_bootstraps_ns:
+======================
+--train_bootstraps_ns
+======================
+Switch
+======
+
+--train_bootstraps_ns N [N2 ...]
+
+Description
+===========
+
+Sample sizes to use when doing bootstrapped training with :doc:`fwflag_train_bootstraps`.
+
+Argument and Default Value
+==========================
+
+One or more integers. Default: ``None``.
+
+Details
+=======
+
+Verified end-to-end: with ``--train_bootstraps 3 --train_bootstraps_ns 20 40``, ran 3 resamples at sample size 20, then 3 more at sample size 40 (printing ``Sample Size: 20, bs resample num: 1/2/3`` then the same for 40) — useful for building a learning curve of model performance vs. training set size.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_train_regression`
+* :doc:`fwflag_train_bootstraps`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age --train_regression --train_bootstraps 3 \
+	--train_bootstraps_ns 500 1000 --save_model --picklefile ./boot_test.pickle

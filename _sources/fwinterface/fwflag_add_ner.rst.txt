@@ -1,0 +1,37 @@
+.. _fwflag_add_ner:
+==========
+--add_ner
+==========
+Switch
+======
+
+--add_ner
+
+Description
+===========
+
+Extracts named-entity features from a directory of Stanford CoreNLP semantic-parse XML files.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Not a database-driven feature at all — ``SemanticsExtractor.addNERTable()`` is meant to read gzipped Stanford CoreNLP XML output directly off disk (one subdirectory of files per group) rather than from any message/feature table, using a corpus directory path.
+
+**Known issue — always crashes, regardless of setup.** The code that constructs the ``SemanticsExtractor`` passes ``args.corpdir`` as that directory path, but no ``--corpdir`` (or any other name) flag registers a ``corpdir`` destination anywhere in ``dlatkInterface.py``. Verified: running ``--add_ner`` on its own fails immediately with ``AttributeError: 'Namespace' object has no attribute 'corpdir'``, before any XML files, database connection, or corpus data are even considered. There is currently no way to invoke this switch successfully from the command line.
+
+Other Switches
+==============
+
+Required Switches:
+
+* None (flag currently cannot complete successfully — see Known issue above)
+
+Example Commands
+================
+
+Not usable as of this writing — see Known issue above.

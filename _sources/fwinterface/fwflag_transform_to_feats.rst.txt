@@ -1,0 +1,45 @@
+.. _fwflag_transform_to_feats:
+=======================
+--transform_to_feats
+=======================
+Switch
+======
+
+--transform_to_feats NAME
+
+Description
+===========
+
+Transforms a feature table through a fitted dimensionality-reduction model (from :doc:`fwflag_fit_reducer`) and writes the reduced components into a new feature table.
+
+Argument and Default Value
+==========================
+
+A name used to build the destination table (``feat$dr_<model>_<name>$<corptable>$<correl_field>``). Default: ``None``.
+
+Details
+=======
+
+Verified end-to-end: with ``--fit_reducer --model pca --n_components 5 --transform_to_feats pca_reduced``, created ``feat$dr_pca_pca_reduced$msgs$user_id`` and inserted one feature row per group for each of ``COMPONENT_0`` through ``COMPONENT_4``, printing a row count per component as it went.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_fit_reducer`
+* :doc:`fwflag_model`
+
+Optional Switches:
+
+* :doc:`fwflag_n_components`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_clustering`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--fit_reducer --model pca --n_components 5 --transform_to_feats pca_reduced

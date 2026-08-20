@@ -26,7 +26,11 @@ Required Switches:
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
-	# Example command correlating county level outcomes with PA twitter data, using Facebook topics and controlling for region
-	 ./dlatkInterface.py -d paHealth -t msgsPA_2012 -c cnty -f 'feat$1gram$msgsPA_2012$cnty$16to16' --outcome_table outcome_data_with_controls --outcomes diab_perc HIV_rate PAAM_age_adj_mort IM_rate CM_rate food_insec_perc LATHF_perc MV_mort_rate DP_mort_rate --tagcloud --make_wordclouds --output_name /localdata/paHealth/d6 --controls 'new_england' 'midatlantic' 'south' 'midwest' 'southwest' 'west' --max_tagcloud_words 25
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`): correlates 1grams with age and gender, controlling for whether the user is a student, then renders word clouds capped at 25 words.
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age gender --tagcloud --make_wordclouds \
+	--output_name ./dla_tutorial_output --outcome_controls is_student --max_tagcloud_words 25

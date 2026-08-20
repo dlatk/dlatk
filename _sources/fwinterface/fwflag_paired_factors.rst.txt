@@ -1,0 +1,42 @@
+.. _fwflag_paired_factors:
+==================
+--paired_factors
+==================
+Switch
+======
+
+--paired_factors
+
+Description
+===========
+
+Multiplies adaptation factors together (pairwise, including self-products) to create a larger pool of candidate factors before selection.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Verified: ran successfully together with :doc:`fwflag_factor_adaptation`/:doc:`fwflag_res_factor_adaptation`, :doc:`fwflag_factor_addition`, and ``--factor_selection_type pca``.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_factor_adaptation` or :doc:`fwflag_res_factor_adaptation`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age --outcome_controls gender is_student \
+	--combo_test_regression --factor_adaptation --adaptation_factors gender is_student \
+	--num_of_factors 1 --factor_selection_type pca --paired_factors

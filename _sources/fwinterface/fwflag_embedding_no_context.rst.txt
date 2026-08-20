@@ -1,0 +1,39 @@
+.. _fwflag_embedding_no_context:
+========================
+--embedding_no_context
+========================
+Switch
+======
+
+--embedding_no_context
+
+Description
+===========
+
+Encodes each sentence/segment independently (without surrounding message context) when extracting features with :doc:`fwflag_add_bert`/:doc:`fwflag_add_emb`. Aliased as ``--emb_no_context``, ``--bert_no_context``.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False`` (context-aware encoding).
+
+Details
+=======
+
+**Known issue — silently produces an empty feature table.** In this mode, ``FeatureExtractor.addEmbTable()`` calls ``tokenizer.encode_plus(...)`` inside a bare ``except:`` that catches and swallows any error, printing ``Message pair/ message unreadable. Skipping this....`` and continuing. Verified: running with ``--embedding_no_context`` completed "successfully" (exit 0, ``DLATK exits with success!``) but the resulting feature table had **0 rows** — every message ended up skipped by that catch-all, and the true underlying error is masked. The same command without this flag (context-aware mode) worked correctly and produced thousands of real feature rows. Also noticeably slower (~13s vs ~3s here) since it processes per-sentence rather than per-message.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_add_bert` or :doc:`fwflag_add_emb`
+
+Example Commands
+================
+
+Not usable as of this writing — see Known issue above. Omit this flag for working (context-aware) embeddings:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_bert

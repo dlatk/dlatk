@@ -22,6 +22,8 @@ Details
 
 This switch performs finds components that explain variance in both the features and the outcomes&controls, using the sparse CCA implementation in R. This first removes groups that have at least 4 non null values in the feature or outcome matrix, then performs softImpute (matrix completion) to get rid of the null values, and then performs CCA. Output will be in the form of (features x component) weights and (outcomes x component) weights, and the exact output format depends on the flags you specify (:doc:`fwflag_rmatrix` or :doc:`fwflag_csv` etc.).
 
+**Known issue — always crashes, even with R and rpy2 correctly installed.** ``CCA.__init__()`` imports ``importr``/``ro``/``RNULLType`` from ``rpy2`` as *local variables inside the constructor* — they're never stored on ``self`` or at module scope. Every other method that needs them (``RsoftImpute()``, called unconditionally by ``cca()`` via ``prepMatrices()``) then references ``importr`` as if it were still in scope, hits a ``NameError``, and that ``NameError`` is caught by an overly broad ``except NameError: warn("rpy2 cannot be imported"); sys.exit(1)`` — printing a misleading message that blames a missing dependency instead of the actual scoping bug. Verified: with real R (4.5.3) and ``rpy2`` (3.5.2) both installed and independently confirmed importable, running ``--cca`` still prints ``rpy2 cannot be imported`` and exits with status 1 before performing any CCA computation. There is currently no way to run ``--cca`` successfully, regardless of environment.
+
 Note that the number of components (the argument, sometimes called K) must satisfy:
 
 

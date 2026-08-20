@@ -34,8 +34,11 @@ Optional Switches:
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
-	# Example command correlating county level outcomes with PA twitter data, using Facebook topics and controlling for region
-	 ./fwInterface.py -d paHealth -t msgsPA_2012 -c cnty -f 'feat$1gram$msgsPA_2012$cnty$16to16' --outcome_table outcome_data_with_controls --outcomes diab_perc HIV_rate PAAM_age_adj_mort IM_rate CM_rate food_insec_perc LATHF_perc MV_mort_rate DP_mort_rate --tagcloud --make_wordclouds 
-	 --output_name /localdata/paHealth/d6 --controls 'new_england' 'midatlantic' 'south' 'midwest' 'southwest' 'west'
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`): correlates 1to3grams with age and gender, controlling for whether the user is a student, then renders word clouds.
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age gender --outcome_controls is_student \
+	--group_freq_thresh 500 --tagcloud --make_wordclouds --output_name ./dla_tutorial_clouds

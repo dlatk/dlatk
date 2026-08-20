@@ -1,0 +1,41 @@
+.. _fwflag_feat_archetype_similarity:
+=============================
+--feat_archetype_similarity
+=============================
+Switch
+======
+
+--feat_archetype_similarity ARCHETYPE_FEAT_TABLE
+
+Description
+===========
+
+Creates a feature table of each group's similarity to a set of "archetype" groups, using the groups in ``ARCHETYPE_FEAT_TABLE`` as the archetypes to compare against. Aliased as ``--archtype_similarity``.
+
+Argument and Default Value
+==========================
+
+The name of a feature table whose groups serve as archetypes. Default: ``None``.
+
+Details
+=======
+
+**Known issue — crashes whenever group ids are numeric.** ``FeatureRefiner.createArchetypeFeats()`` calls ``dlac.warn("calculating for: " + archName)`` where ``archName`` is one of the archetype table's raw group ids. Verified: with an integer :doc:`fwflag_c` field (e.g. ``user_id``), this fails immediately with ``TypeError: can only concatenate str (not "int") to str`` as soon as it starts iterating archetypes — i.e. on essentially any normal numeric-group-id usage. Only string-typed group ids would avoid this particular crash; not otherwise verified end-to-end.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_f` (the feature table to compare against the archetypes)
+
+Example Commands
+================
+
+Not usable as of this writing with numeric group ids — see Known issue above:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' \
+	--feat_archetype_similarity 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16'

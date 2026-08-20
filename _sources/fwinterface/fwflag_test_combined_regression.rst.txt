@@ -1,0 +1,47 @@
+.. _fwflag_test_combined_regression:
+============================
+--test_combined_regression
+============================
+Switch
+======
+
+--test_combined_regression FEAT_TABLE [FEAT_TABLE ...]
+
+Description
+===========
+
+Trains and tests a "combined" regression model that fits a separate sub-model per feature table (one model per :doc:`fwflag_f` table, plus one per table given here) and combines their predictions, rather than concatenating all features into a single model.
+
+Argument and Default Value
+==========================
+
+One or more *additional* feature table names — not the same as :doc:`fwflag_f`, which supplies the first table(s). Default: ``[]``.
+
+Details
+=======
+
+Verified end-to-end: with a 1to3gram table via ``-f`` and a Facebook-topics table passed to this switch, ran a full train/test cycle and printed per-model evaluation (R², Pearson r, Spearman rho, MSE, MAE) followed by a ``***Combined Results***`` section.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_f` (the primary feature table)
+* :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes`
+
+Optional Switches:
+
+* :doc:`fwflag_combined_models`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age \
+	--test_combined_regression 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16'

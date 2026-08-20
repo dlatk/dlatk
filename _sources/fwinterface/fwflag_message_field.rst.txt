@@ -32,6 +32,9 @@ None
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`), whose ``msgs`` table already uses the default column name ``message`` — this is only needed if your table uses a different column name:
 
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --message_field message --add_ngrams

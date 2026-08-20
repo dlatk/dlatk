@@ -1,0 +1,41 @@
+.. _fwflag_multicategory_normalization:
+================================
+--multicategory_normalization
+================================
+Switch
+======
+
+--multicategory_normalization
+
+Description
+===========
+
+Like :doc:`fwflag_lexicon_normalization`, but normalizes each group's category values by the total lexicon-term count across *all* categories combined, rather than per category. Aliased as ``--liwc_normalization``, ``--liwc_norm``.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``. Verified: implicitly turns on :doc:`fwflag_lexicon_normalization` too (``if args.multicategory_normalization and not args.lexicon_normalization: args.lexicon_normalization = True``), so it always implies that switch.
+
+Details
+=======
+
+Verified: with a real weighted lexicon, every group's ``group_norm`` summed to almost exactly ``2.0`` across all categories combined (vs. ~26–33 for :doc:`fwflag_lexicon_normalization` alone, and ~1.2–1.3 with neither switch) — a much more uniform scale, useful when a message can belong to more than one category (e.g. LIWC) and you want category values to be comparable across groups regardless of how lexicon-heavy their language was overall.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_add_lex_table`
+* :doc:`fwflag_l`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_lex_table -l met_a30_2000_cp \
+	--weighted_lexicon --multicategory_normalization

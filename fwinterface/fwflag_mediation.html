@@ -191,10 +191,10 @@
 <p>Mediation analysis considers three variables, as seen in the following figure: path start (also called the treatment), mediator and outcome.</p>
 <p>These variables can be located within a feature or outcome table. There are 4 switches to specify where the features will go within the mediation:  <a class="reference internal" href="fwflag_feat_as_path_start.html"><span class="doc">--feat_as_path_start</span></a>, <a class="reference internal" href="fwflag_feat_as_outcome.html"><span class="doc">--feat_as_outcome</span></a>, <a class="reference internal" href="fwflag_feat_as_control.html"><span class="doc">--feat_as_control</span></a>, <a class="reference internal" href="fwflag_no_features.html"><span class="doc">--no_features</span></a>. Once you specify which variable is in the feature table all other variables will be in the outcome table. There is the option to specify specific features or consider the entire feature table. For example, if your outcome variable is a feature you can run either of the following two commands:</p>
 <blockquote>
-<div><p># Specify feature 1200 as the outcome
-./dlatkInterface.py -d twitterGH -t messages_en -c cty_id -f 'feat$cat_met_a30_2000_cp_w$messages_en$cty_id$16to16' --mediation --path_start 'hsgradHC03_VC93ACS3yr$10' --mediators 'ucd_I25_1_atheroHD$0910_ageadj' --outcome_table nejm_intersect_small50k --outcomes '1200' --feat_as_outcome</p>
-<p># Consider all features as outcomes
-./dlatkInterface.py -d twitterGH -t messages_en -c cty_id -f 'feat$cat_met_a30_2000_cp_w$messages_en$cty_id$16to16' --mediation --path_start 'hsgradHC03_VC93ACS3yr$10' --mediators 'ucd_I25_1_atheroHD$0910_ageadj' --outcome_table nejm_intersect_small50k --feat_as_outcome</p>
+<div><p># Using the packaged dla_tutorial dataset (see tut_dla): specify Facebook topic 344 as the outcome
+./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' --mediation --path_start is_student --mediators age --outcome_table blog_outcomes --outcomes '344' --feat_as_outcome</p>
+<p># Consider all topics as outcomes
+./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' --mediation --path_start is_student --mediators age --outcome_table blog_outcomes --feat_as_outcome</p>
 <p>The analysis is done using two methods. The first is the Baron and Kenny method with a Sobel test for significance. We first do three regressions (all of which are normalized):</p>
 </div></blockquote>
 <p>Regress the outcome with the path start:</p>
@@ -233,7 +233,32 @@ Optional Switches:
 </section>
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Example, using the packaged dla_tutorial dataset (see tut_dla)</span>
+<span class="c1"># Since no mediators are given, this will consider every topic in the feature table as a mediator</span>
+./dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16'</span><span class="w"> </span>--mediation<span class="w"> </span>--path_start<span class="w"> </span>is_student<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--mediation_csv<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span>--output_name<span class="w"> </span>mediation_output.csv<span class="w"> </span>--mediation_boot
+</pre></div>
+</div>
 <p>Part of Output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Mediation number 2000 out of 2000
+Path Start: hsgradHC03_VC93ACS3yr$10, Mediator: 1051, Outcome: ucd_I25_1_atheroHD$0910_ageadj
+C: -0.134772542078, C_p: 6.8251850716e-07, C': -0.163575622445, C'_p: 2.05569898945e-08
+C-C': 0.0288030803674, alpha*beta: 0.0288030803674
+alpha: -0.36936035776, alpha_error: 0.0253295211266, alpha_p: 7.8905979142e-45
+beta: -0.0779809737625, beta_error: 0.0289964186593, beta_p: 0.00724804697931
+Sobel z-score: 2.64473000024, Sobel SE: 0.0108907451289, Sobel p: 0.00817561235516
+                           Estimate P-value Lower CI bound Upper CI bound
+Prop. mediated (average)  -0.2121596   0.004     -0.4912299    -0.06154572
+ACME (average)            0.02911135   0.004    0.008990151      0.0541393
+ADE (average)             -0.1630937       0     -0.2160734     -0.1054184
+ACME (treated)            0.02911135   0.004    0.008990151      0.0541393
+ACME (control)            0.02911135   0.004    0.008990151      0.0541393
+ADE (treated)             -0.1630937       0     -0.2160734     -0.1054184
+ADE (control)             -0.1630937       0     -0.2160734     -0.1054184
+Total effect              -0.1339823       0     -0.1848832     -0.0804331
+Prop. mediated (treated)  -0.2121596   0.004     -0.4912299    -0.06154572
+Prop. mediated (control)  -0.2121596   0.004     -0.4912299    -0.06154572
+</pre></div>
+</div>
 </section>
 </section>
 

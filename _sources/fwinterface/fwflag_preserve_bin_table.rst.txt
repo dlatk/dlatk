@@ -1,0 +1,38 @@
+.. _fwflag_preserve_bin_table:
+======================
+--preserve_bin_table
+======================
+Switch
+======
+
+--preserve_bin_table
+
+Description
+===========
+
+Preserves the :doc:`fwflag_feat_flexibin` binned ("flexibin") table after use, instead of dropping it, so subsequent runs can plot faster (see :doc:`fwflag_skip_bin_step`).
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+**Note:** :doc:`fwflag_feat_flexibin` itself is currently broken for an unrelated reason (references never-registered ``args.gender``/``args.genderattack`` — see the Known issue on that page), so this switch has no working consumer as of this writing even when supplied correctly.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_feat_flexibin`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--feat_flexibin --num_bins 10 --group_id_range 0 100 --preserve_bin_table

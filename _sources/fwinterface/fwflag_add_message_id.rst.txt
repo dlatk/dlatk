@@ -1,0 +1,41 @@
+.. _fwflag_add_message_id:
+==================
+--add_message_id
+==================
+Switch
+======
+
+--add_message_id MESSAGE_FILE STATE_FILE_GZ
+
+Description
+===========
+
+Rewrites a Mallet LDA state file's numeric document index back into real group ids, by cross-referencing the joined-feature-lines file used to build the LDA model.
+
+Argument and Default Value
+==========================
+
+Two file paths: the joined-feature-lines file (as written by :doc:`fwflag_print_joined_feature_lines`) and the gzipped Mallet state file. Default: ``None`` (not used directly).
+
+Details
+=======
+
+Verified: this is normally triggered *automatically* by :doc:`fwflag_estimate_lda_topics` (which sets ``args.addmessageid = [joined_feature_lines_file, state_file]`` itself right after calling Mallet) — you don't need to pass it by hand in the common workflow. Despite the name, the id substituted in is whichever **group id** the feature table used (e.g. ``user_id``), not necessarily a literal message id — confirmed by running with a user-level feature table and seeing real ``user_id`` values appear in the rewritten state file's ``source`` column, in place of Mallet's internal sequential document index.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_estimate_lda_topics` (the usual way this gets triggered)
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla` and :doc:`../../tutorials/tut_lda`) — verified end-to-end with real Mallet:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id' \
+	--estimate_lda_topics --num_topics 20 --no_lda_lexicon \
+	--mallet_path /opt/homebrew/bin/mallet --save_lda_files ./lda_out --num_lda_threads 2

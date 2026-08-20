@@ -1,0 +1,40 @@
+.. _fwflag_add_pnames:
+=============
+--add_pnames
+=============
+Switch
+======
+
+--add_pnames NAMES_LEX LANGUAGE_LEX
+
+Description
+===========
+
+Adds a feature table of people's-names usage, using a names lexicon and a language lexicon to identify first/last names in the text.
+
+Argument and Default Value
+==========================
+
+Two lexicon table names (``nargs=2``): the names lexicon, then the language lexicon. Default: ``None``.
+
+Details
+=======
+
+**Known issue — always tries MySQL, regardless of your corpus's db engine.** Both lexicons are loaded via ``lexInterface.Lexicon(mysql_config_file=...)``, which has no SQLite/db-type option at all — unlike the rest of DLATK, this class always connects with raw MySQL credentials. Verified: running this against a SQLite corpus still attempts (and retries, then fails) a MySQL connection for the lexicon lookups. Works against MySQL, with real names/language lexicon tables loaded first via :doc:`fwflag_add_lex_table`.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* Two existing lexicon tables (names, language)
+
+Example Commands
+================
+
+Requires MySQL — see Known issue above:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_pnames names_lexicon language_lexicon

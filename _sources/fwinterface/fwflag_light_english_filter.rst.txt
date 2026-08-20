@@ -1,0 +1,44 @@
+.. _fwflag_light_english_filter:
+========================
+--light_english_filter
+========================
+Switch
+======
+
+--light_english_filter
+
+Description
+===========
+
+Filters a message table down to English-language messages, using a less stringent threshold than the language-detection filter behind :doc:`fwflag_language_filter` (``--lang_filter``).
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``. Requires the ``langid`` package (``pip install langid``).
+
+Details
+=======
+
+Verified end-to-end against SQLite: creates a new table named ``<corptable>_en`` containing only the rows that pass the language filter, printing a summary like ``Kept 741 out of 741 messages`` and ``{'msgs100u_en': 741}``. Works fine under SQLite, unlike most of the other extraction switches checked in this pass — this one goes through the SQLite-aware ``MessageAnnotator`` path rather than raw ``mysqlmethods`` calls.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+
+Optional Switches:
+
+* :doc:`fwflag_clean_messages` (strip URLs/hashtags/@mentions before language detection)
+* :doc:`fwflag_no_lower` (skip lowercasing before language detection)
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --light_english_filter

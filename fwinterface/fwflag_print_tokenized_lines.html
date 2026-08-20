@@ -203,16 +203,17 @@ Each line of the output file contains the message id, lanugage, and tokens. Exam
 <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a>, <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> Optional Switches:
 <a class="reference internal" href="fwflag_feat_whitelist.html"><span class="doc">--feat_whitelist</span></a>
 Example Commands
-================
-.. code:doc:<cite>fwflag_block</cite>:: python</p>
-<blockquote>
-<div><p># General command
-python fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> DATABASE <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> TABLE <a class="reference internal" href="#"><span class="doc">--print_tokenized_lines</span></a> OUTPUTFILE_NAME</p>
-<p># Example command
-# searches for the table twt_20mil_tok
-# outputs the file twt_20mil.txt
-python fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> twitterGH <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> twt_20mil <a class="reference internal" href="#"><span class="doc">--print_tokenized_lines</span></a> twt_20mil.txt</p>
-</div></blockquote>
+================</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># General command</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>DATABASE<span class="w"> </span>-t<span class="w"> </span>TABLE<span class="w"> </span>--print_tokenized_lines<span class="w"> </span>OUTPUTFILE_NAME
+
+<span class="c1"># Example, using the packaged dla_tutorial dataset (see tut_dla)</span>
+<span class="c1"># searches for the table msgs_tok (built by --add_tokenized)</span>
+<span class="c1"># outputs the file msgs_tokenized.txt</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>--add_tokenized
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>--print_tokenized_lines<span class="w"> </span>msgs_tokenized.txt
+</pre></div>
+</div>
 </section>
 </section>
 

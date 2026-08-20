@@ -1,0 +1,46 @@
+.. _fwflag_feat_group_by_outcomes:
+=========================
+--feat_group_by_outcomes
+=========================
+Switch
+======
+
+--feat_group_by_outcomes
+
+Description
+===========
+
+Creates a new feature table, one per distinct value of the given outcome(s), splitting the original feature table's rows by outcome value.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+**Known issue — broken in SQLite mode.** ``FeatureRefiner.createFeatTableByDistinctOutcomes()`` calls ``mm.execute(...)`` directly with MySQL-flavored SQL (including a ``LIKE``-based table-existence check). Verified: fails with ``sqlite3.OperationalError: near "like": syntax error``. Works against MySQL.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_f`
+* :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes`
+
+Optional Switches:
+
+* :doc:`fwflag_output_name` (used as a suffix on the generated table names)
+
+Example Commands
+================
+
+Requires MySQL — broken against SQLite, see Known issue above:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id' \
+	--outcome_table blog_outcomes --outcomes is_student --feat_group_by_outcomes

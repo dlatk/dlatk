@@ -1,0 +1,42 @@
+.. _fwflag_adaptation_factors:
+======================
+--adaptation_factors
+======================
+Switch
+======
+
+--adaptation_factors FIELD [FIELD ...]
+
+Description
+===========
+
+Fields in the outcome table to use as the pool of factors for :doc:`fwflag_factor_adaptation`/:doc:`fwflag_res_factor_adaptation`. Aliased as ``--factors``.
+
+Argument and Default Value
+==========================
+
+One or more outcome-table column names. Default: ``None`` — falls back to all of :doc:`fwflag_outcome_controls` if :doc:`fwflag_factor_adaptation`/:doc:`fwflag_res_factor_adaptation`/:doc:`fwflag_factor_addition` is set without this.
+
+Details
+=======
+
+Verified: the named fields are appended onto :doc:`fwflag_outcomes` internally so they get pulled from the outcome table, then handed to the factor-selection step (see :doc:`fwflag_num_of_factors`, :doc:`fwflag_factor_selection_type`).
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_factor_adaptation`, :doc:`fwflag_res_factor_adaptation`, or :doc:`fwflag_factor_addition`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age --outcome_controls gender is_student \
+	--combo_test_regression --factor_adaptation --adaptation_factors gender is_student \
+	--num_of_factors 1 --factor_selection_type pca

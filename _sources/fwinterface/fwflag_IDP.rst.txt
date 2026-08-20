@@ -31,7 +31,11 @@ None
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Since ``--IDP`` requires a binary outcome, we use ``is_student`` (0/1) from the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
 
-fwInterface.py :doc:`fwflag_d` tester7 :doc:`fwflag_t` statuses_er1 :doc:`fwflag_c` study_code :doc:`fwflag_f` 'feat$1to3gram$statuses_er1$study_code$16to16$0_1' :doc:`fwflag_group_freq_thresh` 500 :doc:`fwflag_outcome_table` PDS_BMI_subj :doc:`fwflag_outcomes` BMI_avg_2bin BMI_range_2bin BMI_slope_2bin BMI_absslope_2bin BMI_avg_1q4q BMI_range_1q4q BMI_slope_1q4q BMI_absslope_1q4q :doc:`fwflag_outcome_controls` sex_int isBlack isWhite isHispanic ageTercile0 ageTercile1 ageTercile2 :doc:`fwflag_correlate` :doc:`fwflag_IDP` :doc:`fwflag_rmatrix` :doc:`fwflag_sort` :doc:`fwflag_tagcloud` :doc:`fwflag_make_wordclouds` :doc:`fwflag_output_name` 
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--group_freq_thresh 500 --outcome_table blog_outcomes --outcomes is_student \
+	--correlate --IDP --rmatrix --sort --output_name ./idp_output

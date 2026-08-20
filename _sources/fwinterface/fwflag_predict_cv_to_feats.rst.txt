@@ -1,0 +1,48 @@
+.. _fwflag_predict_cv_to_feats:
+======================
+--predict_cv_to_feats
+======================
+Switch
+======
+
+--predict_cv_to_feats NAME
+
+Description
+===========
+
+Runs N-fold cross-validated regression prediction and writes the out-of-fold predictions into a new feature table, without needing a pre-saved model. Aliased as ``--predict_combo_to_feats``, ``--predict_regression_all_to_feats``.
+
+Argument and Default Value
+==========================
+
+A name used to build the destination table (``feat$p_<model>_<name>$<corptable>$<correl_field>``). Default: ``None``.
+
+Details
+=======
+
+Verified table naming and most of the pipeline work correctly — table creation, N-fold splitting, and prediction all ran (``[Inserting Predictions as Feature values for age]``).
+
+**Known issue — broken in SQLite mode.** The final insert calls ``mm.executeWriteMany(...)`` with SQL built using MySQL's ``%s`` parameter placeholders. SQLite's ``sqlite3`` driver expects ``?`` placeholders instead, so ``writeCursor.executemany(sql, rows)`` fails with ``sqlite3.OperationalError: near "%": syntax error`` — different root cause from most other SQLite issues found in this pass (a placeholder-style mismatch, not a MySQL-only SQL statement). Works against MySQL.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_f`
+* :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes`
+
+Optional Switches:
+
+* :doc:`fwflag_folds`
+
+Example Commands
+================
+
+Requires MySQL — broken against SQLite, see Known issue above:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age --folds 10 --predict_cv_to_feats cv_age

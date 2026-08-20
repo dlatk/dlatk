@@ -206,6 +206,14 @@ Required Switches:
 </section>
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># General syntax</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>&lt;DATABASE&gt;<span class="w"> </span>-t<span class="w"> </span>&lt;TABLE&gt;<span class="w"> </span>-c<span class="w"> </span>&lt;GROUP_FIELD&gt;<span class="w"> </span>-f<span class="w"> </span>&lt;FEATURE_TABLE&gt;<span class="w"> </span>--fit_reducer<span class="w"> </span>--model<span class="w"> </span>&lt;MODEL_NAME&gt;<span class="w"> </span>--n_components<span class="w"> </span>N
+
+<span class="c1"># Example, using the packaged dla_tutorial dataset (see tut_dla)</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1to3gram$msgs$user_id$0_05'</span><span class="w"> </span><span class="se">\</span>
+--fit_reducer<span class="w"> </span>--model<span class="w"> </span>spectral<span class="w"> </span>--n_components<span class="w"> </span><span class="m">36</span>
+</pre></div>
+</div>
 </section>
 </section>
 

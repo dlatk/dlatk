@@ -1,0 +1,35 @@
+.. _fwflag_DDLATagcloud:
+================
+--DDLATagcloud
+================
+Switch
+======
+
+--DDLATagcloud
+
+Description
+===========
+
+Makes a tagcloud file from :doc:`fwflag_DDLA` output, using ``deltaR`` for size and ``r_INDEX`` for color. Aliased as ``--DDLAWordcloud``.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+**Known issue — always crashes, since it depends on** :doc:`fwflag_DDLA`, **which is itself always broken.** This switch's handler only runs inside the same ``if args.ddlaFiles:`` block as ``--DDLA``, after ``ddla = DDLA(...)`` — but that line always raises ``TypeError: 'module' object is not callable`` first (see the Known issue on :doc:`fwflag_DDLA`), so this switch's own code is never reached.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_DDLA` (currently broken — see that page)
+
+Example Commands
+================
+
+Not usable as of this writing — see Known issue above.

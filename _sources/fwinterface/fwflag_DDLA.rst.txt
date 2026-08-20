@@ -1,0 +1,39 @@
+.. _fwflag_DDLA:
+=======
+--DDLA
+=======
+Switch
+======
+
+--DDLA CSV_1 CSV_2
+
+Description
+===========
+
+Compares two csv files that came out of :doc:`fwflag_correlate` (Differential DLA) — e.g. correlations run separately on two different subsets of your data — and reports which features' correlations changed most between them.
+
+Argument and Default Value
+==========================
+
+Two csv file paths (``nargs=2``). Requires both source :doc:`fwflag_correlate` runs to have used :doc:`fwflag_csv` with the default :doc:`fwflag_show_feat_freqs`/:doc:`fwflag_nvalue` left on (their values are ``True`` by default already).
+
+Details
+=======
+
+**Known issue — always crashes.** ``dlatkInterface.py`` does ``from dlatk import DDLA`` (importing the *module* ``dlatk/DDLA.py``) but then calls ``ddla = DDLA(args.ddlaFiles[0], args.ddlaFiles[1], outputname)`` as if ``DDLA`` were the class of the same name defined inside that module. Verified: running ``--DDLA`` on two real csv files fails immediately with ``TypeError: 'module' object is not callable``, before touching either file's contents. There is currently no way to run this switch successfully from the command line.
+
+Other Switches
+==============
+
+Required Switches:
+
+* None (flag currently cannot complete successfully — see Known issue above)
+
+Optional Switches:
+
+* :doc:`fwflag_DDLATagcloud` (also broken — depends on this switch succeeding first)
+
+Example Commands
+================
+
+Not usable as of this writing — see Known issue above.

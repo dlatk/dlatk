@@ -1,0 +1,47 @@
+.. _fwflag_add_char_ngrams:
+==================
+--add_char_ngrams
+==================
+Switch
+======
+
+--add_char_ngrams
+
+Description
+===========
+
+Extracts character n-grams (rather than word n-grams) from a message table.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``. Uses :doc:`fwflag_n` for the n-gram size(s), and can be combined with :doc:`fwflag_sqrt`/:doc:`fwflag_gzip_csv`, with or without :doc:`fwflag_use_collocs`.
+
+Details
+=======
+
+Verified table naming: ``-n 3`` creates ``feat$3Cgram$<corptable>$<correl_field>`` (the ``C`` marks it as a character n-gram table, distinguishing it from the word-level ``feat$3gram$...``).
+
+**Known issue — broken in SQLite mode.** ``FeatureExtractor.addCharNGramTable()`` calls ``mm.disableTableKeys(...)`` directly — a raw ``mysqlmethods`` call issuing MySQL's ``ALTER TABLE ... DISABLE KEYS`` syntax — instead of going through the SQLite-aware ``self.data_engine.disable_table_keys()`` that :doc:`fwflag_add_ngrams`'s own ``addNGramTable()`` uses (which has no such call at all). Verified: running ``--add_char_ngrams`` against a SQLite corpus creates the (empty) destination table, then fails with ``sqlite3.OperationalError: near "DISABLE": syntax error`` before any rows are inserted. Works against MySQL.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+
+Optional Switches:
+
+* :doc:`fwflag_n`
+* :doc:`fwflag_sqrt`, :doc:`fwflag_gzip_csv`
+* :doc:`fwflag_use_collocs`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset against MySQL (see :doc:`../../tutorials/tut_dla`) — broken against SQLite, see Known issue above:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_char_ngrams -n 3

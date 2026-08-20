@@ -20,16 +20,22 @@ Argument: True (to report N) or False (to not report N)
 Details
 =======
 
+The argparse type is ``bool``, so on the command line ``--nvalue False`` does **not** disable it — Python's ``bool("False")`` is truthy (any non-empty string is ``True``). In practice there's no documented way to turn this off from the command line; ``N`` is reported by default and stays on. See :doc:`fwflag_conf_int`, which has the same argparse quirk.
+
 
 Other Switches
 ==============
 
-Required Switches:
-None
 Optional Switches:
-:doc:`fwflag_csv` :doc:`fwflag_rmatrix` 
+
+* :doc:`fwflag_csv`, :doc:`fwflag_rmatrix`
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
 
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --correlate --rmatrix --csv

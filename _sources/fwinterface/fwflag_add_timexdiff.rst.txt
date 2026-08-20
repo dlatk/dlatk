@@ -1,0 +1,43 @@
+.. _fwflag_add_timexdiff:
+================
+--add_timexdiff
+================
+Switch
+======
+
+--add_timexdiff
+
+Description
+===========
+
+Creates a feature table of the (mean, std) difference between each message's post-time and the time expressions mentioned within it (e.g. "see you tomorrow" vs. when it was posted).
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``. Uses :doc:`fwflag_date_field` to know each message's post-time.
+
+Details
+=======
+
+Requires a running **Stanford CoreNLP server** on localhost (``FeatureExtractor.addTimexDiffFeatTable()`` connects via ``jsonrpclib.Server("http://localhost:%d" % serverPort)``) with time-expression annotation already available — not something set up in this pass.
+
+**Known issue — broken in SQLite mode too, and hit first.** Verified: under a SQLite corpus, this fails before ever reaching the CoreNLP server logic — ``mm.disableTableKeys(...)`` (same pattern as :doc:`fwflag_add_char_ngrams`) throws ``sqlite3.OperationalError: near "DISABLE": syntax error`` while creating the destination table.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_date_field`
+* A running Stanford CoreNLP server (external, not installable via pip)
+
+Example Commands
+================
+
+Requires MySQL and a running CoreNLP server — not runnable as-is against the packaged SQLite ``dla_tutorial`` dataset:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --date_field date --add_timexdiff

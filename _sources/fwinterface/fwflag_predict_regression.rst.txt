@@ -39,11 +39,11 @@ Required Switches:
 :doc:`fwflag_regression_to_lexicon` :doc:`fwflag_group_freq_thresh` 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_pickle_apply`): loads the regression model in ``age.pickle``, uses the 1grams to predict the age of users in ``blog_outcomes``, and compares the predicted ages to the actual ages in the table.
 
- # Loads the regression model in deleteMe.pickle, and uses the features to predict the ages of the users in 
- # masterstats_andy_r10k, and compares the predicted ages to the actual ages in the table.
- ~/fwInterface.py :doc:`fwflag_d` fb20 :doc:`fwflag_t` messages_en :doc:`fwflag_c` user_id :doc:`fwflag_f` 'feat$1gram$messages_en$user_id$16to16$0_01' 
- :doc:`fwflag_outcome_table` masterstats_andy_r10k :doc:`fwflag_outcomes` age :doc:`fwflag_load_model` :doc:`fwflag_picklefile` deleteMe.pickle 
- :doc:`fwflag_predict_regression` 
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16$0_01' \
+	--outcome_table blog_outcomes --outcomes age --load_model --picklefile age.pickle \
+	--predict_regression

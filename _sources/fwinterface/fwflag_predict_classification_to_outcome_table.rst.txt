@@ -37,10 +37,10 @@ Required Switches:
 :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`, :doc:`fwflag_f` :doc:`fwflag_load_model` and :doc:`fwflag_picklefile` 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_pickle_apply`): loads the classification model in ``is_student.pickle``, uses the 1grams in ``feat$1gram$msgs$user_id$16to16$0_01`` to predict whether users are students, and inserts those values into a table called ``p_svc$lbp_is_student``.
 
- # Loads the classification model in deleteMeGender.pickle, and uses the features to predict the genders of the users in 
- # feat$1gram$messages_en$user_id$16to16$0_01, and inserts those values into a table called p_svc$deleteMe.
- ~/fwInterface.py :doc:`fwflag_d` fb20 :doc:`fwflag_t` messages_en :doc:`fwflag_c` user_id :doc:`fwflag_f` 'feat$1gram$messages_en$user_id$16to16$0_01' 
- :doc:`fwflag_load_model` :doc:`fwflag_picklefile` deleteMeGender.pickle :doc:`fwflag_predict_regression_to_outcome_table` deleteMe
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16$0_01' \
+	--load_model --picklefile is_student.pickle --predict_classification_to_outcome_table lbp_is_student

@@ -10,20 +10,26 @@ Switch
 Description
 ===========
 
-This is to be used with --feat_colloc_filter.  See more info there.
+This is to be used with :doc:`fwflag_feat_colloc_filter`. See more info there.
 
 Argument and Default Value
 ==========================
 
-null
+A float — the minimum PMI (pointwise mutual information) score a multigram must have to be kept as a collocation. Default: ``3.0`` (``dlac.DEF_PMI``).
 
-Details
-=======Contents [hide]Switch
-Description
-    Argument and Default Value
-    
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_feat_colloc_filter`
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
-        
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id' \
+	--feat_colloc_filter --set_pmi_threshold 5.0

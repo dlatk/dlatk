@@ -1,0 +1,39 @@
+.. _fwflag_no_lower:
+==========
+--no_lower
+==========
+Switch
+======
+
+--no_lower
+
+Description
+===========
+
+Preserves case when extracting n-gram/char-n-gram features, instead of lowercasing everything.
+
+Argument and Default Value
+==========================
+
+No argument. Sets ``lowercaseonly`` to ``False``; default (flag absent) is ``True`` (``dlac.LOWERCASE_ONLY``).
+
+Details
+=======
+
+Verified: with ``--no_lower``, features keep their original case (e.g. ``10AM``, ``128M`` show up as distinct features rather than being folded to lowercase), **and** the generated table name changes from ``feat$1gram$...`` to ``feat$1gramUp$...`` — the ``Up`` marks the table as case-preserved, so it never collides with the default lowercased table. Applies to :doc:`fwflag_add_ngrams`, :doc:`fwflag_add_ngrams_from_tokenized`, :doc:`fwflag_add_char_ngrams`, :doc:`fwflag_use_collocs`, and :doc:`fwflag_gzip_csv`.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_add_ngrams`, :doc:`fwflag_add_char_ngrams`, :doc:`fwflag_use_collocs`, etc.
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1 --no_lower

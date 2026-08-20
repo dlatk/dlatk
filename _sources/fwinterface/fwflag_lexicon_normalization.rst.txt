@@ -1,0 +1,45 @@
+.. _fwflag_lexicon_normalization:
+=========================
+--lexicon_normalization
+=========================
+Switch
+======
+
+--lexicon_normalization
+
+Description
+===========
+
+When building a lexicon feature table with :doc:`fwflag_add_lex_table`, normalizes each category's ``group_norm`` by the total count of *lexicon* terms used in the group, instead of the total count of *all* words used in the group. Aliased as ``--lex_norm``, ``--dict_norm``.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False`` (normalize over all words).
+
+Details
+=======
+
+Verified: adds an ``_lw`` marker into the generated table name (e.g. ``feat$cat_met_a30_2000_cp_w_lw$msgs$user_id$1gra``). With a real weighted Facebook-topics lexicon, per-group ``group_norm`` sums went from ~1.2–1.3 (normalized over all word usage) to ~26–33 (normalized over only the smaller set of lexicon-matching words) — same underlying counts, much larger relative values since the denominator shrank. Compare with :doc:`fwflag_multicategory_normalization`, which normalizes across *all* categories combined instead of per-category.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_add_lex_table`
+* :doc:`fwflag_l`
+
+Optional Switches:
+
+* :doc:`fwflag_multicategory_normalization` (implies this switch)
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_lex_table -l met_a30_2000_cp \
+	--weighted_lexicon --lexicon_normalization

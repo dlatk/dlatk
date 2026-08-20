@@ -78,6 +78,7 @@ Original tables like feat$1to3gram$msgsPA_2012_12$cnty$16to16$0_01:
 Initial collapse mysql command, e.g. (note different group field, cntyYM instead of cnty):
 
 .. code-block:: bash
+
 	insert into feat$1to3gram$msgsPA_2013$cntyYM$16to16$0_01
 	  select concat(group_id,'_2013_01') group_id,feat,value,group_norm
 	  from feat$1to3gram$msgsPA_2013_01$cnty$16to16$0_01;
@@ -118,7 +119,7 @@ Resulting table (cntyYM_to_cnty):
 	| 42001_2012_05 | 42001 |
 	+---------------+-------+
 
-Aggregation fwInterface command:
+Aggregation command:
 
 .. code-block:: bash
 

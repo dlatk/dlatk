@@ -1,0 +1,35 @@
+.. _fwflag_adapt_control_names:
+=======================
+--adapt_control_names
+=======================
+Switch
+======
+
+--adapt_control_names COLUMN [COLUMN ...]
+
+Description
+===========
+
+Intended to specify which controls to use for domain adaptation.
+
+Argument and Default Value
+==========================
+
+One or more column names. Default: ``None``.
+
+Details
+=======
+
+**Known issue — explicitly marked not implemented.** The flag's own ``--help`` text reads ``NOT IMPLEMENTED: Controls to be used for adaptation.`` — an acknowledged incomplete feature in the source itself, not a bug found through testing. Not independently exercised.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_adapt_tables` (also marked not implemented)
+
+Example Commands
+================
+
+Not implemented — see Known issue above.

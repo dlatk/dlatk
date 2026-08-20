@@ -189,16 +189,22 @@
 <section id="details">
 <h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
 <p>Possible values include: simes, holm, hochberg, hommel, bonferroni, BH, BY, fdr, none</p>
-<p>simes is built into featureWorker; anything else calls R's stats module, specifically the p_adjust command</p>
+<p><code class="docutils literal notranslate"><span class="pre">simes</span></code> is built into DLATK directly; anything else calls R's stats module (via <code class="docutils literal notranslate"><span class="pre">rpy2</span></code>), specifically the <code class="docutils literal notranslate"><span class="pre">p_adjust</span></code> command — so any value other than <code class="docutils literal notranslate"><span class="pre">simes</span></code> requires <code class="docutils literal notranslate"><span class="pre">rpy2</span></code> to be installed. Default correction method (if this flag is not given) is Benjamini-Hochberg (<code class="docutils literal notranslate"><span class="pre">BH</span></code>). To turn off correction entirely use <a class="reference internal" href="fwflag_no_correction.html"><span class="doc">--no_correction</span></a>, not <a class="reference internal" href="fwflag_no_bonferroni.html"><span class="doc">--no_bonferroni</span></a> (which is currently broken — see that page).</p>
 </section>
 <section id="other-switches">
 <h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>
-<p>Required Switches:
-<a class="reference internal" href="fwflag_no_bonferroni.html"><span class="doc">--no_bonferroni</span></a> <a class="reference internal" href="fwflag_correlate.html"><span class="doc">--correlate</span></a> Optional Switches:
-None</p>
+<p>Required Switches:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="fwflag_correlate.html"><span class="doc">--correlate</span></a></p></li>
+</ul>
 </section>
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
+<p>Using the packaged <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> dataset (see <a class="reference internal" href="../tutorials/tut_dla.html"><span class="doc">Differential Language Analysis (DLA) Tutorial</span></a>):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs$user_id$16to16'</span><span class="w"> </span><span class="se">\</span>
+--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--correlate<span class="w"> </span>--p_correction<span class="w"> </span>simes
+</pre></div>
+</div>
 </section>
 </section>
 

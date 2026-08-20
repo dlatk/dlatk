@@ -33,10 +33,10 @@ Required Switches:
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`): trains a regression model on 4/5ths of the users to predict age from 1grams, then predicts on the remaining 1/5th and compares to the real ages.
 
- # Trains a regression model on 4/5ths of the users to predict their age from 1grams
- # then predicts the ages of the remaining 1/5th of users, and compares the predicted ages to the real ones.
- ~/fwInterface.py :doc:`fwflag_d` fb20 :doc:`fwflag_t` messages_en :doc:`fwflag_c` user_id :doc:`fwflag_f` 'feat$1gram$messages_en$user_id$16to16$0_01' 
- :doc:`fwflag_outcome_table` masterstats_andy_r10k :doc:`fwflag_outcomes` age :doc:`fwflag_test_regression` 
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16$0_01' \
+	--outcome_table blog_outcomes --outcomes age --test_regression

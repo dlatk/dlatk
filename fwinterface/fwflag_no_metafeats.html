@@ -198,8 +198,11 @@ None</p>
 </section>
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
-<p>./fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> 2004blogs <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> messages <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a> user_id <a class="reference internal" href="fwflag_add_ngrams.html"><span class="doc">--add_ngrams</span></a> <a class="reference internal" href="#"><span class="doc">--no_metafeats</span></a>
-Without <a class="reference internal" href="#"><span class="doc">--no_metafeats</span></a>, this would create both feat$1gram$messages$user_id$16to16 (the 1:doc:<cite>fwflag_gram</cite> table) and feat$meta_1gram$messages$user_id$16to16. <a class="reference internal" href="#"><span class="doc">--no_metafeats</span></a> turns off creation of the latter.</p>
+<p>Using the packaged <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> dataset (see <a class="reference internal" href="../tutorials/tut_dla.html"><span class="doc">Differential Language Analysis (DLA) Tutorial</span></a>):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--add_ngrams<span class="w"> </span>--no_metafeats
+</pre></div>
+</div>
+<p>Without <code class="docutils literal notranslate"><span class="pre">--no_metafeats</span></code>, this would create both <code class="docutils literal notranslate"><span class="pre">feat$1gram$msgs$user_id</span></code> (the 1gram table) and <code class="docutils literal notranslate"><span class="pre">feat$meta_1gram$msgs$user_id</span></code>. <code class="docutils literal notranslate"><span class="pre">--no_metafeats</span></code> turns off creation of the latter.</p>
 </section>
 </section>
 

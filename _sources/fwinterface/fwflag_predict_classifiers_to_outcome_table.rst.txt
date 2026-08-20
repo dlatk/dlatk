@@ -1,0 +1,46 @@
+.. _fwflag_predict_classifiers_to_outcome_table:
+========================================
+--predict_classifiers_to_outcome_table
+========================================
+Switch
+======
+
+--predict_classifiers_to_outcome_table NAME
+
+Description
+===========
+
+Predicts classes with a previously-trained classifier and writes them into a new outcome table, rather than a feature table (see :doc:`fwflag_predict_classifiers_to_feats` for the feature-table version).
+
+Argument and Default Value
+==========================
+
+A name used to build the destination table (``p_<model>$<name>``). Default: ``None``.
+
+Details
+=======
+
+Verified end-to-end. **Requires a pre-trained, pre-loaded model** — :doc:`fwflag_load_models`/:doc:`fwflag_picklefile` (trained earlier via :doc:`fwflag_train_classifiers` + :doc:`fwflag_save_models`). Without one, it fails with ``IndexError: list index out of range`` while trying to align features against an empty model. With a real loaded SVC model, produced a table (``p_svc$<name>``, one row per group with the predicted class, e.g. ``743739|0``).
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_f`
+* :doc:`fwflag_load_models`, :doc:`fwflag_picklefile`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_pickle_build` and :doc:`../../tutorials/tut_pickle_apply`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes is_student --train_classifiers --save_models \
+	--picklefile is_student.pickle
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--load_models --picklefile is_student.pickle --predict_classifiers_to_outcome_table pred_is_student

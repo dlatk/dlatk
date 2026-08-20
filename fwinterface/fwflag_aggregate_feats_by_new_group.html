@@ -238,6 +238,11 @@ Feature tables in question:</p>
 </pre></div>
 </div>
 <p>Initial collapse mysql command, e.g. (note different group field, cntyYM instead of cnty):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>insert<span class="w"> </span>into<span class="w"> </span>feat<span class="nv">$1</span>to3gram<span class="nv">$msgsPA_2013$cntyYM$16</span>to16<span class="nv">$0</span>_01
+<span class="w">  </span><span class="k">select</span><span class="w"> </span>concat<span class="o">(</span>group_id,<span class="s1">'_2013_01'</span><span class="o">)</span><span class="w"> </span>group_id,feat,value,group_norm
+<span class="w">  </span>from<span class="w"> </span>feat<span class="nv">$1</span>to3gram<span class="nv">$msgsPA_2013_01$cnty$16</span>to16<span class="nv">$0</span>_01<span class="p">;</span>
+</pre></div>
+</div>
 <p>First collapsed table (feat$1to3gram$msgsPA_2012$cntyYM$16to16$0_01):</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>+---------------+------------------+-------+--------------------------+
 <span class="p">|</span><span class="w"> </span>group_id<span class="w">      </span><span class="p">|</span><span class="w"> </span>feat<span class="w">             </span><span class="p">|</span><span class="w"> </span>value<span class="w"> </span><span class="p">|</span><span class="w"> </span>group_norm<span class="w">               </span><span class="p">|</span>
@@ -269,7 +274,7 @@ insert into cntyYM_to_cnty values('42007_2012_01','42007');</p>
 +---------------+-------+
 </pre></div>
 </div>
-<p>Aggregation fwInterface command:</p>
+<p>Aggregation command:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>paHealth<span class="w"> </span>-t<span class="w"> </span>cntyYM_to_cnty<span class="w"> </span>-c<span class="w"> </span>cnty<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-f<span class="w"> </span><span class="s1">'feat$1to3gram$msgsPA_2012$cntyYM$16to16$0_01'</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--aggregate_feats_by_new_group

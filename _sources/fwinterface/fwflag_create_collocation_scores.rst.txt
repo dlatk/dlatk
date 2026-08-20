@@ -1,0 +1,40 @@
+.. _fwflag_create_collocation_scores:
+=============================
+--create_collocation_scores
+=============================
+Switch
+======
+
+--create_collocation_scores [TABLE]
+
+Description
+===========
+
+Creates a ``ufeat$...`` table from a feature table, annotated with PMI/NPMI collocation scores and percent-occurrence. Aliased as ``--create_collocs``. Meant to be used together with :doc:`fwflag_use_collocs` during n-gram extraction.
+
+Argument and Default Value
+==========================
+
+An optional table name (``nargs='?', const=True``). If given with no value, defaults to the current :doc:`fwflag_t` table name.
+
+Details
+=======
+
+**Known issue — broken in SQLite mode.** ``FeatureRefiner.creatCollocScores()`` itself uses the SQLite-aware ``QueryBuilder`` for table creation and the initial ``INSERT ... SELECT``, but then calls ``mysql_iter_funcs.extend_table()`` to add the ``pmi``/``pmi_filter_val``/``npmi``/``npmi_filter_val`` columns, which queries ``information_schema.COLUMNS`` — a MySQL/ANSI system view that doesn't exist in SQLite (which uses ``PRAGMA table_info`` instead). Verified: fails with repeated ``no such table: information_schema.COLUMNS`` retries, then exits with status 1 without adding the score columns. Works against MySQL.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_f`
+
+Example Commands
+================
+
+Requires MySQL — broken against SQLite, see Known issue above:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id' --create_collocation_scores

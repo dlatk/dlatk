@@ -1,0 +1,37 @@
+.. _fwflag_embedding_word_aggregation:
+==============================
+--embedding_word_aggregation
+==============================
+Switch
+======
+
+--embedding_word_aggregation AGG [AGG ...]
+
+Description
+===========
+
+How to aggregate sub-word token embeddings back up to the word level, when extracting features with :doc:`fwflag_add_bert`/:doc:`fwflag_add_emb` (e.g. ``mean`` or ``concatenate``). Aliased as ``--word_aggregation``, ``--bert_word_aggregation``.
+
+Argument and Default Value
+==========================
+
+One or more aggregation-method strings. Default: ``['mean']`` (``dlac.DEF_TRANS_WORD_AGGREGATION``).
+
+Details
+=======
+
+Verified: ran successfully with ``concatenate`` as part of a full embedding-extraction command (the run got past feature computation and failed later only due to the unrelated :doc:`fwflag_embedding_keep_msg` SQLite issue — see the Known issue there).
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_add_bert` or :doc:`fwflag_add_emb`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_bert --embedding_word_aggregation concatenate

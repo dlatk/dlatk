@@ -41,11 +41,11 @@ Required Switches:
 :doc:`fwflag_classification_to_lexicon` :doc:`fwflag_group_freq_thresh` 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_pickle_apply`): loads the classification model in ``is_student.pickle``, uses the 1grams to predict whether users in ``blog_outcomes`` are students, and compares the predicted classes to the actual ones in the table.
 
- # Loads the classification model in deleteMeGender.pickle, and uses the features to predict the gender 
- # of users in masterstats_andy_r10k, and compares the predicted genders to the actual ones in the table.
- ~/fwInterface.py :doc:`fwflag_d` fb20 :doc:`fwflag_t` messages_en :doc:`fwflag_c` user_id :doc:`fwflag_f` 'feat$1gram$messages_en$user_id$16to16$0_01' 
- :doc:`fwflag_outcome_table` masterstats_andy_r10k :doc:`fwflag_outcomes` gender :doc:`fwflag_load_model` :doc:`fwflag_picklefile` deleteMeGender.pickle 
- :doc:`fwflag_predict_classifiers` 
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16$0_01' \
+	--outcome_table blog_outcomes --outcomes is_student --load_model --picklefile is_student.pickle \
+	--predict_classifiers

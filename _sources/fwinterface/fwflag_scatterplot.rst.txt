@@ -31,8 +31,18 @@ Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_outcomes` :doc:`fwflag_outcome_table` Optional Switches:
-:doc:`fwflag_f` :doc:`fwflag_feature_names`? 
+
+* :doc:`fwflag_outcomes`, :doc:`fwflag_outcome_table`
+
+Optional Switches:
+
+* :doc:`fwflag_f`, :doc:`fwflag_feat_names`
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
+
+Not usable as of this writing — see Known issue above. If it's fixed, the syntax (using the packaged ``dla_tutorial`` dataset, see :doc:`../../tutorials/tut_dla`) would be:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --outcome_table blog_outcomes --outcomes age gender --scatterplot

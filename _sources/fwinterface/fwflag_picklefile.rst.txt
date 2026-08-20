@@ -30,14 +30,16 @@ Required Switches:
 :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`, :doc:`fwflag_f`, :doc:`fwflag_outcome_table`, :doc:`fwflag_outcomes` :doc:`fwflag_save_model` or :doc:`fwflag_load_model` 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_pickle_build` and :doc:`../../tutorials/tut_pickle_apply`):
 
- # Trains a regression model to predict age for users from 1grams
- # Will save the model to a picklefile called deleteMe.pickle
- ~/fwInterface.py :doc:`fwflag_d` fb20 :doc:`fwflag_t` messages_en :doc:`fwflag_c` user_id :doc:`fwflag_f` 'feat$1gram$messages_en$user_id$16to16$0_01' 
- :doc:`fwflag_outcome_table` masterstats_andy_r10k :doc:`fwflag_outcomes` age :doc:`fwflag_train_regression` :doc:`fwflag_save_model` :doc:`fwflag_picklefile` deleteMe.pickle
+.. code-block:: bash
 
- # Uses the trained regression model (deleteMe.pickle) to predict age for users from 1grams
- ~/fwInterface.py :doc:`fwflag_d` fb20 :doc:`fwflag_t` messages_en :doc:`fwflag_c` user_id :doc:`fwflag_f` 'feat$1gram$messages_en$user_id$16to16$0_01' 
- :doc:`fwflag_outcome_table` masterstats_andy_r10k :doc:`fwflag_outcomes` age :doc:`fwflag_predict_regression` :doc:`fwflag_load_model` :doc:`fwflag_picklefile` deleteMe.pickle
+	# Trains a regression model to predict age for users from 1grams
+	# Will save the model to a picklefile called age.pickle
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16$0_01' \
+	--outcome_table blog_outcomes --outcomes age --train_regression --save_model --picklefile age.pickle
+
+	# Uses the trained regression model (age.pickle) to predict age for users from 1grams
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16$0_01' \
+	--outcome_table blog_outcomes --outcomes age --predict_regression --load_model --picklefile age.pickle

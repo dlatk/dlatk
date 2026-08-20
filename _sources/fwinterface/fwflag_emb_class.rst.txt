@@ -1,0 +1,39 @@
+.. _fwflag_emb_class:
+============
+--emb_class
+============
+Switch
+======
+
+--emb_class {bert,XLNet,Roberta,GPT2,DistilBert,XLMRoberta,Albert,auto,None}
+
+Description
+===========
+
+Contextual embedding model *class* to use when extracting features with :doc:`fwflag_add_bert`/:doc:`fwflag_add_emb`, for models not in DLATK's built-in shorthand list.
+
+Argument and Default Value
+==========================
+
+One of the listed choices (argparse ``choices``). Default: ``None`` (DLATK looks up :doc:`fwflag_embedding_model` in its internal ``SHORTHAND_DICT`` instead).
+
+Details
+=======
+
+Verified end-to-end: with an arbitrary Hugging Face model name not in DLATK's shorthand list (e.g. ``prajjwal1/bert-tiny``), omitting ``--emb_class`` fails immediately with ``KeyError: 'prajjwal1/bert-tiny'`` (the shorthand lookup). Passing ``--emb_class auto`` (together with :doc:`fwflag_tokenizer_model`) routes through Hugging Face's ``Auto*`` classes instead and works correctly — confirmed producing real embedding features.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_add_bert` or :doc:`fwflag_add_emb`
+* :doc:`fwflag_tokenizer_model` (needed together with this for non-shorthand model names)
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_bert \
+	--embedding_model prajjwal1/bert-tiny --emb_class auto --tokenizer_model prajjwal1/bert-tiny

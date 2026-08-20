@@ -1,0 +1,45 @@
+.. _fwflag_add_wn_pos:
+==============
+--add_wn_pos
+==============
+Switch
+======
+
+--add_wn_pos
+
+Description
+===========
+
+Creates a WordNet concept feature table (each word mapped to its WordNet synsets, disambiguated by part-of-speech), based on an existing POS-tagged feature table.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``. Requires the ``nltk`` WordNet corpus (``python -c "import nltk; nltk.download('wordnet')"``).
+
+Details
+=======
+
+Passes whatever table is currently set via :doc:`fwflag_f` in as the POS table (built by :doc:`fwflag_add_pos_table`), and separately expects a default-scaled 1gram word table to already exist for group-frequency thresholding.
+
+**Known issue — broken in SQLite mode.** Like :doc:`fwflag_add_wn_nopos`, ``FeatureExtractor.addWNPosFeat()`` checks the word table's existence via a raw ``mm.tableExists(...)`` call. Verified: fails with ``sqlite3.OperationalError: near "show": syntax error`` under a SQLite corpus.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_f` (a POS-tagged table from :doc:`fwflag_add_pos_table`)
+* :doc:`fwflag_add_ngrams` (must be run first, to build the word table)
+
+Example Commands
+================
+
+Requires MySQL — broken against SQLite, see Known issue above:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_pos_table
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$pos$msgs$user_id' --add_wn_pos

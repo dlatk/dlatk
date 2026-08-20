@@ -1,0 +1,42 @@
+.. _fwflag_num_of_factors:
+==================
+--num_of_factors
+==================
+Switch
+======
+
+--num_of_factors N [N2 ...]
+
+Description
+===========
+
+Number of factors to select for :doc:`fwflag_factor_adaptation`/:doc:`fwflag_res_factor_adaptation`. ``0`` means all factors.
+
+Argument and Default Value
+==========================
+
+One or more integers. Default: ``None``.
+
+Details
+=======
+
+Verified end-to-end (with :doc:`fwflag_factor_selection_type` ``pca``): with a single adaptation factor and ``--num_of_factors 1``, the run printed ``all factors: Index(['is_indUnk'], dtype='object')`` / ``nFactors: 1 from: 1`` and completed successfully. Multiple values run the whole comparison once per size, similar to :doc:`fwflag_train_bootstraps_ns`.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_factor_adaptation` or :doc:`fwflag_res_factor_adaptation`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age --outcome_controls gender is_student \
+	--combo_test_regression --factor_adaptation --adaptation_factors gender is_student \
+	--num_of_factors 1 2 --factor_selection_type pca

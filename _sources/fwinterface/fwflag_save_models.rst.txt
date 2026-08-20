@@ -1,0 +1,23 @@
+.. _fwflag_save_models:
+===============
+--save_models
+===============
+Switch
+======
+
+--save_models
+
+Description
+===========
+
+Saves a trained model to a pickle file. This is the canonical registered flag name; see :doc:`fwflag_save_model` for full documentation — ``--save_model`` (singular) is simply argparse's unambiguous-prefix abbreviation of this flag, and both spellings behave identically. Also aliased as ``--save``.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``. Requires :doc:`fwflag_picklefile`.
+
+Details
+=======
+
+See :doc:`fwflag_save_model` for details, required switches, and example commands.

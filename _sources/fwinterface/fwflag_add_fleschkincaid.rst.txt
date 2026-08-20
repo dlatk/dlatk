@@ -1,0 +1,41 @@
+.. _fwflag_add_fleschkincaid:
+======================
+--add_fleschkincaid
+======================
+Switch
+======
+
+--add_fleschkincaid
+
+Description
+===========
+
+Adds a Flesch-Kincaid grade-level readability score feature table, one score per group. Aliased as ``--add_fkscore``.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``. Requires the ``textstat`` package (``pip install textstat``) — without it, DLATK prints ``Cannot import textstat (cannot use addFleschKincaidTable)`` and the feature values are never computed.
+
+Details
+=======
+
+Verified table naming: creates ``feat$flkin$<corptable>$<correl_field>``.
+
+**Known issue — broken in SQLite mode.** ``FeatureExtractor.addFleschKincaidTable()`` calls ``mm.disableTableKeys(...)`` directly (same pattern as :doc:`fwflag_add_char_ngrams`) before inserting rows. Verified: the destination table is created but stays empty, then the run fails with ``sqlite3.OperationalError: near "DISABLE": syntax error``. Works against MySQL (with ``textstat`` installed).
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+
+Example Commands
+================
+
+Requires MySQL and ``textstat`` — broken against SQLite, see Known issue above:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_fleschkincaid

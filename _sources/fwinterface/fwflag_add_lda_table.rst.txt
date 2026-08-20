@@ -1,0 +1,42 @@
+.. _fwflag_add_lda_table:
+================
+--add_lda_table
+================
+Switch
+======
+
+--add_lda_table LDA_MSG_TABLE
+
+Description
+===========
+
+Adds a feature table of per-message LDA topic assignments, from an LDA-labeled message table (e.g. one created by :doc:`fwflag_estimate_lda_topics`, named ``<corptable>_lda$<name>`` — see :doc:`fwflag_lda_msg_tbl`).
+
+Argument and Default Value
+==========================
+
+The name of an LDA-labeled message table. Default: ``None``. Can be combined with :doc:`fwflag_sqrt`/:doc:`fwflag_anscombe`.
+
+Details
+=======
+
+Verified table naming (from source): creates ``feat$lda_<msgtable_component>$...``, where ``<msgtable_component>`` is taken from splitting the LDA message table name on ``$``.
+
+**Known issue — broken in SQLite mode.** ``FeatureExtractor.addLDAFeatTable()`` calls ``mm.disableTableKeys(...)`` directly, the same pattern confirmed broken for :doc:`fwflag_add_char_ngrams`/:doc:`fwflag_add_fleschkincaid`/:doc:`fwflag_add_outcome_feats`. Expect ``sqlite3.OperationalError: near "DISABLE": syntax error`` after the destination table is created but before any rows are written.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* An existing LDA-labeled message table (see :doc:`fwflag_estimate_lda_topics`)
+
+Example Commands
+================
+
+Requires MySQL — broken against SQLite, see Known issue above:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_lda_table 'msgs_lda$dla_topics'

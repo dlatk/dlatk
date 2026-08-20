@@ -1,0 +1,42 @@
+.. _fwflag_topic_dupe_filter:
+=====================
+--topic_dupe_filter
+=====================
+Switch
+======
+
+--topic_dupe_filter
+
+Description
+===========
+
+Removes topics not passing a duplicate-word filter directly from the correlation results, before any tagcloud/wordcloud output is generated — topics whose top words overlap too much with a more strongly-correlated topic are dropped from the correlation matrix entirely.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Verified end-to-end: runs ``oa.topicDupeFilterCorrels(correls, topiclexicon)`` right after :doc:`fwflag_correlate` computes results, inside the main correlate/tagcloud code path. This is a **separate mechanism** from :doc:`fwflag_tagcloud_filter`/:doc:`fwflag_no_tagcloud_filter` (which control the ``duplicateFilter`` parameter of the tagcloud-*writing* step itself, default ``True``) — the two can be used independently or together.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_correlate` (implicitly enabled by :doc:`fwflag_topic_tagcloud` etc.)
+* :doc:`fwflag_topic_lexicon`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --topic_tagcloud --topic_lexicon met_a30_2000_freq_t50ll \
+	--topic_dupe_filter --output_name ./topic_output

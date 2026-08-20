@@ -1,0 +1,35 @@
+.. _fwflag_adapt_tables:
+===============
+--adapt_tables
+===============
+Switch
+======
+
+--adapt_tables TABLE_NUM [TABLE_NUM ...]
+
+Description
+===========
+
+Intended to specify feature table(s) to be domain-adapted.
+
+Argument and Default Value
+==========================
+
+One or more integers. Default: ``None``.
+
+Details
+=======
+
+**Known issue — explicitly marked not implemented.** The flag's own ``--help`` text reads ``NOT IMPLEMENTED: Table(s) containing feature information to be adapted`` — this is not a bug found through testing, it's an acknowledged incomplete feature in the source itself. Not independently exercised.
+
+Other Switches
+==============
+
+Optional Switches:
+
+* :doc:`fwflag_adapt_control_names` (also marked not implemented)
+
+Example Commands
+================
+
+Not implemented — see Known issue above.

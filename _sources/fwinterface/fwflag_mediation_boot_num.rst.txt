@@ -31,8 +31,12 @@ Required Switches:
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`): tests whether Facebook topic 344 mediates the relationship between being a student and age, using 10,000 bootstrap repetitions.
 
- ./fwInterface.py :doc:`fwflag_d` twitterGH :doc:`fwflag_t` messages_en :doc:`fwflag_c` cty_id :doc:`fwflag_f` 'feat$cat_met_a30_2000_cp_w$messages_en$cty_id$16to16' :doc:`fwflag_outcome_table` nejm_intersect_small50k \ 
- :doc:`fwflag_mediation` :doc:`fwflag_path_start` 'hsgradHC03_VC93ACS3yr$10'  :doc:`fwflag_outcomes` 'ucd_I25_1_atheroHD$0910_ageadj' :doc:`fwflag_mediators`  '1051' :doc:`fwflag_mediation_boot` :doc:`fwflag_mediation_boot_num` 10000
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --group_freq_thresh 500 \
+	--mediation --path_start is_student --outcomes age --mediators 344 \
+	--mediation_boot --mediation_boot_num 10000

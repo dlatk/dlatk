@@ -1,0 +1,43 @@
+.. _fwflag_add_postimexdiff:
+===================
+--add_postimexdiff
+===================
+Switch
+======
+
+--add_postimexdiff
+
+Description
+===========
+
+Like :doc:`fwflag_add_timexdiff`, but also creates a part-of-speech-tagged version of the table.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``. Uses :doc:`fwflag_date_field` to know each message's post-time.
+
+Details
+=======
+
+Same requirements as :doc:`fwflag_add_timexdiff`: needs a running Stanford CoreNLP server on localhost (``FeatureExtractor.addPOSAndTimexDiffFeatTable()`` connects via ``jsonrpclib.Server(...)``) with time-expression annotation available.
+
+**Known issue — broken in SQLite mode too, and hit first.** Same ``mm.disableTableKeys(...)`` pattern as :doc:`fwflag_add_timexdiff`; expect ``sqlite3.OperationalError: near "DISABLE": syntax error`` before the CoreNLP logic is ever exercised.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_date_field`
+* A running Stanford CoreNLP server (external, not installable via pip)
+
+Example Commands
+================
+
+Requires MySQL and a running CoreNLP server — not runnable as-is against the packaged SQLite ``dla_tutorial`` dataset:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --date_field date --add_postimexdiff

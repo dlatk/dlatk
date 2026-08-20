@@ -31,8 +31,6 @@ None
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
-
-See tagcloud or topic_tagcloud.
+See the example commands on :doc:`fwflag_tagcloud` or :doc:`fwflag_topic_tagcloud`.
 

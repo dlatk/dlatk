@@ -204,15 +204,13 @@ Mean Absolute Error Mean Absolute Error</p>
 <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a>, <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a>, <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a>, <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a>, <a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a>, <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a> <a class="reference internal" href="fwflag_load_model.html"><span class="doc">--load_model</span></a> and <a class="reference internal" href="fwflag_picklefile.html"><span class="doc">--picklefile</span></a> Optional Switches:
 <a class="reference internal" href="fwflag_regression_to_lexicon.html"><span class="doc">--regression_to_lexicon</span></a> <a class="reference internal" href="fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a>
 Example Commands
-================
-.. code:doc:<cite>fwflag_block</cite>:: python</p>
-<blockquote>
-<div><p># Loads the regression model in deleteMe.pickle, and uses the features to predict the ages of the users in
-# masterstats_andy_r10k, and compares the predicted ages to the actual ages in the table.
-~/fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> fb20 <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> messages_en <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a> user_id <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> 'feat$1gram$messages_en$user_id$16to16$0_01'
-<a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a> masterstats_andy_r10k <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a> age <a class="reference internal" href="fwflag_load_model.html"><span class="doc">--load_model</span></a> <a class="reference internal" href="fwflag_picklefile.html"><span class="doc">--picklefile</span></a> deleteMe.pickle
-<a class="reference internal" href="#"><span class="doc">--predict_regression</span></a></p>
-</div></blockquote>
+================</p>
+<p>Using the packaged <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> dataset (see <a class="reference internal" href="../tutorials/tut_pickle_apply.html"><span class="doc">Applying A Pickle Model</span></a>): loads the regression model in <code class="docutils literal notranslate"><span class="pre">age.pickle</span></code>, uses the 1grams to predict the age of users in <code class="docutils literal notranslate"><span class="pre">blog_outcomes</span></code>, and compares the predicted ages to the actual ages in the table.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs$user_id$16to16$0_01'</span><span class="w"> </span><span class="se">\</span>
+--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--load_model<span class="w"> </span>--picklefile<span class="w"> </span>age.pickle<span class="w"> </span><span class="se">\</span>
+--predict_regression
+</pre></div>
+</div>
 </section>
 </section>
 

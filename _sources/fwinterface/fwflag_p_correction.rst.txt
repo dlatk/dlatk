@@ -22,18 +22,22 @@ Details
 
 Possible values include: simes, holm, hochberg, hommel, bonferroni, BH, BY, fdr, none
 
-simes is built into featureWorker; anything else calls R's stats module, specifically the p_adjust command
+``simes`` is built into DLATK directly; anything else calls R's stats module (via ``rpy2``), specifically the ``p_adjust`` command — so any value other than ``simes`` requires ``rpy2`` to be installed. Default correction method (if this flag is not given) is Benjamini-Hochberg (``BH``). To turn off correction entirely use :doc:`fwflag_no_correction`, not :doc:`fwflag_no_bonferroni` (which is currently broken — see that page).
 
 
 Other Switches
 ==============
 
 Required Switches:
-:doc:`fwflag_no_bonferroni` :doc:`fwflag_correlate` Optional Switches:
-None
+
+* :doc:`fwflag_correlate`
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
 
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --correlate --p_correction simes

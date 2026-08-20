@@ -1,0 +1,41 @@
+.. _fwflag_num_lda_threads:
+===================
+--num_lda_threads
+===================
+Switch
+======
+
+--num_lda_threads N
+
+Description
+===========
+
+Number of threads Mallet uses when estimating LDA topics.
+
+Argument and Default Value
+==========================
+
+An integer. Default: ``4``.
+
+Details
+=======
+
+Verified end-to-end with real Mallet: passed straight through to ``LDAEstimator`` and on to Mallet's ``--num-threads`` option.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_estimate_lda_topics`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_lda`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id' \
+	--estimate_lda_topics --num_topics 100 --no_lda_lexicon \
+	--mallet_path /opt/homebrew/bin/mallet --save_lda_files ./lda_out --num_lda_threads 4

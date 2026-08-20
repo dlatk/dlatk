@@ -1,0 +1,40 @@
+.. _fwflag_keep_duplicates:
+==================
+--keep_duplicates
+==================
+Switch
+======
+
+--keep_duplicates
+
+Description
+===========
+
+Renders word cloud images for topics/features that were flagged as duplicates, instead of skipping them.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False`` (duplicates are skipped at render time).
+
+Details
+=======
+
+Only affects the wordcloud *rendering* step — ``wordcloud.tagcloudToWordcloud(..., keepDuplicates=args.keepduplicates)``, used by :doc:`fwflag_make_wordclouds`/:doc:`fwflag_make_topic_wordclouds`. Distinct from :doc:`fwflag_topic_dupe_filter` and :doc:`fwflag_tagcloud_filter`/:doc:`fwflag_no_tagcloud_filter`, which control whether duplicates are filtered out of the underlying *data* earlier in the pipeline — this switch only controls whether an image still gets rendered for entries already marked duplicate in that data.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_make_wordclouds` or :doc:`fwflag_make_topic_wordclouds`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --tagcloud --make_wordclouds --keep_duplicates

@@ -10,20 +10,26 @@ Switch
 Description
 ===========
 
-Meant to be used with --feat_occ_filter.  See there for more info.
+Meant to be used with :doc:`fwflag_feat_occ_filter`. See there for more info.
 
 Argument and Default Value
 ==========================
 
-pocc_thresh - threshold for the percentage of groups (that are above group_freq_thresh wordcount) that use a given feature.
+``pocc_thresh`` — threshold for the percentage of groups (that are above :doc:`fwflag_group_freq_thresh` wordcount) that must use a given feature for it to be kept. Default: ``0.01`` (``dlac.DEF_P_OCC``).
 
-Details
-=======Contents [hide]Switch
-Description
-    Argument and Default Value
-    
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_feat_occ_filter`
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
-        
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`): keeps only features used by at least 5% of groups.
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id' \
+	--feat_occ_filter --set_p_occ 0.05 --group_freq_thresh 500

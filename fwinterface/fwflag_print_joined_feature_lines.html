@@ -200,8 +200,8 @@ None</p>
 </section>
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
-<p>Input feature table:
-+----+----------+---------------+-------+--------------------+
+<p>Input feature table:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+----+----------+---------------+-------+--------------------+
 | id | group_id | feat          | value | group_norm         |
 +----+----------+---------------+-------+--------------------+
 |  1 |        1 | a             |     1 | 0.0714285714285714 |
@@ -219,7 +219,7 @@ None</p>
 | 13 |        1 | to catch up   |     1 | 0.0714285714285714 |
 | 14 |        2 | and           |     2 | 0.0666666666666667 |
 | 15 |        2 | city          |     1 | 0.0333333333333333 |
-| 16 |        2 | &quot;             |     4 |  0.133333333333333 |
+| 16 |        2 | "             |     4 |  0.133333333333333 |
 | 17 |        2 | two           |     1 | 0.0333333333333333 |
 | 18 |        2 | .             |     2 | 0.0666666666666667 |
 | 19 |        2 | to            |     1 | 0.0333333333333333 |
@@ -239,15 +239,19 @@ None</p>
 | 33 |        2 | zombies       |     1 | 0.0333333333333333 |
 | 34 |        2 | oracle        |     1 | 0.0333333333333333 |
 | 35 |        2 | commit        |     1 | 0.0333333333333333 |
-| 36 |        2 | the           |     3 |                0.1 |</p>
-<p>Print command:
-fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> fb22 <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> messagesEn <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a> message_id <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> 'feat$colloc$messagesEn$message_id$16to16' <a class="reference internal" href="#"><span class="doc">--print_joined_feature_lines</span></a> featCollocLines.txt
-Produces in featCollocLines.txt:
-1 en a off very with is well . . to rested starbucks to_catch_up =) friend
-2 en and and city &quot; &quot; &quot; &quot; two . . to memory got : excited today soundtrack's new</p>
-<blockquote>
-<div><p>oddessy albums by i_am_very this motion zombies oracle commit the the the</p>
-</div></blockquote>
+| 36 |        2 | the           |     3 |                0.1 |
+</pre></div>
+</div>
+<p>Print command, using the packaged <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> dataset (see <a class="reference internal" href="../tutorials/tut_dla.html"><span class="doc">Differential Language Analysis (DLA) Tutorial</span></a>), grouped at the message level:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>message_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$colloc$msgs$message_id$16to16'</span><span class="w"> </span>--print_joined_feature_lines<span class="w"> </span>featCollocLines.txt
+</pre></div>
+</div>
+<p>Produces in featCollocLines.txt:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>1 en a off very with is well . . to rested starbucks to_catch_up =) friend
+2 en and and city " " " " two . . to memory got : excited today soundtrack's new
+   oddessy albums by i_am_very this motion zombies oracle commit the the the
+</pre></div>
+</div>
 </section>
 </section>
 

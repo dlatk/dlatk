@@ -1,0 +1,37 @@
+.. _fwflag_embedding_table_name:
+========================
+--embedding_table_name
+========================
+Switch
+======
+
+--embedding_table_name NAME
+
+Description
+===========
+
+Overrides the auto-generated name of the feature table created by :doc:`fwflag_add_bert`/:doc:`fwflag_add_emb`. Aliased as ``--emb_table_name``.
+
+Argument and Default Value
+==========================
+
+A custom table name (used as-is, without the usual ``feat$<auto-name>$...`` construction pieces). Default: ``None`` (auto-generated name).
+
+Details
+=======
+
+Verified end-to-end: with ``--embedding_table_name testemb_table``, the resulting table was named exactly ``feat$testemb_table$msgs100u$user_id`` — the custom name substituted directly for the auto-generated portion, with the usual ``feat$...$<corptable>$<correl_field>`` wrapper still applied.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_add_bert` or :doc:`fwflag_add_emb`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_bert --embedding_table_name my_bert_feats

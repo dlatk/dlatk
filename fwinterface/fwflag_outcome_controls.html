@@ -204,12 +204,13 @@ From this model, the B2 is the value that shows up in the r matrix.</p>
 <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a> <a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a> Optional Switches:
 <a class="reference internal" href="fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a> <a class="reference internal" href="fwflag_outcome_interaction.html"><span class="doc">--outcome_interaction</span></a>
 Example Commands
-================
-.. code:doc:<cite>fwflag_block</cite>:: python</p>
-<blockquote>
-<div><p># Correlates 1grams with age for every user
-./fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> twitterGH <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> messages_en <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a> cty_id <a class="reference internal" href="fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a> 100 <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> 'feat$cat_moralFoundations$messages_en$cty_id$16to16' <a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a> countyVotingSM2 <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a> Median_Age Rpercent_2008 overall_LS population_density percent_white percent_bachelors <a class="reference internal" href="#"><span class="doc">--outcome_controls</span></a> log_mean_income  <a class="reference internal" href="fwflag_output_name.html"><span class="doc">--output_name</span></a> morals2demog_ctrinc <a class="reference internal" href="fwflag_rmatrix.html"><span class="doc">--rmatrix</span></a> <a class="reference internal" href="fwflag_sort.html"><span class="doc">--sort</span></a></p>
-</div></blockquote>
+================</p>
+<p>Using the packaged <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> dataset (see <a class="reference internal" href="../tutorials/tut_dla.html"><span class="doc">Differential Language Analysis (DLA) Tutorial</span></a>): correlates 1grams with age and gender for every user, controlling for whether they're a student.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span><span class="se">\</span>
+-f<span class="w"> </span><span class="s1">'feat$1gram$msgs$user_id$16to16'</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span><span class="se">\</span>
+--outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span>--outcome_controls<span class="w"> </span>is_student<span class="w"> </span>--output_name<span class="w"> </span>age_gender_ctrl_student<span class="w"> </span>--rmatrix<span class="w"> </span>--sort
+</pre></div>
+</div>
 </section>
 </section>
 

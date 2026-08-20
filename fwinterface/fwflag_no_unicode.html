@@ -180,33 +180,31 @@
 </section>
 <section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h2>
-<p>If set then all CHAR, VARCHAR and TEXT fields in MySQL will be treated as strings. This is done both in reading from MySQL and writing to MySQL (and writing to any other output formats specified: csv, html, wordclouds). When printing wordclouds with this flag all features with non-ascii will be ignored.</p>
+<p>If set then all CHAR, VARCHAR and TEXT fields in MySQL will be treated as plain strings rather than unicode. This applies both to reading from MySQL and to writing output (MySQL, csv, html, wordclouds). When printing wordclouds with this flag, all features with non-ASCII characters will be ignored.</p>
 </section>
 <section id="argument-and-default-value">
 <h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
-<p>If this flag is set during feature extraction all non-ascii will be removed.</p>
-<p>Details
-=======Contents [hide]Switch
-Description
-    Argument and Default Value</p>
+<p>No argument. Sets <code class="docutils literal notranslate"><span class="pre">useunicode</span></code> to <code class="docutils literal notranslate"><span class="pre">False</span></code>; default (flag absent) is <code class="docutils literal notranslate"><span class="pre">True</span></code>. This flag also sets the encoding to <code class="docutils literal notranslate"><span class="pre">latin1</span></code>, which can be overridden with <a class="reference internal" href="fwflag_encoding.html"><span class="doc">--encoding</span></a>.</p>
+</section>
+<section id="details">
+<h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
+<p>Unicode is the default and no flag is needed for normal use — only use this flag to turn it off. If set during feature extraction, all non-ASCII characters will be removed from the extracted features.</p>
+</section>
+<section id="other-switches">
+<h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>
+<p>Optional Switches:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="fwflag_encoding.html"><span class="doc">--encoding</span></a> (to override the resulting <code class="docutils literal notranslate"><span class="pre">latin1</span></code> encoding)</p></li>
+</ul>
 </section>
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
-<p>Switch</p>
-<p><a class="reference internal" href="#"><span class="doc">--no_unicode</span></a>
-Description</p>
-<p>If set then all CHAR, VARCHAR and TEXT fields in MySQL will be treated as strings. This is done both in reading from MySQL and writing to MySQL (and writing to any other output formats specified: csv, html, wordclouds). When printing wordclouds with this flag all features with non:doc:<cite>fwflag_ascii</cite> will be ignored.</p>
-<p>If this flag is set during feature extraction all non:doc:<cite>fwflag_ascii</cite> will be removed.</p>
-<p>Argument and Default Value</p>
-<p>Unicode is the default and no flag is needed. Only use this flag for turning it off.</p>
-<p>This flag sets the encoding to latin1. You can override this with <a class="reference internal" href="fwflag_encoding.html"><span class="doc">--encoding</span></a>.</p>
-</section>
-<section id="id1">
-<h2>Example Commands<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
-<p>This command will write all output to HTML and CSV files as strings.</p>
-<blockquote>
-<div><p>./fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> dla_tutorial <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> msgs_xxx <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a> user_id <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> 'feat$cat_LIWC2007$msgs_xxx$user_id$16to16' <a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a> masterstats_r500 <a class="reference internal" href="fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a> 1000 <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a> demog_age demog_gender <a class="reference internal" href="fwflag_output_name.html"><span class="doc">--output_name</span></a> xxx_output <a class="reference internal" href="fwflag_rmatrix.html"><span class="doc">--rmatrix</span></a> <a class="reference internal" href="fwflag_sort.html"><span class="doc">--sort</span></a> <a class="reference internal" href="fwflag_csv.html"><span class="doc">--csv</span></a> <a class="reference internal" href="#"><span class="doc">--no_unicode</span></a></p>
-</div></blockquote>
+<p>Using the packaged <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> dataset (see <a class="reference internal" href="../tutorials/tut_dla.html"><span class="doc">Differential Language Analysis (DLA) Tutorial</span></a>): writes all output to HTML and CSV files as plain (non-unicode) strings.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$cat_LIWC2007$msgs$user_id$16to16'</span><span class="w"> </span><span class="se">\</span>
+--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span><span class="se">\</span>
+--outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span>--output_name<span class="w"> </span>xxx_output<span class="w"> </span>--rmatrix<span class="w"> </span>--sort<span class="w"> </span>--csv<span class="w"> </span>--no_unicode
+</pre></div>
+</div>
 </section>
 </section>
 

@@ -35,13 +35,14 @@ Required Switches:
 :doc:`fwflag_feat_whitelist` 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+.. code-block:: bash
 
- # General command
- python fwInterface.py :doc:`fwflag_d` DATABASE :doc:`fwflag_t` TABLE :doc:`fwflag_print_tokenized_lines` OUTPUTFILE_NAME
+	# General command
+	dlatkInterface.py -d DATABASE -t TABLE --print_tokenized_lines OUTPUTFILE_NAME
 
- # Example command
- # searches for the table twt_20mil_tok
- # outputs the file twt_20mil.txt
- python fwInterface.py :doc:`fwflag_d` twitterGH :doc:`fwflag_t` twt_20mil :doc:`fwflag_print_tokenized_lines` twt_20mil.txt
+	# Example, using the packaged dla_tutorial dataset (see tut_dla)
+	# searches for the table msgs_tok (built by --add_tokenized)
+	# outputs the file msgs_tokenized.txt
+	dlatkInterface.py -d dla_tutorial -t msgs --add_tokenized
+	dlatkInterface.py -d dla_tutorial -t msgs --print_tokenized_lines msgs_tokenized.txt

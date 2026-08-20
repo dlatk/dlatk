@@ -199,6 +199,10 @@ None</p>
 </section>
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
+<p>Using the packaged <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> dataset (see <a class="reference internal" href="../tutorials/tut_dla.html"><span class="doc">Differential Language Analysis (DLA) Tutorial</span></a>), whose <code class="docutils literal notranslate"><span class="pre">msgs</span></code> table already uses the default column name <code class="docutils literal notranslate"><span class="pre">message_id</span></code> — this is only needed if your table uses a different column name:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--messageid_field<span class="w"> </span>message_id<span class="w"> </span>--add_ngrams
+</pre></div>
+</div>
 </section>
 </section>
 

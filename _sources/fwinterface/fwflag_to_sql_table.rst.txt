@@ -1,0 +1,40 @@
+.. _fwflag_to_sql_table:
+================
+--to_sql_table
+================
+Switch
+======
+
+--to_sql_table TABLE_NAME
+
+Description
+===========
+
+With :doc:`fwflag_cca_predict_components`, writes the predicted CCA components into a new SQL table instead of (or alongside) csv output.
+
+Argument and Default Value
+==========================
+
+A table name. Default: ``None``.
+
+Details
+=======
+
+Passed as ``tablename`` to ``CCA.predictCompsToSQL()``. **Unreachable as of this writing** — every CCA code path depends on the same ``CCA`` class whose constructor has a confirmed scoping bug that always crashes with a misleading ``rpy2 cannot be imported`` message and ``sys.exit(1)``, verified with real R and ``rpy2`` both installed and working. See the Known issue on :doc:`fwflag_cca` for the full root cause.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_cca_predict_components`
+* :doc:`fwflag_load_model`, :doc:`fwflag_picklefile` (a previously-saved CCA model)
+
+Optional Switches:
+
+* :doc:`fwflag_useXFeats`, :doc:`fwflag_useXControls`
+
+Example Commands
+================
+
+Not usable as of this writing — see the Known issue on :doc:`fwflag_cca`.

@@ -34,9 +34,10 @@ Note: there are many other required and optional switches when running :doc:`fwf
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`), with all three mediation variables coming from ``blog_outcomes`` (no feature table needed):
 
- # GENERAL COMMAND
- ./fwInterface.py :doc:`fwflag_d` DATABASE :doc:`fwflag_t` TABLE_NAME :doc:`fwflag_c` GROUP :doc:`fwflag_outcome_table` OUTCOME_TABLE_NAME :doc:`fwflag_mediation` \ 
- :doc:`fwflag_outcomes` OUTCOME_1 ... OUTCOME_N :doc:`fwflag_path_start` PATHSTART_1 ... PATHSTART_M  :doc:`fwflag_mediator` MEDIATOR_1 ... MEDIATOR_L :doc:`fwflag_no_features` 
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --outcome_table blog_outcomes --mediation \
+	--outcomes age --path_starts is_student --mediators gender --no_features

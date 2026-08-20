@@ -44,7 +44,7 @@ Things to keep in mind when creating your own feature tables:
 
 Example 1: unigram, bigram, etc features
 ----------------------------------------
-These tables are generally created with the :doc:`../fwinterface/fwflag_add_ngrams` flag of fwInterface.
+These tables are generally created with the :doc:`../fwinterface/fwflag_add_ngrams` flag of dlatkInterface.
 
 .. code-block:: bash
 

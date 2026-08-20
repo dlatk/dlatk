@@ -1,0 +1,42 @@
+.. _fwflag_prefix_super_groups:
+========================
+--prefix_super_groups
+========================
+Switch
+======
+
+--prefix_super_groups
+
+Description
+===========
+
+When stratifying cross-validation folds with :doc:`fwflag_stratify_folds`, treats a prefix of each group id as a "super group" to stratify by, instead of the full group id.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Passed as ``stratifyPrefixSuperGroups`` into ``RegressionPredictor.testControlCombos()``. Useful when group ids are structured (e.g. a county FIPS code where the first few digits are a state), so folds are balanced across the higher-level grouping rather than the raw id.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_combo_test_regression`
+* :doc:`fwflag_stratify_folds`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age --combo_test_regression \
+	--stratify_folds --prefix_super_groups

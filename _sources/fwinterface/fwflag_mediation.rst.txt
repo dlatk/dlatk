@@ -24,11 +24,11 @@ Mediation analysis considers three variables, as seen in the following figure: p
 
 These variables can be located within a feature or outcome table. There are 4 switches to specify where the features will go within the mediation:  :doc:`fwflag_feat_as_path_start`, :doc:`fwflag_feat_as_outcome`, :doc:`fwflag_feat_as_control`, :doc:`fwflag_no_features`. Once you specify which variable is in the feature table all other variables will be in the outcome table. There is the option to specify specific features or consider the entire feature table. For example, if your outcome variable is a feature you can run either of the following two commands:
 
- # Specify feature 1200 as the outcome
- ./dlatkInterface.py -d twitterGH -t messages_en -c cty_id -f 'feat$cat_met_a30_2000_cp_w$messages_en$cty_id$16to16' --mediation --path_start 'hsgradHC03_VC93ACS3yr$10' --mediators 'ucd_I25_1_atheroHD$0910_ageadj' --outcome_table nejm_intersect_small50k --outcomes '1200' --feat_as_outcome
+ # Using the packaged dla_tutorial dataset (see tut_dla): specify Facebook topic 344 as the outcome
+ ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' --mediation --path_start is_student --mediators age --outcome_table blog_outcomes --outcomes '344' --feat_as_outcome
 
- # Consider all features as outcomes
- ./dlatkInterface.py -d twitterGH -t messages_en -c cty_id -f 'feat$cat_met_a30_2000_cp_w$messages_en$cty_id$16to16' --mediation --path_start 'hsgradHC03_VC93ACS3yr$10' --mediators 'ucd_I25_1_atheroHD$0910_ageadj' --outcome_table nejm_intersect_small50k --feat_as_outcome
+ # Consider all topics as outcomes
+ ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' --mediation --path_start is_student --mediators age --outcome_table blog_outcomes --feat_as_outcome
 
 
  The analysis is done using two methods. The first is the Baron and Kenny method with a Sobel test for significance. We first do three regressions (all of which are normalized):
@@ -76,16 +76,17 @@ Optional Switches:
 
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
-	 # Example
-	 # Since no mediators are given, this will consider every feature in the feature table as a mediator
-	 ./dlatkInterface.py -d twitterGH -t messages_en -c cty_id -f 'feat$cat_met_a30_2000_cp_w$messages_en$cty_id$16to16' --mediation --path_start 'hsgradHC03_VC93ACS3yr$10' --outcomes 'ucd_I25_1_atheroHD$0910_ageadj' --outcome_table nejm_intersect_small50k --mediation_csv --group_freq_thresh 40000 --output_name mediation_40k.csv --mediation_boot
+.. code-block:: bash
+
+	 # Example, using the packaged dla_tutorial dataset (see tut_dla)
+	 # Since no mediators are given, this will consider every topic in the feature table as a mediator
+	 ./dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' --mediation --path_start is_student --outcomes age --outcome_table blog_outcomes --mediation_csv --group_freq_thresh 500 --output_name mediation_output.csv --mediation_boot
 
 
 Part of Output:
 
-.. code:doc:`fwflag_block`:: python
+.. code-block:: text
 
 	 Mediation number 2000 out of 2000
 	 Path Start: hsgradHC03_VC93ACS3yr$10, Mediator: 1051, Outcome: ucd_I25_1_atheroHD$0910_ageadj

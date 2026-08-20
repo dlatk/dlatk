@@ -1,0 +1,55 @@
+.. _fwflag_report:
+==========
+--report
+==========
+Switch
+======
+
+--report
+
+Description
+===========
+
+Writes a text report of factor-adaptation results to ``<output_name>_.report``.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Verified end-to-end: with no ``--output_name`` given, wrote a file literally named ``_.report`` in the current directory, containing per-fold R² summaries for each factor-selection configuration and outcome, e.g.:
+
+.. code-block:: text
+
+	  selection type , selection size:
+	pca , 1
+	_
+	= age (w/ lang.) (r: 0)=
+	-----------------
+	_*Overall R^2:          0.2446
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_factor_adaptation` or :doc:`fwflag_res_factor_adaptation`
+
+Optional Switches:
+
+* :doc:`fwflag_output_name` (recommended — otherwise the report file is just named ``_.report``)
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age --outcome_controls gender is_student \
+	--combo_test_regression --factor_adaptation --adaptation_factors gender is_student \
+	--num_of_factors 1 --factor_selection_type pca --report --output_name ./factor_adapt_run

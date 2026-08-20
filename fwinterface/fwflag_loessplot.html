@@ -200,22 +200,25 @@
 </ul>
 <p>Optional Switches:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="fwflag_output_dir.html"><span class="doc">--output_dir</span></a></p></li>
+<li><p><a class="reference internal" href="fwflag_output_dir.html"><span class="doc">--output_dir</span></a> or <a class="reference internal" href="fwflag_output_name.html"><span class="doc">--output_name</span></a></p></li>
 <li><p><a class="reference internal" href="fwflag_spearman.html"><span class="doc">--spearman</span></a></p></li>
 <li><p><a class="reference internal" href="fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a></p></li>
-<li><p><a class="reference internal" href="fwflag_no_bonferroni.html"><span class="doc">--no_bonferroni</span></a></p></li>
 <li><p><a class="reference internal" href="fwflag_p_correction.html"><span class="doc">--p_correction</span></a></p></li>
 <li><p><a class="reference internal" href="fwflag_blacklist.html"><span class="doc">--blacklist</span></a></p></li>
 <li><p><a class="reference internal" href="fwflag_whitelist.html"><span class="doc">--whitelist</span></a></p></li>
 <li><p><a class="reference internal" href="fwflag_show_feat_freqs.html"><span class="doc">--show_feat_freqs</span></a></p></li>
 <li><p><a class="reference internal" href="fwflag_not_show_feat_freqs.html"><span class="doc">--not_show_feat_freqs</span></a></p></li>
-<li><p><a class="reference internal" href="fwflag_output_dir.html"><span class="doc">--output_dir</span></a></p></li>
-<li><p><a class="reference internal" href="fwflag_output_name.html"><span class="doc">--output_name</span></a></p></li>
 <li><p><a class="reference internal" href="fwflag_topic_lexicon.html"><span class="doc">--topic_lexicon</span></a></p></li>
 </ul>
 </section>
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
+<p>Using the packaged <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> dataset (see <a class="reference internal" href="../tutorials/tut_dla.html"><span class="doc">Differential Language Analysis (DLA) Tutorial</span></a>):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs$user_id$16to16$0_01'</span><span class="w"> </span><span class="se">\</span>
+--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span><span class="se">\</span>
+--loessplot<span class="w"> </span>good<span class="w"> </span>great<span class="w"> </span>happy<span class="w"> </span>sad<span class="w"> </span>--output_name<span class="w"> </span>./loess_output
+</pre></div>
+</div>
 </section>
 </section>
 

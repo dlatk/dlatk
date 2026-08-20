@@ -1,0 +1,37 @@
+.. _fwflag_batch_size:
+==============
+--batch_size
+==============
+Switch
+======
+
+--batch_size N
+
+Description
+===========
+
+Batch size to use when generating embeddings with :doc:`fwflag_add_bert`/:doc:`fwflag_add_emb`.
+
+Argument and Default Value
+==========================
+
+An integer. Default: ``32`` (``dlac.GPU_BATCH_SIZE``).
+
+Details
+=======
+
+Verified end-to-end: ran successfully at ``--batch_size 8`` producing real embedding features for a small corpus.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_add_bert` or :doc:`fwflag_add_emb`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_bert --batch_size 16

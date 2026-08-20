@@ -1,0 +1,48 @@
+.. _fwflag_res_factor_adaptation:
+=========================
+--res_factor_adaptation
+=========================
+Switch
+======
+
+--res_factor_adaptation
+
+Description
+===========
+
+Like :doc:`fwflag_factor_adaptation`, but applies *residualized* factor adaptation. Aliased as ``--rfa``.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``. Sets an internal ``integrationMethod`` of ``"rfa"`` (or ``"rfa_plus"`` combined with :doc:`fwflag_factor_addition`).
+
+Details
+=======
+
+Verified end-to-end with :doc:`fwflag_factor_selection_type` ``pca`` (the default ``rfe`` is broken — see the Known issue on that page, which applies here too since both switches share the same factor-selection code path).
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_combo_test_regression`
+* :doc:`fwflag_outcome_controls`
+
+Optional Switches:
+
+* :doc:`fwflag_adaptation_factors`, :doc:`fwflag_num_of_factors`, :doc:`fwflag_factor_selection_type`
+* :doc:`fwflag_paired_factors`, :doc:`fwflag_factor_addition`, :doc:`fwflag_report`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age --outcome_controls gender is_student \
+	--combo_test_regression --res_factor_adaptation --adaptation_factors gender is_student \
+	--num_of_factors 1 --factor_selection_type pca

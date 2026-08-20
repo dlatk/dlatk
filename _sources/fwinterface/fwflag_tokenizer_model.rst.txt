@@ -1,0 +1,42 @@
+.. _fwflag_tokenizer_model:
+===================
+--tokenizer_model
+===================
+Switch
+======
+
+--tokenizer_model NAME
+
+Description
+===========
+
+Tokenizer model to use when extracting features with :doc:`fwflag_add_bert`/:doc:`fwflag_add_emb`, when it differs from :doc:`fwflag_embedding_model` (or when the model isn't in DLATK's built-in shorthand list — see :doc:`fwflag_emb_class`).
+
+Argument and Default Value
+==========================
+
+A Hugging Face tokenizer name. Default: ``None``.
+
+Details
+=======
+
+Verified end-to-end together with :doc:`fwflag_emb_class` ``auto``: needed for any embedding model name not in DLATK's internal shorthand list — without it, tokenizer lookup fails with ``KeyError``.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_add_bert` or :doc:`fwflag_add_emb`
+
+Optional Switches:
+
+* :doc:`fwflag_emb_class`
+
+Example Commands
+================
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_bert \
+	--embedding_model prajjwal1/bert-tiny --emb_class auto --tokenizer_model prajjwal1/bert-tiny

@@ -1,0 +1,41 @@
+.. _fwflag_use_featuretable_feats:
+==========================
+--use_featuretable_feats
+==========================
+Switch
+======
+
+--use_featuretable_feats
+
+Description
+===========
+
+Uses the 1gram feature table as a whitelist when generating topic tagcloud data, restricting output to words that actually occur in your corpus's own 1gram table.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Passed as ``useFeatTableFeats`` into ``oa.printTopicTagCloudData()``, used by :doc:`fwflag_topic_tagcloud`/:doc:`fwflag_corp_topic_tagcloud`. Useful when your topic lexicon covers a broader vocabulary than your corpus and you only want to display words that are actually attested in your data.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_topic_tagcloud` or :doc:`fwflag_corp_topic_tagcloud`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16' \
+	--outcome_table blog_outcomes --outcomes age --topic_tagcloud --topic_lexicon met_a30_2000_freq_t50ll \
+	--use_featuretable_feats

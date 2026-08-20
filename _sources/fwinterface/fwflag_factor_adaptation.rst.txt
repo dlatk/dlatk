@@ -1,0 +1,48 @@
+.. _fwflag_factor_adaptation:
+=====================
+--factor_adaptation
+=====================
+Switch
+======
+
+--factor_adaptation
+
+Description
+===========
+
+Applies factor adaptation: rather than using the outcome controls directly, selects a smaller number of derived "factors" from them (or from :doc:`fwflag_adaptation_factors`) and adapts language features against those. Aliased as ``--fa``.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``. Only takes effect with :doc:`fwflag_combo_test_regression`.
+
+Details
+=======
+
+Verified end-to-end with :doc:`fwflag_factor_selection_type` ``pca`` (the default ``rfe`` is currently broken — see the Known issue on that page). If :doc:`fwflag_adaptation_factors` isn't given, falls back to using all of :doc:`fwflag_outcome_controls` as the factor pool. Sets an internal ``integrationMethod`` of ``"fa"`` (or ``"fa_plus"`` if combined with :doc:`fwflag_factor_addition`).
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_combo_test_regression`
+* :doc:`fwflag_outcome_controls`
+
+Optional Switches:
+
+* :doc:`fwflag_adaptation_factors`, :doc:`fwflag_num_of_factors`, :doc:`fwflag_factor_selection_type`
+* :doc:`fwflag_paired_factors`, :doc:`fwflag_factor_addition`, :doc:`fwflag_report`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1to3gram$msgs$user_id$0_05' \
+	--outcome_table blog_outcomes --outcomes age --outcome_controls gender is_student is_education \
+	--combo_test_regression --factor_adaptation --adaptation_factors gender is_student is_education \
+	--num_of_factors 2 --factor_selection_type pca

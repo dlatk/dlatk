@@ -192,14 +192,20 @@
 <p>Required switches
 <a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a>
 Example Commands
-================
-.. code:doc:<cite>fwflag_block</cite>:: python</p>
-<blockquote>
-<div><p># Example command correlating county level outcomes with PA twitter data, using Facebook topics and controlling for region
-./fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> paHealth <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> msgsPA_2012 <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a> cnty <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> 'feat$cat_met_a30_2000_cp_w$msgsPA_2012$cnty$16to16' <a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a> outcome_data_with_controls <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a> diab_perc HIV_rate PAAM_age_adj_mort IM_rate CM_rate food_insec_perc LATHF_perc MV_mort_rate DP_mort_rate UA_perc UC_perc health_care_cost NDDTC_perc OPCP_rate HI_income free_lunch_perc HR_rate <a class="reference internal" href="fwflag_topic_tagcloud.html"><span class="doc">--topic_tagcloud</span></a> <span class="xref std std-doc">fwflag_make_topic_wordcloud</span> <a class="reference internal" href="fwflag_topic_lexicon.html"><span class="doc">--topic_lexicon</span></a> met_a30_2000_freq_t50ll <span class="xref std std-doc">fwflag_no_bonf</span> <a class="reference internal" href="fwflag_p_correction.html"><span class="doc">--p_correction</span></a> simes <a class="reference internal" href="fwflag_output_name.html"><span class="doc">--output_name</span></a> /localdata/paHealth/a19_d6_s4 <span class="xref std std-doc">fwflag_controls</span> 'new_england' 'midatlantic' 'south' 'midwest' 'southwest' 'west' <a class="reference internal" href="fwflag_tagcloud_colorscheme.html"><span class="doc">--tagcloud_colorscheme</span></a> blue</p>
-<p># Example using mediation analysis
-./fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> twitterGH <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> messages_en <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a> cty_id <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> 'feat$cat_met_a30_2000_cp_w$messages_en$cty_id$16to16' <a class="reference internal" href="fwflag_mediation.html"><span class="doc">--mediation</span></a> <span class="xref std std-doc">fwflag_path_start</span> '1051' <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a> 'hsgradHC03_VC93ACS3yr$10' <a class="reference internal" href="fwflag_mediators.html"><span class="doc">--mediators</span></a>  'hsgradHC03_VC93ACS3yr$10' <a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a> nejm_intersect_small50k</p>
-</div></blockquote>
+================</p>
+<p>Using the packaged <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> dataset (see <a class="reference internal" href="../tutorials/tut_dla.html"><span class="doc">Differential Language Analysis (DLA) Tutorial</span></a>): correlates Facebook topics with several outcomes, controlling for gender.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16'</span><span class="w"> </span><span class="se">\</span>
+--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span><span class="se">\</span>
+--outcomes<span class="w"> </span>age<span class="w"> </span>is_student<span class="w"> </span>is_education<span class="w"> </span>is_technology<span class="w"> </span><span class="se">\</span>
+--topic_tagcloud<span class="w"> </span>--make_topic_wordclouds<span class="w"> </span>--topic_lexicon<span class="w"> </span>met_a30_2000_freq_t50ll<span class="w"> </span>--no_correction<span class="w"> </span><span class="se">\</span>
+--output_name<span class="w"> </span>./a19_d6_s4<span class="w"> </span>--outcome_controls<span class="w"> </span>gender<span class="w"> </span>--tagcloud_colorscheme<span class="w"> </span>blue
+</pre></div>
+</div>
+<p>Example using mediation analysis:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$cat_met_a30_2000_cp_w$msgs$user_id$16to16'</span><span class="w"> </span><span class="se">\</span>
+--mediation<span class="w"> </span>--path_starts<span class="w"> </span>is_student<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--mediators<span class="w"> </span><span class="m">344</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes
+</pre></div>
+</div>
 </section>
 </section>
 

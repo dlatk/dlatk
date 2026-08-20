@@ -24,10 +24,20 @@ Details
 Other Switches
 ==============
 
+Required Switches:
+
+* One of the classification prediction switches, e.g. :doc:`fwflag_combo_test_classifiers`, :doc:`fwflag_test_classifiers`
+
 Optional Switches:
-:doc:`fwflag_group_freq_thresh` :doc:`fwflag_sparse` :doc:`fwflag_output_name` :doc:`fwflag_standardize`? 
+
+* :doc:`fwflag_group_freq_thresh`, :doc:`fwflag_sparse`, :doc:`fwflag_output_name`
+
 Example Commands
 ================
-.. code:doc:`fwflag_block`:: python
 
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
 
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$user_id$16to16$0_01' \
+	--outcome_table blog_outcomes --outcomes is_student --combo_test_classifiers --roc --output_name ./is_student

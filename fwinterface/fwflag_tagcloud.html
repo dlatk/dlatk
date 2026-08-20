@@ -180,41 +180,35 @@
 </section>
 <section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h2>
-<p>Produces data for making Wordle tag clouds. For a topic based tagcloud see --topic_tagcloud.</p>
+<p>Produces data for making Wordle-style tag clouds. For a topic-based tagcloud see <a class="reference internal" href="fwflag_topic_tagcloud.html"><span class="doc">--topic_tagcloud</span></a>.</p>
 </section>
 <section id="argument-and-default-value">
 <h2>Argument and Default Value<a class="headerlink" href="#argument-and-default-value" title="Link to this heading"></a></h2>
-<p>None</p>
-<p>Details
-=======Contents [hide]Switch
-Description
-    Argument and Default Value</p>
+<p>No argument. Boolean switch, default: <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p>
 </section>
 <section id="other-switches">
 <h2>Other Switches<a class="headerlink" href="#other-switches" title="Link to this heading"></a></h2>
+<p>Required Switches:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> FEAT_TABLE (cannot be topic based)</p></li>
+<li><p><a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a>, <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a></p></li>
+</ul>
+<p>Optional Switches:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="fwflag_make_wordclouds.html"><span class="doc">--make_wordclouds</span></a></p></li>
+<li><p><a class="reference internal" href="fwflag_tagcloud_filter.html"><span class="doc">--tagcloud_filter</span></a> / <a class="reference internal" href="fwflag_no_tagcloud_filter.html"><span class="doc">--no_tagcloud_filter</span></a></p></li>
+</ul>
 </section>
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
-<p>Switch</p>
-<p><a class="reference internal" href="#"><span class="doc">--tagcloud</span></a>
-Description</p>
-<p>Produces data for making Wordle tag clouds. For a topic based tagcloud see <a class="reference internal" href="fwflag_topic_tagcloud.html"><span class="doc">--topic_tagcloud</span></a>.
-Argument and Default Value</p>
-<p>None</p>
-</section>
-<section id="id1">
-<h2>Other Switches<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
-<p>Required Switches:
-<a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a>, <span class="xref std std-doc">fwflag_feat_table</span> FEAT_TABLE (cannot be topic based)
-<a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a> <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a> Optional Switches
-<a class="reference internal" href="fwflag_make_wordclouds.html"><span class="doc">--make_wordclouds</span></a> <a class="reference internal" href="fwflag_tagcloud_filter.html"><span class="doc">--tagcloud_filter</span></a> / <a class="reference internal" href="fwflag_no_tagcloud_filter.html"><span class="doc">--no_tagcloud_filter</span></a>
-Example Commands
-================
-.. code:doc:<cite>fwflag_block</cite>:: python</p>
-<blockquote>
-<div><p># Example command correlating county level outcomes with PA twitter data, using Facebook topics and controlling for region
-./fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> paHealth <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> msgsPA_2012 <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a> cnty <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> 'feat$1gram$msgsPA_2012$cnty$16to16' <a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a> outcome_data_with_controls <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a> diab_perc HIV_rate PAAM_age_adj_mort IM_rate CM_rate food_insec_perc LATHF_perc MV_mort_rate DP_mort_rate <a class="reference internal" href="#"><span class="doc">--tagcloud</span></a> <a class="reference internal" href="fwflag_make_wordclouds.html"><span class="doc">--make_wordclouds</span></a>  <a class="reference internal" href="fwflag_output_name.html"><span class="doc">--output_name</span></a> /localdata/paHealth/d6 <span class="xref std std-doc">fwflag_controls</span> 'new_england' 'midatlantic' 'south' 'midwest' 'southwest' 'west'</p>
-</div></blockquote>
+<p>Using the packaged <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> dataset (see <a class="reference internal" href="../tutorials/tut_dla.html"><span class="doc">Differential Language Analysis (DLA) Tutorial</span></a>): correlates 1grams with age and gender, controlling for whether the user is a student, then renders word clouds.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span><span class="se">\</span>
+-f<span class="w"> </span><span class="s1">'feat$1gram$msgs$user_id$16to16'</span><span class="w"> </span>--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span><span class="se">\</span>
+--outcomes<span class="w"> </span>age<span class="w"> </span>gender<span class="w"> </span><span class="se">\</span>
+--tagcloud<span class="w"> </span>--make_wordclouds<span class="w"> </span><span class="se">\</span>
+--output_name<span class="w"> </span>./dla_tutorial_output<span class="w"> </span>--outcome_controls<span class="w"> </span>is_student
+</pre></div>
+</div>
 </section>
 </section>
 

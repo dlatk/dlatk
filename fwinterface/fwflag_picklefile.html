@@ -195,17 +195,18 @@
 <p>Required Switches:
 <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a>, <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a>, <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a>, <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a>, <a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a>, <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a> <a class="reference internal" href="fwflag_save_model.html"><span class="doc">--save_model</span></a> or <a class="reference internal" href="fwflag_load_model.html"><span class="doc">--load_model</span></a>
 Example Commands
-================
-.. code:doc:<cite>fwflag_block</cite>:: python</p>
-<blockquote>
-<div><p># Trains a regression model to predict age for users from 1grams
-# Will save the model to a picklefile called deleteMe.pickle
-~/fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> fb20 <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> messages_en <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a> user_id <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> 'feat$1gram$messages_en$user_id$16to16$0_01'
-<a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a> masterstats_andy_r10k <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a> age <a class="reference internal" href="fwflag_train_regression.html"><span class="doc">--train_regression</span></a> <a class="reference internal" href="fwflag_save_model.html"><span class="doc">--save_model</span></a> <a class="reference internal" href="#"><span class="doc">--picklefile</span></a> deleteMe.pickle</p>
-<p># Uses the trained regression model (deleteMe.pickle) to predict age for users from 1grams
-~/fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> fb20 <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> messages_en <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a> user_id <a class="reference internal" href="fwflag_f.html"><span class="doc">-f</span></a> 'feat$1gram$messages_en$user_id$16to16$0_01'
-<a class="reference internal" href="fwflag_outcome_table.html"><span class="doc">--outcome_table</span></a> masterstats_andy_r10k <a class="reference internal" href="fwflag_outcomes.html"><span class="doc">--outcomes</span></a> age <a class="reference internal" href="fwflag_predict_regression.html"><span class="doc">--predict_regression</span></a> <a class="reference internal" href="fwflag_load_model.html"><span class="doc">--load_model</span></a> <a class="reference internal" href="#"><span class="doc">--picklefile</span></a> deleteMe.pickle</p>
-</div></blockquote>
+================</p>
+<p>Using the packaged <code class="docutils literal notranslate"><span class="pre">dla_tutorial</span></code> dataset (see <a class="reference internal" href="../tutorials/tut_pickle_build.html"><span class="doc">Building A Pickle Model</span></a> and <a class="reference internal" href="../tutorials/tut_pickle_apply.html"><span class="doc">Applying A Pickle Model</span></a>):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Trains a regression model to predict age for users from 1grams</span>
+<span class="c1"># Will save the model to a picklefile called age.pickle</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs$user_id$16to16$0_01'</span><span class="w"> </span><span class="se">\</span>
+--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--train_regression<span class="w"> </span>--save_model<span class="w"> </span>--picklefile<span class="w"> </span>age.pickle
+
+<span class="c1"># Uses the trained regression model (age.pickle) to predict age for users from 1grams</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>-f<span class="w"> </span><span class="s1">'feat$1gram$msgs$user_id$16to16$0_01'</span><span class="w"> </span><span class="se">\</span>
+--outcome_table<span class="w"> </span>blog_outcomes<span class="w"> </span>--outcomes<span class="w"> </span>age<span class="w"> </span>--predict_regression<span class="w"> </span>--load_model<span class="w"> </span>--picklefile<span class="w"> </span>age.pickle
+</pre></div>
+</div>
 </section>
 </section>
 

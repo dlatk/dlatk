@@ -1,0 +1,46 @@
+.. _fwflag_make_all_topic_wordclouds:
+=============================
+--make_all_topic_wordclouds
+=============================
+Switch
+======
+
+--make_all_topic_wordclouds
+
+Description
+===========
+
+Makes a word cloud image for every topic in a topic lexicon (not restricted to topics that correlated with an outcome). Aliased as ``--make_all_topic_tagclouds``.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+Verified end-to-end (with the ``wordcloud`` Python package installed): given a 2000-topic lexicon, rendered all 2000 PNGs into ``<output_name>_alltopics/topic_<id>_wc.png``, printing ``Generating wordclouds using amueller's python package...`` for each — confirming DLATK falls back to the open-source ``wordcloud`` (amueller) renderer rather than requiring the IBM wordcloud jar mentioned in :doc:`../../install`.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_topic_lexicon`
+
+Optional Switches:
+
+* :doc:`fwflag_topic_tagcloud_colorscheme`
+* :doc:`fwflag_num_topic_words`
+
+Example Commands
+================
+
+Using the packaged ``dla_tutorial`` dataset (see :doc:`../../tutorials/tut_dla`):
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --topic_lexicon met_a30_2000_freq_t50ll \
+	--make_all_topic_wordclouds --output_name ./all_topics

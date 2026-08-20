@@ -1,0 +1,47 @@
+.. _fwflag_add_wn_nopos:
+================
+--add_wn_nopos
+================
+Switch
+======
+
+--add_wn_nopos
+
+Description
+===========
+
+Creates a WordNet concept feature table (each word mapped to its WordNet noun synsets, without part-of-speech disambiguation), based on an existing 1gram feature table.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``. Requires the ``nltk`` WordNet corpus (``python -c "import nltk; nltk.download('wordnet')"``).
+
+Details
+=======
+
+Requires a word table (default ``feat$1gram$<corptable>$<correl_field>``) to already exist — build it first with :doc:`fwflag_add_ngrams`.
+
+**Known issue — broken in SQLite mode.** ``FeatureExtractor.addWNNoPosFeat()`` creates the destination table correctly (through the SQLite-aware path), but then checks the source word table's existence via ``mm.tableExists(...)`` — a raw ``mysqlmethods`` call. Verified: the feature table gets created empty, then the run crashes with ``sqlite3.OperationalError: near "show": syntax error`` before any WordNet lookups happen, leaving a 0-row table behind.
+
+Other Switches
+==============
+
+Required Switches:
+
+* :doc:`fwflag_d`, :doc:`fwflag_c`, :doc:`fwflag_t`
+* :doc:`fwflag_add_ngrams` (must be run first, to build the word table)
+
+Optional Switches:
+
+* :doc:`fwflag_word_table` (to point at a non-default word table)
+
+Example Commands
+================
+
+Requires MySQL — broken against SQLite, see Known issue above:
+
+.. code-block:: bash
+
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_ngrams -n 1
+	dlatkInterface.py -d dla_tutorial -t msgs -c user_id --add_wn_nopos

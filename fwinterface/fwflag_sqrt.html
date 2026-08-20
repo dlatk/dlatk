@@ -199,11 +199,15 @@ None</p>
 </section>
 <section id="example-commands">
 <h2>Example Commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
-<dl class="simple">
-<dt>./fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> DATABSE <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> TABLE <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a> GROUP_BY_FIELD <a class="reference internal" href="fwflag_add_lex_table.html"><span class="doc">--add_lex_table</span></a> <a class="reference internal" href="fwflag_l.html"><span class="doc">-l</span></a> LEX_TABLE  <a class="reference internal" href="#"><span class="doc">--sqrt</span></a></dt><dd><p># Creates the table: feat$cat_met_a30_2000_cp_w$primals_new$dp_id$16to4</p>
-</dd>
-</dl>
-<p>./fwInterface.py <a class="reference internal" href="fwflag_d.html"><span class="doc">-d</span></a> primals <a class="reference internal" href="fwflag_t.html"><span class="doc">-t</span></a> primals_new <a class="reference internal" href="fwflag_c.html"><span class="doc">-g</span></a> dp_id <a class="reference internal" href="fwflag_group_freq_thresh.html"><span class="doc">--group_freq_thresh</span></a> 40000 <a class="reference internal" href="fwflag_add_lex_table.html"><span class="doc">--add_lex_table</span></a> <a class="reference internal" href="fwflag_l.html"><span class="doc">-l</span></a> met_a30_2000_cp <span class="xref std std-doc">fwflag_weighted_lex</span> <a class="reference internal" href="#"><span class="doc">--sqrt</span></a></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># General syntax — creates the table: feat$cat_LEX_TABLE$TABLE$GROUP_BY_FIELD$16to4</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>DATABASE<span class="w"> </span>-t<span class="w"> </span>TABLE<span class="w"> </span>-c<span class="w"> </span>GROUP_BY_FIELD<span class="w"> </span>--add_lex_table<span class="w"> </span>-l<span class="w"> </span>LEX_TABLE<span class="w"> </span>--sqrt
+
+<span class="c1"># Example, using the packaged dla_tutorial dataset (see tut_dla)</span>
+<span class="c1"># Creates the table: feat$cat_met_a30_2000_cp_w$msgs$user_id$16to4</span>
+dlatkInterface.py<span class="w"> </span>-d<span class="w"> </span>dla_tutorial<span class="w"> </span>-t<span class="w"> </span>msgs<span class="w"> </span>-c<span class="w"> </span>user_id<span class="w"> </span>--group_freq_thresh<span class="w"> </span><span class="m">500</span><span class="w"> </span><span class="se">\</span>
+--add_lex_table<span class="w"> </span>-l<span class="w"> </span>met_a30_2000_cp<span class="w"> </span>--weighted_lexicon<span class="w"> </span>--sqrt
+</pre></div>
+</div>
 </section>
 </section>
 

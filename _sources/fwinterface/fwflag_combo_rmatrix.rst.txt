@@ -1,0 +1,35 @@
+.. _fwflag_combo_rmatrix:
+================
+--combo_rmatrix
+================
+Switch
+======
+
+--combo_rmatrix
+
+Description
+===========
+
+Outputs a correlation matrix using every combination of :doc:`fwflag_outcome_controls`, instead of a single fixed set of controls.
+
+Argument and Default Value
+==========================
+
+No argument. Boolean switch, default: ``False``.
+
+Details
+=======
+
+**Known issue — always crashes.** ``OutcomeAnalyzer.correlateControlCombosWithFeatures()`` does ``controlKeys = list(allControls.keys())``, but ``allControls`` is never defined anywhere in the function (the value actually unpacked from the data loop is named ``controls``, not ``allControls``) — a plain variable-name typo in the source. Verified: running ``--combo_rmatrix`` on a real correlation always fails with ``NameError: name 'allControls' is not defined``, regardless of database backend. There is currently no way to run this switch successfully.
+
+Other Switches
+==============
+
+Required Switches:
+
+* None (flag currently cannot complete successfully — see Known issue above)
+
+Example Commands
+================
+
+Not usable as of this writing — see Known issue above.

@@ -5,6 +5,8 @@ import sys, time, datetime, os, getpass
 try:
     import MySQLdb
 except ImportError:
+    import warnings
+    warnings.warn("mysqlclient not found, falling back to PyMySQL", ImportWarning)
     import pymysql
     pymysql.install_as_MySQLdb()
     import MySQLdb

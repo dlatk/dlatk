@@ -4,8 +4,10 @@ MySQL interface methods based on the mysqlclient package
 import sys, time, datetime, os, getpass
 try:
     import MySQLdb
-except:
-    pass
+except ImportError:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+    import MySQLdb
 import re
 import csv
 from random import sample

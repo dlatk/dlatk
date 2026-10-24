@@ -62,7 +62,8 @@ NGRAM_FEAT_PMI="${NGRAM_FEAT}\$pmi3_0"
 TOPIC_FEAT="feat\$cat_${TOPIC_CP}_w\$${T}\$${G}\$1gra"
 SMALL_TOPIC_LEX=${T}_topics
 EMB_MODEL=distilroberta-base
-EMB_FEAT="feat\$distilroberta\$${T}\$${G}"
+EMB_T=${T}_emb
+EMB_FEAT="feat\$distilroberta\$${EMB_T}\$${G}"
 
 mkdir -p "$OUT"
 PASSED=(); FAILED=(); SKIPPED=()
@@ -71,11 +72,10 @@ PASSED=(); FAILED=(); SKIPPED=()
 run() {
     local name=$1; shift
     echo "=== $name"
-    if (cd "$ROOT" && "$@") > "$OUT/$name.log" 2>&1; then
-        return 0
-    fi
-    echo "    command failed (exit $?); see $OUT/$name.log"
-    return 1
+    (cd "$ROOT" && "$@") > "$OUT/$name.log" 2>&1
+    local rc=$?
+    [ $rc -eq 0 ] || echo "    command failed (exit $rc); see $OUT/$name.log"
+    return $rc
 }
 
 # check NAME CONDITION_DESC TEST...: records pass/fail for a step
@@ -116,9 +116,20 @@ dir_nonempty() {
     [ -n "$(ls -A "$1" 2>/dev/null)" ] || { echo "    missing or empty: $1"; return 1; }
 }
 
-# Drops the scratch table, tables derived from it (msgs_unittest_en, _dedup, ...) and its feature tables
+# cap_messages TABLE MAX: keeps each group's earliest MAX messages (by message_id).
+# Uses a self-join rather than window functions so it works on MySQL 5.x as well as 8.x / MariaDB.
+cap_messages() {
+    mysql "$DB" -e "DROP TABLE IF EXISTS ${1}_keep;
+        CREATE TABLE ${1}_keep (message_id BIGINT PRIMARY KEY)
+            SELECT a.message_id FROM $1 a JOIN $1 b ON a.$G = b.$G AND b.message_id <= a.message_id
+            GROUP BY a.message_id HAVING COUNT(*) <= $2;
+        DELETE FROM $1 WHERE message_id NOT IN (SELECT message_id FROM ${1}_keep);
+        DROP TABLE ${1}_keep;"
+}
+
+# Drops the scratch table, tables derived from it (msgs_unittest_en, _dedup, ...) and their feature tables
 drop_scratch() {
-    mysql -Ne "SHOW TABLES FROM $DB" | grep -E "^${T}(_[a-z0-9]+)?\$|\\\$${T}\\\$" | while read -r tbl; do
+    mysql -Ne "SHOW TABLES FROM $DB" | grep -E "^${T}(_[a-z0-9]+)?\$|\\\$${T}(_[a-z0-9]+)?\\\$" | while read -r tbl; do
         mysql -e "DROP TABLE IF EXISTS $DB.\`$tbl\`"
     done
 }
@@ -146,16 +157,8 @@ else
         JOIN (SELECT DISTINCT $G FROM $DB.$SRC_TABLE ORDER BY RAND(42) LIMIT $NUM_USERS) u USING ($G)" \
         || { echo "Could not create scratch table $DB.$T"; exit 1; }
 
-    # Cap each user at MAX_MSGS messages (their earliest by message_id) to keep runtime short.
-    # Uses a self-join rather than window functions so it works on MySQL 5.x as well as 8.x / MariaDB.
     if [ "$MAX_MSGS" -gt 0 ]; then
-        mysql "$DB" -e "DROP TABLE IF EXISTS ${T}_keep;
-            CREATE TABLE ${T}_keep (message_id BIGINT PRIMARY KEY)
-                SELECT a.message_id FROM $T a JOIN $T b ON a.$G = b.$G AND b.message_id <= a.message_id
-                GROUP BY a.message_id HAVING COUNT(*) <= $MAX_MSGS;
-            DELETE FROM $T WHERE message_id NOT IN (SELECT message_id FROM ${T}_keep);
-            DROP TABLE ${T}_keep;" \
-            || { echo "Could not cap messages per user in $DB.$T"; exit 1; }
+        cap_messages "$T" "$MAX_MSGS" || { echo "Could not cap messages per user in $DB.$T"; exit 1; }
     fi
     echo "Scratch table: $(mysql -Ne "SELECT CONCAT(COUNT(*), ' messages, ', COUNT(DISTINCT $G), ' users') FROM $DB.$T")"
 
@@ -222,9 +225,10 @@ if [ "$CORE_ONLY" -eq 0 ]; then
     check ngrams_pmi "pmi-filtered feature table populated" table_nonempty "$NGRAM_FEAT_PMI"
 
     # Word DLA with a control variable, rendered as wordcloud images
+    # (age has significant features in this sample; gender and is_student do not)
     run dla_controls_wordclouds "${DLATK[@]}" -d $DB -t $T -c $G -f "$NGRAM_FEAT_OCC" \
         --outcome_table $OT --group_freq_thresh $GFT \
-        --outcomes is_student --controls age \
+        --outcomes age --controls gender \
         --correlate --tagcloud --make_wordclouds \
         --output_name "$OUT/dla_controls"
     check dla_controls_wordclouds "tagcloud and wordcloud images written" \
@@ -235,7 +239,7 @@ if [ "$CORE_ONLY" -eq 0 ]; then
         CREATE TABLE $SMALL_TOPIC_LEX LIKE dlatk_lexica.$TOPIC_FREQ;
         INSERT INTO $SMALL_TOPIC_LEX SELECT * FROM dlatk_lexica.$TOPIC_FREQ
             WHERE category IN ('0','1','2','3','4','5','6','7','8','9');"
-    run topic_wordclouds "${DLATK[@]}" --lexicondb $DB --topic_lexicon $SMALL_TOPIC_LEX \
+    run topic_wordclouds "${DLATK[@]}" -d $DB -t $T -c $G --lexicondb $DB --topic_lexicon $SMALL_TOPIC_LEX \
         --make_all_topic_wordclouds --tagcloud_colorscheme blue \
         --output_name "$OUT/topic_wordclouds"
     check topic_wordclouds "topic wordcloud images written" dir_nonempty "$OUT/topic_wordclouds_alltopics"
@@ -269,8 +273,12 @@ if [ "$CORE_ONLY" -eq 0 ]; then
     run spam_filter "${DLATK[@]}" -d $DB -t $T -c $G --spam_filter
     check spam_filter "${T}_nospam populated" table_nonempty "${T}_nospam"
 
-    # Transformer embeddings (mean of the last layer per message, then per user); runs on CPU if no GPU
-    run transformer_emb "${DLATK[@]}" -d $DB -t $T -c $G \
+    # Transformer embeddings (one layer, mean per message then per user) on a 20-user,
+    # 5-message slice of the scratch table so it stays quick on CPU
+    mysql "$DB" -e "DROP TABLE IF EXISTS $EMB_T; CREATE TABLE $EMB_T LIKE $T;
+        INSERT INTO $EMB_T SELECT m.* FROM $T m
+        JOIN (SELECT DISTINCT $G FROM $T ORDER BY $G LIMIT 20) u USING ($G)" && cap_messages $EMB_T 5
+    run transformer_emb "${DLATK[@]}" -d $DB -t $EMB_T -c $G \
         --add_emb_feat --emb_model $EMB_MODEL --emb_layers 5 --emb_table_name distilroberta
     check transformer_emb "768-dimension embedding feature table populated" \
         eval '[ "$(num_feats "$EMB_FEAT")" = 768 ]'

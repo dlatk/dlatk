@@ -213,7 +213,7 @@ class SelectQuery(Query):
 				selectQuery += """ GROUP BY %s"""%(', '.join(self.group_by_fields))
 			if self.order_by_fields:
 				selectQuery += """ ORDER BY {}""".format(', '.join(self.order_by_fields))
-			if self.limit:
+			if self.limit is not None:
 				selectQuery += """ LIMIT {}""".format(str(self.limit))
 			return selectQuery
 
@@ -254,7 +254,7 @@ class SelectQuery(Query):
 					selectQuery += """ GROUP BY %s"""%(', '.join(self.group_by_fields))
 				if self.order_by_fields:
 					selectQuery += """ ORDER BY {}""".format(', '.join(self.order_by_fields))
-				if self.limit:
+				if self.limit is not None:
 					selectQuery += """ LIMIT {}""".format(str(self.limit))
 				return selectQuery
 

@@ -1,27 +1,15 @@
-#!/usr/bin/bash 
+#!/usr/bin/env bash
+# Lexicon (e.g. topic) feature extraction with a weighted lexicon.
+source "$(dirname "$0")/common.sh"
+USAGE="-d <DB> -t <TABLE> -c <GROUP_FIELD> -l <LEX_TABLE> [-e <ENGINE>] [--group_freq_thresh <GFT>]"
 
-while getopts "he:d:t:c:l:-:" opt; do
-    case $opt in
-	h) echo "Usage - bash add_lex_table.sh -e <ENGINE> -d <DB> -t <TABLE> -c <GROUP_FIELD> -l <LEX_TABLE> --group_freq_thresh <GFT>" >&2
-	   exit 2 ;;
-        e) ENGINE=$OPTARG ;;
-        d) DATABASE=$OPTARG ;;
-	t) TABLE=$OPTARG ;;
-	c) GROUP_FIELD=$OPTARG ;;
-	l) LEX_TABLE=$OPTARG ;;
-	-)
-            case $OPTARG in
-                group_freq_thresh) GFT="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 )) ;;
-		*)
-		    if [ "$OPTERR" == 1 ]; then
-                        echo "Non-option argument: '-${OPTARG}'" >&2
-                    fi;;
-            esac;;
-	*) 
-	    if [ "$OPTERR" == 1 ]; then
-                echo "Non-option argument: '-${OPTARG}'" >&2
-            fi;;
+while [ $# -gt 0 ]; do
+    case $1 in
+        -l) LEX_TABLE=$2; shift 2 ;;
+        *) parse_common "$@" || usage_exit; shift $SHIFT ;;
     esac
 done
+require DATABASE TABLE GROUP_FIELD LEX_TABLE
 
-dlatkInterface.py -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT --add_lex_table -l $LEX_TABLE --weighted_lexicon 
+dlatk -e $ENGINE -d $DATABASE -t $TABLE -c $GROUP_FIELD --group_freq_thresh $GFT \
+    --add_lex_table -l $LEX_TABLE --weighted_lexicon

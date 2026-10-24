@@ -45,14 +45,14 @@ while getopts "hd:t:o:n:m:p:cks" opt; do
     esac
 done
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+TESTS="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(dirname "$TESTS")"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
-# Python < 3.9 block-buffers stderr when redirected, which hides progress in the logs
-export PYTHONUNBUFFERED=1
-DLATK=("$PYTHON_BIN" "$ROOT/dlatkInterface.py")
 T=${SRC_TABLE}_unittest
 G=user_id
 GFT=500
+# Each step runs one of the helper scripts in tests/ (they run the repo's own dlatkInterface.py)
+COMMON=(-d $DB -c $G --group_freq_thresh $GFT)
 OT=blog_outcomes
 TOPIC_CP=met_a30_2000_cp
 TOPIC_FREQ=met_a30_2000_freq_t50ll
@@ -86,7 +86,7 @@ skip() {
     echo "    SKIP: $2"
 }
 
-# run NAME CMD...: runs a dlatk command, logging to $OUT/NAME.log
+# run NAME CMD...: runs a command (a helper script), logging to $OUT/NAME.log
 run() {
     local name=$1; shift
     echo "=== $name"
@@ -177,55 +177,43 @@ else
     echo "Scratch table: $(mysql -Ne "SELECT CONCAT(COUNT(*), ' messages, ', COUNT(DISTINCT $G), ' users') FROM $DB.$T")"
 
     # N-gram extraction (1-2 grams) and combined feature table
-    run ngrams "${DLATK[@]}" -d $DB -t $T -c $G \
-        --add_ngrams -n 1 2 --combine_feat_tables 1to2gram
+    run ngrams bash "$TESTS/add_ngrams.sh" "${COMMON[@]}" -t $T -n "1 2" --combine_feat_tables 1to2gram
     check ngrams "1to2gram feature table populated" table_nonempty "$NGRAM_FEAT"
 fi
 
 # Occurrence filter: keep features used by at least P_OCC of groups
-run ngrams_occ "${DLATK[@]}" -d $DB -t $T -c $G -f "$NGRAM_FEAT" \
-    --feat_occ_filter --set_p_occ $P_OCC --group_freq_thresh $GFT
+run ngrams_occ bash "$TESTS/add_ngrams.sh" "${COMMON[@]}" -t $T -n "1 2" --combine_feat_tables 1to2gram \
+    --no_extract --set_p_occ $P_OCC
 check ngrams_occ "p_occ-filtered feature table populated" table_nonempty "$NGRAM_FEAT_OCC"
 
 # Topic extraction (weighted lexicon of Facebook topics)
-run topics "${DLATK[@]}" -d $DB -t $T -c $G \
-    --add_lex_table -l $TOPIC_CP --weighted_lexicon
+run topics bash "$TESTS/add_lex_table.sh" "${COMMON[@]}" -t $T -l $TOPIC_CP
 check topics "weighted topic feature table populated" table_nonempty "$TOPIC_FEAT"
 
 # Word DLA: rmatrix, csv, tagclouds; age + occupation (categories to binary)
-run dla_ngrams "${DLATK[@]}" -d $DB -t $T -c $G -f "$NGRAM_FEAT_OCC" \
-    --outcome_table $OT --group_freq_thresh $GFT \
-    --outcomes age occu --categories_to_binary occu \
-    --correlate --rmatrix --csv --sort --tagcloud \
+run dla_ngrams bash "$TESTS/correlate.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC" \
+    --outcome_table $OT --outcomes "age occu" --categories_to_binary occu \
     --output_name "$OUT/dla_ngrams"
 check dla_ngrams "rmatrix html/csv and tagcloud output written" \
     files_exist "$OUT/dla_ngrams.html" "$OUT/dla_ngrams.csv" "$OUT/dla_ngrams_tagcloud.txt"
 
 # Topic DLA with topic tagclouds
-run dla_topics "${DLATK[@]}" -d $DB -t $T -c $G -f "$TOPIC_FEAT" \
-    --outcome_table $OT --group_freq_thresh $GFT \
-    --outcomes age occu --categories_to_binary occu \
-    --correlate --rmatrix --csv --sort \
-    --topic_tagcloud --topic_lexicon $TOPIC_FREQ \
-    --output_name "$OUT/dla_topics"
+run dla_topics bash "$TESTS/correlate.sh" "${COMMON[@]}" -t $T -f "$TOPIC_FEAT" \
+    --outcome_table $OT --outcomes "age occu" --categories_to_binary occu \
+    --topic_lexicon $TOPIC_FREQ --output_name "$OUT/dla_topics"
 check dla_topics "rmatrix csv and topic tagcloud output written" \
     files_exist "$OUT/dla_topics.csv" "$OUT/dla_topics_topic_tagcloud.txt"
 
 # Ridge regression, 10-fold cross-validation
-run regression "${DLATK[@]}" -d $DB -t $T -c $G -f "$TOPIC_FEAT" "$NGRAM_FEAT_OCC" \
-    --outcome_table $OT --group_freq_thresh $GFT --outcomes age \
-    --nfold_test_regression --model ridgecv --folds 10 --csv \
-    --output_name "$OUT/regression"
+run regression bash "$TESTS/regression.sh" "${COMMON[@]}" -t $T -f "$TOPIC_FEAT $NGRAM_FEAT_OCC" \
+    --outcome_table $OT --outcomes age --output_name "$OUT/regression"
 check regression "regression csv written" files_exist "$OUT/regression.accuracy_data.csv"
 
 # Logistic regression classification, 10-fold, on an occupation indicator.
 # (--categories_to_binary occu makes classes too rare for 10 folds on a small sample;
 # the DLA steps above cover categories_to_binary.)
-run classification "${DLATK[@]}" -d $DB -t $T -c $G -f "$TOPIC_FEAT" "$NGRAM_FEAT_OCC" \
-    --outcome_table $OT --group_freq_thresh $GFT \
-    --outcomes is_student \
-    --nfold_test_classifiers --model lr --folds 10 --csv \
-    --output_name "$OUT/classification"
+run classification bash "$TESTS/classification.sh" "${COMMON[@]}" -t $T -f "$TOPIC_FEAT $NGRAM_FEAT_OCC" \
+    --outcome_table $OT --outcomes is_student --output_name "$OUT/classification"
 check classification "classification csv written" files_exist "$OUT/classification.accuracy_data.csv"
 
 ##################
@@ -234,16 +222,14 @@ check classification "classification csv written" files_exist "$OUT/classificati
 if [ "$CORE_ONLY" -eq 0 ]; then
 
     # PMI collocation filter
-    run ngrams_pmi "${DLATK[@]}" -d $DB -t $T -c $G -f "$NGRAM_FEAT" \
-        --feat_colloc_filter --set_pmi_threshold 3
+    run ngrams_pmi bash "$TESTS/add_ngrams.sh" "${COMMON[@]}" -t $T -n "1 2" --combine_feat_tables 1to2gram \
+        --no_extract --set_pmi_threshold 3
     check ngrams_pmi "pmi-filtered feature table populated" table_nonempty "$NGRAM_FEAT_PMI"
 
     # Word DLA with a control variable, rendered as wordcloud images
     # (age has significant features in this sample; gender and is_student do not)
-    run dla_controls_wordclouds "${DLATK[@]}" -d $DB -t $T -c $G -f "$NGRAM_FEAT_OCC" \
-        --outcome_table $OT --group_freq_thresh $GFT \
-        --outcomes age --controls gender \
-        --correlate --tagcloud --make_wordclouds \
+    run dla_controls_wordclouds bash "$TESTS/correlate.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC" \
+        --outcome_table $OT --outcomes age --controls gender --make_wordclouds \
         --output_name "$OUT/dla_controls"
     check dla_controls_wordclouds "tagcloud and wordcloud images written" \
         eval 'files_exist "$OUT/dla_controls_tagcloud.txt" && dir_nonempty "$OUT/dla_controls_tagcloud_wordclouds"'
@@ -253,29 +239,26 @@ if [ "$CORE_ONLY" -eq 0 ]; then
         CREATE TABLE $SMALL_TOPIC_LEX LIKE dlatk_lexica.$TOPIC_FREQ;
         INSERT INTO $SMALL_TOPIC_LEX SELECT * FROM dlatk_lexica.$TOPIC_FREQ
             WHERE category IN ('0','1','2','3','4','5','6','7','8','9');"
-    run topic_wordclouds "${DLATK[@]}" -d $DB -t $T -c $G --lexicondb $DB --topic_lexicon $SMALL_TOPIC_LEX \
-        --make_all_topic_wordclouds --tagcloud_colorscheme blue \
-        --output_name "$OUT/topic_wordclouds"
+    run topic_wordclouds bash "$TESTS/make_all_topic_wordclouds.sh" "${COMMON[@]}" -t $T \
+        --lexicondb $DB --topic_lexicon $SMALL_TOPIC_LEX --output "$OUT/topic_wordclouds"
     check topic_wordclouds "topic wordcloud images written" dir_nonempty "$OUT/topic_wordclouds_alltopics"
 
     # Prediction with the recommended feature selection pipeline
-    run regression_magic_sauce "${DLATK[@]}" -d $DB -t $T -c $G -f "$TOPIC_FEAT" "$NGRAM_FEAT_OCC" \
-        --outcome_table $OT --group_freq_thresh $GFT --outcomes age \
-        --nfold_test_regression --model ridgecv --folds 10 --feature_selection magic_sauce --csv \
+    run regression_magic_sauce bash "$TESTS/regression.sh" "${COMMON[@]}" -t $T -f "$TOPIC_FEAT $NGRAM_FEAT_OCC" \
+        --outcome_table $OT --outcomes age --feature_selection magic_sauce \
         --output_name "$OUT/regression_magic_sauce"
     check regression_magic_sauce "regression csv written" \
         files_exist "$OUT/regression_magic_sauce.accuracy_data.csv"
 
-    run classification_magic_sauce "${DLATK[@]}" -d $DB -t $T -c $G -f "$TOPIC_FEAT" "$NGRAM_FEAT_OCC" \
-        --outcome_table $OT --group_freq_thresh $GFT --outcomes is_student \
-        --nfold_test_classifiers --model lr --folds 10 --feature_selection magic_sauce --csv \
+    run classification_magic_sauce bash "$TESTS/classification.sh" "${COMMON[@]}" -t $T -f "$TOPIC_FEAT $NGRAM_FEAT_OCC" \
+        --outcome_table $OT --outcomes is_student --feature_selection magic_sauce \
         --output_name "$OUT/classification_magic_sauce"
     check classification_magic_sauce "classification csv written" \
         files_exist "$OUT/classification_magic_sauce.accuracy_data.csv"
 
     # Message cleaning: each creates a new message table derived from the scratch table
     if "$PYTHON_BIN" -c "import langid" 2>/dev/null; then
-        run language_filter "${DLATK[@]}" -d $DB -t $T -c $G --language_filter en --clean_messages
+        run language_filter bash "$TESTS/clean_messages.sh" "${COMMON[@]}" -t $T --language_filter en
         check language_filter "${T}_en populated" table_nonempty "${T}_en"
     else
         echo "=== language_filter"
@@ -294,13 +277,13 @@ if [ "$CORE_ONLY" -eq 0 ]; then
         UPDATE ${DEDUP_T}_dups SET message_id = message_id + $DUP_ID_OFFSET;
         INSERT INTO $DEDUP_T SELECT * FROM ${DEDUP_T}_dups;"
     NUM_DUPS=$(mysql -Ne "SELECT COUNT(*) FROM $DB.${DEDUP_T}_dups" 2>/dev/null)
-    run deduplicate "${DLATK[@]}" -d $DB -t $DEDUP_T -c $G --deduplicate
+    run deduplicate bash "$TESTS/clean_messages.sh" "${COMMON[@]}" -t $DEDUP_T --deduplicate
     check deduplicate "exactly one of each of the $NUM_DUPS planted duplicate pairs kept in ${DEDUP_T}_dedup" \
         eval '[ "${NUM_DUPS:-0}" -gt 0 ] && [ "$(mysql -Ne "SELECT COUNT(*) FROM $DB.${DEDUP_T}_dups p
             WHERE (SELECT COUNT(*) FROM $DB.${DEDUP_T}_dedup d
                    WHERE d.message_id IN (p.message_id, p.message_id - $DUP_ID_OFFSET)) = 1")" = "$NUM_DUPS" ]'
 
-    run spam_filter "${DLATK[@]}" -d $DB -t $T -c $G --spam_filter
+    run spam_filter bash "$TESTS/clean_messages.sh" "${COMMON[@]}" -t $T --spam_filter
     check spam_filter "${T}_nospam populated" table_nonempty "${T}_nospam"
 
     # Transformer embeddings (one layer, mean per message then per user) on a 20-user,
@@ -308,8 +291,8 @@ if [ "$CORE_ONLY" -eq 0 ]; then
     mysql "$DB" -e "DROP TABLE IF EXISTS $EMB_T; CREATE TABLE $EMB_T LIKE $T;
         INSERT INTO $EMB_T SELECT m.* FROM $T m
         JOIN (SELECT DISTINCT $G FROM $T ORDER BY $G LIMIT 20) u USING ($G)" && cap_messages $EMB_T 5
-    run transformer_emb "${DLATK[@]}" -d $DB -t $EMB_T -c $G \
-        --add_emb_feat --emb_model $EMB_MODEL --emb_layers 5 --emb_table_name distilroberta
+    run transformer_emb bash "$TESTS/add_embeddings.sh" "${COMMON[@]}" -t $EMB_T \
+        --emb_model $EMB_MODEL --emb_layers 5 --emb_table_name distilroberta
     check transformer_emb "768-dimension embedding feature table populated" \
         eval '[ "$(num_feats "$EMB_FEAT")" = 768 ]'
 
@@ -317,7 +300,7 @@ if [ "$CORE_ONLY" -eq 0 ]; then
     # Attempted on any Python version: it works on 3.8 here, and a FAIL says more than a SKIP.
     echo "=== sentence_transformer"
     ST_LOG="$OUT/sentence_transformer.log"
-    if ST_IGNORE_PY_VERSION=1 bash "$ROOT/tests/sentence_transformer.sh" > "$ST_LOG" 2>&1; then
+    if ST_IGNORE_PY_VERSION=1 bash "$TESTS/sentence_transformer.sh" > "$ST_LOG" 2>&1; then
         if grep -q "^SKIP" "$ST_LOG"; then
             skip sentence_transformer "$(grep -m1 '^SKIP' "$ST_LOG" | sed 's/^SKIP: *//')"
         else

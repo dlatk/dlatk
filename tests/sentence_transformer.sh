@@ -21,10 +21,12 @@ if ! command -v mysql >/dev/null 2>&1; then
   exit 0
 fi
 
-# Require Python >= 3.9 (avoid tokenizer overflow issues)
-"$PYTHON_BIN" - <<'PY' || { echo "SKIP: Python < 3.9 (DLATK ST requires 3.9)"; exit 0; }
+# Require Python >= 3.9 (avoid tokenizer overflow issues); set ST_IGNORE_PY_VERSION=1 to try anyway
+if [[ -z "${ST_IGNORE_PY_VERSION:-}" ]]; then
+"$PYTHON_BIN" - <<'PY' || { echo "SKIP: Python < 3.9 (DLATK ST requires 3.9; set ST_IGNORE_PY_VERSION=1 to try anyway)"; exit 0; }
 import sys; sys.exit(0 if sys.version_info >= (3,9) else 1)
 PY
+fi
 
 
 # MySQL connection (defaults to ~/.my.cnf if present)

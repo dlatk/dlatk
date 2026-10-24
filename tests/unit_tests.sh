@@ -63,37 +63,51 @@ TOPIC_FEAT="feat\$cat_${TOPIC_CP}_w\$${T}\$${G}\$1gra"
 SMALL_TOPIC_LEX=${T}_topics
 EMB_MODEL=distilroberta-base
 EMB_T=${T}_emb
+DEDUP_T=${T}_dd
+DUP_ID_OFFSET=1000000000
 EMB_FEAT="feat\$distilroberta\$${EMB_T}\$${G}"
 
 mkdir -p "$OUT"
 PASSED=(); FAILED=(); SKIPPED=()
+
+# Each test ends as PASS, FAIL (with a reason) or SKIP (with a reason)
+pass() {
+    PASSED+=("$1")
+    echo "    PASS"
+}
+
+fail() {
+    FAILED+=("$1: $2")
+    echo "    FAIL: $2"
+}
+
+skip() {
+    SKIPPED+=("$1: $2")
+    echo "    SKIP: $2"
+}
 
 # run NAME CMD...: runs a dlatk command, logging to $OUT/NAME.log
 run() {
     local name=$1; shift
     echo "=== $name"
     (cd "$ROOT" && "$@") > "$OUT/$name.log" 2>&1
-    local rc=$?
-    [ $rc -eq 0 ] || echo "    command failed (exit $rc); see $OUT/$name.log"
-    return $rc
+    LAST_RC=$?
+    return $LAST_RC
 }
 
-# check NAME CONDITION_DESC TEST...: records pass/fail for a step
+# check NAME CONDITION_DESC TEST...: passes if TEST succeeds; otherwise fails with
+# CONDITION_DESC, what TEST reported missing, and dlatk's exit code if non-zero
 check() {
     local name=$1 desc=$2; shift 2
-    if "$@"; then
-        PASSED+=("$name")
-        echo "    PASS"
+    local detail
+    if detail=$("$@" 2>&1); then
+        pass "$name"
     else
-        FAILED+=("$name")
-        echo "    FAIL: $desc"
+        detail=$(echo "$detail" | sed 's/^ *//' | paste -sd ';' -)
+        [ "${LAST_RC:-0}" -ne 0 ] && detail="${detail:+$detail; }dlatk exited $LAST_RC"
+        fail "$name" "$desc${detail:+ ($detail)}; see $OUT/$name.log"
     fi
-}
-
-skip() {
-    echo "=== $1"
-    echo "    SKIP: $2"
-    SKIPPED+=("$1")
+    LAST_RC=0
 }
 
 table_exists() {
@@ -129,7 +143,7 @@ cap_messages() {
 
 # Drops the scratch table, tables derived from it (msgs_unittest_en, _dedup, ...) and their feature tables
 drop_scratch() {
-    mysql -Ne "SHOW TABLES FROM $DB" | grep -E "^${T}(_[a-z0-9]+)?\$|\\\$${T}(_[a-z0-9]+)?\\\$" | while read -r tbl; do
+    mysql -Ne "SHOW TABLES FROM $DB" | grep -E "^${T}(_[a-z0-9]+)*\$|\\\$${T}(_[a-z0-9]+)*\\\$" | while read -r tbl; do
         mysql -e "DROP TABLE IF EXISTS $DB.\`$tbl\`"
     done
 }
@@ -264,11 +278,27 @@ if [ "$CORE_ONLY" -eq 0 ]; then
         run language_filter "${DLATK[@]}" -d $DB -t $T -c $G --language_filter en --clean_messages
         check language_filter "${T}_en populated" table_nonempty "${T}_en"
     else
+        echo "=== language_filter"
         skip language_filter "python module langid not installed"
     fi
 
-    run deduplicate "${DLATK[@]}" -d $DB -t $T -c $G --deduplicate
-    check deduplicate "${T}_dedup populated" table_nonempty "${T}_dedup"
+    # Deduplication on 10 users x 5 messages plus one planted exact duplicate per user
+    # (copy of a non-empty, non-retweet message, with message_id + DUP_ID_OFFSET):
+    # passes only if exactly one message of every planted pair is kept
+    mysql "$DB" -e "DROP TABLE IF EXISTS $DEDUP_T, ${DEDUP_T}_dups; CREATE TABLE $DEDUP_T LIKE $T;
+        INSERT INTO $DEDUP_T SELECT m.* FROM $T m
+        JOIN (SELECT DISTINCT $G FROM $T ORDER BY $G LIMIT 10) u USING ($G)" && cap_messages $DEDUP_T 5 \
+    && mysql "$DB" -e "CREATE TABLE ${DEDUP_T}_dups SELECT * FROM $DEDUP_T WHERE message_id IN (
+            SELECT MIN(message_id) FROM $DEDUP_T
+            WHERE LENGTH(TRIM(message)) > 30 AND message NOT LIKE 'RT %' GROUP BY $G);
+        UPDATE ${DEDUP_T}_dups SET message_id = message_id + $DUP_ID_OFFSET;
+        INSERT INTO $DEDUP_T SELECT * FROM ${DEDUP_T}_dups;"
+    NUM_DUPS=$(mysql -Ne "SELECT COUNT(*) FROM $DB.${DEDUP_T}_dups" 2>/dev/null)
+    run deduplicate "${DLATK[@]}" -d $DB -t $DEDUP_T -c $G --deduplicate
+    check deduplicate "exactly one of each of the $NUM_DUPS planted duplicate pairs kept in ${DEDUP_T}_dedup" \
+        eval '[ "${NUM_DUPS:-0}" -gt 0 ] && [ "$(mysql -Ne "SELECT COUNT(*) FROM $DB.${DEDUP_T}_dups p
+            WHERE (SELECT COUNT(*) FROM $DB.${DEDUP_T}_dedup d
+                   WHERE d.message_id IN (p.message_id, p.message_id - $DUP_ID_OFFSET)) = 1")" = "$NUM_DUPS" ]'
 
     run spam_filter "${DLATK[@]}" -d $DB -t $T -c $G --spam_filter
     check spam_filter "${T}_nospam populated" table_nonempty "${T}_nospam"
@@ -283,19 +313,18 @@ if [ "$CORE_ONLY" -eq 0 ]; then
     check transformer_emb "768-dimension embedding feature table populated" \
         eval '[ "$(num_feats "$EMB_FEAT")" = 768 ]'
 
-    # Sentence-transformer embeddings (self-contained; builds and drops its own tables)
+    # Sentence-transformer embeddings (self-contained; builds and drops its own tables).
+    # Attempted on any Python version: it works on 3.8 here, and a FAIL says more than a SKIP.
     echo "=== sentence_transformer"
-    if bash "$ROOT/tests/sentence_transformer.sh" > "$OUT/sentence_transformer.log" 2>&1; then
-        if grep -q "^SKIP" "$OUT/sentence_transformer.log"; then
-            SKIPPED+=("sentence_transformer")
-            echo "    $(grep -m1 '^SKIP' "$OUT/sentence_transformer.log")"
+    ST_LOG="$OUT/sentence_transformer.log"
+    if ST_IGNORE_PY_VERSION=1 bash "$ROOT/tests/sentence_transformer.sh" > "$ST_LOG" 2>&1; then
+        if grep -q "^SKIP" "$ST_LOG"; then
+            skip sentence_transformer "$(grep -m1 '^SKIP' "$ST_LOG" | sed 's/^SKIP: *//')"
         else
-            PASSED+=("sentence_transformer")
-            echo "    PASS"
+            pass sentence_transformer
         fi
     else
-        FAILED+=("sentence_transformer")
-        echo "    FAIL: see $OUT/sentence_transformer.log"
+        fail sentence_transformer "$(grep -m1 '^FAIL' "$ST_LOG" | sed 's/^FAIL: *//')${ST_LOG:+; see $ST_LOG}"
     fi
 fi
 
@@ -303,7 +332,9 @@ fi
 
 echo
 echo "Passed (${#PASSED[@]}): ${PASSED[*]}"
-echo "Failed (${#FAILED[@]}): ${FAILED[*]}"
-echo "Skipped (${#SKIPPED[@]}): ${SKIPPED[*]}"
+echo "Failed (${#FAILED[@]}):"
+for f in "${FAILED[@]}"; do echo "  - $f"; done
+echo "Skipped (${#SKIPPED[@]}):"
+for s in "${SKIPPED[@]}"; do echo "  - $s"; done
 echo "Logs and outputs: $OUT"
 [ ${#FAILED[@]} -eq 0 ]

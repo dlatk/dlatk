@@ -60,8 +60,11 @@ Then, from the repo root:
 
 It runs the repo's own dlatkInterface.py (not an installed copy) on a scratch table,
 dla_tutorial.msgs_unittest: a fixed random sample of 150 users (-n) capped at 30 messages each (-m),
-so msgs is never modified. Each step logs to the output folder (-o, default a new temp folder), and
-the script ends with a list of passed / failed / skipped tests and exits non-zero if any failed.
+so msgs is never modified. Each step logs to the output folder (-o, default a new temp folder).
+Every test ends as PASS, FAIL or SKIP; FAIL and SKIP give a reason (e.g. which output was missing,
+dlatk's exit code, or which dependency is not installed) and the log to look at. The script ends with
+a summary of all three and exits non-zero if any test failed. Note that dlatk can exit 0 after an
+error, so each test also checks for the tables/files the step should produce.
 Scratch tables are dropped at the end unless -k is given; with -k, a later run can add -s to skip
 sampling and n-gram extraction (the slowest step) and start from the occurrence filter.
 
@@ -75,10 +78,13 @@ Core tests:
  - --nfold_test_classifiers --model lr on is_student (topics + ngrams)
 Extended tests (skipped with -c):
  - --feat_colloc_filter --set_pmi_threshold 3
- - DLA with --controls and --make_wordclouds (needs Java)
+ - DLA with --controls (age controlling for gender) and --make_wordclouds (needs Java)
  - --make_all_topic_wordclouds on a 10-topic slice of the Facebook topics
  - regression and classification with --feature_selection magic_sauce
  - message cleaning: --language_filter en --clean_messages (skipped without langid),
-   --deduplicate, --spam_filter
- - sentence-transformer embeddings (tests/sentence_transformer.sh; skipped on Python < 3.9)
-A full run takes roughly 10-15 minutes, most of it n-gram extraction.
+   --deduplicate (on 10 users with one planted duplicate each; exactly one of each pair must remain),
+   --spam_filter
+ - transformer embeddings: --add_emb_feat --emb_model distilroberta-base on 20 users x 5 messages
+ - sentence-transformer embeddings (tests/sentence_transformer.sh)
+A full run takes roughly 15 minutes on CPU: about 6.5 for n-gram extraction, 2 for transformer
+embeddings and 1 for sentence transformers. With -s, a rerun takes about 8 minutes.

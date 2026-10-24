@@ -12,6 +12,7 @@ from importlib.machinery import PathFinder
 from pathlib import Path
 
 import subprocess
+import tempfile
 from subprocess import check_call, CalledProcessError
 
 from numpy import array
@@ -278,9 +279,10 @@ def wordcloud(word_list, freq_list, output_prefix='test',
         if background_color[0] == "#": #TODO: do an actual HEX check
             background_color = background_color[1:]
 
-        config_loc = PERMA_path + "/wc_config.txt";
-        #if not os.path.isfile(config_loc):
-        with open(config_loc, "w") as f:
+        # Per-call temp file rather than the package folder, which may be read-only (installed)
+        # and should not change in a git checkout
+        with tempfile.NamedTemporaryFile("w", suffix="_wc_config.txt", delete=False) as f:
+            config_loc = f.name
             f.write('font: ' + font_path + '\n')
             f.write("format: tab\n" +
                     "inputencoding: UTF-8\n" +
@@ -351,8 +353,11 @@ def wordcloud(word_list, freq_list, output_prefix='test',
         print('Generating wordcloud at ' + pngFile)
 
         #print ' '.join(command)
-        with open(os.devnull, 'w') as fnull: #for suppressing outputs of the command
-            subprocess.call(command, stdout=fnull, stderr=subprocess.STDOUT)
+        try:
+            with open(os.devnull, 'w') as fnull: #for suppressing outputs of the command
+                subprocess.call(command, stdout=fnull, stderr=subprocess.STDOUT)
+        finally:
+            os.remove(config_loc)
 
     else:
         print("Wordcloud algorithm not recognized.")

@@ -1630,7 +1630,9 @@ class FeatureExtractor(DLAWorker):
                     return_tensors="pt",
                     truncation=True,
                     max_length=max_length,
-                ).to('cuda')
+                )
+                if cuda:
+                    tokens = tokens.to('cuda')
             except OverflowError:
                 print("=== OVERFLOW DETECTED ===")
                 print(f"Type: {type(text)}")

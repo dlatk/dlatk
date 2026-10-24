@@ -345,7 +345,7 @@ def wordcloud(word_list, freq_list, output_prefix='test',
                     print(tup)
                 #str is necessary in case the words are numbers
 
-        command = ['java','-jar', str(ibm_jar), '-c',
+        command = ['java', '-Djava.awt.headless=true', '-jar', str(ibm_jar), '-c',
                     config_loc, '-w', str(width), '-h', str(height), '-i',
                     words_loc, '-o', pngFile]
         print('Generating wordcloud at ' + pngFile)

@@ -154,8 +154,9 @@ class DimensionReducer:
             "iterated_power": 3,
             "svd_solver": "randomized",
         },
-        "spectralclustering": {"n_clusters": 2},
-        "sc": {"n_clusters": 2},
+        # kNN affinity: the default rbf (gamma=1) collapses to ~0 for high-dim embeddings
+        "spectralclustering": {"n_clusters": 2, "affinity": "nearest_neighbors", "n_neighbors": 10, "random_state": 42},
+        "sc": {"n_clusters": 2, "affinity": "nearest_neighbors", "n_neighbors": 10, "random_state": 42},
         "fa": {"n_components": 10, "random_state": 42},
         "ppa": {"D": 1},  # None defaults to original dimensions / 100
         "ae": {"n_components": 128, "layers": 2, "epochs": 4, "dropout_prob": 0, "batch_size": 100},
@@ -204,6 +205,8 @@ class DimensionReducer:
             sys.exit()
         if modelName == "lda":
             component_name = "nb_topics"
+        elif modelName in ("spectralclustering", "sc"):
+            component_name = "n_clusters"
         else:
             component_name = "n_components"
         try:

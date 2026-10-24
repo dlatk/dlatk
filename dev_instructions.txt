@@ -42,3 +42,43 @@ Suggested Unit Tests (using age and occupation as outcomes):
 --topic_tagclouds --topic_lex
 --nfold_test_regression --model ridgecv
 --nfold_test_classif --model lr --cat_to_bin occupation
+  (unit_tests.sh classifies is_student instead: --cat_to_bin occu makes some classes too rare
+   for 10 folds on the small test sample)
+
+
+Running the Unit Tests:
+=======================
+tests/unit_tests.sh runs the suggested unit tests above, plus extended tests, using only the data
+distributed with dlatk. Load it first (see README / CLAUDE.md):
+   mysql -e 'CREATE DATABASE dla_tutorial'; cat dlatk/data/dla_tutorial.sql | mysql dla_tutorial
+   mysql -e 'CREATE DATABASE dlatk_lexica'; cat dlatk/data/dlatk_lexica.sql | mysql dlatk_lexica
+
+Then, from the repo root:
+   bash tests/unit_tests.sh            # all tests
+   bash tests/unit_tests.sh -c         # core tests only
+   bash tests/unit_tests.sh -h         # all options
+
+It runs the repo's own dlatkInterface.py (not an installed copy) on a scratch table,
+dla_tutorial.msgs_unittest: a fixed random sample of 150 users (-n) capped at 30 messages each (-m),
+so msgs is never modified. Each step logs to the output folder (-o, default a new temp folder), and
+the script ends with a list of passed / failed / skipped tests and exits non-zero if any failed.
+Scratch tables are dropped at the end unless -k is given; with -k, a later run can add -s to skip
+sampling and n-gram extraction (the slowest step) and start from the occurrence filter.
+
+Core tests:
+ - 1-2gram extraction and --combine_feat_tables
+ - --feat_occ_filter (--set_p_occ 0.2 by default, -p)
+ - topic extraction: --add_lex_table -l met_a30_2000_cp --weighted_lexicon
+ - word DLA: --correlate --rmatrix --csv --sort --tagcloud on age and occupation (--cat_to_bin occu)
+ - topic DLA: the same plus --topic_tagcloud --topic_lexicon met_a30_2000_freq_t50ll
+ - --nfold_test_regression --model ridgecv on age (topics + ngrams)
+ - --nfold_test_classifiers --model lr on is_student (topics + ngrams)
+Extended tests (skipped with -c):
+ - --feat_colloc_filter --set_pmi_threshold 3
+ - DLA with --controls and --make_wordclouds (needs Java)
+ - --make_all_topic_wordclouds on a 10-topic slice of the Facebook topics
+ - regression and classification with --feature_selection magic_sauce
+ - message cleaning: --language_filter en --clean_messages (skipped without langid),
+   --deduplicate, --spam_filter
+ - sentence-transformer embeddings (tests/sentence_transformer.sh; skipped on Python < 3.9)
+A full run takes roughly 10-15 minutes, most of it n-gram extraction.

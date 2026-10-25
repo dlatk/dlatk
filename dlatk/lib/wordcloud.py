@@ -74,6 +74,27 @@ def wordcloudByFile(input_filename, output_filename='wordle_test'):
     freq_list = [x[1] for x in word_freq_pairs]
     wordcloud(word_list, freq_list)
 
+IBM_JAR_NAME = "ibm-word-cloud.jar"
+_ibm_jar_note_shown = False
+
+def _findIbmJar(lib_path):
+    """Returns the IBM wordcloud jar from dlatk/lib or DEF_WORDCLOUD_JAR, or None if neither exists"""
+    for jar in (Path(lib_path) / IBM_JAR_NAME, Path(dlac.DEF_WORDCLOUD_JAR)):
+        if jar.is_file():
+            return jar
+    return None
+
+def _noteMissingIbmJar(lib_path):
+    """Tells the user (once per run) that the IBM jar makes better wordclouds than the fallback"""
+    global _ibm_jar_note_shown
+    if _ibm_jar_note_shown:
+        return
+    _ibm_jar_note_shown = True
+    print("NOTE: %s not found, so wordclouds are made with the 'wordcloud' Python package instead "
+          "(pip install dlatk[wordcloud] if it is missing). The IBM jar produces better wordclouds: "
+          "add %s to %s (or %s)."
+          % (IBM_JAR_NAME, IBM_JAR_NAME, lib_path, os.path.dirname(dlac.DEF_WORDCLOUD_JAR)))
+
 def _makeRandomColorTuples(num_rgb_tuples, rgb_bounds=[0, 0.39]):
     """Create a list of length num_rgb_tuples, where every element is a random hex color"""
     assert(num_rgb_tuples > 0)
@@ -96,9 +117,12 @@ def wordcloud(word_list, freq_list, output_prefix='test',
     """given a list of words and a list of their frequencies, builds a wordle"""
 
     PERMA_path = os.path.dirname(os.path.realpath(__file__))
-    
-    ibm_jar = Path(dlac.DEF_WORDCLOUD_JAR)
-    if not ibm_jar.is_file(): wordcloud_algorithm = 'amueller'
+
+    ibm_jar = _findIbmJar(PERMA_path)
+    if ibm_jar is None:
+        if wordcloud_algorithm == 'ibm':
+            _noteMissingIbmJar(PERMA_path)
+        wordcloud_algorithm = 'amueller'
 
     if font_path == "":
         font_path = PERMA_path + "/meloche_bd.ttf"

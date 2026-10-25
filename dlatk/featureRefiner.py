@@ -352,7 +352,6 @@ class FeatureRefiner(FeatureGetter):
             if p < 1: threshold = int(round(p*totalGroups))
         dlac.warn (" %s [threshold: %d]" %(featureTable, threshold))
 
-
         #apply filter:
         toKeep = set()
         i = 0
@@ -380,40 +379,30 @@ class FeatureRefiner(FeatureGetter):
             
         return toKeep, threshold
 
-    def _autoMinGroups(self, mode, totalGroups, counts):
-        """Returns the minimum number of groups a feature must be used by for --set_p_occ auto or auto_prediction
+    def _autoMinGroups(self, mode, N, counts):
+        """Returns the minimum number of groups (of N) a feature must be used by for --set_p_occ auto or auto_prediction
 
-        auto requires k = max(5, 0.75*sqrt(N)) groups and keeps at most min(50000, 5*N^0.75) features, which suits
-        DLA, where every feature must pass a multiple-test correction. auto_prediction halves k and keeps at
-        most 20*N features: features need not be significant on their own to help a prediction model.
-        The cap is met by raising k, so the threshold is always a group count.
+        auto requires k = max(5, 0.75*sqrt(N)) groups and keeps at most 5*N^0.75 features, which suits DLA,
+        where every feature must pass a multiple-test correction. auto_prediction halves k and keeps at most
+        10*N features: features need not be significant on their own to help a prediction model.
+        The cap is met by raising k, at most to N (dense tables keep the features every group uses).
         """
-        N = totalGroups
         k = max(dlac.DEF_AUTO_POCC_K_MIN, int(math.ceil(dlac.DEF_AUTO_POCC_K_C * math.sqrt(N))))
-        cap = min(dlac.DEF_AUTO_POCC_CAP_MAX, dlac.DEF_AUTO_POCC_CAP_C * N ** dlac.DEF_AUTO_POCC_CAP_EXP)
+        cap = int(dlac.DEF_AUTO_POCC_CAP_C * N ** dlac.DEF_AUTO_POCC_CAP_EXP)
         if mode == 'auto_prediction':
-            k = int(math.ceil(k / 2.0))
-            cap = dlac.DEF_AUTO_PRED_POCC_CAP_C * N
-        cap = int(cap)
-        kMin = k
+            k, cap = int(math.ceil(k / 2.0)), dlac.DEF_AUTO_PRED_POCC_CAP_C * N
         counts = sorted(counts, reverse=True)
-        if len(counts) > cap:
-            k = max(k, counts[cap] + 1)
-        if k > N:
-            #dense table (e.g. topics or embeddings): too many features are used by every group to fit the cap
-            dlac.warn("--set_p_occ %s: more than %d features are used by all %d groups, so all %d features are kept"
-                      % (mode, cap, N, len(counts)), attention=True)
-            return 1
-        numKept = sum(1 for c in counts if c >= k)
-        if numKept < min(len(counts), dlac.DEF_AUTO_POCC_MIN_FEATS):
-            k = counts[min(len(counts), dlac.DEF_AUTO_POCC_MIN_FEATS) - 1]
-            numKept = sum(1 for c in counts if c >= k)
+        threshold = min(max(k, counts[cap] + 1), N) if len(counts) > cap else k
+        numKept = sum(1 for c in counts if c >= threshold)
         dlac.warn(" --set_p_occ %s: %d groups; minimum groups per feature %d, at most %d features -> threshold %d groups (p_occ %.4f), keeping %d of %d features"
-                  % (mode, N, kMin, cap, k, k / float(N), numKept, len(counts)))
-        if mode == 'auto_prediction' and numKept > dlac.DEF_AUTO_PRED_POCC_WARN:
+                  % (mode, N, k, cap, threshold, threshold / float(N), numKept, len(counts)))
+        if numKept > cap:
+            dlac.warn("--set_p_occ %s: more than %d features are used by all %d groups (a dense table?), so those %d are kept"
+                      % (mode, cap, N, numKept), attention=True)
+        elif mode == 'auto_prediction' and numKept > dlac.DEF_AUTO_PRED_POCC_WARN:
             dlac.warn("--set_p_occ auto_prediction keeps %d features; consider --set_p_occ auto or a fixed p_occ if models run out of memory"
                       % numKept, attention=True)
-        return k
+        return threshold
 
     def createStandardizedFeatTable(self, use_mean = True, use_std = True, groupFreqThresh = 0, setGFTWarning = False, where=None):
         #creates a copy of a feature table where all group_norms have been standardized

@@ -182,7 +182,7 @@ def main(fn_args = None):
     group.add_argument('--set_p_occ', '--set_pocc', metavar='P', dest='pocc', type=pOccArg, default=dlac.DEF_P_OCC,
                        help='For --feat_occ_filter: keep features used by at least this fraction of groups (if >= 1, this many groups). '
                             '"auto" sets the number of groups from how many groups there are, keeping a feature count suited to DLA; '
-                            '"auto_prediction" halves that requirement and keeps up to 20 features per group, for prediction.')
+                            '"auto_prediction" halves that requirement and keeps up to 10 features per group, for prediction.')
     group.add_argument('--set_pmi_threshold', metavar='PMI', dest='pmi', type=float, default=dlac.DEF_PMI,
                        help='The threshold for the feat_colloc_filter.')
     group.add_argument('--set_min_feat_sum', metavar='N', dest='minfeatsum', type=int, default=dlac.DEF_MIN_FEAT_SUM,#TODO: Deprecate?

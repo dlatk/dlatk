@@ -27,13 +27,13 @@ Default: 0.01
 Details
 =======
 
-**auto.** A feature must be used by at least k = max(5, 0.75·√N) groups, and at most min(50,000, 5·N^0.75) features are kept; if more pass, k is raised until they fit. The chosen k is printed and names the table (e.g. ``$46``), so ``--set_p_occ 46`` reproduces it.
+**auto.** A feature must be used by at least k = max(5, 0.75·√N) groups, and at most 5·N^0.75 features are kept; if more pass, k is raised until they fit. The chosen k is printed and names the table (e.g. ``$46``), so ``--set_p_occ 46`` reproduces it.
 
 Why these rules: how reliably a feature is measured within a group depends on how many words the group has, not on how many groups there are. Since n-gram use is zero-inflated (each group has its own vocabulary and simply never uses most words), a feature used by k groups is estimated from those k groups, and the smallest effect DLA can detect on it shrinks with √k. Requiring k to grow with √N keeps rare, noisy features out while still admitting more features as groups gain words, because then more groups use each feature. The cap reflects that every extra feature makes the multiple-test correction in DLA harder to pass: with few words per group the minimum number of groups sets the count, and with many words per group the cap does. This is the intended behavior: once groups have many words, each group's feature values are already measured reliably, and what limits how many features DLA can usefully test is the number of groups, which supply the variation across groups that correlations are estimated from and the statistical power to survive correction for testing more features.
 
-**auto_prediction** essentially halves the criteria: it requires half as many groups (k/2) and keeps up to 20·N features. Prediction models are much more admissible of features, since a feature does not have to be significant on its own to help a prediction. It warns above 200,000 features.
+**auto_prediction** essentially halves the criteria: it requires half as many groups (k/2) and keeps up to 10·N features (10 per group). Prediction models are much more admissible of features, since a feature does not have to be significant on its own to help a prediction. The cap grows with N rather than N^0.75 because what limits a prediction model is how many features it can estimate from N groups without overfitting, rather than a multiple-test correction. The cap still leans toward fewer features (bias over variance), so that an automatic choice is unlikely to overfit. It warns above 200,000 features.
 
-If the cap is filled by features that every group uses (dense tables such as topics or embeddings), all features are kept, with a warning. At least 10 features are always kept.
+If more features than the cap are used by every group (dense tables such as topics or embeddings), k stops at N, keeping the features every group uses, with a warning. Occurrence filtering is meant for sparse features such as n-grams.
 
 **Estimating how many n-gram features are kept.** For 1-2grams, the number of features used by at least a fraction p of groups is approximately
 
@@ -53,10 +53,10 @@ N=100,000  4.5k   28k    28k    28k      28k
 ================  =====  =====  =====  =======  ========
 auto_prediction   W=30   W=200  W=500  W=2,000  W=20,000
 ================  =====  =====  =====  =======  ========
-N=50              71     472    1.0k   1.0k     1.0k
-N=500             339    2.3k   5.6k   10k      10k
-N=5,000           1.6k   11k    26k    100k     100k
-N=100,000         11k    73k    183k   733k     2.0M
+N=50              71     472    500    500      500
+N=500             339    2.3k   5.0k   5.0k     5.0k
+N=5,000           1.6k   11k    26k    50k      50k
+N=100,000         11k    73k    183k   733k     1.0M
 ================  =====  =====  =====  =======  ========
 
 Other Switches

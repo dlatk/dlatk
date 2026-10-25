@@ -65,9 +65,12 @@ def pOccArg(value):
     if value in dlac.AUTO_POCC_MODES:
         return value
     try:
-        return float(value)
+        value = float(value)
     except ValueError:
         raise argparse.ArgumentTypeError("must be a number or one of: %s" % ", ".join(dlac.AUTO_POCC_MODES))
+    if value >= 1 and value.is_integer():
+        return int(value) #a group count: the table is named $46, not $46_0
+    return value
 
 def main(fn_args = None):
     """

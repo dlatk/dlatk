@@ -282,7 +282,9 @@ class FeatureRefiner(FeatureGetter):
         """creates a new table with features that appear in more than p*|correl_field| rows, only considering groups above groupfreqthresh"""
         if not setGFTWarning:
             dlac.warn("""group_freq_thresh is set to %s. Be aware that groups might be removed during this process and your group norms will reflect this.""" % (groupFreqThresh), attention=True)
-        toKeep = self._getKeepSet(p, minimumFeatSum, groupFreqThresh)
+        toKeep, threshold = self._getKeepSet(p, minimumFeatSum, groupFreqThresh)
+        if p in dlac.AUTO_POCC_MODES:
+            p = threshold #auto tables are named by their group count, reproducible with --set_p_occ <count>
         label = str(p).replace('.', '_')
         if 'e' in label:
             label = label.replace('-','n')
@@ -340,15 +342,17 @@ class FeatureRefiner(FeatureGetter):
         featureTable = self.featureTable
         totalGroups = self.countGroups(groupFreqThresh)
         assert totalGroups > 0, 'NO GROUPS TO FILTER BASED ON (LIKELY group_freq_thresh IS TOO HIGH)'
-        #assert p <= 1, 'p_occ > 1 not implemented yet'
-        threshold = p
-        if p < 1: threshold = int(round(p*totalGroups))
+        #acquire counts per feature (each row will come from a different correl_field)
+        featCounts = self.getFeatureCounts(groupFreqThresh) #tuples of: feat, count (number of groups feature appears with)
+
+        if p in dlac.AUTO_POCC_MODES:
+            threshold = self._autoMinGroups(p, totalGroups, [count for (feat, count) in featCounts])
+        else:
+            threshold = p
+            if p < 1: threshold = int(round(p*totalGroups))
         dlac.warn (" %s [threshold: %d]" %(featureTable, threshold))
 
-        #acquire counts per feature (each row will come from a different correl_field)
 
-        featCounts = self.getFeatureCounts(groupFreqThresh) #tuples of: feat, count (number of groups feature appears with)
-        
         #apply filter:
         toKeep = set()
         i = 0
@@ -374,7 +378,42 @@ class FeatureRefiner(FeatureGetter):
                     if fsum < minimumFeatSum:
                         toKeep.remove(feat)
             
-        return toKeep
+        return toKeep, threshold
+
+    def _autoMinGroups(self, mode, totalGroups, counts):
+        """Returns the minimum number of groups a feature must be used by for --set_p_occ auto or auto_prediction
+
+        auto requires k = max(5, 0.75*sqrt(N)) groups and keeps at most min(50000, 5*N^0.75) features, which suits
+        DLA, where every feature must pass a multiple-test correction. auto_prediction halves k and keeps at
+        most 20*N features: features need not be significant on their own to help a prediction model.
+        The cap is met by raising k, so the threshold is always a group count.
+        """
+        N = totalGroups
+        k = max(dlac.DEF_AUTO_POCC_K_MIN, int(math.ceil(dlac.DEF_AUTO_POCC_K_C * math.sqrt(N))))
+        cap = min(dlac.DEF_AUTO_POCC_CAP_MAX, dlac.DEF_AUTO_POCC_CAP_C * N ** dlac.DEF_AUTO_POCC_CAP_EXP)
+        if mode == 'auto_prediction':
+            k = int(math.ceil(k / 2.0))
+            cap = dlac.DEF_AUTO_PRED_POCC_CAP_C * N
+        cap = int(cap)
+        kMin = k
+        counts = sorted(counts, reverse=True)
+        if len(counts) > cap:
+            k = max(k, counts[cap] + 1)
+        if k > N:
+            #dense table (e.g. topics or embeddings): too many features are used by every group to fit the cap
+            dlac.warn("--set_p_occ %s: more than %d features are used by all %d groups, so all %d features are kept"
+                      % (mode, cap, N, len(counts)), attention=True)
+            return 1
+        numKept = sum(1 for c in counts if c >= k)
+        if numKept < min(len(counts), dlac.DEF_AUTO_POCC_MIN_FEATS):
+            k = counts[min(len(counts), dlac.DEF_AUTO_POCC_MIN_FEATS) - 1]
+            numKept = sum(1 for c in counts if c >= k)
+        dlac.warn(" --set_p_occ %s: %d groups; minimum groups per feature %d, at most %d features -> threshold %d groups (p_occ %.4f), keeping %d of %d features"
+                  % (mode, N, kMin, cap, k, k / float(N), numKept, len(counts)))
+        if mode == 'auto_prediction' and numKept > dlac.DEF_AUTO_PRED_POCC_WARN:
+            dlac.warn("--set_p_occ auto_prediction keeps %d features; consider --set_p_occ auto or a fixed p_occ if models run out of memory"
+                      % numKept, attention=True)
+        return k
 
     def createStandardizedFeatTable(self, use_mean = True, use_std = True, groupFreqThresh = 0, setGFTWarning = False, where=None):
         #creates a copy of a feature table where all group_norms have been standardized

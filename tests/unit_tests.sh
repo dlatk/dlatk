@@ -122,6 +122,17 @@ num_feats() {
     mysql -Ne "SELECT COUNT(DISTINCT feat) FROM $DB.\`$1\`" 2>/dev/null
 }
 
+# auto_occ_ok LOG: the --set_p_occ auto table named by the threshold in LOG exists and fits the cap
+auto_occ_ok() {
+    local k cap n
+    k=$(grep -o 'threshold [0-9]* groups' "$1" | grep -o '[0-9]*')
+    cap=$(grep -o 'at most [0-9]* features' "$1" | grep -o '[0-9]*')
+    [ -n "$k" ] && [ -n "$cap" ] || { echo "    no auto threshold in log"; return 1; }
+    table_nonempty "${NGRAM_FEAT}\$${k}" || { echo "    missing: ${NGRAM_FEAT}\$${k}"; return 1; }
+    n=$(num_feats "${NGRAM_FEAT}\$${k}")
+    [ "$n" -le "$cap" ] || { echo "    $n features is over the cap of $cap"; return 1; }
+}
+
 files_exist() {
     for f in "$@"; do [ -s "$f" ] || { echo "    missing: $f"; return 1; }; done
 }
@@ -225,6 +236,13 @@ if [ "$CORE_ONLY" -eq 0 ]; then
     run ngrams_pmi bash "$TESTS/add_ngrams.sh" "${COMMON[@]}" -t $T -n "1 2" --combine_feat_tables 1to2gram \
         --no_extract --set_pmi_threshold 3
     check ngrams_pmi "pmi-filtered feature table populated" table_nonempty "$NGRAM_FEAT_PMI"
+
+    # Automatic occurrence thresholds (table named by the chosen group count)
+    for mode in auto auto_prediction; do
+        run ngrams_occ_$mode bash "$TESTS/add_ngrams.sh" "${COMMON[@]}" -t $T -n "1 2" --combine_feat_tables 1to2gram \
+            --no_extract --set_p_occ $mode
+        check ngrams_occ_$mode "--set_p_occ $mode table populated within its feature cap" auto_occ_ok "$OUT/ngrams_occ_$mode.log"
+    done
 
     # Word DLA with a control variable, rendered as wordcloud images
     # (age has significant features in this sample; gender and is_student do not)

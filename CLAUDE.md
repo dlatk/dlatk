@@ -113,6 +113,7 @@ python3 dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \
 | `16to8` | Anscombe transform |
 | `16to4` | sqrt transform |
 | `0_05` | occurrence filter (5% threshold) |
+| `46` | occurrence filter by group count (`--set_p_occ 46`, or the count chosen by `--set_p_occ auto`) |
 | `pmi3_0` | PMI threshold 3.0 |
 
 Examples:

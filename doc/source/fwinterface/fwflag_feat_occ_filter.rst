@@ -20,7 +20,7 @@ There is no default value.
 Details
 =======
 
-Group ratio is set by :doc:`fwflag_set_p_occ` RATIO_OF_GROUPS. Then feat_occ_filter filters features so as to keep only those features which are used by RATIO_OF_GROUPS number of groups or more. The missing features are aggregated into a feature called <OOV> which contains the value and group norm data for all the missing features.  
+Group ratio is set by :doc:`fwflag_set_p_occ` RATIO_OF_GROUPS. Then feat_occ_filter filters features so as to keep only those features which are used by RATIO_OF_GROUPS of the groups or more (a value of 1 or more is a number of groups; ``auto`` and ``auto_prediction`` choose it from the number of groups, see :doc:`fwflag_set_p_occ`). The missing features are aggregated into a feature called <OOV> which contains the value and group norm data for all the missing features.  
 
 
 Other Switches

@@ -104,6 +104,17 @@ DEF_N = int(1)
 DEF_FEAT_NAMES = ['honor']
 DEF_MIN_FREQ = int(1) #min frequency per group to keep (don't advise above 1)
 DEF_P_OCC = float(.01) #percentage of groups a feature must appear in, to keep it
+# --set_p_occ auto: features must be used by k = max(5, 0.75*sqrt(N)) of the N groups, keeping at most
+# min(50000, 5*N^0.75) features (k is raised until they fit). auto_prediction halves k and keeps at most 20*N.
+DEF_AUTO_POCC_K_C = 0.75
+DEF_AUTO_POCC_K_MIN = 5
+DEF_AUTO_POCC_CAP_C = 5
+DEF_AUTO_POCC_CAP_EXP = 0.75
+DEF_AUTO_POCC_CAP_MAX = 50000
+DEF_AUTO_PRED_POCC_CAP_C = 20 #auto_prediction keeps at most this many features per group
+DEF_AUTO_PRED_POCC_WARN = 200000 #auto_prediction warns when keeping more features than this
+DEF_AUTO_POCC_MIN_FEATS = 10 #auto keeps at least this many features
+AUTO_POCC_MODES = ('auto', 'auto_prediction')
 DEF_PMI = 3.0
 DEF_MIN_FEAT_SUM = 0 #minimum sum of feature total to keep
 DEF_LEXICON_DB = 'dlatk_lexica'

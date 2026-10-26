@@ -8,6 +8,13 @@ DLATK is an end-to-end social media text analysis toolkit. The single entry poin
 
 ## Design Principles
 
+- **Read the tutorials before running dlatk.** They are at https://dlatk.github.io/dlatk/tutorials.html (source:
+  `doc/source/tutorials/*.rst`, start with `tut_dla`, `tut_pred`, `tut_adv_fe`, `tut_feat_tables`, `tut_dla_rot`)
+  and show the intended order of steps and which tables each step expects. Easy-to-miss prerequisites:
+  `--add_lex_table` and `--group_freq_thresh` read the 1gram "word table" whose name dlatk builds from `-d/-t/-g`
+  (`feat$1gram$<t>$<g>`, override with `--word_table`), so extract 1grams first; extract topic features with the
+  `_cp` lexicon and use `_freq_t50ll` only for `--topic_tagcloud --topic_lexicon`. Some flag names and output in
+  the tutorials are older than the code; where they disagree, `dlatkInterface.py -h` and the code win.
 - **Keep raw data on the server.** Never send messages, outcomes, feature tables or query results that contain them
   to anything outside this server: no web or API requests, uploads, pastes, issues/PRs, published pages, or
   external model endpoints. Don't commit data files. Downloading models and packages is fine. Share only
@@ -138,6 +145,36 @@ python3 dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \
   --outcome_table blog_outcomes --group_freq_thresh 500 \
   --outcomes gender --output_name /tmp/class_out \
   --nfold_test_classifiers --model lr --folds 10
+```
+
+## Learning LDA Topics (suggested settings)
+
+Learn topics from message-level 1grams kept if used in at least 3 messages, using Mallet (on this server:
+`/data/mallet/Mallet/bin/mallet`), alpha 2, 700 iterations. A whole-number `--set_p_occ` is a group count, so the
+table is `$3`.
+
+- **Number of topics** depends on the project and data (50 below is a starting point): topics tend to get more
+  coherent as you add more, but duplicate topics start appearing.
+- **Stopwords:** LDA handles the head of the Zipf distribution poorly. dlatk removes the `--num_stopwords` most
+  common words (default 50; try 75 or 100) rather than a fixed list, because fixed lists, which other
+  implementations use, miss other head-of-distribution words that throw LDA off. Sometimes it's best to remove
+  function words plus the top ~30 most common words: `--num_stopwords 30 --extra_lda_stopwords FUNCTION_WORDS_FILE`
+  (one word per line).
+
+```sh
+python3 dlatkInterface.py -d DB -t MSGS -g message_id --group_freq_thresh 5 --add_ngrams -n 1 --feat_occ_filter --set_p_occ 3
+python3 dlatkInterface.py -d DB -t MSGS -g message_id --group_freq_thresh 5 -f 'feat$1gram$MSGS$message_id$3' \
+  --estimate_lda_topics --mallet_path /data/mallet/Mallet/bin/mallet --lda_lexicon_name NAME_50 \
+  --num_topics 50 --lda_alpha 2 --num_stopwords 50 --lda_iterations 700 --save_lda_files /tmp/lda_files
+# review every topic before using them
+python3 dlatkInterface.py -d DB -t MSGS -g message_id --make_all_topic_wordclouds \
+  --topic_lexicon NAME_50_freq_t50ll --output_name OUTDIR/NAME_50
+# apply at the user level (or -g message_id with the $3 table above); extract with _cp, cloud with _freq_t50ll
+python3 dlatkInterface.py -d DB -t MSGS -g user_id --group_freq_thresh 5 --add_ngrams -n 1 --feat_occ_filter \
+  --set_p_occ 2 --add_lex_table -l NAME_50_cp --weighted_lexicon
+python3 dlatkInterface.py -d DB -t MSGS -g user_id --group_freq_thresh 50 -f 'feat$cat_NAME_50_cp_w$MSGS$user_id$1gra' \
+  --outcome_table OUTCOMES --outcomes OUT1 OUT2 --correlate --rmatrix --csv \
+  --make_topic_wordclouds --topic_lexicon NAME_50_freq_t50ll --output_name OUTDIR/NAME_50_correlates
 ```
 
 ## Feature Table Naming

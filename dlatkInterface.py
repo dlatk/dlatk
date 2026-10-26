@@ -582,8 +582,8 @@ def main(fn_args = None):
     group = parser.add_argument_group('Outcome Actions', '')
     group.add_argument('--print_csv', metavar="FILENAME", dest='printcsv', default = None,
                        help='prints group normalized values use for correlation.')
-    group.add_argument('--print_freq_csv', metavar="FILENAME", dest='printfreqcsv', default = None,
-                       help='prints frequencies instead of group normalized values')
+    group.add_argument('--print_freq_csv', metavar="FILENAME", dest='printfreqcsv', nargs='?', const=True, default = None,
+                       help='with --print_csv, prints feature counts (value) instead of relative frequencies (group_norm); can also be given its own filename.')
     group.add_argument('--print_numgroups', action='store_true', dest='printnumgroups', default = False,
                        help='prints number of groups per outcome field')
     group.add_argument('--densify_table', dest='densifytable', nargs=3, default = None,
@@ -1479,20 +1479,18 @@ def main(fn_args = None):
     if args.p_correction_method == '':
         args.bonferroni = False
 
-    if args.printcsv:
+    if args.printcsv or args.printfreqcsv:
         pprint(args)
+        outputfile = args.printfreqcsv if isinstance(args.printfreqcsv, str) else args.printcsv
+        if not outputfile:
+            print("--print_freq_csv needs a filename: give one, or use it with --print_csv FILENAME")
+            sys.exit(1)
         if not oa: oa = OA()
         if not fg: fg = FG()
 #        if args.isbinned:
 #            og.printBinnedGroupsAndOutcomesToCSV(fg, args.printcsv)
 #        else:
-        oa.printGroupsAndOutcomesToCSV(fg, args.printcsv)
-
-    if args.printfreqcsv:
-        pprint(args)
-        if not oa: oa = OA()
-        if not fg: fg = FG()
-        oa.printGroupsAndOutcomesToCSV(fg, args.printcsv, freqs = True)
+        oa.printGroupsAndOutcomesToCSV(fg, outputfile, freqs = bool(args.printfreqcsv))
 
     if args.printnumgroups:
         pprint(args)

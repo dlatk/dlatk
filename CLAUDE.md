@@ -6,6 +6,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 DLATK is an end-to-end social media text analysis toolkit. The single entry point is `dlatkInterface.py`; nearly all functionality is exposed as CLI flags. Primary backend is MySQL; SQLite is also supported (pass a `.csv` path as `-t` to auto-import and use SQLite).
 
+## Design Principles
+
+- **Keep raw data on the server.** Never send messages, outcomes, feature tables or query results that contain them
+  to anything outside this server: no web or API requests, uploads, pastes, issues/PRs, published pages, or
+  external model endpoints. Don't commit data files. Downloading models and packages is fine. Share only
+  aggregate results (e.g. correlations, accuracies), and only when the user asks.
+- **Preserve the existing organization.** dlatk is mature and used by dozens of researchers who know the code.
+  Prefer small, local edits in the surrounding style. Propose sweeping changes (moving modules, splitting files,
+  renaming flags or classes, changing data structures), explain them thoroughly and wait for approval before
+  applying any of them.
+- **Multi-level analysis is a core feature.** Features are extracted per message and aggregated up to any group
+  (`-g`: message, user, county, user-week, ...) via `group_norm` and `--group_freq_thresh`. Make this more visible
+  in help and docs; don't simplify toward a document-only model.
+- **Data I/O is built for MyISAM bulk speed** (disable/enable keys, batched multi-row inserts, streaming cursors).
+  Don't replace it with per-row, ORM-style or transaction-oriented patterns.
+- **Prefer native/primitive code** (dicts, lists, generators, numpy/scipy). Use pandas only to convert DataFrames
+  into dlatk's own structures.
+- **Commands should work on both MySQL and SQLite/CSV** (`-e sqlite`, or a `.csv` path as `-t`).
+- **Logistic regression's fixed C = 0.01 is deliberate:** across many studies it was always within error of the
+  best C. Don't tune it or caveat results because of it.
+- **Feature counts:** dlatk runs at roughly 10 to 100,000 words per group, and rules for p_occ or feature counts
+  must hold across that range. A feature's per-group reliability depends on words per group (expected count =
+  rate × words); the number of groups sets how much noise DLA tolerates. For DLA keep features ≲ 3× groups at
+  small N and rarely above ~50k n-grams (`--set_p_occ auto`). Prediction can use more, erring toward bias over
+  variance (`--set_p_occ auto_prediction`).
+- **Ask before pushing to public.**
+
 ## Setup
 
 ```sh

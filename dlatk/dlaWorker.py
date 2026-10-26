@@ -167,21 +167,31 @@ class DLAWorker(object):
 
             else:
                 #rotate connection if lexicon not in current db type
+                tried = "%s db %s" % (db_type, self.lexicondb)
                 db_idx = (db_idx + 1) % len(idx_to_db_type)
                 db_type = idx_to_db_type[db_idx]
 
                 if db_type == "sqlite":
                     default_dir = path.join("/content", "sqlite_data") if path.exists("/content") else path.join(path.expanduser('~'), "sqlite_data")
                     self.lexicondb = path.join(default_dir, db_name)
+                    #a missing file won't appear on retry, so exit rather than letting the connect retry
+                    if not path.exists(self.lexicondb + ".db"):
+                        dlac.warn("Lexicon table %s not found in %s (and no sqlite lexicon db at %s.db)" % (lex_table, tried, self.lexicondb), attention=True)
+                        sys.exit(1)
                 if db_type == "mysql":
                     self.lexicondb = db_name
 
+                dlac.warn("Lexicon table %s not found in %s; trying %s db %s" % (lex_table, tried, db_type, self.lexicondb))
                 self.lexicon = WeightedLexicon(
                     lexicon_db=self.lexicondb,
-                    mysql_config_file=self.mysql_config_file, 
-                    lex_db_type=db_type, 
-                    encoding=self.encoding, 
+                    mysql_config_file=self.mysql_config_file,
+                    lex_db_type=db_type,
+                    encoding=self.encoding,
                     use_unicode=self.use_unicode)
+
+                if not self.lexicon.engine.tableExists(lex_table):
+                    dlac.warn("Lexicon table %s not found in %s or %s db %s" % (lex_table, tried, db_type, self.lexicondb), attention=True)
+                    sys.exit(1)
 
         return lex_table
  

@@ -10,7 +10,7 @@ Switch
 Description
 ===========
 
-Produce histograms and boxplots for specified outcomes.
+**Retired: no longer supported.** We would like to bring it back with a new dlatk implementation. It produced histograms and boxplots for specified outcomes.
 
 Argument and Default Value
 ==========================

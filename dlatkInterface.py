@@ -766,7 +766,7 @@ def main(fn_args = None):
     # group.add_argument('--hist2d', action='store_true', dest='hist2d',
     #                    help='Requires -f --feature_names --outcome_table --outcome_value')
     group.add_argument('--descplot', action='store_true', dest='descplot',
-                       help='produce histograms and boxplots for specified outcomes. Requires oa. Uses outputdir')
+                       help='Retired: no longer supported (we would like to bring it back with a new dlatk implementation).')
     group.add_argument('--loessplot', type=str, metavar='FEAT(S)', dest='loessplot', nargs='+', default='',
                        help='Output loess plots of the given features.')
 
@@ -2150,13 +2150,9 @@ def main(fn_args = None):
         oa.barPlot(correls, outputFile)
 
     if args.descplot:
-        if not og: og=OG()
-        (groups, outcome_to_gid_to_value, controls) = og.getGroupsAndOutcomes()
-        outcome_to_values = dict(  [(k_v[0], list(k_v[1].values())) for k_v in list(outcome_to_gid_to_value.items())]  )
-        outputFile = makeOutputFilename(args, None, og, "desc_stats")
-        from dlatk.lib.descStats import StatsPlotter
-        sp = StatsPlotter(args.corpdb)
-        sp.plotDescStats(outcome_to_values, len(groups), outputFile)
+        #retired: it needed R (rpy2) and the old wwbp package via lib/descStats.py; see git history for the old code
+        print("--descplot is no longer supported. We would like to bring it back with a new dlatk implementation.")
+        sys.exit(1)
 
     if args.scatterplot:
         #retired: it needed R (rpy2) and the old wwbp package via lib/descStats.py; see git history for the old code

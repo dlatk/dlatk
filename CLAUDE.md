@@ -51,7 +51,9 @@ mysql -e 'CREATE DATABASE dlatk_lexica'
 cat dlatk/data/dlatk_lexica.sql | mysql dlatk_lexica
 ```
 
-MySQL credentials are read from `~/.my.cnf`. To import CSV files into MySQL use `usefulScripts/csv2mySQLv2.py`:
+MySQL credentials are read from `~/.my.cnf`. To import CSV files into MySQL use `csv2mySQLv2.py` from the separate
+[usefulScripts](https://github.com/dlatk/usefulScripts) repo (clone it next to or inside dlatk; it is not part of
+this repo), or the in-repo `dlatk/tools/importmethods.py --csv_to_mysql` (see its `-h`):
 
 ```sh
 python3 usefulScripts/csv2mySQLv2.py FILE DATABASE TABLENAME '(col_def)' IGNORE_LINES

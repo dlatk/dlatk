@@ -8,6 +8,7 @@ import os, getpass
 import sys
 import argparse
 import shlex
+import numbers
 import time
 import subprocess
 from pprint import pprint
@@ -81,6 +82,37 @@ def boolArg(value):
         return False
     raise argparse.ArgumentTypeError("must be true or false")
 
+#scikit-learn class -> model type, for --list_models
+MODEL_TYPES = [
+    ('linear', ['LinearRegression', 'Ridge', 'RidgeCV', 'RPCRidgeCV', 'Lasso', 'LassoCV', 'ElasticNet', 'ElasticNetCV', 'Lars', 'LassoLars', 'LassoLarsCV',
+                'SGDRegressor', 'PassiveAggressiveRegressor', 'LogisticRegression', 'LinearSVC', 'PassiveAggressiveClassifier']),
+    ('support vector machine (kernel)', ['SVR', 'SVC']),
+    ('tree ensemble', ['ExtraTreesRegressor', 'ExtraTreesClassifier', 'RandomForestClassifier', 'GradientBoostingClassifier']),
+    ('naive Bayes', ['MultinomialNB', 'GaussianNB', 'BernoulliNB']),
+    ('neural network', ['MLPRegressor', 'MLPClassifier']),
+]
+
+def listModels():
+    """prints the models available to --model, read from the regression and classification predictors"""
+    def fmt(v):
+        return '%g' % v if isinstance(v, numbers.Real) and not isinstance(v, bool) else str(v)
+    def settings(params):
+        if not params: return ''
+        return ', '.join('%s=%s' % (k, fmt(list(v)[0]) if len(v) == 1 else '[' + ', '.join(fmt(x) for x in v) + ']')
+                         for k, v in params[0].items())
+    classToType = dict((c, t) for (t, classes) in MODEL_TYPES for c in classes)
+    for title, predictor, default in (('Regression models (--nfold_test_regression, --train_regression, ...)', RegressionPredictor, dlac.DEF_MODEL),
+                                      ('Classification models (--nfold_test_classifiers, --train_classifiers, ...)', ClassifyPredictor, dlac.DEF_CLASS_MODEL)):
+        print(title)
+        for modelType in [t for (t, _) in MODEL_TYPES] + ['other']:
+            names = sorted(m for m, c in predictor.modelToClassName.items() if classToType.get(c, 'other') == modelType)
+            if not names: continue
+            print('  %s:' % modelType)
+            for m in names:
+                print(('    %-16s %-28s %s' % (m + ('*' if m == default else ''), predictor.modelToClassName[m], settings(predictor.cvParams.get(m)))).rstrip())
+        print('')
+    print('* default')
+
 def main(fn_args = None):
     """
     :param fn_args: string (split like a shell command line) or list of arguments - ex "-d testing -t msgs -c user_id --add_ngrams -n 1 "
@@ -122,7 +154,13 @@ def main(fn_args = None):
 
     # Inherit options from init_parser
     parser = argparse.ArgumentParser(description='Extract and Manage Language Feature Data.',
-        parents=[init_parser])
+        parents=[init_parser], formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""levels of analysis:
+  dlatk extracts features from each message and aggregates them up to the groups named
+  by -g, so the same message table can be analyzed at several levels, e.g.
+    dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_ngrams -n 1      (per user)
+    dlatkInterface.py -d dla_tutorial -t msgs -g message_id --add_ngrams -n 1   (per message)
+  Analyses leave out groups with fewer than --group_freq_thresh words.""")
 
     group = parser.add_argument_group('Corpus Variables', 'Defining the data from which features are extracted.')
 
@@ -132,9 +170,11 @@ def main(fn_args = None):
                         help='Corpus Database Name.')
     group.add_argument('-t', '--corptable', metavar='TABLE', dest='corptable', default=getInitVar('corptable', conf_parser, dlac.DEF_CORPTABLE),
                         help='Corpus Table.')
-    group.add_argument('-c', '-g', '--correl_field', '--group', '--group_by_field', metavar='FIELD', dest='correl_field',
+    group.add_argument('-g', '--group', '--group_by_field', '-c', '--correl_field', metavar='FIELD', dest='correl_field',
                        default=getInitVar('correl_field', conf_parser, dlac.DEF_CORREL_FIELD),
-                        help='Correlation Field (AKA Group Field): The field which features are aggregated over.')
+                        help='Group field: the level of analysis. Features are extracted from each message and aggregated up to '
+                             'the groups of this field (e.g. message_id, user_id, county) as counts (value) and relative '
+                             'frequencies (group_norm). -c/--correl_field is the older name for -g.')
     group.add_argument('--message_field', metavar='FIELD', dest='message_field', default=getInitVar('message_field', conf_parser, dlac.DEF_MESSAGE_FIELD),
                         help='The field where the text to be analyzed is located.')
     group.add_argument('--messageid_field', metavar='FIELD', dest='messageid_field', default=getInitVar('messageid_field', conf_parser, dlac.DEF_MESSAGEID_FIELD),
@@ -248,7 +288,7 @@ def main(fn_args = None):
 
 
 
-    group = parser.add_argument_group('MySQL Interactoins', '')
+    group = parser.add_argument_group('MySQL Interactions', '')
     group.add_argument('--show_feature_tables', '--show_feat_tables', '--ls', action='store_true', dest='listfeattables', default=False,
                        help='List all feature tables for given corpdb, corptable and correl_field')
     group.add_argument('--show_tables', nargs='?', dest='showtables', default=False, const=True,
@@ -291,7 +331,9 @@ def main(fn_args = None):
     group.add_argument('--feat_names', type=str, metavar='FIELD(S)', dest='featnames', nargs='+', default=getInitVar('featnames', conf_parser, dlac.DEF_FEAT_NAMES, varList=True),
                        help='Limit outputs to the given set of features.')
     group.add_argument("--group_freq_thresh", type=int, metavar='N', dest="groupfreqthresh", default=getInitVar('groupfreqthresh', conf_parser, None),
-                       help="minimum WORD frequency per correl_field to include correl_field in results")
+                       help="minimum number of words a group must have to be included in analyses. If not given, it is inferred "
+                            "from the -g field's name: 1 for message-level fields (containing mess, msg, or starting with id), "
+                            "500 for user-level (user, usr, auth), 40000 for county-level (county, cnty, cty, fips), otherwise 1000.")
     group.add_argument('--output_dir', type=str, dest='outputdir', default=dlac.DEF_OUTPUT_DIR, help='folder to store the outputs, use either this or --output_name')
     group.add_argument('--output_name', '--output', '--output_file', type=str, dest='outputname', default=getInitVar('outputname', conf_parser, ''),
                        help='overrides the default filename for output')
@@ -396,7 +438,7 @@ def main(fn_args = None):
     group.add_argument('--mediation_csv', action='store_true', dest='mediationcsv', default=False,
                        help='Print results to a CSV. Default file name is mediation.csv. Use --output_name to specify file name.')
     group.add_argument('--mediation_no_summary', action='store_false', dest='mediationsummary', default=True,
-                       help='Print results to a CSV. Default file name is mediation.csv. Use --output_name to specify file name.')
+                       help='Do not print the mediation summary (printed by default).')
     group.add_argument('--mediation_method', metavar='METHOD', type=str, dest='mediation_style', default='baron',
                        help='Specify a mediation method: baron, imai, both')
 
@@ -407,7 +449,10 @@ def main(fn_args = None):
     group.add_argument('--adapt_control_names', metavar='COLUMN', dest='adaptcolumns', type=str, nargs='+', default=None,
                         help='NOT IMPLEMENTED: Controls to be used for adaptation.')
     group.add_argument('--model', type=str, metavar='name', dest='model', default=getInitVar('model', conf_parser, dlac.DEF_MODEL),
-                       help='Model to use when predicting: svc, linear-svc, ridge, linear.')
+                       help='Model to use when predicting, e.g. linear, ridgecv, etc, lr, linear-svc, mlp; there are more: see --list_models. '
+                       'Default: ridgecv for regression, lr (L2 logistic regression) for classification.')
+    group.add_argument('--list_models', action='store_true', dest='listmodels', default=False,
+                       help='List the models available to --model, for regression then classification, by type.')
     group.add_argument('--turn_off_backoff_model', action='store_true', dest='turn_off_backoff_model', default=False,
                        help='Turn off backoff model (logistic or linear) when using a small number of features (uses --model instead)')
     group.add_argument('--combined_models', type=str, nargs='+', metavar='name', dest='combmodels', default=dlac.DEF_COMB_MODELS,
@@ -556,7 +601,7 @@ def main(fn_args = None):
                        help='extract ner features from xml files (corptable should be directory of xml files).')
 
 
-    group = parser.add_argument_group('Feature Table Aanalyses', '')
+    group = parser.add_argument_group('Feature Table Analyses', '')
     group.add_argument('--ttest_feat_tables', action='store_true', dest='ttestfeats',
                        help='Performs ttest on differences between group norms for 2 tables, within features')
 
@@ -692,7 +737,7 @@ def main(fn_args = None):
     group.add_argument('--test_classifiers', action='store_true', dest='testclassifiers', default=False,
                        help='trains and tests classification for each outcome')
     group.add_argument('--nfold_classifiers', '--combo_test_classifiers', '--nfold_test_classifiers', action='store_true', dest='combotestclassifiers', default=False,
-                       help='train/test a regression model with and without all combinations of controls')
+                       help='train/test a classification model with and without all combinations of controls')
     group.add_argument('--predict_classifiers', '--predict_class', action='store_true', dest='predictclassifiers', default=False,
                        help='predict outcomes bases on loaded training')
     group.add_argument('--roc', action='store_true', dest='roc',
@@ -817,6 +862,10 @@ def main(fn_args = None):
 
     args = parser.parse_args(remaining_argv)
 
+    if args.listmodels:
+        listModels()
+        sys.exit(0)
+
     #--conf is parsed by init_parser, so it is not in remaining_argv; otherwise use the init file's
     args.mysqlconfigfile = init_args.mysqlconfigfile
     if args.mysqlconfigfile == dlac.MYSQL_CONFIG_FILE:
@@ -870,6 +919,8 @@ def main(fn_args = None):
     if not args.groupfreqthresh and args.groupfreqthresh != 0:
         setGFTWarning = False
         args.groupfreqthresh = dlac.getGroupFreqThresh(args.correl_field)
+        dlac.warn("group_freq_thresh = %d: analyses leave out groups with fewer words (inferred from group field '%s'; set --group_freq_thresh to change)"
+                  % (args.groupfreqthresh, args.correl_field))
     else:
         setGFTWarning = True
 
@@ -2236,7 +2287,8 @@ Settings:
 
 Database - {}
 Corpus - {}
-Group ID - {}'''.format(args.corpdb, args.corptable, args.correl_field)
+Group ID - {}
+Group freq threshold - {}{}'''.format(args.corpdb, args.corptable, args.correl_field, args.groupfreqthresh, '' if setGFTWarning else ' (inferred from group field)')
     dlac.warn(warning) 
     if args.feattable:
         dlac.warn("Feature table(s) - {}".format(args.feattable))

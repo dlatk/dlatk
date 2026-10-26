@@ -159,7 +159,7 @@ EMB_CLASS = ['bert', 'XLNet', 'Roberta', 'GPT2', 'DistilBert', 'XLMRoberta', 'Al
 
 ##Prediction Settings:
 DEF_MODEL = 'ridgecv'
-DEF_CLASS_MODEL = 'svc'
+DEF_CLASS_MODEL = 'lr'
 DEF_COMB_MODELS = ['ridgecv']
 DEF_FOLDS = 5
 DEF_OUTLIER_THRESHOLD = 2.5

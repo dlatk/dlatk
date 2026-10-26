@@ -15,7 +15,7 @@ Model to use when predicting or clustering
 Argument and Default Value
 ==========================
 
-There is no default model when using --fit_reducer. For everything else, default model is ridgecv.
+There is no default model when using --fit_reducer. For everything else, default model is ridgecv for regression and lr (L2-penalized logistic regression) for classification. Run :doc:`fwflag_list_models` to see every regression and classification model.
 
 Details
 =======

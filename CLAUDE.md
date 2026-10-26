@@ -77,6 +77,17 @@ bash tests/regression.sh -d dla_tutorial -t msgs -c user_id -f 'feat$1gram$msgs$
 See `tests/README.md` and the bottom of `dev_instructions.txt` for details. dlatk can exit 0 after an error,
 so tests check for the tables/files each step should produce rather than relying on exit codes.
 
+**Watch dlatk's progress while it runs.** dlatk prints frequent status lines (e.g. `[45%] Inserted ... rows
+covering 68 user_ids`); follow them instead of waiting for the end, so stalls and errors are caught early:
+
+- Run long commands in the background with output going to a log, and set `PYTHONUNBUFFERED=1` (or use
+  `python3 -u`), or the lines sit in Python's buffer until exit. `tests/common.sh` already sets it.
+- `unit_tests.sh` prints only stage names (`=== ngrams`); each step's dlatk output goes to
+  `$OUT/<step>.log` (`$OUT` is the "Output folder" printed at the top, e.g. `/tmp/dlatk_unit_tests.XXXX`).
+  Follow the newest step log, not just the top-level output.
+- Report to the user as stages finish, and right away on any `Traceback`/`Error`. dlatk can exit 0 after an
+  error, so a quiet log isn't proof of success.
+
 ## Typical DLA Pipeline
 
 **Step 0 — Prepare a personal copy of the message table** (replace `xxx` with your initials):

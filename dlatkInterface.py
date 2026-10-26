@@ -121,7 +121,7 @@ def main(fn_args = None):
 
     group = parser.add_argument_group('Corpus Variables', 'Defining the data from which features are extracted.')
 
-    group.add_argument('-e', '--engine', '--db_engine', metavar='DB', dest='dbengine', default=getInitVar('dbengine', conf_parser, dlac.DB_TYPE),
+    group.add_argument('-e', '--engine', '--db_engine', metavar='DB', dest='dbengine', default=getInitVar('dbengine', conf_parser, getInitVar('db_type', conf_parser, dlac.DB_TYPE)),
                         help='Database engine: mysql or sqlite.')
     group.add_argument('-d', '--corpdb', metavar='DB', dest='corpdb', default=getInitVar('corpdb', conf_parser, dlac.DEF_CORPDB),
                         help='Corpus Database Name.')
@@ -814,6 +814,11 @@ def main(fn_args = None):
         args = parser.parse_args(fn_args.split())
     else:
         args = parser.parse_args(remaining_argv)
+
+    #--conf is parsed by init_parser, so it is not in remaining_argv; otherwise use the init file's
+    args.mysqlconfigfile = init_args.mysqlconfigfile
+    if args.mysqlconfigfile == dlac.MYSQL_CONFIG_FILE:
+        args.mysqlconfigfile = getInitVar('mysql_config_file', conf_parser, args.mysqlconfigfile)
 
     ##Warnings
     if not args.bonferroni:
@@ -2185,7 +2190,7 @@ def main(fn_args = None):
       with open(init_args.toinitfile, 'w') as init_file:
         init_file.write("[constants]\n")
 
-        if (args.dbengine and args.dbengine != dlac.DB_TYPE): init_file.write("db_type = " + str(args.dbengine)+"\n")
+        if (args.dbengine and args.dbengine != dlac.DB_TYPE): init_file.write("dbengine = " + str(args.dbengine)+"\n")
         if (args.corpdb and args.corpdb != dlac.DEF_CORPDB): init_file.write("corpdb = " + str(args.corpdb)+"\n")
         if (args.corptable and args.corptable != dlac.DEF_CORPTABLE): init_file.write("corptable = " + str(args.corptable)+"\n")
         if (args.correl_field): init_file.write("correl_field = " + str(args.correl_field)+"\n")

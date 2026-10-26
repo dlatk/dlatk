@@ -31,6 +31,7 @@ from .dlaWorker import DLAWorker
 from . import dlaConstants as dlac
 from . import textCleaner as tc
 from .mysqlmethods import mysqlMethods as mm
+from .lexicainterface import lexInterface as interface
 
 #dataEngine / query
 from .database.query import QueryBuilder

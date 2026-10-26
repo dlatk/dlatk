@@ -197,6 +197,8 @@ def main(fn_args = None):
                        help='this is the list of topics to group together in a plot for --feat_flexibin')
     group.add_argument('--topic_lex_method', type=str, dest='topiclexmethod', default=dlac.DEF_TOPIC_LEX_METHOD,
                        help='must be one of: "csv_lik", "standard"')
+    group.add_argument('--lex_thresh', type=float, metavar='THRESH', dest='lexthresh', default=None,
+                       help='Use with --add_topiclex_from_topicfile (csv_lik): keep only words whose weight exceeds this fraction of their topic\'s top word weight (default: keep all).')
     group.add_argument('--weighted_lexicon', action='store_true', dest='weightedlexicon', default=False,
                        help='use with Extraction Action add_lex_table to make weighted lexicon features')
     group.add_argument('--num_bins', type=int, dest='numbins', default=None,
@@ -1494,7 +1496,7 @@ def main(fn_args = None):
 
     if args.printnumgroups:
         pprint(args)
-        if not oa: oa = OA()
+        if not og: og = OG()
         if not fg: fg = FG()
         pprint(('number of groups per outcome:', og.numGroupsPerOutcome(fg, args.printcsv)))
 
@@ -2187,15 +2189,15 @@ def main(fn_args = None):
         for scatter_group_1 in scatter_dict_1:
             for scatter_group_2 in scatter_dict_2:
                 if scatter_group_1 != scatter_group_2 or (args.featnames and args.feattable):
-                    (xValues, yValues) = alignDictsAsLists(scatter_dict_1[scatter_group_1], scatter_dict_2[scatter_group_2])
+                    (xValues, yValues) = dlac.alignDictsAsLists(scatter_dict_1[scatter_group_1], scatter_dict_2[scatter_group_2])
                     if args.scatterplot:
                         outputFile = '%s/plots/scatter/%s.%s.%s.%s.scat'%(args.outputdir, fg.featureTable if fg else 'noFeatureTable', scatter_group_2, og.outcome_table, scatter_group_1)
                         if args.outputname: outputFile = '.'.join([args.outputname, scatter_group_1, scatter_group_2, 'scat'])
                         sp.plotScatter(scatter_group_1, xValues, scatter_group_2, yValues, outputFile)
-                    if args.hist2d:
-                        outputFile = '%s/plots/scatter/%s.%s.%s.%s.hist2d'%(args.outputdir, fg.featureTable if fg else 'noFeatureTable', scatter_group_2, og.outcome_table, scatter_group_1)
-                        if args.outputname: outputFile = outputFile = '.'.join([args.outputname, scatter_group_1, scatter_group_2, 'hist2d'])
-                        sp.plot2dHist(scatter_group_1, xValues, scatter_group_2, yValues, outputFile)
+                    # if args.hist2d: #--hist2d is disabled (see Plot Actions)
+                    #     outputFile = '%s/plots/scatter/%s.%s.%s.%s.hist2d'%(args.outputdir, fg.featureTable if fg else 'noFeatureTable', scatter_group_2, og.outcome_table, scatter_group_1)
+                    #     if args.outputname: outputFile = outputFile = '.'.join([args.outputname, scatter_group_1, scatter_group_2, 'hist2d'])
+                    #     sp.plot2dHist(scatter_group_1, xValues, scatter_group_2, yValues, outputFile)
                     outputFile = '%s/plots/scatter/%s.%s.%s.%s.desc.%s'%(args.outputdir, fg.featureTable if fg else 'noFeatureTable', scatter_group_2, og.outcome_table, scatter_group_1, scatter_group_1)
                     if args.outputname: outputFile = '.'.join([args.outputname, scatter_group_1, scatter_group_2, 'desc'])
                     sp.plotDescStats(dict({scatter_group_1:xValues}), outputFile)

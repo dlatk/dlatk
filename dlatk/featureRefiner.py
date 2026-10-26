@@ -345,6 +345,9 @@ class FeatureRefiner(FeatureGetter):
         #acquire counts per feature (each row will come from a different correl_field)
         featCounts = self.getFeatureCounts(groupFreqThresh) #tuples of: feat, count (number of groups feature appears with)
 
+        if featCounts and min(count for (feat, count) in featCounts) >= totalGroups:
+            dlac.warn("Every feature is used by every group, so these appear not to be frequency- or count-based features (e.g. embeddings), which the occurrence filter is designed for", attention=True)
+
         if p in dlac.AUTO_POCC_MODES:
             threshold = self._autoMinGroups(p, totalGroups, [count for (feat, count) in featCounts])
         else:
@@ -385,7 +388,7 @@ class FeatureRefiner(FeatureGetter):
         auto requires k = max(5, 0.75*sqrt(N)) groups and keeps at most 5*N^0.75 features, which suits DLA,
         where every feature must pass a multiple-test correction. auto_prediction halves k and keeps at most
         10*N features: features need not be significant on their own to help a prediction model.
-        The cap is met by raising k, at most to N (dense tables keep the features every group uses).
+        The cap is met by raising k, at most to N.
         """
         k = max(dlac.DEF_AUTO_POCC_K_MIN, int(math.ceil(dlac.DEF_AUTO_POCC_K_C * math.sqrt(N))))
         cap = int(dlac.DEF_AUTO_POCC_CAP_C * N ** dlac.DEF_AUTO_POCC_CAP_EXP)
@@ -396,10 +399,7 @@ class FeatureRefiner(FeatureGetter):
         numKept = sum(1 for c in counts if c >= threshold)
         dlac.warn(" --set_p_occ %s: %d groups; minimum groups per feature %d, at most %d features -> threshold %d groups (p_occ %.4f), keeping %d of %d features"
                   % (mode, N, k, cap, threshold, threshold / float(N), numKept, len(counts)))
-        if numKept > cap:
-            dlac.warn("--set_p_occ %s: more than %d features are used by all %d groups (a dense table?), so those %d are kept"
-                      % (mode, cap, N, numKept), attention=True)
-        elif mode == 'auto_prediction' and numKept > dlac.DEF_AUTO_PRED_POCC_WARN:
+        if mode == 'auto_prediction' and numKept > dlac.DEF_AUTO_PRED_POCC_WARN:
             dlac.warn("--set_p_occ auto_prediction keeps %d features; consider --set_p_occ auto or a fixed p_occ if models run out of memory"
                       % numKept, attention=True)
         return threshold

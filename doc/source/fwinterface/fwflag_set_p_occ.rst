@@ -33,7 +33,7 @@ Why these rules: how reliably a feature is measured within a group depends on ho
 
 **auto_prediction** essentially halves the criteria: it requires half as many groups (k/2) and keeps up to 10·N features (10 per group). Prediction models are much more admissible of features, since a feature does not have to be significant on its own to help a prediction. The cap grows with N rather than N^0.75 because what limits a prediction model is how many features it can estimate from N groups without overfitting, rather than a multiple-test correction. The cap still leans toward fewer features (bias over variance), so that an automatic choice is unlikely to overfit. It warns above 200,000 features.
 
-If more features than the cap are used by every group (dense tables such as topics or embeddings), k stops at N, keeping the features every group uses, with a warning. Occurrence filtering is meant for sparse features such as n-grams.
+Every table is filtered the same way; k is never raised above N. The occurrence filter is designed for frequency- or count-based features (n-grams, lexica and topics, whose zeros are left out of the table), so the filter warns when every feature is used by every group, as with embeddings.
 
 **Estimating how many n-gram features are kept.** For 1-2grams, the number of features used by at least a fraction p of groups is approximately
 

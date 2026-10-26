@@ -149,9 +149,10 @@ python3 dlatkInterface.py -d dla_tutorial -t msgs_xxx -c user_id \
 
 ## Learning LDA Topics (suggested settings)
 
-Learn topics from message-level 1grams kept if used in at least 3 messages, using Mallet (on this server:
-`/data/mallet/Mallet/bin/mallet`), alpha 2, 700 iterations. A whole-number `--set_p_occ` is a group count, so the
-table is `$3`.
+Learn topics from message-level 1grams kept if used in at least 3 messages, using Mallet, alpha 2, 700 iterations.
+A whole-number `--set_p_occ` is a group count, so the table is `$3`. Find Mallet on the machine you're on and pass
+it as `--mallet_path` (MALLET below); `/data/mallet/Mallet/bin/mallet` is a common location but not guaranteed
+(dlatk's default is `/opt/mallet/bin/mallet`).
 
 - **Number of topics** depends on the project and data (50 below is a starting point): topics tend to get more
   coherent as you add more, but duplicate topics start appearing.
@@ -164,7 +165,7 @@ table is `$3`.
 ```sh
 python3 dlatkInterface.py -d DB -t MSGS -g message_id --group_freq_thresh 5 --add_ngrams -n 1 --feat_occ_filter --set_p_occ 3
 python3 dlatkInterface.py -d DB -t MSGS -g message_id --group_freq_thresh 5 -f 'feat$1gram$MSGS$message_id$3' \
-  --estimate_lda_topics --mallet_path /data/mallet/Mallet/bin/mallet --lda_lexicon_name NAME_50 \
+  --estimate_lda_topics --mallet_path MALLET --lda_lexicon_name NAME_50 \
   --num_topics 50 --lda_alpha 2 --num_stopwords 50 --lda_iterations 700 --save_lda_files /tmp/lda_files
 # review every topic before using them
 python3 dlatkInterface.py -d DB -t MSGS -g message_id --make_all_topic_wordclouds \

@@ -7,6 +7,7 @@ print("\n")#clear some lines to make command more obvious
 import os, getpass
 import sys
 import argparse
+import shlex
 import time
 import subprocess
 from pprint import pprint
@@ -82,7 +83,7 @@ def boolArg(value):
 
 def main(fn_args = None):
     """
-    :param fn_args: string - ex "-d testing -t msgs -c user_id --add_ngrams -n 1 "
+    :param fn_args: string (split like a shell command line) or list of arguments - ex "-d testing -t msgs -c user_id --add_ngrams -n 1 "
     """
     strTime = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
     dlac.warn("\n-----\nDLATK Interface Initiated: %s\n-----" % strTime)
@@ -103,7 +104,11 @@ def main(fn_args = None):
     group.add_argument('--conf', '--mysql_config', '--mysql_config_file', metavar='HOST', dest='mysqlconfigfile', default=dlac.MYSQL_CONFIG_FILE,
                        help='Configuration file for MySQL connection settings (default: ~/.my.cnf or dlatk/lib/.dlatk.cnf)')
 
-    init_args, remaining_argv = init_parser.parse_known_args()
+    if fn_args:
+        argv = fn_args if isinstance(fn_args, list) else shlex.split(fn_args)
+    else:
+        argv = sys.argv[1:]
+    init_args, remaining_argv = init_parser.parse_known_args(argv)
     
     if init_args.lexinterface:
         lex_parser = LexInterfaceParser(parents=[init_parser], mysql_config_file=init_args.mysqlconfigfile)
@@ -806,14 +811,11 @@ def main(fn_args = None):
                        help="The number of Gibbs sampling iterations to perform. Default: {}"
                        .format(str(dlac.DEF_NUM_ITERATIONS)))
 
-    if len(sys.argv)==1:
+    if not argv:
         parser.print_help()
         sys.exit(0)
 
-    if fn_args:
-        args = parser.parse_args(fn_args.split())
-    else:
-        args = parser.parse_args(remaining_argv)
+    args = parser.parse_args(remaining_argv)
 
     #--conf is parsed by init_parser, so it is not in remaining_argv; otherwise use the init file's
     args.mysqlconfigfile = init_args.mysqlconfigfile
@@ -1102,7 +1104,7 @@ def main(fn_args = None):
     if args.addcorplextable:
         if not args.lextable:
             print("Need to specify lex table with -l", file=sys.stderr)
-            sys.exit()
+            sys.exit(1)
         if not fe: fe = FE()
         args.feattable = fe.addCorpLexTable(args.lextable, lowercase_only=args.lowercaseonly, valueFunc = args.valuefunc, isWeighted=args.weightedlexicon, featValueFunc=args.lexvaluefunc)
 
@@ -1472,7 +1474,7 @@ def main(fn_args = None):
     if args.top_messages:
       if not args.feattable:
         print("You must specify a feature table, extracted at the message level.")
-        sys.exit()
+        sys.exit(1)
       if not any(substring in args.feattable for substring in ["mess", "msg"]):
         print("WARNING: Your feature table doesn't seem to be at the message level.")
       if not fg: fg = FG()
@@ -1504,10 +1506,16 @@ def main(fn_args = None):
         pprint(('number of groups per outcome:', og.numGroupsPerOutcome(fg, args.printcsv)))
 
     if args.loessplot:
+        try:
+            import rpy2.robjects as ro
+            ro.r.library('ggplot2')
+        except Exception:
+            print("--loessplot needs R with the ggplot2 package and the rpy2 Python package (pip install rpy2)")
+            sys.exit(1)
         if not oa: oa = OA()
         if not fg: fg = FG()
         # whitelist = whitelist
-        oa.loessPlotFeaturesByOutcome(fg, args.spearman, args.p_correction_method, blacklist, whitelist.union(args.loessplot), args.showfeatfreqs, outputdir=args.outputdir, outputname=args.outputname, topicLexicon=args.topiclexicon)
+        oa.loessPlotFeaturesByOutcome(fg, args.spearman, args.p_correction_method, blacklist, list(set(whitelist or []).union(args.loessplot)), args.showfeatfreqs, outputdir=args.outputdir, outputname=args.outputname, topicLexicon=args.topiclexicon)
 
     if args.densifytable:
         if not oa: oa = OA()
@@ -1680,7 +1688,7 @@ def main(fn_args = None):
     if args.makewordclouds:
         if not args.tagcloud:
             print("ERROR, can't use --make_wordclouds without --tagcloud", file=sys.stderr)
-            sys.exit()
+            sys.exit(1)
         wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True, metric=metric)
 
     if args.topictc or args.corptopictc:
@@ -1693,7 +1701,7 @@ def main(fn_args = None):
     if args.maketopicwordclouds:
         if not args.topictc and not args.corptopictc:
             print("ERROR, can't use --make_topic_wordclouds without --topic_tagcloud or --corp_topic_tagcloud", file=sys.stderr)
-            sys.exit()
+            sys.exit(1)
         print(outputFile)
         wordcloud.tagcloudToWordcloud(outputFile, withTitle=True, fontFamily="Meloche Rg", fontStyle="bold", toFolders=True, metric=metric, keepDuplicates=args.keepduplicates)
 
@@ -1746,44 +1754,44 @@ def main(fn_args = None):
         # more than one feature location flag
         if sum([args.feat_as_path_start, args.feat_as_outcome, args.feat_as_control, args.no_features]) > 1:
             print("You must specify only one of the following: --feat_as_path_start, --feat_as_outcome, --feat_as_control, --no_features")
-            sys.exit()
+            sys.exit(1)
 
         # default mode, catch no feature table or no outcome table
         if not (args.feat_as_path_start or args.feat_as_outcome or args.feat_as_control or args.no_features) and (not args.feattable or args.outcometable == dlac.DEF_OUTCOME_TABLE):
             print("You must specify a feature table (-f FEAT_TABLE) and an outcome table (--outcome_table OUTCOME_TABLE)")
-            sys.exit()
+            sys.exit(1)
 
         if not args.no_features:
             if args.feat_as_path_start:
                 if not args.feattable:# or len(args.outcomepathstarts) == 0:
                     print("You must specify a feature table: -f FEAT_TABLE")
-                    sys.exit()
+                    sys.exit(1)
                 if len(args.outcomefields) == 0 or len(args.outcomemediators) == 0:
                     print("You must specify at least one mediator and outcome")
-                    sys.exit()
+                    sys.exit(1)
             elif args.feat_as_outcome:
                 if not args.feattable:
                     print("You must specify a feature table: -f FEAT_TABLE")
-                    sys.exit()
+                    sys.exit(1)
                 if len(args.outcomepathstarts) == 0 or len(args.outcomemediators) == 0:
                     print("You must specify at least one mediator and path start")
-                    sys.exit()
+                    sys.exit(1)
             elif args.feat_as_control:
                 if not args.feattable:
                     print("You must specify a feature table: -f FEAT_TABLE")
-                    sys.exit()
+                    sys.exit(1)
                 if len(args.outcomepathstarts) == 0 or len(args.outcomemediators) == 0 or len(args.outcomefields) == 0:
                     print("You must specify at least one mediator, path start and outcome")
-                    sys.exit()
+                    sys.exit(1)
         else:
             if args.feattable:
                 print("WARNING: You specified an feature table AND the flag --no_features. This table is being ignored.")
             if args.outcometable == dlac.DEF_OUTCOME_TABLE:
                 print("You must specify an outcome table")
-                sys.exit()
+                sys.exit(1)
             if len(args.outcomepathstarts) == 0 or len(args.outcomemediators) == 0 or len(args.outcomefields) == 0:
                 print("You must specify at least one mediator, path start and outcome")
-                sys.exit()
+                sys.exit(1)
 
         path_starts = args.outcomepathstarts
         mediators = args.outcomemediators

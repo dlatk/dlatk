@@ -72,6 +72,14 @@ def pOccArg(value):
         return int(value) #a group count: the table is named $46, not $46_0
     return value
 
+def boolArg(value):
+    """value of a true/false flag such as --nvalue: true/false, yes/no, 1/0"""
+    if value.lower() in ('true', 't', 'yes', 'y', '1'):
+        return True
+    if value.lower() in ('false', 'f', 'no', 'n', '0'):
+        return False
+    raise argparse.ArgumentTypeError("must be true or false")
+
 def main(fn_args = None):
     """
     :param fn_args: string - ex "-d testing -t msgs -c user_id --add_ngrams -n 1 "
@@ -333,11 +341,11 @@ def main(fn_args = None):
                        help='Turn off bonferroni correction of p-values.')
     group.add_argument('--no_correction', action='store_const', const='', dest='p_correction_method',
                        help='Turn off BH correction of p-values.')
-    group.add_argument('--nvalue', type=bool, dest='nvalue', default=True,
+    group.add_argument('--nvalue', type=boolArg, dest='nvalue', default=True,
                        help='Report n values.')
-    group.add_argument('--conf_int', type=bool, dest='confint', default=True,
+    group.add_argument('--conf_int', type=boolArg, dest='confint', default=True,
                        help='Report confidence intervals.')
-    group.add_argument('--freq', type=bool, dest='freq', default=True,
+    group.add_argument('--freq', type=boolArg, dest='freq', default=True,
                        help='Report freqs.')
     group.add_argument('--tagcloud_colorscheme', '--wordcloud_colorscheme', type=str, dest='tagcloudcolorscheme', default=getInitVar('tagcloudcolorscheme', conf_parser, 'multi'),
                        help='specify a color scheme to use for tagcloud generation. Default: multi, also accepts red, blue, red-random, redblue, bluered')
@@ -829,9 +837,6 @@ def main(fn_args = None):
 
     if args.feattable and len(args.feattable) == 1:
         args.feattable = args.feattable[0]
-
-    if not args.feattable and args.aggregategroup:
-        args.feattable = aggregategroup[0]
 
     if args.weightedeval:
         args.outcomefields.append(args.weightedeval)
@@ -1344,6 +1349,9 @@ def main(fn_args = None):
         args.feattable = fr.createFeatTableByDistinctOutcomes(og, nameSuffix=args.outputname)
 
     if args.aggregategroup:
+        if not args.feattable:
+            print("--aggregate_feats_by_new_group needs a feature table to aggregate (-f, or one extracted in the same command)")
+            sys.exit(1)
         if not fr: fr=FR()
         args.feattable = fr.createAggregateFeatTableByGroup(valueFunc = args.valuefunc)
 
@@ -2000,7 +2008,8 @@ def main(fn_args = None):
                 outputStream = open(args.outputname+'.accuracy_data.csv', 'w')
             ClassifyPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
-            outputStream.close()
+            if args.outputname:
+                outputStream.close()
         if not (args.pred_csv or args.prob_csv):
             pprint(comboScores, compact=True)
         for outcome, cData in sorted(comboScores.items()):
@@ -2028,14 +2037,16 @@ def main(fn_args = None):
                 outputStream = open(args.outputname+'.predicted_data.csv', 'w')
             ClassifyPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
-            outputStream.close()
+            if args.outputname:
+                outputStream.close()
         if args.prob_csv:
             outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.prediction_probabilities.csv', 'w')
             ClassifyPredictor.printComboControlPredictionProbsToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
-            outputStream.close()
+            if args.outputname:
+                outputStream.close()
 
     if args.predictclassifiers:
         cp.predict(sparse = args.sparse, groupsWhere = args.groupswhere, probs = True)

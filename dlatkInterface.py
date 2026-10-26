@@ -202,11 +202,11 @@ def main(fn_args = None):
     group.add_argument('--weighted_lexicon', action='store_true', dest='weightedlexicon', default=False,
                        help='use with Extraction Action add_lex_table to make weighted lexicon features')
     group.add_argument('--num_bins', type=int, dest='numbins', default=None,
-                       help='number of bins (feature refiner).')
+                       help='number of bins (feature refiner). (For the retired --feat_flexibin.)')
     group.add_argument('--flexiplot_file', type=str, dest='flexiplotfile', default='',
-                       help='use with Plot Action --feat_flexibin to specify a file to read for plotting')
+                       help='use with Plot Action --feat_flexibin to specify a file to read for plotting. (For the retired --feat_flexibin.)')
     group.add_argument('--group_id_range', type=float, dest='groupidrange', nargs=2,
-                       help='range of group id\'s to include in binning.')
+                       help='range of group id\'s to include in binning. (For the retired --feat_flexibin.)')
     group.add_argument('--mask_table', type=str, metavar='TABLE', dest='masktable', default=None,
                        help='Table containing which groups run in various bins (for ttest).')
     group.add_argument('--embedding_model', '--emb_model', '--bert_model', type=str, metavar='NAME', dest='embmodel', default=dlac.DEF_EMB_MODEL,
@@ -755,13 +755,13 @@ def main(fn_args = None):
     group.add_argument('--barplot', action='store_true', dest='barplot',
                        help='produce correlation barplots. Requires fg, oa. Uses groupfreqthresh, outputdir')
     group.add_argument('--scatterplot', action='store_true', dest='scatterplot',
-                       help='Requires --outcome_table --outcome_fields, optional: -f --feature_names')
+                       help='Retired: no longer supported (we would like to bring it back with a new dlatk implementation).')
     group.add_argument('--feat_flexibin', action='store_true', dest='featflexibin', default=False,
-                       help='Plots a binned feature table, uses --num_bins, --group_id_range, --feat_table, --flexiplot_file')    # group.add_argument('--hist2d', action='store_true', dest='hist2d',
+                       help='Retired: no longer supported.')    # group.add_argument('--hist2d', action='store_true', dest='hist2d',
     group.add_argument('--skip_bin_step', action='store_true', dest='skipbinstep', default=False,
-                       help='Skips the binning step for feat_flexibin. For when we want fast plotting and the flexitable has been created.')
+                       help='Skips the binning step for feat_flexibin. For when we want fast plotting and the flexitable has been created. (For the retired --feat_flexibin.)')
     group.add_argument('--preserve_bin_table', action='store_true', dest='preservebintable', default=False,
-                       help='Preserves the flexibin table for faster plotting.')
+                       help='Preserves the flexibin table for faster plotting. (For the retired --feat_flexibin.)')
     # group.add_argument('--hist
     # group.add_argument('--hist2d', action='store_true', dest='hist2d',
     #                    help='Requires -f --feature_names --outcome_table --outcome_value')
@@ -1375,19 +1375,9 @@ def main(fn_args = None):
         args.featlabelmaplex = fr.makeTopicLabelMap(args.topiclexicon, args.numtopicwords, args.weightedlexicon)
 
     if args.featflexibin:
-        if not fr: fr=FR()
-        if not args.numbins or not args.groupidrange or not args.feattable:
-            raise Exception('cannot bin feature table without specifying --num_bins, --group_id_range, --feat_table') #optionally specify --topic_lexicon
-        args.feattable = fr.createTableWithBinnedFeats(args.numbins, args.groupidrange, args.valuefunc, args.gender, args.genderattack, skip_binning=args.skipbinstep)#, args.reportingpercent)
-        # sys.exit(0)
-        # need feature csv for batch plotting
-        temp_feature_file = OutcomeGetter.buildBatchPlotFile(args.corpdb, args.feattable, args.topiclist) if not args.flexiplotfile else args.flexiplotfile
-        feat_to_label = None
-        if args.topiclexicon:
-            if not oa: oa=OA()
-            feat_to_label = oa.buildTopicLabelDict(args.topiclexicon, args.numtopicwords) #TODO-finish -- uses topictagcloudwords method
-            #pprint(feat_to_label)
-        OutcomeGetter.plotFlexibinnedTable(args.corpdb, args.feattable, temp_feature_file, feat_to_label, args.preservebintable)
+        #retired: the binning (FeatureRefiner.createTableWithBinnedFeats) remains, but plotting needed a missing plotbot.R
+        print("--feat_flexibin is no longer supported.")
+        sys.exit(1)
     if args.tfidf:
         if not fr: fr=FR()
         args.feattable = fr.createTfIdfTable(args.feattable)
@@ -2168,42 +2158,10 @@ def main(fn_args = None):
         sp = StatsPlotter(args.corpdb)
         sp.plotDescStats(outcome_to_values, len(groups), outputFile)
 
-    if args.scatterplot: # or args.hist2d:
-        scatter_dict_1 = {}
-        scatter_dict_2 = {}
-
-        if not og: og = OG()
-        (out_groups, outcome_to_gid_to_value, controls) = og.getGroupsAndOutcomes()
-        scatter_dict_1 = outcome_to_gid_to_value
-
-        if args.featnames and args.feattable:
-            if not fg: fg = FG()
-            where = 'group_id IN ( %s )'%(','.join(map(str, out_groups)))
-            (feat_groups, feature_to_gid_to_value) = fg.getGroupsAndFeats( where )
-            scatter_dict_2 = feature_to_gid_to_value
-        else:
-            scatter_dict_2 = outcome_to_gid_to_value
-
-        from dlatk.lib.descStats import StatsPlotter
-        sp = StatsPlotter()
-        for scatter_group_1 in scatter_dict_1:
-            for scatter_group_2 in scatter_dict_2:
-                if scatter_group_1 != scatter_group_2 or (args.featnames and args.feattable):
-                    (xValues, yValues) = dlac.alignDictsAsLists(scatter_dict_1[scatter_group_1], scatter_dict_2[scatter_group_2])
-                    if args.scatterplot:
-                        outputFile = '%s/plots/scatter/%s.%s.%s.%s.scat'%(args.outputdir, fg.featureTable if fg else 'noFeatureTable', scatter_group_2, og.outcome_table, scatter_group_1)
-                        if args.outputname: outputFile = '.'.join([args.outputname, scatter_group_1, scatter_group_2, 'scat'])
-                        sp.plotScatter(scatter_group_1, xValues, scatter_group_2, yValues, outputFile)
-                    # if args.hist2d: #--hist2d is disabled (see Plot Actions)
-                    #     outputFile = '%s/plots/scatter/%s.%s.%s.%s.hist2d'%(args.outputdir, fg.featureTable if fg else 'noFeatureTable', scatter_group_2, og.outcome_table, scatter_group_1)
-                    #     if args.outputname: outputFile = outputFile = '.'.join([args.outputname, scatter_group_1, scatter_group_2, 'hist2d'])
-                    #     sp.plot2dHist(scatter_group_1, xValues, scatter_group_2, yValues, outputFile)
-                    outputFile = '%s/plots/scatter/%s.%s.%s.%s.desc.%s'%(args.outputdir, fg.featureTable if fg else 'noFeatureTable', scatter_group_2, og.outcome_table, scatter_group_1, scatter_group_1)
-                    if args.outputname: outputFile = '.'.join([args.outputname, scatter_group_1, scatter_group_2, 'desc'])
-                    sp.plotDescStats(dict({scatter_group_1:xValues}), outputFile)
-                    outputFile = '%s/plots/scatter/%s.%s.%s.%s.desc.%s'%(args.outputdir, fg.featureTable if fg else 'noFeatureTable', scatter_group_2, og.outcome_table, scatter_group_1, scatter_group_2)
-                    if args.outputname: outputFile = '.'.join([args.outputname, scatter_group_1, scatter_group_2, 'desc'])
-                    sp.plotDescStats(dict({scatter_group_2:yValues}), outputFile)
+    if args.scatterplot:
+        #retired: it needed R (rpy2) and the old wwbp package via lib/descStats.py; see git history for the old code
+        print("--scatterplot is no longer supported. We would like to bring it back with a new dlatk implementation.")
+        sys.exit(1)
 
     #Analysis using only feature tables:
     if args.ttestfeats:

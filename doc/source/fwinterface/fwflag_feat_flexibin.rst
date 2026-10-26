@@ -10,7 +10,7 @@ Switch
 Description
 ===========
 
-Plots a binned feature table, uses --num_bins, --group_id_range, --f, --flexiplot_file
+**Retired: no longer supported.** It plotted a binned feature table, using --num_bins, --group_id_range, --f, --flexiplot_file.
 
 Argument and Default Value
 ==========================

@@ -10,7 +10,7 @@ Switch
 Description
 ===========
 
-Creates a scatter plot for each pair of given variables.
+**Retired: no longer supported.** We would like to bring it back with a new dlatk implementation. It created a scatter plot for each pair of given variables.
 
 Argument and Default Value
 ==========================

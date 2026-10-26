@@ -10,7 +10,7 @@ Switch
 Description
 ===========
 
-Use with Plot Action --feat_flexibin to specify a file to read for plotting.
+Use with Plot Action --feat_flexibin to specify a file to read for plotting. **--feat_flexibin is retired.**
 
 Argument and Default Value
 ==========================

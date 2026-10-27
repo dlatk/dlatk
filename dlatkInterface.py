@@ -166,15 +166,11 @@ def listModels():
         print('')
     print('* default')
 
-def main(fn_args = None):
-    """
-    :param fn_args: string (split like a shell command line) or list of arguments - ex "-d testing -t msgs -c user_id --add_ngrams -n 1 "
-    """
-    strTime = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-    dlac.warn("\n-----\nDLATK Interface Initiated: %s\n-----" % strTime)
-    start_time = time.time()
-
-
+#################################################################
+### Argument parsing
+##
+def buildInitParser():
+    """the arguments read before the rest: --to_file, --from_file, --conf, --lex_interface"""
     ##Argument Parser:
     init_parser = argparse.ArgumentParser(prefix_chars='-+', formatter_class=argparse.ArgumentDefaultsHelpFormatter, add_help=False)
 
@@ -188,23 +184,11 @@ def main(fn_args = None):
                        help='reads flag values from file')
     group.add_argument('--conf', '--mysql_config', '--mysql_config_file', metavar='HOST', dest='mysqlconfigfile', default=dlac.MYSQL_CONFIG_FILE,
                        help='Configuration file for MySQL connection settings (default: ~/.my.cnf or dlatk/lib/.dlatk.cnf)')
+    return init_parser
 
-    if fn_args:
-        argv = fn_args if isinstance(fn_args, list) else shlex.split(fn_args)
-    else:
-        argv = sys.argv[1:]
-    init_args, remaining_argv = init_parser.parse_known_args(argv)
-    
-    if init_args.lexinterface:
-        lex_parser = LexInterfaceParser(parents=[init_parser], mysql_config_file=init_args.mysqlconfigfile)
-        lex_parser.processArgs(args=remaining_argv, parents=True)
-        sys.exit()
-    elif init_args.frominitfile:
-        conf_parser = SafeConfigParser()
-        conf_parser.read(init_args.frominitfile)
-    else:
-        conf_parser = None
 
+def buildParser(init_parser, conf_parser):
+    """every other argument; defaults come from the --from_file init file (conf_parser) when given"""
     # Inherit options from init_parser
     parser = argparse.ArgumentParser(description='Extract and Manage Language Feature Data.',
         parents=[init_parser], formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -345,7 +329,6 @@ order of actions:
                        help='store embeddings as message_level feature table instead.')
 
 
-
     group = parser.add_argument_group('MySQL Interactions', '')
     group.add_argument('--show_feature_tables', '--show_feat_tables', '--ls', action='store_true', dest='listfeattables', default=False,
                        help='List all feature tables for given corpdb, corptable and correl_field')
@@ -462,7 +445,6 @@ order of actions:
                        help='Does not remove low variance outcomes and controls from analysis')
     group.add_argument("--min_abs_effect_size", "--min_es", type=float, metavar='r', dest="minabseffectsize", default = 0.0,
                        help="Minimum effect size to add to tagcloud. Default = 0.0.")
-
 
 
     group.add_argument('--interactions', action='store_true', dest='interactions', default=False,
@@ -696,7 +678,6 @@ order of actions:
                        help='Aggregates features from a lower level to new group by field, interpolating across specified amount of days.')
 
 
-
     group = parser.add_argument_group('Outcome Actions', '')
     group.add_argument('--print_csv', metavar="FILENAME", dest='printcsv', default = None,
                        help='prints group normalized values use for correlation.')
@@ -913,22 +894,12 @@ order of actions:
     group.add_argument('--lda_iterations', type=int, default=dlac.DEF_NUM_ITERATIONS,
                        help="The number of Gibbs sampling iterations to perform. Default: {}"
                        .format(str(dlac.DEF_NUM_ITERATIONS)))
+    return parser
 
-    if not argv:
-        parser.print_help()
-        sys.exit(0)
 
-    args = parser.parse_args(remaining_argv)
-
-    if args.listmodels:
-        listModels()
-        sys.exit(0)
-
-    #recorded with the settings of every output (see settingsRecord), so it can be replicated
-    args.dlatk_command = 'dlatkInterface.py ' + ' '.join(shlex.quote(a) for a in argv)
-    args.dlatk_version = dlatkVersion()
-    args.dlatk_run_date = time.strftime('%Y-%m-%d %H:%M:%S')
-
+def adjustArgs(args, init_args, conf_parser):
+    """fills in and adjusts arguments after parsing; returns setGFTWarning: False when
+    --group_freq_thresh was inferred from the group field"""
     #--conf is parsed by init_parser, so it is not in remaining_argv; otherwise use the init file's
     args.mysqlconfigfile = init_args.mysqlconfigfile
     if args.mysqlconfigfile == dlac.MYSQL_CONFIG_FILE:
@@ -1011,55 +982,100 @@ order of actions:
         args.featureselectionparams = None
 
     DLAWorker.lexicon_db = args.lexicondb
+    return setGFTWarning
 
-    ##Process Arguments
-    settingsPrinted = []
-    def settingsRecord():
+
+#################################################################
+### Workers and results shared by the actions of one run
+##
+class RunState:
+    """What the actions of one run share: the workers, each created by the first action that needs
+    it (`if not fg: fg = FG()`) and reused by the actions after it, and results passed from one
+    action to later ones (e.g. whitelist/blacklist from refinement to the analyses)."""
+
+    def __init__(self, args, setGFTWarning):
+        self.args = args
+        self.setGFTWarning = setGFTWarning
+        self.settingsPrinted = False
+        self.dlaw = None
+        self.ma = None
+        self.mt = None
+        self.fe = None
+        self.se = None
+        self.fr = None
+        self.og = None
+        self.oa = None
+        self.fg = None
+        self.fgs = None #feature getters
+        self.te = None
+        #results passed from one action to later ones
+        self.blacklist = None
+        self.correls = None
+        self.cp = None
+        self.dr = None
+        self.lda_state_name = None
+        self.rp = None
+        self.whitelist = None
+
+    def settingsRecord(self):
         """the settings of this run, recorded with every analysis output so it can be replicated:
         printed once to the screen, and returned (one line, Namespace(...)) to write into output files"""
-        if not settingsPrinted:
+        args = self.args
+        if not self.settingsPrinted:
             pprint(args)
-            settingsPrinted.append(True)
+            self.settingsPrinted = True
         return str(args)
 
-    def corpArgs():
+    def corpArgs(self):
         """the arguments every worker takes first: database, corpus, group field, ..."""
+        args = self.args
         return (args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field,
                 args.messageid_field, args.encoding, args.useunicode, args.lexicondb)
 
-    def DLAW():
-        return DLAWorker(*corpArgs(), wordTable = args.wordTable)
+    def DLAW(self):
+        args = self.args
+        return DLAWorker(*self.corpArgs(), wordTable = args.wordTable)
 
-    def MA():
-        return MessageAnnotator(*corpArgs(), wordTable = args.wordTable)
+    def MA(self):
+        args = self.args
+        return MessageAnnotator(*self.corpArgs(), wordTable = args.wordTable)
 
-    def MT():
-        return MessageTransformer(*corpArgs(), wordTable = args.wordTable)
+    def MT(self):
+        args = self.args
+        return MessageTransformer(*self.corpArgs(), wordTable = args.wordTable)
 
-    def FE():
-        return FeatureExtractor(*corpArgs(), wordTable = args.wordTable)
+    def FE(self):
+        args = self.args
+        return FeatureExtractor(*self.corpArgs(), wordTable = args.wordTable)
 
-    def SE():
-        return SemanticsExtractor(*corpArgs(), args.corpdir, wordTable = args.wordTable)
+    def SE(self):
+        args = self.args
+        return SemanticsExtractor(*self.corpArgs(), args.corpdir, wordTable = args.wordTable)
 
-    def OG():
-        return OutcomeGetter(*corpArgs(), args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, fold_column = args.fold_column, outcome_adaptation_factors=args.adaptationfactors)
+    def OG(self):
+        args = self.args
+        return OutcomeGetter(*self.corpArgs(), args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, fold_column = args.fold_column, outcome_adaptation_factors=args.adaptationfactors)
 
-    def OA():
-        return OutcomeAnalyzer(*corpArgs(), args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname, outcome_adaptation_factors=args.adaptationfactors)
+    def OA(self):
+        args = self.args
+        return OutcomeAnalyzer(*self.corpArgs(), args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname, outcome_adaptation_factors=args.adaptationfactors)
 
-    def DR(fg, og):
+    def DR(self, fg, og):
+        args = self.args
         return DimensionReducer(fg, args.model, og, args.n_components)
     
-    def FR():
-        return FeatureRefiner(*corpArgs(), args.feattable, args.featnames, wordTable = args.wordTable)
+    def FR(self):
+        args = self.args
+        return FeatureRefiner(*self.corpArgs(), args.feattable, args.featnames, wordTable = args.wordTable)
 
-    def FG(featTable = None):
+    def FG(self, featTable = None):
+        args = self.args
         if not featTable:
             featTable = args.feattable
-        return FeatureGetter(*corpArgs(), featTable, args.featnames, wordTable = args.wordTable)
+        return FeatureGetter(*self.corpArgs(), featTable, args.featnames, wordTable = args.wordTable)
 
-    def FGs(featTable = None):
+    def FGs(self, featTable = None):
+        args = self.args
         if not featTable:
             featTable = args.feattable
             if not featTable:
@@ -1067,39 +1083,113 @@ order of actions:
                 sys.exit(1)
         if isinstance(featTable, str):
             featTable = [featTable]
-        return [FeatureGetter(*corpArgs(), featTable,
+        return [FeatureGetter(*self.corpArgs(), featTable,
                               args.featnames,
                               wordTable = args.wordTable)
                 for featTable in featTable]
-    def TE():
+    def TE(self):
+        args = self.args
         return TopicExtractor(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, dlac.DEF_ENCODING, dlac.DEF_UNICODE_SWITCH, args.ldamsgtbl)
 
-    dlaw = None
-    ma = None
-    mt = None
-    fe = None
-    se = None
-    fr = None
-    og = None
-    oa = None
-    fg = None
-    fgs = None #feature getters
-    te = None
 
-    # if not fe:
-    #  fe = FE()
-    # fe.addFeatsToLexTable(args.lextable, valueFunc = args.valuefunc, isWeighted=args.weightedlexicon, featValueFunc=args.lexvaluefunc)
-    # exit()
+#################################################################
+### Output helpers
+##
+def printTableDesc(description):
+    header = ['Field', 'Type','Null', 'Key', 'Default', 'Extra']
+    row_format ="{:>25}{:>25}{:>10}{:>10}{:>10}{:>15}"
+    print(row_format.format(*header))
+    for row in description:
+        print(row_format.format(*[r if r or r == 0 else '' for r in row]))
 
-    ##### Actions #####
-    # Actions run in this fixed order, so one command can chain several (e.g. --add_ngrams ... --correlate);
-    # a step that creates a feature table sets args.feattable for the steps after it. Sections, in run order:
-    #   Tables, Feature Extraction, Messages, LDA and Other Features, Semantic Features, Refinement,
-    #   Feature Only, Outcome Only, Correlation, Multiple Regression, Mediation, Prediction (Regression),
-    #   Classification, Clustering, Plots, Feature Table Analyses, Save Settings
-    # Workers (fe, fg, og, ...) are created by the first section that needs one and reused after that.
 
-    ##### Tables #####  (-h: MySQL Interactions)
+def printTableData(data):
+    row_format = "{:>15}" * len(data[0])
+    for row in data:
+        print(row_format.format(*[' ' + str(r)[0:14] if r or r == 0 else '' for r in row]))
+
+
+def makeOutputFilename(args, fg=None, og=None, prefix=None, suffix=None):
+    if args.outputname:
+        return args.outputname+suffix
+
+    outputFile = args.outputdir + '/'
+    filePieces = []
+    if prefix:
+        filePieces.append(prefix)
+    if fg:
+        filePieces.append(fg.featureTable)
+    if og:
+        if og.outcome_value_fields and len(og.outcome_value_fields) <= 10:
+            filePieces.append('_'.join(og.outcome_value_fields))
+    if og.outcome_controls: filePieces.append('_'.join(og.outcome_controls))
+    if args.groupfreqthresh: filePieces.append("freq" + str(args.groupfreqthresh))
+    if args.spearman: filePieces.append('spear')
+    if args.blacklist: filePieces.append('blist')
+    if args.lextable: filePieces.append('-'.join([args.lextable] + args.categories))
+    if args.feat_blacklist: filePieces.append('-'.join(args.feat_blacklist))
+    if args.feat_whitelist: filePieces.append('wlist')
+    if args.feat_whitelist: filePieces.append('-'.join(args.feat_whitelist))
+    if suffix: filePieces.append(suffix)
+    outputFile += '.'.join(filePieces)
+    outputFile = outputFile.replace("$", ".")
+    print("Created output filename: %s" % outputFile)
+    return outputFile
+
+
+def pprintCorrelsPerOutcome(correls, maxP=0.05):
+    for outcomeField, featRs in correls.items():
+        print("\n%s:" % outcomeField)
+        cnt = 0
+        for featR in featRs.items():
+            if featR[1][1] < maxP: cnt +=1
+        #pprint(featRs)#debug
+        pprint(sorted(list(featRs.items()), key= lambda f: f[1][0] if not isnan(f[1][0]) else 0),depth=3, compact=True)
+        print("\n%d features significant at p < %s" % (cnt, maxP))
+
+
+def printMessagesAndPredictions(dlaw, prediction_table, outcome_table=None, outcome=None, num_groups=2, num_messages=3):
+
+    # get unique groups
+    fields = ["DISTINCT {}".format(dlaw.correl_field)]
+    selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields(fields).set_limit(num_groups)
+    groups = [row[0] for row in selectQuery.execute_query()]
+
+    # get messages, outcomes, and predictions for the groups
+    dlac.warn("\nExample predictions\n-------")
+    for group in groups:
+
+        dlac.warn("Group ID: {}".format(group))
+        selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields(["COUNT(*)"]).where("{} = {}".format(dlaw.correl_field, group))
+        num_messages = min(selectQuery.execute_query()[0][0], num_messages)
+
+        # print messages for the group
+        selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields([dlaw.message_field]).where("{} = {}".format(dlaw.correl_field, group)).set_limit(num_messages)
+        messages = [row[0] for row in selectQuery.execute_query()]
+        dlac.warn("Top {} messages for the group:".format(num_messages))
+        for message in messages:
+            dlac.warn(message)
+            dlac.warn('\n')
+
+        selectQuery = dlaw.qb.create_select_query(prediction_table).set_fields(['*']).where("{} = {}".format(dlaw.correl_field, group))
+        prediction = selectQuery.execute_query()[0][1]
+
+        if outcome:
+            selectQuery = dlaw.qb.create_select_query(outcome_table).set_fields(outcome).where("{} = {}".format(dlaw.correl_field, group))
+            outcome_value = selectQuery.execute_query()[0]
+            dlac.warn("Ground-truth, Prediction: {}, {}\n-------".format(outcome_value, prediction))
+
+        else:
+            dlac.warn("Prediction: {}\n-------".format(prediction))
+
+
+#################################################################
+### Actions, in the order they run (see main)
+##
+def runTables(args, s):
+    """Tables (-h: MySQL Interactions)"""
+    DLAW = s.DLAW
+    dlaw = s.dlaw
     if args.listfeattables or args.showtables or args.describetables or args.createrandsample or args.viewtables or args.createcopiedtable:
         if not dlaw: dlaw = DLAW()
 
@@ -1117,17 +1207,6 @@ order of actions:
         print('\nFound %s available tables\n----' % (len(tables)))
         for table in tables: print(str(table[0]))
 
-    def printTableDesc(description):
-        header = ['Field', 'Type','Null', 'Key', 'Default', 'Extra']
-        row_format ="{:>25}{:>25}{:>10}{:>10}{:>10}{:>15}"
-        print(row_format.format(*header))
-        for row in description:
-            print(row_format.format(*[r if r or r == 0 else '' for r in row]))
-
-    def printTableData(data):
-        row_format = "{:>15}" * len(data[0])
-        for row in data:
-            print(row_format.format(*[' ' + str(r)[0:14] if r or r == 0 else '' for r in row]))
 
     if args.describetables:
         if args.corptable:
@@ -1169,9 +1248,13 @@ order of actions:
             print("Error: Need two arguments for --create_copied_table")
             sys.exit(1)
         new_table = dlaw.createCopiedTable(args.createcopiedtable[0], args.createcopiedtable[1], where=args.groupswhere)
-    
+    s.dlaw = dlaw
 
-    ##### Feature Extraction #####  (-h: Standard Extraction Actions)
+
+def runFeatureExtraction(args, s):
+    """Feature Extraction (-h: Standard Extraction Actions)"""
+    FE, FG = s.FE, s.FG
+    fe, fg = s.fe, s.fg
     if args.addngrams:
         if not fe: fe = FE()
 
@@ -1314,10 +1397,14 @@ order of actions:
             state_file = os.path.splitext(state_file)[0]
             args.outputname = state_file
         args.addldamsgs = state_file
+    s.fe, s.fg = fe, fg
 
+
+def runMessages(args, s):
+    """Messages (-h: Messages Transformation Actions, Message Cleaning Actions)"""
+    MA, MT = s.MA, s.MT
+    lda_state_name, ma, mt = s.lda_state_name, s.ma, s.mt
     # LDA
-
-    ##### Messages #####  (-h: Messages Transformation Actions, Message Cleaning Actions)
     if args.addmessageid:
         messageFile = open(args.addmessageid[0], 'rb')
         stateFile = gzip.open(args.addmessageid[1], 'rb')
@@ -1408,9 +1495,13 @@ order of actions:
     if args.cleanmessages and not (args.langfilter or args.deduplicate) :
         if not ma: ma = MA()
         ma.addAnonymizedTable()
+    s.lda_state_name, s.ma, s.mt = lda_state_name, ma, mt
 
 
-    ##### LDA and Other Features #####  (-h: LDA Actions)
+def runLDAAndOtherFeatures(args, s):
+    """LDA and Other Features (-h: LDA Actions)"""
+    DLAW, FE, OG, TE = s.DLAW, s.FE, s.OG, s.TE
+    dlaw, fe, lda_state_name, og, te = s.dlaw, s.fe, s.lda_state_name, s.og, s.te
     if args.createdists and not args.no_lda_lexicon:
         dist_file_output_name = None
         if args.estimate_lda_topics:
@@ -1463,19 +1554,23 @@ order of actions:
     if args.addpostimexdiff:
         if not fe: fe = FE()
         args.feattable = fe.addPOSAndTimexDiffFeatTable(args.date_field, valueFunc = args.valuefunc)
+    s.dlaw, s.fe, s.og, s.te = dlaw, fe, og, te
 
 
-    ##### Semantic Features #####  (-h: Semantic Extraction Actions)
+def runSemanticFeatures(args, s):
+    """Semantic Features (-h: Semantic Extraction Actions)"""
+    SE = s.SE
+    se = s.se
     if args.addner:
         if not se: se = SE()
         args.feattable = se.addNERTable(valueFunc = args.valuefunc)
+    s.se = se
 
 
-
-
-
-    ##### Refinement #####  (-h: Refinement Actions)
-
+def runRefinement(args, s):
+    """Refinement (-h: Refinement Actions)"""
+    DLAW, FR, OG = s.DLAW, s.FR, s.OG
+    blacklist, dlaw, fr, og, setGFTWarning, whitelist = s.blacklist, s.dlaw, s.fr, s.og, s.setGFTWarning, s.whitelist
     #(first do refinements that group tables so these tables can then be refined further by filter refinements)
     if args.combinefeattables:
         if not fr: fr=FR()
@@ -1564,47 +1659,13 @@ order of actions:
     if args.whitelist:
         if not dlaw: dlaw = DLAW()
         whitelist = dlaw.makeBlackWhiteList(args.feat_whitelist, args.lextable, args.categories)
+    s.blacklist, s.dlaw, s.fr, s.og, s.whitelist = blacklist, dlaw, fr, og, whitelist
 
-    def makeOutputFilename(args, fg=None, og=None, prefix=None, suffix=None):
-        if args.outputname:
-            return args.outputname+suffix
 
-        outputFile = args.outputdir + '/'
-        filePieces = []
-        if prefix:
-            filePieces.append(prefix)
-        if fg:
-            filePieces.append(fg.featureTable)
-        if og:
-            if og.outcome_value_fields and len(og.outcome_value_fields) <= 10:
-                filePieces.append('_'.join(og.outcome_value_fields))
-        if og.outcome_controls: filePieces.append('_'.join(og.outcome_controls))
-        if args.groupfreqthresh: filePieces.append("freq" + str(args.groupfreqthresh))
-        if args.spearman: filePieces.append('spear')
-        if args.blacklist: filePieces.append('blist')
-        if args.lextable: filePieces.append('-'.join([args.lextable] + args.categories))
-        if args.feat_blacklist: filePieces.append('-'.join(args.feat_blacklist))
-        if args.feat_whitelist: filePieces.append('wlist')
-        if args.feat_whitelist: filePieces.append('-'.join(args.feat_whitelist))
-        if suffix: filePieces.append(suffix)
-        outputFile += '.'.join(filePieces)
-        outputFile = outputFile.replace("$", ".")
-        print("Created output filename: %s" % outputFile)
-        return outputFile
-
-    def pprintCorrelsPerOutcome(correls, maxP=0.05):
-        for outcomeField, featRs in correls.items():
-            print("\n%s:" % outcomeField)
-            cnt = 0
-            for featR in featRs.items():
-                if featR[1][1] < maxP: cnt +=1
-            #pprint(featRs)#debug
-            pprint(sorted(list(featRs.items()), key= lambda f: f[1][0] if not isnan(f[1][0]) else 0),depth=3, compact=True)
-            print("\n%d features significant at p < %s" % (cnt, maxP))
-
-    
-
-    ##### Feature Only #####  (-h: MySQL Interactions: --top_messages)
+def runFeatureOnly(args, s):
+    """Feature Only (-h: MySQL Interactions: --top_messages)"""
+    FG = s.FG
+    fg = s.fg
     if args.top_messages:
       if not args.feattable:
         print("You must specify a feature table, extracted at the message level.")
@@ -1615,9 +1676,13 @@ order of actions:
 
       outputFile = makeOutputFilename(args, None, None, suffix="_topmsgs.csv") if args.outputname else None
       fg.getTopMessages(args.lextable, outputFile, args.top_messages, args.feat_whitelist, group_freq_thresh=args.groupfreqthresh)
+    s.fg = fg
 
 
-    ##### Outcome Only #####  (-h: Outcome Actions)
+def runOutcomeOnly(args, s):
+    """Outcome Only (-h: Outcome Actions)"""
+    FG, OA, OG, settingsRecord = s.FG, s.OA, s.OG, s.settingsRecord
+    blacklist, fg, oa, og, whitelist = s.blacklist, s.fg, s.oa, s.og, s.whitelist
     if args.p_correction_method == '':
         args.bonferroni = False
 
@@ -1657,9 +1722,13 @@ order of actions:
         row_column, col_column, value_column = args.densifytable
         outputFile = makeOutputFilename(args, None, None, suffix="_dense.csv") if args.outputname else None
         oa.tableToDenseCsv(row_column, col_column, value_column, output_csv_filename=outputFile, compress_csv=True)
+    s.fg, s.oa, s.og = fg, oa, og
 
 
-    ##### Correlation #####  (-h: Correlation Actions, CCA Actions)
+def runCorrelation(args, s):
+    """Correlation (-h: Correlation Actions, CCA Actions)"""
+    DLAW, FG, FR, OA, OG, settingsRecord = s.DLAW, s.FG, s.FR, s.OA, s.OG, s.settingsRecord
+    blacklist, correls, dlaw, fg, fr, oa, og, whitelist = s.blacklist, s.correls, s.dlaw, s.fg, s.fr, s.oa, s.og, s.whitelist
     correls = None
     if args.compTagcloud and args.compTCsample1 and args.compTCsample2:
         if not fg: fg = FG()
@@ -1868,10 +1937,13 @@ order of actions:
             correls = ddla.outputForTagclouds()
             OA().printTagCloudData(correls, args.maxP, outputFile = ddla.outputFile[:-4]+"_tagcloud", colorScheme = args.tagcloudcolorscheme)
             ## TODO : use this output into OutcomeGetter.
+    s.correls, s.dlaw, s.fg, s.fr, s.oa, s.og, s.whitelist = correls, dlaw, fg, fr, oa, og, whitelist
 
 
-
-    ##### Multiple Regression #####  (-h: Multiple Regression Actions)
+def runMultipleRegression(args, s):
+    """Multiple Regression (-h: Multiple Regression Actions)"""
+    FG, OA, settingsRecord = s.FG, s.OA, s.settingsRecord
+    blacklist, fg, oa, whitelist = s.blacklist, s.fg, s.oa, s.whitelist
     coeffs = None
     if args.multir: #add any options that output multiR results to be caught here
         if not oa: oa = OA()
@@ -1883,10 +1955,14 @@ order of actions:
             outputFile = makeOutputFilename(args, fg, oa, "multiprint") ##uses outputdir
             oa.writeSignificantCoeffs4dVis(coeffs, outputFile, args.outcomefields, paramString=settingsRecord())
         #TODO: do some sort of sorted printing?
+    s.fg, s.oa = fg, oa
 
+
+def runMediation(args, s):
+    """Mediation (-h: Mediation Variables)"""
+    FG, OG = s.FG, s.OG
+    fg, og = s.fg, s.og
     # Mediation Analysis
-
-    ##### Mediation #####  (-h: Mediation Variables)
     if args.mediation:
 
         # more than one feature location flag
@@ -1974,44 +2050,13 @@ order of actions:
         # print mediation results
         if args.mediationsummary: mg.print_summary(args.outputname)
         if args.mediationcsv or args.csv: mg.print_csv(args.outputname)
+    s.fg, s.og = fg, og
 
 
-    ##### Prediction (Regression) #####  (-h: Prediction Actions, Factor Adaptation Actions)
-
-    def printMessagesAndPredictions(dlaw, prediction_table, outcome_table=None, outcome=None, num_groups=2, num_messages=3):
-
-        # get unique groups
-        fields = ["DISTINCT {}".format(dlaw.correl_field)]
-        selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields(fields).set_limit(num_groups)
-        groups = [row[0] for row in selectQuery.execute_query()]
-
-        # get messages, outcomes, and predictions for the groups
-        dlac.warn("\nExample predictions\n-------")
-        for group in groups:
-
-            dlac.warn("Group ID: {}".format(group))
-            selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields(["COUNT(*)"]).where("{} = {}".format(dlaw.correl_field, group))
-            num_messages = min(selectQuery.execute_query()[0][0], num_messages)
-
-            # print messages for the group
-            selectQuery = dlaw.qb.create_select_query(dlaw.corptable).set_fields([dlaw.message_field]).where("{} = {}".format(dlaw.correl_field, group)).set_limit(num_messages)
-            messages = [row[0] for row in selectQuery.execute_query()]
-            dlac.warn("Top {} messages for the group:".format(num_messages))
-            for message in messages:
-                dlac.warn(message)
-                dlac.warn('\n')
-
-            selectQuery = dlaw.qb.create_select_query(prediction_table).set_fields(['*']).where("{} = {}".format(dlaw.correl_field, group))
-            prediction = selectQuery.execute_query()[0][1]
-
-            if outcome:
-                selectQuery = dlaw.qb.create_select_query(outcome_table).set_fields(outcome).where("{} = {}".format(dlaw.correl_field, group))
-                outcome_value = selectQuery.execute_query()[0]
-                dlac.warn("Ground-truth, Prediction: {}, {}\n-------".format(outcome_value, prediction))
-
-            else:
-                dlac.warn("Prediction: {}\n-------".format(prediction))
-
+def runPrediction(args, s):
+    """Prediction (Regression) (-h: Prediction Actions, Factor Adaptation Actions)"""
+    DR, FE, FG, FGs, OG, settingsRecord = s.DR, s.FE, s.FG, s.FGs, s.OG, s.settingsRecord
+    blacklist, dr, fe, fg, fgs, og, rp = s.blacklist, s.dr, s.fe, s.fg, s.fgs, s.og, s.rp
     rp = None #regression predictor
     crp = None #combined regression predictor
     fgs = None #feature getters
@@ -2119,9 +2164,13 @@ order of actions:
 
     if args.savemodels and rp:
         rp.save(args.picklefile)
+    s.dr, s.fe, s.fg, s.fgs, s.og, s.rp = dr, fe, fg, fgs, og, rp
 
 
-    ##### Classification #####  (-h: Classification Actions)
+def runClassification(args, s):
+    """Classification (-h: Classification Actions)"""
+    FE, FG, FGs, OG, settingsRecord = s.FE, s.FG, s.FGs, s.OG, s.settingsRecord
+    blacklist, cp, fe, fg, fgs, og = s.blacklist, s.cp, s.fe, s.fg, s.fgs, s.og
     cp = None
     if args.trainclassifiers or args.testclassifiers or args.combotestclassifiers or args.predictclassifiers or args.predictctofeats or args.predictprobstofeats or args.classToLex or args.roc or args.predictCtoOutcomeTable:
         if (args.predictctofeats or args.predictprobstofeats) and isinstance(args.low_variance_thresh, (int, float)): args.low_variance_thresh = False
@@ -2238,9 +2287,13 @@ order of actions:
 
     if args.savemodels and cp:
         cp.save(args.picklefile)
+    s.cp, s.fe, s.fg, s.fgs, s.og = cp, fe, fg, fgs, og
 
 
-    ##### Clustering #####  (-h: Clustering Actions)
+def runClustering(args, s):
+    """Clustering (-h: Clustering Actions)"""
+    DLAW, FE = s.DLAW, s.FE
+    cp, dlaw, dr, fe, rp = s.cp, s.dlaw, s.dr, s.fe, s.rp
     if args.loadmodels and dr:
         print("LOADING ", args.picklefile)
         dr.load(args.picklefile)
@@ -2301,9 +2354,13 @@ order of actions:
             rp.modelName[:4] if args.predictRtoOutcomeTable else cp.modelName[:4],
             args.predictRtoOutcomeTable if args.predictRtoOutcomeTable else args.predictCtoOutcomeTable)
         #printMessagesAndPredictions(dlaw, prediction_table, args.outcometable, args.outcomefields)
+    s.dlaw, s.fe = dlaw, fe
 
 
-    ##### Plots #####  (-h: Plot Actions, LDA Estimation Actions)
+def runPlots(args, s):
+    """Plots (-h: Plot Actions, LDA Estimation Actions)"""
+    DLAW = s.DLAW
+    correls, dlaw, fg, oa = s.correls, s.dlaw, s.fg, s.oa
     if args.makealltopicwordclouds:
         outputFile = makeOutputFilename(args, None, None, suffix="_alltopics/")
         if args.topictagcloudcolorscheme == 'multi':#make sure not to use multi
@@ -2325,9 +2382,13 @@ order of actions:
         #retired: it needed R (rpy2) and the old wwbp package via lib/descStats.py; see git history for the old code
         print("--scatterplot is no longer supported. We would like to bring it back with a new dlatk implementation.")
         sys.exit(1)
+    s.dlaw = dlaw
 
 
-    ##### Feature Table Analyses #####  (-h: Feature Table Analyses)
+def runFeatureTableAnalyses(args, s):
+    """Feature Table Analyses (-h: Feature Table Analyses)"""
+    FGs = s.FGs
+    fgs = s.fgs
     if args.ttestfeats:
         if not fgs: fgs = FGs()
         #TODO: change below to use every pair of FGs (in case there are more than 2)
@@ -2337,9 +2398,11 @@ order of actions:
             #can use something similar to OG correlMatrix
             pass
         pprint(results)
+    s.fgs = fgs
 
 
-    ##### Save Settings #####  (-h: --to_file)
+def runSaveSettings(args, init_args):
+    """Save Settings (-h: --to_file)"""
     if init_args.toinitfile:
       with open(init_args.toinitfile, 'w') as init_file:
         init_file.write("[constants]\n")
@@ -2347,7 +2410,76 @@ order of actions:
             value = getattr(args, dest)
             if value and value != default:
                 init_file.write("%s = %s\n" % (name, ", ".join(str(v) for v in value) if isinstance(value, list) else str(value)))
+
+
+def main(fn_args = None):
+    """
+    :param fn_args: string (split like a shell command line) or list of arguments - ex "-d testing -t msgs -c user_id --add_ngrams -n 1 "
+    """
+    strTime = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+    dlac.warn("\n-----\nDLATK Interface Initiated: %s\n-----" % strTime)
+    start_time = time.time()
+
+
+    init_parser = buildInitParser()
+
+    if fn_args:
+        argv = fn_args if isinstance(fn_args, list) else shlex.split(fn_args)
+    else:
+        argv = sys.argv[1:]
+    init_args, remaining_argv = init_parser.parse_known_args(argv)
     
+    if init_args.lexinterface:
+        lex_parser = LexInterfaceParser(parents=[init_parser], mysql_config_file=init_args.mysqlconfigfile)
+        lex_parser.processArgs(args=remaining_argv, parents=True)
+        sys.exit()
+    elif init_args.frominitfile:
+        conf_parser = SafeConfigParser()
+        conf_parser.read(init_args.frominitfile)
+    else:
+        conf_parser = None
+
+    parser = buildParser(init_parser, conf_parser)
+
+    if not argv:
+        parser.print_help()
+        sys.exit(0)
+
+    args = parser.parse_args(remaining_argv)
+
+    if args.listmodels:
+        listModels()
+        sys.exit(0)
+
+    #recorded with the settings of every output (see settingsRecord), so it can be replicated
+    args.dlatk_command = 'dlatkInterface.py ' + ' '.join(shlex.quote(a) for a in argv)
+    args.dlatk_version = dlatkVersion()
+    args.dlatk_run_date = time.strftime('%Y-%m-%d %H:%M:%S')
+
+    setGFTWarning = adjustArgs(args, init_args, conf_parser)
+    s = RunState(args, setGFTWarning)
+
+    # Actions run in this fixed order, so one command can chain several (e.g. --add_ngrams ... --correlate);
+    # an action that creates a feature table sets args.feattable for the actions after it. Each run...()
+    # function is one group of -h actions; s (RunState) carries the workers and results between them.
+    runTables(args, s)
+    runFeatureExtraction(args, s)
+    runMessages(args, s)
+    runLDAAndOtherFeatures(args, s)
+    runSemanticFeatures(args, s)
+    runRefinement(args, s)
+    runFeatureOnly(args, s)
+    runOutcomeOnly(args, s)
+    runCorrelation(args, s)
+    runMultipleRegression(args, s)
+    runMediation(args, s)
+    runPrediction(args, s)
+    runClassification(args, s)
+    runClustering(args, s)
+    runPlots(args, s)
+    runFeatureTableAnalyses(args, s)
+    runSaveSettings(args, init_args)
+
     warning = '''-------
 Settings:
 

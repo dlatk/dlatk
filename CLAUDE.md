@@ -229,6 +229,13 @@ python3 dlatkInterface.py -e sqlite \
 
 ## Architecture
 
+`dlatkInterface.py` is laid out in run order: `buildInitParser()`/`buildParser()` define every flag (grouped as in
+`-h`), `adjustArgs()` fills in and adjusts them, and `main()` calls one `run<Section>(args, s)` per group of actions
+(`runFeatureExtraction`, `runRefinement`, `runCorrelation`, `runPrediction`, ...) in a fixed order, so one command
+can chain actions. `s` is a `RunState`: the workers (`fg = FG()`, created by the first action that needs one and
+reused) and results passed between actions (e.g. `whitelist`). A new action goes in the `run...` function for its
+`-h` group; a new flag goes in that group in `buildParser()`.
+
 `DLAWorker` (`dlatk/dlaWorker.py`) is the base class; it owns the `DataEngine` and `QueryBuilder`. All workers inherit from it. The database layer (`dlatk/database/dataEngine.py`) abstracts MySQL vs. SQLite. Constants and defaults are in `dlatk/dlaConstants.py`.
 
 Key workers: `FeatureExtractor`, `FeatureGetter`, `FeatureRefiner`, `OutcomeAnalyzer`, `RegressionPredictor`, `ClassifyPredictor`, `TopicExtractor`, `MessageTransformer`, `SemanticsExtractor`.

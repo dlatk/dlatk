@@ -48,6 +48,41 @@ except ImportError:
 
 from dlatk.lexicainterface.lexInterface import LexInterfaceParser
 
+#settings saved by --to_file and read back by --from_file (each flag reads its own with getInitVar):
+#(name in the init file, args dest, default: not written when equal to it)
+INIT_FILE_VARS = [
+    ('dbengine', 'dbengine', dlac.DB_TYPE),
+    ('corpdb', 'corpdb', dlac.DEF_CORPDB),
+    ('corptable', 'corptable', dlac.DEF_CORPTABLE),
+    ('correl_field', 'correl_field', None),
+    ('mysql_config_file', 'mysqlconfigfile', dlac.MYSQL_CONFIG_FILE),
+    ('message_field', 'message_field', dlac.DEF_MESSAGE_FIELD),
+    ('messageid_field', 'messageid_field', dlac.DEF_MESSAGEID_FIELD),
+    ('encoding', 'encoding', dlac.DEF_ENCODING),
+    ('lexicondb', 'lexicondb', dlac.DEF_LEXICON_DB),
+    ('feattable', 'feattable', dlac.DEF_FEAT_TABLE),
+    ('featnames', 'featnames', dlac.DEF_FEAT_NAMES),
+    ('date_field', 'date_field', dlac.DEF_DATE_FIELD),
+    ('outcometable', 'outcometable', dlac.DEF_OUTCOME_TABLE),
+    ('outcomefields', 'outcomefields', dlac.DEF_OUTCOME_FIELDS),
+    ('outcomecontrols', 'outcomecontrols', dlac.DEF_OUTCOME_CONTROLS),
+    ('outcomeinteraction', 'outcomeinteraction', dlac.DEF_OUTCOME_CONTROLS),
+    ('featlabelmaptable', 'featlabelmaptable', ''),
+    ('featlabelmaplex', 'featlabelmaplex', ''),
+    ('wordTable', 'wordTable', None),
+    ('outputname', 'outputname', None),
+    ('groupfreqthresh', 'groupfreqthresh', int(dlac.DEF_GROUP_FREQ_THRESHOLD)),
+    ('lextable', 'lextable', None),
+    ('p_correction_method', 'p_correction_method', dlac.DEF_P_CORR),
+    ('tagcloudcolorscheme', 'tagcloudcolorscheme', 'multi'),
+    ('maxP', 'maxP', float(dlac.DEF_P)),
+    ('model', 'model', dlac.DEF_MODEL),
+    ('adapttable', 'adapttable', None),
+    ('featureselection', 'featureselection', ''),
+    ('featureselectionstring', 'featureselectionstring', ''),
+    ('topictagcloudcolorscheme', 'topictagcloudcolorscheme', 'blue'),
+]
+
 def getInitVar(variable, parser, default, varList=False):
     if parser:
         if varList:
@@ -91,6 +126,24 @@ MODEL_TYPES = [
     ('naive Bayes', ['MultinomialNB', 'GaussianNB', 'BernoulliNB']),
     ('neural network', ['MLPRegressor', 'MLPClassifier']),
 ]
+
+#value transforms for --sqrt, --log, ... (named functions, so the settings record shows which one was used)
+def identityValue(d): return d
+def sqrtValue(d): return sqrt(d)
+def logValue(d): return log(d+1)
+def anscombeValue(d): return 2*sqrt(d+3/float(8))
+def booleanValue(d): return float(1.0)
+
+def dlatkVersion():
+    """dlatk's version, plus the git commit when run from a checkout"""
+    version = dlatk.__version__
+    try:
+        commit = subprocess.run(['git', '-C', os.path.dirname(os.path.abspath(__file__)), 'rev-parse', '--short', 'HEAD'],
+                                capture_output=True, text=True, timeout=5).stdout.strip()
+        if commit: version += ' (git %s)' % commit
+    except Exception:
+        pass
+    return version
 
 def listModels():
     """prints the models available to --model, read from the regression and classification predictors"""
@@ -160,7 +213,12 @@ def main(fn_args = None):
   by -g, so the same message table can be analyzed at several levels, e.g.
     dlatkInterface.py -d dla_tutorial -t msgs -g user_id --add_ngrams -n 1      (per user)
     dlatkInterface.py -d dla_tutorial -t msgs -g message_id --add_ngrams -n 1   (per message)
-  Analyses leave out groups with fewer than --group_freq_thresh words.""")
+  Analyses leave out groups with fewer than --group_freq_thresh words.
+
+order of actions:
+  One command can run several actions, e.g. --add_ngrams -n 1 ... --correlate. They run in a fixed order
+  (tables, feature extraction, messages, refinement, analyses, prediction, plots), and an action that
+  creates a feature table passes it on to the actions after it.""")
 
     group = parser.add_argument_group('Corpus Variables', 'Defining the data from which features are extracted.')
 
@@ -216,21 +274,21 @@ def main(fn_args = None):
                        help='Features to ban when correlating with outcomes.')
     group.add_argument('--feat_whitelist', type=str, metavar='FEAT(S)', dest='feat_whitelist', nargs='+', default='',
                        help='Only permit these features when correlating with outcomes (specify feature names or if feature table then read distinct features).')
-    group.add_argument('--sqrt', action='store_const', dest='valuefunc', const=lambda d: sqrt(d),
+    group.add_argument('--sqrt', action='store_const', dest='valuefunc', const=sqrtValue,
                        help='square-roots normalized group_norm freq information.')
-    group.add_argument('--log', action='store_const', dest='valuefunc', const=lambda d: log(d+1),
+    group.add_argument('--log', action='store_const', dest='valuefunc', const=logValue,
                        help='logs the normalized group_norm freq information.')
-    group.add_argument('--anscombe', action='store_const', dest='valuefunc', const=lambda d: 2*sqrt(d+3/float(8)),
+    group.add_argument('--anscombe', action='store_const', dest='valuefunc', const=anscombeValue,
                        help='anscombe transforms normalized group_norm freq information.')
-    group.add_argument('--boolean', action='store_const', dest='valuefunc', const=lambda d: float(1.0),
+    group.add_argument('--boolean', action='store_const', dest='valuefunc', const=booleanValue,
                        help='boolean transforms normalized group_norm freq information (1 if true).')
-    group.add_argument('--lex_sqrt', action='store_const', dest='lexvaluefunc', const=lambda d: sqrt(d),
+    group.add_argument('--lex_sqrt', action='store_const', dest='lexvaluefunc', const=sqrtValue,
                        help='square-roots normalized group_norm lexicon freq information.')
-    group.add_argument('--lex_log', action='store_const', dest='lexvaluefunc', const=lambda d: log(d+1),
+    group.add_argument('--lex_log', action='store_const', dest='lexvaluefunc', const=logValue,
                        help='logs the normalized group_norm lexicon freq information.')
-    group.add_argument('--lex_anscombe', action='store_const', dest='lexvaluefunc', const=lambda d: 2*sqrt(d+3/float(8)),
+    group.add_argument('--lex_anscombe', action='store_const', dest='lexvaluefunc', const=anscombeValue,
                        help='anscombe transforms normalized group_norm lexicon freq information.')
-    group.add_argument('--lex_boolean', action='store_const', dest='lexvaluefunc', const=lambda d: float(1.0),
+    group.add_argument('--lex_boolean', action='store_const', dest='lexvaluefunc', const=booleanValue,
                        help='boolean transforms normalized group_norm freq information (1 if true).')
     group.add_argument('--set_p_occ', '--set_pocc', metavar='P', dest='pocc', type=pOccArg, default=dlac.DEF_P_OCC,
                        help='For --feat_occ_filter: keep features used by at least this fraction of groups (if >= 1, this many groups). '
@@ -866,6 +924,11 @@ def main(fn_args = None):
         listModels()
         sys.exit(0)
 
+    #recorded with the settings of every output (see settingsRecord), so it can be replicated
+    args.dlatk_command = 'dlatkInterface.py ' + ' '.join(shlex.quote(a) for a in argv)
+    args.dlatk_version = dlatkVersion()
+    args.dlatk_run_date = time.strftime('%Y-%m-%d %H:%M:%S')
+
     #--conf is parsed by init_parser, so it is not in remaining_argv; otherwise use the init file's
     args.mysqlconfigfile = init_args.mysqlconfigfile
     if args.mysqlconfigfile == dlac.MYSQL_CONFIG_FILE:
@@ -877,14 +940,14 @@ def main(fn_args = None):
       sys.exit(1)
 
     ##Argument adjustments:
-    if not args.valuefunc: args.valuefunc = lambda d: d
-    if not args.lexvaluefunc: args.lexvaluefunc = lambda d: d
+    if not args.valuefunc: args.valuefunc = identityValue
+    if not args.lexvaluefunc: args.lexvaluefunc = identityValue
 
     if args.feattable:
         if isinstance(args.feattable,list):
             args.feattable = [s.strip() for s in args.feattable]
         else:
-            args.feattable = arg.feattable.strip()
+            args.feattable = args.feattable.strip()
 
 
     if args.outcomeWithOutcomeOnly and not args.feattable:
@@ -950,37 +1013,51 @@ def main(fn_args = None):
     DLAWorker.lexicon_db = args.lexicondb
 
     ##Process Arguments
+    settingsPrinted = []
+    def settingsRecord():
+        """the settings of this run, recorded with every analysis output so it can be replicated:
+        printed once to the screen, and returned (one line, Namespace(...)) to write into output files"""
+        if not settingsPrinted:
+            pprint(args)
+            settingsPrinted.append(True)
+        return str(args)
+
+    def corpArgs():
+        """the arguments every worker takes first: database, corpus, group field, ..."""
+        return (args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field,
+                args.messageid_field, args.encoding, args.useunicode, args.lexicondb)
+
     def DLAW():
-        return DLAWorker(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
+        return DLAWorker(*corpArgs(), wordTable = args.wordTable)
 
     def MA():
-        return MessageAnnotator(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
+        return MessageAnnotator(*corpArgs(), wordTable = args.wordTable)
 
     def MT():
-        return MessageTransformer(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
+        return MessageTransformer(*corpArgs(), wordTable = args.wordTable)
 
     def FE():
-        return FeatureExtractor(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, wordTable = args.wordTable)
+        return FeatureExtractor(*corpArgs(), wordTable = args.wordTable)
 
     def SE():
-        return SemanticsExtractor(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.corpdir, wordTable = args.wordTable)
+        return SemanticsExtractor(*corpArgs(), args.corpdir, wordTable = args.wordTable)
 
     def OG():
-        return OutcomeGetter(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, fold_column = args.fold_column, outcome_adaptation_factors=args.adaptationfactors)
+        return OutcomeGetter(*corpArgs(), args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, fold_column = args.fold_column, outcome_adaptation_factors=args.adaptationfactors)
 
     def OA():
-        return OutcomeAnalyzer(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname, outcome_adaptation_factors=args.adaptationfactors)
+        return OutcomeAnalyzer(*corpArgs(), args.outcometable, args.outcomefields, args.outcomecontrols, args.outcomeinteraction, args.cattobinfields, args.cattointfields, args.groupfreqthresh, args.low_variance_thresh, args.featlabelmaptable, args.featlabelmaplex, wordTable = args.wordTable, output_name = args.outputname, outcome_adaptation_factors=args.adaptationfactors)
 
     def DR(fg, og):
         return DimensionReducer(fg, args.model, og, args.n_components)
     
     def FR():
-        return FeatureRefiner(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, args.feattable, args.featnames, wordTable = args.wordTable)
+        return FeatureRefiner(*corpArgs(), args.feattable, args.featnames, wordTable = args.wordTable)
 
     def FG(featTable = None):
         if not featTable:
             featTable = args.feattable
-        return FeatureGetter(args.dbengine, args.corpdb, args.corptable, args.correl_field, args.mysqlconfigfile, args.message_field, args.messageid_field, args.encoding, args.useunicode, args.lexicondb, featTable, args.featnames, wordTable = args.wordTable)
+        return FeatureGetter(*corpArgs(), featTable, args.featnames, wordTable = args.wordTable)
 
     def FGs(featTable = None):
         if not featTable:
@@ -990,16 +1067,7 @@ def main(fn_args = None):
                 sys.exit(1)
         if isinstance(featTable, str):
             featTable = [featTable]
-        return [FeatureGetter(args.dbengine, 
-                              args.corpdb,
-                              args.corptable,
-                              args.correl_field,
-                              args.mysqlconfigfile, 
-                              args.message_field,
-                              args.messageid_field,
-                              args.encoding,
-                              args.useunicode,
-                              args.lexicondb, featTable,
+        return [FeatureGetter(*corpArgs(), featTable,
                               args.featnames,
                               wordTable = args.wordTable)
                 for featTable in featTable]
@@ -1023,7 +1091,15 @@ def main(fn_args = None):
     # fe.addFeatsToLexTable(args.lextable, valueFunc = args.valuefunc, isWeighted=args.weightedlexicon, featValueFunc=args.lexvaluefunc)
     # exit()
 
-    # SQL interface methods
+    ##### Actions #####
+    # Actions run in this fixed order, so one command can chain several (e.g. --add_ngrams ... --correlate);
+    # a step that creates a feature table sets args.feattable for the steps after it. Sections, in run order:
+    #   Tables, Feature Extraction, Messages, LDA and Other Features, Semantic Features, Refinement,
+    #   Feature Only, Outcome Only, Correlation, Multiple Regression, Mediation, Prediction (Regression),
+    #   Classification, Clustering, Plots, Feature Table Analyses, Save Settings
+    # Workers (fe, fg, og, ...) are created by the first section that needs one and reused after that.
+
+    ##### Tables #####  (-h: MySQL Interactions)
     if args.listfeattables or args.showtables or args.describetables or args.createrandsample or args.viewtables or args.createcopiedtable:
         if not dlaw: dlaw = DLAW()
 
@@ -1094,7 +1170,8 @@ def main(fn_args = None):
             sys.exit(1)
         new_table = dlaw.createCopiedTable(args.createcopiedtable[0], args.createcopiedtable[1], where=args.groupswhere)
     
-    #Feature Extraction:
+
+    ##### Feature Extraction #####  (-h: Standard Extraction Actions)
     if args.addngrams:
         if not fe: fe = FE()
 
@@ -1239,6 +1316,8 @@ def main(fn_args = None):
         args.addldamsgs = state_file
 
     # LDA
+
+    ##### Messages #####  (-h: Messages Transformation Actions, Message Cleaning Actions)
     if args.addmessageid:
         messageFile = open(args.addmessageid[0], 'rb')
         stateFile = gzip.open(args.addmessageid[1], 'rb')
@@ -1330,7 +1409,8 @@ def main(fn_args = None):
         if not ma: ma = MA()
         ma.addAnonymizedTable()
 
-    #LDA
+
+    ##### LDA and Other Features #####  (-h: LDA Actions)
     if args.createdists and not args.no_lda_lexicon:
         dist_file_output_name = None
         if args.estimate_lda_topics:
@@ -1384,7 +1464,8 @@ def main(fn_args = None):
         if not fe: fe = FE()
         args.feattable = fe.addPOSAndTimexDiffFeatTable(args.date_field, valueFunc = args.valuefunc)
 
-    #Semantic Feature Extraction:
+
+    ##### Semantic Features #####  (-h: Semantic Extraction Actions)
     if args.addner:
         if not se: se = SE()
         args.feattable = se.addNERTable(valueFunc = args.valuefunc)
@@ -1392,7 +1473,8 @@ def main(fn_args = None):
 
 
 
-    #Feature Refinement:
+
+    ##### Refinement #####  (-h: Refinement Actions)
 
     #(first do refinements that group tables so these tables can then be refined further by filter refinements)
     if args.combinefeattables:
@@ -1521,7 +1603,8 @@ def main(fn_args = None):
             print("\n%d features significant at p < %s" % (cnt, maxP))
 
     
-    #Feature Only options:
+
+    ##### Feature Only #####  (-h: MySQL Interactions: --top_messages)
     if args.top_messages:
       if not args.feattable:
         print("You must specify a feature table, extracted at the message level.")
@@ -1533,12 +1616,13 @@ def main(fn_args = None):
       outputFile = makeOutputFilename(args, None, None, suffix="_topmsgs.csv") if args.outputname else None
       fg.getTopMessages(args.lextable, outputFile, args.top_messages, args.feat_whitelist, group_freq_thresh=args.groupfreqthresh)
 
-    #Outcome Only options:
+
+    ##### Outcome Only #####  (-h: Outcome Actions)
     if args.p_correction_method == '':
         args.bonferroni = False
 
     if args.printcsv or args.printfreqcsv:
-        pprint(args)
+        settingsRecord()
         outputfile = args.printfreqcsv if isinstance(args.printfreqcsv, str) else args.printcsv
         if not outputfile:
             print("--print_freq_csv needs a filename: give one, or use it with --print_csv FILENAME")
@@ -1551,7 +1635,7 @@ def main(fn_args = None):
         oa.printGroupsAndOutcomesToCSV(fg, outputfile, freqs = bool(args.printfreqcsv))
 
     if args.printnumgroups:
-        pprint(args)
+        settingsRecord()
         if not og: og = OG()
         if not fg: fg = FG()
         pprint(('number of groups per outcome:', og.numGroupsPerOutcome(fg, args.printcsv)))
@@ -1574,7 +1658,8 @@ def main(fn_args = None):
         outputFile = makeOutputFilename(args, None, None, suffix="_dense.csv") if args.outputname else None
         oa.tableToDenseCsv(row_column, col_column, value_column, output_csv_filename=outputFile, compress_csv=True)
 
-    #Correlation Analysis Options:
+
+    ##### Correlation #####  (-h: Correlation Actions, CCA Actions)
     correls = None
     if args.compTagcloud and args.compTCsample1 and args.compTCsample2:
         if not fg: fg = FG()
@@ -1673,7 +1758,7 @@ def main(fn_args = None):
             (featComp, outcomeComp, dVectorDict) = cca.cca(penaltyX = args.penaltyFeats,
                                                            penaltyZ = args.penaltyOutcomes)
 
-        paramString = str(args)+"\n\n"
+        paramString = settingsRecord()+"\n\n"
         paramString += "Components D vector\n"+'\n'.join(["%s, %.3f" % (comp,d) for comp, d in sorted(dVectorDict.items())])
         correls = featComp
         # Print csvs, topic_tagcloud
@@ -1709,7 +1794,7 @@ def main(fn_args = None):
                                            useXFeats = args.usexfeats, useXControls = args.usexcontrols)
     #"""
     if args.correlate:
-        pprint(args)
+        settingsRecord()
         pprintCorrelsPerOutcome(correls, maxP=args.maxP) 
     #"""
     if args.rmatrix and not args.cca:
@@ -1720,7 +1805,7 @@ def main(fn_args = None):
 
         metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
         if args.auc: metric = 'AUC'
-        oa.correlMatrix(correls, outputFile, outputFormat='html', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq, metric=metric)
+        oa.correlMatrix(correls, outputFile, outputFormat='html', sort=args.sort, paramString=settingsRecord(), nValue=args.nvalue, cInt=args.confint, freq=args.freq, metric=metric)
 
     if args.csv and not args.cca and correls:
         if args.outputname:
@@ -1730,12 +1815,12 @@ def main(fn_args = None):
 
         metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
         if args.auc: metric = 'AUC'
-        oa.correlMatrix(correls, outputFile, outputFormat='csv', sort=args.sort, paramString=str(args), nValue=args.nvalue, cInt=args.confint, freq=args.freq, metric=metric)
+        oa.correlMatrix(correls, outputFile, outputFormat='csv', sort=args.sort, paramString=settingsRecord(), nValue=args.nvalue, cInt=args.confint, freq=args.freq, metric=metric)
 
     if args.tagcloud:
         metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
         outputFile = makeOutputFilename(args, fg, oa, suffix="_tagcloud")
-        oa.printTagCloudData(correls, args.maxP, outputFile, str(args), maxWords = args.maxtcwords, duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, cleanCloud = args.cleancloud, metric=metric)
+        oa.printTagCloudData(correls, args.maxP, outputFile, settingsRecord(), maxWords = args.maxtcwords, duplicateFilter = args.tcfilter, colorScheme=args.tagcloudcolorscheme, cleanCloud = args.cleancloud, metric=metric)
     if args.makewordclouds:
         if not args.tagcloud:
             print("ERROR, can't use --make_wordclouds without --tagcloud", file=sys.stderr)
@@ -1747,7 +1832,7 @@ def main(fn_args = None):
         metric = dlac.getMetric(args.logisticReg, args.cohensd, args.IDP, args.spearman, args.outcomecontrols)
         outputFile = makeOutputFilename(args, fg, oa, suffix='_topic_tagcloud')
         # use plottingWhitelistPickle to link to a pickle file containing the words driving the categories
-        oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, str(args), duplicateFilter = args.tcfilter, colorScheme=args.topictagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats, maxWords=args.numtopicwords, cleanCloud=args.cleancloud, metric=metric, minAbsEffectSize=args.minabseffectsize)
+        oa.printTopicTagCloudData(correls, args.topiclexicon, args.maxP, settingsRecord(), duplicateFilter = args.tcfilter, colorScheme=args.topictagcloudcolorscheme, outputFile = outputFile, useFeatTableFeats=args.useFeatTableFeats, maxWords=args.numtopicwords, cleanCloud=args.cleancloud, metric=metric, minAbsEffectSize=args.minabseffectsize)
         # don't want to base on this: maxWords = args.maxtcwords)
     if args.maketopicwordclouds:
         if not args.topictc and not args.corptopictc:
@@ -1765,7 +1850,7 @@ def main(fn_args = None):
             outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.combocntrl.csv', 'w')
-            oa.outputComboCorrelMatrixCSV(comboCorrels, outputStream, paramString = str(args))
+            oa.outputComboCorrelMatrixCSV(comboCorrels, outputStream, paramString = settingsRecord())
         else:
             pprint(comboCorrels)
 
@@ -1785,21 +1870,23 @@ def main(fn_args = None):
             ## TODO : use this output into OutcomeGetter.
 
 
-    ##multiRegression Options:
+
+    ##### Multiple Regression #####  (-h: Multiple Regression Actions)
     coeffs = None
     if args.multir: #add any options that output multiR results to be caught here
         if not oa: oa = OA()
         if not fg: fg = FG()
-        pprint(args)
-        pprint(coeffs)
+        settingsRecord()
         coeffs = oa.multRegressionWithFeatures(fg, args.spearman, args.p_correction_method, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, interactions = args.interactions)
 
         if args.csv:
             outputFile = makeOutputFilename(args, fg, oa, "multiprint") ##uses outputdir
-            oa.writeSignificantCoeffs4dVis(coeffs, outputFile, args.outcomefields, paramString=str(args))
+            oa.writeSignificantCoeffs4dVis(coeffs, outputFile, args.outcomefields, paramString=settingsRecord())
         #TODO: do some sort of sorted printing?
 
     # Mediation Analysis
+
+    ##### Mediation #####  (-h: Mediation Variables)
     if args.mediation:
 
         # more than one feature location flag
@@ -1888,7 +1975,8 @@ def main(fn_args = None):
         if args.mediationsummary: mg.print_summary(args.outputname)
         if args.mediationcsv or args.csv: mg.print_csv(args.outputname)
 
-    ##Prediction methods:
+
+    ##### Prediction (Regression) #####  (-h: Prediction Actions, Factor Adaptation Actions)
 
     def printMessagesAndPredictions(dlaw, prediction_table, outcome_table=None, outcome=None, num_groups=2, num_messages=3):
 
@@ -1990,18 +2078,18 @@ def main(fn_args = None):
             outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.predicted_data.csv', 'w')
-            RegressionPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
+            RegressionPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=settingsRecord(), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
             if args.outputname:
                 outputStream.close()
         #TODO:
         # if args.pred_feat:
-        #     RegressionPredictor.printComboControlPredictionsToFeats(comboScores, label=pred_feat, paramString=str(args), delimiter='|')
+        #     RegressionPredictor.printComboControlPredictionsToFeats(comboScores, label=pred_feat, paramString=settingsRecord(), delimiter='|')
         if args.csv:
             outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.accuracy_data.csv', 'w')
-            RegressionPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
+            RegressionPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=settingsRecord(), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
             if args.outputname:
                 outputStream.close()
@@ -2032,7 +2120,8 @@ def main(fn_args = None):
     if args.savemodels and rp:
         rp.save(args.picklefile)
 
-    ##CLASSIFICATION:
+
+    ##### Classification #####  (-h: Classification Actions)
     cp = None
     if args.trainclassifiers or args.testclassifiers or args.combotestclassifiers or args.predictclassifiers or args.predictctofeats or args.predictprobstofeats or args.classToLex or args.roc or args.predictCtoOutcomeTable:
         if (args.predictctofeats or args.predictprobstofeats) and isinstance(args.low_variance_thresh, (int, float)): args.low_variance_thresh = False
@@ -2070,7 +2159,7 @@ def main(fn_args = None):
             outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.accuracy_data.csv', 'w')
-            ClassifyPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
+            ClassifyPredictor.printComboControlScoresToCSV(comboScores, outputStream, paramString=settingsRecord(), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
             if args.outputname:
                 outputStream.close()
@@ -2099,7 +2188,7 @@ def main(fn_args = None):
             outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.predicted_data.csv', 'w')
-            ClassifyPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
+            ClassifyPredictor.printComboControlPredictionsToCSV(comboScores, outputStream, paramString=settingsRecord(), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
             if args.outputname:
                 outputStream.close()
@@ -2107,7 +2196,7 @@ def main(fn_args = None):
             outputStream = sys.stdout
             if args.outputname:
                 outputStream = open(args.outputname+'.prediction_probabilities.csv', 'w')
-            ClassifyPredictor.printComboControlPredictionProbsToCSV(comboScores, outputStream, paramString=str(args), delimiter=',')
+            ClassifyPredictor.printComboControlPredictionProbsToCSV(comboScores, outputStream, paramString=settingsRecord(), delimiter=',')
             print("Wrote to: %s" % str(outputStream))
             if args.outputname:
                 outputStream.close()
@@ -2150,6 +2239,8 @@ def main(fn_args = None):
     if args.savemodels and cp:
         cp.save(args.picklefile)
 
+
+    ##### Clustering #####  (-h: Clustering Actions)
     if args.loadmodels and dr:
         print("LOADING ", args.picklefile)
         dr.load(args.picklefile)
@@ -2211,7 +2302,8 @@ def main(fn_args = None):
             args.predictRtoOutcomeTable if args.predictRtoOutcomeTable else args.predictCtoOutcomeTable)
         #printMessagesAndPredictions(dlaw, prediction_table, args.outcometable, args.outcomefields)
 
-    ##Plot Actions:
+
+    ##### Plots #####  (-h: Plot Actions, LDA Estimation Actions)
     if args.makealltopicwordclouds:
         outputFile = makeOutputFilename(args, None, None, suffix="_alltopics/")
         if args.topictagcloudcolorscheme == 'multi':#make sure not to use multi
@@ -2234,7 +2326,8 @@ def main(fn_args = None):
         print("--scatterplot is no longer supported. We would like to bring it back with a new dlatk implementation.")
         sys.exit(1)
 
-    #Analysis using only feature tables:
+
+    ##### Feature Table Analyses #####  (-h: Feature Table Analyses)
     if args.ttestfeats:
         if not fgs: fgs = FGs()
         #TODO: change below to use every pair of FGs (in case there are more than 2)
@@ -2245,42 +2338,15 @@ def main(fn_args = None):
             pass
         pprint(results)
 
+
+    ##### Save Settings #####  (-h: --to_file)
     if init_args.toinitfile:
       with open(init_args.toinitfile, 'w') as init_file:
         init_file.write("[constants]\n")
-
-        if (args.dbengine and args.dbengine != dlac.DB_TYPE): init_file.write("dbengine = " + str(args.dbengine)+"\n")
-        if (args.corpdb and args.corpdb != dlac.DEF_CORPDB): init_file.write("corpdb = " + str(args.corpdb)+"\n")
-        if (args.corptable and args.corptable != dlac.DEF_CORPTABLE): init_file.write("corptable = " + str(args.corptable)+"\n")
-        if (args.correl_field): init_file.write("correl_field = " + str(args.correl_field)+"\n")
-        if (args.mysqlconfigfile and args.mysqlconfigfile != dlac.MYSQL_CONFIG_FILE): init_file.write("mysql_config_file = " + str(args.mysqlconfigfile)+"\n")
-        if (args.message_field and args.message_field != dlac.DEF_MESSAGE_FIELD): init_file.write("message_field = " + str(args.message_field)+"\n")
-        if (args.messageid_field and args.messageid_field != dlac.DEF_MESSAGEID_FIELD): init_file.write("messageid_field = " + str(args.messageid_field)+"\n")
-        if (args.encoding and args.encoding != dlac.DEF_ENCODING): init_file.write("encoding = " + str(args.encoding)+"\n")
-        if (args.lexicondb and args.lexicondb != dlac.DEF_LEXICON_DB): init_file.write("lexicondb = " + str(args.lexicondb)+"\n")
-        if (args.feattable and args.feattable != dlac.DEF_FEAT_TABLE):
-            if isinstance(args.feattable, str):
-                init_file.write("feattable = " + args.feattable+"\n")
-            else:
-                init_file.write("feattable = " + ", ".join([str(ftable) for ftable in args.feattable])+"\n")
-        if (args.featnames and args.featnames != dlac.DEF_FEAT_NAMES): init_file.write("featnames = " + ", ".join([str(feat) for feat in args.featnames])+"\n")
-        if (args.date_field and args.date_field != dlac.DEF_DATE_FIELD): init_file.write("date_field = " + str(args.date_field)+"\n")
-        if (args.outcometable and args.outcometable != dlac.DEF_OUTCOME_TABLE): init_file.write("outcometable = " + str(args.outcometable)+"\n")
-        if (args.outcomefields and args.outcomefields != dlac.DEF_OUTCOME_FIELDS): init_file.write("outcomefields = " + ", ".join([str(out) for out in args.outcomefields])+"\n")
-        if (args.outcomecontrols and args.outcomecontrols != dlac.DEF_OUTCOME_CONTROLS): init_file.write("outcomecontrols = " + ", ".join([str(out) for out in args.outcomecontrols])+"\n")
-        if (args.outcomeinteraction and args.outcomeinteraction != dlac.DEF_OUTCOME_CONTROLS): init_file.write("outcomeinteraction = " + ", ".join([str(out) for out in args.outcomeinteraction])+"\n")
-        if (args.featlabelmaptable and args.featlabelmaptable != ''): init_file.write("featlabelmaptable = " + str(args.featlabelmaptable)+"\n")
-        if (args.featlabelmaplex and args.featlabelmaplex != ''): init_file.write("featlabelmaplex = " + str(args.featlabelmaplex)+"\n")
-        if (args.wordTable): init_file.write("wordTable = " + str(args.wordTable)+"\n")
-        if (args.outputname): init_file.write("outputname = " + str(args.outputname)+"\n")
-        if (args.groupfreqthresh and args.groupfreqthresh != int(dlac.DEF_GROUP_FREQ_THRESHOLD)): init_file.write("groupfreqthresh = " + str(args.groupfreqthresh)+"\n")
-        if (args.lextable): init_file.write("lextable = " + str(args.lextable)+"\n")
-        if (args.p_correction_method and args.p_correction_method != dlac.DEF_P_CORR): init_file.write("p_correction_method = " + str(args.p_correction_method)+"\n")
-        if (args.tagcloudcolorscheme and args.tagcloudcolorscheme != 'multi'): init_file.write("tagcloudcolorscheme = " + str(args.tagcloudcolorscheme)+"\n")
-        if (args.maxP and args.maxP != float(dlac.DEF_P)): init_file.write("maxP = " + str(args.maxP)+"\n")
-        if (args.model and args.model != dlac.DEF_MODEL): init_file.write("model = " + str(args.model)+"\n")
-
-        init_file.close()
+        for name, dest, default in INIT_FILE_VARS:
+            value = getattr(args, dest)
+            if value and value != default:
+                init_file.write("%s = %s\n" % (name, ", ".join(str(v) for v in value) if isinstance(value, list) else str(value)))
     
     warning = '''-------
 Settings:

@@ -1733,8 +1733,8 @@ class OutcomeAnalyzer(OutcomeGetter):
             usedWordSets.append(currentWords)
             if not shouldCont:
                 keptTopics.add(topic)
-            if freq < 1000:
-                dlac.warn("**The frequency for this topic was very small**")
+            if freq < dlac.DEF_MIN_TOPIC_FREQ_PER_GROUP * n:
+                dlac.warn("**The frequency for this topic was very small (under %s word(s) per group on average)**" % dlac.DEF_MIN_TOPIC_FREQ_PER_GROUP)
                 dlac.warn("[Topic Id: %s, R: %.3f, p: %.4f, N: %d, CI: (%.4f,%.4f), Freq: %d]\n" % (topic, r, p, n, ci[0], ci[1], freq))
 
         return keptTopics
@@ -2005,8 +2005,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                     #continue
                     print("**The following topic did not pass the duplicate filter**")
                     print("**[ %d matched out of %d total words ]**"%(len(otherWords.intersection(currentWords)) , len(currentWords)))
-            if freq < 2000:
-                print("**The frequency for this topic is too small**")
+            if freq < dlac.DEF_MIN_TOPIC_FREQ_PER_GROUP * n:
+                print("**The frequency for this topic is too small (under %s word(s) per group on average)**" % dlac.DEF_MIN_TOPIC_FREQ_PER_GROUP)
 
 
             print("[Topic Id: %s, %s: %.3f, p: %.4f, N: %d, CI: (%.3f, %.3f), Freq: %d]" % (topic, metric, r, p, n, ci[0], ci[1], freq))

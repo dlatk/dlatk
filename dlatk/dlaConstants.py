@@ -395,6 +395,24 @@ def cohensD(x, y):
             x0.append(x[i])
     return (mean(x1) - mean(x0)) / (sqrt((std(x0, ddof=1) ** 2 + std(x1, ddof=1) ** 2) / 2))
 
+def cohensDConfInterval(d, y, percent=DEF_CONF_INT):
+    """calculates two sided confidence interval for Cohen's d (conf_interval is for a correlation, r)
+    uses the large-sample standard error (Hedges & Olkin): se = sqrt((n1+n2)/(n1*n2) + d^2/(2*(n1+n2)))
+
+    Parameters
+    ----------
+    d : :obj:`float`
+        Cohen's d
+    y : :obj:`list`
+        list of class (0 or 1) values for each observation (gives the group sizes n1 and n0)
+    """
+    n1 = sum(1 for e in y if e > 0)
+    n0 = len(y) - n1
+    if np.isnan(d) or n1 == 0 or n0 == 0:
+        return (np.nan, np.nan)
+    se = sqrt((n1 + n0) / float(n1 * n0) + d ** 2 / (2.0 * (n1 + n0)))
+    return tuple(d + np.array([-1, 1]) * se * norm.ppf((1 + percent) / 2))
+
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""

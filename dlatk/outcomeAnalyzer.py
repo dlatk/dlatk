@@ -620,6 +620,10 @@ class OutcomeAnalyzer(OutcomeGetter):
 
         correls = dict() #dict of outcome=>feature=>(R, p, numGroups, (conf_int), featFreqs)
         numRed = 0
+        if cohensD: #--cohens_d: d is the effect size, but significance comes from a logistic regression (see below)
+            dlac.warn("NOTE: --cohens_d reports Cohen's d (computed on the feature alone, without controls) as the effect size, "
+                      "but significance is tested with a logistic regression (with an intercept and any controls). "
+                      "Significant features where the two disagree in direction are set to p = 1.")
 
         firstLoop = True
 
@@ -705,18 +709,29 @@ class OutcomeAnalyzer(OutcomeGetter):
                     results = None
                     try:
                         if logisticReg or cohensD:
-                            results = sm.Logit(y, X, missing='drop').fit(disp=False)
+                            # --cohens_d: the significance test is a logistic regression WITH an intercept (plus any controls);
+                            # without one, a rare 0/1 outcome is misfit and its p-values are biased
+                            results = sm.Logit(y, sm.add_constant(X, has_constant='add') if cohensD else X, missing='drop').fit(disp=False)
                         else:
                             results = sm.OLS(y, X).fit() #runs regression
-                        effect_size = dlac.cohensD(X, y) if cohensD else results.params[-1]
-                        conf = dlac.conf_interval(effect_size, len(y))
-                        tup = (effect_size, results.pvalues[-1], len(y), conf)
+                        # --cohens_d: d uses only the feature (last column of X), so it is uncontrolled even when controls are given
+                        effect_size = dlac.cohensD([x[-1] for x in X], y) if cohensD else results.params[-1]
+                        # --cohens_d: CI for d from its own standard error (conf_interval is for correlations)
+                        conf = dlac.cohensDConfInterval(effect_size, y) if cohensD else dlac.conf_interval(effect_size, len(y))
+                        pValue = results.pvalues[-1]
+                        if cohensD and pValue < dlac.DEF_P and np.sign(results.params[-1]) != np.sign(effect_size):
+                            # --cohens_d: the (controlled) logistic regression and the (uncontrolled) d disagree in direction,
+                            # so the feature is not reported as significant
+                            dlac.warn(" feature '%s' with outcome '%s': logistic regression and Cohen's d disagree in direction; p set to 1" % (feat, outcomeField))
+                            pValue = 1.0
+                        tup = (effect_size, pValue, len(y), conf)
 
                         if outputInteraction:
                             interaction_tuples = {}
+                            c = 1 if cohensD else 0 #--cohens_d added an intercept as the first column, shifting the other params by one
                             for i, inter in enumerate(interaction):
-                                interaction_tuples["%s with %s" % (inter, outcomeField)] = (results.params[i+len(controls)-len(interaction)], results.pvalues[i+len(controls)-len(interaction)], len(y), dlac.conf_interval(results.params[i+len(controls)-len(interaction)], len(y)))
-                                interaction_tuples["group_norm * %s from %s" % (inter, outcomeField)] = (results.params[i+len(controls)], results.pvalues[i+len(controls)], len(y), dlac.conf_interval(results.params[i+len(controls)], len(y)))
+                                interaction_tuples["%s with %s" % (inter, outcomeField)] = (results.params[c+i+len(controls)-len(interaction)], results.pvalues[c+i+len(controls)-len(interaction)], len(y), dlac.conf_interval(results.params[c+i+len(controls)-len(interaction)], len(y)))
+                                interaction_tuples["group_norm * %s from %s" % (inter, outcomeField)] = (results.params[c+i+len(controls)], results.pvalues[c+i+len(controls)], len(y), dlac.conf_interval(results.params[c+i+len(controls)], len(y)))
 
                     except (ValueError,Exception) as err:
                         mode = 'Logistic regression' if logisticReg else 'OLS'

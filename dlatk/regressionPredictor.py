@@ -2395,8 +2395,12 @@ class RegressionPredictor:
 
         print("[PREDICT] combined X shape: %s" % str(X.shape)) 
 
+        try:
+            regressorStr = str(regressor)
+        except AttributeError: #models pickled with an older sklearn lack parameters newer versions print
+            regressorStr = type(regressor).__name__
         print("[PREDICT] regressor: %s\nsettings: " %
-              str(regressor), str([i for i in regressor.__dict__.items() if not isinstance(i[1], Iterable)]))
+              regressorStr, str([i for i in regressor.__dict__.items() if not isinstance(i[1], Iterable)]))
         if returnX:
             return regressor.predict(X), X
         else: 
@@ -2425,12 +2429,13 @@ class RegressionPredictor:
                         if module.startswith('sklearn.linear_model'):
                             # Capitalize the first letter of the class name if it is lowercase
                             module = 'sklearn.linear_model'
-                            name = name.capitalize()
+                            name = name[0].upper() + name[1:] #capitalize() would turn RidgeCV into Ridgecv
                         elif module == 'sklearn.preprocessing.data':
                             module = 'sklearn.preprocessing'
                         print(module, name)
                         return super().find_class(module, name)
 
+                f.seek(0) #the failed pickle.load above left the file partly read
                 tmp_dict = CustomUnpickler(f).load()
                 #tmp_dict = pickle.load(f)
                 

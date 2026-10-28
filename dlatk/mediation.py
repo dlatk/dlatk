@@ -279,6 +279,7 @@ class MediationAnalysis:
 		if "no_features" not in switch:
 			(groups, allOutcomes, controls) = self.outcomeGetter.getGroupsAndOutcomes()
 
+		allFeatures = None
 		if self.featureGetter:
 			(allFeatures, featureNames) = self.featureGetter.getGroupNormsWithZerosFeatsFirst(groups=groups)
 
@@ -305,6 +306,7 @@ class MediationAnalysis:
 				self.mediatorNames = list(allFeatures.keys())
 			numMeds = len(self.mediatorNames)
 			
+		controlsDict = dict((control, self.get_data(switch, control, "control", allFeatures)) for control in self.controlNames)
 		mediation_count = 0
 		total_mediations = str(len(self.pathStartNames)*len(self.mediatorNames)*len(self.outcomeNames))
 
@@ -355,6 +357,12 @@ class MediationAnalysis:
 					else:
 						outcome_array = np.asarray(data['outcome'])
 						mediator_array = np.asarray(data['mediator'])
+
+					#a variable that is constant across groups becomes nan when z-scored: skip it rather than stop the run
+					if not (np.all(np.isfinite(outcome_array)) and np.all(np.isfinite(mediator_array)) and np.all(np.isfinite(outcome_exog.values))):
+						warn("Path Start: %s, Mediator: %s, Outcome: %s: skipped, a variable has no variance (or missing values)" % (path_start, mediator, outcome))
+						del self.output[path_start][outcome][mediator], self.output_p[path_start][outcome][mediator]
+						continue
 
 					outcome_model = sm.OLS(outcome_array, outcome_exog)
 					mediator_model = sm.OLS(mediator_array, mediator_exog)
@@ -436,9 +444,9 @@ class MediationAnalysis:
 				for outcome in self.outcomeNames:
 					for i, p in enumerate(p_list):
 						p_dict[p] = dict()
-						for mediator in self.mediatorNames:
+						for mediator in self.output_p[path_start][outcome]: #mediators not skipped
 							p_dict[p][mediator] = self.output_p[path_start][outcome][mediator][i]
 						p_dict[p] = pCorrection(p_dict[p], p_correction_method, [0.05, 0.01, 0.001], rDict = None)
-					for mediator in self.mediatorNames:
+					for mediator in self.output_p[path_start][outcome]:
 						self.output_p[path_start][outcome][mediator] = [p_dict[p][mediator] for p in p_list]
 

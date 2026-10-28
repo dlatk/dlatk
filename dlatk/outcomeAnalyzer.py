@@ -1022,7 +1022,7 @@ class OutcomeAnalyzer(OutcomeGetter):
         numRed = 0
         firstLoop = True
 
-        for (groups, allOutcomes, controls, feat, dataDict, numFeats, featFreqs) in self.yieldDataForOneFeatAtATime(featGetter, blacklist, whitelist, outcomeWithOutcome, includeFreqs):
+        for (groups, allOutcomes, allControls, feat, dataDict, numFeats, featFreqs) in self.yieldDataForOneFeatAtATime(featGetter, blacklist, whitelist, outcomeWithOutcome, includeFreqs):
 
             controlKeys = list(allControls.keys())
             for r in range(len(controlKeys)+1):
@@ -1064,7 +1064,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                                         tup = (results.params[c], results.pvalues[c], len(y))
                                         comboCorrels[outcomeField][controlKeyCombo]['__CONTROL_'+thisControlKeys[c]] = tup
                                     print(results.summary(outcomeField, sorted(controls.keys())))#debug
-                                except ValueError as err:
+                                except (ValueError, Exception) as err:
                                     dlac.warn("OLS threw ValueError: %s" % str(err))
                                     dlac.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
 
@@ -1083,7 +1083,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                                 results = sm.OLS(y, X).fit() #runs regression
                                 tup = (results.params[-1], results.pvalues[-1], len(y))
                                 #print results.summary(outcomeField, controls.keys()+[feat])#debug
-                            except ValueError as err:
+                            except (ValueError, Exception) as err:
                                 dlac.warn("OLS threw ValueError: %s" % str(err))
                                 dlac.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
 
@@ -1130,8 +1130,8 @@ class OutcomeAnalyzer(OutcomeGetter):
                     pDict = dict( [(k, tup[1]) for k, tup in featCorrels.items()] )
                     rDict = dict( [(k, tup[0]) for k, tup in featCorrels.items()] )
                     pDict = dlac.pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
-                    for k, tup in featComboCorrels.items():
-                        featComboCorrels[k][controlCombo] = (tup[0], pDict[k]) + tup[2:]
+                    for k, tup in featCorrels.items():
+                        featCorrels[k] = (tup[0], pDict[k]) + tup[2:]
 
         if self.featureMapping:
             #pickle.dump((comboCorrels, self.featureMapping), open("comboCorrels-featmapping.p", "wb"))

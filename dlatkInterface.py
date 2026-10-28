@@ -2,6 +2,20 @@
 
 """
 Interface Module to DLATK
+
+Layout, top to bottom, in the order a run uses it:
+  - Module helpers -- small pieces the parser and settings record rely on: init-file settings
+    (INIT_FILE_VARS, getInitVar), named value transforms (sqrtValue, ...), listModels
+  - Argument parsing -- turn the command line (and any --from_file init file) into one args object:
+    buildInitParser()/buildParser() define every flag, grouped as in -h; adjustArgs() fills in and adjusts them
+  - RunState -- what one run shares across its actions, so chained actions reuse work: the workers
+    (FG(), OG(), OA(), ...; created by the first action that needs one) and results (blacklist/whitelist, correls, ...)
+  - Output helpers -- printing and output-file naming used by several actions
+  - Actions -- the work itself: one run<Section>(args, s) per -h group of actions (runFeatureExtraction,
+    runCorrelation, ...); each does nothing unless one of its flags was given
+  - main() -- the outline of a run: parses, then calls the run<Section> functions in a fixed order,
+    so one command can chain actions (e.g. --add_ngrams ... --correlate)
+To add a flag, put it in its -h group in buildParser(); to add an action, put it in that group's run<Section>.
 """
 print("\n")#clear some lines to make command more obvious
 import os, getpass

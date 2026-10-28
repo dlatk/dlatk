@@ -103,7 +103,7 @@ class MinScaler(MinMaxScaler, BaseEstimator):
 DEF_N = int(1)
 DEF_FEAT_NAMES = ['honor']
 DEF_MIN_FREQ = int(1) #min frequency per group to keep (don't advise above 1)
-DEF_MIN_TOPIC_FREQ_PER_GROUP = 1 #topic tagclouds note a topic used less than this many words per group, on average
+DEF_MIN_TOPIC_FREQ = 50 #topic tagclouds note a topic used less than this many (weighted) words in total; the same at any group level
 DEF_P_OCC = float(.01) #percentage of groups a feature must appear in, to keep it
 # --set_p_occ auto: features must be used by k = max(5, 0.75*sqrt(N)) of the N groups, keeping at most 5*N^0.75
 # features (k is raised until they fit). auto_prediction halves k and keeps at most 10*N.

@@ -748,7 +748,7 @@ class ClassifyPredictor:
                 % (len(groups), nFolds)
             )
             random.seed(self.randomState)
-            groupList = list(groups)
+            groupList = sorted(groups) #sort first so folds don't depend on set order (which differs between mysql and sqlite)
             random.shuffle(groupList)
             groupFolds = foldN(groupList, nFolds)
         else:

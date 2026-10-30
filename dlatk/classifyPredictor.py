@@ -3395,8 +3395,9 @@ def permutation_1tail_on_aucs(ytrue, ypredProbs, multiclass=False, classes=None,
     target_auc = computeAUC(ytrue, ypredProbs, multiclass,  classes = classes)
     criteria_met = 0 #counts how frequent old auc surpassed new auc
     allids = np.random.randint(n, size=(iters, n))
+    rng = np.random.RandomState(DEFAULT_RANDOM_SEED) #seeded so the same run gives the same p
     for i in range(iters):
-        this_probs = np.random.permutation(ypredProbs)
+        this_probs = rng.permutation(ypredProbs)
         this_newauc = computeAUC(ytrue, this_probs, multiclass,  classes = classes)
         if this_newauc > target_auc:
             criteria_met += 1

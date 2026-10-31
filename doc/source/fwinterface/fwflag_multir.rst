@@ -30,7 +30,7 @@ As with :doc:`fwflag_correlate`:
 
 :doc:`fwflag_interactions` also adds a product term for every pair of outcomes, reported as *outcome1##outcome2*: is the feature linked to the combination of outcomes beyond each one alone?
 
-With :doc:`fwflag_csv` the results are written to *OUTPUT_NAME_multir.tsv.gz*: one row per feature with at least one coefficient at or below :doc:`fwflag_p_value` (default 0.05), with a coefficient (*-r*) and *-pValue* column per outcome, then *n* (number of groups) and *freq* (the feature's total count).
+Results are written as the same matrix :doc:`fwflag_rmatrix` makes, to *OUTPUT_NAME_multir.html*: one row per feature and, for each outcome (and interaction), its standardized coefficient (*beta*), p-value, N (number of groups), confidence interval and the feature's frequency. :doc:`fwflag_csv` also writes *OUTPUT_NAME_multir.csv*, and :doc:`fwflag_sort` adds the features sorted by coefficient. Adding :doc:`fwflag_rmatrix` to the same command still gives the regular one-outcome-at-a-time correlations, in their own files.
 
 Other Switches
 ==============
@@ -45,8 +45,8 @@ Optional Switches:
 
 * :doc:`fwflag_outcome_controls`
 * :doc:`fwflag_interactions`
-* :doc:`fwflag_csv`, :doc:`fwflag_output_name`
-* :doc:`fwflag_spearman`, :doc:`fwflag_p_correction`, :doc:`fwflag_p_value`
+* :doc:`fwflag_csv`, :doc:`fwflag_sort`, :doc:`fwflag_output_name`
+* :doc:`fwflag_spearman`, :doc:`fwflag_p_correction`
 * :doc:`fwflag_group_freq_thresh`
 
 Example Commands
@@ -57,4 +57,4 @@ Example Commands
  dlatkInterface.py -d dla_tutorial -t msgs -c user_id --group_freq_thresh 500 \
    -f 'feat$cat_met_a30_2000_cp_w$msgs$user_id$1gra' \
    --outcome_table blog_outcomes --outcomes age gender --controls is_student \
-   --multir --interactions --csv --output_name multir_out
+   --multir --interactions --csv --sort --output_name multir_out

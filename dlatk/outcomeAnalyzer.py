@@ -1193,15 +1193,16 @@ class OutcomeAnalyzer(OutcomeGetter):
         Returns
         -------
         coeffs : dict
-            dict of feature=>outcome=>(coef, p, N[, freq]): one OLS per feature, with the feature as y and
-            all outcomes (plus controls) together as X, so each coef adjusts for the other outcomes
+            dict of feature=>outcome=>(coef, p, N, (conf_int)[, freq]): one OLS per feature, with the feature as y
+            and all outcomes (plus controls) together as X, so each coef adjusts for the other outcomes
+            (reverseDictDict gives the outcome=>feature layout correlMatrix expects)
 
         """
         #outcomes => things to find coefficients for
         #controls => included as covariates but coefficients not stored
         #language feature => y in regression
 
-        coeffs = dict() #dict of feature=>outcome=>(coef, p, N[, freq])
+        coeffs = dict() #dict of feature=>outcome=>(coef, p, N, (conf_int)[, freq])
         numRed = 0
         #alignDictsAsXy keeps only groups with every outcome and control, so all outcomes share one set of groups
         for (groups, allOutcomes, controls, feat, dataDict, numFeats, featFreqs) in self.yieldDataForOneFeatAtATime(featGetter, blacklist, whitelist, outcomeWithOutcome, includeFreqs):
@@ -1229,7 +1230,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                         X = npappend(X, array([newColumn]).T, 1)
                         outcomeColumns[outcomeKeys[i]+'##'+outcomeKeys[j]] = X.shape[1] - 1
 
-            nanTup = (float('nan'), float('nan'), len(y)) + ((float('nan'),) if includeFreqs else ())
+            nanTup = (float('nan'), float('nan'), len(y), (float('nan'), float('nan'))) + ((float('nan'),) if includeFreqs else ())
             results = None
             if not (np.all(np.isfinite(X)) and np.all(np.isfinite(y))):
                 #a variable that is constant across groups becomes nan when z-scored
@@ -1246,7 +1247,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                         dlac.warn("unable to regress feature '%s' on '%s'" %(feat, outcomeName))
                     tup = nanTup
                 else:
-                    tup = (results.params[i], results.pvalues[i], len(y))
+                    tup = (results.params[i], results.pvalues[i], len(y), dlac.conf_interval(results.params[i], len(y)))
                     if p_correction_method.startswith("bonf"):
                         tup = dlac.bonfPCorrection(tup, numFeats)
                     if includeFreqs:
@@ -2809,7 +2810,7 @@ class OutcomeAnalyzer(OutcomeGetter):
             dlac.warn("No feature had a coefficient with p <= %s; nothing written" % maxP)
             return
         outcomes = sorted(sigCoeffs[list(sigCoeffs.keys())[0]].keys())
-        hasFreqs = len(next(iter(sigCoeffs.values()))[outcomes[0]]) > self.n_idx + 1
+        hasFreqs = len(next(iter(sigCoeffs.values()))[outcomes[0]]) > self.freq_idx
 
         header = '\t'.join(['ngram'] + [x + '-r' for x in outcomes] + [x + '-pValue' for x in outcomes] + ['n'] + (['freq'] if hasFreqs else [])) + '\n'
 
@@ -2823,7 +2824,7 @@ class OutcomeAnalyzer(OutcomeGetter):
                         dlac.warn('ngram [%s] skipped because it had a tab in it' % (ngram, ))
                         continue
                     # linedata has: ngram, outcome_1_r, outcome_2_r, ... outcome_n_r, outcome_1_pValue, outcome_2_pValue, ... outcome_n_pValue, num_users, ngram_frequency
-                    linedata = [ngram] + list([outcomeDict[x][self.r_idx] for x in outcomes]) + list([outcomeDict[x][self.p_idx] for x in outcomes]) + list(outcomeDict[outcomes[0]][self.n_idx:4])
+                    linedata = [ngram] + list([outcomeDict[x][self.r_idx] for x in outcomes]) + list([outcomeDict[x][self.p_idx] for x in outcomes]) + [outcomeDict[outcomes[0]][self.n_idx]] + ([outcomeDict[outcomes[0]][self.freq_idx]] if hasFreqs else [])
                     line = '\t'.join(map(str, linedata)) + '\n'
                     gf.write(line)
                     print(line)

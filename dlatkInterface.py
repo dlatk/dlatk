@@ -749,7 +749,7 @@ order of actions:
     group.add_argument('--multir', action='store_true', dest='multir',
                        help='Multiple regression per feature: the feature as y, all --outcomes (plus --controls) together as X, so each '
                             'outcome\'s coefficient holds the other outcomes fixed. P-values corrected per outcome. '
-                            'With --csv writes features with any p <= --p_value to OUTPUT_NAME_multir.tsv.gz.')
+                            'Writes an --rmatrix-style matrix to OUTPUT_NAME_multir.html (--csv adds a .csv; --sort works too).')
 
     group = parser.add_argument_group('Prediction Actions', '')
     group.add_argument('--train_regression', '--train_reg', action='store_true', dest='trainregression', default=False,
@@ -1967,10 +1967,13 @@ def runMultipleRegression(args, s):
         settingsRecord()
         coeffs = oa.multRegressionWithFeatures(fg, args.spearman, args.p_correction_method, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, interactions = args.interactions)
 
-        if args.csv:
+        #same matrix as --rmatrix (html; --csv adds a csv), with each outcome's coefficients from the joint model
+        if coeffs:
             outputFile = makeOutputFilename(args, fg, oa, prefix="multiprint", suffix="_multir") ##uses outputdir
-            oa.writeSignificantCoeffs4dVis(coeffs, outputFile, maxP=args.maxP, paramString=settingsRecord())
-        #TODO: do some sort of sorted printing?
+            multirMatrix = dlac.reverseDictDict(coeffs) #outcome => feature => (beta, p, N, (conf_int)[, freq])
+            for outputFormat in ['html'] + (['csv'] if args.csv else []):
+                oa.correlMatrix(multirMatrix, outputFile, outputFormat=outputFormat, sort=args.sort, paramString=settingsRecord(),
+                                nValue=args.nvalue, cInt=args.confint, freq=args.freq, metric='beta')
     s.fg, s.oa = fg, oa
 
 

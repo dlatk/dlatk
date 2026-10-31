@@ -90,7 +90,8 @@ so tests check for the tables/files each step should produce rather than relying
 covering 68 user_ids`); follow them instead of waiting for the end, so stalls and errors are caught early:
 
 - Run long commands in the background with output going to a log, and set `PYTHONUNBUFFERED=1` (or use
-  `python3 -u`), or the lines sit in Python's buffer until exit. `tests/common.sh` already sets it.
+  `python3 -u`), or the lines sit in Python's buffer until exit. `tests/common.sh` already sets it. `python3 -I`
+  ignores `PYTHONUNBUFFERED`, so with `-I` use `-u` too (`python3 -I -u script.py`).
 - `unit_tests.sh` prints only stage names (`=== ngrams`); each step's dlatk output goes to
   `$OUT/<step>.log` (`$OUT` is the "Output folder" printed at the top, e.g. `/tmp/dlatk_unit_tests.XXXX`).
   Follow the newest step log, not just the top-level output.
@@ -184,6 +185,10 @@ python3 dlatkInterface.py -d DB -t MSGS -g user_id --group_freq_thresh 50 -f 'fe
 
 `feat$<type>$<msg_table>$<group_col>[$<options>]`
 
+Keep message table names short: the name is repeated in every derived feature table, and MySQL limits table names
+to 64 characters. Balance this against a short `_NOTE` suffix on revised copies of a message table (e.g.
+`msgs_en` for an English-only copy) so each revision stays identifiable.
+
 | Suffix | Meaning |
 |---|---|
 | `16to16` | relative frequency (default) |
@@ -210,7 +215,7 @@ When building and later applying a pickled model, the `-f` feature table list mu
 | `-c` / `-g` | group/correlation field |
 | `-f` | feature table(s) |
 | `-e` | engine: `mysql` (default) or `sqlite` |
-| `--group_freq_thresh` | min words per group (500 typical for users) |
+| `--group_freq_thresh` | min words per group: 500 typical for users (`-g user_id`), 50 for user-day / day-level groups |
 | `--outcome_table` | table with outcome variables |
 | `--outcomes` | outcome columns to analyze |
 | `--weighted_lexicon` | use weighted (vs. unweighted) lexicon scoring |

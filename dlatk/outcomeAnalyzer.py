@@ -1188,87 +1188,91 @@ class OutcomeAnalyzer(OutcomeGetter):
         zscoreRegression : :obj:`boolean`, optional
             standard both variables if True
         interactions : :obj:`boolean`, optional
+            Also adds a product term for every pair of outcomes (reported as outcome1##outcome2) if True
 
         Returns
         -------
         coeffs : dict
-            dict of feature=>outcome=>(R, p)
+            dict of feature=>outcome=>(coef, p, N[, freq]): one OLS per feature, with the feature as y and
+            all outcomes (plus controls) together as X, so each coef adjusts for the other outcomes
 
         """
         #outcomes => things to find coefficients for
         #controls => included as covariates but coefficients not stored
         #language feature => y in regression
 
-        coeffs = dict() #dict of feature=>outcome=>(R, p)
+        coeffs = dict() #dict of feature=>outcome=>(coef, p, N[, freq])
         numRed = 0
-        previousGroupSetting = self.oneGroupSetForAllOutcomes
-        self.oneGroupSetForAllOutcomes = True #makes sure the groups returned are the intersection of data available
+        #alignDictsAsXy keeps only groups with every outcome and control, so all outcomes share one set of groups
         for (groups, allOutcomes, controls, feat, dataDict, numFeats, featFreqs) in self.yieldDataForOneFeatAtATime(featGetter, blacklist, whitelist, outcomeWithOutcome, includeFreqs):
 
             if not controls: controls = dict()
             currentCoeffs = dict() #outcome_name => coeff
 
-            #find regression coef, p-value, and N (stored in tup)
-            outcomeKeys = list(allOutcomes.keys())
+            #find regression coef, p-value, and N (stored in tup) for every outcome from one model
+            outcomeKeys = sorted(allOutcomes.keys())
             numOutcomes = len(outcomeKeys)
-            outcomeColumns = dict((outcomeKeys[i], i) for i in range(len(outcomeKeys)))
-            (X, y) = dlac.alignDictsAsXy(list(allOutcomes.values()) + list(controls.values()), dataDict)
+            outcomeColumns = dict((outcomeKeys[i], i) for i in range(numOutcomes)) #only outcomes (and interactions) are reported, not controls
+            controlKeys = sorted(controls.keys())
+            (X, y) = dlac.alignDictsAsXy([allOutcomes[k] for k in outcomeKeys] + [controls[k] for k in controlKeys], dataDict)
+            X, y = array(X, dtype=float), array(y, dtype=float)
             if spearman:
-                X = dlac.switchColumnsAndRows([rankdata(x) for x in dlac.switchColumnsAndRows(X)])
+                X = array(dlac.switchColumnsAndRows([rankdata(x) for x in dlac.switchColumnsAndRows(X)]), dtype=float)
                 y = rankdata(y)
             if zscoreRegression: (X, y) = (zscore(X), zscore(y))
-            results = None
             if interactions:
-                #print "INTERACTIONS" #debug
                 for i in range(numOutcomes - 1):
                     for j in range(i+1, numOutcomes):
-                        #add a row to X that is xi X xj
+                        #add a column to X that is xi * xj
                         newColumn = multiply(X[:,i], X[:,j])
                         if zscoreRegression: newColumn = zscore(newColumn)
-                        npappend(X, array([newColumn]).T, 1)
-                        newOutcomeName = outcomeKeys[i]+'##'+outcomeKeys[j]
-                        #print "added %s" % newOutcomeName #debug
-                        outcomeColumns[newOutcomeName] = X.shape[1] - 1
+                        X = npappend(X, array([newColumn]).T, 1)
+                        outcomeColumns[outcomeKeys[i]+'##'+outcomeKeys[j]] = X.shape[1] - 1
 
-            try:
-                results = sm.OLS(y, X).fit() #runs regression
-                #print results.summary(feat, allOutcomes.keys()+controls.keys())#debug
-                for outcomeName, i in outcomeColumns.items():
+            nanTup = (float('nan'), float('nan'), len(y)) + ((float('nan'),) if includeFreqs else ())
+            results = None
+            if not (np.all(np.isfinite(X)) and np.all(np.isfinite(y))):
+                #a variable that is constant across groups becomes nan when z-scored
+                dlac.warn("feature '%s': a variable has no variance (or missing values); results not included" % feat)
+            else:
+                try:
+                    results = sm.OLS(y, X).fit() #runs regression
+                except (ValueError, Exception) as err: #if OLS couldn't run
+                    dlac.warn("OLS threw ValueError: %s" % str(err))
+                    dlac.warn(" feature '%s' results not included" % feat)
+            for outcomeName, i in outcomeColumns.items():
+                if results is None or not np.isfinite(results.params[i]): #if there was no coefficient for some reason
+                    if results is not None and not whitelist:
+                        dlac.warn("unable to regress feature '%s' on '%s'" %(feat, outcomeName))
+                    tup = nanTup
+                else:
                     tup = (results.params[i], results.pvalues[i], len(y))
-                    i += 1
-                    if not tup[0]: #if there was no coefficient for some reason
-                        if not whitelist:
-                            dlac.warn("unable to correlate feature '%s' with '%s'" %(feat, outcomeField))
-                        if includeFreqs: tup = (float('nan'), float('nan'), float('nan'), float('nan'))
-                        else: tup = (float('nan'), float('nan'), float('nan'))
-                    else:
-                        if p_correction_method.startswith("bonf"):
-                            tup = dlac.bonfPCorrection(tup, numFeats)
-                        if includeFreqs:
-                            try:
-                                if not featFreqs: raise KeyError
-                                tup = tup + (int(featFreqs[str(feat)]), )
-                            except KeyError:
-                                if not whitelist:
-                                    dlac.warn("unable to find total freq for '%s'" % feat)
-                                tup = tup + (float('nan'), )
-                    currentCoeffs[outcomeName] = tup
-            except ValueError as err: #if OLS couldn't run
-                dlac.warn("OLS threw ValueError: %s" % str(err))
-                dlac.warn(" feature '%s' with outcome '%s' results not included" % (feat, outcomeField))
+                    if p_correction_method.startswith("bonf"):
+                        tup = dlac.bonfPCorrection(tup, numFeats)
+                    if includeFreqs:
+                        try:
+                            if not featFreqs: raise KeyError
+                            tup = tup + (int(featFreqs[str(feat)]), )
+                        except KeyError:
+                            if not whitelist:
+                                dlac.warn("unable to find total freq for '%s'" % feat)
+                            tup = tup + (float('nan'), )
+                currentCoeffs[outcomeName] = tup
 
             coeffs[feat] = currentCoeffs
             numRed += 1
             if numRed % 200 == 0: dlac.warn("  %d features regressed over"%(numRed))
 
         if p_correction_method and not p_correction_method.startswith("bonf"):
-            ##change correls here.
-            for feat, outcomeCoeffs in coeffs.items():
-                pDict = dict( [(k, tup[1]) for k, tup in featCorrels.items()] )
-                rDict = dict( [(k, tup[0]) for k, tup in featCorrels.items()] )
+            #correct each outcome's p-values across features, as --correlate does
+            outcomeNames = set(name for outcomeCoeffs in coeffs.values() for name in outcomeCoeffs)
+            for outcomeName in outcomeNames:
+                featCoeffs = dict((feat, outcomeCoeffs[outcomeName]) for feat, outcomeCoeffs in coeffs.items() if outcomeName in outcomeCoeffs)
+                pDict = dict( [(k, tup[self.p_idx]) for k, tup in featCoeffs.items()] )
+                rDict = dict( [(k, tup[self.r_idx]) for k, tup in featCoeffs.items()] )
                 pDict = dlac.pCorrection(pDict, p_correction_method, [0.05, 0.01, 0.001], rDict = rDict)
-                for k, tup in outcomeCoeffs.items():
-                    outcomeCoeffsCorrels[k] = (tup[0], pDict[k]) + tup[2:]
+                for k, tup in featCoeffs.items():
+                    coeffs[k][outcomeName] = (tup[self.r_idx], pDict[k]) + tup[self.n_idx:]
 
         if self.featureMapping:
             newCoeffs = dict()
@@ -1276,7 +1280,6 @@ class OutcomeAnalyzer(OutcomeGetter):
                 newCoeffs[self.mapFeatureName(feat, self.featureMapping)] = values
             coeffs = newCoeffs
 
-        self.oneGroupSetForAllOutcomes = previousGroupSetting #restore previous setting
         return coeffs
 
 
@@ -2802,13 +2805,17 @@ class OutcomeAnalyzer(OutcomeGetter):
             if keep:
                 sigCoeffs[feat] = outcomeCoeffs #add all coeffs if any are sig
 
-        outcomes = list(sigCoeffs[list(sigCoeffs.keys())[0]].keys())
+        if not sigCoeffs:
+            dlac.warn("No feature had a coefficient with p <= %s; nothing written" % maxP)
+            return
+        outcomes = sorted(sigCoeffs[list(sigCoeffs.keys())[0]].keys())
+        hasFreqs = len(next(iter(sigCoeffs.values()))[outcomes[0]]) > self.n_idx + 1
 
-        header = '\t'.join(['ngram'] + [x + '-r' for x in outcomes] + [x + '-pValue' for x in outcomes] + ['n', 'freq']) + '\n'
+        header = '\t'.join(['ngram'] + [x + '-r' for x in outcomes] + [x + '-pValue' for x in outcomes] + ['n'] + (['freq'] if hasFreqs else [])) + '\n'
 
         if outputFormat == 'tsv':
             outputFile += '.tsv.gz'
-            with gzip.open(outputFile, 'wb') as gf:
+            with gzip.open(outputFile, 'wt') as gf:
                 gf.write(header)
                 print(header)
                 for ngram, outcomeDict in sigCoeffs.items():

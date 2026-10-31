@@ -462,7 +462,7 @@ order of actions:
 
 
     group.add_argument('--interactions', action='store_true', dest='interactions', default=False,
-                       help='Includes interaction terms in multiple regression.')
+                       help='With --multir, adds a product term for every pair of outcomes (reported as outcome1##outcome2).')
     group.add_argument('--bootstrapp', '--bootstrap', dest='bootstrapp', type=int, default = 0,
                        help="Bootstrap p-values (only works for AUCs for now) ")
     group.add_argument("--p_value", type=float, metavar='P', dest="maxP", default = getInitVar('maxP', conf_parser, float(dlac.DEF_P)),
@@ -747,7 +747,9 @@ order of actions:
 
     group = parser.add_argument_group('Multiple Regression Actions', 'Find multiple relationships at once')
     group.add_argument('--multir', action='store_true', dest='multir',
-                       help='multivariate regression with outcome (uses variable feat_table and all outcome variables, optionally csv).')
+                       help='Multiple regression per feature: the feature as y, all --outcomes (plus --controls) together as X, so each '
+                            'outcome\'s coefficient holds the other outcomes fixed. P-values corrected per outcome. '
+                            'With --csv writes features with any p <= --p_value to OUTPUT_NAME_multir.tsv.gz.')
 
     group = parser.add_argument_group('Prediction Actions', '')
     group.add_argument('--train_regression', '--train_reg', action='store_true', dest='trainregression', default=False,
@@ -1966,8 +1968,8 @@ def runMultipleRegression(args, s):
         coeffs = oa.multRegressionWithFeatures(fg, args.spearman, args.p_correction_method, blacklist, whitelist, args.showfeatfreqs, args.outcomeWithOutcome, interactions = args.interactions)
 
         if args.csv:
-            outputFile = makeOutputFilename(args, fg, oa, "multiprint") ##uses outputdir
-            oa.writeSignificantCoeffs4dVis(coeffs, outputFile, args.outcomefields, paramString=settingsRecord())
+            outputFile = makeOutputFilename(args, fg, oa, prefix="multiprint", suffix="_multir") ##uses outputdir
+            oa.writeSignificantCoeffs4dVis(coeffs, outputFile, maxP=args.maxP, paramString=settingsRecord())
         #TODO: do some sort of sorted printing?
     s.fg, s.oa = fg, oa
 

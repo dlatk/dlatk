@@ -10,7 +10,7 @@ Switch
 Description
 ===========
 
-Enables interactions with multivariate regression.
+With :doc:`fwflag_multir`, adds a product term for every pair of outcomes, reported as outcome1##outcome2.
 
 Argument and Default Value
 ==========================

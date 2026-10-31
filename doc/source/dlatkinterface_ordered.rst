@@ -82,6 +82,7 @@ Language Insights
 * :doc:`fwinterface/fwflag_interaction_ddla` 
 * :doc:`fwinterface/fwflag_logistic_reg`
 * :doc:`fwinterface/fwflag_mediation` 
+* :doc:`fwinterface/fwflag_multir`
 * :doc:`fwinterface/fwflag_ttest_feat_tables` 
 * :doc:`fwinterface/fwflag_rmatrix` 
 * :doc:`fwinterface/fwflag_csv` 

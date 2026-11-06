@@ -133,6 +133,18 @@ auto_occ_ok() {
     [ "$n" -le "$cap" ] || { echo "    $n features is over the cap of $cap"; return 1; }
 }
 
+# smooth_dense TABLE 'SUFFIX...': each smoothed copy TABLE$SUFFIX has groups x features rows and no NULL group_norm
+smooth_dense() {
+    local sfx t rows groups feats nulls
+    for sfx in $2; do
+        t="$1\$$sfx"
+        table_nonempty "$t" || { echo "    missing: $t"; return 1; }
+        read -r rows groups feats nulls <<< "$(mysql -Ne "SELECT COUNT(*), COUNT(DISTINCT group_id), COUNT(DISTINCT feat), SUM(group_norm IS NULL) FROM $DB.\`$t\`")"
+        [ "$rows" -eq $((groups * feats)) ] && [ "$nulls" -eq 0 ] \
+            || { echo "    $t: $rows rows for $groups groups x $feats features, $nulls NULL"; return 1; }
+    done
+}
+
 files_exist() {
     for f in "$@"; do [ -s "$f" ] || { echo "    missing: $f"; return 1; }; done
 }
@@ -243,6 +255,13 @@ if [ "$CORE_ONLY" -eq 0 ]; then
             --no_extract --set_p_occ $mode
         check ngrams_occ_$mode "--set_p_occ $mode table populated within its feature cap" auto_occ_ok "$OUT/ngrams_occ_$mode.log"
     done
+
+    # Smoothed n-gram tables (--smooth_feats): the estimators on simulated counts, then two methods on the
+    # filtered 1-2gram table, which must be dense (a row for every feature in every group)
+    run smoothing_math "$PYTHON_BIN" "$TESTS/check_smoothing.py"
+    check smoothing_math "smoothing estimators match simulated values" grep -q '^smoothing math ok' "$OUT/smoothing_math.log"
+    run smooth_feats bash "$TESTS/smooth_feats.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC" --methods "nb pln" --smooth_log
+    check smooth_feats "dense smoothed tables written" smooth_dense "$NGRAM_FEAT_OCC" "nbL plnL"
 
     # Word DLA with a control variable, rendered as wordcloud images
     # (age has significant features in this sample; gender and is_student do not)

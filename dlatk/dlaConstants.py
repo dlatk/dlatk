@@ -105,6 +105,9 @@ DEF_FEAT_NAMES = ['honor']
 DEF_MIN_FREQ = int(1) #min frequency per group to keep (don't advise above 1)
 DEF_MIN_TOPIC_FREQ = 50 #topic tagclouds note a topic used less than this many (weighted) words in total; the same at any group level
 DEF_P_OCC = float(.01) #percentage of groups a feature must appear in, to keep it
+DEF_SMOOTH_MIN_WORDS = 50 #--smooth_feats: groups with fewer words have their mu pulled toward the corpus-wide mu
+DEF_SMOOTH_MU_RANGE = 10 #--smooth_feats: per-group mu is kept within this factor of the corpus-wide mu
+SMOOTH_DENSE_WARN = 10 #--smooth_feats: warn when the dense smoothed table has this many times the rows of the original
 # --set_p_occ auto: features must be used by k = max(5, 0.75*sqrt(N)) of the N groups, keeping at most 5*N^0.75
 # features (k is raised until they fit). auto_prediction halves k and keeps at most 10*N.
 DEF_AUTO_POCC_K_C = 0.75

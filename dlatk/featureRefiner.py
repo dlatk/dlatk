@@ -1151,6 +1151,188 @@ class FeatureRefiner(FeatureGetter):
         dlac.warn('Finished inserting.')
         return idf_table
 
+    def createSmoothedFeatTable(self, method, mu = None, logRate = False, groupFreqThresh = 0):
+        """Creates a dense copy of an n-gram table whose group_norm is a smoothed estimate of each feature's rate
+        (--smooth_feats; the estimators are in smoothing.py). value keeps the raw count (0 where a group never
+        used the feature), so the new table has a row for every feature in every group above groupFreqThresh.
+
+        Parameters
+        ----------
+        method : str
+            one of smoothing.METHODS
+        mu : :obj:`float`, optional
+            constant prior strength (in words) for dirichlet and logodds_idp; default: estimated for each group
+            (for dirichlet with logRate, the corpus-wide estimate)
+        logRate : :obj:`boolean`, optional
+            store the posterior expected log rate (dirichlet, nb, pln, zinb)
+        groupFreqThresh : :obj:`int`, optional
+            only groups with at least this many words
+
+        Returns
+        -------
+        str
+            the new table (for hurdle, the table of log rates; its 0/1 "used" part is the same name ending in B)
+        """
+        from . import smoothing
+        assert method in smoothing.METHODS, "--smooth_feats method must be one of: %s" % ', '.join(smoothing.METHODS)
+        if logRate and method not in smoothing.LOG_METHODS:
+            dlac.warn("--smooth_log does not apply to %s (already on a log scale, or has its own log part); ignoring it" % method)
+            logRate = False
+        featureTable = self.featureTable
+        pieces = featureTable.split('$')
+        featType = pieces[1]
+        perGroupMu = method in ('dirichlet', 'logodds_idp') and not mu
+        orderField = lambda f: ('BINARY ' + f) if self.db_type == 'mysql' else f #exact order, whatever the collation
+
+        #1. each group's total n-grams (for each n) from the meta tables
+        nMatch = re.match(r'^(\d+)(?:to(\d+))?gram', featType)
+        ns = list(range(int(nMatch.group(1)), int(nMatch.group(2) or nMatch.group(1)) + 1)) if nMatch else [None]
+        featN = (lambda feat: len(feat.split())) if len(ns) > 1 else (lambda feat: ns[0])
+        totals = dict() #n => {group_id: total n-grams}
+        for n in ns:
+            metaTable = '$'.join(['feat', 'meta_' + (featType if len(ns) == 1 else '%dgram' % n)] + pieces[2:4])
+            if n is not None and self.data_engine.tableExists(metaTable):
+                sql = self.qb.create_select_query(metaTable).set_fields(['group_id', 'value']).where("feat = '_total%dgrams'" % n)
+                totals[n] = dict((g, float(v)) for g, v in sql.execute_query())
+        inferTotals = len(totals) < len(ns) or not all(totals.values())
+        if inferTotals:
+            dlac.warn("No meta table with n-gram totals for %s: taking each group's total as value / group_norm, "
+                      "which assumes group_norm is the plain relative frequency" % featureTable, attention=True)
+            totals = dict((n, dict()) for n in ns)
+
+        #2. one pass over the table: rows, features, and their counts over the groups kept
+        wordCounts = self.getGroupWordCounts() if groupFreqThresh else None
+        keepGroups = lambda gs: set(g for g in gs if wordCounts.get(g, 0) >= groupFreqThresh) if groupFreqThresh else set(gs)
+        groups = None if inferTotals else keepGroups(g for t in totals.values() for g in t)
+        dlac.warn("Reading %s" % featureTable)
+        numRows, featSums, rowGroups = 0, dict(), set()
+        for (gid, feat, value, gn) in self.getFeatAllSS(featNorm=False):
+            numRows += 1
+            if inferTotals:
+                rowGroups.add(gid)
+                if gn and gid not in totals[featN(feat)]:
+                    totals[featN(feat)][gid] = value / float(gn)
+            if groups is None or gid in groups:
+                featSums[feat] = featSums.get(feat, 0) + value
+        if inferTotals:
+            groups = keepGroups(rowGroups)
+            featSums = None #recounted below over the groups kept
+        groupList = sorted(groups)
+        assert len(groupList) > 1, "--smooth_feats needs at least two groups (is group_freq_thresh too high?)"
+        groupIdx = dict((g, i) for i, g in enumerate(groupList))
+        if featSums is None:
+            featSums = dict()
+            for (gid, feat, value, gn) in self.getFeatAllSS(featNorm=False):
+                if gid in groupIdx: featSums[feat] = featSums.get(feat, 0) + value
+        Nvec = dict((n, np.array([totals[n].get(g, 0.0) for g in groupList])) for n in ns)
+        Ntot = dict((n, Nvec[n].sum()) for n in ns)
+        rowsOut = len(groupList) * len(featSums)
+        dlac.warn(" %d groups x %d features = %d rows (the original table has %d)" % (len(groupList), len(featSums), rowsOut, numRows))
+        if rowsOut > dlac.SMOOTH_DENSE_WARN * numRows:
+            dlac.warn("The smoothed table is dense and will have %.0fx the rows of %s (%d vs %d). Consider filtering "
+                      "features first (--feat_occ_filter)." % (rowsOut / float(numRows), featureTable, rowsOut, numRows), attention=True)
+
+        #3. dirichlet / logodds_idp: each group's mu (leave-one-out likelihood), unless given
+        groupMu = mu
+        if perGroupMu:
+            dlac.warn("Estimating each group's mu (leave-one-out likelihood)")
+            pw = dict((feat, s / Ntot[featN(feat)]) for feat, s in featSums.items())
+            bestMu = np.full(len(groupList), np.nan)
+            totalLL = np.zeros(len(smoothing.MU_GRID))
+            def addGroup(gid, byN):
+                if gid not in groupIdx or not byN: return
+                ll = sum(smoothing.looLogLikGrid(cs, ps, Nvec[n][groupIdx[gid]]) for n, (cs, ps) in byN.items() if Nvec[n][groupIdx[gid]] > 1)
+                if np.ndim(ll):
+                    bestMu[groupIdx[gid]] = smoothing.MU_GRID[np.argmax(ll)]
+                    totalLL[:] += ll
+            sql = self.qb.create_select_query(featureTable).set_fields(['group_id', 'feat', 'value']).order_by([(orderField('group_id'), 'ASC')])
+            current, byN = None, dict()
+            for (gid, feat, value) in self.data_engine.execute_get_SSCursor(sql.toString()):
+                if gid != current:
+                    addGroup(current, byN)
+                    current, byN = gid, dict()
+                cs, ps = byN.setdefault(featN(feat), ([], []))
+                cs.append(value)
+                ps.append(pw[feat])
+            addGroup(current, byN)
+            globalMu = smoothing.MU_GRID[np.argmax(totalLL)]
+            bestMu = np.where(np.isnan(bestMu), globalMu, bestMu)
+            groupMu = smoothing.shrinkGroupMus(bestMu, globalMu, Nvec[ns[0]], dlac.DEF_SMOOTH_MIN_WORDS, dlac.DEF_SMOOTH_MU_RANGE)
+            dlac.warn(" corpus-wide mu: %.4g; per-group mu: median %.4g (%.4g to %.4g)" % (globalMu, np.median(groupMu), groupMu.min(), groupMu.max()))
+            if method == 'dirichlet' and logRate:
+                #in log, a never-used word's value is driven by its group's mu, a factor every feature would share
+                #(and that tracks the group's language): log rates use the one corpus-wide mu
+                dlac.warn(" log rates use the corpus-wide mu (%.4g) for every group" % globalMu)
+                groupMu = globalMu
+
+        #4. the new table(s)
+        muLabel = ('%g' % mu).replace('.', '_').replace('+', '') if mu else ''
+        suffix = {'dirichlet': 'dir' + muLabel, 'nb': 'nb', 'pln': 'pln', 'zinb': 'zinb', 'logodds_idp': 'loi' + muLabel,
+                  'logodds': 'lo', 'hurdle': 'hurL'}[method] + ('L' if logRate else '')
+        newTables = [featureTable + '$' + suffix] + ([featureTable + '$hurB'] if method == 'hurdle' else [])
+        for newTable in newTables:
+            if self.db_type == 'mysql' and len(newTable) > 64:
+                dlac.warn("%s is longer than MySQL's 64 characters; use a shorter message table name" % newTable, attention=True)
+                sys.exit(1)
+            self.qb.create_drop_query(newTable).execute_query()
+            self.qb.create_createTable_query(newTable).like(featureTable).execute_query()
+            self.data_engine.standardizeTable(newTable, collate=dlac.DEF_COLLATIONS[self.encoding.lower()], engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+            self.data_engine.disable_table_keys(newTable)
+        wsqls = [self.qb.create_insert_query(t).set_values([("group_id", ""), ("feat", ""), ("value", ""), ("group_norm", "")]) for t in newTables]
+
+        #5. one pass in feature order: smooth each feature over all groups and write it
+        dlac.warn("Smoothing (%s%s) and writing %s" % (method, ', log rate' if logRate else '', ', '.join(newTables)))
+        toWrite = [[] for t in newTables]
+        numFeats, nonFinite = 0, 0
+        def smoothFeat(feat, rows):
+            c = np.zeros(len(groupList))
+            for gid, value in rows:
+                if gid in groupIdx: c[groupIdx[gid]] = value
+            n = featN(feat)
+            N, C, Cw = Nvec[n], Ntot[n], c.sum()
+            if not Cw: return [] #only used by groups below group_freq_thresh
+            p = Cw / C
+            with np.errstate(divide='ignore', invalid='ignore'):
+                if method == 'dirichlet': values = [smoothing.dirichlet(c, N, p, groupMu, logRate)]
+                elif method == 'nb': values = [smoothing.nb(c, N, p, smoothing.nbDispersion(c, N, p), logRate)]
+                elif method == 'pln': values = [smoothing.pln(c, N, p, smoothing.nbDispersion(c, N, p), logRate)]
+                elif method == 'zinb': values = [smoothing.zinb(c, N, *smoothing.zinbFit(c, N), log=logRate, floor=0.5 / C)]
+                elif method == 'logodds_idp': values = [smoothing.logoddsIDP(c, N, Cw, C, p, groupMu)]
+                elif method == 'logodds': values = [smoothing.logodds(c, N, Cw, C)]
+                else: values = list(reversed(smoothing.hurdle(c, N, p, smoothing.nbDispersion(c, N, p)))) #(log rate, used)
+            return values, c
+        def writeFeat(feat, rows):
+            nonlocal numFeats, nonFinite
+            result = smoothFeat(feat, rows)
+            if not result: return
+            values, c = result
+            numFeats += 1
+            for t, vals in enumerate(values):
+                nonFinite += int((~np.isfinite(vals)).sum())
+                toWrite[t].extend(zip(groupList, [feat] * len(groupList), c.astype(int).tolist(), vals.tolist()))
+                if len(toWrite[t]) >= dlac.MYSQL_BATCH_INSERT_SIZE:
+                    wsqls[t].execute_query(toWrite[t])
+                    toWrite[t] = []
+            if numFeats % 5000 == 0: dlac.warn("  %d features smoothed" % numFeats)
+        sql = self.qb.create_select_query(featureTable).set_fields(['group_id', 'feat', 'value']).order_by([(orderField('feat'), 'ASC')])
+        current, rows = None, []
+        for (gid, feat, value) in self.data_engine.execute_get_SSCursor(sql.toString()):
+            if feat != current:
+                if rows: writeFeat(current, rows)
+                current, rows = feat, []
+            rows.append((gid, value))
+        if rows: writeFeat(current, rows)
+        for t, wsql in enumerate(wsqls):
+            if toWrite[t]: wsql.execute_query(toWrite[t])
+        if nonFinite:
+            dlac.warn("%d smoothed values were not finite (nan or inf)" % nonFinite, attention=True)
+
+        dlac.warn("Done: %d features. Enabling keys." % numFeats)
+        for newTable in newTables:
+            self.data_engine.enable_table_keys(newTable)
+        self.featureTable = newTables[0]
+        return newTables[0]
+
     def _calc_pmi_iter(self, multigram_counts_iter, onegram_counts_iter, total_count, tokenize_func=lambda x:x.split()):
         '''
         :param multigram_counts_iter: iterator yields dicts, dicts have columns "feat" and "count"

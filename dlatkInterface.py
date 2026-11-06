@@ -292,6 +292,12 @@ order of actions:
                        help='For --feat_occ_filter: keep features used by at least this fraction of groups (if >= 1, this many groups). '
                             '"auto" sets the number of groups from how many groups there are, keeping a feature count suited to DLA; '
                             '"auto_prediction" halves that requirement and keeps up to 10 features per group, for prediction.')
+    group.add_argument('--smooth_mu', metavar='MU', dest='smoothmu', type=float, default=None,
+                       help='For --smooth_feats dirichlet or logodds_idp: a constant prior strength (in words) for every group. '
+                            'Default: estimated for each group by leave-one-out likelihood (with --smooth_log, dirichlet uses '
+                            'the corpus-wide estimate for every group).')
+    group.add_argument('--smooth_log', action='store_true', dest='smoothlog', default=False,
+                       help='For --smooth_feats dirichlet, nb, pln or zinb: store the posterior expected log rate instead of the rate.')
     group.add_argument('--set_pmi_threshold', metavar='PMI', dest='pmi', type=float, default=dlac.DEF_PMI,
                        help='The threshold for the feat_colloc_filter.')
     group.add_argument('--set_min_feat_sum', metavar='N', dest='minfeatsum', type=int, default=dlac.DEF_MIN_FEAT_SUM,#TODO: Deprecate?
@@ -662,6 +668,13 @@ order of actions:
     group = parser.add_argument_group('Refinement Actions', '')
     group.add_argument('--feat_occ_filter', action='store_true', dest='featoccfilter',
                        help='remove infrequent features. (uses variables feat_table and p_occ).')
+    group.add_argument('--smooth_feats', metavar='METHOD', dest='smoothfeats', default=None,
+                       choices=['dirichlet', 'nb', 'pln', 'zinb', 'logodds_idp', 'logodds', 'hurdle'],
+                       help='Creates a dense copy of an n-gram table (-f) whose group_norm is a smoothed rate instead of '
+                            'count/total: dirichlet, nb (negative binomial), pln (Poisson-log-normal), zinb (zero-inflated NB), '
+                            'logodds_idp (z-scored log-odds vs. the rest of the corpus, informative Dirichlet prior), logodds '
+                            '(uninformative), or hurdle (two tables: used 0/1, and log rate). Uses --smooth_mu, --smooth_log, '
+                            '--group_freq_thresh; run after --feat_occ_filter.')
     group.add_argument('--combine_feat_tables', '--combine_feats', type=str, dest='combinefeattables', default=None,
                        help='Given multiple feature table, combines them (provide feature name) ')
     group.add_argument('--add_feat_norms', action='store_true', dest='addfeatnorms',
@@ -1616,6 +1629,10 @@ def runRefinement(args, s):
             args.wordTable = args.feattable
         if not fr: fr=FR()
         args.feattable = fr.createTableWithRemovedFeats(args.pocc, args.minfeatsum, args.groupfreqthresh, setGFTWarning)
+
+    if args.smoothfeats:
+        if not fr: fr=FR()
+        args.feattable = fr.createSmoothedFeatTable(args.smoothfeats, args.smoothmu, args.smoothlog, args.groupfreqthresh)
 
     if args.featcollocfilter:
         if not fr: fr=FR()

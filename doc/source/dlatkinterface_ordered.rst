@@ -70,6 +70,9 @@ Feature Refinement
 * :doc:`fwinterface/fwflag_feat_correl_filter` 
 * :doc:`fwinterface/fwflag_feat_colloc_filter` 
 * :doc:`fwinterface/fwflag_feat_occ_filter` 
+* :doc:`fwinterface/fwflag_smooth_feats`
+* :doc:`fwinterface/fwflag_smooth_mu`
+* :doc:`fwinterface/fwflag_smooth_log`
 * :doc:`fwinterface/fwflag_feat_group_by_outcomes` 
 * :doc:`fwinterface/fwflag_aggregate_feats_by_new_group` 
 * :doc:`fwinterface/fwflag_p_value`

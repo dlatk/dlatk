@@ -813,22 +813,20 @@ class RegressionPredictor:
         #1. setup groups for random folds
         if blacklist: print("USING BLACKLIST: %s" %str(blacklist))
         (groups, allOutcomes, allControls, foldLabels) = self.outcomeGetter.getGroupsAndOutcomes(groupsWhere = groupsWhere, includeFoldLabels=True)
-        if foldLabels: #TODO: STRATIFY_FOLDS: update print statements; change to elif, else
-            print("    ***explicit fold labels specified, not splitting again***")
+        if foldLabels:
+            print("    ***explicit fold labels specified, not splitting or stratifying again***")
+            if stratifyFolds:
+                warn("WARNING: --stratify_folds is ignored: the fold column's folds are used as given")
+                stratifyFolds = False #explicit folds win (as in classifyPredictor)
             temp = {}
             # for k,v in sorted(foldLabels.iteritems()): temp.setdefault(v, []).append(k)
             for k,v in sorted(foldLabels.items()): temp.setdefault(v, []).append(k)
             groupFolds = list(temp.values())
             nFolds = len(groupFolds)
         elif stratifyFolds:
-            print(
-                "[number of groups: %d (%d Folds)] non-stratified / using same folds for all outcomes"
-                % (len(groups), nFolds)
-            )
-            random.seed(self.randomState)
-            groupList = list(groups)
-            random.shuffle(groupList)
-            groupFolds = foldN(groupList, nFolds)
+            #stratification happens per outcome, below (folds differ across outcomes)
+            print("    using stratified folds; different folds per outcome")
+            groupFolds = None
         else:
             random.seed(self.randomState)
             groupList = sorted(list(groups), reverse=True)
@@ -938,7 +936,6 @@ class RegressionPredictor:
                         thisOutcomeGroups = set(outcomes.keys()) & XGroups
 
                         if stratifyFolds:
-                            #TODO: STRATIFY_FOLDS: copy logic of classify predictor; add stratify function
                             print(
                             "Warning: Stratifying outcome classes across folds (thus, folds will differ across outcomes)."
                         )

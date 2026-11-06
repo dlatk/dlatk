@@ -736,6 +736,8 @@ class ClassifyPredictor:
         groupFolds = []
         if foldLabels:
             print("    ***explicit fold labels specified, not splitting or stratifying again***")
+            if stratifyFolds:
+                warn("WARNING: --stratify_folds is ignored: the fold column's folds are used as given")
             stratifyFolds = False
             temp = {}
             for k, v in sorted(foldLabels.items()):

@@ -56,7 +56,7 @@ mysql_exec "USE \`$DB\`; SELECT 1;" >/dev/null 2>&1 || {
 
 # Clean up handler: drop our msgs table and any feat tables we created
 cleanup() {
-  mysql_exec "USE \`$DB\`; DROP TABLE IF EXISTS \`$TABLE\`, \`$TABLE\`_bert_trunc;" >/dev/null 2>&1 || true
+  mysql_exec "USE \`$DB\`; DROP TABLE IF EXISTS \`$TABLE\`, \`${TABLE}_bert_trunc\`;" >/dev/null 2>&1 || true
   drop_feats_for() {
     local SRC="$1"
     while read -r FT; do

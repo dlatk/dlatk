@@ -155,6 +155,17 @@ smooth_zero_gap() {
     [ "$bad" -eq 0 ] && [ "$rows" -eq "$src" ] || { echo "    $t: $rows rows ($src expected), $bad not positive"; return 1; }
 }
 
+# reliable_subset TABLE LOG: TABLE$rel... (named in LOG) keeps some, not all, of TABLE's features, and the message
+# n-gram counts matched the table's
+reliable_subset() {
+    local t n src
+    t=$(grep -o "new table [^ ]*\$rel[0-9_]*" "$2" | head -1 | cut -d' ' -f3)
+    [ -n "$t" ] && table_nonempty "$t" || { echo "    no reliability-filtered table"; return 1; }
+    n=$(num_feats "$t"); src=$(num_feats "$1")
+    [ "$n" -gt 0 ] && [ "$n" -lt "$src" ] || { echo "    $t: $n of $src features"; return 1; }
+    ! grep -q "n-gram counts from .* differ" "$2" || { echo "    message n-gram counts differ from the table"; return 1; }
+}
+
 files_exist() {
     for f in "$@"; do [ -s "$f" ] || { echo "    missing: $f"; return 1; }; done
 }
@@ -274,6 +285,12 @@ if [ "$CORE_ONLY" -eq 0 ]; then
     check smooth_feats "dense smoothed tables written" smooth_dense "$NGRAM_FEAT_OCC" "nbL plnL"
     run smooth_feats_zero_gap bash "$TESTS/smooth_feats.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC" --methods nb --smooth_sqrt --smooth_zero_gap
     check smooth_feats_zero_gap "zero-gap sqrt table keeps only groups that used each feature" smooth_zero_gap "$NGRAM_FEAT_OCC" zgnbS
+
+    # Reliability filter (--feat_reliability_filter): split-half math on simulated halves, then the filtered table
+    run reliability_math "$PYTHON_BIN" "$TESTS/check_reliability.py"
+    check reliability_math "Spearman-Brown split-half reliability matches simulated values" grep -q '^reliability math ok' "$OUT/reliability_math.log"
+    run feat_reliability_filter bash "$TESTS/feat_reliability_filter.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC"
+    check feat_reliability_filter "reliable features kept, counted as in the table" reliable_subset "$NGRAM_FEAT_OCC" "$OUT/feat_reliability_filter.log"
 
     # Word DLA with a control variable, rendered as wordcloud images
     # (age has significant features in this sample; gender and is_student do not)

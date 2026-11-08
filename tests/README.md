@@ -51,6 +51,8 @@ with `-h` for usage, e.g.
 | `classification.sh` | `--nfold_test_classifiers` (default `--model lr --folds 10`), optional `--categories_to_binary`, `--feature_selection` |
 | `clean_messages.sh` | `--language_filter <LANG> --clean_messages`, `--deduplicate`, `--spam_filter` (any combination) |
 | `make_all_topic_wordclouds.sh` | `--make_all_topic_wordclouds` for a topic lexicon |
+| `smooth_feats.sh` | `--smooth_feats` for each of `--methods`, optional `--smooth_mu`, `--smooth_log` or `--smooth_sqrt`, `--smooth_zero_gap` |
+| `feat_reliability_filter.sh` | `--feat_reliability_filter`, optional `--set_reliability` |
 | `sentence_transformer.sh` | self-contained sentence-transformer embedding test (`--add_sent_emb_feat`) |
 
 `common.sh` holds the setup the helpers share. Example:

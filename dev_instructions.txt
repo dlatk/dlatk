@@ -79,6 +79,7 @@ Core tests:
 Extended tests (skipped with -c):
  - --feat_colloc_filter --set_pmi_threshold 3
  - --set_p_occ auto and auto_prediction (table named by the chosen group count, within its feature cap)
+ - --feat_reliability_filter (split-half math on simulated halves; filtered table keeps a subset of features)
  - DLA with --controls (age controlling for gender) and --make_wordclouds (needs Java)
  - --make_all_topic_wordclouds on a 10-topic slice of the Facebook topics
  - regression and classification with --feature_selection magic_sauce

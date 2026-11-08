@@ -26,6 +26,7 @@ from scipy.interpolate import interp1d
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 
 from .featureGetter import FeatureGetter
+from . import textCleaner as tc
 from . import dlaConstants as dlac
 from .mysqlmethods import mysqlMethods as mm
 from .mysqlmethods import mysql_iter_funcs as mif
@@ -35,6 +36,16 @@ from .database.query import Column
 from .database.dataEngine import DataEngine
 
 from .regressionPredictor import alignDictsAsXy
+
+
+def splitHalfReliability(sx, sy, sxx, syy, sxy, n):
+    """Spearman-Brown corrected correlation, 2r / (1 + r), between two halves x and y over n groups, from the sums
+    of x, y, x^2, y^2 and xy (arrays); 0 where a half does not vary. Negative r gives a negative reliability."""
+    with np.errstate(divide='ignore', invalid='ignore'):
+        cov = sxy / n - (sx / n) * (sy / n)
+        r = cov / np.sqrt((sxx / n - (sx / n) ** 2) * (syy / n - (sy / n) ** 2))
+    r = np.clip(np.nan_to_num(r), -0.999, 1.0)
+    return 2 * r / (1 + r)
 
 
 class FeatureRefiner(FeatureGetter):
@@ -403,6 +414,146 @@ class FeatureRefiner(FeatureGetter):
             dlac.warn("--set_p_occ auto_prediction keeps %d features; consider --set_p_occ auto or a fixed p_occ if models run out of memory"
                       % numKept, attention=True)
         return threshold
+
+    def createTableWithReliableFeats(self, minReliability = dlac.DEF_RELIABILITY, groupFreqThresh = 0, splits = dlac.DEF_RELIABILITY_SPLITS, seed = dlac.DEFAULT_RANDOM_SEED):
+        """creates a new table with the features of an n-gram table whose split-half reliability across groups is at
+        least minReliability (--feat_reliability_filter).
+
+        Each group's messages are split at random into two halves with about as many words each; the feature's
+        relative frequency in one half is correlated, across groups, with that in the other, and the correlation is
+        Spearman-Brown corrected (2r / (1 + r)) to the reliability of the whole group's relative frequency. This is
+        averaged over several random splits, which approaches coefficient alpha with each group's messages as items.
+        It is the share of the feature's variance across groups that is not sampling noise (its correlations with
+        outcomes are attenuated by sqrt(reliability)), on the scale of group_norm, the relative frequency. Messages, not words, are the sampled
+        units, so words used in bursts (several times in one message) are not counted as more reliable than they are.
+
+        Needs groups with several messages (e.g. -c user_id, not -c message_id); n-grams are counted from the
+        message table as --add_ngrams counts them, and a sample of groups is checked against the table's counts.
+
+        Parameters
+        ----------
+        minReliability : :obj:`float`, optional
+            keep features with at least this reliability
+        groupFreqThresh : :obj:`int`, optional
+            only groups with at least this many words
+        splits : :obj:`int`, optional
+            number of random split-halves to average
+        seed : :obj:`int`, optional
+            random seed for the splits (each group's split depends only on the seed and its id)
+
+        Returns
+        -------
+        str
+            the new table: the feature table name with $rel<minReliability> appended
+        """
+        import zlib
+        featureTable = self.featureTable
+        if self.correl_field == self.messageid_field:
+            dlac.warn("--feat_reliability_filter splits each group's messages in two, so groups need several messages "
+                      "(e.g. -c user_id); it does not yet work with -c %s" % self.correl_field, attention=True)
+            sys.exit(1)
+        featType = featureTable.split('$')[1]
+        nMatch = re.match(r'^(\d+)(?:to(\d+))?gram(Up)?$', featType)
+        if not nMatch:
+            dlac.warn("--feat_reliability_filter works on n-gram tables (feat$1gram..., feat$1to3gram...); %s is not one"
+                      % featureTable, attention=True)
+            sys.exit(1)
+        ns = list(range(int(nMatch.group(1)), int(nMatch.group(2) or nMatch.group(1)) + 1))
+        lowercaseOnly = not nMatch.group(3)
+        tokenizer = Tokenizer(preserve_case = not lowercaseOnly, use_unicode=self.use_unicode)
+        cleanWord = tc.removeNonUTF8 if self.use_unicode else tc.removeNonAscii
+        varcharLength = dict((n, min((dlac.VARCHAR_WORD_LENGTH-(n-1))*n, 255)) for n in ns)
+
+        #1. features, and the groups to use
+        feats = sorted(set(self.getDistinctFeatures()))
+        featIndex = dict((f, i) for i, f in enumerate(feats))
+        featNIndex = np.array([ns.index(len(f.split())) if len(f.split()) in ns else 0 for f in feats])
+        groups = self.getDistinctGroupsFromFeatTable()
+        if groupFreqThresh:
+            wordCounts = self.getGroupWordCounts()
+            groups = [g for g in groups if wordCounts.get(g, 0) >= groupFreqThresh]
+        assert groups, 'NO GROUPS TO FILTER BASED ON (LIKELY group_freq_thresh IS TOO HIGH)'
+        dlac.warn("--feat_reliability_filter: %d features over %d groups of %s.%s; counting n-grams per message (%d random split-halves)"
+                  % (len(feats), len(groups), self.corptable, self.correl_field, splits))
+
+        #2. one pass over the groups' messages: sums for each feature's correlation between halves, per split
+        F = len(feats)
+        sx, sy, sxx, syy, sxy = (np.zeros((splits, F)) for _ in range(5))
+        used, fewMessages, groupsChecked, checked, mismatches = 0, 0, 0, 0, 0
+        for gi, gid in enumerate(groups):
+            mids, rows, cols, counts, totals = set(), [], [], [], []
+            for (mid, message) in self.getMessagesForCorrelField(gid, warnMsg = False):
+                if mid in mids or not message:
+                    continue
+                words = [cleanWord(w) for w in tokenizer.tokenize(tc.shrinkSpace(tc.treatNewlines(message)))]
+                msgCounts, msgTotals = dict(), []
+                for n in ns:
+                    msgTotals.append(max(len(words) - n + 1, 0))
+                    for i in range(len(words) - n + 1):
+                        gram = ' '.join(words[i:i+n])[:varcharLength[n]]
+                        if lowercaseOnly: gram = gram.lower()
+                        fi = featIndex.get(gram)
+                        if fi is not None:
+                            msgCounts[fi] = msgCounts.get(fi, 0) + 1
+                rows.extend([len(mids)] * len(msgCounts))
+                cols.extend(msgCounts.keys())
+                counts.extend(msgCounts.values())
+                totals.append(msgTotals)
+                mids.add(mid)
+            m = len(mids)
+            if m < 2:
+                fewMessages += 1
+                continue
+            touched, colIdx = np.unique(np.array(cols, dtype=int), return_inverse=True)
+            M = csr_array((np.array(counts, dtype=float), (np.array(rows, dtype=int), colIdx)), shape=(m, len(touched)))
+            W = np.array(totals, dtype=float) #messages x n: total n-grams
+            rng = np.random.default_rng([seed, zlib.crc32(str(gid).encode('utf-8'))])
+            H = np.zeros((splits, m))
+            for k in range(splits): #in a random order, each message goes to the half with fewer words so far
+                wordsA = wordsB = 0
+                for i in rng.permutation(m):
+                    if wordsA < wordsB or (wordsA == wordsB and rng.random() < 0.5):
+                        H[k, i] = 1.0
+                        wordsA += W[i, 0]
+                    else:
+                        wordsB += W[i, 0]
+            A = np.asarray((M.T @ H.T).T) #splits x touched: counts in half one
+            T = np.asarray(M.sum(axis=0)).ravel() #counts in the group
+            WA, Wt = H @ W, W.sum(axis=0) #n-grams in half one (splits x n), in the group (n)
+            nIdx = featNIndex[touched]
+            with np.errstate(divide='ignore', invalid='ignore'):
+                x = np.nan_to_num(A / WA[:, nIdx])
+                y = np.nan_to_num((T[None, :] - A) / (Wt[None, :] - WA)[:, nIdx])
+            sx[:, touched] += x
+            sy[:, touched] += y
+            sxx[:, touched] += x * x
+            syy[:, touched] += y * y
+            sxy[:, touched] += x * y
+            used += 1
+            if groupsChecked < dlac.RELIABILITY_CHECK_GROUPS: #the counts should be those of the table
+                sql = self.qb.create_select_query(featureTable).set_fields(['feat', 'value']).where("group_id = '%s'" % gid)
+                ours = dict((feats[f], c) for f, c in zip(touched, T))
+                tableRows = sql.execute_query()
+                mismatches += sum(1 for (f, v) in tableRows if abs(ours.get(f, 0) - float(v)) > 1e-6)
+                checked += len(tableRows)
+                groupsChecked += 1
+            if (gi + 1) % max(1, len(groups) // 20) == 0:
+                dlac.warn(" [%d%%] %d of %d groups read" % (int(100 * (gi + 1) / len(groups)), gi + 1, len(groups)))
+        if fewMessages:
+            dlac.warn("%d groups with fewer than 2 messages were left out" % fewMessages)
+        assert used > 2, 'TOO FEW GROUPS WITH SEVERAL MESSAGES FOR --feat_reliability_filter'
+        if checked and mismatches > dlac.RELIABILITY_CHECK_TOLERANCE * checked:
+            dlac.warn("n-gram counts from %s differ from %s in %d of %d checked rows: was the table extracted from this "
+                      "message table and group field with --add_ngrams (not collocations or a tokenized table)? "
+                      "Reliabilities may not match its features" % (self.corptable, featureTable, mismatches, checked), attention=True)
+
+        #3. reliability: Spearman-Brown corrected correlation between halves, averaged over the splits
+        reliability = splitHalfReliability(sx, sy, sxx, syy, sxy, used).mean(axis=0)
+        toKeep = set((str(f) if self.use_unicode else f).lower() for f, rel in zip(feats, reliability) if rel >= minReliability)
+        qs = np.percentile(reliability, [10, 25, 50, 75, 90])
+        dlac.warn(" %s [reliability over %d groups: 10%%/25%%/50%%/75%%/90%% = %s; keeping %d of %d features with reliability >= %s]"
+                  % (featureTable, used, ' / '.join('%.2f' % q for q in qs), len(toKeep), F, minReliability))
+        return self.createNewTableWithGivenFeats(toKeep, 'rel' + str(minReliability).replace('.', '_'))
 
     def createStandardizedFeatTable(self, use_mean = True, use_std = True, groupFreqThresh = 0, setGFTWarning = False, where=None):
         #creates a copy of a feature table where all group_norms have been standardized

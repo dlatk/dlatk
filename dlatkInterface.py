@@ -292,6 +292,8 @@ order of actions:
                        help='For --feat_occ_filter: keep features used by at least this fraction of groups (if >= 1, this many groups). '
                             '"auto" sets the number of groups from how many groups there are, keeping a feature count suited to DLA; '
                             '"auto_prediction" halves that requirement and keeps up to 10 features per group, for prediction.')
+    group.add_argument('--set_reliability', metavar='R', dest='reliability', type=float, default=dlac.DEF_RELIABILITY,
+                       help='For --feat_reliability_filter: keep features whose split-half reliability across groups is at least R (default: %s).' % dlac.DEF_RELIABILITY)
     group.add_argument('--smooth_mu', metavar='MU', dest='smoothmu', type=float, default=None,
                        help='For --smooth_feats dirichlet or logodds_idp: a constant prior strength (in words) for every group. '
                             'Default: estimated for each group by leave-one-out likelihood (with --smooth_log, dirichlet uses '
@@ -676,6 +678,11 @@ order of actions:
     group = parser.add_argument_group('Refinement Actions', '')
     group.add_argument('--feat_occ_filter', action='store_true', dest='featoccfilter',
                        help='remove infrequent features. (uses variables feat_table and p_occ).')
+    group.add_argument('--feat_reliability_filter', action='store_true', dest='featrelfilter',
+                       help='Keep the features of an n-gram table (-f) that are reliable across groups: each group\'s messages are split '
+                            'into random halves of about equal words, and the Spearman-Brown corrected correlation of the halves\' relative frequencies, '
+                            'averaged over splits, must be at least --set_reliability. Needs groups with several messages '
+                            '(e.g. -c user_id); uses --group_freq_thresh. Creates a table ending in $rel0_3.')
     group.add_argument('--smooth_feats', metavar='METHOD', dest='smoothfeats', default=None,
                        choices=['dirichlet', 'nb', 'pln', 'zinb', 'logodds_idp', 'logodds', 'hurdle'],
                        help='Creates a dense copy of an n-gram table (-f) whose group_norm is a smoothed rate instead of '
@@ -1637,6 +1644,10 @@ def runRefinement(args, s):
             args.wordTable = args.feattable
         if not fr: fr=FR()
         args.feattable = fr.createTableWithRemovedFeats(args.pocc, args.minfeatsum, args.groupfreqthresh, setGFTWarning)
+
+    if args.featrelfilter:
+        if not fr: fr=FR()
+        args.feattable = fr.createTableWithReliableFeats(args.reliability, args.groupfreqthresh)
 
     if args.smoothfeats:
         if not fr: fr=FR()

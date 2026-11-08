@@ -3272,11 +3272,13 @@ def r2simple(ytrue, ypred):
 def ensembleNFoldAUCWeight(outcomes, probsListOfDicts, groupFolds):
     """produce average two probability sets (one for each class), weighted by training AUC; return new probs"""
     newProbs = dict()
+    predicted = set.intersection(*[set(probs) for probs in probsListOfDicts]) #folds can hold groups not predicted (e.g. below group_freq_thresh with --fold_column)
     for testChunk in [i for i in range(0, len(groupFolds))]:
         trainGroups = set()
         for chunk in groupFolds[:testChunk] + groupFolds[(testChunk + 1) :]:
             trainGroups.update(chunk)
-        testGroups = set(groupFolds[testChunk])
+        trainGroups &= predicted
+        testGroups = set(groupFolds[testChunk]) & predicted
         trainGroupsOrder = list(trainGroups)
         testGroupsOrder = list(testGroups)
         (Xtrain, ytrain) = alignDictsAsXy(probsListOfDicts, outcomes, keys=trainGroupsOrder)

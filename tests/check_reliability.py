@@ -1,9 +1,9 @@
-"""Checks the split-half and negative binomial reliabilities used by --feat_reliability_filter on simulated halves; no database needed.
+"""Checks the split-half, negative binomial and per-group reliabilities used by --feat_reliability_filter and --create_reliability_table on simulated halves; no database needed.
 Prints 'reliability math ok' when every check passes."""
 import os, sys
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from dlatk.featureRefiner import splitHalfReliability, nbReliability
+from dlatk.featureRefiner import splitHalfReliability, nbReliability, groupReliability
 
 rng = np.random.default_rng(0)
 n = 100000
@@ -31,5 +31,33 @@ for a, p in ((0.5, 0.01), (5.0, 0.002)):
     good = abs(rel - true) < 0.03
     print('%s negative binomial reliability %.3f (true %.3f; a=%g, p=%g)' % ('PASS' if good else 'FAIL', rel, true, a, p))
     ok = ok and good
+
+# per-group reliability (--create_reliability_table): a group with the harmonic mean total has the across-group
+# reliability; under the negative binomial model it is (p^2/a) / (p^2/a + p/N); negative reliabilities give 0
+h = 1 / (1 / N).mean()
+good = abs(float(groupReliability(0.4, h, h)) - 0.4) < 1e-12 and float(groupReliability(-0.2, h, h)) == 0 and float(groupReliability(0.4, 0.0, h)) == 0
+print('%s per-group reliability is the across-group reliability at the harmonic mean total, 0 for negative or no n-grams' % ('PASS' if good else 'FAIL'))
+ok = ok and good
+a, p = 0.5, 0.01
+between = p * p / a
+acrossRel = between / (between + p * (1 / N).mean())
+err = np.abs(groupReliability(acrossRel, N, h) - between / (between + p / N)).max()
+good = err < 1e-9
+print('%s per-group reliability matches the negative binomial (p^2/a) / (p^2/a + p/N) (max difference %.1g)' % ('PASS' if good else 'FAIL', err))
+ok = ok and good
+# simulated groups of varying size, noise variance k/N: per-group reliability is exactly the true tau^2 / (tau^2 + k/N)
+# given the true across-group reliability, and tracks it given the split-half estimate (within its sampling error)
+tau2, k = 1.0, 200.0
+err = np.abs(groupReliability(tau2 / (tau2 + k * (1 / N).mean()), N, h) - tau2 / (tau2 + k / N)).max()
+good = err < 1e-9
+print('%s per-group reliability from the true across-group reliability is exact over group sizes (max difference %.1g)' % ('PASS' if good else 'FAIL', err))
+ok = ok and good
+t = rng.normal(size=len(N))
+x, y = (t + rng.normal(size=len(N)) * np.sqrt(2 * k / N) for _ in range(2)) #halves: twice the whole's noise
+rel = float(splitHalfReliability(x.sum(), y.sum(), (x * x).sum(), (y * y).sum(), (x * y).sum(), len(N)))
+err = np.abs(groupReliability(rel, N, h) - tau2 / (tau2 + k / N)).max()
+good = err < 0.06
+print('%s per-group reliability from split-half tracks the true reliability over group sizes %d to %d (max difference %.3f)' % ('PASS' if good else 'FAIL', N.min(), N.max(), err))
+ok = ok and good
 if ok:
     print('reliability math ok')

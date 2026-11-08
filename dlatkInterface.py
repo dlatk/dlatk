@@ -684,6 +684,11 @@ order of actions:
                             'averaged over splits, must be at least --set_reliability. When most groups have one message (e.g. -c message_id), '
                             'it is calculated from a negative binomial model instead, assuming words are independent. '
                             'Uses --group_freq_thresh. Creates a table ending in $rel0_3.')
+    group.add_argument('--create_reliability_table', action='store_true', dest='createreltable',
+                       help='Writes the reliabilities of an n-gram table\'s (-f) features, calculated as for --feat_reliability_filter, to a table '
+                            'named like it with relf$ in place of feat$: for each of its rows, value is the feature\'s reliability across groups and '
+                            'group_norm is the reliability of that group\'s relative frequency (projected to the group\'s number of words). '
+                            'Uses --group_freq_thresh. Later actions still use -f.')
     group.add_argument('--smooth_feats', metavar='METHOD', dest='smoothfeats', default=None,
                        choices=['dirichlet', 'nb', 'pln', 'zinb', 'logodds_idp', 'logodds', 'hurdle'],
                        help='Creates a dense copy of an n-gram table (-f) whose group_norm is a smoothed rate instead of '
@@ -1645,6 +1650,10 @@ def runRefinement(args, s):
             args.wordTable = args.feattable
         if not fr: fr=FR()
         args.feattable = fr.createTableWithRemovedFeats(args.pocc, args.minfeatsum, args.groupfreqthresh, setGFTWarning)
+
+    if args.createreltable: #a side table of the reliabilities of the table --feat_reliability_filter would filter; -f is unchanged
+        if not fr: fr=FR()
+        fr.createReliabilityTable(args.groupfreqthresh)
 
     if args.featrelfilter:
         if not fr: fr=FR()

@@ -71,6 +71,7 @@ Feature Refinement
 * :doc:`fwinterface/fwflag_feat_colloc_filter` 
 * :doc:`fwinterface/fwflag_feat_occ_filter` 
 * :doc:`fwinterface/fwflag_feat_reliability_filter`
+* :doc:`fwinterface/fwflag_create_reliability_table`
 * :doc:`fwinterface/fwflag_set_reliability`
 * :doc:`fwinterface/fwflag_smooth_feats`
 * :doc:`fwinterface/fwflag_smooth_mu`

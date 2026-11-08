@@ -166,6 +166,20 @@ reliable_subset() {
     ! grep -q "n-gram counts from .* differ" "$2" || { echo "    message n-gram counts differ from the table"; return 1; }
 }
 
+# reliability_table TABLE LOG: relf$... (TABLE with relf in place of feat) has reliabilities across groups (value) from
+# -1 to 1, the same in each row of a feature, and per-group ones (group_norm) from 0 to 1; its features with value >= 0.3
+# are those --feat_reliability_filter kept (the TABLE$rel0_3 named in LOG)
+reliability_table() {
+    local r="relf\$${1#feat\$}" rows bad varying kept filtered
+    filtered=$(grep -o "new table [^ ]*\$rel0_3" "$2" | head -1 | cut -d' ' -f3)
+    table_nonempty "$r" || { echo "    missing: $r"; return 1; }
+    read -r rows bad <<< "$(mysql -Ne "SELECT COUNT(*), SUM(value < -1 OR value > 1 OR group_norm < 0 OR group_norm > 1 OR group_norm IS NULL) FROM $DB.\`$r\`")"
+    varying=$(mysql -Ne "SELECT COUNT(*) FROM (SELECT feat FROM $DB.\`$r\` GROUP BY feat HAVING MAX(value) - MIN(value) > 1e-9) v")
+    kept=$(mysql -Ne "SELECT COUNT(DISTINCT feat) FROM $DB.\`$r\` WHERE value >= 0.3")
+    [ "$bad" -eq 0 ] && [ "$varying" -eq 0 ] && [ -n "$filtered" ] && [ "$kept" -eq "$(num_feats "$filtered")" ] \
+        || { echo "    $r: $rows rows, $bad out of range, $varying features with differing values, $kept with value >= 0.3 vs $(num_feats "$filtered") filtered"; return 1; }
+}
+
 files_exist() {
     for f in "$@"; do [ -s "$f" ] || { echo "    missing: $f"; return 1; }; done
 }
@@ -289,15 +303,19 @@ if [ "$CORE_ONLY" -eq 0 ]; then
     # Reliability filter (--feat_reliability_filter): split-half math on simulated halves, then the filtered table
     run reliability_math "$PYTHON_BIN" "$TESTS/check_reliability.py"
     check reliability_math "Spearman-Brown split-half reliability matches simulated values" grep -q '^reliability math ok' "$OUT/reliability_math.log"
-    run feat_reliability_filter bash "$TESTS/feat_reliability_filter.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC"
+    run feat_reliability_filter bash "$TESTS/feat_reliability_filter.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC" --table
     check feat_reliability_filter "reliable features kept, counted as in the table" reliable_subset "$NGRAM_FEAT_OCC" "$OUT/feat_reliability_filter.log"
+    check create_reliability_table "relf\$ table of across-group and per-group reliabilities, consistent with the filter" \
+        reliability_table "$NGRAM_FEAT_OCC" "$OUT/feat_reliability_filter.log"
     # one message per group (-c message_id): reliability from the negative binomial model, with a warning
     MSG_COMMON=(-d $DB -c message_id --group_freq_thresh 5)
     run feat_reliability_filter_nb eval 'bash "$TESTS/add_ngrams.sh" "${MSG_COMMON[@]}" -t $T -n 1 --set_p_occ 20 &&
-        bash "$TESTS/feat_reliability_filter.sh" "${MSG_COMMON[@]}" -t $T -f "feat\$1gram\$${T}\$message_id\$20"'
+        bash "$TESTS/feat_reliability_filter.sh" "${MSG_COMMON[@]}" -t $T -f "feat\$1gram\$${T}\$message_id\$20" --table'
     check feat_reliability_filter_nb "message-level reliable features kept, from the negative binomial model" \
         eval 'reliable_subset "feat\$1gram\$${T}\$message_id\$20" "$OUT/feat_reliability_filter_nb.log" &&
               grep -q "parametrically calculated using a Negative Binomial model" "$OUT/feat_reliability_filter_nb.log"'
+    check create_reliability_table_nb "message-level relf\$ table, consistent with the filter" \
+        reliability_table "feat\$1gram\$${T}\$message_id\$20" "$OUT/feat_reliability_filter_nb.log"
 
     # Word DLA with a control variable, rendered as wordcloud images
     # (age has significant features in this sample; gender and is_student do not)

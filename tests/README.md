@@ -52,7 +52,7 @@ with `-h` for usage, e.g.
 | `clean_messages.sh` | `--language_filter <LANG> --clean_messages`, `--deduplicate`, `--spam_filter` (any combination) |
 | `make_all_topic_wordclouds.sh` | `--make_all_topic_wordclouds` for a topic lexicon |
 | `smooth_feats.sh` | `--smooth_feats` for each of `--methods`, optional `--smooth_mu`, `--smooth_log` or `--smooth_sqrt`, `--smooth_zero_gap` |
-| `feat_reliability_filter.sh` | `--feat_reliability_filter`, optional `--set_reliability` |
+| `feat_reliability_filter.sh` | `--feat_reliability_filter`, optional `--set_reliability`; `--table` adds `--create_reliability_table` |
 | `sentence_transformer.sh` | self-contained sentence-transformer embedding test (`--add_sent_emb_feat`) |
 
 `common.sh` holds the setup the helpers share. Example:

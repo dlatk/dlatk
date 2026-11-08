@@ -26,7 +26,7 @@ from scipy.interpolate import interp1d
 from .lib.happierfuntokenizing import Tokenizer #Potts tokenizer
 
 from .featureGetter import FeatureGetter
-from . import textCleaner as tc
+from . import smoothing
 from . import dlaConstants as dlac
 from .mysqlmethods import mysqlMethods as mm
 from .mysqlmethods import mysql_iter_funcs as mif
@@ -46,6 +46,22 @@ def splitHalfReliability(sx, sy, sxx, syy, sxy, n):
         r = cov / np.sqrt((sxx / n - (sx / n) ** 2) * (syy / n - (sy / n) ** 2))
     r = np.clip(np.nan_to_num(r), -0.999, 1.0)
     return 2 * r / (1 + r)
+
+
+def nbReliability(sumC, sumC2, sumCN, sumN, sumN2, meanInvN):
+    """reliability across groups of features' relative frequencies under a gamma-Poisson (negative binomial) model,
+    assuming words are independent draws: true rates vary across groups with variance p^2/a, and a group with N words
+    adds sampling variance p/N, so reliability = (p^2/a) / (p^2/a + p * mean_g(1/N_g)) -- the same quantity the
+    split-half estimates (how much the feature's correlations are attenuated, by sqrt(reliability)). Per feature
+    (arrays): sums over groups of c, c^2 and c*N (c = the feature's count); for the feature's n-gram size: sums over
+    groups of N and N^2, and the mean of 1/N over groups."""
+    with np.errstate(divide='ignore', invalid='ignore'):
+        p = np.nan_to_num(sumC / sumN)
+        excess = sumC2 - 2 * p * sumCN + p * p * sumN2 - p * sumN #sum over groups of (c - N*p)^2 - N*p
+        a = np.where(excess > 0, np.clip(p * p * sumN2 / excess, smoothing.A_MIN, smoothing.A_MAX), smoothing.A_MAX)
+        between = p * p / a
+        rel = np.nan_to_num(between / (between + p * meanInvN))
+    return np.where(p > 0, rel, 0.0)
 
 
 class FeatureRefiner(FeatureGetter):
@@ -427,8 +443,10 @@ class FeatureRefiner(FeatureGetter):
         outcomes are attenuated by sqrt(reliability)), on the scale of group_norm, the relative frequency. Messages, not words, are the sampled
         units, so words used in bursts (several times in one message) are not counted as more reliable than they are.
 
-        Needs groups with several messages (e.g. -c user_id, not -c message_id); n-grams are counted from the
-        message table as --add_ngrams counts them, and a sample of groups is checked against the table's counts.
+        N-grams are counted from the message table with the methods --add_ngrams uses, and a sample of groups is
+        checked against the table's counts. Groups with fewer than 2 messages are left out. When most groups have only
+        one message (e.g. -c message_id), messages cannot be split: reliability is then calculated from the table under
+        a negative binomial model, assuming words are independent (see nbReliability), with a warning.
 
         Parameters
         ----------
@@ -448,10 +466,6 @@ class FeatureRefiner(FeatureGetter):
         """
         import zlib
         featureTable = self.featureTable
-        if self.correl_field == self.messageid_field:
-            dlac.warn("--feat_reliability_filter splits each group's messages in two, so groups need several messages "
-                      "(e.g. -c user_id); it does not yet work with -c %s" % self.correl_field, attention=True)
-            sys.exit(1)
         featType = featureTable.split('$')[1]
         nMatch = re.match(r'^(\d+)(?:to(\d+))?gram(Up)?$', featType)
         if not nMatch:
@@ -460,9 +474,8 @@ class FeatureRefiner(FeatureGetter):
             sys.exit(1)
         ns = list(range(int(nMatch.group(1)), int(nMatch.group(2) or nMatch.group(1)) + 1))
         lowercaseOnly = not nMatch.group(3)
+        from .featureExtractor import FeatureExtractor #counts n-grams with the same methods as --add_ngrams
         tokenizer = Tokenizer(preserve_case = not lowercaseOnly, use_unicode=self.use_unicode)
-        cleanWord = tc.removeNonUTF8 if self.use_unicode else tc.removeNonAscii
-        varcharLength = dict((n, min((dlac.VARCHAR_WORD_LENGTH-(n-1))*n, 255)) for n in ns)
 
         #1. features, and the groups to use
         feats = sorted(set(self.getDistinctFeatures()))
@@ -473,6 +486,19 @@ class FeatureRefiner(FeatureGetter):
             wordCounts = self.getGroupWordCounts()
             groups = [g for g in groups if wordCounts.get(g, 0) >= groupFreqThresh]
         assert groups, 'NO GROUPS TO FILTER BASED ON (LIKELY group_freq_thresh IS TOO HIGH)'
+        if self.correl_field == self.messageid_field:
+            singles = len(groups)
+        else:
+            sql = self.qb.create_select_query(self.corptable).set_fields([self.correl_field, "count(*)"]).group_by([self.correl_field])
+            msgCounts = dict((str(g), c) for g, c in sql.execute_query())
+            singles = sum(1 for g in groups if msgCounts.get(str(g), 0) < 2)
+        if singles > len(groups) / 2.0:
+            dlac.warn("Because there was only 1 message per %s for %d of %d groups, the reliability was parametrically "
+                      "calculated using a Negative Binomial model and assuming independence of words (leading to slight "
+                      "overestimate of reliability for common words)"
+                      % (self.correl_field, singles, len(groups)), attention=True)
+            reliability = self._nbReliabilities(feats, featNIndex, ns, groups)
+            return self._keepReliable(feats, reliability, minReliability, len(groups))
         dlac.warn("--feat_reliability_filter: %d features over %d groups of %s.%s; counting n-grams per message (%d random split-halves)"
                   % (len(feats), len(groups), self.corptable, self.correl_field, splits))
 
@@ -485,13 +511,12 @@ class FeatureRefiner(FeatureGetter):
             for (mid, message) in self.getMessagesForCorrelField(gid, warnMsg = False):
                 if mid in mids or not message:
                     continue
-                words = [cleanWord(w) for w in tokenizer.tokenize(tc.shrinkSpace(tc.treatNewlines(message)))]
+                words = FeatureExtractor.ngramWords(message, tokenizer, self.use_unicode)
                 msgCounts, msgTotals = dict(), []
                 for n in ns:
-                    msgTotals.append(max(len(words) - n + 1, 0))
-                    for i in range(len(words) - n + 1):
-                        gram = ' '.join(words[i:i+n])[:varcharLength[n]]
-                        if lowercaseOnly: gram = gram.lower()
+                    grams = FeatureExtractor.ngramsFromWords(words, n, lowercaseOnly)
+                    msgTotals.append(len(grams))
+                    for gram in grams:
                         fi = featIndex.get(gram)
                         if fi is not None:
                             msgCounts[fi] = msgCounts.get(fi, 0) + 1
@@ -549,11 +574,57 @@ class FeatureRefiner(FeatureGetter):
 
         #3. reliability: Spearman-Brown corrected correlation between halves, averaged over the splits
         reliability = splitHalfReliability(sx, sy, sxx, syy, sxy, used).mean(axis=0)
+        return self._keepReliable(feats, reliability, minReliability, used)
+
+    def _keepReliable(self, feats, reliability, minReliability, numGroups):
+        """writes the table of features with at least minReliability (createTableWithReliableFeats)"""
         toKeep = set((str(f) if self.use_unicode else f).lower() for f, rel in zip(feats, reliability) if rel >= minReliability)
         qs = np.percentile(reliability, [10, 25, 50, 75, 90])
         dlac.warn(" %s [reliability over %d groups: 10%%/25%%/50%%/75%%/90%% = %s; keeping %d of %d features with reliability >= %s]"
-                  % (featureTable, used, ' / '.join('%.2f' % q for q in qs), len(toKeep), F, minReliability))
+                  % (self.featureTable, numGroups, ' / '.join('%.2f' % q for q in qs), len(toKeep), len(feats), minReliability))
         return self.createNewTableWithGivenFeats(toKeep, 'rel' + str(minReliability).replace('.', '_'))
+
+    def _nbReliabilities(self, feats, featNIndex, ns, groups):
+        """each feature's reliability across groups under a negative binomial model (nbReliability), from the
+        feature table and each group's total n-grams (meta tables, else value / group_norm)"""
+        featureTable = self.featureTable
+        pieces = featureTable.split('$')
+        groupIndex = dict((str(g), i) for i, g in enumerate(groups))
+        totals = np.zeros((len(ns), len(groups)))
+        for j, n in enumerate(ns):
+            metaTable = '$'.join(['feat', 'meta_' + (pieces[1] if len(ns) == 1 else '%dgram' % n)] + pieces[2:4])
+            if self.data_engine.tableExists(metaTable):
+                sql = self.qb.create_select_query(metaTable).set_fields(['group_id', 'value']).where("feat = '_total%dgrams'" % n)
+                for g, v in sql.execute_query():
+                    if str(g) in groupIndex: totals[j, groupIndex[str(g)]] = float(v)
+        inferTotals = not totals.any(axis=1).all()
+        if inferTotals:
+            dlac.warn("No meta table with n-gram totals for %s: taking each group's total as value / group_norm" % featureTable)
+            totals[:] = 0
+        F = len(feats)
+        featIndex = dict((f, i) for i, f in enumerate(feats))
+        sumC, sumC2, sumCN = np.zeros(F), np.zeros(F), np.zeros(F)
+        rows = []
+        for (gid, feat, value, gn) in self.getFeatAllSS(featNorm=False):
+            gi, fi = groupIndex.get(str(gid)), featIndex.get(feat)
+            if gi is None or fi is None:
+                continue
+            if inferTotals and gn:
+                totals[featNIndex[fi], gi] = max(totals[featNIndex[fi], gi], float(value) / float(gn))
+            rows.append((fi, gi, float(value)))
+        for fi, gi, c in rows:
+            sumC[fi] += c
+            sumC2[fi] += c * c
+            sumCN[fi] += c * totals[featNIndex[fi], gi]
+        reliability = np.zeros(F)
+        for j in range(len(ns)):
+            fs = np.nonzero(featNIndex == j)[0]
+            if not len(fs):
+                continue
+            withGrams = totals[j] > 0 #groups with no n-grams of this size have no rate
+            reliability[fs] = nbReliability(sumC[fs], sumC2[fs], sumCN[fs], totals[j].sum(), (totals[j] ** 2).sum(),
+                                            (1.0 / totals[j][withGrams]).mean() if withGrams.any() else np.inf)
+        return reliability
 
     def createStandardizedFeatTable(self, use_mean = True, use_std = True, groupFreqThresh = 0, setGFTWarning = False, where=None):
         #creates a copy of a feature table where all group_norms have been standardized

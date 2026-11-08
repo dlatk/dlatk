@@ -681,8 +681,9 @@ order of actions:
     group.add_argument('--feat_reliability_filter', action='store_true', dest='featrelfilter',
                        help='Keep the features of an n-gram table (-f) that are reliable across groups: each group\'s messages are split '
                             'into random halves of about equal words, and the Spearman-Brown corrected correlation of the halves\' relative frequencies, '
-                            'averaged over splits, must be at least --set_reliability. Needs groups with several messages '
-                            '(e.g. -c user_id); uses --group_freq_thresh. Creates a table ending in $rel0_3.')
+                            'averaged over splits, must be at least --set_reliability. When most groups have one message (e.g. -c message_id), '
+                            'it is calculated from a negative binomial model instead, assuming words are independent. '
+                            'Uses --group_freq_thresh. Creates a table ending in $rel0_3.')
     group.add_argument('--smooth_feats', metavar='METHOD', dest='smoothfeats', default=None,
                        choices=['dirichlet', 'nb', 'pln', 'zinb', 'logodds_idp', 'logodds', 'hurdle'],
                        help='Creates a dense copy of an n-gram table (-f) whose group_norm is a smoothed rate instead of '

@@ -291,6 +291,13 @@ if [ "$CORE_ONLY" -eq 0 ]; then
     check reliability_math "Spearman-Brown split-half reliability matches simulated values" grep -q '^reliability math ok' "$OUT/reliability_math.log"
     run feat_reliability_filter bash "$TESTS/feat_reliability_filter.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC"
     check feat_reliability_filter "reliable features kept, counted as in the table" reliable_subset "$NGRAM_FEAT_OCC" "$OUT/feat_reliability_filter.log"
+    # one message per group (-c message_id): reliability from the negative binomial model, with a warning
+    MSG_COMMON=(-d $DB -c message_id --group_freq_thresh 5)
+    run feat_reliability_filter_nb eval 'bash "$TESTS/add_ngrams.sh" "${MSG_COMMON[@]}" -t $T -n 1 --set_p_occ 20 &&
+        bash "$TESTS/feat_reliability_filter.sh" "${MSG_COMMON[@]}" -t $T -f "feat\$1gram\$${T}\$message_id\$20"'
+    check feat_reliability_filter_nb "message-level reliable features kept, from the negative binomial model" \
+        eval 'reliable_subset "feat\$1gram\$${T}\$message_id\$20" "$OUT/feat_reliability_filter_nb.log" &&
+              grep -q "parametrically calculated using a Negative Binomial model" "$OUT/feat_reliability_filter_nb.log"'
 
     # Word DLA with a control variable, rendered as wordcloud images
     # (age has significant features in this sample; gender and is_student do not)

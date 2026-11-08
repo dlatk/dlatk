@@ -106,6 +106,26 @@ class FeatureExtractor(DLAWorker):
 
     ##Feature Tables ##
 
+    @staticmethod
+    def ngramVarcharLength(n):
+        """characters allowed for an n-gram feature (longer n-grams are truncated to this)"""
+        return min((dlac.VARCHAR_WORD_LENGTH-(n-1))*n, 255)
+
+    @staticmethod
+    def ngramWords(message, tokenizer, use_unicode=dlac.DEF_UNICODE_SWITCH):
+        """the words of a message that --add_ngrams counts: newlines treated, spaces shrunk, tokenized, cleaned"""
+        message = tc.shrinkSpace(tc.treatNewlines(message))
+        cleanWord = tc.removeNonUTF8 if use_unicode else tc.removeNonAscii
+        return [cleanWord(w) for w in tokenizer.tokenize(message)]
+
+    @staticmethod
+    def ngramsFromWords(words, n, lowercase_only=dlac.LOWERCASE_ONLY):
+        """the n-grams --add_ngrams counts from a message's words (each truncated to ngramVarcharLength(n))"""
+        varcharLength = FeatureExtractor.ngramVarcharLength(n)
+        if lowercase_only: #one pass: O(len(words) * n), as when this was inline in addNGramTable
+            return [' '.join(words[i:i+n])[:varcharLength].lower() for i in range(len(words) - n + 1)]
+        return [' '.join(words[i:i+n])[:varcharLength] for i in range(len(words) - n + 1)]
+
     def addNGramTable(self, n, lowercase_only=dlac.LOWERCASE_ONLY, min_freq=1, tableName = None, valueFunc = lambda d: d, metaFeatures = True, extension = None):
         """Creates feature tuples (correl_field, feature, values) table where features are ngrams
 
@@ -138,7 +158,7 @@ class FeatureExtractor(DLAWorker):
         #CREATE TABLE:
         featureName = str(n)+'gram'
         if not lowercase_only: featureName += 'Up'
-        varcharLength = min((dlac.VARCHAR_WORD_LENGTH-(n-1))*n, 255)
+        varcharLength = FeatureExtractor.ngramVarcharLength(n)
         featureTableName = self.createFeatureTable(featureName, "VARCHAR(%d)"%varcharLength, 'INTEGER', tableName, valueFunc, extension = extension)
 
         if metaFeatures:
@@ -176,23 +196,11 @@ class FeatureExtractor(DLAWorker):
                     msgs+=1
                     if msgs % dlac.PROGRESS_AFTER_ROWS == 0: #progress update
                         dlac.warn("Messages Read: %dk" % int(msgs/1000))
-                    message = tc.treatNewlines(message)
-                    message = tc.shrinkSpace(message)
-
-                    #words = message.split()
-                    if not self.use_unicode:
-                        words = [tc.removeNonAscii(w) for w in tokenizer.tokenize(message)]
-                    else:
-                        words = [tc.removeNonUTF8(w) for w in tokenizer.tokenize(message)]
+                    words = FeatureExtractor.ngramWords(message, tokenizer, self.use_unicode)
 
                     gram = '' ## MAARTEN
-                    for i in range(0,(len(words) - n)+1):
+                    for gram in FeatureExtractor.ngramsFromWords(words, n, lowercase_only):
                         totalGrams += 1
-                        gram = ' '.join(words[i:i+n])
-                        #truncate:
-                        gram = gram[:varcharLength]
-
-                        if lowercase_only: gram = gram.lower()
 
                         try:
                             freqs[gram] += 1

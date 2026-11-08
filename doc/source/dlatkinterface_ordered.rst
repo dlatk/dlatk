@@ -73,6 +73,8 @@ Feature Refinement
 * :doc:`fwinterface/fwflag_smooth_feats`
 * :doc:`fwinterface/fwflag_smooth_mu`
 * :doc:`fwinterface/fwflag_smooth_log`
+* :doc:`fwinterface/fwflag_smooth_sqrt`
+* :doc:`fwinterface/fwflag_smooth_zero_gap`
 * :doc:`fwinterface/fwflag_feat_group_by_outcomes` 
 * :doc:`fwinterface/fwflag_aggregate_feats_by_new_group` 
 * :doc:`fwinterface/fwflag_p_value`

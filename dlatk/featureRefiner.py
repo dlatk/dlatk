@@ -1151,10 +1151,11 @@ class FeatureRefiner(FeatureGetter):
         dlac.warn('Finished inserting.')
         return idf_table
 
-    def createSmoothedFeatTable(self, method, mu = None, logRate = False, groupFreqThresh = 0):
+    def createSmoothedFeatTable(self, method, mu = None, logRate = False, groupFreqThresh = 0, sqrtRate = False, zeroGap = False):
         """Creates a dense copy of an n-gram table whose group_norm is a smoothed estimate of each feature's rate
         (--smooth_feats; the estimators are in smoothing.py). value keeps the raw count (0 where a group never
-        used the feature), so the new table has a row for every feature in every group above groupFreqThresh.
+        used the feature), so the new table has a row for every feature in every group above groupFreqThresh
+        (with zeroGap and no logRate, only the rows of groups that used the feature).
 
         Parameters
         ----------
@@ -1167,6 +1168,12 @@ class FeatureRefiner(FeatureGetter):
             store the posterior expected log rate (dirichlet, nb, pln, zinb)
         groupFreqThresh : :obj:`int`, optional
             only groups with at least this many words
+        sqrtRate : :obj:`boolean`, optional
+            store the square root of the smoothed rate (dirichlet, nb, pln, zinb)
+        zeroGap : :obj:`boolean`, optional
+            groups that never used a feature keep 0 (with logRate: a value below the feature's smallest log rate)
+            rather than a smoothed rate, so used and unused stay apart (dirichlet, nb, pln, zinb); rates and square
+            roots then need only the rows of groups that used the feature, as in an unsmoothed table
 
         Returns
         -------
@@ -1178,6 +1185,13 @@ class FeatureRefiner(FeatureGetter):
         if logRate and method not in smoothing.LOG_METHODS:
             dlac.warn("--smooth_log does not apply to %s (already on a log scale, or has its own log part); ignoring it" % method)
             logRate = False
+        if (sqrtRate or zeroGap) and method not in smoothing.LOG_METHODS:
+            dlac.warn("--smooth_sqrt and --smooth_zero_gap apply only to %s; ignoring them" % ', '.join(smoothing.LOG_METHODS))
+            sqrtRate = zeroGap = False
+        if sqrtRate and logRate:
+            dlac.warn("--smooth_sqrt and --smooth_log are alternatives; choose one", attention=True)
+            sys.exit(1)
+        sparseOut = zeroGap and not logRate #unused groups are 0: their rows can be left out, as in the original table
         featureTable = self.featureTable
         pieces = featureTable.split('$')
         featType = pieces[1]
@@ -1228,7 +1242,7 @@ class FeatureRefiner(FeatureGetter):
         Ntot = dict((n, Nvec[n].sum()) for n in ns)
         rowsOut = len(groupList) * len(featSums)
         dlac.warn(" %d groups x %d features = %d rows (the original table has %d)" % (len(groupList), len(featSums), rowsOut, numRows))
-        if rowsOut > dlac.SMOOTH_DENSE_WARN * numRows:
+        if not sparseOut and rowsOut > dlac.SMOOTH_DENSE_WARN * numRows:
             dlac.warn("The smoothed table is dense and will have %.0fx the rows of %s (%d vs %d). Consider filtering "
                       "features first (--feat_occ_filter)." % (rowsOut / float(numRows), featureTable, rowsOut, numRows), attention=True)
 
@@ -1268,7 +1282,8 @@ class FeatureRefiner(FeatureGetter):
         #4. the new table(s)
         muLabel = ('%g' % mu).replace('.', '_').replace('+', '') if mu else ''
         suffix = {'dirichlet': 'dir' + muLabel, 'nb': 'nb', 'pln': 'pln', 'zinb': 'zinb', 'logodds_idp': 'loi' + muLabel,
-                  'logodds': 'lo', 'hurdle': 'hurL'}[method] + ('L' if logRate else '')
+                  'logodds': 'lo', 'hurdle': 'hurL'}[method] + ('L' if logRate else 'S' if sqrtRate else '')
+        suffix = ('zg' if zeroGap else '') + suffix
         newTables = [featureTable + '$' + suffix] + ([featureTable + '$hurB'] if method == 'hurdle' else [])
         for newTable in newTables:
             if self.db_type == 'mysql' and len(newTable) > 64:
@@ -1281,7 +1296,8 @@ class FeatureRefiner(FeatureGetter):
         wsqls = [self.qb.create_insert_query(t).set_values([("group_id", ""), ("feat", ""), ("value", ""), ("group_norm", "")]) for t in newTables]
 
         #5. one pass in feature order: smooth each feature over all groups and write it
-        dlac.warn("Smoothing (%s%s) and writing %s" % (method, ', log rate' if logRate else '', ', '.join(newTables)))
+        dlac.warn("Smoothing (%s%s%s) and writing %s" % (method, ', log rate' if logRate else ', square root' if sqrtRate else '',
+                                                         ', zero gap' if zeroGap else '', ', '.join(newTables)))
         toWrite = [[] for t in newTables]
         numFeats, nonFinite = 0, 0
         def smoothFeat(feat, rows):
@@ -1300,6 +1316,8 @@ class FeatureRefiner(FeatureGetter):
                 elif method == 'logodds_idp': values = [smoothing.logoddsIDP(c, N, Cw, C, p, groupMu)]
                 elif method == 'logodds': values = [smoothing.logodds(c, N, Cw, C)]
                 else: values = list(reversed(smoothing.hurdle(c, N, p, smoothing.nbDispersion(c, N, p)))) #(log rate, used)
+                if sqrtRate: values = [np.sqrt(v) for v in values]
+                if zeroGap: values = [smoothing.zeroGap(v, c, logRate) for v in values]
             return values, c
         def writeFeat(feat, rows):
             nonlocal numFeats, nonFinite
@@ -1307,9 +1325,10 @@ class FeatureRefiner(FeatureGetter):
             if not result: return
             values, c = result
             numFeats += 1
+            keep = np.nonzero(c)[0] if sparseOut else np.arange(len(groupList))
             for t, vals in enumerate(values):
                 nonFinite += int((~np.isfinite(vals)).sum())
-                toWrite[t].extend(zip(groupList, [feat] * len(groupList), c.astype(int).tolist(), vals.tolist()))
+                toWrite[t].extend(zip([groupList[i] for i in keep], [feat] * len(keep), c[keep].astype(int).tolist(), vals[keep].tolist()))
                 if len(toWrite[t]) >= dlac.MYSQL_BATCH_INSERT_SIZE:
                     wsqls[t].execute_query(toWrite[t])
                     toWrite[t] = []

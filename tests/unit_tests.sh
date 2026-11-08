@@ -145,6 +145,16 @@ smooth_dense() {
     done
 }
 
+# smooth_zero_gap TABLE SUFFIX: the zero-gap copy TABLE$SUFFIX has exactly the source's rows of groups that used
+# each feature (value > 0, groups kept by group_freq_thresh), all with a smoothed group_norm above 0
+smooth_zero_gap() {
+    local t="$1\$$2" rows bad src
+    table_nonempty "$t" || { echo "    missing: $t"; return 1; }
+    read -r rows bad <<< "$(mysql -Ne "SELECT COUNT(*), SUM(group_norm IS NULL OR group_norm <= 0 OR value <= 0) FROM $DB.\`$t\`")"
+    src=$(mysql -Ne "SELECT COUNT(*) FROM $DB.\`$1\` f WHERE f.value > 0 AND f.group_id IN (SELECT DISTINCT group_id FROM $DB.\`$t\`)")
+    [ "$bad" -eq 0 ] && [ "$rows" -eq "$src" ] || { echo "    $t: $rows rows ($src expected), $bad not positive"; return 1; }
+}
+
 files_exist() {
     for f in "$@"; do [ -s "$f" ] || { echo "    missing: $f"; return 1; }; done
 }
@@ -262,6 +272,8 @@ if [ "$CORE_ONLY" -eq 0 ]; then
     check smoothing_math "smoothing estimators match simulated values" grep -q '^smoothing math ok' "$OUT/smoothing_math.log"
     run smooth_feats bash "$TESTS/smooth_feats.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC" --methods "nb pln" --smooth_log
     check smooth_feats "dense smoothed tables written" smooth_dense "$NGRAM_FEAT_OCC" "nbL plnL"
+    run smooth_feats_zero_gap bash "$TESTS/smooth_feats.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC" --methods nb --smooth_sqrt --smooth_zero_gap
+    check smooth_feats_zero_gap "zero-gap sqrt table keeps only groups that used each feature" smooth_zero_gap "$NGRAM_FEAT_OCC" zgnbS
 
     # Word DLA with a control variable, rendered as wordcloud images
     # (age has significant features in this sample; gender and is_student do not)

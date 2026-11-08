@@ -12,7 +12,7 @@ import numpy as np
 from scipy.special import digamma, lambertw
 
 METHODS = ('dirichlet', 'nb', 'pln', 'zinb', 'logodds_idp', 'logodds', 'hurdle')
-LOG_METHODS = ('dirichlet', 'nb', 'pln', 'zinb') #methods that have a --smooth_log version
+LOG_METHODS = ('dirichlet', 'nb', 'pln', 'zinb') #rate methods: have --smooth_log, --smooth_sqrt and --smooth_zero_gap versions
 
 MU_GRID = np.logspace(0, 6, 121) #candidate per-group mu (pseudo-words of background), 1 to 1,000,000
 A_MIN, A_MAX = 1e-3, 1e6 #clip for a feature's gamma shape (dispersion); A_MAX is effectively Poisson (no overdispersion)
@@ -137,6 +137,16 @@ def zinb(c, N, pi, p, a, tau, log=False, floor=None):
     if log:
         return np.log(np.maximum(rate, floor))
     return rate
+
+def zeroGap(values, c, log=False):
+    """keeps groups that never used the feature (c = 0) apart from those that did: 0 for rates and their square
+    roots (every smoothed rate is above 0); for log rates, the log of half the feature's smallest smoothed rate
+    among the groups that used it (a gap below them, as 0 is below the smallest rate)"""
+    used = c > 0
+    if not used.any():
+        return values
+    zero = values[used].min() - np.log(2) if log else 0.0
+    return np.where(used, values, zero)
 
 def logoddsIDP(c, N, Cw, C, p, mu):
     """Monroe, Colaresi & Quinn's (2008) z-scored log-odds of the feature in the group versus the rest of the corpus,

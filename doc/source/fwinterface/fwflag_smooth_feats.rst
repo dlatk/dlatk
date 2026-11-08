@@ -32,9 +32,9 @@ For a feature with count *c* in a group with *N* total n-grams (from the meta ta
 * **logodds**: the same with an uninformative prior (0.5 added to every count), as a baseline.
 * **hurdle**: two tables, *TABLE$hurB* (1 if the group used the feature, else 0) and *TABLE$hurL* (the nb log rate where it was used, the feature's mean log rate elsewhere). Use both with :doc:`fwflag_f` in prediction.
 
-With :doc:`fwflag_smooth_log`, dirichlet, nb, pln and zinb store the posterior expected log rate, which suits rates that are close to log-normal across groups.
+With :doc:`fwflag_smooth_log`, dirichlet, nb, pln and zinb store the posterior expected log rate, which suits rates that are close to log-normal across groups; with :doc:`fwflag_smooth_sqrt`, the square root of the smoothed rate. :doc:`fwflag_smooth_zero_gap` smooths only the groups that used a feature and keeps the others at 0, so whether a group used it at all stays apart from how much.
 
-The new table is named after the original plus a suffix (*$dir*, *$dir500* for a constant *mu*, *$nb*, *$pln*, *$zinb*, *$loi*, *$lo*, *$hurL*/*$hurB*, with *L* added for :doc:`fwflag_smooth_log`). Its value column keeps the raw count. Because no smoothed rate is 0, the table is dense: one row per feature per group, with a warning if that is more than 10 times the rows of the original. Smoothing should therefore come last: filter features first with :doc:`fwflag_feat_occ_filter` (which counts rows, so it should not be run on a smoothed table).
+The new table is named after the original plus a suffix (*$dir*, *$dir500* for a constant *mu*, *$nb*, *$pln*, *$zinb*, *$loi*, *$lo*, *$hurL*/*$hurB*, with *L* added for :doc:`fwflag_smooth_log`, *S* for :doc:`fwflag_smooth_sqrt`, and *zg* in front for :doc:`fwflag_smooth_zero_gap`, e.g. *$zgnbS*). Its value column keeps the raw count. Because no smoothed rate is 0, the table is dense (except with :doc:`fwflag_smooth_zero_gap` and no log): one row per feature per group, with a warning if that is more than 10 times the rows of the original. Smoothing should therefore come last: filter features first with :doc:`fwflag_feat_occ_filter` (which counts rows, so it should not be run on a smoothed table).
 
 Other Switches
 ==============
@@ -48,6 +48,8 @@ Optional Switches:
 
 * :doc:`fwflag_smooth_mu`
 * :doc:`fwflag_smooth_log`
+* :doc:`fwflag_smooth_sqrt`
+* :doc:`fwflag_smooth_zero_gap`
 * :doc:`fwflag_group_freq_thresh`
 * :doc:`fwflag_feat_occ_filter` with :doc:`fwflag_set_p_occ` (run in the same command, it filters first)
 

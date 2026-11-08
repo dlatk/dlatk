@@ -29,6 +29,12 @@ Required Switches:
 
 * :doc:`fwflag_smooth_feats` dirichlet, nb, pln or zinb
 
+Optional Switches:
+
+* :doc:`fwflag_smooth_zero_gap`
+
+Alternative: :doc:`fwflag_smooth_sqrt`
+
 Example Commands
 ================
 .. code-block:: bash

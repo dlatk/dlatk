@@ -298,6 +298,14 @@ order of actions:
                             'the corpus-wide estimate for every group).')
     group.add_argument('--smooth_log', action='store_true', dest='smoothlog', default=False,
                        help='For --smooth_feats dirichlet, nb, pln or zinb: store the posterior expected log rate instead of the rate.')
+    group.add_argument('--smooth_sqrt', action='store_true', dest='smoothsqrt', default=False,
+                       help='For --smooth_feats dirichlet, nb, pln or zinb: store the square root of the smoothed rate '
+                            '(an alternative to --smooth_log).')
+    group.add_argument('--smooth_zero_gap', action='store_true', dest='smoothzerogap', default=False,
+                       help='For --smooth_feats dirichlet, nb, pln or zinb: groups that never used a feature keep 0 '
+                            '(with --smooth_log, a value below its smallest log rate) instead of a smoothed rate, so '
+                            'used and unused stay apart; only groups that used a feature are smoothed. Adds zg to the '
+                            'table name (e.g. $zgnbS).')
     group.add_argument('--set_pmi_threshold', metavar='PMI', dest='pmi', type=float, default=dlac.DEF_PMI,
                        help='The threshold for the feat_colloc_filter.')
     group.add_argument('--set_min_feat_sum', metavar='N', dest='minfeatsum', type=int, default=dlac.DEF_MIN_FEAT_SUM,#TODO: Deprecate?
@@ -674,7 +682,7 @@ order of actions:
                             'count/total: dirichlet, nb (negative binomial), pln (Poisson-log-normal), zinb (zero-inflated NB), '
                             'logodds_idp (z-scored log-odds vs. the rest of the corpus, informative Dirichlet prior), logodds '
                             '(uninformative), or hurdle (two tables: used 0/1, and log rate). Uses --smooth_mu, --smooth_log, '
-                            '--group_freq_thresh; run after --feat_occ_filter.')
+                            '--smooth_sqrt, --smooth_zero_gap, --group_freq_thresh; run after --feat_occ_filter.')
     group.add_argument('--combine_feat_tables', '--combine_feats', type=str, dest='combinefeattables', default=None,
                        help='Given multiple feature table, combines them (provide feature name) ')
     group.add_argument('--add_feat_norms', action='store_true', dest='addfeatnorms',
@@ -1632,7 +1640,8 @@ def runRefinement(args, s):
 
     if args.smoothfeats:
         if not fr: fr=FR()
-        args.feattable = fr.createSmoothedFeatTable(args.smoothfeats, args.smoothmu, args.smoothlog, args.groupfreqthresh)
+        args.feattable = fr.createSmoothedFeatTable(args.smoothfeats, args.smoothmu, args.smoothlog, args.groupfreqthresh,
+                                                    sqrtRate=args.smoothsqrt, zeroGap=args.smoothzerogap)
 
     if args.featcollocfilter:
         if not fr: fr=FR()

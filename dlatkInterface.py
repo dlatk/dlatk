@@ -679,14 +679,15 @@ order of actions:
     group.add_argument('--feat_occ_filter', action='store_true', dest='featoccfilter',
                        help='remove infrequent features. (uses variables feat_table and p_occ).')
     group.add_argument('--feat_reliability_filter', action='store_true', dest='featrelfilter',
-                       help='Keep the features of an n-gram table (-f) that are reliable across groups: each group\'s messages are split '
-                            'into random halves of about equal words, and the Spearman-Brown corrected correlation of the halves\' relative frequencies, '
-                            'averaged over splits, must be at least --set_reliability. When most groups have one message (e.g. -c message_id), '
-                            'it is calculated from a negative binomial model instead, assuming words are independent. '
+                       help='Keep the features of an n-gram or lexicon table (-f) that are reliable across groups: each group\'s messages are split '
+                            'into random halves of about equal words (message tables -t_sh<k>a/b, dropped after), the table\'s features are extracted from '
+                            'each half as it was made (--add_ngrams, or --add_lex_table), and the Spearman-Brown corrected correlation of the halves\' '
+                            'group_norms, averaged over 1 to 6 splits (fewer with more groups), must be at least --set_reliability. When most groups have 1 or 2 messages (e.g. '
+                            '-c message_id, or user-days), an n-gram table\'s is calculated from a negative binomial model instead, assuming words are independent. '
                             'Uses --group_freq_thresh. Creates a table ending in $rel0_3.')
     group.add_argument('--create_reliability_table', action='store_true', dest='createreltable',
-                       help='Writes the reliabilities of an n-gram table\'s (-f) features, calculated as for --feat_reliability_filter, to a table '
-                            'named like it with relf$ in place of feat$: for each of its rows, value is the feature\'s reliability across groups and '
+                       help='Writes the reliabilities of an n-gram or lexicon table\'s (-f) features, calculated as for --feat_reliability_filter, to a table '
+                            'named like it with relf$ in place of feat$ and $sh<splits> or $nb (negative binomial) appended: for each of its rows, value is the feature\'s reliability across groups and '
                             'group_norm is the reliability of that group\'s relative frequency (projected to the group\'s number of words). '
                             'Uses --group_freq_thresh. Later actions still use -f.')
     group.add_argument('--smooth_feats', metavar='METHOD', dest='smoothfeats', default=None,

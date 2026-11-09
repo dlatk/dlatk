@@ -155,23 +155,28 @@ smooth_zero_gap() {
     [ "$bad" -eq 0 ] && [ "$rows" -eq "$src" ] || { echo "    $t: $rows rows ($src expected), $bad not positive"; return 1; }
 }
 
-# reliable_subset TABLE LOG: TABLE$rel... (named in LOG) keeps some, not all, of TABLE's features, and the message
-# n-gram counts matched the table's
+# reliable_subset TABLE LOG: TABLE$rel... (named in LOG) keeps some, not all, of TABLE's features, the features
+# extracted from the split-half message tables added up to the table's, and those message tables were dropped
 reliable_subset() {
-    local t n src
+    local t n src left
+    ! grep -q "Unsure how" "$2" || { echo "    $(grep -o "Unsure how.*" "$2" | head -1 | cut -c1-200)"; return 1; }
     t=$(grep -o "new table [^ ]*\$rel[0-9_]*" "$2" | head -1 | cut -d' ' -f3)
     [ -n "$t" ] && table_nonempty "$t" || { echo "    no reliability-filtered table"; return 1; }
     n=$(num_feats "$t"); src=$(num_feats "$1")
     [ "$n" -gt 0 ] && [ "$n" -lt "$src" ] || { echo "    $t: $n of $src features"; return 1; }
-    ! grep -q "n-gram counts from .* differ" "$2" || { echo "    message n-gram counts differ from the table"; return 1; }
+    left=$(mysql -Ne "SHOW TABLES FROM $DB LIKE '%${T}\\_sh%'" | wc -l)
+    [ "$left" -eq 0 ] || { echo "    $left split-half tables left behind"; return 1; }
 }
 
-# reliability_table TABLE LOG: relf$... (TABLE with relf in place of feat) has reliabilities across groups (value) from
-# -1 to 1, the same in each row of a feature, and per-group ones (group_norm) from 0 to 1; its features with value >= 0.3
-# are those --feat_reliability_filter kept (the TABLE$rel0_3 named in LOG)
+# reliability_table TABLE LOG: relf$...$sh<k> or $nb (TABLE with relf in place of feat, and how the reliabilities were
+# calculated; named in LOG) has reliabilities across groups (value) from -1 to 1, the same in each row of a feature, and
+# per-group ones (group_norm) from 0 to 1; its features with value >= 0.3 are those --feat_reliability_filter kept (the
+# TABLE$rel0_3 named in LOG)
 reliability_table() {
-    local r="relf\$${1#feat\$}" rows bad varying kept filtered
+    local r rows bad varying kept filtered
+    r=$(grep -o "Writing relf\$[^ ]*" "$2" | head -1 | cut -d' ' -f2)
     filtered=$(grep -o "new table [^ ]*\$rel0_3" "$2" | head -1 | cut -d' ' -f3)
+    [ "$r" = "relf\$${1#feat\$}\$nb" ] || [[ "$r" == "relf\$${1#feat\$}\$sh"[1-6] ]] || { echo "    no relf\$${1#feat\$}\$sh<k> or \$nb table named in the log ($r)"; return 1; }
     table_nonempty "$r" || { echo "    missing: $r"; return 1; }
     read -r rows bad <<< "$(mysql -Ne "SELECT COUNT(*), SUM(value < -1 OR value > 1 OR group_norm < 0 OR group_norm > 1 OR group_norm IS NULL) FROM $DB.\`$r\`")"
     varying=$(mysql -Ne "SELECT COUNT(*) FROM (SELECT feat FROM $DB.\`$r\` GROUP BY feat HAVING MAX(value) - MIN(value) > 1e-9) v")
@@ -307,6 +312,12 @@ if [ "$CORE_ONLY" -eq 0 ]; then
     check feat_reliability_filter "reliable features kept, counted as in the table" reliable_subset "$NGRAM_FEAT_OCC" "$OUT/feat_reliability_filter.log"
     check create_reliability_table "relf\$ table of across-group and per-group reliabilities, consistent with the filter" \
         reliability_table "$NGRAM_FEAT_OCC" "$OUT/feat_reliability_filter.log"
+    # a weighted lexicon (topic) table: the topics are extracted from each half's 1grams as --add_lex_table does
+    run feat_reliability_filter_topics bash "$TESTS/feat_reliability_filter.sh" "${COMMON[@]}" -t $T -f "$TOPIC_FEAT" --table
+    check feat_reliability_filter_topics "reliable topics kept, extracted from split-halves like the table" \
+        reliable_subset "$TOPIC_FEAT" "$OUT/feat_reliability_filter_topics.log"
+    check create_reliability_table_topics "relf\$ table of topic reliabilities, consistent with the filter" \
+        reliability_table "$TOPIC_FEAT" "$OUT/feat_reliability_filter_topics.log"
     # one message per group (-c message_id): reliability from the negative binomial model, with a warning
     MSG_COMMON=(-d $DB -c message_id --group_freq_thresh 5)
     run feat_reliability_filter_nb eval 'bash "$TESTS/add_ngrams.sh" "${MSG_COMMON[@]}" -t $T -n 1 --set_p_occ 20 &&

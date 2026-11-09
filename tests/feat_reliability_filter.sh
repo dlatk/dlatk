@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Keeps the features of an n-gram table that are reliable across groups (--feat_reliability_filter); with --table, also
+# Keeps the features of an n-gram or lexicon table that are reliable across groups (--feat_reliability_filter); with --table, also
 # writes their reliabilities to relf$... (--create_reliability_table).
 source "$(dirname "$0")/common.sh"
-USAGE="-d <DB> -t <TABLE> -c <GROUP_FIELD> -f <NGRAM_FEAT_TABLE> [-e <ENGINE>] [--group_freq_thresh <GFT>] [--set_reliability <R>] [--table]"
+USAGE="-d <DB> -t <TABLE> -c <GROUP_FIELD> -f <NGRAM_OR_LEX_FEAT_TABLE> [-e <ENGINE>] [--group_freq_thresh <GFT>] [--set_reliability <R>] [--table]"
 
 while [ $# -gt 0 ]; do
     case $1 in

@@ -3,7 +3,7 @@ Prints 'reliability math ok' when every check passes."""
 import os, sys
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from dlatk.featureRefiner import splitHalfReliability, nbReliability, groupReliability
+from dlatk.featureRefiner import splitHalfFromSums, nbReliability, groupReliability
 
 rng = np.random.default_rng(0)
 n = 100000
@@ -11,11 +11,11 @@ ok = True
 for noise in (0.25, 1.0, 4.0): #each half = true score + noise; the whole (both halves) has reliability 1 / (1 + noise/2)
     t = rng.normal(size=n)
     x, y = t + rng.normal(scale=np.sqrt(noise), size=n), t + rng.normal(scale=np.sqrt(noise), size=n)
-    rel = float(splitHalfReliability(x.sum(), y.sum(), (x * x).sum(), (y * y).sum(), (x * y).sum(), n))
+    rel = float(splitHalfFromSums(x.sum(), y.sum(), (x * x).sum(), (y * y).sum(), (x * y).sum(), n))
     good = abs(rel - 1 / (1 + noise / 2)) < 0.02
     print('%s Spearman-Brown reliability %.3f (true %.3f)' % ('PASS' if good else 'FAIL', rel, 1 / (1 + noise / 2)))
     ok = ok and good
-zero = splitHalfReliability(*(np.zeros(1) for _ in range(5)), 10)
+zero = splitHalfFromSums(*(np.zeros(1) for _ in range(5)), 10)
 print('%s a feature that never varies has reliability 0' % ('PASS' if zero[0] == 0 else 'FAIL'))
 ok = ok and zero[0] == 0
 
@@ -54,7 +54,7 @@ print('%s per-group reliability from the true across-group reliability is exact 
 ok = ok and good
 t = rng.normal(size=len(N))
 x, y = (t + rng.normal(size=len(N)) * np.sqrt(2 * k / N) for _ in range(2)) #halves: twice the whole's noise
-rel = float(splitHalfReliability(x.sum(), y.sum(), (x * x).sum(), (y * y).sum(), (x * y).sum(), len(N)))
+rel = float(splitHalfFromSums(x.sum(), y.sum(), (x * x).sum(), (y * y).sum(), (x * y).sum(), len(N)))
 err = np.abs(groupReliability(rel, N, h) - tau2 / (tau2 + k / N)).max()
 good = err < 0.06
 print('%s per-group reliability from split-half tracks the true reliability over group sizes %d to %d (max difference %.3f)' % ('PASS' if good else 'FAIL', N.min(), N.max(), err))

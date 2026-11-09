@@ -5,6 +5,7 @@ import pandas as pd
 import sys
 from dateutil.parser import parse as dtParse
 import datetime
+import time
 
 #math / stats:
 from numpy import sqrt, array, std, mean, log2, log
@@ -38,7 +39,7 @@ from .database.dataEngine import DataEngine
 from .regressionPredictor import alignDictsAsXy
 
 
-def splitHalfReliability(sx, sy, sxx, syy, sxy, n):
+def splitHalfFromSums(sx, sy, sxx, syy, sxy, n):
     """Spearman-Brown corrected correlation, 2r / (1 + r), between two halves x and y over n groups, from the sums
     of x, y, x^2, y^2 and xy (arrays); 0 where a half does not vary. Negative r gives a negative reliability."""
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -445,7 +446,7 @@ class FeatureRefiner(FeatureGetter):
         return threshold
 
     def createTableWithReliableFeats(self, minReliability = dlac.DEF_RELIABILITY, groupFreqThresh = 0, splits = dlac.DEF_RELIABILITY_SPLITS, seed = dlac.DEFAULT_RANDOM_SEED):
-        """creates a new table with the features of an n-gram table whose split-half reliability across groups is at
+        """creates a new table with the features of an n-gram or lexicon table whose split-half reliability across groups is at
         least minReliability (--feat_reliability_filter); see getFeatReliabilities for how reliability is calculated.
 
         Parameters
@@ -455,7 +456,7 @@ class FeatureRefiner(FeatureGetter):
         groupFreqThresh : :obj:`int`, optional
             only groups with at least this many words
         splits : :obj:`int`, optional
-            number of random split-halves to average
+            number of random split-halves to start with (getFeatReliabilities)
         seed : :obj:`int`, optional
             random seed for the splits (each group's split depends only on the seed and its id)
 
@@ -467,161 +468,290 @@ class FeatureRefiner(FeatureGetter):
         rel = self.getFeatReliabilities(groupFreqThresh, splits, seed)
         return self._keepReliable(rel['feats'], rel['reliability'], minReliability, rel['numGroups'])
 
-    def getFeatReliabilities(self, groupFreqThresh = 0, splits = dlac.DEF_RELIABILITY_SPLITS, seed = dlac.DEFAULT_RANDOM_SEED):
-        """each feature's reliability across groups, for an n-gram table (--feat_reliability_filter,
+    def getFeatReliabilities(self, groupFreqThresh = 0, splits = dlac.DEF_RELIABILITY_SPLITS, seed = dlac.DEFAULT_RANDOM_SEED,
+                             maxSplits = dlac.RELIABILITY_MAX_SPLITS, maxSE = dlac.RELIABILITY_MAX_SE):
+        """each feature's reliability across groups, for an n-gram or lexicon table (--feat_reliability_filter,
         --create_reliability_table).
 
-        Each group's messages are split at random into two halves with about as many words each; the feature's
-        relative frequency in one half is correlated, across groups, with that in the other, and the correlation is
-        Spearman-Brown corrected (2r / (1 + r)) to the reliability of the whole group's relative frequency. This is
-        averaged over several random splits, which approaches coefficient alpha with each group's messages as items.
-        It is the share of the feature's variance across groups that is not sampling noise (its correlations with
-        outcomes are attenuated by sqrt(reliability)), on the scale of group_norm, the relative frequency. Messages, not words, are the sampled
-        units, so words used in bursts (several times in one message) are not counted as more reliable than they are.
+        Each group's messages are split at random into two halves with about as many words each
+        (MessageTransformer.addSplitHalfMessageTables), the table's features are extracted from each half the way the
+        table was made (--add_ngrams, or --add_lex_table on the half's 1grams; see _featTableRecipe), and each feature's
+        group_norm in one half is correlated, across groups, with that in the other and Spearman-Brown corrected
+        (splitHalfReliability) to the reliability of the whole group's group_norm. This is averaged over random splits.
+        How much a feature's reliability varies from split to split is close to (1 - rel^2) / sqrt(groups) (as for a
+        correlation over that many groups), so without splits, the first number of splits is the fewest that keep that
+        standard error of the average below maxSE even when rel is 0: ceil(1 / (maxSE^2 * groups)), from 1 (100 or more
+        groups split, for maxSE .1) to maxSplits, or 1 when most groups have only 2 messages (whose splits are all the
+        same). With 2 or more splits, one more is added at a time while the measured standard error (median over
+        features of their sd over splits / sqrt(splits)) is above maxSE, up to maxSplits. It is the share of the
+        feature's variance across groups that is not sampling noise (its correlations with outcomes are attenuated by
+        sqrt(reliability)). Messages, not words, are the sampled units, so words used in bursts (several times in one
+        message) are not counted as more reliable than they are.
 
-        N-grams are counted from the message table with the methods --add_ngrams uses, and a sample of groups is
-        checked against the table's counts. Groups with fewer than 2 messages are left out. When most groups have only
-        one message (e.g. -c message_id), messages cannot be split: reliability is then calculated from the table under
-        a negative binomial model, assuming words are independent (see nbReliability), with a warning.
+        The halves' counts are checked against the table's for a sample of groups; if they differ, the table was not
+        made this way and nothing is calculated. Groups with fewer than 2 messages are left out. When most groups have
+        at most two messages (e.g. -c message_id, or user-days), messages cannot be split, or every split of a group is
+        the same and its halves can be far from equal: an n-gram table's reliability is then calculated from the table
+        under a negative binomial model, assuming words are independent (see nbReliability), with a warning; a lexicon
+        table is refused.
 
         Parameters
         ----------
         groupFreqThresh : :obj:`int`, optional
             only groups with at least this many words
         splits : :obj:`int`, optional
-            number of random split-halves to average
+            number of random split-halves to start with (None: from the number of groups, as above)
         seed : :obj:`int`, optional
             random seed for the splits (each group's split depends only on the seed and its id)
+        maxSplits : :obj:`int`, optional
+            most split-halves
+        maxSE : :obj:`float`, optional
+            add split-halves while the median standard error of the features' reliabilities is above this
 
         Returns
         -------
         dict
             feats (sorted list), reliability (array over feats; negative when the halves disagree more than chance),
             numGroups (groups the reliabilities are from), method ('split-half' or 'negative binomial'), featNIndex
-            (index into ns of each feature's n-gram size), ns (n-gram sizes), groupTotals (group id -> array of the
-            group's total n-grams of each size, for every group passing groupFreqThresh) and harmonicN (array: harmonic
-            mean over the groups the reliabilities are from of their total n-grams of each size)
+            (index into ns of each feature's n-gram size; 0 for lexicon tables), ns (n-gram sizes; [1] for lexicon
+            tables), groupTotals (group id -> array of the group's total n-grams of each size, for every group passing
+            groupFreqThresh), harmonicN (array: harmonic mean over the groups the reliabilities are from of their total
+            n-grams of each size), splits (split-halves averaged) and se (array over feats: standard error over them; nan
+            with one split)
         """
-        import zlib
-        featureTable = self.featureTable
-        featType = featureTable.split('$')[1]
-        nMatch = re.match(r'^(\d+)(?:to(\d+))?gram(Up)?$', featType)
-        if not nMatch:
-            dlac.warn("--feat_reliability_filter works on n-gram tables (feat$1gram..., feat$1to3gram...); %s is not one"
-                      % featureTable, attention=True)
-            sys.exit(1)
-        ns = list(range(int(nMatch.group(1)), int(nMatch.group(2) or nMatch.group(1)) + 1))
-        lowercaseOnly = not nMatch.group(3)
-        from .featureExtractor import FeatureExtractor #counts n-grams with the same methods as --add_ngrams
-        tokenizer = Tokenizer(preserve_case = not lowercaseOnly, use_unicode=self.use_unicode)
+        recipe = self._featTableRecipe()
+        ns = recipe['ns']
 
         #1. features, and the groups to use
         feats = sorted(set(self.getDistinctFeatures()))
         featIndex = dict((f, i) for i, f in enumerate(feats))
-        featNIndex = np.array([ns.index(len(f.split())) if len(f.split()) in ns else 0 for f in feats])
+        featNIndex = np.array([ns.index(len(f.split())) if len(f.split()) in ns else 0 for f in feats]) if recipe['kind'] == 'ngram' \
+            else np.zeros(len(feats), dtype=int)
         groups = self.getDistinctGroupsFromFeatTable()
         if groupFreqThresh:
             wordCounts = self.getGroupWordCounts()
             groups = [g for g in groups if wordCounts.get(g, 0) >= groupFreqThresh]
         assert groups, 'NO GROUPS TO FILTER BASED ON (LIKELY group_freq_thresh IS TOO HIGH)'
         if self.correl_field == self.messageid_field:
-            singles = len(groups)
+            few = len(groups)
         else:
             sql = self.qb.create_select_query(self.corptable).set_fields([self.correl_field, "count(*)"]).group_by([self.correl_field])
             msgCounts = dict((str(g), c) for g, c in sql.execute_query())
-            singles = sum(1 for g in groups if msgCounts.get(str(g), 0) < 2)
-        if singles > len(groups) / 2.0:
-            dlac.warn("Because there was only 1 message per %s for %d of %d groups, the reliability was parametrically "
+            few = sum(1 for g in groups if msgCounts.get(str(g), 0) <= 2)
+        if few > len(groups) / 2.0: #1 message can't be split; 2 split only one way, often into unequal halves
+            perGroup = 'only 1 message' if self.correl_field == self.messageid_field else 'only 1 or 2 messages'
+            if recipe['kind'] != 'ngram':
+                dlac.warn("There was %s per %s for %d of %d groups: messages cannot be split well, so the reliability "
+                          "of %s cannot be calculated (the negative binomial model works only for n-gram tables)"
+                          % (perGroup, self.correl_field, few, len(groups), self.featureTable), attention=True)
+                sys.exit(1)
+            dlac.warn("Because there was %s per %s for %d of %d groups, the reliability was parametrically "
                       "calculated using a Negative Binomial model and assuming independence of words (leading to slight "
                       "overestimate of reliability for common words)"
-                      % (self.correl_field, singles, len(groups)), attention=True)
+                      % (perGroup, self.correl_field, few, len(groups)), attention=True)
             reliability, totals = self._nbReliabilities(feats, featNIndex, ns, groups)
             withGrams = totals > 0 #groups with no n-grams of a size have no rate
             harmonicN = np.array([1.0 / (1.0 / t[w]).mean() if w.any() else 0.0 for t, w in zip(totals, withGrams)])
             return dict(feats=feats, reliability=reliability, numGroups=len(groups), method='negative binomial', featNIndex=featNIndex,
-                        ns=ns, groupTotals=dict((g, totals[:, i]) for i, g in enumerate(groups)), harmonicN=harmonicN)
-        dlac.warn("Reliability: %d features over %d groups of %s.%s; counting n-grams per message (%d random split-halves)"
-                  % (len(feats), len(groups), self.corptable, self.correl_field, splits))
+                        ns=ns, groupTotals=dict((g, totals[:, i]) for i, g in enumerate(groups)), harmonicN=harmonicN,
+                        splits=0, se=np.zeros(len(feats)))
+        if not splits: #enough splits for a standard error below maxSE (median message count: of groups that can be split)
+            several = sorted(msgCounts[str(g)] for g in groups if msgCounts.get(str(g), 0) >= 2)
+            splits = 1 if several[len(several) // 2] <= 2 else int(min(maxSplits, max(1, math.ceil(1.0 / (maxSE ** 2 * len(several))))))
+        dlac.warn("Reliability: %d features over %d groups of %s.%s; extracting them from random split-halves of each "
+                  "group's messages (%d splits%s)" % (len(feats), len(groups), self.corptable, self.correl_field, splits,
+                                                      ', up to %d' % maxSplits if 1 < splits < maxSplits else ''))
 
-        #2. one pass over the groups' messages: sums for each feature's correlation between halves, per split
-        F = len(feats)
-        sx, sy, sxx, syy, sxy = (np.zeros((splits, F)) for _ in range(5))
-        used, fewMessages, groupsChecked, checked, mismatches = 0, 0, 0, 0, 0
-        groupTotals, invN = dict(), np.zeros(len(ns))
-        for gi, gid in enumerate(groups):
-            mids, rows, cols, counts, totals = set(), [], [], [], []
-            for (mid, message) in self.getMessagesForCorrelField(gid, warnMsg = False):
-                if mid in mids or not message:
-                    continue
-                words = FeatureExtractor.ngramWords(message, tokenizer, self.use_unicode)
-                msgCounts, msgTotals = dict(), []
-                for n in ns:
-                    grams = FeatureExtractor.ngramsFromWords(words, n, lowercaseOnly)
-                    msgTotals.append(len(grams))
-                    for gram in grams:
-                        fi = featIndex.get(gram)
-                        if fi is not None:
-                            msgCounts[fi] = msgCounts.get(fi, 0) + 1
-                rows.extend([len(mids)] * len(msgCounts))
-                cols.extend(msgCounts.keys())
-                counts.extend(msgCounts.values())
-                totals.append(msgTotals)
-                mids.add(mid)
-            m = len(mids)
-            groupTotals[gid] = np.array(totals, dtype=float).sum(axis=0) if m else np.zeros(len(ns))
-            if m < 2:
-                fewMessages += 1
-                continue
-            touched, colIdx = np.unique(np.array(cols, dtype=int), return_inverse=True)
-            M = csr_array((np.array(counts, dtype=float), (np.array(rows, dtype=int), colIdx)), shape=(m, len(touched)))
-            W = np.array(totals, dtype=float) #messages x n: total n-grams
-            rng = np.random.default_rng([seed, zlib.crc32(str(gid).encode('utf-8'))])
-            H = np.zeros((splits, m))
-            for k in range(splits): #in a random order, each message goes to the half with fewer words so far
-                wordsA = wordsB = 0
-                for i in rng.permutation(m):
-                    if wordsA < wordsB or (wordsA == wordsB and rng.random() < 0.5):
-                        H[k, i] = 1.0
-                        wordsA += W[i, 0]
-                    else:
-                        wordsB += W[i, 0]
-            A = np.asarray((M.T @ H.T).T) #splits x touched: counts in half one
-            T = np.asarray(M.sum(axis=0)).ravel() #counts in the group
-            WA, Wt = H @ W, W.sum(axis=0) #n-grams in half one (splits x n), in the group (n)
-            nIdx = featNIndex[touched]
-            with np.errstate(divide='ignore', invalid='ignore'):
-                x = np.nan_to_num(A / WA[:, nIdx])
-                y = np.nan_to_num((T[None, :] - A) / (Wt[None, :] - WA)[:, nIdx])
-            sx[:, touched] += x
-            sy[:, touched] += y
-            sxx[:, touched] += x * x
-            syy[:, touched] += y * y
-            sxy[:, touched] += x * y
-            with np.errstate(divide='ignore'):
-                invN += np.where(Wt > 0, 1.0 / Wt, 0.0)
-            used += 1
-            if groupsChecked < dlac.RELIABILITY_CHECK_GROUPS: #the counts should be those of the table
-                sql = self.qb.create_select_query(featureTable).set_fields(['feat', 'value']).where("group_id = '%s'" % gid)
-                ours = dict((feats[f], c) for f, c in zip(touched, T))
-                tableRows = sql.execute_query()
-                mismatches += sum(1 for (f, v) in tableRows if abs(ours.get(f, 0) - float(v)) > 1e-6)
-                checked += len(tableRows)
-                groupsChecked += 1
-            if (gi + 1) % max(1, len(groups) // 20) == 0:
-                dlac.warn(" [%d%%] %d of %d groups read" % (int(100 * (gi + 1) / len(groups)), gi + 1, len(groups)))
-        if fewMessages:
-            dlac.warn("%d groups with fewer than 2 messages were left out" % fewMessages)
-        assert used > 2, 'TOO FEW GROUPS WITH SEVERAL MESSAGES FOR --feat_reliability_filter'
-        if checked and mismatches > dlac.RELIABILITY_CHECK_TOLERANCE * checked:
-            dlac.warn("n-gram counts from %s differ from %s in %d of %d checked rows: was the table extracted from this "
-                      "message table and group field with --add_ngrams (not collocations or a tokenized table)? "
-                      "Reliabilities may not match its features" % (self.corptable, featureTable, mismatches, checked), attention=True)
+        #2. split-halves: write the halves' message tables, extract the features from each, correlate
+        from .messageTransformer import MessageTransformer
+        mt = MessageTransformer(self.db_type, self.corpdb, self.corptable, self.correl_field, self.mysql_config_file,
+                                self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb)
+        rels, used, toDrop = [], [], []
+        seconds = OrderedDict((step, 0.0) for step in ('splitting messages', 'extracting features', 'checking halves', 'correlating halves', 'dropping tables'))
+        def timed(step, func, *args):
+            start = time.time()
+            result = func(*args)
+            seconds[step] += time.time() - start
+            return result
+        try:
+            while True:
+                batch = list(range(len(rels), len(rels) + (splits if not rels else 1)))
+                names, used = timed('splitting messages', mt.addSplitHalfMessageTables, groups, batch, seed)
+                toDrop = [name for pair in names for name in pair]
+                for halfA, halfB in names: #extract, correlate, and drop each split's tables before the next
+                    made = []
+                    try:
+                        tablesA = timed('extracting features', self._extractLike, recipe, halfA, made)
+                        tablesB = timed('extracting features', self._extractLike, recipe, halfB, made)
+                        if not rels:
+                            timed('checking halves', self._checkHalves, recipe, tablesA, tablesB, used[:dlac.RELIABILITY_CHECK_GROUPS], featIndex)
+                        rels.append(timed('correlating halves', self.splitHalfReliability, tablesA, tablesB, used, feats))
+                    finally:
+                        timed('dropping tables', self._dropTables, made + [halfA, halfB])
+                assert len(used) > 2, 'TOO FEW GROUPS WITH SEVERAL MESSAGES FOR --feat_reliability_filter'
+                if len(rels) < 2: #one split: no measured standard error
+                    se = np.full(len(feats), np.nan)
+                    break
+                se = np.std(rels, axis=0, ddof=1) / np.sqrt(len(rels))
+                dlac.warn(" %d split-halves: standard error of reliabilities over features, 10%%/25%%/50%%/75%%/90%% = %s"
+                          % (len(rels), ' / '.join('%.3f' % q for q in np.percentile(se, [10, 25, 50, 75, 90]))))
+                if len(rels) >= maxSplits or np.median(se) <= maxSE:
+                    break
+        finally:
+            self._dropTables(toDrop)
+        dlac.warn(" %d split-halves took %s" % (len(rels), ', '.join('%s %.0fs' % (step, t) for step, t in seconds.items())))
 
-        #3. reliability: Spearman-Brown corrected correlation between halves, averaged over the splits
-        reliability = splitHalfReliability(sx, sy, sxx, syy, sxy, used).mean(axis=0)
-        harmonicN = np.where(invN > 0, used / np.where(invN > 0, invN, 1.0), 0.0)
-        return dict(feats=feats, reliability=reliability, numGroups=used, method='split-half', featNIndex=featNIndex,
-                    ns=ns, groupTotals=groupTotals, harmonicN=harmonicN)
+        #3. reliability: averaged over the splits; groups' totals for per-group reliabilities
+        reliability = np.mean(rels, axis=0)
+        totals = self._groupNgramTotals(ns, groups, recipe['lowercase'])
+        usedIndex = [i for i, g in enumerate(groups) if str(g) in set(str(u) for u in used)]
+        harmonicN = np.zeros(len(ns))
+        for j in range(len(ns)):
+            t = totals[j, usedIndex]
+            if (t > 0).any(): harmonicN[j] = 1.0 / (1.0 / t[t > 0]).mean()
+        return dict(feats=feats, reliability=reliability, numGroups=len(used), method='split-half', featNIndex=featNIndex,
+                    ns=ns, groupTotals=dict((g, totals[:, i]) for i, g in enumerate(groups)), harmonicN=harmonicN,
+                    splits=len(rels), se=se)
+
+    def _featTableRecipe(self):
+        """how the feature table was made, from its name, for extracting its features from split-halves of the
+        messages (getFeatReliabilities): {'kind': 'ngram', 'ns': [n, ...], 'lowercase': bool} for --add_ngrams tables
+        (feat$1gram..., feat$1to3gram...), {'kind': 'lex', 'lexicon': name, 'weighted': bool, 'ns': [1], 'lowercase':
+        True} for --add_lex_table tables (feat$cat_LEX[_w]$...$1gra), either optionally followed by --feat_occ_filter or
+        --feat_reliability_filter suffixes ($0_05, $46, $rel0_3), which only remove features. Exits otherwise."""
+        pieces = self.featureTable.split('$')
+        def deny(why):
+            dlac.warn("Unsure how %s was created (%s), so its features cannot be extracted from split-halves of the "
+                      "messages: reliabilities work on tables made from -t and -c by --add_ngrams or --add_lex_table (on "
+                      "the 1gram table), optionally filtered by --feat_occ_filter or --feat_reliability_filter"
+                      % (self.featureTable, why), attention=True)
+            sys.exit(1)
+        if len(pieces) < 4 or pieces[0] != 'feat':
+            deny('not a feat$ table name')
+        if pieces[2] != self.corptable or pieces[3] != self.correl_field:
+            deny('made from %s grouped by %s, not -t %s -c %s' % (pieces[2], pieces[3], self.corptable, self.correl_field))
+        featType, extras = pieces[1], pieces[4:]
+        isFilter = lambda e: re.match(r'^(\d+|0_\d+|rel\d+_\d+)$', e) is not None
+        nMatch = re.match(r'^(\d+)(?:to(\d+))?gram(Up)?$', featType)
+        if nMatch:
+            if not all(isFilter(e) for e in extras):
+                deny('suffix %s' % '$'.join(e for e in extras if not isFilter(e)))
+            return dict(kind='ngram', ns=list(range(int(nMatch.group(1)), int(nMatch.group(2) or nMatch.group(1)) + 1)),
+                        lowercase=not nMatch.group(3))
+        if featType.startswith('cat_'):
+            if not extras or extras[0] != '1gra' or not all(isFilter(e) for e in extras[1:]):
+                deny('a lexicon table is expected to end in $1gra (from the 1gram table), then only filter suffixes')
+            lex = featType[len('cat_'):]
+            if re.search(r'_16to\d+$|_lw$', lex):
+                deny('value-transformed or lexicon-normalized lexicon features')
+            if lex.endswith('_w') and self._lexiconExists(lex[:-2]):
+                return dict(kind='lex', lexicon=lex[:-2], weighted=True, ns=[1], lowercase=True)
+            if self._lexiconExists(lex):
+                return dict(kind='lex', lexicon=lex, weighted=False, ns=[1], lowercase=True)
+            deny('no lexicon %s in %s' % (lex, self.lexicondb))
+        deny('feature type %s' % featType)
+
+    def _lexiconExists(self, name):
+        from .lexicainterface.lexInterface import WeightedLexicon
+        import os
+        lexdb = self.lexicondb
+        if self.db_type == 'sqlite' and not os.path.isabs(lexdb): #as load_lexicon finds it
+            lexdb = os.path.join("/content" if os.path.exists("/content") else os.path.expanduser('~'), "sqlite_data", lexdb)
+        lexicon = WeightedLexicon(lexicon_db=lexdb, mysql_config_file=self.mysql_config_file, lex_db_type=self.db_type,
+                                  encoding=self.encoding, use_unicode=self.use_unicode)
+        return lexicon.engine.tableExists(name)
+
+    def _extractLike(self, recipe, messageTable, made):
+        """extracts the features of a _featTableRecipe from messageTable with --add_ngrams' or --add_lex_table's
+        methods; returns the tables to read (one per n-gram size, or the lexicon table) and adds every table it made
+        to made"""
+        from .featureExtractor import FeatureExtractor
+        fe = FeatureExtractor(self.db_type, self.corpdb, messageTable, self.correl_field, self.mysql_config_file,
+                              self.message_field, self.messageid_field, self.encoding, self.use_unicode, self.lexicondb)
+        if recipe['kind'] == 'ngram':
+            tables = []
+            for n in recipe['ns']:
+                tables.append(fe.addNGramTable(n, lowercase_only=recipe['lowercase'], metaFeatures=False))
+                made.append(tables[-1])
+            return tables
+        made.append(fe.addNGramTable(1, metaFeatures=False)) #the word table the lexicon is applied to
+        made.append(fe.addLexiconFeat(recipe['lexicon'], isWeighted=recipe['weighted']))
+        return [made[-1]]
+
+    def _dropTables(self, tables):
+        for table in tables:
+            self.qb.create_drop_query(table).execute_query()
+
+    def _readTables(self, tables, groups, featIndex, where=''):
+        """(group index, feature index, value, group_norm) of tables' rows for groups and features in featIndex"""
+        groupIndex = dict((str(g), i) for i, g in enumerate(groups))
+        for table in tables:
+            sql = self.qb.create_select_query(table).set_fields(["group_id", "feat", "value", "group_norm"])
+            if where: sql = sql.where(where)
+            for gid, feat, value, gn in self.data_engine.execute_get_SSCursor(sql.toString()):
+                gi, fi = groupIndex.get(str(gid)), featIndex.get(feat)
+                if gi is not None and fi is not None:
+                    yield gi, fi, float(value), float(gn)
+
+    def _checkHalves(self, recipe, tablesA, tablesB, groups, featIndex):
+        """exits unless, for groups, the halves' values add up to the feature table's (so the table was made as
+        _featTableRecipe says): exactly for counts, within rounding for a weighted lexicon's (integer) values"""
+        where = "group_id IN ('%s')" % "','".join(str(g) for g in groups)
+        full, halves = dict(), dict()
+        for gi, fi, value, gn in self._readTables([self.featureTable], groups, featIndex, where):
+            full[(gi, fi)] = value
+        for gi, fi, value, gn in self._readTables(tablesA + tablesB, groups, featIndex, where):
+            halves[(gi, fi)] = halves.get((gi, fi), 0.0) + value
+        tolerance = 1.5 if recipe.get('weighted') else 1e-6
+        keys = set(full) | set(halves)
+        mismatches = sum(1 for k in keys if abs(full.get(k, 0.0) - halves.get(k, 0.0)) > tolerance)
+        if not keys or mismatches > dlac.RELIABILITY_CHECK_TOLERANCE * len(keys):
+            dlac.warn("Unsure how %s was created: features extracted from split-halves of %s's messages do not add up to "
+                      "its values in %d of %d (group, feature) pairs of %d groups (was it made from this message table "
+                      "and group field, from its unfiltered 1grams, without collocations or a tokenized table?)"
+                      % (self.featureTable, self.corptable, mismatches, len(keys), len(groups)), attention=True)
+            sys.exit(1)
+
+    def splitHalfReliability(self, tablesA, tablesB, groups, feats):
+        """each feature's split-half reliability across groups: the correlation over groups between its group_norm in
+        feature tables extracted from one half of each group's messages (tablesA, one per n-gram size or a lexicon
+        table) and from the other half (tablesB), Spearman-Brown corrected to the whole (splitHalfFromSums). Groups
+        without the feature in a half count as 0.
+
+        Returns
+        -------
+        numpy array
+            reliability of each of feats
+        """
+        featIndex = dict((f, i) for i, f in enumerate(feats))
+        halves = []
+        for tables in (tablesA, tablesB):
+            rows, cols, data = [], [], []
+            for gi, fi, value, gn in self._readTables(tables, groups, featIndex):
+                rows.append(gi); cols.append(fi); data.append(gn)
+            halves.append(csr_array((np.array(data, dtype=float), (np.array(rows, dtype=int), np.array(cols, dtype=int))),
+                                    shape=(len(groups), len(feats))))
+        A, B = halves
+        colSum = lambda M: np.asarray(M.sum(axis=0)).ravel()
+        return splitHalfFromSums(colSum(A), colSum(B), colSum(A.multiply(A)), colSum(B.multiply(B)), colSum(A.multiply(B)), len(groups))
+
+    def _groupNgramTotals(self, ns, groups, lowercase = True):
+        """(len(ns) x len(groups)) array of each group's total n-grams of each size, from the feat$meta_ tables, else
+        (with a warning) the groups' word counts for every size"""
+        pieces = self.featureTable.split('$')
+        groupIndex = dict((str(g), i) for i, g in enumerate(groups))
+        totals = np.zeros((len(ns), len(groups)))
+        for j, n in enumerate(ns):
+            metaTable = '$'.join(['feat', 'meta_%dgram%s' % (n, '' if lowercase else 'Up')] + pieces[2:4])
+            if self.data_engine.tableExists(metaTable):
+                sql = self.qb.create_select_query(metaTable).set_fields(['group_id', 'value']).where("feat = '_total%dgrams'" % n)
+                for g, v in sql.execute_query():
+                    if str(g) in groupIndex: totals[j, groupIndex[str(g)]] = float(v)
+        if not totals.any(axis=1).all():
+            dlac.warn("No meta tables with n-gram totals for %s: taking each group's word count as its total n-grams" % self.featureTable)
+            wordCounts = dict((str(g), c) for g, c in self.getGroupWordCounts().items())
+            totals[:] = [[float(wordCounts.get(str(g), 0)) for g in groups]] * len(ns)
+        return totals
 
     def _keepReliable(self, feats, reliability, minReliability, numGroups):
         """writes the table of features with at least minReliability (createTableWithReliableFeats)"""
@@ -632,13 +762,14 @@ class FeatureRefiner(FeatureGetter):
         return self.createNewTableWithGivenFeats(toKeep, 'rel' + str(minReliability).replace('.', '_'))
 
     def createReliabilityTable(self, groupFreqThresh = 0, splits = dlac.DEF_RELIABILITY_SPLITS, seed = dlac.DEFAULT_RANDOM_SEED):
-        """writes the reliabilities of an n-gram table's features (--create_reliability_table) to a table named like it
-        with relf$ in place of feat$ (relf$1gram$msgs$user_id), with a row for each of the feature table's rows (group,
-        feature) whose group has at least groupFreqThresh words:
+        """writes the reliabilities of an n-gram or lexicon table's features (--create_reliability_table) to a table named like it
+        with relf$ in place of feat$ and how they were calculated appended: $sh<k> when from k random split-halves of
+        the groups' messages, $nb when from the negative binomial model (relf$1gram$msgs$user_id$sh1), with a row for
+        each of the feature table's rows (group, feature) whose group has at least groupFreqThresh words:
         value is the feature's reliability across groups (getFeatReliabilities; the same in each of its rows, and
-        negative when its halves agree less than chance), and group_norm is the reliability of that group's relative
-        frequency of the feature (groupReliability: the across-group reliability projected to the group's number of
-        n-grams). Groups where a feature does not occur get no row, as in the feature table; their reliability follows
+        negative when its halves agree less than chance), and group_norm is the reliability of that group's group_norm
+        of the feature (groupReliability: the across-group reliability projected to the group's number of n-grams, or
+        words for a lexicon table). Groups where a feature does not occur get no row, as in the feature table; their reliability follows
         from value and the group's total (feat$meta_ tables) by groupReliability.
 
         Returns
@@ -649,10 +780,11 @@ class FeatureRefiner(FeatureGetter):
         featureTable = self.featureTable
         pieces = featureTable.split('$')
         newTable = '$'.join(['relf'] + pieces[1:])
-        if self.db_type == 'mysql' and len(newTable) > 64:
-            dlac.warn("%s is longer than MySQL's 64 characters; use a shorter message table name" % newTable, attention=True)
+        if self.db_type == 'mysql' and len(newTable) + len('$sh6') > 64:
+            dlac.warn("%s$sh6 is longer than MySQL's 64 characters; use a shorter message table name" % newTable, attention=True)
             sys.exit(1)
         rel = self.getFeatReliabilities(groupFreqThresh, splits, seed)
+        newTable += '$nb' if rel['method'] == 'negative binomial' else '$sh%d' % rel['splits']
         featIndex = dict((f, i) for i, f in enumerate(rel['feats']))
         reliability, featNIndex, harmonicN = rel['reliability'], rel['featNIndex'], rel['harmonicN']
         groupTotals = dict((str(g), t) for g, t in rel['groupTotals'].items())

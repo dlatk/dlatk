@@ -263,6 +263,104 @@ class MessageTransformer(DLAWorker):
         
         return tableName
 
+    def addSplitHalfMessageTables(self, groups, splits, seed = dlac.DEFAULT_RANDOM_SEED):
+        """Writes random split-halves of each group's messages as pairs of message tables, corptable_sh<k>a and
+        corptable_sh<k>b, copies of corptable (same columns and types, as the message filters write) holding about half
+        of each group's messages, so features can be extracted from each half with the usual methods (e.g. for
+        split-half reliability, --create_reliability_table).
+
+        In each split, a group's messages are taken in a random order and each goes to the half with fewer words so
+        far, so the halves have about as many words. Messages that are empty or repeat an id are left out, as when
+        n-grams are extracted, and so are groups with fewer than 2 messages. A group's splits depend only on the seed and
+        its id, so split k is the same whichever other splits are written.
+
+        Parameters
+        ----------
+        groups : list
+            group field values whose messages to split
+        splits : list of int
+            which splits to write (e.g. [0, 1, 2], later [3])
+        seed : :obj:`int`, optional
+            random seed
+
+        Returns
+        -------
+        (list, list)
+            the (half a, half b) table names for each of splits, and the groups that were split
+        """
+        names = [("%s_sh%da" % (self.corptable, k), "%s_sh%db" % (self.corptable, k)) for k in splits]
+        tables = [name for pair in names for name in pair]
+        for name in tables:
+            if self.data_engine.tableExists(name):
+                dlac.warn("%s already exists: drop it, or rename the message table, before splitting %s" % (name, self.corptable), attention=True)
+                sys.exit(1)
+        try:
+            for name in tables:
+                self.qb.create_createTable_query(name).like(self.corptable).execute_query()
+                self.data_engine.standardizeTable(name, collate=dlac.DEF_COLLATIONS[self.encoding.lower()],
+                                                  engine=dlac.DEF_MYSQL_ENGINE, charset=self.encoding, use_unicode=self.use_unicode)
+                self.data_engine.disable_table_keys(name)
+            return self._writeSplitHalves(groups, splits, seed, names)
+        except BaseException:
+            for name in tables:
+                self.qb.create_drop_query(name).execute_query()
+            raise
+
+    def _writeSplitHalves(self, groups, splits, seed, names):
+        """writes the messages of addSplitHalfMessageTables' tables"""
+        import zlib
+        import numpy as np
+        from .featureExtractor import FeatureExtractor #counts words as n-gram extraction does
+        columnNames = list(self.data_engine.getTableColumnNameTypes(self.corptable))
+        idIndex, messageIndex = columnNames.index(self.messageid_field), columnNames.index(self.message_field)
+        tables = [name for pair in names for name in pair]
+        inserts = dict((name, self.qb.create_insert_query(name).set_values([(c, '') for c in columnNames])) for name in tables)
+        toWrite = dict((name, []) for name in tables)
+        tokenizer = Tokenizer(use_unicode=self.use_unicode)
+        lastSplit, splitIndex = max(splits), dict((k, i) for i, k in enumerate(splits))
+        written = []
+        for gi, gid in enumerate(groups):
+            mids, rows, words = set(), [], []
+            selectQuery = self.qb.create_select_query(self.corptable).set_fields(columnNames).where("%s='%s'" % (self.correl_field, gid))
+            for row in selectQuery.execute_query():
+                if row[idIndex] in mids or not row[messageIndex]:
+                    continue
+                mids.add(row[idIndex])
+                rows.append(row)
+                words.append(len(FeatureExtractor.ngramWords(row[messageIndex], tokenizer, self.use_unicode)))
+            m = len(rows)
+            if m < 2:
+                continue
+            rng = np.random.default_rng([seed, zlib.crc32(str(gid).encode('utf-8'))])
+            for k in range(lastSplit + 1): #in a random order, each message goes to the half with fewer words so far
+                inA, wordsA, wordsB = np.zeros(m, dtype=bool), 0, 0
+                for i in rng.permutation(m):
+                    if wordsA < wordsB or (wordsA == wordsB and rng.random() < 0.5):
+                        inA[i] = True
+                        wordsA += words[i]
+                    else:
+                        wordsB += words[i]
+                if k not in splitIndex:
+                    continue
+                nameA, nameB = names[splitIndex[k]]
+                for i in range(m):
+                    toWrite[nameA if inA[i] else nameB].append(rows[i])
+            written.append(gid)
+            for name, batch in toWrite.items():
+                if len(batch) >= dlac.MYSQL_BATCH_INSERT_SIZE:
+                    inserts[name].execute_query(batch)
+                    toWrite[name] = []
+            if (gi + 1) % max(1, len(groups) // 10) == 0:
+                dlac.warn(" [%d%%] %d of %d %ss' messages split" % (int(100 * (gi + 1) / len(groups)), gi + 1, len(groups), self.correl_field))
+        for name, batch in toWrite.items():
+            if batch:
+                inserts[name].execute_query(batch)
+        for name in tables:
+            self.data_engine.enable_table_keys(name)
+        dlac.warn("Split the messages of %d of %d %ss (with at least 2 messages) into %s" % (len(written), len(groups),
+                  self.correl_field, ', '.join('%s / %s' % pair for pair in names)))
+        return names, written
+
     def addSegmentedMessages(self, model="ctb", tmpdir="/tmp"):
         """Exports the messages to a csv, writes to a tmp file, segments, cleans up and reimports as JSON list
 

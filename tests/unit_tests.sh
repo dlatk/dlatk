@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Unit tests for dlatkInterface.py, covering the "Suggested Unit Tests" in
-# dev_instructions.txt (following the DLA / prediction tutorials), plus extended tests.
+# dev_instructions.txt (following the DLA / prediction tutorials); with -x, also the extended tests.
 #
 # Uses only data distributed with dlatk (dla_tutorial.sql, dlatk_lexica.sql) and runs the
 # repo's own dlatkInterface.py on a scratch sample of the message table, so `msgs` is untouched.
@@ -10,9 +10,8 @@
 #   -n  number of users sampled (fixed seed) into the scratch table (default 150)
 #   -m  maximum messages kept per user, 0 for no cap (default 30)
 #   -p  occurrence filter threshold for the 1-2gram table used in DLA/prediction (default 0.2)
-#   -c  core tests only (skip the extended tests)
-#   -x  also run the extra extended tests (not run by default): DLA on smoothed tables (nb, nbL, zgnb, logodds) and
-#       the values of reliability tables (relf$)
+#   -x  also run the extended tests (by default only the core tests run)
+#   -c  core tests only (the default; kept so older commands still work)
 #   -k  keep the scratch message table and its feature tables afterwards
 #   -s  skip sampling and 1-2gram extraction: start at the occurrence filter, reusing the
 #       scratch table and 1to2gram table kept by an earlier run with -k
@@ -30,19 +29,18 @@ NUM_USERS=150
 MAX_MSGS=30
 P_OCC=0.2
 SKIP_EXTRACT=0
-CORE_ONLY=0
-EXTRA=0
+EXTENDED=0
 while getopts "hd:t:o:n:m:p:cxks" opt; do
     case $opt in
-        h) sed -n '2,23p' "$0"; exit 2 ;;
+        h) sed -n '2,22p' "$0"; exit 2 ;;
         d) DB=$OPTARG ;;
         t) SRC_TABLE=$OPTARG ;;
         o) OUT=$OPTARG ;;
         n) NUM_USERS=$OPTARG ;;
         m) MAX_MSGS=$OPTARG ;;
         p) P_OCC=$OPTARG ;;
-        c) CORE_ONLY=1 ;;
-        x) EXTRA=1 ;;
+        c) EXTENDED=0 ;;
+        x) EXTENDED=1 ;;
         k) KEEP=1 ;;
         s) SKIP_EXTRACT=1 ;;
         *) exit 2 ;;
@@ -352,7 +350,7 @@ check classification "classification csv written" files_exist "$OUT/classificati
 ##################
 ## EXTENDED TESTS
 
-if [ "$CORE_ONLY" -eq 0 ]; then
+if [ "$EXTENDED" -eq 1 ]; then
 
     # PMI collocation filter
     run ngrams_pmi bash "$TESTS/add_ngrams.sh" "${COMMON[@]}" -t $T -n "1 2" --combine_feat_tables 1to2gram \
@@ -398,28 +396,26 @@ if [ "$CORE_ONLY" -eq 0 ]; then
     check create_reliability_table_nb "message-level relf\$ table, consistent with the filter" \
         reliability_table "feat\$1gram\$${T}\$message_id\$20" "$OUT/feat_reliability_filter_nb.log"
 
-    if [ "$EXTRA" -eq 1 ]; then
-        # DLA on the smoothed tables suggested for DLA (nb, nbL, zgnb, logodds): the nb copies agree with each other
-        # (zgnb = nb where used, zgnbS^2 = nb, exp(nbL) <= nb), and DLA of age on each finds significant features
-        # whose correlations agree with the raw table's (check_dla_agreement.py prints how many for each)
-        run smooth_dla eval 'bash "$TESTS/smooth_feats.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC" --methods "nb logodds" &&
-            bash "$TESTS/smooth_feats.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC" --methods nb --smooth_zero_gap &&
-            for sfx in nb nbL zgnb lo; do
-                bash "$TESTS/correlate.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC\$$sfx" --outcome_table $OT --outcomes age \
-                    --output_name "$OUT/dla_smooth_$sfx" &&
-                "$PYTHON_BIN" "$TESTS/check_dla_agreement.py" "$OUT/dla_ngrams.csv" "$OUT/dla_smooth_$sfx.csv" age || exit 1
-            done'
-        check smooth_dla "nb copies agree; DLA of age on nb, nbL, zgnb and lo agrees with the raw table's" \
-            eval 'smooth_transforms "$NGRAM_FEAT_OCC" && [ "$(grep -c "^dla agreement ok" "$OUT/smooth_dla.log")" -eq 4 ]'
-        # relf$ values: a row for each row of the table in groups over group_freq_thresh, exactly the filter's
-        # features at 0.3, and each group's reliability projected from the logged harmonic mean n-grams per group
-        echo "=== reliability_table_values"
-        check reliability_table_values "relf\$ rows, filtered features and per-group reliabilities (n-grams, topics, messages)" \
-            eval 'relf_values "$NGRAM_FEAT_OCC" "$OUT/feat_reliability_filter.log" "$WORD_FEAT" $GFT $T $G "1 2" &&
-                  relf_values "$TOPIC_FEAT" "$OUT/feat_reliability_filter_topics.log" "$WORD_FEAT" $GFT $T $G 1 &&
-                  relf_values "feat\$1gram\$${T}\$message_id\$20" "$OUT/feat_reliability_filter_nb.log" \
-                      "feat\$1gram\$${T}\$message_id" 5 $T message_id 1'
-    fi
+    # DLA on the smoothed tables suggested for DLA (nb, nbL, zgnb, logodds): the nb copies agree with each other
+    # (zgnb = nb where used, zgnbS^2 = nb, exp(nbL) <= nb), and DLA of age on each finds significant features
+    # whose correlations agree with the raw table's (check_dla_agreement.py prints how many for each)
+    run smooth_dla eval 'bash "$TESTS/smooth_feats.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC" --methods "nb logodds" &&
+        bash "$TESTS/smooth_feats.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC" --methods nb --smooth_zero_gap &&
+        for sfx in nb nbL zgnb lo; do
+            bash "$TESTS/correlate.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC\$$sfx" --outcome_table $OT --outcomes age \
+                --output_name "$OUT/dla_smooth_$sfx" &&
+            "$PYTHON_BIN" "$TESTS/check_dla_agreement.py" "$OUT/dla_ngrams.csv" "$OUT/dla_smooth_$sfx.csv" age || exit 1
+        done'
+    check smooth_dla "nb copies agree; DLA of age on nb, nbL, zgnb and lo agrees with the raw table's" \
+        eval 'smooth_transforms "$NGRAM_FEAT_OCC" && [ "$(grep -c "^dla agreement ok" "$OUT/smooth_dla.log")" -eq 4 ]'
+    # relf$ values: a row for each row of the table in groups over group_freq_thresh, exactly the filter's
+    # features at 0.3, and each group's reliability projected from the logged harmonic mean n-grams per group
+    echo "=== reliability_table_values"
+    check reliability_table_values "relf\$ rows, filtered features and per-group reliabilities (n-grams, topics, messages)" \
+        eval 'relf_values "$NGRAM_FEAT_OCC" "$OUT/feat_reliability_filter.log" "$WORD_FEAT" $GFT $T $G "1 2" &&
+              relf_values "$TOPIC_FEAT" "$OUT/feat_reliability_filter_topics.log" "$WORD_FEAT" $GFT $T $G 1 &&
+              relf_values "feat\$1gram\$${T}\$message_id\$20" "$OUT/feat_reliability_filter_nb.log" \
+                  "feat\$1gram\$${T}\$message_id" 5 $T message_id 1'
 
     # Word DLA with a control variable, rendered as wordcloud images
     # (age has significant features in this sample; gender and is_student do not)

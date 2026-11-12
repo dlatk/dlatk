@@ -1,7 +1,7 @@
 ﻿# Unit Testing
 
-`unit_tests.sh` runs the core DLATK pipeline (n-grams, topics, DLA, regression, classification) plus
-extended tests, using only the data distributed with DLATK. It is built from the helper scripts below,
+`unit_tests.sh` runs the core DLATK pipeline (n-grams, topics, DLA, regression, classification) and, with
+`-x`, the extended tests, using only the data distributed with DLATK. It is built from the helper scripts below,
 which can also be run on their own.
 
 All scripts run the repo's own `dlatkInterface.py` (found relative to this `tests/` folder), not an
@@ -19,10 +19,10 @@ mysql -e 'CREATE DATABASE dlatk_lexica'; cat dlatk/data/dlatk_lexica.sql | mysql
 Then, from the repo root:
 
 ```bash
-bash tests/unit_tests.sh        # all tests (~15 minutes on CPU)
-bash tests/unit_tests.sh -c     # core tests only
+bash tests/unit_tests.sh        # core tests (~8 minutes on CPU, most of it n-gram extraction)
+bash tests/unit_tests.sh -x     # core and extended tests (~15 minutes on CPU)
 bash tests/unit_tests.sh -k     # keep the scratch tables afterwards...
-bash tests/unit_tests.sh -s     # ...so a rerun can skip sampling and n-gram extraction (~8 minutes)
+bash tests/unit_tests.sh -s     # ...so a rerun can skip sampling and n-gram extraction (-x -s: ~8 minutes)
 bash tests/unit_tests.sh -h     # all options (-n users, -m messages per user, -p p_occ, -o output folder)
 ```
 

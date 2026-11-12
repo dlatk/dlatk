@@ -69,9 +69,9 @@ tutorial data (`dla_tutorial`, `dlatk_lexica`) and builds everything else itself
 (`dla_tutorial.msgs_unittest`: 150 users x 30 messages), so `msgs` is never modified:
 
 ```sh
-bash tests/unit_tests.sh          # all tests, ~15 min on CPU; ends with PASS/FAIL/SKIP (with reasons)
-bash tests/unit_tests.sh -c       # core tests only (n-grams, topics, DLA, ridge, lr)
-bash tests/unit_tests.sh -k       # keep scratch tables, then rerun with -s to skip n-gram extraction (~8 min)
+bash tests/unit_tests.sh          # core tests (n-grams, topics, DLA, ridge, lr), ~8 min on CPU; ends with PASS/FAIL/SKIP
+bash tests/unit_tests.sh -x       # core and extended tests, ~15 min on CPU
+bash tests/unit_tests.sh -k       # keep scratch tables, then rerun with -s to skip n-gram extraction (-x -s: ~8 min)
 ```
 
 `unit_tests.sh` is built from helper scripts that can be run individually (`-h` for usage; lists are one

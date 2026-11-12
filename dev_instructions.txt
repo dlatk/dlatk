@@ -48,14 +48,14 @@ Suggested Unit Tests (using age and occupation as outcomes):
 
 Running the Unit Tests:
 =======================
-tests/unit_tests.sh runs the suggested unit tests above, plus extended tests, using only the data
+tests/unit_tests.sh runs the suggested unit tests above and, with -x, extended tests, using only the data
 distributed with dlatk. Load it first (see README / CLAUDE.md):
    mysql -e 'CREATE DATABASE dla_tutorial'; cat dlatk/data/dla_tutorial.sql | mysql dla_tutorial
    mysql -e 'CREATE DATABASE dlatk_lexica'; cat dlatk/data/dlatk_lexica.sql | mysql dlatk_lexica
 
 Then, from the repo root:
-   bash tests/unit_tests.sh            # all tests
-   bash tests/unit_tests.sh -c         # core tests only
+   bash tests/unit_tests.sh            # core tests
+   bash tests/unit_tests.sh -x         # core and extended tests
    bash tests/unit_tests.sh -h         # all options
 
 It runs the repo's own dlatkInterface.py (not an installed copy) on a scratch table,
@@ -76,11 +76,15 @@ Core tests:
  - topic DLA: the same plus --topic_tagcloud --topic_lexicon met_a30_2000_freq_t50ll
  - --nfold_test_regression --model ridgecv on age (topics + ngrams)
  - --nfold_test_classifiers --model lr on is_student (topics + ngrams)
-Extended tests (skipped with -c):
+Extended tests (run with -x):
  - --feat_colloc_filter --set_pmi_threshold 3
  - --set_p_occ auto and auto_prediction (table named by the chosen group count, within its feature cap)
  - --feat_reliability_filter (split-half math on simulated halves; filtered table keeps a subset of features) and
-   --create_reliability_table (relf$ table consistent with the filter)
+   --create_reliability_table (relf$ table consistent with the filter; its rows, the filter's exact features and each
+   group's reliability from the logged harmonic mean), on n-gram, topic and message-level tables
+ - --smooth_feats (estimators on simulated counts; dense nbL/plnL tables, zero-gap zgnbS), and DLA of age on the
+   nb, nbL, zgnb and logodds tables: the nb copies agree with each other, and each finds significant features whose
+   correlations agree with the raw table's (tests/check_dla_agreement.py prints significant counts per table)
  - DLA with --controls (age controlling for gender) and --make_wordclouds (needs Java)
  - --make_all_topic_wordclouds on a 10-topic slice of the Facebook topics
  - regression and classification with --feature_selection magic_sauce
@@ -89,5 +93,6 @@ Extended tests (skipped with -c):
    --spam_filter
  - transformer embeddings: --add_emb_feat --emb_model distilroberta-base on 20 users x 5 messages
  - sentence-transformer embeddings (tests/sentence_transformer.sh)
-A full run takes roughly 15 minutes on CPU: about 6.5 for n-gram extraction, 2 for transformer
-embeddings and 1 for sentence transformers. With -s, a rerun takes about 8 minutes.
+A full run (-x) takes roughly 15 minutes on CPU: about 6.5 for n-gram extraction, 2 for transformer
+embeddings and 1 for sentence transformers; the core tests alone take about 8. With -s, a rerun with -x takes
+about 8 minutes.

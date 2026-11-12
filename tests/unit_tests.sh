@@ -6,11 +6,13 @@
 # repo's own dlatkInterface.py on a scratch sample of the message table, so `msgs` is untouched.
 #
 # Usage: bash tests/unit_tests.sh [-d DB] [-t SOURCE_MSG_TABLE] [-o OUTPUT_DIR]
-#                                 [-n NUM_USERS] [-m MAX_MSGS] [-p P_OCC] [-c] [-k] [-s]
+#                                 [-n NUM_USERS] [-m MAX_MSGS] [-p P_OCC] [-c] [-x] [-k] [-s]
 #   -n  number of users sampled (fixed seed) into the scratch table (default 150)
 #   -m  maximum messages kept per user, 0 for no cap (default 30)
 #   -p  occurrence filter threshold for the 1-2gram table used in DLA/prediction (default 0.2)
 #   -c  core tests only (skip the extended tests)
+#   -x  also run the extra extended tests (not run by default): DLA on smoothed tables (nb, nbL, zgnb, logodds) and
+#       the values of reliability tables (relf$)
 #   -k  keep the scratch message table and its feature tables afterwards
 #   -s  skip sampling and 1-2gram extraction: start at the occurrence filter, reusing the
 #       scratch table and 1to2gram table kept by an earlier run with -k
@@ -29,9 +31,10 @@ MAX_MSGS=30
 P_OCC=0.2
 SKIP_EXTRACT=0
 CORE_ONLY=0
-while getopts "hd:t:o:n:m:p:cks" opt; do
+EXTRA=0
+while getopts "hd:t:o:n:m:p:cxks" opt; do
     case $opt in
-        h) sed -n '2,21p' "$0"; exit 2 ;;
+        h) sed -n '2,23p' "$0"; exit 2 ;;
         d) DB=$OPTARG ;;
         t) SRC_TABLE=$OPTARG ;;
         o) OUT=$OPTARG ;;
@@ -39,6 +42,7 @@ while getopts "hd:t:o:n:m:p:cks" opt; do
         m) MAX_MSGS=$OPTARG ;;
         p) P_OCC=$OPTARG ;;
         c) CORE_ONLY=1 ;;
+        x) EXTRA=1 ;;
         k) KEEP=1 ;;
         s) SKIP_EXTRACT=1 ;;
         *) exit 2 ;;
@@ -58,6 +62,7 @@ TOPIC_CP=met_a30_2000_cp
 TOPIC_FREQ=met_a30_2000_freq_t50ll
 NGRAM_FEAT="feat\$1to2gram\$${T}\$${G}"
 NGRAM_FEAT_OCC="${NGRAM_FEAT}\$${P_OCC//./_}"
+WORD_FEAT="feat\$1gram\$${T}\$${G}"
 NGRAM_FEAT_PMI="${NGRAM_FEAT}\$pmi3_0"
 TOPIC_FEAT="feat\$cat_${TOPIC_CP}_w\$${T}\$${G}\$1gra"
 SMALL_TOPIC_LEX=${T}_topics
@@ -183,6 +188,71 @@ reliability_table() {
     kept=$(mysql -Ne "SELECT COUNT(DISTINCT feat) FROM $DB.\`$r\` WHERE value >= 0.3")
     [ "$bad" -eq 0 ] && [ "$varying" -eq 0 ] && [ -n "$filtered" ] && [ "$kept" -eq "$(num_feats "$filtered")" ] \
         || { echo "    $r: $rows rows, $bad out of range, $varying features with differing values, $kept with value >= 0.3 vs $(num_feats "$filtered") filtered"; return 1; }
+}
+
+# totals_sql MSG_TABLE GROUP_FIELD 'N...': SQL for rows (group_id, n, total) of each group's total n-grams of each size,
+# from the --add_ngrams meta tables
+totals_sql() {
+    local n sql="" sep=""
+    for n in $3; do
+        sql+="$sep SELECT group_id, $n AS n, value AS total FROM $DB.\`feat\$meta_${n}gram\$$1\$$2\` WHERE feat = '_total${n}grams'"
+        sep=" UNION ALL"
+    done
+    echo "$sql"
+}
+
+# kept_sql WORD_TABLE GFT: SQL for the groups with at least GFT words, as --group_freq_thresh counts them
+kept_sql() {
+    echo "SELECT group_id FROM $DB.\`$1\` GROUP BY group_id HAVING SUM(value) >= $2"
+}
+
+# smooth_transforms TABLE: TABLE's negative binomial copies agree: zgnb is nb where the group used the feature, zgnbS
+# its square root, and exp(nbL) (the exponentiated expected log rate) is at most nb (Jensen's inequality)
+smooth_transforms() {
+    local b="$DB.\`$1\$nb\`" n zg zgs l
+    read -r n zg <<< "$(mysql -Ne "SELECT COUNT(*), SUM(ABS(z.group_norm - b.group_norm) > 1e-9 * b.group_norm)
+        FROM $DB.\`$1\$zgnb\` z JOIN $b b USING (group_id, feat)")"
+    [ "$n" -eq "$(mysql -Ne "SELECT COUNT(*) FROM $DB.\`$1\$zgnb\`")" ] && [ "$zg" -eq 0 ] || { echo "    zgnb: $zg of $n rows differ from nb"; return 1; }
+    read -r n zgs <<< "$(mysql -Ne "SELECT COUNT(*), SUM(ABS(z.group_norm * z.group_norm - b.group_norm) > 1e-9 * b.group_norm)
+        FROM $DB.\`$1\$zgnbS\` z JOIN $b b USING (group_id, feat)")"
+    [ "$n" -gt 0 ] && [ "$zgs" -eq 0 ] || { echo "    zgnbS: $zgs of $n squared rows differ from nb"; return 1; }
+    read -r n l <<< "$(mysql -Ne "SELECT COUNT(*), SUM(EXP(l.group_norm) > b.group_norm * (1 + 1e-9))
+        FROM $DB.\`$1\$nbL\` l JOIN $b b USING (group_id, feat)")"
+    [ "$n" -eq "$(mysql -Ne "SELECT COUNT(*) FROM $b")" ] && [ "$l" -eq 0 ] || { echo "    nbL: $l of $n rows with exp(log rate) above nb's rate"; return 1; }
+}
+
+# relf_values TABLE LOG WORD_TABLE GFT MSG_TABLE GROUP_FIELD 'N...': the relf$ table named in LOG has a row for each of
+# TABLE's rows in groups with at least GFT words; the features with value >= 0.3 are exactly those of TABLE$rel0_3 (if
+# LOG names one); group_norm is 0 where value <= 0, and elsewhere is value projected to the group's total n-grams
+# (value / (value + (1 - value) * H / N)) with the same H for every row (each n), the harmonic mean in LOG
+relf_values() {
+    local r filtered rows expected missing extra nonpos h hs n bad
+    r=$(grep -o "Writing relf\$[^ ]*" "$2" | head -1 | cut -d' ' -f2)
+    table_nonempty "$r" || { echo "    missing: $r"; return 1; }
+    rows=$(mysql -Ne "SELECT COUNT(*) FROM $DB.\`$r\`")
+    expected=$(mysql -Ne "SELECT COUNT(*) FROM $DB.\`$1\` WHERE group_id IN ($(kept_sql "$3" $4))")
+    [ "$rows" -eq "$expected" ] || { echo "    $r: $rows rows ($expected rows of $1 in groups with at least $4 words)"; return 1; }
+    filtered=$(grep -o "new table [^ ]*\$rel0_3" "$2" | head -1 | cut -d' ' -f3)
+    if [ -n "$filtered" ]; then
+        read -r missing extra <<< "$(mysql -Ne "SELECT
+            (SELECT COUNT(DISTINCT feat) FROM $DB.\`$r\` WHERE value >= 0.3 AND feat NOT IN (SELECT feat FROM $DB.\`$filtered\`)),
+            (SELECT COUNT(DISTINCT feat) FROM $DB.\`$filtered\` WHERE feat NOT IN (SELECT feat FROM $DB.\`$r\` WHERE value >= 0.3))")"
+        [ "$missing" -eq 0 ] && [ "$extra" -eq 0 ] \
+            || { echo "    $r: $missing features with value >= 0.3 not in $filtered, $extra there below 0.3"; return 1; }
+    fi
+    nonpos=$(mysql -Ne "SELECT COUNT(*) FROM $DB.\`$r\` WHERE value <= 0 AND group_norm <> 0")
+    [ "$nonpos" -eq 0 ] || { echo "    $r: $nonpos rows with value <= 0 but group_norm above 0"; return 1; }
+    hs=($(grep -o "harmonic mean n-grams per group: [0-9, ]*" "$2" | head -1 | cut -d: -f2 | tr -d ','))
+    [ ${#hs[@]} -gt 0 ] || { echo "    no harmonic mean in $2"; return 1; }
+    local i=0
+    for n in $7; do
+        h=${hs[$i]}; i=$((i + 1))
+        read -r rows bad <<< "$(mysql -Ne "SELECT COUNT(*), SUM(ABS(m.total * s.value * (1 - s.group_norm) / (s.group_norm * (1 - s.value)) - $h) > 0.5 + 1e-6 * $h)
+            FROM $DB.\`$r\` s JOIN ($(totals_sql $5 $6 "$n")) m ON m.group_id = s.group_id
+            WHERE s.value > 0 AND s.value < 1 AND s.group_norm > 0 AND 1 + (s.feat LIKE '% %') = $n")"
+        [ "$rows" -gt 0 ] && [ "$bad" -eq 0 ] \
+            || { echo "    $r: $bad of $rows ${n}-gram rows not projected from the harmonic mean $h"; return 1; }
+    done
 }
 
 files_exist() {
@@ -327,6 +397,29 @@ if [ "$CORE_ONLY" -eq 0 ]; then
               grep -q "parametrically calculated using a Negative Binomial model" "$OUT/feat_reliability_filter_nb.log"'
     check create_reliability_table_nb "message-level relf\$ table, consistent with the filter" \
         reliability_table "feat\$1gram\$${T}\$message_id\$20" "$OUT/feat_reliability_filter_nb.log"
+
+    if [ "$EXTRA" -eq 1 ]; then
+        # DLA on the smoothed tables suggested for DLA (nb, nbL, zgnb, logodds): the nb copies agree with each other
+        # (zgnb = nb where used, zgnbS^2 = nb, exp(nbL) <= nb), and DLA of age on each finds significant features
+        # whose correlations agree with the raw table's (check_dla_agreement.py prints how many for each)
+        run smooth_dla eval 'bash "$TESTS/smooth_feats.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC" --methods "nb logodds" &&
+            bash "$TESTS/smooth_feats.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC" --methods nb --smooth_zero_gap &&
+            for sfx in nb nbL zgnb lo; do
+                bash "$TESTS/correlate.sh" "${COMMON[@]}" -t $T -f "$NGRAM_FEAT_OCC\$$sfx" --outcome_table $OT --outcomes age \
+                    --output_name "$OUT/dla_smooth_$sfx" &&
+                "$PYTHON_BIN" "$TESTS/check_dla_agreement.py" "$OUT/dla_ngrams.csv" "$OUT/dla_smooth_$sfx.csv" age || exit 1
+            done'
+        check smooth_dla "nb copies agree; DLA of age on nb, nbL, zgnb and lo agrees with the raw table's" \
+            eval 'smooth_transforms "$NGRAM_FEAT_OCC" && [ "$(grep -c "^dla agreement ok" "$OUT/smooth_dla.log")" -eq 4 ]'
+        # relf$ values: a row for each row of the table in groups over group_freq_thresh, exactly the filter's
+        # features at 0.3, and each group's reliability projected from the logged harmonic mean n-grams per group
+        echo "=== reliability_table_values"
+        check reliability_table_values "relf\$ rows, filtered features and per-group reliabilities (n-grams, topics, messages)" \
+            eval 'relf_values "$NGRAM_FEAT_OCC" "$OUT/feat_reliability_filter.log" "$WORD_FEAT" $GFT $T $G "1 2" &&
+                  relf_values "$TOPIC_FEAT" "$OUT/feat_reliability_filter_topics.log" "$WORD_FEAT" $GFT $T $G 1 &&
+                  relf_values "feat\$1gram\$${T}\$message_id\$20" "$OUT/feat_reliability_filter_nb.log" \
+                      "feat\$1gram\$${T}\$message_id" 5 $T message_id 1'
+    fi
 
     # Word DLA with a control variable, rendered as wordcloud images
     # (age has significant features in this sample; gender and is_student do not)

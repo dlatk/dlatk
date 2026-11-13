@@ -2207,6 +2207,18 @@ def runPrediction(args, s):
                 outputStream.close()
         elif not args.pred_csv:
             pprint(comboScores)
+        if args.combotestregression and comboScores: #short summary: language alone, controls alone, controls + language
+            for outcome, cData in sorted(comboScores.items()):
+                print("\n["+outcome+"]")
+                for controls, wLangData in sorted(cData.items()):
+                    print("   CONTROLS -- "+' '.join(sorted(controls))) if len(controls) > 0 else print("   NO CONTROLS")
+                    for withLang in sorted(wLangData):
+                        stats = wLangData[withLang]
+                        line = "     %s LANG: R2: %.3f, r: %.3f, mae: %.3f" % \
+                            (('+' if withLang else '-'), stats['R2'], stats['r'], stats['mae'])
+                        if 'paired_ttest_p1tail' in stats: #--res_controls: language + controls vs. controls alone
+                            line += " (paired t p = %.4f, fisher z p = %.4f)" % (stats['paired_ttest_p1tail'], stats['fisher_z_p1tail'])
+                        print(line)
 
 
     if args.testcombregression:

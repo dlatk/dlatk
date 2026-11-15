@@ -49,3 +49,5 @@ Thumbs.db
 *.html
 !doc/source/_templates/*html
 *.csv
+# IBM wordcloud jar: licensed, each user downloads it (see doc/source/install.rst)
+dlatk/lib/ibm-word-cloud.jar

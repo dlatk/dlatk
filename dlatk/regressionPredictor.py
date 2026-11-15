@@ -59,7 +59,7 @@ except ImportError as e:
     from scipy.sparse import csr_matrix as csr_array
 import numpy as np
 from numpy import sqrt, array, std, mean, ceil, absolute, append, log, log2
-from numpy.linalg.linalg import LinAlgError
+from numpy.linalg import LinAlgError
 
 import math
 

@@ -9,10 +9,26 @@ Layout, top to bottom, in the order a run uses it:
   - Argument parsing -- turn the command line (and any --from_file init file) into one args object:
     buildInitParser()/buildParser() define every flag, grouped as in -h; adjustArgs() fills in and adjusts them
   - RunState -- what one run shares across its actions, so chained actions reuse work: the workers
-    (FG(), OG(), OA(), ...; created by the first action that needs one) and results (blacklist/whitelist, correls, ...)
+    (FG(), OG(), OA(), ...; created by the first action that needs one) and results (correls, comboScores, ...)
   - Output helpers -- printing and output-file naming used by several actions
   - Actions -- the work itself: one run<Section>(args, s) per -h group of actions (runFeatureExtraction,
-    runCorrelation, ...); each does nothing unless one of its flags was given
+    runCorrelation, ...); each does nothing unless one of its flags was given. In the order main() calls them:
+      - Tables: runTables (MySQL Interactions: list, describe, view, copy or sample tables)
+      - Building features from messages: runFeatureExtraction (Standard Extraction: n-grams, lexica, embeddings,
+        ...; also writes the Mallet input and runs --estimate_lda_topics), runMessages (Messages Transformation,
+        Message Cleaning: new message tables -- tokenized, parsed, deduplicated, language-filtered, ...),
+        runLDAAndOtherFeatures (LDA: topic distributions and _cp/_freq_t50ll lexica from an estimate; also
+        outcome-as-feature and timex features), runSemanticFeatures (--add_ner)
+      - Refining feature tables: runRefinement (occurrence/PMI filters, combine, normalize, smooth, tf-idf,
+        reliability, aggregate to another group level)
+      - Describing one side: runFeatureOnly (--top_messages), runOutcomeOnly (Outcome Actions: csv dumps of
+        features with outcomes, loess plots)
+      - Relating language to outcomes: runCorrelation (DLA, one outcome at a time: correlate, rmatrix,
+        wordclouds; also CCA), runMultipleRegression (--multir), runMediation (--mediation)
+      - Prediction: runPrediction (regression; also Factor Adaptation and dimension reduction),
+        runClassification, runClustering (dimension reduction and model-to-lexicon)
+      - Afterwards: runPlots (all-topic wordclouds, barplots), runFeatureTableAnalyses (--ttest_feat_tables),
+        runSaveSettings (--to_file)
   - main() -- the outline of a run: parses, then calls the run<Section> functions in a fixed order,
     so one command can chain actions (e.g. --add_ngrams ... --correlate)
 To add a flag, put it in its -h group in buildParser(); to add an action, put it in that group's run<Section>.
@@ -671,10 +687,6 @@ order of actions:
                        help='extract ner features from xml files (corptable should be directory of xml files).')
 
 
-    group = parser.add_argument_group('Feature Table Analyses', '')
-    group.add_argument('--ttest_feat_tables', action='store_true', dest='ttestfeats',
-                       help='Performs ttest on differences between group norms for 2 tables, within features')
-
     group = parser.add_argument_group('Refinement Actions', '')
     group.add_argument('--feat_occ_filter', action='store_true', dest='featoccfilter',
                        help='remove infrequent features. (uses variables feat_table and p_occ).')
@@ -780,6 +792,37 @@ order of actions:
     group.add_argument('--DDLATagcloud', '--DDLAWordcloud', dest='ddlaTagcloud', action='store_true',
                        help="Makes a tagcloud file from the DDLA output. Uses deltaR as size, r_INDEX as color. ")
 
+    group = parser.add_argument_group('CCA Actions', '')
+    group.add_argument('--cca', type=int, dest='cca', default=0,
+                       help='Performs sparse CCA on a set of features and a set of outcomes.'+
+                       "Argument is number of components to output (Uses R's PMA package)")
+    group.add_argument('--cca_penalty_feats', '--cca_penaltyx', type=float, dest='penaltyFeats', default = None,
+                       help="Penalty value on the feature matrix (X) [penaltyx argument of PMA.CCA]"+
+                       "must be between 0 and 1, larger means less penalization (i.e. less sparse) ")
+    group.add_argument('--cca_penalty_outcomes', '--cca_penaltyz', type=float, dest='penaltyOutcomes', default = None,
+                       help="Penalty value on the outcomes matrix (Z) [penaltyz argument of PMA.CCA]"+
+                       "must be between 0 and 1, larger means less penalization (i.e. less sparse) ")
+    group.add_argument('--cca_outcomes_vs_controls', dest='ccaOutcomesVsControls',action='store_true',
+                       help="performs CCA on outcomes vs controls (no language)")
+    group.add_argument('--cca_permute', dest='ccaPermute', type=int,default=0,
+                       help='Wrapper for the PMA package CCA.permute function that determines the'+
+                       ' ideal L1 Penalties for X and Z matrices'+
+                       'argument: number of permutations')
+    group.add_argument('--cca_predict_components', dest='predictCcaCompsFromModel',action="store_true",
+                       help='Using --picklefile, predict outcomes from the V matrix (aka Z_comp)')
+    group.add_argument('--to_sql_table', dest='newSQLtable',type=str,
+                       help='Using --cca_predict_components, predict components to sql table,'+
+                       'the name of which you should provide here')
+    group.add_argument('--useXFeats', dest='usexfeats',action="store_true", default = False,
+                       help='Use feats stored in X matrix when predicting CCA components to SQL')
+    group.add_argument('--useXControls', dest='usexcontrols',action="store_true", default = False,
+                       help='Use controls stored in X matrix when predicting CCA components to SQL')
+
+    group.add_argument('--save_models', '--save', action='store_true', dest='savemodels', default=False,
+                       help='saves predictive models (uses --picklefile)')
+    group.add_argument('--load_models', '--load', action='store_true', dest='loadmodels', default=False,
+                       help='loads predictive models (uses --picklefile)')
+
     group = parser.add_argument_group('Multiple Regression Actions', 'Find multiple relationships at once')
     group.add_argument('--multir', action='store_true', dest='multir',
                        help='Multiple regression per feature: the feature as y, all --outcomes (plus --controls) together as X, so each '
@@ -867,37 +910,6 @@ order of actions:
     group.add_argument('--transform_to_feats', dest='transformdrtofeats', type=str, default = None,
                        help='feature table to send reduced features to.')
     
-    group = parser.add_argument_group('CCA Actions', '')
-    group.add_argument('--cca', type=int, dest='cca', default=0,
-                       help='Performs sparse CCA on a set of features and a set of outcomes.'+
-                       "Argument is number of components to output (Uses R's PMA package)")
-    group.add_argument('--cca_penalty_feats', '--cca_penaltyx', type=float, dest='penaltyFeats', default = None,
-                       help="Penalty value on the feature matrix (X) [penaltyx argument of PMA.CCA]"+
-                       "must be between 0 and 1, larger means less penalization (i.e. less sparse) ")
-    group.add_argument('--cca_penalty_outcomes', '--cca_penaltyz', type=float, dest='penaltyOutcomes', default = None,
-                       help="Penalty value on the outcomes matrix (Z) [penaltyz argument of PMA.CCA]"+
-                       "must be between 0 and 1, larger means less penalization (i.e. less sparse) ")
-    group.add_argument('--cca_outcomes_vs_controls', dest='ccaOutcomesVsControls',action='store_true',
-                       help="performs CCA on outcomes vs controls (no language)")
-    group.add_argument('--cca_permute', dest='ccaPermute', type=int,default=0,
-                       help='Wrapper for the PMA package CCA.permute function that determines the'+
-                       ' ideal L1 Penalties for X and Z matrices'+
-                       'argument: number of permutations')
-    group.add_argument('--cca_predict_components', dest='predictCcaCompsFromModel',action="store_true",
-                       help='Using --picklefile, predict outcomes from the V matrix (aka Z_comp)')
-    group.add_argument('--to_sql_table', dest='newSQLtable',type=str,
-                       help='Using --cca_predict_components, predict components to sql table,'+
-                       'the name of which you should provide here')
-    group.add_argument('--useXFeats', dest='usexfeats',action="store_true", default = False,
-                       help='Use feats stored in X matrix when predicting CCA components to SQL')
-    group.add_argument('--useXControls', dest='usexcontrols',action="store_true", default = False,
-                       help='Use controls stored in X matrix when predicting CCA components to SQL')
-
-    group.add_argument('--save_models', '--save', action='store_true', dest='savemodels', default=False,
-                       help='saves predictive models (uses --picklefile)')
-    group.add_argument('--load_models', '--load', action='store_true', dest='loadmodels', default=False,
-                       help='loads predictive models (uses --picklefile)')
-
 
     group = parser.add_argument_group('Plot Actions', '')
     group.add_argument('--barplot', action='store_true', dest='barplot',
@@ -917,6 +929,10 @@ order of actions:
                        help='Retired: no longer supported (we would like to bring it back with a new dlatk implementation).')
     group.add_argument('--loessplot', type=str, metavar='FEAT(S)', dest='loessplot', nargs='+', default='',
                        help='Output loess plots of the given features.')
+
+    group = parser.add_argument_group('Feature Table Analyses', '')
+    group.add_argument('--ttest_feat_tables', action='store_true', dest='ttestfeats',
+                       help='Performs ttest on differences between group norms for 2 tables, within features')
 
     group = parser.add_argument_group('LDA Estimation Actions', '')
     group.add_argument('--estimate_lda_topics', action='store_true', help="Estimates LDA topics using PyMallet.")
@@ -2437,7 +2453,7 @@ def runClustering(args, s):
 
 
 def runPlots(args, s):
-    """Plots (-h: Plot Actions, LDA Estimation Actions)"""
+    """Plots (-h: Plot Actions: --barplot; Correlation Actions: --make_all_topic_wordclouds)"""
     DLAW = s.DLAW
     correls, dlaw, fg, oa = s.correls, s.dlaw, s.fg, s.oa
     if args.makealltopicwordclouds:

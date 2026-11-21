@@ -15,10 +15,13 @@ Layout, top to bottom, in the order a run uses it:
     runCorrelation, ...); each does nothing unless one of its flags was given. In the order main() calls them:
       - Tables: runTables (MySQL Interactions: list, describe, view, copy or sample tables)
       - Building features from messages: runFeatureExtraction (Standard Extraction: n-grams, lexica, embeddings,
-        ...; also writes the Mallet input and runs --estimate_lda_topics), runMessages (Messages Transformation,
-        Message Cleaning: new message tables -- tokenized, parsed, deduplicated, language-filtered, ...),
-        runLDAAndOtherFeatures (LDA: topic distributions and _cp/_freq_t50ll lexica from an estimate; also
-        outcome-as-feature and timex features), runSemanticFeatures (--add_ner)
+        ...; also writes the Mallet input and runs --estimate_lda_topics), runMessageTransformations (Messages
+        Transformation, Message Cleaning: new message tables -- tokenized, parsed, deduplicated, language-filtered,
+        ...), runTopicsAndDerivedFeatures (LDA: topic distributions and _cp/_freq_t50ll lexica from an estimate;
+        also outcome-as-feature and timex features), runSemanticFeatures (--add_ner).
+        Message transformations usually come first in a project, but each writes a new table (e.g. <t>_tok) and
+        leaves -t as it was, so features from it need a second command with -t set to the new table. They run after
+        runFeatureExtraction so that --estimate_lda_topics can pass its state file to --add_lda_messages.
       - Refining feature tables: runRefinement (occurrence/PMI filters, combine, normalize, smooth, tf-idf,
         reliability, aggregate to another group level)
       - Describing one side: runFeatureOnly (--top_messages), runOutcomeOnly (Outcome Actions: csv dumps of
@@ -638,6 +641,8 @@ order of actions:
                        help='add sBERT mean features (optionally add min, max, --bert_model large)')
     group.add_argument('--lexicon_normalization', '--lex_norm', '--dict_norm', action='store_true', help='Use weighting over lexicon terms (instead of over all terms).')
     group.add_argument('--multicategory_normalization', '--liwc_normalization', '--liwc_norm', action='store_true', help='Use weighting over lexicon terms across terms in all categories. Similar to --lexicon_normalization but totals are across all lexicon categories.')
+    group.add_argument('--add_outcome_feats', action='store_true', dest='addoutcomefeats',
+                       help='add a feature table from the specified outcome table.')
 
 
     group = parser.add_argument_group('Messages Transformation Actions', '')
@@ -659,8 +664,6 @@ order of actions:
                        help='adds tweetNLP pos tagged versions of message table.')
     group.add_argument('--add_lda_messages', metavar='LDA_States_File', dest='addldamsgs',
                        help='add lda topic version of message table.')
-    group.add_argument('--add_outcome_feats', action='store_true', dest='addoutcomefeats',
-                       help='add a feature table from the specified outcome table.')
 
     group = parser.add_argument_group('Message Cleaning Actions', '')
     group.add_argument('--language_filter', '--lang_filter',  type=str, metavar='FIELD(S)', dest='langfilter', nargs='+', default=[],
@@ -1467,8 +1470,8 @@ def runFeatureExtraction(args, s):
     s.fe, s.fg = fe, fg
 
 
-def runMessages(args, s):
-    """Messages (-h: Messages Transformation Actions, Message Cleaning Actions)"""
+def runMessageTransformations(args, s):
+    """Message Transformations (-h: Messages Transformation Actions, Message Cleaning Actions)"""
     MA, MT = s.MA, s.MT
     lda_state_name, ma, mt = s.lda_state_name, s.ma, s.mt
     # LDA
@@ -1565,8 +1568,9 @@ def runMessages(args, s):
     s.lda_state_name, s.ma, s.mt = lda_state_name, ma, mt
 
 
-def runLDAAndOtherFeatures(args, s):
-    """LDA and Other Features (-h: LDA Actions)"""
+def runTopicsAndDerivedFeatures(args, s):
+    """Topics and Derived Features (-h: LDA Actions; also --add_topiclex_from_topicfile, --add_timexdiff,
+    --add_postimexdiff, --add_outcome_feats)"""
     DLAW, FE, OG, TE = s.DLAW, s.FE, s.OG, s.TE
     dlaw, fe, lda_state_name, og, te = s.dlaw, s.fe, s.lda_state_name, s.og, s.te
     if args.createdists and not args.no_lda_lexicon:
@@ -2559,8 +2563,8 @@ def main(fn_args = None):
     # function is one group of -h actions; s (RunState) carries the workers and results between them.
     runTables(args, s)
     runFeatureExtraction(args, s)
-    runMessages(args, s)
-    runLDAAndOtherFeatures(args, s)
+    runMessageTransformations(args, s)
+    runTopicsAndDerivedFeatures(args, s)
     runSemanticFeatures(args, s)
     runRefinement(args, s)
     runFeatureOnly(args, s)

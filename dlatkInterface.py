@@ -11,27 +11,28 @@ Layout, top to bottom, in the order a run uses it:
   - RunState -- what one run shares across its actions, so chained actions reuse work: the workers
     (FG(), OG(), OA(), ...; created by the first action that needs one) and results (correls, comboScores, ...)
   - Output helpers -- printing and output-file naming used by several actions
-  - Actions -- the work itself: one run<Section>(args, s) per -h group of actions (runFeatureExtraction,
-    runCorrelation, ...); each does nothing unless one of its flags was given. In the order main() calls them:
-      - Tables: runTables (MySQL Interactions: list, describe, view, copy or sample tables)
-      - Building features from messages: runFeatureExtraction (Standard Extraction: n-grams, lexica, embeddings,
-        ...; also writes the Mallet input and runs --estimate_lda_topics), runMessageTransformations (Messages
-        Transformation, Message Cleaning: new message tables -- tokenized, parsed, deduplicated, language-filtered,
-        ...), runTopicsAndDerivedFeatures (LDA: topic distributions and _cp/_freq_t50ll lexica from an estimate;
-        also outcome-as-feature and timex features), runSemanticFeatures (--add_ner).
-        Message transformations usually come first in a project, but each writes a new table (e.g. <t>_tok) and
-        leaves -t as it was, so features from it need a second command with -t set to the new table. They run after
-        runFeatureExtraction so that --estimate_lda_topics can pass its state file to --add_lda_messages.
-      - Refining feature tables: runRefinement (occurrence/PMI filters, combine, normalize, smooth, tf-idf,
-        reliability, aggregate to another group level)
-      - Describing one side: runFeatureOnly (--top_messages), runOutcomeOnly (Outcome Actions: csv dumps of
-        features with outcomes, loess plots)
-      - Relating language to outcomes: runCorrelation (DLA, one outcome at a time: correlate, rmatrix,
-        wordclouds; also CCA), runMultipleRegression (--multir), runMediation (--mediation)
-      - Prediction: runPrediction (regression; also Factor Adaptation and dimension reduction),
-        runClassification, runClustering (dimension reduction and model-to-lexicon)
-      - Afterwards: runPlots (all-topic wordclouds, barplots), runFeatureTableAnalyses (--ttest_feat_tables),
-        runSaveSettings (--to_file)
+  - Actions -- the work itself: one run<Section>(args, s) per -h group of actions; each does nothing unless one
+    of its flags was given. Features are per message and aggregated to any group (-g: user, county, user-week,
+    ...), keeping groups with at least --group_freq_thresh words.
+    Core pipeline (tutorials tut_dla, tut_pred, tut_bert; tests/unit_tests.sh core tests):
+      1. Extract features -- runFeatureExtraction unless noted:
+          - n-grams: --add_ngrams -n 1 2 3
+          - lexica and topics: --add_lex_table -l LEX (topics: the _cp lexicon with --weighted_lexicon); learn
+            new topics with --estimate_lda_topics (tut_lda; finished by runTopicsAndDerivedFeatures)
+          - contextual embeddings: --add_emb_feat (tokens and layers aggregated per message, then messages per
+            group) or --add_sent_emb_feat (sentence transformers); --emb_model, --emb_layers (tut_bert)
+          - predictions as features: apply a saved model with --load_models --picklefile and
+            --predict_regression_to_feats / --predict_classifiers_to_feats / --predict_probabilities_to_feats
+            (run in runPrediction/runClassification; tut_pickle_apply)
+      2. Refine -- runRefinement: --feat_occ_filter --set_p_occ, --combine_feat_tables, --feat_colloc_filter
+      3. DLA -- runCorrelation: --correlate --rmatrix --csv --sort, --tagcloud/--make_wordclouds,
+         --topic_tagcloud/--make_topic_wordclouds; adjust with --controls
+      4. Predict -- runPrediction (--nfold_test_regression --model ridgecv), runClassification
+         (--nfold_test_classifiers --model lr); --feature_selection, --save_models/--load_models
+    Other actions, in run order: runTables (list/copy/sample tables), runMessageTransformations (tokenize, clean,
+    deduplicate: writes new message tables; tut_text_transformations, tut_data_cleaning), runSemanticFeatures,
+    runFeatureOnly, runOutcomeOnly, runMultipleRegression, runMediation, runClustering, runPlots,
+    runFeatureTableAnalyses, runSaveSettings.
   - main() -- the outline of a run: parses, then calls the run<Section> functions in a fixed order,
     so one command can chain actions (e.g. --add_ngrams ... --correlate)
 To add a flag, put it in its -h group in buildParser(); to add an action, put it in that group's run<Section>.
@@ -1471,7 +1472,12 @@ def runFeatureExtraction(args, s):
 
 
 def runMessageTransformations(args, s):
-    """Message Transformations (-h: Messages Transformation Actions, Message Cleaning Actions)"""
+    """Message Transformations (-h: Messages Transformation Actions, Message Cleaning Actions)
+
+    Each writes a new message table (e.g. <t>_tok) and leaves -t as it was, so features from it need a second
+    command with -t set to the new table. Runs after runFeatureExtraction so that --estimate_lda_topics can pass
+    its state file to --add_lda_messages.
+    """
     MA, MT = s.MA, s.MT
     lda_state_name, ma, mt = s.lda_state_name, s.ma, s.mt
     # LDA
